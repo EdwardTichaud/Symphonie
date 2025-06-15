@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7261911478402680135}
   - component: {fileID: 3379418481353585641}
   - component: {fileID: 8038965481855559691}
-  - component: {fileID: 7890626438977942418}
+  - component: {fileID: 4939831428149609052}
   m_Layer: 0
   m_Name: Cinematic_Timeline_Intro
   m_TagString: Untagged
@@ -51,7 +51,15 @@ PlayableDirector:
   m_WrapMode: 2
   m_DirectorUpdateMode: 1
   m_InitialTime: 0
-  m_SceneBindings: []
+  m_SceneBindings:
+  - key: {fileID: 2198551092438063412, guid: d9234e12cb041ee47b2f14d9070eadce, type: 2}
+    value: {fileID: 0}
+  - key: {fileID: 4342695755183404979, guid: d9234e12cb041ee47b2f14d9070eadce, type: 2}
+    value: {fileID: 0}
+  - key: {fileID: -4718209423084149117, guid: d9234e12cb041ee47b2f14d9070eadce, type: 2}
+    value: {fileID: 0}
+  - key: {fileID: 8661345093308863838, guid: d9234e12cb041ee47b2f14d9070eadce, type: 2}
+    value: {fileID: 0}
   m_ExposedReferences:
     m_References: []
 --- !u!114 &6281036084582256108
@@ -68,71 +76,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Events:
     m_Signals:
-    - {fileID: 11400000, guid: 22e1e5ad7efccb54bbabc8a032840cee, type: 2}
-    - {fileID: 11400000, guid: 608fc7748df609049a8dee4d3876baa6, type: 2}
-    - {fileID: 11400000, guid: 155f04c709dd54a4db829bd2bb4f3ef3, type: 2}
-    - {fileID: 11400000, guid: d35648cb58916824ea553f6cf7ba6207, type: 2}
     - {fileID: 11400000, guid: eb7940215f9f54e41bb850606af9cadc, type: 2}
     - {fileID: 11400000, guid: b065b87c966207c4d9943fbc83fd4860, type: 2}
-    - {fileID: 11400000, guid: f12b8218f99d7e347bfcad7124cc175a, type: 2}
-    - {fileID: 11400000, guid: 5dd34430dd218b54eae0d09e2b3e0f13, type: 2}
+    - {fileID: 11400000, guid: 3be94180c8b8bf541a456ac0b241f951, type: 2}
+    - {fileID: 11400000, guid: ece4011c625fd564bbb1d57cdd5de30d, type: 2}
+    - {fileID: 11400000, guid: 2a5a71bc57566de4a8d9118b51095eeb, type: 2}
+    - {fileID: 11400000, guid: fc44c621f660a034b9274f8d73bfa1b4, type: 2}
+    - {fileID: 11400000, guid: 04ef6fe86c6118640b3f08a525e51b04, type: 2}
+    - {fileID: 11400000, guid: 4076d31eadc77904e8bf16418e430509, type: 2}
+    - {fileID: 11400000, guid: c3c6fdac1730561419123b57ab43d2fd, type: 2}
     m_Events:
-    - m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 8038965481855559691}
-          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
-          m_MethodName: TriggerAnimation
-          m_Mode: 2
-          m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: 1088e6e41eac21f489303caeaec39bf5, type: 2}
-            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: Idle_Sit
-            m_BoolArgument: 0
-          m_CallState: 1
-    - m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 8038965481855559691}
-          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
-          m_MethodName: TriggerAnimation
-          m_Mode: 2
-          m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: 311e5ee79ac7b9441893e874fc2eca87, type: 2}
-            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: Idle_Sit_RaiseHead
-            m_BoolArgument: 0
-          m_CallState: 1
-    - m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 8038965481855559691}
-          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
-          m_MethodName: TriggerAnimation
-          m_Mode: 2
-          m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: ba0a35bd1cc87b244aea4d75915f7373, type: 2}
-            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: Idle_Sit_HeadRaised
-            m_BoolArgument: 0
-          m_CallState: 1
-    - m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 8038965481855559691}
-          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
-          m_MethodName: TriggerAnimation
-          m_Mode: 2
-          m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: 6c0d86d7237132a4e88f17b6a88be941, type: 2}
-            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: Idle_Sit_LowerHead
-            m_BoolArgument: 0
-          m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
         - m_Target: {fileID: 3379418481353585641}
@@ -163,12 +116,26 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
+        - m_Target: {fileID: 3379418481353585641}
+          m_TargetAssemblyTypeName: DialogueSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerDialogueAndPause
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: fc9e255037a247e40a4933a79e7a2520, type: 2}
+            m_ObjectArgumentAssemblyTypeName: DialogueContainer, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
         - m_Target: {fileID: 8038965481855559691}
           m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
           m_MethodName: TriggerAnimation
           m_Mode: 2
           m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: 3b76cfbb25737cb4fb75252a2be3ab35, type: 2}
+            m_ObjectArgument: {fileID: 11400000, guid: 1088e6e41eac21f489303caeaec39bf5, type: 2}
             m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
             m_IntArgument: 0
             m_FloatArgument: 0
@@ -177,13 +144,69 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 7890626438977942418}
-          m_TargetAssemblyTypeName: CameraSignalReceiver, Assembly-CSharp
-          m_MethodName: StartOrbit
+        - m_Target: {fileID: 8038965481855559691}
+          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerAnimation
           m_Mode: 2
           m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: 9939d9458eba2c946a3a43c0a0d81be5, type: 2}
-            m_ObjectArgumentAssemblyTypeName: OrbitAroundTriggerSO, Assembly-CSharp
+            m_ObjectArgument: {fileID: 11400000, guid: 311e5ee79ac7b9441893e874fc2eca87, type: 2}
+            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 8038965481855559691}
+          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerAnimation
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: ba0a35bd1cc87b244aea4d75915f7373, type: 2}
+            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 8038965481855559691}
+          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerAnimation
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: 6c0d86d7237132a4e88f17b6a88be941, type: 2}
+            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 8038965481855559691}
+          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerAnimation
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: 918118d56943f154882a706c50d066a5, type: 2}
+            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 8038965481855559691}
+          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerAnimation
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: e940b93f63f5f03438ff8f58886dd0a3, type: 2}
+            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
             m_IntArgument: 0
             m_FloatArgument: 0
             m_StringArgument: 
@@ -232,7 +255,7 @@ MonoBehaviour:
     animator: {fileID: 0}
   - id: BlackFade
     animator: {fileID: 0}
---- !u!114 &7890626438977942418
+--- !u!114 &4939831428149609052
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -241,6 +264,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 4876822539084247125}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4735151b7e5083d4085fa2b156583487, type: 3}
+  m_Script: {fileID: 11500000, guid: e28e087c41201b543b93c39acfd73cab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
