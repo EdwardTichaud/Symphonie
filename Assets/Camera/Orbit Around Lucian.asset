@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1d7b8ed42bf0ec46a806c2c1bfc8c59, type: 3}
+  m_Name: Orbit Around Lucian
+  m_EditorClassIdentifier: 
+  targetName: Lucian_World/Points/Player_Points_Chest
+  target: {fileID: 0}
+  distance: 2
+  speed: 5
+  orbitX: 0
+  orbitY: 1
+  orbitZ: 0

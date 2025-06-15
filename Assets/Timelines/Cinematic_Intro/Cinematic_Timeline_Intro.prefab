@@ -1,0 +1,246 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4876822539084247125
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2417066013289002589}
+  - component: {fileID: 928104240474029746}
+  - component: {fileID: 6281036084582256108}
+  - component: {fileID: 7261911478402680135}
+  - component: {fileID: 3379418481353585641}
+  - component: {fileID: 8038965481855559691}
+  - component: {fileID: 7890626438977942418}
+  m_Layer: 0
+  m_Name: Cinematic_Timeline_Intro
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2417066013289002589
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4876822539084247125}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!320 &928104240474029746
+PlayableDirector:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4876822539084247125}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_PlayableAsset: {fileID: 11400000, guid: d9234e12cb041ee47b2f14d9070eadce, type: 2}
+  m_InitialState: 1
+  m_WrapMode: 2
+  m_DirectorUpdateMode: 1
+  m_InitialTime: 0
+  m_SceneBindings: []
+  m_ExposedReferences:
+    m_References: []
+--- !u!114 &6281036084582256108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4876822539084247125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e52de21a22b6dd44c9cc19f810c65059, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Events:
+    m_Signals:
+    - {fileID: 11400000, guid: 22e1e5ad7efccb54bbabc8a032840cee, type: 2}
+    - {fileID: 11400000, guid: 608fc7748df609049a8dee4d3876baa6, type: 2}
+    - {fileID: 11400000, guid: 155f04c709dd54a4db829bd2bb4f3ef3, type: 2}
+    - {fileID: 11400000, guid: d35648cb58916824ea553f6cf7ba6207, type: 2}
+    - {fileID: 11400000, guid: eb7940215f9f54e41bb850606af9cadc, type: 2}
+    - {fileID: 11400000, guid: b065b87c966207c4d9943fbc83fd4860, type: 2}
+    - {fileID: 11400000, guid: f12b8218f99d7e347bfcad7124cc175a, type: 2}
+    - {fileID: 11400000, guid: 5dd34430dd218b54eae0d09e2b3e0f13, type: 2}
+    m_Events:
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 8038965481855559691}
+          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerAnimation
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: 1088e6e41eac21f489303caeaec39bf5, type: 2}
+            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Idle_Sit
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 8038965481855559691}
+          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerAnimation
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: 311e5ee79ac7b9441893e874fc2eca87, type: 2}
+            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Idle_Sit_RaiseHead
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 8038965481855559691}
+          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerAnimation
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: ba0a35bd1cc87b244aea4d75915f7373, type: 2}
+            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Idle_Sit_HeadRaised
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 8038965481855559691}
+          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerAnimation
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: 6c0d86d7237132a4e88f17b6a88be941, type: 2}
+            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: Idle_Sit_LowerHead
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 3379418481353585641}
+          m_TargetAssemblyTypeName: DialogueSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerDialogueAndPause
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: de7e65e243a18f242bffdef2bf630389, type: 2}
+            m_ObjectArgumentAssemblyTypeName: DialogueContainer, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 3379418481353585641}
+          m_TargetAssemblyTypeName: DialogueSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerDialogueAndPause
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: 215ebe5f3ea7b0446888325cd450442e, type: 2}
+            m_ObjectArgumentAssemblyTypeName: DialogueContainer, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 8038965481855559691}
+          m_TargetAssemblyTypeName: AnimationSignalReceiver, Assembly-CSharp
+          m_MethodName: TriggerAnimation
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: 3b76cfbb25737cb4fb75252a2be3ab35, type: 2}
+            m_ObjectArgumentAssemblyTypeName: AnimationTriggerSO, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 7890626438977942418}
+          m_TargetAssemblyTypeName: CameraSignalReceiver, Assembly-CSharp
+          m_MethodName: StartOrbit
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: 9939d9458eba2c946a3a43c0a0d81be5, type: 2}
+            m_ObjectArgumentAssemblyTypeName: OrbitAroundTriggerSO, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+--- !u!114 &7261911478402680135
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4876822539084247125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac23be14a2d31684f9595f85fe7fa236, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timeline: {fileID: 928104240474029746}
+--- !u!114 &3379418481353585641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4876822539084247125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8bf910b8ed2d70a4295a9b8b710d3199, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  timeline: {fileID: 928104240474029746}
+--- !u!114 &8038965481855559691
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4876822539084247125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9592bf901286d244a9923aabb74c0885, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  animators:
+  - id: Lucian
+    animator: {fileID: 0}
+  - id: BlackFade
+    animator: {fileID: 0}
+--- !u!114 &7890626438977942418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4876822539084247125}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4735151b7e5083d4085fa2b156583487, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

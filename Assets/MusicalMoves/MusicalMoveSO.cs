@@ -1,0 +1,55 @@
+﻿using UnityEngine;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEditor.Callbacks;
+
+[CreateAssetMenu(fileName = "NewMusicalMove", menuName = "Symphonie/Musical Move")]
+public class MusicalMoveSO : ScriptableObject
+{
+    [Header("Identité")]
+    public string moveName;
+    public enum MoveType { Attack, Parry, Dodge }
+    public MoveType moveType;
+    public Sprite moveIcon;
+    [TextArea] public string description;
+    public string musicalMoveTargetingAnimationName;
+    public string musicalMoveRunAnimationName;
+    public float maxRunDuration = 0.5f;
+    public bool stayFaceToTarget;
+    public string[] musicalMoveIntroAnimationNames;
+    public string[] musicalMoveAnimationNames;
+
+   [Header("Coût et Dégâts")]
+    public int mpCost = 5;
+    public int power = 10;
+
+    [Header("Ciblage")]
+    public TargetType targetType = TargetType.SingleEnemy;
+    public TargetType defaultTargetType = TargetType.SingleEnemy;
+
+    [Header("Effet appliqué")]
+    public MusicalEffectType effectType = MusicalEffectType.Damage;
+    public int effectValue = 10;
+
+    public float moveSpeed = 20f;
+    public float castDistance;
+    public bool stayInPlace = false;
+
+    [Header("VFX")]
+    public GameObject introVFXPrefab;
+    public GameObject hitVFXPrefab;
+
+    public void ApplyEffect(CharacterUnit target)
+    {
+        if (effectType == MusicalEffectType.Damage && target.Data.characterType == CharacterType.EnemyUnit)
+        {
+            target.TakeDamage(effectValue);
+        }
+        else if (effectType == MusicalEffectType.Heal && target.Data.characterType == CharacterType.SquadUnit)
+        {
+            target.Heal(effectValue);
+        }
+    }
+}
+
+public enum MusicalEffectType { Damage, Heal, Buff, Debuff }

@@ -1,0 +1,1475 @@
+﻿using UnityEngine;
+using UnityEngine.SceneManagement;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine.UI;
+using UnityEngine.InputSystem;
+using TMPro;
+
+public enum TargetType
+{
+    Self,
+    SingleEnemy,
+    AllEnemies,
+    SingleAlly,
+    AllAllies
+}
+
+public class NewBattleManager : MonoBehaviour
+{
+    public static NewBattleManager Instance { get; private set; }
+
+    // Initialisation de la scene de combat et spawn des unités ---------------------------
+    [Tooltip("Nom exact de la scène de combat à charger (sans extension)")]
+    public string battleSceneName = "BattleScene";
+
+    [Header("Joueurs")]
+    public GameObject squadUnitRay;
+    private List<Transform> playerSpawnPoints = new List<Transform>();
+
+    [Header("Ennemis")]
+    private List<Transform> enemySpawnPoints = new List<Transform>();
+    public List<CharacterData> enemyTemplates = new List<CharacterData>();
+
+    [Header("Ordre d'initialisation des unités")]
+    [SerializeField] private Transform initializationRoot;
+    public List<CharacterUnit> activeCharacterUnits = new List<CharacterUnit>();
+
+    // États du combat -------------------------------------------------------------------
+    public enum BattleState
+    {
+        None,
+        Initialization,
+        NewTurn,
+        EndTurn,
+
+        // SquadUnit Turn
+        SquadUnit_MainMenu,
+        SquadUnit_SkillsMenu,
+        SquadUnit_ItemsMenu,
+        SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad,
+        SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies,
+        SquadUnit_TargetSelectionAmongSquadForSkill,
+        SquadUnit_TargetSelectionAmongSquadForItem,
+        SquadUnit_TargetSelectionAmongEnemiesForSkill,
+        SquadUnit_TargetSelectionAmongEnemiesForItem,
+        SquadUnit_PerformingMusicalMove,
+        SquadUnit_UseItem,
+
+        // EnemyUnit Turn
+        EnemyUnit_Reflexion,
+        EnemyUnit_PerformingMusicalMove,
+        EnemyUnit_UseItem,
+
+        // Game Over
+        VictoryScreen_Await,
+        VictoryScreen_CanContinue,
+
+        GameOverScreen_Await,
+        GameOverScreen_CanContinue,
+    }
+    public BattleState currentBattleState;
+
+    // -----------------------------------------------------------------------------------
+    [SerializeField] private GroupFocus currentGroupFocus = GroupFocus.None;
+    private enum GroupFocus { None, Squad, Enemies }
+
+    public GameObject victoryScreen;
+    public GameObject gameOverScreen;
+
+    // -----------------------------------------------------------------------------------
+    // Gestion des tours de jeu ----------------------------------------------------------
+    [Header("Timeline UI")]
+    public RectTransform timelineContainer;
+    public GameObject timelineUnitPrefab;
+    public List<BattleTimelineUnit> timelineUIObjects = new();
+
+    private CharacterUnit previousUnit; // Champ de classe, pas une variable locale
+    public CharacterUnit currentCharacterUnit;
+    private bool isTurnResolving = false;
+
+    public List<CharacterUnit> unitsInBattle = new();
+
+    private const float ATB_THRESHOLD = 100f;
+    // -----------------------------------------------------------------------------------
+
+    // Gestion de l’interface utilisateur de combat --------------------------------------
+    [Header("Sprites des touches")]
+    [SerializeField] private Sprite inputSprite1;
+    [SerializeField] private Sprite inputSprite2;
+    [SerializeField] private Sprite inputSprite3;
+    [SerializeField] private Sprite inputSprite4;
+
+    [Header("UI Prefab")]
+    [SerializeField] private GameObject buttonPrefab;
+
+    // Curseur
+    private int currentTargetIndex = 0;
+    private float navigationCooldown = 0.3f;
+    private float lastNavTime = 0f;
+
+    //Permet de détecter les changements de target--------------------------------------------
+    private CharacterUnit _currentTargetCharacter;
+    public CharacterUnit currentTargetCharacter
+    {
+        get => _currentTargetCharacter;
+        set
+        {
+            _currentTargetCharacter = value;
+            UpdateCameraBehaviour(currentBattleState); // Met à jour la caméra quand la cible change
+        }
+    }
+    //-------------------------------------------------------------------------------------
+
+    public GameObject targetCursorPrefab;
+    public GameObject targetCursor;
+    private List<CharacterUnit> filteredUnits = new();
+
+    // Caméra
+    [Header("Caméra de combat")]
+    public Transform battleCameraTransform;
+    public float cameraSmoothSpeed = 5f;
+    private Transform desiredTransform;
+    private Vector3 desiredPosition;
+    private Quaternion desiredRotation;
+    private bool isFollowing = false;
+    private bool isOrbiting = false;
+    private float currentOrbitAngle;
+    private Transform orbitCenter;
+
+    // Compétences et items disponibles pour l’unité qui joue
+    private List<MusicalMoveSO> skillChoices = new List<MusicalMoveSO>();
+    private List<ItemData> itemChoices = new List<ItemData>();
+
+    public MusicalMoveSO currentMove;
+    public ItemData currentItem;
+    public int currentMenuIndex;
+
+    // Menus personnalisés pour l’unité qui joue
+    public GameObject currentMainMenuContainer;
+    public List<Transform> currentMainMenuSlots;
+
+    public GameObject currentSkillsMenuContainer;
+    public List<Transform> currentSkillsMenuSlots;
+
+    public GameObject currentItemsMenuContainer;
+    public List<Transform> currentItemsMenuSlots;
+
+    // -----------------------------------------------------------------------------------
+
+    #region Initialization
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    private void Start()
+    {
+        if (targetCursorPrefab != null)
+        {
+            targetCursor = Instantiate(targetCursorPrefab, transform.position, Quaternion.identity);
+            targetCursor.SetActive(false);
+        }
+    }
+
+    private void Update()
+    {
+        HandleTargetCursor();
+        HandleTargetNavigation();
+    }
+
+    public void SetBattleInputs()
+    {
+        if (InputsManager.Instance == null)
+        {
+            Debug.LogWarning("[NewBattleManager] InputsManager.Instance est null, nouvelle recherche.");
+            return;
+        }
+
+        var battle = InputsManager.Instance.playerInputs.Battle;
+        battle.Select1.performed += OnSelect1;
+        battle.Select2.performed += OnSelect2;
+        battle.Select3.performed += OnSelect3;
+        battle.Back.performed += OnBackInput;
+        battle.EnemiesGroupSelection.performed += ctx => OnEnemiesGroupSelection();
+        battle.SquadGroupSelection.performed += ctx => OnSquadGroupSelection();
+        battle.Confirm.performed += OnConfirm;
+    }
+
+    public void ResetBattleInputs()
+    {
+        var battle = InputsManager.Instance.playerInputs.Battle;
+        battle.Select1.performed -= OnSelect1;
+        battle.Select2.performed -= OnSelect2;
+        battle.Select3.performed -= OnSelect3;
+        battle.Back.performed -= OnBackInput;
+        battle.EnemiesGroupSelection.performed -= ctx => OnEnemiesGroupSelection();
+        battle.SquadGroupSelection.performed -= ctx => OnSquadGroupSelection();
+        battle.Confirm.performed -= OnConfirm;
+    }
+
+    public void ChangeBattleState(BattleState newState)
+    {
+        currentBattleState = newState;
+        Debug.Log("Nouvel état de combat: " + newState);
+        UpdateCameraBehaviour(newState);
+    }
+
+    public void LaunchBattle()
+    {
+        activeCharacterUnits = unitsInBattle
+            .Where(u => u.currentHP > 0)
+            .ToList();
+
+        StartBattle(activeCharacterUnits);
+
+        Debug.Log("[NewBattleManager] Lancement du combat dans la scène : " + battleSceneName);
+    }
+
+    public void SpawnAll()
+    {
+        if (activeCharacterUnits.Count > 0)
+        {
+            Debug.LogWarning("[NewBattleManager] SpawnAll déjà exécuté ou unités déjà présentes.");
+            return;
+        }
+
+        activeCharacterUnits.Clear();
+        SpawnSquadUnits();
+        SpawnEnemies();
+    }
+
+    private void SpawnSquadUnits()
+    {
+        playerSpawnPoints.Clear();
+        var playerSpawnRoot = GameObject.FindGameObjectWithTag("PlayerSpawn").transform;
+
+        for (int i = 0; i < playerSpawnRoot.childCount; i++)
+        {
+            var child = playerSpawnRoot.GetChild(i);
+            if (child != null)
+                playerSpawnPoints.Add(child);
+        }
+
+        var squad = GameManager.Instance.gameData.squadCharacters;
+        for (int i = 0; i < squad.Count && i < playerSpawnPoints.Count; i++)
+        {
+            var pc = squad[i];
+            var spawnPoint = playerSpawnPoints[i];
+
+            if (pc.characterBattleModel == null)
+            {
+                Debug.LogWarning($"[SpawnPlayers] Aucun modèle défini pour {pc.characterName}, annulation du spawn.");
+                continue;
+            }
+
+            Vector3 offset = spawnPoint.position - spawnPoint.forward * 4f;
+
+            var unitGO = Instantiate(pc.characterBattleModel, offset, Quaternion.identity);
+            unitGO.transform.SetParent(spawnPoint, worldPositionStays: true);
+            unitGO.name = $"SquadUnit_{i}";
+
+            var unit = unitGO.GetComponent<CharacterUnit>();
+            unit.Initialize(pc);
+            unitsInBattle.Add(unit);
+
+            float animationDuration = PlayRandomStartAnimation(unitGO); // ⏱️
+            StartCoroutine(AnimateSpawn(unitGO, spawnPoint.position, animationDuration));
+        }
+    }
+
+    private void SpawnEnemies()
+    {
+        enemySpawnPoints.Clear();
+        var enemySpawnRoot = GameObject.FindGameObjectWithTag("EnemySpawn").transform;
+
+        for (int i = 0; i < enemySpawnRoot.childCount; i++)
+        {
+            var child = enemySpawnRoot.GetChild(i);
+            if (child != null)
+                enemySpawnPoints.Add(child);
+        }
+
+        for (int i = 0; i < enemyTemplates.Count && i < enemySpawnPoints.Count; i++)
+        {
+            var enemyData = Instantiate(enemyTemplates[i]);
+            var spawnPoint = enemySpawnPoints[i];
+
+            if (enemyData.characterBattleModel == null)
+            {
+                Debug.LogWarning($"[SpawnEnemies] Aucun modèle défini pour {enemyData.characterName}, annulation du spawn.");
+                continue;
+            }
+
+            if (squadUnitRay != null)
+                Instantiate(squadUnitRay, spawnPoint.position, Quaternion.identity);
+
+            Vector3 offset = spawnPoint.position + spawnPoint.forward * 4f;
+
+            var unitGO = Instantiate(enemyData.characterBattleModel, offset, Quaternion.Euler(0f, 180f, 0f));
+            unitGO.transform.SetParent(spawnPoint, worldPositionStays: true);
+            unitGO.name = $"EnemyUnit_{i}";
+
+            var eu = unitGO.GetComponent<CharacterUnit>();
+            eu.Initialize(enemyData);
+            unitsInBattle.Add(eu);
+
+            float animationDuration = PlayRandomStartAnimation(unitGO); // ⏱️
+            StartCoroutine(AnimateSpawn(unitGO, spawnPoint.position, animationDuration));
+        }
+    }
+
+    private IEnumerator AnimateSpawn(GameObject unitGO, Vector3 targetPosition, float duration)
+    {
+        Vector3 startPos = unitGO.transform.position;
+        float elapsed = 0f;
+
+        CharacterUnit activeUnit = unitGO.GetComponentInChildren<CharacterUnit>();
+        OrientAllUnitsTowardCenter(activeUnit);
+
+        while (elapsed < duration)
+        {
+            float t = elapsed / duration;
+            unitGO.transform.position = Vector3.Lerp(startPos, targetPosition, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        unitGO.transform.position = targetPosition;
+    }
+
+    private float PlayRandomStartAnimation(GameObject unitGO)
+    {
+        var animator = unitGO.GetComponentInChildren<Animator>();
+
+        if (animator != null)
+        {
+            int choice = Random.Range(1, 2);
+            string animationName = $"EquipOnMove_{choice}";
+            animator.Play(animationName);
+
+            return 2f;
+        }
+
+        return 2f;
+    }
+    #endregion
+
+    #region Gestion des tours de jeu
+
+    void StartBattle(List<CharacterUnit> characters)
+    {
+        Debug.Log("[BattleTurnManager] Démarrage du combat avec " + characters.Count + " unités");
+
+        // 1) On ne garde que ceux dont le HP est > 0
+        unitsInBattle = characters.Where(c => c.currentHP > 0).ToList();
+
+        // 2) On initialise l’UI de timeline
+        InitializeTimelineUI(unitsInBattle);
+
+        // 3) On affecte currentTargetCharacter au premier ennemi de la liste
+        currentTargetCharacter = unitsInBattle
+            .FirstOrDefault(u => !u.Data.isPlayerControlled && u.currentHP > 0);
+
+        // 4) Si aucun ennemi n’est présent, on peut mettre à null ou garder un fallback
+        if (currentTargetCharacter == null)
+        {
+            Debug.LogWarning("[BattleTurnManager] Aucun ennemi actif trouvé pour currentTargetCharacter.");
+        }
+
+        // 5) On réinitialise les ATB
+        foreach (var unit in unitsInBattle)
+        {
+            unit.currentATB = 0f;
+        }
+
+        GameManager.Instance.CurrentState = GameState.StartBattle;
+
+        // 7) Lancement de la boucle de tours
+        StartCoroutine(TurnLoop());
+    }
+
+    private IEnumerator TurnLoop()
+    {
+        while (true)
+        {
+            if (unitsInBattle.All(u => u.currentHP <= 0))
+            {
+                Debug.LogWarning("[BattleTurnManager] Tous les combattants sont morts.");
+                yield break;
+            }
+
+            yield return ExecuteTurn(CalculateNextUnit());
+            yield return new WaitForSeconds(0.2f);
+        }
+    }
+
+    private CharacterUnit CalculateNextUnit()
+    {
+        while (true)
+        {
+            foreach (var unit in unitsInBattle.Where(u => u.currentHP > 0))
+            {
+                unit.currentATB += unit.currentInitiative;
+                if (unit.currentATB >= ATB_THRESHOLD)
+                    return unit;
+            }
+        }
+    }
+
+    private IEnumerator ExecuteTurn(CharacterUnit unit)
+    {
+        if (currentBattleState != BattleState.VictoryScreen_Await && currentBattleState != BattleState.VictoryScreen_CanContinue && currentBattleState != BattleState.GameOverScreen_Await && currentBattleState != BattleState.GameOverScreen_CanContinue)
+        {
+            isTurnResolving = true;
+
+            // 1) On stocke l’unité qui jouait juste avant (champ de classe)
+            CharacterUnit oldUnit = previousUnit;
+
+            // 2) Mise à jour de l’unité courante
+            currentCharacterUnit = unit;
+            UpdateTimelineHighlight(unit);
+
+            ChangeBattleState(BattleState.NewTurn);
+
+            Debug.Log($"[BattleTurnManager] Tour de {unit.name} (ATB: {unit.currentATB})");
+            OrientAllUnitsTowardEnemyGroupSmooth();
+
+            yield return new WaitForSeconds(0.5f);
+
+            if (unit.Data.isPlayerControlled)
+            {
+                Initialize(unit);
+                yield return new WaitUntil(() => !isTurnResolving);
+            }
+            else
+            {
+                yield return EnemyTurnWithQTE(unit);
+                EndTurn();
+            }
+
+            // 8) On mémorise unit comme précédente pour le prochain tour
+            previousUnit = unit;
+        }
+        else
+        {
+            yield break;
+        }
+    }
+
+    private IEnumerator EnemyTurnWithQTE(CharacterUnit enemy)
+    {
+        ChangeBattleState(BattleState.EnemyUnit_PerformingMusicalMove);
+        yield return new WaitForSeconds(1f);
+
+        var move = enemy.GetRandomMusicalAttack();
+        var target = enemy.SelectTargetFromSquad();
+
+        _currentTargetCharacter = target;
+
+        if (move == null || target == null)
+        {
+            Debug.LogWarning("[EnemyTurn] Aucune attaque ou cible valide !");
+            yield break;
+        }
+
+        ActionUIDisplayManager.Instance.DisplayAttackName(move.moveName);
+        yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
+    }
+
+    private IEnumerator ExecuteMoveOnTarget(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
+    {
+        Debug.Log($"{caster} exécute le mouvement {move.moveName} sur {target}");
+        ToggleMenuContainers(false, false, false);
+        yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
+        move.ApplyEffect(target);
+        currentCharacterUnit.currentATB = 0f;
+    }
+
+    private IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
+    {
+        yield return null;
+    }
+
+    public void EndTurn()
+    {
+        if (currentCharacterUnit != null)
+        {
+            Debug.Log($"[BattleTurnManager] Fin du tour de {currentCharacterUnit.name}");
+            currentCharacterUnit.currentATB = 0f;
+        }
+
+        ChangeBattleState(BattleState.EndTurn);
+        UpdateTimelineHighlight(null);
+        isTurnResolving = false;
+        HandleEndOfBattle();
+    }
+
+    private void InitializeTimelineUI(List<CharacterUnit> characters)
+    {
+        foreach (var go in timelineUIObjects)
+            Destroy(go.gameObject);
+        timelineUIObjects.Clear();
+
+        foreach (var unit in characters)
+        {
+            var slot = Instantiate(timelineUnitPrefab, timelineContainer);
+            var ui = slot.GetComponent<BattleTimelineUnit>();
+            ui.Initialize(unit);
+            timelineUIObjects.Add(ui);
+        }
+    }
+
+    private void UpdateTimelineHighlight(CharacterUnit activeUnit)
+    {
+        foreach (var ui in timelineUIObjects)
+        {
+            bool isCurrent = activeUnit != null && ui.characterData == activeUnit.Data;
+            ui.SetHighlight(isCurrent);
+        }
+    }
+
+    public void OrientAllUnitsTowardCenter(CharacterUnit activeUnit)
+    {
+        foreach (var unit in unitsInBattle)
+        {
+            if (unit == null || unit == activeUnit)
+                continue;
+
+            // Calcul de la direction vers le centre (0,0,0)
+            Vector3 dir = (Vector3.zero - unit.transform.position).normalized;
+            if (dir == Vector3.zero)
+                continue;
+
+            // Angle entre la direction actuelle de l’unité (forward) et la nouvelle direction
+            float angle = Vector3.Angle(unit.transform.forward, dir);
+            if (angle > 90f)
+            {
+                // Si l’angle est > 90°, on déclenche le trigger "isTurning" sur l’Animator enfant
+                Animator anim = unit.GetComponentInChildren<Animator>();
+                if (anim != null)
+                {
+                    anim.SetTrigger("isTurning");
+                }
+            }
+
+            // On oriente instantanément l’unité vers la nouvelle direction (seulement sur l’axe Y)
+            unit.transform.rotation = Quaternion.Euler(0, Quaternion.LookRotation(dir).eulerAngles.y, 0);
+        }
+    }
+
+    public void OrientAllUnitsTowardEnemyGroupSmooth(float rotationSpeed = 360f)
+    {
+        foreach (var unit in unitsInBattle)
+        {
+            if (unit == null || unit.Data.currentHP <= 0)
+                continue;
+
+            bool isPlayer = unit.Data.isPlayerControlled;
+
+            // Trouve toutes les unités ennemies vivantes
+            var enemies = unitsInBattle
+                .Where(u => u != null && u.Data.currentHP > 0 && u.Data.isPlayerControlled != isPlayer)
+                .ToList();
+
+            if (enemies.Count == 0)
+                continue;
+
+            // Calcul du barycentre des ennemis
+            Vector3 averagePosition = Vector3.zero;
+            foreach (var enemy in enemies)
+                averagePosition += enemy.transform.position;
+            averagePosition /= enemies.Count;
+
+            // Direction vers le barycentre
+            Vector3 direction = (averagePosition - unit.transform.position).normalized;
+            if (direction == Vector3.zero)
+                continue;
+
+            // Calcul de l’angle entre l’orientation actuelle et la cible
+            float angle = Vector3.Angle(unit.transform.forward, direction);
+            if (angle > 90f)
+            {
+                // Si > 90°, déclenche "isTurning" sur l’Animator enfant
+                Animator anim = unit.GetComponentInChildren<Animator>();
+                if (anim != null)
+                {
+                    anim.SetTrigger("isTurning");
+                }
+            }
+
+            // Lance la rotation en douceur vers targetRotation
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            StartCoroutine(RotateUnitSmoothly(unit, targetRotation, rotationSpeed));
+        }
+    }
+
+    private IEnumerator RotateUnitSmoothly(CharacterUnit unit, Quaternion targetRotation, float rotationSpeed)
+    {
+        // Tant que l’angle entre la rotation actuelle et la target est > 0.5f
+        while (Quaternion.Angle(unit.transform.rotation, targetRotation) > 0.5f)
+        {
+            unit.transform.rotation = Quaternion.RotateTowards(
+                unit.transform.rotation,
+                targetRotation,
+                rotationSpeed * Time.deltaTime
+            );
+            yield return null;
+        }
+
+        // Orientation finale propre (uniquement sur l’axe Y)
+        unit.transform.rotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
+    }
+
+    public void RemoveFromTimeline(CharacterUnit deadUnit)
+    {
+        activeCharacterUnits.Remove(deadUnit);
+
+        var ui = timelineUIObjects.FirstOrDefault(x => x.characterData == deadUnit.Data);
+        if (ui != null)
+        {
+            timelineUIObjects.Remove(ui);
+            Destroy(ui.gameObject);
+        }
+    }
+
+    private void HandleEndOfBattle()
+    {
+        if (currentBattleState == BattleState.None
+            || currentBattleState == BattleState.VictoryScreen_Await
+            || currentBattleState == BattleState.VictoryScreen_CanContinue
+            || currentBattleState == BattleState.GameOverScreen_Await
+            || currentBattleState == BattleState.GameOverScreen_CanContinue)
+        {
+            return;
+        }
+
+        bool allEnemiesDead = unitsInBattle
+            .Where(u => u != null)
+            .Where(u => u.Data.characterType == CharacterType.EnemyUnit)
+            .All(u => u.currentHP <= 0);
+
+        bool allSquadDead = unitsInBattle
+            .Where(u => u != null)
+            .Where(u => u.Data.characterType == CharacterType.SquadUnit)
+            .All(u => u.currentHP <= 0);
+
+        if (allEnemiesDead)
+        {
+            Debug.Log("[BattleTurnManager] 🎉 Tous les ennemis sont vaincus !");
+            ChangeBattleState(BattleState.VictoryScreen_Await);
+            StartCoroutine(ReduceTimeAndShowVictoryPanel());
+        }
+        else if (allSquadDead)
+        {
+            Debug.Log("[BattleTurnManager] 💀 Tous les alliés sont morts...");
+            ChangeBattleState(BattleState.GameOverScreen_Await);
+            StartCoroutine(ShowGameOverPanel());
+        }
+    }
+
+    private IEnumerator ReduceTimeAndShowVictoryPanel()
+    {
+        float transitionDuration = 0.3f;
+        float t = 0f;
+
+        while (t < transitionDuration)
+        {
+            t += Time.unscaledDeltaTime;
+            Time.timeScale = Mathf.Lerp(1f, 0.05f, t / transitionDuration);
+            Time.fixedDeltaTime = Time.timeScale * 0.02f;
+            yield return null;
+        }
+
+        Time.timeScale = 0.05f;
+        Time.fixedDeltaTime = 0.001f;
+
+        // Optionnel : attendre encore un peu avant d’afficher le panneau
+        yield return new WaitForSecondsRealtime(0.1f); // Soumis à timeScale
+
+        //Prendre une photo de la dernière frame de la mort de l'ennemi avant VictoryScreen
+
+        victoryScreen.transform.GetChild(0).gameObject.SetActive(true);
+
+        GameObject continueButton = FindChildRecursive(victoryScreen.transform.GetChild(0), "BattleScene_UI_VictoryPanel_Continue").gameObject;
+
+        CleanupAllSpawnedUnits();
+
+        ChangeBattleState(BattleState.VictoryScreen_CanContinue);
+    }
+
+    IEnumerator ShowGameOverPanel()
+    {
+        yield return new WaitForSeconds(0.5f); // Attente pour la transition
+        gameOverScreen.transform.GetChild(0).gameObject.SetActive(true);
+    }
+
+    void HideVictoryPanel()
+    {
+        victoryScreen.transform.GetChild(0).gameObject.SetActive(false);
+    }
+
+    void HideGameOverPanel()
+    {
+        gameOverScreen.transform.GetChild(0).gameObject.SetActive(false);
+    }
+
+    private void CleanupAllSpawnedUnits()
+    {
+        foreach (var unit in unitsInBattle)
+            if (unit != null)
+                Destroy(unit.gameObject);
+
+        unitsInBattle.Clear();
+    }
+    #endregion
+
+    #region Gestion de l'interface utilisateur de combat
+    public void Initialize(CharacterUnit characterUnit)
+    {
+        if (currentBattleState == BattleState.None
+            || currentBattleState == BattleState.VictoryScreen_Await
+            || currentBattleState == BattleState.VictoryScreen_CanContinue
+            || currentBattleState == BattleState.GameOverScreen_Await
+            || currentBattleState == BattleState.GameOverScreen_CanContinue)
+        {
+            return;
+        }
+
+        if (characterUnit.Data.characterType == CharacterType.SquadUnit)
+            ChangeBattleState(BattleState.SquadUnit_MainMenu);
+        else if (characterUnit.Data.characterType == CharacterType.EnemyUnit)
+            ChangeBattleState(BattleState.EnemyUnit_Reflexion);
+
+        Debug.Log("Initialisation du menu de combat avec l'unité : " + characterUnit.Data.characterName);
+
+        if (currentCharacterUnit != null)
+            ToggleMenuContainers(false, false, false);
+
+        // Réinitialise l’unité active
+        currentCharacterUnit = characterUnit;
+
+        SetupCurrentUnitMenus(); // prépare les panels de l’unité
+        ShowMainMenu(); // montre le menu principal
+
+        InputsManager.Instance.playerInputs.Battle.Enable();
+        OrientAllUnitsTowardEnemyGroupSmooth();
+    }
+
+    void ExitVictoryScreenAndBattle()
+    {
+        // Récupération des ennemis dans la scène monde
+        var worldEnemies = FindObjectsOfType<Enemy>()
+            .Where(e => e.wasPartOfLastBattle)
+            .ToList();
+
+        // Exemple : XP et loot fictifs, à adapter selon tes systèmes réels
+        int totalXP = 100;
+        List<ItemData> loot = new List<ItemData>();
+
+        GameManager.Instance.CurrentState = GameState.Exploration;
+
+        // 9) Dissolution des ennemis dans le monde
+        foreach (var enemy in worldEnemies)
+        {
+            if (enemy != null)
+            {
+                enemy.DissolveFadeOff();
+            }
+        }
+
+        StartCoroutine(BattleTransitionManager.Instance.ExitCombatRoutine());
+
+        Debug.Log("[NewBattleManager] Fin du combat, retour à la scène principale.");
+        Time.timeScale = 1f;
+        StopAllCoroutines();
+        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Player.Get());
+        //SetBattleInputs();
+
+        // Masque les écrans de fin
+        HideVictoryPanel();
+        HideGameOverPanel();
+
+        // Réinitialise l’état du combat
+        ChangeBattleState(BattleState.None);
+
+        // Nettoie les références
+        currentCharacterUnit = null;
+        unitsInBattle.Clear();
+        activeCharacterUnits.Clear();
+
+        // Réinitialisation UI timeline
+        foreach (var ui in timelineUIObjects)
+            Destroy(ui.gameObject);
+        timelineUIObjects.Clear();
+
+        // Réinitialise le curseur cible si existant
+        if (targetCursor != null)
+            Destroy(targetCursor);
+
+        ResetBattleFlagsOnAllEnemies();
+
+        PlayerDetection playerDetection = FindFirstObjectByType<PlayerDetection>();
+        playerDetection.detectedEnemies.Clear();
+        playerDetection.detectionOn = true;
+        playerDetection.battleEngaged = false;
+
+        Camera battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").GetComponent<Camera>();
+        battleCamera.enabled = false;
+        battleCamera.transform.GetChild(0).gameObject.SetActive(false); // Désactive l'UI
+    }
+
+    public void ResetBattleFlagsOnAllEnemies()
+    {
+        foreach (var enemy in FindObjectsOfType<Enemy>())
+        {
+            enemy.wasPartOfLastBattle = false;
+        }
+    }
+    #endregion
+
+    #region Gestion de l’ouverture des menus
+
+    private void SetupCurrentUnitMenus()
+    {
+        // 1) Essaye de récupérer la BattleCamera par tag
+        Transform battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").transform;
+
+        // 2) Cherche le panneau MainMenu_Panel, de façon récursive (plutôt que Find("MainMenu_Panel"))
+        Transform mainPanel = FindChildRecursive(battleCamera, "MainMenu_Panel");
+        if (mainPanel == null)
+        {
+            Debug.LogWarning("[SetupCurrentUnitMenus] 'MainMenu_Panel' introuvable sous la BattleCamera.");
+            currentMainMenuContainer = null;
+            currentMainMenuSlots = new List<Transform>();
+        }
+        else
+        {
+            currentMainMenuContainer = mainPanel.gameObject;
+            // On recherche ensuite le container « Menu » à l’intérieur du MainMenu_Panel
+            Transform mainSlotsParent = FindChildRecursive(mainPanel, "Menu");
+            currentMainMenuSlots = (mainSlotsParent != null)
+                ? mainSlotsParent.Cast<Transform>().ToList()
+                : new List<Transform>();
+        }
+
+        // 3) Panneau SkillsMenu_Panel
+        Transform skillsPanel = FindChildRecursive(battleCamera, "SkillsMenu_Panel");
+        if (skillsPanel == null)
+        {
+            Debug.LogWarning("[SetupCurrentUnitMenus] 'SkillsMenu_Panel' introuvable sous la BattleCamera.");
+            currentSkillsMenuContainer = null;
+            currentSkillsMenuSlots = new List<Transform>();
+        }
+        else
+        {
+            currentSkillsMenuContainer = skillsPanel.gameObject;
+            Transform skillsSlotsParent = FindChildRecursive(skillsPanel, "Menu");
+            currentSkillsMenuSlots = (skillsSlotsParent != null)
+                ? skillsSlotsParent.Cast<Transform>().ToList()
+                : new List<Transform>();
+        }
+
+        // 4) Panneau ItemsMenu_Panel
+        Transform itemsPanel = FindChildRecursive(battleCamera, "ItemsMenu_Panel");
+        if (itemsPanel == null)
+        {
+            Debug.LogWarning("[SetupCurrentUnitMenus] 'ItemsMenu_Panel' introuvable sous la BattleCamera.");
+            currentItemsMenuContainer = null;
+            currentItemsMenuSlots = new List<Transform>();
+        }
+        else
+        {
+            currentItemsMenuContainer = itemsPanel.gameObject;
+            Transform itemsSlotsParent = FindChildRecursive(itemsPanel, "Menu");
+            currentItemsMenuSlots = (itemsSlotsParent != null)
+                ? itemsSlotsParent.Cast<Transform>().ToList()
+                : new List<Transform>();
+        }
+    }
+
+    private void ShowMainMenu()
+    {
+        ActionUIDisplayManager.Instance.DisplayInstruction_SelectItemOrSkill();
+        ChangeBattleState(BattleState.SquadUnit_MainMenu);
+        ToggleMenuContainers(true, false, false);
+
+        Debug.Log($"[ShowMainMenu] Nombre de slots = {currentMainMenuSlots.Count}");
+        for (int i = 0; i < currentMainMenuSlots.Count; i++)
+            Debug.Log($"Slot {i} = {currentMainMenuSlots[i].name}, enfants : {currentMainMenuSlots[i].childCount}");
+
+        UpdateButton(currentMainMenuSlots[0], "Compétences", null);
+        UpdateButton(currentMainMenuSlots[1], "Objet", null);
+    }
+
+    private void OpenSkillsMenu()
+    {
+        ActionUIDisplayManager.Instance.DisplayInstruction_SelectSkill();
+        ChangeBattleState(BattleState.SquadUnit_SkillsMenu);
+        ToggleMenuContainers(false, true, false);
+        currentMenuIndex = 0;
+
+        skillChoices = currentCharacterUnit.Data.musicalAttacks.ToList();
+
+        // 7) Création des boutons de compétences
+        for (int i = 0; i < skillChoices.Count && i < currentSkillsMenuSlots.Count; i++)
+        {
+            var move = skillChoices[i];
+            UpdateButton(currentSkillsMenuSlots[i], move.moveName, move.moveIcon);
+        }
+        // Désactive les slots restants
+        for (int j = skillChoices.Count; j < currentSkillsMenuSlots.Count; j++)
+        {
+            if (currentSkillsMenuSlots[j].childCount > 0)
+                currentSkillsMenuSlots[j].GetChild(0).gameObject.SetActive(false);
+        }
+    }
+
+    private void OpenItemMenu()
+    {
+        ActionUIDisplayManager.Instance.DisplayInstruction_SelectItem();
+        ChangeBattleState(BattleState.SquadUnit_ItemsMenu);
+        ToggleMenuContainers(false, false, true);
+        currentMenuIndex = 0;
+
+        itemChoices = InventoryManager.Instance.GetUsableItems();
+
+        // 6) Création des boutons d’items
+        for (int i = 0; i < itemChoices.Count && i < currentItemsMenuSlots.Count; i++)
+        {
+            var item = itemChoices[i];
+            UpdateButton(currentItemsMenuSlots[i], item.itemName, item.itemIcon);
+        }
+    }
+
+    private void ToggleMenuContainers(bool showMain, bool showSkills, bool showItems)
+    {
+        if (currentCharacterUnit.Data == null) return;
+
+        Transform battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").transform;
+
+        battleCamera.transform.GetChild(0).GetChild(0).gameObject.SetActive(showMain);
+        battleCamera.transform.GetChild(0).GetChild(1).gameObject.SetActive(showSkills);
+        battleCamera.transform.GetChild(0).GetChild(2).gameObject.SetActive(showItems);
+    }
+
+    private void UpdateButton(Transform slot, string label, Sprite icon)
+    {
+        if (slot == null || slot.childCount == 0)
+        {
+            Debug.LogWarning($"[UpdateButton] Slot invalide ou vide : {slot?.name}");
+            return;
+        }
+
+        if (slot == null)
+        {
+            Debug.LogWarning($"[UpdateButton] L’enfant du slot {slot.name} est null.");
+            return;
+        }
+
+        var txt = slot.GetComponentInChildren<TextMeshProUGUI>();
+        var img = slot.childCount > 3 ? slot.GetChild(3).GetComponent<Image>() : null;
+
+        if (txt != null) txt.text = label;
+        if (img != null) img.sprite = icon;
+    }
+    #endregion
+
+    #region Gestion de la navigation dans les menus
+    private void HandleTargetNavigation()
+    {
+        bool isEnemyTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
+                                currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem;
+
+        bool isSquadTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
+                                currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem;
+
+        if (!isEnemyTargeting && !isSquadTargeting)
+            return;
+
+        CharacterType requiredType = isEnemyTargeting ? CharacterType.EnemyUnit : CharacterType.SquadUnit;
+
+        // 🔍 DEBUG : ce que contient activeCharacterUnits
+        Debug.Log($"[TargetNav] Active Units = {activeCharacterUnits.Count}");
+        foreach (var unit in activeCharacterUnits)
+        {
+            Debug.Log($"[TargetNav] Unit = {unit.name}, type = {unit.characterType}, active = {unit.gameObject.activeInHierarchy}");
+        }
+
+        // 🔧 Ajustement pour tests : enlève gameObject.activeInHierarchy pour isoler le souci
+        filteredUnits = activeCharacterUnits
+            .Where(u => u.characterType == requiredType) // Retire le test d'activité temporairement
+            .Take(3)
+            .ToList();
+
+        if (filteredUnits.Count == 0)
+        {
+            Debug.LogWarning("[TargetNav] Aucune unité filtrée trouvée !");
+            return;
+        }
+
+        Vector2 input = InputsManager.Instance.playerInputs.Battle.HorizontalNav.ReadValue<Vector2>();
+        if (Time.time - lastNavTime < navigationCooldown)
+        {
+            return;
+        }
+
+        int direction = 0;
+
+        if (input.x > 0.5f) direction = 1;
+        else if (input.x < -0.5f) direction = -1;
+
+        if (direction == 0) return;
+
+        lastNavTime = Time.time;
+
+        int count = filteredUnits.Count;
+        currentTargetIndex = (currentTargetIndex + direction + count) % count;
+
+        currentTargetCharacter = filteredUnits[currentTargetIndex];
+    }
+    #endregion
+
+    #region Gestion de la navigation parmi les unités en combat
+
+    private void HandleTargetCursor()
+    {
+        //if (currentTargetCharacter != null && currentTargetCharacter.currentHP <= 0)
+        //{
+        //    targetCursor.SetActive(false);
+        //    return;
+        //}
+
+        if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill || currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem)
+        {
+            if (targetCursor != null && currentTargetCharacter != null)
+            {
+                targetCursor.SetActive(true);
+                targetCursor.transform.position = currentTargetCharacter.transform.position;
+            }
+        }
+        else
+        {
+            if (targetCursor != null)
+            {
+                targetCursor.transform.position = Vector3.zero;
+                targetCursor.SetActive(false);
+            }
+        }
+    }
+
+    private void HandleTargetSelection(MusicalMoveSO move)
+    {
+        switch (move.defaultTargetType)
+        {
+            case TargetType.Self:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
+
+                currentTargetCharacter = activeCharacterUnits
+                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetIndex = 0;
+                break;
+
+            case TargetType.SingleEnemy:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill);
+
+                currentTargetCharacter = activeCharacterUnits
+                    .FirstOrDefault(u => u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
+                currentTargetIndex = 0;
+                break;
+
+            case TargetType.AllEnemies:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
+
+                currentTargetCharacter = activeCharacterUnits
+                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetIndex = 0;
+                break;
+                break;
+
+            case TargetType.SingleAlly:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
+                break;
+
+                currentTargetCharacter = activeCharacterUnits
+                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetIndex = 0;
+                break;
+
+            case TargetType.AllAllies:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
+
+                currentTargetCharacter = activeCharacterUnits
+                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetIndex = 0;
+                break;
+                break;
+
+            default:
+                Debug.LogWarning($"[BattleTurnManager] Type de cible par défaut non géré : {move.defaultTargetType}");
+                return;
+        }
+    }
+
+    private void HandleTargetSelection(ItemData item)
+    {
+        switch (item.defaultTargetType)
+        {
+            case TargetType.Self:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
+
+                currentTargetCharacter = activeCharacterUnits
+                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetIndex = 0;
+                break;
+
+            case TargetType.SingleEnemy:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem);
+
+                currentTargetCharacter = activeCharacterUnits
+                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetIndex = 0;
+                break;
+
+            case TargetType.AllEnemies:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
+                currentTargetCharacter = activeCharacterUnits
+                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetIndex = 0;
+                break;
+
+            case TargetType.SingleAlly:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
+                currentTargetCharacter = activeCharacterUnits
+                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetIndex = 0;
+                break;
+
+            case TargetType.AllAllies:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
+                currentTargetCharacter = activeCharacterUnits
+                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetIndex = 0;
+                break;
+
+            default:
+                Debug.LogWarning($"[BattleTurnManager] Type de cible par défaut non géré : {item.defaultTargetType}");
+                return;
+        }
+
+        ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
+    }
+    #endregion
+
+    #region Gestion des mouvements de la caméra de combat
+    public void UpdateCameraBehaviour(BattleState newState)
+    {
+        if (battleCameraTransform == null)
+        {
+            battleCameraTransform = GameObject.FindGameObjectWithTag("BattleCamera")?.transform;
+            if (battleCameraTransform == null)
+            {
+                Debug.LogError("[BattleCameraManager] Aucune caméra de combat trouvée !");
+                return;
+            }
+        }
+
+        currentBattleState = newState;
+
+        switch (currentBattleState)
+        {
+            case BattleState.Initialization:
+                isFollowing = true;
+                desiredTransform = GameObject.Find("BattleScene_Camera_BattleIntro").transform;
+                break;
+            case BattleState.SquadUnit_MainMenu:
+                isFollowing = false;
+                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_MainMenu");
+                if (desiredTransform == null)
+                {
+                    Debug.LogWarning("[BattleCameraManager] Aucun point 'Camera_MainMenu' trouvé.");
+                }
+                break;
+
+            case BattleState.SquadUnit_SkillsMenu:
+                isFollowing = false;
+                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_SkillsMenu");
+                if (desiredTransform == null)
+                {
+                    Debug.LogWarning("[BattleCameraManager] Aucun point 'Camera_SkillsMenu' trouvé.");
+                }
+                break;
+
+            case BattleState.SquadUnit_ItemsMenu:
+                isFollowing = false;
+                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_ItemsMenu");
+                if (desiredTransform == null)
+                {
+                    Debug.LogWarning("[BattleCameraManager] Aucun point 'Camera_ItemsMenu' trouvé.");
+                }
+                break;
+
+            case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad:
+                isFollowing = false;
+                desiredTransform = GameObject.Find("BattleScene_Battlefield_FocusSquad").transform;
+                break;
+
+            case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies:
+                isFollowing = false;
+                desiredTransform = GameObject.Find("BattleScene_Battlefield_FocusEnemies").transform;
+                break;
+
+            case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
+                isFollowing = false;
+                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                break;
+
+            case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
+                isFollowing = false;
+                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                break;
+
+            case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
+                isFollowing = false;
+                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                break;
+
+            case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
+                isFollowing = false;
+                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                break;
+
+            case BattleState.SquadUnit_PerformingMusicalMove:
+                isFollowing = true;
+                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
+                break;
+
+            case BattleState.EnemyUnit_PerformingMusicalMove:
+                isFollowing = true;
+                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
+                break;
+            case BattleState.SquadUnit_UseItem:
+                isFollowing = true;
+                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
+                break;
+            case BattleState.EnemyUnit_UseItem:
+                isFollowing = true;
+                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
+                break;
+            case BattleState.VictoryScreen_Await:
+                isFollowing = false;
+                desiredTransform = GameObject.Find("BattleScene_Victory").transform;
+                break;
+
+            default:
+                isFollowing = false;
+                desiredTransform = null;
+                break;
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (battleCameraTransform == null)
+        {
+            battleCameraTransform = GameObject.FindGameObjectWithTag("BattleCamera")?.transform;
+            if (battleCameraTransform == null)
+            {
+                Debug.LogError("[BattleCameraManager] Aucune caméra de combat trouvée !");
+                return;
+            }
+        }
+
+        if (isFollowing && currentCharacterUnit != null && currentTargetCharacter != null)
+        {
+            Vector3 midPoint = (currentCharacterUnit.transform.position + currentTargetCharacter.transform.position) / 2f;
+            Vector3 offset = Vector3.up * 3f - currentCharacterUnit.transform.forward * 5f;
+
+            Vector3 targetPosition = midPoint + offset;
+            Quaternion targetRotation = Quaternion.LookRotation(midPoint - battleCameraTransform.position);
+
+            battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, targetPosition, Time.deltaTime * cameraSmoothSpeed);
+            battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
+        }
+        else if (desiredTransform != null)
+        {
+            battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
+            battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, desiredTransform.rotation, Time.deltaTime * cameraSmoothSpeed);
+        }
+    }
+    #endregion
+
+    #region Méthodes utilitaires
+
+    private Transform FindChildRecursive(Transform parent, string targetName)
+    {
+        if (parent.name == targetName)
+            return parent;
+
+        foreach (Transform child in parent)
+        {
+            Transform result = FindChildRecursive(child, targetName);
+            if (result != null)
+                return result;
+        }
+        return null;
+    }
+
+    private Sprite GetInputSprite(int index)
+    {
+        return index switch
+        {
+            0 => inputSprite1,
+            1 => inputSprite2,
+            2 => inputSprite3,
+            _ => null,
+        };
+    }
+    #endregion
+
+    #region Inputs
+    private void OnConfirm(InputAction.CallbackContext ctx)
+    {
+        if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill)
+        {
+            ChangeBattleState(BattleState.SquadUnit_PerformingMusicalMove);
+            StartCoroutine(ExecuteMoveOnTarget(currentMove, currentCharacterUnit, currentTargetCharacter));
+            ToggleMenuContainers(false, false, false);
+        }
+        else if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem)
+        {
+            ChangeBattleState(BattleState.SquadUnit_UseItem);
+            StartCoroutine(UseItemOnTarget(currentItem, currentCharacterUnit, currentTargetCharacter));
+            ToggleMenuContainers(false, false, false);
+        }
+
+        if (currentBattleState == BattleState.VictoryScreen_CanContinue)
+        {
+            ChangeBattleState(BattleState.None);
+            ExitVictoryScreenAndBattle();
+        }
+    }
+
+    private void OnSelect1(InputAction.CallbackContext ctx)
+    {
+        if (currentBattleState == BattleState.SquadUnit_MainMenu)
+        {
+            OpenSkillsMenu();
+        }
+        else if(currentBattleState == BattleState.SquadUnit_SkillsMenu)
+        {
+            currentMove = skillChoices[0];
+            ToggleMenuContainers(false, false, false);
+            HandleTargetSelection(currentMove);
+            if (currentMove.musicalMoveTargetingAnimationName != null)
+            {
+                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentMove.musicalMoveTargetingAnimationName);
+            }
+        }
+        else if (currentBattleState == BattleState.SquadUnit_ItemsMenu)
+        {
+            currentItem = itemChoices[0];
+            ToggleMenuContainers(false, false, false);
+            HandleTargetSelection(currentItem);
+            if (currentItem.itemTargetingAnimationName != null)
+            {
+                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentItem.itemTargetingAnimationName);
+            }
+        }
+    }
+
+    private void OnSelect2(InputAction.CallbackContext ctx)
+    {
+        if (currentBattleState == BattleState.SquadUnit_MainMenu)
+        {
+            OpenItemMenu();
+        }
+        else if (currentBattleState == BattleState.SquadUnit_SkillsMenu)
+        {
+            currentMove = skillChoices[1];
+            ToggleMenuContainers(false, false, false);
+            HandleTargetSelection(currentMove);
+            if (currentMove.musicalMoveTargetingAnimationName != null)
+            {
+                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentMove.musicalMoveTargetingAnimationName);
+            }
+        }
+        else if (currentBattleState == BattleState.SquadUnit_ItemsMenu)
+        {
+            currentItem = itemChoices[1];
+            ToggleMenuContainers(false, false, false);
+            HandleTargetSelection(currentItem);
+            if (currentItem.itemTargetingAnimationName != null)
+            {
+                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentItem.itemTargetingAnimationName);
+            }
+        }
+    }
+
+    private void OnSelect3(InputAction.CallbackContext ctx)
+    {
+        if (currentBattleState == BattleState.SquadUnit_SkillsMenu)
+        {
+            currentMove = skillChoices[2];
+            ToggleMenuContainers(false, false, false);
+            HandleTargetSelection(currentMove);
+            if (currentMove.musicalMoveTargetingAnimationName != null)
+            {
+                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentMove.musicalMoveTargetingAnimationName);
+            }
+        }
+        else if (currentBattleState == BattleState.SquadUnit_ItemsMenu)
+        {
+            currentItem = itemChoices[2];
+            ToggleMenuContainers(false, false, false);
+            HandleTargetSelection(currentItem);
+            if (currentItem.itemTargetingAnimationName != null)
+            {
+                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentItem.itemTargetingAnimationName);
+            }
+        }
+    }
+
+    private void OnBackInput(InputAction.CallbackContext ctx)
+    {
+        if (currentBattleState == BattleState.SquadUnit_SkillsMenu || currentBattleState == BattleState.SquadUnit_ItemsMenu)
+        {
+            ShowMainMenu();
+        }
+        else if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill)
+        {
+            OpenSkillsMenu();
+            currentCharacterUnit.GetComponentInChildren<Animator>().SetTrigger("exitAction");
+        }
+        else if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem)
+        {
+            OpenItemMenu();
+        }
+    }
+
+    private void OnEnemiesGroupSelection()
+    {
+        if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad)
+        {
+            ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
+
+        }
+    }
+
+    private void OnSquadGroupSelection()
+    {
+        if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
+        {
+            ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
+
+        }
+    }
+    #endregion
+}

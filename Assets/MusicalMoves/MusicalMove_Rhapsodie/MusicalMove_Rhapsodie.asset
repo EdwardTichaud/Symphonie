@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8caee409dd862bf429bf43fff5538c9f, type: 3}
+  m_Name: MusicalMove_Rhapsodie
+  m_EditorClassIdentifier: 
+  moveName: Rhapsodie
+  moveType: 0
+  moveIcon: {fileID: 21300000, guid: f507f03eb80bcbf49bb458bd6a54bd9a, type: 3}
+  description: 
+  musicalMoveTargetingAnimationName: Rhapsodie_Targetting
+  musicalMoveRunAnimationName: Rhapsodie_Run
+  maxRunDuration: 0.5
+  stayFaceToTarget: 0
+  musicalMoveIntroAnimationNames: []
+  musicalMoveAnimationNames:
+  - Rhapsodie_Move
+  mpCost: 5
+  power: 10
+  targetType: 1
+  defaultTargetType: 1
+  effectType: 0
+  effectValue: 10
+  moveSpeed: 20
+  castDistance: 1.5
+  stayInPlace: 0
+  introVFXPrefab: {fileID: 0}
+  hitVFXPrefab: {fileID: 0}
