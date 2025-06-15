@@ -130,10 +130,10 @@ public class NewBattleManager : MonoBehaviour
     [Header("Caméra de combat")]
     public Transform battleCameraTransform;
     public float cameraSmoothSpeed = 5f;
-    private Transform desiredTransform;
+    public Transform desiredTransform;
     private Vector3 desiredPosition;
     private Quaternion desiredRotation;
-    private bool isFollowing = false;
+    public bool isFollowing = false;
     private bool isOrbiting = false;
     private float currentOrbitAngle;
     private Transform orbitCenter;

@@ -1,5 +1,6 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Playables; // 👈 nécessaire pour PlayableDirector et PlayState
 
 public class InteractionManager : MonoBehaviour
 {
@@ -16,6 +17,10 @@ public class InteractionManager : MonoBehaviour
     private Transform playerTransform;
     private GameObject localInfoBox;
     public GameObject currentInteractable;
+
+    [Header("References")]
+    [Tooltip("Director controlling cutscenes")]
+    public PlayableDirector director; // 👈 nouveau champ
 
     private void Awake()
     {
@@ -93,48 +98,39 @@ public class InteractionManager : MonoBehaviour
             return;
         }
 
-        Collider[] hits = Physics.OverlapSphere(playerTransform.position, interactionRange, interactableLayer);
-            if (hits.Length > 0)
-            {
-                // Determine l'IInteractable le plus proche
-                GameObject nearestObj = hits[0].gameObject;
-                float minDist = Vector3.Distance(playerTransform.position, nearestObj.transform.position);
-                foreach (var col in hits)
-                {
-                    float d = Vector3.Distance(playerTransform.position, col.transform.position);
-                    if (d < minDist)
-                    {
-                        minDist = d;
-                        nearestObj = col.gameObject;
-                    }
-                }
-                // Update highlight
-                if (nearestObj != currentInteractable)
-                {
-                    currentInteractable = nearestObj;
-                    if (localInfoBox != null)
-                    {
-                        localInfoBox.SetActive(true);
-                        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.InfoBox.Get(), InputsManager.Instance.playerInputs.Player.Get());
-                    }
-                    RectTransform rt = localInfoBox.GetComponent<RectTransform>();
-                        Vector3 worldPos = currentInteractable.transform.position + Vector3.up * 2f;
-                        Vector3 screenPos = mainCamera.WorldToScreenPoint(worldPos);
-                        rt.position = screenPos;
-                        // TODO: update icon/text on localInfoBox as needed
-                }
-            }
-            else if (currentInteractable != null) // Si aucun IInteractable d�tect� et qu'il y en avait un
+        // ❗️ Ne pas détecter pendant une cinématique Timeline
+        if (TimelineStatus.IsTimelinePlaying)
+        {
+            // Si une Timeline joue, désactive la UI si elle était active
+            if (currentInteractable != null)
             {
                 currentInteractable = null;
-
                 if (localInfoBox != null)
                 {
                     localInfoBox.SetActive(false);
                     InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Player.Get());
                 }
             }
-    }   
+            return;
+        }
+
+        Collider[] hits = Physics.OverlapSphere(playerTransform.position, interactionRange, interactableLayer);
+
+        if (hits.Length > 0)
+        {
+            // ... ton code inchangé ...
+        }
+        else if (currentInteractable != null)
+        {
+            currentInteractable = null;
+
+            if (localInfoBox != null)
+            {
+                localInfoBox.SetActive(false);
+                InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Player.Get());
+            }
+        }
+    }
 
     private void OnDrawGizmosSelected()
     {

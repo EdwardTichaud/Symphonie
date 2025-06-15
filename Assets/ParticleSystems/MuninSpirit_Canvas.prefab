@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4125316605555784328}
   - component: {fileID: 8568880400678092177}
   - component: {fileID: 3192034534595622148}
+  - component: {fileID: 6577839600971639451}
   m_Layer: 5
   m_Name: MuninSpirit_Canvas
   m_TagString: Untagged
@@ -102,6 +103,28 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!95 &6577839600971639451
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6630457007007829341}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: cf90ee8d6ce7ad14595c854e4561d555, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1001 &8032653888298082257
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -264,7 +287,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6381801045449005612, guid: 67f6c5d1d45eea348b44aeb799af664b, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6381801045449005612, guid: 67f6c5d1d45eea348b44aeb799af664b, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x

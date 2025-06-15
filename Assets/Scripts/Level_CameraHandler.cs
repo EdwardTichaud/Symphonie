@@ -32,7 +32,7 @@ public class Level_CameraHandler : MonoBehaviour
         if (player == null)
             Debug.LogError("[CameraHandler] Aucun joueur trouvé avec le tag 'Player' !");
 
-        GameObject targetObj = GameObject.Find("Player_Points_Chest");
+        GameObject targetObj = FindChildRecursive(player, "spine_03").gameObject;
         if (targetObj != null)
             cameraTargetName = targetObj.name;
 
@@ -62,6 +62,20 @@ public class Level_CameraHandler : MonoBehaviour
         HandleCameraBehaviour();
     }
 
+    private Transform FindChildRecursive(Transform parent, string targetName)
+    {
+        if (parent.name == targetName)
+            return parent;
+
+        foreach (Transform child in parent)
+        {
+            Transform result = FindChildRecursive(child, targetName);
+            if (result != null)
+                return result;
+        }
+        return null;
+    }
+
     void FindSpecificCameraController()
     {
         // Cherche tous les CameraController et sélectionne celui qui correspond au nom
@@ -81,6 +95,10 @@ public class Level_CameraHandler : MonoBehaviour
 
     void HandleCameraBehaviour()
     {
+        // ❗ Vérifier si une Timeline est en cours
+        if (TimelineStatus.IsTimelinePlaying)
+            return;
+
         if (eventsManager != null && eventsManager.eventInProgress)
             return;
 
@@ -104,7 +122,7 @@ public class Level_CameraHandler : MonoBehaviour
             return;
         }
 
-        // ✅ Nouveau : Si Orbit actif → ne pas appliquer closest point
+        // Si Orbit actif → ne pas appliquer closest point
         if (cameraController != null && cameraController.IsOrbiting)
         {
             // Ne rien faire, laisser Orbit contrôler la caméra
