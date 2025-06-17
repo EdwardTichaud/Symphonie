@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9036584201565639864}
   m_Layer: 3
-  m_Name: Player_Points_MuninProjectionPosition
+  m_Name: Point_MuninProjectionPosition
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -41,7 +41,7 @@ GameObject:
   m_Component:
   - component: {fileID: 386906731445994840}
   m_Layer: 3
-  m_Name: Player_Points_Detection_Ground
+  m_Name: Point_Detection_Ground
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -74,7 +74,7 @@ GameObject:
   - component: {fileID: 1681770092414242451}
   - component: {fileID: 6489587830830623781}
   m_Layer: 3
-  m_Name: Player_Points_MuninCameraPosition
+  m_Name: Point_MuninCameraPosition
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -88,8 +88,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1994242244946575267}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.37341267, y: 0.28937876, z: 0.83335966, w: -0.28694022}
-  m_LocalPosition: {x: -1.5943878, y: 1.2130127, z: 4.7207236}
+  m_LocalRotation: {x: 0.36415312, y: -0.2861774, z: -0.83745074, w: 0.29012308}
+  m_LocalPosition: {x: -1.4903871, y: 1.2132568, z: 4.7541413}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -138,7 +138,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2760026749942926761}
   m_Layer: 3
-  m_Name: Player_Points_Camera_Shoulder_PlayerLook
+  m_Name: Point_Camera_Shoulder_PlayerLook
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -169,7 +169,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7263596179930797055}
   m_Layer: 3
-  m_Name: Player_Points_Camera_Shoulder_Right_Far
+  m_Name: Point_Camera_Shoulder_Right_Far
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -200,7 +200,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9216460970934680483}
   m_Layer: 3
-  m_Name: Player_Points_Camera_Shoulder_Left_Far
+  m_Name: Point_Camera_Shoulder_Left_Far
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -273,7 +273,7 @@ GameObject:
   m_Component:
   - component: {fileID: 516281021666434239}
   m_Layer: 3
-  m_Name: Player_Points_Camera_Shoulder_Right_Near
+  m_Name: Point_Camera_Shoulder_Right_Near
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -304,7 +304,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8608801236952511679}
   m_Layer: 3
-  m_Name: Player_Points_Camera_Shoulder_Left_Near
+  m_Name: Point_Camera_Shoulder_Left_Near
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -335,7 +335,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5489275572599385812}
   m_Layer: 3
-  m_Name: Player_Points_Chest
+  m_Name: Point_Chest
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -366,7 +366,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4492400218338302563}
   m_Layer: 3
-  m_Name: Player_Points_Head
+  m_Name: Point_Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -429,7 +429,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2550040262476355530}
   m_Layer: 3
-  m_Name: Player_Points_Camera_Default
+  m_Name: Point_Camera_Default
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -577,8 +577,12 @@ PrefabInstance:
       value: FX_ParticleChar_Flame
       objectReference: {fileID: 0}
     - target: {fileID: 4536405592196679870, guid: 70e4e1183225f3e44b0961916dac87ba, type: 3}
+      propertyPath: m_Asset
+      value: 
+      objectReference: {fileID: 8926484042661614526, guid: ce4e8ab2e0bd2ed448fe6c6c95c96597, type: 3}
+    - target: {fileID: 4536405592196679870, guid: 70e4e1183225f3e44b0961916dac87ba, type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[1].m_Value.x
-      value: 1.6897473
+      value: 1.6897689
       objectReference: {fileID: 0}
     - target: {fileID: 4536405592196679870, guid: 70e4e1183225f3e44b0961916dac87ba, type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[1].m_Value.y
@@ -586,7 +590,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4536405592196679870, guid: 70e4e1183225f3e44b0961916dac87ba, type: 3}
       propertyPath: m_PropertySheet.m_Vector3f.m_Array.Array.data[1].m_Value.z
-      value: 1.0653001
+      value: 1.0652927
       objectReference: {fileID: 0}
     - target: {fileID: 4536405592196679870, guid: 70e4e1183225f3e44b0961916dac87ba, type: 3}
       propertyPath: m_PropertySheet.m_NamedObject.m_Array.Array.data[0].m_Value
