@@ -4,7 +4,8 @@ using UnityEngine;
 [ExecuteAlways]
 [AddComponentMenu("Camera/Editor Camera Follower")]
 /// <summary>
-/// Fait suivre une cible à la caméra en mode Éditeur uniquement. Lorsque le mode Play est activé, le script ne fonctionne pas.
+/// Fait suivre une cible à la caméra en mode Éditeur uniquement, en reprenant sa position et sa rotation.
+/// Lorsque le mode Play est activé, le script ne fonctionne pas.
 /// </summary>
 public class EditorCameraFollower : MonoBehaviour
 {
@@ -14,7 +15,10 @@ public class EditorCameraFollower : MonoBehaviour
     
     [Header("Offset")]
     [Tooltip("Décalage local de la caméra par rapport à la cible")] 
-    public Vector3 localOffset = new Vector3(0, 5, -10);
+    public Vector3 localPositionOffset = new Vector3(0, 5, -10);
+
+    [Tooltip("Décalage de rotation en Euler (ajouté à la rotation de la cible)")]
+    public Vector3 rotationOffsetEuler = Vector3.zero;
 
     void Update()
     {
@@ -24,14 +28,14 @@ public class EditorCameraFollower : MonoBehaviour
 
         if (target == null)
             return;
-        
-        // Calcul de la position désirée
-        Vector3 worldOffset = transform.parent != null
-            ? transform.parent.TransformDirection(localOffset)
-            : localOffset;
-        
-        transform.position = target.position + worldOffset;
-        transform.LookAt(target);
+
+        // Calcule la position : offset dans l'espace local de la cible
+        Vector3 desiredPosition = target.TransformPoint(localPositionOffset);
+        transform.position = desiredPosition;
+
+        // Calcule la rotation : rotation de la cible + offset
+        Quaternion desiredRotation = target.rotation * Quaternion.Euler(rotationOffsetEuler);
+        transform.rotation = desiredRotation;
     }
 }
 #endif

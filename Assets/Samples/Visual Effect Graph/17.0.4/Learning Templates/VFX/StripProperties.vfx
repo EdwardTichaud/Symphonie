@@ -247,17 +247,17 @@ MonoBehaviour:
       The
       line is divided into segments based on the count property value.
 
-      
+
 
       To
       determine the location of each particle on the line, we set an index setting.
       By default, the setting uses the ParticleID. In this example, we use a custom
       index and feed the ParticleIndexInStrip attribute to it.
 
-      
 
-      Using
-      the ParticleIndexInStrip attribute, this block spreads the particles that compose
+
+      Using the
+      ParticleIndexInStrip attribute, this block spreads the particles that compose
       the strip along a line.
 
 '
@@ -347,10 +347,10 @@ MonoBehaviour:
       connect a regular Output Quad (unlit/lit/ShaderGraph) to Particle Strip Data
       too.
 
-      
 
-      Here, our quad outputs help illustrate the particle''s
-      position within the strip and the ParticleIndexInStrip value.
+
+      Here, our quad outputs help illustrate the particle''s position
+      within the strip and the ParticleIndexInStrip value.
 
 '
     theme: Black
@@ -3864,12 +3864,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 388ad3b1dc9c6ae45b630f914fab638f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UIIgnoredErrors: []
-  m_Parent: {fileID: 0}
-  m_Children: []
-  m_UIPosition: {x: 0, y: 0}
-  m_UICollapsed: 1
-  m_UISuperCollapsed: 0
 --- !u!114 &8926484042661615257
 MonoBehaviour:
   m_ObjectHideFlags: 0
