@@ -105,7 +105,7 @@ public class AudioManager : MonoBehaviour
         SwitchImmediately(combatClip);
     }
 
-    public void ReturnFromCombat()
+    public void ReturnFromBattle()
     {
         if (!isInCombat || lastExplorationClip == null)
             return;

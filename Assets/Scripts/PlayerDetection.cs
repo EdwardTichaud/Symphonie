@@ -18,9 +18,9 @@ public class PlayerDetection : MonoBehaviour
 
     [Header("Détection des ennemis (par tag)")]
     // On garde baseDetectionRadius et detectionExpansion, mais on ne se base plus sur un LayerMask
-    public float enemyDetectionRadius = 3f;
-    private float baseDetectionRadius = 3f;
-    public float detectionExpansion = 17f;
+    public float currentDetectionRadius = 1.5f;
+    public float baseDetectionRadius = 1.5f;
+    public float detectionExpansion = 5.5f;
     // Le tag à rechercher
     [Tooltip("Tag utilisé pour identifier les ennemis (par exemple : \"Enemy\").")]
     public string enemyTag = "Enemy";
@@ -33,7 +33,7 @@ public class PlayerDetection : MonoBehaviour
 
     private void Awake()
     {
-        baseDetectionRadius = enemyDetectionRadius;
+        currentDetectionRadius = baseDetectionRadius;
     }
 
     private void Update()
@@ -55,7 +55,7 @@ public class PlayerDetection : MonoBehaviour
         // 1) On recherche tous les colliders dans le rayon de base (sans layer mask)
         Collider[] initialColliders = Physics.OverlapSphere(
             transform.position,
-            baseDetectionRadius
+            currentDetectionRadius
         );
 
         // 2) On filtre uniquement ceux qui portent le tag "Enemy"
@@ -68,12 +68,12 @@ public class PlayerDetection : MonoBehaviour
 
         // 3) Premier ennemi détecté → on désactive detectionOn et on agrandit le rayon
         detectionOn = false;
-        float expandedRadius = baseDetectionRadius + detectionExpansion;
+        currentDetectionRadius = currentDetectionRadius + detectionExpansion;
 
         // 4) On récupère tous les colliders dans le rayon élargi
         Collider[] allColliders = Physics.OverlapSphere(
             transform.position,
-            expandedRadius
+            currentDetectionRadius
         );
 
         // 5) On filtre encore par tag "Enemy"
@@ -116,19 +116,33 @@ public class PlayerDetection : MonoBehaviour
         }
         else if (detectedEnemies.Count == 0 && battleEngaged)
         {
+            currentDetectionRadius = baseDetectionRadius;
             battleEngaged = false;
         }
     }
+
+    /// <summary>
+    /// Réinitialise tous les paramètres de détection aux valeurs de base,
+    /// pour repartir proprement après un combat.
+    /// </summary>
+    public void ResetDetection()
+    {
+        currentDetectionRadius = baseDetectionRadius;
+        detectionOn = true;
+        battleEngaged = false;
+        detectedEnemies.Clear();
+    }
+
 
     private void OnDrawGizmos()
     {
         // Rayon de détection des ennemis (base)
         Gizmos.color = new Color(1f, 0.5f, 0f, 0.4f); // orange semi-transparent
-        Gizmos.DrawWireSphere(transform.position, enemyDetectionRadius);
+        Gizmos.DrawWireSphere(transform.position, currentDetectionRadius);
 
         // Rayon agrandi si détection déclenchée
         Gizmos.color = new Color(1f, 0f, 0f, 0.3f); // rouge
-        Gizmos.DrawWireSphere(transform.position, enemyDetectionRadius + detectionExpansion);
+        Gizmos.DrawWireSphere(transform.position, currentDetectionRadius + detectionExpansion);
 
         // Détection du sol
         if (groundCheck != null)

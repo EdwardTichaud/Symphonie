@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using TMPro;
+using UnityEngine.Playables;
 
 public enum TargetType
 {
@@ -14,6 +15,40 @@ public enum TargetType
     AllEnemies,
     SingleAlly,
     AllAllies
+}
+
+// États du combat -------------------------------------------------------------------
+public enum BattleState
+{
+    None,
+    Initialization,
+    NewTurn,
+    EndTurn,
+
+    // SquadUnit Turn
+    SquadUnit_MainMenu,
+    SquadUnit_SkillsMenu,
+    SquadUnit_ItemsMenu,
+    SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad,
+    SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies,
+    SquadUnit_TargetSelectionAmongSquadForSkill,
+    SquadUnit_TargetSelectionAmongSquadForItem,
+    SquadUnit_TargetSelectionAmongEnemiesForSkill,
+    SquadUnit_TargetSelectionAmongEnemiesForItem,
+    SquadUnit_PerformingMusicalMove,
+    SquadUnit_UseItem,
+
+    // EnemyUnit Turn
+    EnemyUnit_Reflexion,
+    EnemyUnit_PerformingMusicalMove,
+    EnemyUnit_UseItem,
+
+    // Game Over
+    VictoryScreen_Await,
+    VictoryScreen_CanContinue,
+
+    GameOverScreen_Await,
+    GameOverScreen_CanContinue,
 }
 
 public class NewBattleManager : MonoBehaviour
@@ -36,39 +71,6 @@ public class NewBattleManager : MonoBehaviour
     [SerializeField] private Transform initializationRoot;
     public List<CharacterUnit> activeCharacterUnits = new List<CharacterUnit>();
 
-    // États du combat -------------------------------------------------------------------
-    public enum BattleState
-    {
-        None,
-        Initialization,
-        NewTurn,
-        EndTurn,
-
-        // SquadUnit Turn
-        SquadUnit_MainMenu,
-        SquadUnit_SkillsMenu,
-        SquadUnit_ItemsMenu,
-        SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad,
-        SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies,
-        SquadUnit_TargetSelectionAmongSquadForSkill,
-        SquadUnit_TargetSelectionAmongSquadForItem,
-        SquadUnit_TargetSelectionAmongEnemiesForSkill,
-        SquadUnit_TargetSelectionAmongEnemiesForItem,
-        SquadUnit_PerformingMusicalMove,
-        SquadUnit_UseItem,
-
-        // EnemyUnit Turn
-        EnemyUnit_Reflexion,
-        EnemyUnit_PerformingMusicalMove,
-        EnemyUnit_UseItem,
-
-        // Game Over
-        VictoryScreen_Await,
-        VictoryScreen_CanContinue,
-
-        GameOverScreen_Await,
-        GameOverScreen_CanContinue,
-    }
     public BattleState currentBattleState;
 
     // -----------------------------------------------------------------------------------
@@ -231,6 +233,8 @@ public class NewBattleManager : MonoBehaviour
         StartBattle(activeCharacterUnits);
 
         Debug.Log("[NewBattleManager] Lancement du combat dans la scène : " + battleSceneName);
+
+        ChangeBattleState(BattleState.Initialization);
     }
 
     public void SpawnAll()
@@ -402,7 +406,7 @@ public class NewBattleManager : MonoBehaviour
         {
             if (unitsInBattle.All(u => u.currentHP <= 0))
             {
-                Debug.LogWarning("[BattleTurnManager] Tous les combattants sont morts.");
+                Debug.LogWarning("[BattleTurnManager] Tous les combattants sont hors combat.");
                 yield break;
             }
 
@@ -711,16 +715,6 @@ public class NewBattleManager : MonoBehaviour
         gameOverScreen.transform.GetChild(0).gameObject.SetActive(true);
     }
 
-    void HideVictoryPanel()
-    {
-        victoryScreen.transform.GetChild(0).gameObject.SetActive(false);
-    }
-
-    void HideGameOverPanel()
-    {
-        gameOverScreen.transform.GetChild(0).gameObject.SetActive(false);
-    }
-
     private void CleanupAllSpawnedUnits()
     {
         foreach (var unit in unitsInBattle)
@@ -761,77 +755,6 @@ public class NewBattleManager : MonoBehaviour
 
         InputsManager.Instance.playerInputs.Battle.Enable();
         OrientAllUnitsTowardEnemyGroupSmooth();
-    }
-
-    void ExitVictoryScreenAndBattle()
-    {
-        // Récupération des ennemis dans la scène monde
-        var worldEnemies = FindObjectsOfType<Enemy>()
-            .Where(e => e.wasPartOfLastBattle)
-            .ToList();
-
-        // Exemple : XP et loot fictifs, à adapter selon tes systèmes réels
-        int totalXP = 100;
-        List<ItemData> loot = new List<ItemData>();
-
-        GameManager.Instance.CurrentState = GameState.Exploration;
-
-        // 9) Dissolution des ennemis dans le monde
-        foreach (var enemy in worldEnemies)
-        {
-            if (enemy != null)
-            {
-                enemy.DissolveFadeOff();
-            }
-        }
-
-        StartCoroutine(BattleTransitionManager.Instance.ExitCombatRoutine());
-
-        Debug.Log("[NewBattleManager] Fin du combat, retour à la scène principale.");
-        Time.timeScale = 1f;
-        StopAllCoroutines();
-        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Player.Get());
-        //SetBattleInputs();
-
-        // Masque les écrans de fin
-        HideVictoryPanel();
-        HideGameOverPanel();
-
-        // Réinitialise l’état du combat
-        ChangeBattleState(BattleState.None);
-
-        // Nettoie les références
-        currentCharacterUnit = null;
-        unitsInBattle.Clear();
-        activeCharacterUnits.Clear();
-
-        // Réinitialisation UI timeline
-        foreach (var ui in timelineUIObjects)
-            Destroy(ui.gameObject);
-        timelineUIObjects.Clear();
-
-        // Réinitialise le curseur cible si existant
-        if (targetCursor != null)
-            Destroy(targetCursor);
-
-        ResetBattleFlagsOnAllEnemies();
-
-        PlayerDetection playerDetection = FindFirstObjectByType<PlayerDetection>();
-        playerDetection.detectedEnemies.Clear();
-        playerDetection.detectionOn = true;
-        playerDetection.battleEngaged = false;
-
-        Camera battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").GetComponent<Camera>();
-        battleCamera.enabled = false;
-        battleCamera.transform.GetChild(0).gameObject.SetActive(false); // Désactive l'UI
-    }
-
-    public void ResetBattleFlagsOnAllEnemies()
-    {
-        foreach (var enemy in FindObjectsOfType<Enemy>())
-        {
-            enemy.wasPartOfLastBattle = false;
-        }
     }
     #endregion
 
@@ -1186,8 +1109,9 @@ public class NewBattleManager : MonoBehaviour
         switch (currentBattleState)
         {
             case BattleState.Initialization:
-                isFollowing = true;
-                desiredTransform = GameObject.Find("BattleScene_Camera_BattleIntro").transform;
+                GameObject.Find("Sequence_Battle_Intro").GetComponent<PlayableDirector>().Play();
+                //isFollowing = true;
+                //desiredTransform = GameObject.Find("BattleScene_Camera_BattleIntro").transform;
                 break;
             case BattleState.SquadUnit_MainMenu:
                 isFollowing = false;
@@ -1332,6 +1256,30 @@ public class NewBattleManager : MonoBehaviour
             _ => null,
         };
     }
+
+    void ResetBattleInfos()
+    {
+        // Réinitialise l’état du combat
+        ChangeBattleState(BattleState.None);
+
+        // Nettoie les références
+        currentCharacterUnit = null;
+        unitsInBattle.Clear();
+        activeCharacterUnits.Clear();
+
+        // Réinitialisation UI timeline
+        //foreach (var ui in timelineUIObjects)
+        //{
+        //    Destroy(ui.gameObject);
+        //    timelineUIObjects.Clear();
+        //}
+
+        // Réinitialise le curseur cible si existant
+        if (targetCursor != null)
+        {
+            Destroy(targetCursor);
+        }
+    }
     #endregion
 
     #region Inputs
@@ -1353,7 +1301,8 @@ public class NewBattleManager : MonoBehaviour
         if (currentBattleState == BattleState.VictoryScreen_CanContinue)
         {
             ChangeBattleState(BattleState.None);
-            ExitVictoryScreenAndBattle();
+            BattleTransitionManager.Instance.ExitVictoryScreenAndBattle();
+            ResetBattleInfos();
         }
     }
 

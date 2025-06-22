@@ -156,7 +156,7 @@ public class Enemy : MonoBehaviour
     IEnumerator Die()
     {
         yield return new WaitForSeconds(2f); // Attendre
-        while (NewBattleManager.Instance.currentBattleState != NewBattleManager.BattleState.None) { yield return null; }        
+        while (NewBattleManager.Instance.currentBattleState != BattleState.None) { yield return null; }        
         yield return new WaitForSeconds(2f); // Attendre que l'effet de dissolve soit terminé
         isDead = true;
         Destroy(transform.parent.gameObject);

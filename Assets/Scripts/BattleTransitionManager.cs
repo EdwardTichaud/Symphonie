@@ -1,8 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Linq;              // ← Ajouté pour FirstOrDefault
+using System.Linq;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class BattleTransitionManager : MonoBehaviour
@@ -29,49 +28,42 @@ public class BattleTransitionManager : MonoBehaviour
     [SerializeField] private float maskTargetSize = 4500f;
 
     [Header("Camera Intro")]
-    [SerializeField] private Transform cameraFocusTarget;
-
-    [Header("Camera Intro - Rotation")]
-    [SerializeField] private float introRotationRadius = 8f;
-    [SerializeField] private float introRotationSpeed = 60f;
-    [SerializeField] private float introRotationHeight = 3f;
-    [SerializeField] private float introDuration = 2f;
-    [SerializeField] private float introZoomStart = 6f;
-    [SerializeField] private float introZoomEnd = 12f;
-
-    [Header("Camera Intro - Translation")]
-    [SerializeField] private Transform startPoint;
-    [SerializeField] private Transform endPoint;
+    [SerializeField] CameraPath battleIntroPath;
 
     [Header("SFX")]
-    public List<AudioClip> transitionSFXClips = new();
-    public AudioSource sfxSource;
+    [SerializeField] private List<AudioClip> transitionSFXClips = new();
+    [SerializeField] private AudioSource sfxSource;
 
     [Header("Music")]
-    public List<AudioClip> battleMusics = new();
-    public AudioSource musicSource;
+    [SerializeField] private List<AudioClip> battleMusics = new();
+    [SerializeField] private AudioSource musicSource;
 
-    private AsyncOperation preloadOp;
     private Camera battleCamera;
 
-    void Awake()
+    private void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
         }
-        else Destroy(gameObject);
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
 
-        worldFadeOverlay = GameObject.Find("WorldFadeOverlayPanel")?.GetComponent<Image>();
-        playerDetection = FindFirstObjectByType<PlayerDetection>();
+        worldFadeOverlay ??= GameObject.Find("WorldFadeOverlayPanel")?.GetComponent<Image>();
+        playerDetection ??= FindFirstObjectByType<PlayerDetection>();
     }
 
     public void StartCombatTransition()
     {
+        StopAllCoroutines();
+        //ResetCameraAndVisuals();
+
         StartCoroutine(PlayRandomBattleMusic());
         StartCoroutine(PlayTransitionSoundsSequentially());
-        worldRiftTweener.PlayCombatTween(50f, 0.1f, 2f);
         StartCoroutine(FadeToBlack(revealDuration));
         StartCoroutine(TransitionRoutine());
 
@@ -79,14 +71,170 @@ public class BattleTransitionManager : MonoBehaviour
         InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Battle.Get());
         NewBattleManager.Instance.SetBattleInputs();
 
-        Debug.Log("[BattleTransitionManager] Démarrage de la transition de combat...");
+        Debug.Log("[BattleTransitionManager] Transition de combat démarrée.");
+    }
+
+    private IEnumerator TransitionRoutine()
+    {
+        yield return SlowTimeScale(to: 0.1f, speed: 2f);
+        yield return new WaitForSecondsRealtime(worldRiftTweener.tweenDuration);
+
+        yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
+
+        NewBattleManager.Instance.SpawnAll();
+
+        if (!SetupBattleCameraAndUI())
+            yield break;
+
+        if (battleIntroPath != null)
+        {
+            CameraController.Instance.StartPathFollow(battleIntroPath, "BattleCamera", 0, true);
+            Debug.Log("[BattleTransitionManager] CameraPath Intro Combat lancé !");
+        }
+        else
+        {
+            Debug.LogWarning("[BattleTransitionManager] Aucun CameraPath défini pour l'intro combat !");
+        }
+
+        battleRiftTweener = FindFirstObjectByType<BattleRiftMaterialTweener>();
+        if (battleRiftTweener == null)
+        {
+            Debug.LogError("[BattleTransitionManager] BattleRiftMaterialTweener introuvable !");
+            yield break;
+        }
+
+        battleRiftTweener.PlayCombatTween(50f, 0.1f, 1f);
+
+        if (battleRevealMask == null)
+        {
+            Debug.LogError("[BattleTransitionManager] CombatRevealMask introuvable !");
+            yield break;
+        }
+
+        battleRevealMask.SetActive(true);
+        CameraController.Instance.SetCamerasDepth(0f, 1f);
+        RectTransform maskRect = battleRevealMask.GetComponent<RectTransform>();
+        maskRect.sizeDelta = Vector2.zero;
+
+        if (maskRingParticles != null)
+        {
+            maskRingParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            maskRingParticles.Play();
+        }
+
+        yield return AnimateMaskCircle(maskRect, revealDuration);
+
+        EndVisualTransition();
+
+        while (NewBattleManager.Instance.unitsInBattle.Count <= 0)
+            yield return null;
+
+        worldRiftTweener.TweenToZeroRoutine();
+        yield return battleRiftTweener.TweenToZeroRoutine();
+
+        if (TimelineManager.Instance.IsTimelinePlaying == false)
+        {
+            NewBattleManager.Instance.LaunchBattle();
+        }       
+    }
+
+    public IEnumerator ExitVictoryScreenAndBattle()
+    {
+        Time.timeScale = 1f;
+        yield return FadeToBlack(2f);
+
+        var worldEnemies = FindObjectsOfType<Enemy>().Where(e => e.wasPartOfLastBattle).ToList();
+        foreach (var enemy in worldEnemies)
+            enemy?.DissolveFadeOff();
+
+        GameManager.Instance.CurrentState = GameState.Exploration;
+
+        playerDetection ??= FindFirstObjectByType<PlayerDetection>();
+        playerDetection.ResetDetection();
+
+        HideVictoryPanel();
+        HideGameOverPanel();
+        ResetBattleFlagsOnAllEnemies();
+
+        CameraController.Instance.SetCamerasDepth(1f, 0f);
+
+        battleCamera ??= GameObject.FindGameObjectWithTag(battleCameraTag)?.GetComponent<Camera>();
+        if (battleCamera != null)
+        {
+            if (battleCamera.transform.childCount > 0)
+                battleCamera.transform.GetChild(0).gameObject.SetActive(false);
+        }
+
+        AudioManager.Instance.ReturnFromBattle();
+        yield return FadeToTransparent(1f);
+    }
+
+    private void ResetCameraAndVisuals()
+    {
+        battleCamera = null;
+        battleRevealMask = null;
+        maskRingParticles = null;
+    }
+
+    private bool SetupBattleCameraAndUI()
+    {
+        battleCamera = GameObject.FindWithTag(battleCameraTag)?.GetComponent<Camera>();
+        if (battleCamera == null)
+        {
+            Debug.LogError($"[BattleTransitionManager] Caméra taggée '{battleCameraTag}' introuvable !");
+            return false;
+        }
+
+        battleCamera.targetTexture = battleRenderTexture;
+
+        if (battleCamera.transform.childCount > 0)
+            battleCamera.transform.GetChild(0).gameObject.SetActive(true);
+
+        var battleUICanvas = FindObjectsOfType<Canvas>().FirstOrDefault(c => c.renderMode == RenderMode.ScreenSpaceCamera);
+        if (battleUICanvas != null)
+            battleUICanvas.worldCamera = battleCamera;
+
+        GameObject.Find("BattleScene_TransitionCanvas")?.transform.GetChild(0).gameObject.SetActive(true);
+
+        return true;
+    }
+
+    private IEnumerator SlowTimeScale(float to, float speed)
+    {
+        while (Time.timeScale > to)
+        {
+            Time.timeScale -= Time.unscaledDeltaTime * speed;
+            Time.timeScale = Mathf.Max(Time.timeScale, to);
+            yield return new WaitForEndOfFrame();
+        }
+    }
+
+    private IEnumerator RestoreTimeScale(float from, float to, float speed)
+    {
+        while (Time.timeScale < to)
+        {
+            Time.timeScale += Time.unscaledDeltaTime * speed;
+            Time.timeScale = Mathf.Min(Time.timeScale, to);
+            yield return new WaitForEndOfFrame();
+        }
+    }
+
+    private void EndVisualTransition()
+    {
+        if (battleCamera != null)
+            battleCamera.targetTexture = null;
+
+        if (battleRevealMask != null)
+            battleRevealMask.SetActive(false);
+
+        if (worldFadeOverlay != null)
+            StartCoroutine(FadeToTransparent(0.5f));
     }
 
     private IEnumerator PlayRandomBattleMusic()
     {
         yield return new WaitForSeconds(1f);
-
-        if (musicSource == null || battleMusics == null || battleMusics.Count == 0)
+        if (musicSource == null || battleMusics.Count == 0)
         {
             Debug.LogWarning("[BattleMusic] AudioSource ou liste vide !");
             yield break;
@@ -98,116 +246,6 @@ public class BattleTransitionManager : MonoBehaviour
         musicSource.Play();
 
         Debug.Log($"[BattleMusic] Lecture de : {selected.name}");
-    }
-
-    private IEnumerator TransitionRoutine()
-    {
-        // 1. Ralenti progressif mais sans bloquer la coroutine
-        while (Time.timeScale > 0.1f)
-        {
-            Time.timeScale -= Time.unscaledDeltaTime * 2f;
-            Time.timeScale = Mathf.Max(Time.timeScale, 0.1f); // Sécurité
-            yield return new WaitForEndOfFrame(); // Ne dépend pas du timeScale
-        }
-
-        //// 2. Lancement du chargement async
-        //preloadOp = SceneManager.LoadSceneAsync("BattleScene", LoadSceneMode.Additive);
-        //preloadOp.allowSceneActivation = false;
-
-        //while (preloadOp.progress < 0.9f)
-        //    yield return new WaitForEndOfFrame(); // Toujours timeScale-safe
-
-        // 3. Attente visuelle avant activation
-        yield return new WaitForSecondsRealtime(worldRiftTweener.tweenDuration);
-
-        //preloadOp.allowSceneActivation = true;
-
-        //while (!preloadOp.isDone)
-        //    yield return new WaitForEndOfFrame();
-        //yield return null;
-
-        // 4. Rétablit le temps progressivement
-        while (Time.timeScale < 1f)
-        {
-            Time.timeScale += Time.unscaledDeltaTime * 2f;
-            Time.timeScale = Mathf.Min(Time.timeScale, 1f);
-            yield return new WaitForEndOfFrame();
-        }
-
-        // 3) Spawn immédiat des unités (avant toute transition visuelle)
-        NewBattleManager.Instance.SpawnAll();
-
-        // 4) Initialisation des éléments visuels
-        battleCamera = GameObject.FindWithTag(battleCameraTag)?.GetComponent<Camera>();
-        if (battleCamera == null)
-        {
-            Debug.LogError($"[BattleTransitionManager] Caméra taggée '{battleCameraTag}' introuvable !");
-            yield break;
-        }
-
-        battleCamera.targetTexture = battleRenderTexture;
-        battleCamera.enabled = true;
-        battleCamera.transform.GetChild(0).gameObject.SetActive(true); // Active l'UI
-
-        battleRiftTweener = FindFirstObjectByType<BattleRiftMaterialTweener>();
-        if (battleRiftTweener == null)
-        {
-            Debug.LogError("[BattleTransitionManager] BattleRiftMaterialTweener introuvable !");
-            yield break;
-        }
-
-        Canvas battleUICanvas = FindObjectsOfType<Canvas>()
-            .FirstOrDefault(c => c.renderMode == RenderMode.ScreenSpaceCamera);
-        if (battleUICanvas != null)
-            battleUICanvas.worldCamera = battleCamera;
-
-        GameObject battleTransitionCanvas = GameObject.Find("BattleScene_TransitionCanvas")
-            ?.transform.GetChild(0).gameObject;
-        if (battleTransitionCanvas != null)
-            battleTransitionCanvas.SetActive(true);
-
-        battleRevealMask = GameObject.Find("BattleScene_CombatRevealMask_Image");
-        if (battleRevealMask == null)
-        {
-            Debug.LogError("[BattleTransitionManager] Le masque circulaire est introuvable !");
-            yield break;
-        }
-
-        maskRingParticles = GameObject.Find("BattleScene_CombatRevealParticles")
-            ?.GetComponent<ParticleSystem>();
-
-        battleRiftTweener.PlayCombatTween(50f, 0.1f, 1f);
-
-        RectTransform maskRect = battleRevealMask.GetComponent<RectTransform>();
-        maskRect.sizeDelta = Vector2.zero;
-
-        if (maskRingParticles != null)
-        {
-            maskRingParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            maskRingParticles.Play();
-        }
-
-        // 5) Animation d’intro (cercle de masque)
-        yield return AnimateMaskCircle(maskRect, revealDuration);
-
-        // 6) Fin de la transition visuelle
-        EndVisualTransition();
-
-        // 7) Attends que les unités soient bien prêtes (fail-safe, souvent inutile ici)
-        while (NewBattleManager.Instance.unitsInBattle.Count <= 0)
-            yield return null;
-
-        NewBattleManager.Instance.ChangeBattleState(NewBattleManager.BattleState.Initialization);
-
-        // 8) Rétracte les effets de rift
-        worldRiftTweener.TweenToZeroRoutine();
-        yield return battleRiftTweener.TweenToZeroRoutine();
-
-        // 9) Cache le canvas de transition
-        if (battleTransitionCanvas != null)
-            battleTransitionCanvas.SetActive(false);
-
-        NewBattleManager.Instance.LaunchBattle();
     }
 
     private IEnumerator PlayTransitionSoundsSequentially()
@@ -229,25 +267,22 @@ public class BattleTransitionManager : MonoBehaviour
     private IEnumerator AnimateMaskCircle(RectTransform mask, float duration)
     {
         float elapsed = 0f;
-
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
-
             float size = Mathf.Lerp(0f, maskTargetSize, t);
-            mask.sizeDelta = new Vector2(size, size);
+            mask.sizeDelta = Vector2.one * size;
 
             if (maskRingParticles != null)
             {
                 var shape = maskRingParticles.shape;
                 shape.radius = size / 2f;
             }
-
             yield return null;
         }
 
-        mask.sizeDelta = new Vector2(maskTargetSize, maskTargetSize);
+        mask.sizeDelta = Vector2.one * maskTargetSize;
 
         if (maskRingParticles != null)
         {
@@ -257,125 +292,48 @@ public class BattleTransitionManager : MonoBehaviour
         }
     }
 
-    private void EndVisualTransition()
-    {
-        // 1) Supprime le RenderTexture pour que la battleCamera rende à l’écran
-        battleCamera.targetTexture = null;
-
-        // 2) Cache ou désactive le RawImage qui faisait office de transition
-        if (battleRevealMask != null)
-        {
-            battleRevealMask.SetActive(false);
-        }
-
-        // 3) Relance un fade-out progressif pour rendre l’overlay transparent
-        if (worldFadeOverlay != null)
-        {
-            StartCoroutine(FadeToTransparent(0.5f));
-        }
-    }
-
     private IEnumerator FadeToBlack(float duration)
     {
-        yield return new WaitForSeconds(2f);
+        yield return FadeAlpha(0f, 1f, duration);
+    }
 
-        float elapsed = 0f;
-        float startAlpha = 0f;
-        float endAlpha = 1f;
+    private IEnumerator FadeToTransparent(float duration)
+    {
+        yield return FadeAlpha(worldFadeOverlay?.color.a ?? 1f, 0f, duration);
+    }
 
+    private IEnumerator FadeAlpha(float from, float to, float duration)
+    {
         if (worldFadeOverlay == null)
         {
             Debug.LogWarning("WorldFadeOverlay manquant !");
             yield break;
         }
 
+        float elapsed = 0f;
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
 
             Color col = worldFadeOverlay.color;
-            col.a = Mathf.Lerp(startAlpha, endAlpha, t);
+            col.a = Mathf.Lerp(from, to, t);
             worldFadeOverlay.color = col;
 
             yield return null;
         }
 
         Color final = worldFadeOverlay.color;
-        final.a = endAlpha;
+        final.a = to;
         worldFadeOverlay.color = final;
     }
 
-    private IEnumerator FadeToTransparent(float duration)
+    private void HideVictoryPanel() => NewBattleManager.Instance.victoryScreen?.transform.GetChild(0).gameObject.SetActive(false);
+    private void HideGameOverPanel() => NewBattleManager.Instance.gameOverScreen?.transform.GetChild(0).gameObject.SetActive(false);
+
+    public void ResetBattleFlagsOnAllEnemies()
     {
-        float elapsed = 0f;
-        float startAlpha = worldFadeOverlay.color.a;
-        float endAlpha = 0f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
-
-            Color col = worldFadeOverlay.color;
-            col.a = Mathf.Lerp(startAlpha, endAlpha, t);
-            worldFadeOverlay.color = col;
-
-            yield return null;
-        }
-
-        Color final = worldFadeOverlay.color;
-        final.a = endAlpha;
-        worldFadeOverlay.color = final;
-    }
-
-    public IEnumerator MoveCameraToPosition(Camera cam, Vector3 from, Vector3 to, Transform lookAtTarget, float duration)
-    {
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
-
-            cam.transform.position = Vector3.Lerp(from, to, t);
-            if (lookAtTarget != null)
-            {
-                cam.transform.LookAt(lookAtTarget.position);
-            }
-
-            yield return null;
-        }
-
-        cam.transform.position = to;
-        if (lookAtTarget != null)
-            cam.transform.LookAt(lookAtTarget.position);
-    }
-
-    //public void EndCombatTransition()
-    //{
-    //    StartCoroutine(UnloadCombat());
-    //}
-
-    //private IEnumerator UnloadCombat()
-    //{
-    //    SceneManager.UnloadSceneAsync("BattleScene");
-    //    yield return null;
-    //}
-
-    public IEnumerator ExitCombatRoutine()
-    {
-        Debug.Log("[BattleTransitionManager] Sortie du combat...");
-
-        // 2) Fade vers noir
-        yield return FadeToBlack(1f);
-
-        //// 5) Décharge la scène de combat
-        //yield return SceneManager.UnloadSceneAsync("BattleScene");
-
-        AudioManager.Instance.ReturnFromCombat();
-
-        // 7) Reset visuel (overlay)
-        yield return FadeToTransparent(1f);
+        foreach (var enemy in FindObjectsOfType<Enemy>())
+            enemy.wasPartOfLastBattle = false;
     }
 }

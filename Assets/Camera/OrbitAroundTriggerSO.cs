@@ -33,7 +33,7 @@ public class OrbitAroundTriggerSO : ScriptableObject
             return;
         }
 
-        CameraController.Instance.OrbitAround(target, distance, speed, orbitX, orbitY, orbitZ);
+        CameraController.Instance.OrbitAround("BattleCamera", target, distance, speed, orbitX, orbitY, orbitZ);
     }
 
     /// <summary>
