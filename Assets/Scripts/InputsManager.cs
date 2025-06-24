@@ -6,6 +6,7 @@ public class InputsManager : MonoBehaviour
 {
     public static InputsManager Instance { get; private set; }
     public PlayerInputs playerInputs;
+    private CharacterController3D controller;
 
     private InputActionMap[] allMaps;
 
@@ -26,7 +27,7 @@ public class InputsManager : MonoBehaviour
 
         allMaps = new[]
         {
-            playerInputs.Player.Get(),
+            playerInputs.World.Get(),
             playerInputs.Inventory.Get(),
             playerInputs.Battle.Get(),
             playerInputs.Munin.Get(),
@@ -36,7 +37,36 @@ public class InputsManager : MonoBehaviour
 
     void Start()
     {
-        ActivateOnly(playerInputs.Player.Get());
+        ActivateOnly(playerInputs.World.Get());
+        SetInputs();
+        controller = FindFirstObjectByType<CharacterController3D>();
+    }
+
+    public void SetInputs()
+    {
+        var battle = playerInputs.Battle;
+        battle.Select1.performed += OnSelect1;
+        battle.Select2.performed += OnSelect2;
+        battle.Select3.performed += OnSelect3;
+        battle.Back.performed += OnBackInput;
+        battle.Confirm.performed += OnConfirm;
+
+        var world = playerInputs.World;
+        world.ForceCam.performed += OnForceCamInput;
+
+    }
+
+    public void ResetInputs()
+    {
+        var battle = playerInputs.Battle;
+        battle.Select1.performed -= OnSelect1;
+        battle.Select2.performed -= OnSelect2;
+        battle.Select3.performed -= OnSelect3;
+        battle.Back.performed -= OnBackInput;
+        battle.Confirm.performed -= OnConfirm;
+
+        var world = playerInputs.World;
+        world.ForceCam.performed -= OnForceCamInput;
     }
 
     public void ActivateOnly(params InputActionMap[] mapsToEnable)
@@ -49,6 +79,206 @@ public class InputsManager : MonoBehaviour
         foreach (var m in mapsToEnable)
             m.Enable();
     }
+
+    #region Inputs
+    private void OnConfirm(InputAction.CallbackContext ctx)
+    {
+        NewBattleManager bm = NewBattleManager.Instance;
+        if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill)
+        {
+            bm.ChangeBattleState(BattleState.SquadUnit_PerformingMusicalMove);
+            bm.StartCoroutine(bm.ExecuteMoveOnTarget(bm.currentMove, bm.currentCharacterUnit, bm.currentTargetCharacter));
+            bm.ToggleMenuContainers(false, false, false);
+        }
+        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem)
+        {
+            bm.ChangeBattleState(BattleState.SquadUnit_UseItem);
+            bm.StartCoroutine(bm.UseItemOnTarget(bm.currentItem, bm.currentCharacterUnit, bm.currentTargetCharacter));
+            bm.ToggleMenuContainers(false, false, false);
+        }
+
+        if (bm.currentBattleState == BattleState.VictoryScreen_CanContinue)
+        {
+            bm.ChangeBattleState(BattleState.None);
+            BattleTransitionManager.Instance.StartCoroutine(BattleTransitionManager.Instance.ExitVictoryScreenAndBattle());
+        }
+    }
+
+    private void OnSelect1(InputAction.CallbackContext ctx)
+    {
+        NewBattleManager bm = NewBattleManager.Instance;
+
+        if (bm.currentBattleState == BattleState.SquadUnit_MainMenu)
+        {
+            bm.OpenSkillsMenu();
+        }
+        else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
+        {
+            if (bm.skillChoices.Count > 0)
+            {
+                bm.currentMove = bm.skillChoices[0];
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentMove);
+
+                if (!string.IsNullOrEmpty(bm.currentMove.musicalMoveTargetingAnimationName))
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimationName);
+            }
+            else
+            {
+                Debug.LogWarning("[InputsManager] OnSelect1 ignoré : pas de skill disponible !");
+            }
+        }
+        else if (bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
+        {
+            if (bm.itemChoices.Count > 0)
+            {
+                bm.currentItem = bm.itemChoices[0];
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentItem);
+
+                if (!string.IsNullOrEmpty(bm.currentItem.itemTargetingAnimationName))
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimationName);
+            }
+            else
+            {
+                Debug.LogWarning("[InputsManager] OnSelect1 ignoré : pas d'item disponible !");
+            }
+        }
+    }
+
+    private void OnSelect2(InputAction.CallbackContext ctx)
+    {
+        NewBattleManager bm = NewBattleManager.Instance;
+
+        if (bm.currentBattleState == BattleState.SquadUnit_MainMenu)
+        {
+            bm.OpenItemMenu();
+        }
+        else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
+        {
+            if (bm.skillChoices.Count > 1)
+            {
+                bm.currentMove = bm.skillChoices[1];
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentMove);
+
+                if (!string.IsNullOrEmpty(bm.currentMove.musicalMoveTargetingAnimationName))
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimationName);
+            }
+            else
+            {
+                Debug.LogWarning("[InputsManager] OnSelect2 ignoré : pas assez de skills !");
+            }
+        }
+        else if (bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
+        {
+            if (bm.itemChoices.Count > 1)
+            {
+                bm.currentItem = bm.itemChoices[1];
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentItem);
+
+                if (!string.IsNullOrEmpty(bm.currentItem.itemTargetingAnimationName))
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimationName);
+            }
+            else
+            {
+                Debug.LogWarning("[InputsManager] OnSelect2 ignoré : pas assez d'items !");
+            }
+        }
+    }
+
+    private void OnSelect3(InputAction.CallbackContext ctx)
+    {
+        NewBattleManager bm = NewBattleManager.Instance;
+
+        if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
+        {
+            if (bm.skillChoices.Count > 2)
+            {
+                bm.currentMove = bm.skillChoices[2];
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentMove);
+
+                if (bm.currentMove.musicalMoveTargetingAnimationName != null)
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimationName);
+            }
+            else
+            {
+                Debug.LogWarning("[InputsManager] OnSelect3 ignoré : pas assez de skills !");
+            }
+        }
+        else if (bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
+        {
+            if (bm.itemChoices.Count > 2)
+            {
+                bm.currentItem = bm.itemChoices[2];
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentItem);
+
+                if (bm.currentItem.itemTargetingAnimationName != null)
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimationName);
+            }
+            else
+            {
+                Debug.LogWarning("[InputsManager] OnSelect3 ignoré : pas assez d'items !");
+            }
+        }
+    }
+
+    private void OnBackInput(InputAction.CallbackContext ctx)
+    {
+        NewBattleManager bm = NewBattleManager.Instance;
+        if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu || bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
+        {
+            bm.ShowMainMenu();
+        }
+        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill)
+        {
+            bm.OpenSkillsMenu();
+            bm.currentCharacterUnit.GetComponentInChildren<Animator>().SetTrigger("exitAction");
+        }
+        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem)
+        {
+            bm.OpenItemMenu();
+        }
+    }
+
+    private void OnEnemiesGroupSelection()
+    {
+        NewBattleManager bm = NewBattleManager.Instance;
+        if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad)
+        {
+            bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
+
+        }
+    }
+
+    private void OnSquadGroupSelection()
+    {
+        NewBattleManager bm = NewBattleManager.Instance;
+        if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
+        {
+            bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
+
+        }
+    }
+
+    private void OnForceCamInput(InputAction.CallbackContext ctx)
+    {
+        CameraController cc = CameraController.Instance;
+        if (cc.currentCameraState != CameraState.Forced)
+        {
+            cc.ForceCam();
+            controller.movementMode = CharacterController3D.MovementMode.TPSOverShoulder;
+        }
+        else
+        {
+            cc.ReleaseCam();
+            controller.movementMode = CharacterController3D.MovementMode.FixedCamera;
+        }
+    }
+    #endregion
 }
 
 [CustomEditor(typeof(InputsManager))]
@@ -91,7 +321,7 @@ public class InputsManagerEditor : Editor
                 if (mgr == null) continue;
 
                 EditorGUILayout.LabelField($"-- {mgr.gameObject.name} --", EditorStyles.miniBoldLabel);
-                DrawMapStatus("Player", mgr.playerInputs.Player.Get());
+                DrawMapStatus("World", mgr.playerInputs.World.Get());
                 DrawMapStatus("Inventory", mgr.playerInputs.Inventory.Get());
                 DrawMapStatus("Battle", mgr.playerInputs.Battle.Get());
                 DrawMapStatus("Munin", mgr.playerInputs.Munin.Get());

@@ -10,9 +10,8 @@ public class CharacterData : ScriptableObject, ITargetable
     public GameObject characterWorldModel;
     public GameObject characterBattleModel;
 
-    //[Header("Animation")]
-    //public RuntimeAnimatorController animatorController;
-    //public Avatar animatorAvatar;
+    [Header("Battlefield")]
+    public int battlefieldIndex = 0; // Indice du battlefield dans la zone
 
     [Header("UI")]
     public GameObject uiPrefab;

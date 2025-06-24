@@ -131,6 +131,8 @@ public class PlayerDetection : MonoBehaviour
         detectionOn = true;
         battleEngaged = false;
         detectedEnemies.Clear();
+
+        Debug.Log("[PlayerDetection] Détection réinitialisée.");
     }
 
 

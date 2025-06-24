@@ -37,10 +37,10 @@ public class MovementInputHandler : MonoBehaviour
             return;
 
         var inputs = InputsManager.Instance.playerInputs;
-        Vector2 input2D = inputs.Player.Move.ReadValue<Vector2>();
+        Vector2 input2D = inputs.World.Move.ReadValue<Vector2>();
         moveInput = new Vector3(input2D.x, 0f, input2D.y).normalized;
 
-        isRunning = inputs.Player.Run.IsPressed();
+        isRunning = inputs.World.Run.IsPressed();
         isWalking = !isRunning;
     }
 }

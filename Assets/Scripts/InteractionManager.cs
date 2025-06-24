@@ -108,7 +108,7 @@ public class InteractionManager : MonoBehaviour
                 if (localInfoBox != null)
                 {
                     localInfoBox.SetActive(false);
-                    InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Player.Get());
+                    InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
                 }
             }
             return;
@@ -127,7 +127,7 @@ public class InteractionManager : MonoBehaviour
             if (localInfoBox != null)
             {
                 localInfoBox.SetActive(false);
-                InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Player.Get());
+                InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
             }
         }
     }

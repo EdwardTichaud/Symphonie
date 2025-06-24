@@ -20,6 +20,9 @@ public class CameraPath : MonoBehaviour
 
     private float previewTime = 0f;
 
+    public bool IsPlaying = false;
+    public bool triggered;
+
     private void OnValidate() => UpdatePoints();
     private void Awake() => UpdatePoints();
 
@@ -204,6 +207,9 @@ public class CameraPath : MonoBehaviour
 
     public void PlaySequence(float startPosition = 0f)
     {
+        if (triggered)
+            return; // ✅ Si déjà déclenché, on ne relance pas
+
         UpdatePoints();
 
         if (points.Count < 2)
@@ -226,7 +232,14 @@ public class CameraPath : MonoBehaviour
             return;
         }
 
+        IsPlaying = true; // ✅ Marque comme en cours de suivi
+        triggered = true; // ✅ Marque comme déclenché
         controller.StartPathFollow(this, cameraTag, startPosition);
+    }
+
+    public void StopSequence()
+    {
+        IsPlaying = false;
     }
 
     private Vector3 Bezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)

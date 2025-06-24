@@ -135,14 +135,14 @@ public class NewBattleManager : MonoBehaviour
     public Transform desiredTransform;
     private Vector3 desiredPosition;
     private Quaternion desiredRotation;
-    public bool isFollowing = false;
+    public bool isFollowingCurrentTarget = false;
     private bool isOrbiting = false;
     private float currentOrbitAngle;
     private Transform orbitCenter;
 
     // Compétences et items disponibles pour l’unité qui joue
-    private List<MusicalMoveSO> skillChoices = new List<MusicalMoveSO>();
-    private List<ItemData> itemChoices = new List<ItemData>();
+    [HideInInspector] public List<MusicalMoveSO> skillChoices = new List<MusicalMoveSO>();
+    [HideInInspector] public List<ItemData> itemChoices = new List<ItemData>();
 
     public MusicalMoveSO currentMove;
     public ItemData currentItem;
@@ -157,6 +157,9 @@ public class NewBattleManager : MonoBehaviour
 
     public GameObject currentItemsMenuContainer;
     public List<Transform> currentItemsMenuSlots;
+
+    [Header("Victory Screen")]
+    public RenderTexture VictoryScreenImage;
 
     // -----------------------------------------------------------------------------------
 
@@ -187,36 +190,6 @@ public class NewBattleManager : MonoBehaviour
         HandleTargetNavigation();
     }
 
-    public void SetBattleInputs()
-    {
-        if (InputsManager.Instance == null)
-        {
-            Debug.LogWarning("[NewBattleManager] InputsManager.Instance est null, nouvelle recherche.");
-            return;
-        }
-
-        var battle = InputsManager.Instance.playerInputs.Battle;
-        battle.Select1.performed += OnSelect1;
-        battle.Select2.performed += OnSelect2;
-        battle.Select3.performed += OnSelect3;
-        battle.Back.performed += OnBackInput;
-        battle.EnemiesGroupSelection.performed += ctx => OnEnemiesGroupSelection();
-        battle.SquadGroupSelection.performed += ctx => OnSquadGroupSelection();
-        battle.Confirm.performed += OnConfirm;
-    }
-
-    public void ResetBattleInputs()
-    {
-        var battle = InputsManager.Instance.playerInputs.Battle;
-        battle.Select1.performed -= OnSelect1;
-        battle.Select2.performed -= OnSelect2;
-        battle.Select3.performed -= OnSelect3;
-        battle.Back.performed -= OnBackInput;
-        battle.EnemiesGroupSelection.performed -= ctx => OnEnemiesGroupSelection();
-        battle.SquadGroupSelection.performed -= ctx => OnSquadGroupSelection();
-        battle.Confirm.performed -= OnConfirm;
-    }
-
     public void ChangeBattleState(BattleState newState)
     {
         currentBattleState = newState;
@@ -233,8 +206,6 @@ public class NewBattleManager : MonoBehaviour
         StartBattle(activeCharacterUnits);
 
         Debug.Log("[NewBattleManager] Lancement du combat dans la scène : " + battleSceneName);
-
-        ChangeBattleState(BattleState.Initialization);
     }
 
     public void SpawnAll()
@@ -394,7 +365,7 @@ public class NewBattleManager : MonoBehaviour
             unit.currentATB = 0f;
         }
 
-        GameManager.Instance.CurrentState = GameState.StartBattle;
+        GameManager.Instance.ChangeGameState(GameState.StartBattle);
 
         // 7) Lancement de la boucle de tours
         StartCoroutine(TurnLoop());
@@ -488,7 +459,7 @@ public class NewBattleManager : MonoBehaviour
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
     }
 
-    private IEnumerator ExecuteMoveOnTarget(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
+    public IEnumerator ExecuteMoveOnTarget(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
     {
         Debug.Log($"{caster} exécute le mouvement {move.moveName} sur {target}");
         ToggleMenuContainers(false, false, false);
@@ -497,7 +468,7 @@ public class NewBattleManager : MonoBehaviour
         currentCharacterUnit.currentATB = 0f;
     }
 
-    private IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
+    public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
     {
         yield return null;
     }
@@ -615,6 +586,63 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
+    #region Gestion de l'orientation de la caméra quand aucune chatacterUnit n'est ciblée
+    public void OrientTransformTowardEnemyGroupSmoothXY(Transform targetTransform, float rotationSpeed = 360f)
+    {
+        if (unitsInBattle == null || unitsInBattle.Count == 0)
+            return;
+
+        // Trouve tous les ennemis vivants (ou l'inverse si la cible est un ennemi)
+        var enemies = unitsInBattle
+            .Where(u => u != null && u.Data.currentHP > 0 && !u.Data.isPlayerControlled)
+            .ToList();
+
+        if (enemies.Count == 0)
+            return;
+
+        // Calcul du barycentre du groupe d'ennemis
+        Vector3 averagePosition = Vector3.zero;
+        foreach (var enemy in enemies)
+            averagePosition += enemy.transform.position;
+        averagePosition /= enemies.Count;
+
+        // Direction vers le barycentre
+        Vector3 direction = (averagePosition - targetTransform.position).normalized;
+        if (direction == Vector3.zero)
+            return;
+
+        // Calcul de la rotation visée : LookRotation sans roll
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+
+        // Filtrer pour ne garder que la rotation Yaw (Y) et Pitch (X)
+        Vector3 euler = targetRotation.eulerAngles;
+        Quaternion filteredRotation = Quaternion.Euler(euler.x, euler.y, 0f);
+
+        // Lancer la coroutine pour tourner en douceur
+        StartCoroutine(RotateTransformSmoothlyXY(targetTransform, filteredRotation, rotationSpeed));
+    }
+
+    private IEnumerator RotateTransformSmoothlyXY(Transform target, Quaternion targetRotation, float speed)
+    {
+        while (Quaternion.Angle(target.rotation, targetRotation) > 0.1f)
+        {
+            // Interpolation à vitesse constante
+            target.rotation = Quaternion.RotateTowards(target.rotation, targetRotation, speed * Time.deltaTime);
+
+            // En option : forcer Z à 0 à chaque frame pour éviter le roll parasite
+            Vector3 euler = target.rotation.eulerAngles;
+            target.rotation = Quaternion.Euler(euler.x, euler.y, 0f);
+
+            yield return null;
+        }
+
+        // Force la rotation finale propre
+        Vector3 finalEuler = targetRotation.eulerAngles;
+        target.rotation = Quaternion.Euler(finalEuler.x, finalEuler.y, 0f);
+    }
+    #endregion
+
+
     private IEnumerator RotateUnitSmoothly(CharacterUnit unit, Quaternion targetRotation, float rotationSpeed)
     {
         // Tant que l’angle entre la rotation actuelle et la target est > 0.5f
@@ -669,7 +697,7 @@ public class NewBattleManager : MonoBehaviour
         {
             Debug.Log("[BattleTurnManager] 🎉 Tous les ennemis sont vaincus !");
             ChangeBattleState(BattleState.VictoryScreen_Await);
-            StartCoroutine(ReduceTimeAndShowVictoryPanel());
+            StartCoroutine(ReduceTimeAndShowVictoryPanel());            
         }
         else if (allSquadDead)
         {
@@ -677,6 +705,30 @@ public class NewBattleManager : MonoBehaviour
             ChangeBattleState(BattleState.GameOverScreen_Await);
             StartCoroutine(ShowGameOverPanel());
         }
+    }
+
+    public void TakeVictoryScreenshot()
+    {
+        if (VictoryScreenImage == null)
+        {
+            Debug.LogError("VictoryScreenImage n'est pas assigné !");
+            return;
+        }
+
+        Camera battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
+        if (battleCamera == null)
+        {
+            Debug.LogError("Aucune caméra trouvée pour la capture !");
+            return;
+        }
+
+        // Assure-toi que la caméra utilise la render texture pour la capture
+        RenderTexture prevRT = battleCamera.targetTexture;
+        battleCamera.targetTexture = VictoryScreenImage;
+        battleCamera.Render();
+        battleCamera.targetTexture = prevRT;
+
+        Debug.Log("Screenshot de victoire capturé !");
     }
 
     private IEnumerator ReduceTimeAndShowVictoryPanel()
@@ -695,12 +747,25 @@ public class NewBattleManager : MonoBehaviour
         Time.timeScale = 0.05f;
         Time.fixedDeltaTime = 0.001f;
 
+        TakeVictoryScreenshot(); // 👈 Capture ici immédiatement
+
         // Optionnel : attendre encore un peu avant d’afficher le panneau
         yield return new WaitForSecondsRealtime(0.1f); // Soumis à timeScale
 
         //Prendre une photo de la dernière frame de la mort de l'ennemi avant VictoryScreen
 
         victoryScreen.transform.GetChild(0).gameObject.SetActive(true);
+
+        // Applique la RenderTexture sur le RawImage du panel
+        RawImage img = victoryScreen.transform.GetChild(0).GetComponent<RawImage>();
+        if (img != null)
+        {
+            img.texture = VictoryScreenImage;
+        }
+        else
+        {
+            Debug.LogWarning("Pas de RawImage sur le VictoryScreen child(0)");
+        }
 
         GameObject continueButton = FindChildRecursive(victoryScreen.transform.GetChild(0), "BattleScene_UI_VictoryPanel_Continue").gameObject;
 
@@ -818,7 +883,7 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
-    private void ShowMainMenu()
+    public void ShowMainMenu()
     {
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectItemOrSkill();
         ChangeBattleState(BattleState.SquadUnit_MainMenu);
@@ -832,7 +897,7 @@ public class NewBattleManager : MonoBehaviour
         UpdateButton(currentMainMenuSlots[1], "Objet", null);
     }
 
-    private void OpenSkillsMenu()
+    public void OpenSkillsMenu()
     {
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectSkill();
         ChangeBattleState(BattleState.SquadUnit_SkillsMenu);
@@ -855,7 +920,7 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
-    private void OpenItemMenu()
+    public void OpenItemMenu()
     {
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectItem();
         ChangeBattleState(BattleState.SquadUnit_ItemsMenu);
@@ -872,7 +937,7 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
-    private void ToggleMenuContainers(bool showMain, bool showSkills, bool showItems)
+    public void ToggleMenuContainers(bool showMain, bool showSkills, bool showItems)
     {
         if (currentCharacterUnit.Data == null) return;
 
@@ -988,7 +1053,7 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
-    private void HandleTargetSelection(MusicalMoveSO move)
+    public void HandleTargetSelection(MusicalMoveSO move)
     {
         switch (move.defaultTargetType)
         {
@@ -1041,7 +1106,7 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
-    private void HandleTargetSelection(ItemData item)
+    public void HandleTargetSelection(ItemData item)
     {
         switch (item.defaultTargetType)
         {
@@ -1109,13 +1174,18 @@ public class NewBattleManager : MonoBehaviour
         switch (currentBattleState)
         {
             case BattleState.Initialization:
-                GameObject.Find("Sequence_Battle_Intro").GetComponent<PlayableDirector>().Play();
-                //isFollowing = true;
+                CameraPath cP = GameObject.Find("BattleScene_Camera_BattleIntro").GetComponent<CameraPath>();
+                if(!cP.IsPlaying && !cP.triggered)
+                {
+                    cP.PlaySequence();
+                }
+                //isFollowingCurrentTarget = true;
                 //desiredTransform = GameObject.Find("BattleScene_Camera_BattleIntro").transform;
                 break;
             case BattleState.SquadUnit_MainMenu:
-                isFollowing = false;
+                isFollowingCurrentTarget = false;                
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_MainMenu");
+                OrientTransformTowardEnemyGroupSmoothXY(desiredTransform, 180f);
                 if (desiredTransform == null)
                 {
                     Debug.LogWarning("[BattleCameraManager] Aucun point 'Camera_MainMenu' trouvé.");
@@ -1123,7 +1193,7 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case BattleState.SquadUnit_SkillsMenu:
-                isFollowing = false;
+                isFollowingCurrentTarget = false;
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_SkillsMenu");
                 if (desiredTransform == null)
                 {
@@ -1132,7 +1202,7 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case BattleState.SquadUnit_ItemsMenu:
-                isFollowing = false;
+                isFollowingCurrentTarget = false;
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_ItemsMenu");
                 if (desiredTransform == null)
                 {
@@ -1141,59 +1211,59 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad:
-                isFollowing = false;
-                desiredTransform = GameObject.Find("BattleScene_Battlefield_FocusSquad").transform;
+                isFollowingCurrentTarget = false;
+                desiredTransform = GameObject.Find("Camera_FocusSquad").transform;
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies:
-                isFollowing = false;
-                desiredTransform = GameObject.Find("BattleScene_Battlefield_FocusEnemies").transform;
+                isFollowingCurrentTarget = false;
+                desiredTransform = GameObject.Find("Camera_FocusEnemies").transform;
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
-                isFollowing = false;
+                isFollowingCurrentTarget = false;
                 desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
-                isFollowing = false;
+                isFollowingCurrentTarget = false;
                 desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
-                isFollowing = false;
+                isFollowingCurrentTarget = false;
                 desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
-                isFollowing = false;
+                isFollowingCurrentTarget = false;
                 desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_PerformingMusicalMove:
-                isFollowing = true;
+                isFollowingCurrentTarget = true;
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
                 break;
 
             case BattleState.EnemyUnit_PerformingMusicalMove:
-                isFollowing = true;
+                isFollowingCurrentTarget = true;
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
                 break;
             case BattleState.SquadUnit_UseItem:
-                isFollowing = true;
+                isFollowingCurrentTarget = true;
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
                 break;
             case BattleState.EnemyUnit_UseItem:
-                isFollowing = true;
+                isFollowingCurrentTarget = true;
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
                 break;
             case BattleState.VictoryScreen_Await:
-                isFollowing = false;
-                desiredTransform = GameObject.Find("BattleScene_Victory").transform;
+                isFollowingCurrentTarget = false;
+                desiredTransform = GameObject.Find("Camera_Victory").transform;
                 break;
 
             default:
-                isFollowing = false;
+                isFollowingCurrentTarget = false;
                 desiredTransform = null;
                 break;
         }
@@ -1211,7 +1281,7 @@ public class NewBattleManager : MonoBehaviour
             }
         }
 
-        if (isFollowing && currentCharacterUnit != null && currentTargetCharacter != null)
+        if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)
         {
             Vector3 midPoint = (currentCharacterUnit.transform.position + currentTargetCharacter.transform.position) / 2f;
             Vector3 offset = Vector3.up * 3f - currentCharacterUnit.transform.forward * 5f;
@@ -1257,7 +1327,7 @@ public class NewBattleManager : MonoBehaviour
         };
     }
 
-    void ResetBattleInfos()
+    public void ResetBattleInfos()
     {
         // Réinitialise l’état du combat
         ChangeBattleState(BattleState.None);
@@ -1278,146 +1348,6 @@ public class NewBattleManager : MonoBehaviour
         if (targetCursor != null)
         {
             Destroy(targetCursor);
-        }
-    }
-    #endregion
-
-    #region Inputs
-    private void OnConfirm(InputAction.CallbackContext ctx)
-    {
-        if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill)
-        {
-            ChangeBattleState(BattleState.SquadUnit_PerformingMusicalMove);
-            StartCoroutine(ExecuteMoveOnTarget(currentMove, currentCharacterUnit, currentTargetCharacter));
-            ToggleMenuContainers(false, false, false);
-        }
-        else if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem)
-        {
-            ChangeBattleState(BattleState.SquadUnit_UseItem);
-            StartCoroutine(UseItemOnTarget(currentItem, currentCharacterUnit, currentTargetCharacter));
-            ToggleMenuContainers(false, false, false);
-        }
-
-        if (currentBattleState == BattleState.VictoryScreen_CanContinue)
-        {
-            ChangeBattleState(BattleState.None);
-            BattleTransitionManager.Instance.ExitVictoryScreenAndBattle();
-            ResetBattleInfos();
-        }
-    }
-
-    private void OnSelect1(InputAction.CallbackContext ctx)
-    {
-        if (currentBattleState == BattleState.SquadUnit_MainMenu)
-        {
-            OpenSkillsMenu();
-        }
-        else if(currentBattleState == BattleState.SquadUnit_SkillsMenu)
-        {
-            currentMove = skillChoices[0];
-            ToggleMenuContainers(false, false, false);
-            HandleTargetSelection(currentMove);
-            if (currentMove.musicalMoveTargetingAnimationName != null)
-            {
-                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentMove.musicalMoveTargetingAnimationName);
-            }
-        }
-        else if (currentBattleState == BattleState.SquadUnit_ItemsMenu)
-        {
-            currentItem = itemChoices[0];
-            ToggleMenuContainers(false, false, false);
-            HandleTargetSelection(currentItem);
-            if (currentItem.itemTargetingAnimationName != null)
-            {
-                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentItem.itemTargetingAnimationName);
-            }
-        }
-    }
-
-    private void OnSelect2(InputAction.CallbackContext ctx)
-    {
-        if (currentBattleState == BattleState.SquadUnit_MainMenu)
-        {
-            OpenItemMenu();
-        }
-        else if (currentBattleState == BattleState.SquadUnit_SkillsMenu)
-        {
-            currentMove = skillChoices[1];
-            ToggleMenuContainers(false, false, false);
-            HandleTargetSelection(currentMove);
-            if (currentMove.musicalMoveTargetingAnimationName != null)
-            {
-                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentMove.musicalMoveTargetingAnimationName);
-            }
-        }
-        else if (currentBattleState == BattleState.SquadUnit_ItemsMenu)
-        {
-            currentItem = itemChoices[1];
-            ToggleMenuContainers(false, false, false);
-            HandleTargetSelection(currentItem);
-            if (currentItem.itemTargetingAnimationName != null)
-            {
-                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentItem.itemTargetingAnimationName);
-            }
-        }
-    }
-
-    private void OnSelect3(InputAction.CallbackContext ctx)
-    {
-        if (currentBattleState == BattleState.SquadUnit_SkillsMenu)
-        {
-            currentMove = skillChoices[2];
-            ToggleMenuContainers(false, false, false);
-            HandleTargetSelection(currentMove);
-            if (currentMove.musicalMoveTargetingAnimationName != null)
-            {
-                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentMove.musicalMoveTargetingAnimationName);
-            }
-        }
-        else if (currentBattleState == BattleState.SquadUnit_ItemsMenu)
-        {
-            currentItem = itemChoices[2];
-            ToggleMenuContainers(false, false, false);
-            HandleTargetSelection(currentItem);
-            if (currentItem.itemTargetingAnimationName != null)
-            {
-                currentCharacterUnit.GetComponentInChildren<Animator>().Play(currentItem.itemTargetingAnimationName);
-            }
-        }
-    }
-
-    private void OnBackInput(InputAction.CallbackContext ctx)
-    {
-        if (currentBattleState == BattleState.SquadUnit_SkillsMenu || currentBattleState == BattleState.SquadUnit_ItemsMenu)
-        {
-            ShowMainMenu();
-        }
-        else if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill)
-        {
-            OpenSkillsMenu();
-            currentCharacterUnit.GetComponentInChildren<Animator>().SetTrigger("exitAction");
-        }
-        else if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem)
-        {
-            OpenItemMenu();
-        }
-    }
-
-    private void OnEnemiesGroupSelection()
-    {
-        if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad)
-        {
-            ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
-
-        }
-    }
-
-    private void OnSquadGroupSelection()
-    {
-        if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
-        {
-            ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
-
         }
     }
     #endregion

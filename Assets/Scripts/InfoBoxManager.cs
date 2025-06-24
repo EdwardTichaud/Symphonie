@@ -57,7 +57,7 @@ public class InfoBoxManager : MonoBehaviour
             infoImage.gameObject.SetActive(false);
         }
 
-        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Player.Get(), InputsManager.Instance.playerInputs.InfoBox.Get());
+        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get(), InputsManager.Instance.playerInputs.InfoBox.Get());
 
         var infoBox = InputsManager.Instance.playerInputs.InfoBox;
         infoBox.Confirm.canceled += OnConfirm;
@@ -69,7 +69,7 @@ public class InfoBoxManager : MonoBehaviour
         isOpen = false;
         animator?.SetBool("isOpen", false);
 
-        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Player.Get());
+        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
 
         var infoBox = InputsManager.Instance.playerInputs.InfoBox;
         infoBox.Confirm.canceled -= OnConfirm;

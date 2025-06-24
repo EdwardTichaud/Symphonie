@@ -88,7 +88,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     ""name"": ""PlayerInputs"",
     ""maps"": [
         {
-            ""name"": ""Player"",
+            ""name"": ""World"",
             ""id"": ""ee27b5c5-62b4-414e-bfc0-61964cfe726f"",
             ""actions"": [
                 {
@@ -1049,23 +1049,23 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     ],
     ""controlSchemes"": []
 }");
-        // Player
-        m_Player = asset.FindActionMap("Player", throwIfNotFound: true);
-        m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
-        m_Player_Move = m_Player.FindAction("Move", throwIfNotFound: true);
-        m_Player_Shot = m_Player.FindAction("Shot", throwIfNotFound: true);
-        m_Player_Interact = m_Player.FindAction("Interact", throwIfNotFound: true);
-        m_Player_Mouse = m_Player.FindAction("Mouse", throwIfNotFound: true);
-        m_Player_MuninDash = m_Player.FindAction("MuninDash", throwIfNotFound: true);
-        m_Player_Dodge = m_Player.FindAction("Dodge", throwIfNotFound: true);
-        m_Player_Shield = m_Player.FindAction("Shield", throwIfNotFound: true);
-        m_Player_Death = m_Player.FindAction("Death", throwIfNotFound: true);
-        m_Player_Run = m_Player.FindAction("Run", throwIfNotFound: true);
-        m_Player_Action = m_Player.FindAction("Action", throwIfNotFound: true);
-        m_Player_Cancel = m_Player.FindAction("Cancel", throwIfNotFound: true);
-        m_Player_Dash = m_Player.FindAction("Dash", throwIfNotFound: true);
-        m_Player_ForceCam = m_Player.FindAction("ForceCam", throwIfNotFound: true);
-        m_Player_ForcedCamMove = m_Player.FindAction("ForcedCamMove", throwIfNotFound: true);
+        // World
+        m_World = asset.FindActionMap("World", throwIfNotFound: true);
+        m_World_Jump = m_World.FindAction("Jump", throwIfNotFound: true);
+        m_World_Move = m_World.FindAction("Move", throwIfNotFound: true);
+        m_World_Shot = m_World.FindAction("Shot", throwIfNotFound: true);
+        m_World_Interact = m_World.FindAction("Interact", throwIfNotFound: true);
+        m_World_Mouse = m_World.FindAction("Mouse", throwIfNotFound: true);
+        m_World_MuninDash = m_World.FindAction("MuninDash", throwIfNotFound: true);
+        m_World_Dodge = m_World.FindAction("Dodge", throwIfNotFound: true);
+        m_World_Shield = m_World.FindAction("Shield", throwIfNotFound: true);
+        m_World_Death = m_World.FindAction("Death", throwIfNotFound: true);
+        m_World_Run = m_World.FindAction("Run", throwIfNotFound: true);
+        m_World_Action = m_World.FindAction("Action", throwIfNotFound: true);
+        m_World_Cancel = m_World.FindAction("Cancel", throwIfNotFound: true);
+        m_World_Dash = m_World.FindAction("Dash", throwIfNotFound: true);
+        m_World_ForceCam = m_World.FindAction("ForceCam", throwIfNotFound: true);
+        m_World_ForcedCamMove = m_World.FindAction("ForcedCamMove", throwIfNotFound: true);
         // Battle
         m_Battle = asset.FindActionMap("Battle", throwIfNotFound: true);
         m_Battle_Back = m_Battle.FindAction("Back", throwIfNotFound: true);
@@ -1093,7 +1093,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
 
     ~@PlayerInputs()
     {
-        UnityEngine.Debug.Assert(!m_Player.enabled, "This will cause a leak and performance issues, PlayerInputs.Player.Disable() has not been called.");
+        UnityEngine.Debug.Assert(!m_World.enabled, "This will cause a leak and performance issues, PlayerInputs.World.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_Battle.enabled, "This will cause a leak and performance issues, PlayerInputs.Battle.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_InfoBox.enabled, "This will cause a leak and performance issues, PlayerInputs.InfoBox.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_Inventory.enabled, "This will cause a leak and performance issues, PlayerInputs.Inventory.Disable() has not been called.");
@@ -1170,99 +1170,99 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         return asset.FindBinding(bindingMask, out action);
     }
 
-    // Player
-    private readonly InputActionMap m_Player;
-    private List<IPlayerActions> m_PlayerActionsCallbackInterfaces = new List<IPlayerActions>();
-    private readonly InputAction m_Player_Jump;
-    private readonly InputAction m_Player_Move;
-    private readonly InputAction m_Player_Shot;
-    private readonly InputAction m_Player_Interact;
-    private readonly InputAction m_Player_Mouse;
-    private readonly InputAction m_Player_MuninDash;
-    private readonly InputAction m_Player_Dodge;
-    private readonly InputAction m_Player_Shield;
-    private readonly InputAction m_Player_Death;
-    private readonly InputAction m_Player_Run;
-    private readonly InputAction m_Player_Action;
-    private readonly InputAction m_Player_Cancel;
-    private readonly InputAction m_Player_Dash;
-    private readonly InputAction m_Player_ForceCam;
-    private readonly InputAction m_Player_ForcedCamMove;
+    // World
+    private readonly InputActionMap m_World;
+    private List<IWorldActions> m_WorldActionsCallbackInterfaces = new List<IWorldActions>();
+    private readonly InputAction m_World_Jump;
+    private readonly InputAction m_World_Move;
+    private readonly InputAction m_World_Shot;
+    private readonly InputAction m_World_Interact;
+    private readonly InputAction m_World_Mouse;
+    private readonly InputAction m_World_MuninDash;
+    private readonly InputAction m_World_Dodge;
+    private readonly InputAction m_World_Shield;
+    private readonly InputAction m_World_Death;
+    private readonly InputAction m_World_Run;
+    private readonly InputAction m_World_Action;
+    private readonly InputAction m_World_Cancel;
+    private readonly InputAction m_World_Dash;
+    private readonly InputAction m_World_ForceCam;
+    private readonly InputAction m_World_ForcedCamMove;
     /// <summary>
-    /// Provides access to input actions defined in input action map "Player".
+    /// Provides access to input actions defined in input action map "World".
     /// </summary>
-    public struct PlayerActions
+    public struct WorldActions
     {
         private @PlayerInputs m_Wrapper;
 
         /// <summary>
         /// Construct a new instance of the input action map wrapper class.
         /// </summary>
-        public PlayerActions(@PlayerInputs wrapper) { m_Wrapper = wrapper; }
+        public WorldActions(@PlayerInputs wrapper) { m_Wrapper = wrapper; }
         /// <summary>
-        /// Provides access to the underlying input action "Player/Jump".
+        /// Provides access to the underlying input action "World/Jump".
         /// </summary>
-        public InputAction @Jump => m_Wrapper.m_Player_Jump;
+        public InputAction @Jump => m_Wrapper.m_World_Jump;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Move".
+        /// Provides access to the underlying input action "World/Move".
         /// </summary>
-        public InputAction @Move => m_Wrapper.m_Player_Move;
+        public InputAction @Move => m_Wrapper.m_World_Move;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Shot".
+        /// Provides access to the underlying input action "World/Shot".
         /// </summary>
-        public InputAction @Shot => m_Wrapper.m_Player_Shot;
+        public InputAction @Shot => m_Wrapper.m_World_Shot;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Interact".
+        /// Provides access to the underlying input action "World/Interact".
         /// </summary>
-        public InputAction @Interact => m_Wrapper.m_Player_Interact;
+        public InputAction @Interact => m_Wrapper.m_World_Interact;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Mouse".
+        /// Provides access to the underlying input action "World/Mouse".
         /// </summary>
-        public InputAction @Mouse => m_Wrapper.m_Player_Mouse;
+        public InputAction @Mouse => m_Wrapper.m_World_Mouse;
         /// <summary>
-        /// Provides access to the underlying input action "Player/MuninDash".
+        /// Provides access to the underlying input action "World/MuninDash".
         /// </summary>
-        public InputAction @MuninDash => m_Wrapper.m_Player_MuninDash;
+        public InputAction @MuninDash => m_Wrapper.m_World_MuninDash;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Dodge".
+        /// Provides access to the underlying input action "World/Dodge".
         /// </summary>
-        public InputAction @Dodge => m_Wrapper.m_Player_Dodge;
+        public InputAction @Dodge => m_Wrapper.m_World_Dodge;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Shield".
+        /// Provides access to the underlying input action "World/Shield".
         /// </summary>
-        public InputAction @Shield => m_Wrapper.m_Player_Shield;
+        public InputAction @Shield => m_Wrapper.m_World_Shield;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Death".
+        /// Provides access to the underlying input action "World/Death".
         /// </summary>
-        public InputAction @Death => m_Wrapper.m_Player_Death;
+        public InputAction @Death => m_Wrapper.m_World_Death;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Run".
+        /// Provides access to the underlying input action "World/Run".
         /// </summary>
-        public InputAction @Run => m_Wrapper.m_Player_Run;
+        public InputAction @Run => m_Wrapper.m_World_Run;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Action".
+        /// Provides access to the underlying input action "World/Action".
         /// </summary>
-        public InputAction @Action => m_Wrapper.m_Player_Action;
+        public InputAction @Action => m_Wrapper.m_World_Action;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Cancel".
+        /// Provides access to the underlying input action "World/Cancel".
         /// </summary>
-        public InputAction @Cancel => m_Wrapper.m_Player_Cancel;
+        public InputAction @Cancel => m_Wrapper.m_World_Cancel;
         /// <summary>
-        /// Provides access to the underlying input action "Player/Dash".
+        /// Provides access to the underlying input action "World/Dash".
         /// </summary>
-        public InputAction @Dash => m_Wrapper.m_Player_Dash;
+        public InputAction @Dash => m_Wrapper.m_World_Dash;
         /// <summary>
-        /// Provides access to the underlying input action "Player/ForceCam".
+        /// Provides access to the underlying input action "World/ForceCam".
         /// </summary>
-        public InputAction @ForceCam => m_Wrapper.m_Player_ForceCam;
+        public InputAction @ForceCam => m_Wrapper.m_World_ForceCam;
         /// <summary>
-        /// Provides access to the underlying input action "Player/ForcedCamMove".
+        /// Provides access to the underlying input action "World/ForcedCamMove".
         /// </summary>
-        public InputAction @ForcedCamMove => m_Wrapper.m_Player_ForcedCamMove;
+        public InputAction @ForcedCamMove => m_Wrapper.m_World_ForcedCamMove;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
-        public InputActionMap Get() { return m_Wrapper.m_Player; }
+        public InputActionMap Get() { return m_Wrapper.m_World; }
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
         public void Enable() { Get().Enable(); }
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
@@ -1270,9 +1270,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
         public bool enabled => Get().enabled;
         /// <summary>
-        /// Implicitly converts an <see ref="PlayerActions" /> to an <see ref="InputActionMap" /> instance.
+        /// Implicitly converts an <see ref="WorldActions" /> to an <see ref="InputActionMap" /> instance.
         /// </summary>
-        public static implicit operator InputActionMap(PlayerActions set) { return set.Get(); }
+        public static implicit operator InputActionMap(WorldActions set) { return set.Get(); }
         /// <summary>
         /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
         /// </summary>
@@ -1280,11 +1280,11 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <remarks>
         /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
         /// </remarks>
-        /// <seealso cref="PlayerActions" />
-        public void AddCallbacks(IPlayerActions instance)
+        /// <seealso cref="WorldActions" />
+        public void AddCallbacks(IWorldActions instance)
         {
-            if (instance == null || m_Wrapper.m_PlayerActionsCallbackInterfaces.Contains(instance)) return;
-            m_Wrapper.m_PlayerActionsCallbackInterfaces.Add(instance);
+            if (instance == null || m_Wrapper.m_WorldActionsCallbackInterfaces.Contains(instance)) return;
+            m_Wrapper.m_WorldActionsCallbackInterfaces.Add(instance);
             @Jump.started += instance.OnJump;
             @Jump.performed += instance.OnJump;
             @Jump.canceled += instance.OnJump;
@@ -1338,8 +1338,8 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <remarks>
         /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
         /// </remarks>
-        /// <seealso cref="PlayerActions" />
-        private void UnregisterCallbacks(IPlayerActions instance)
+        /// <seealso cref="WorldActions" />
+        private void UnregisterCallbacks(IWorldActions instance)
         {
             @Jump.started -= instance.OnJump;
             @Jump.performed -= instance.OnJump;
@@ -1389,12 +1389,12 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         }
 
         /// <summary>
-        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="PlayerActions.UnregisterCallbacks(IPlayerActions)" />.
+        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="WorldActions.UnregisterCallbacks(IWorldActions)" />.
         /// </summary>
-        /// <seealso cref="PlayerActions.UnregisterCallbacks(IPlayerActions)" />
-        public void RemoveCallbacks(IPlayerActions instance)
+        /// <seealso cref="WorldActions.UnregisterCallbacks(IWorldActions)" />
+        public void RemoveCallbacks(IWorldActions instance)
         {
-            if (m_Wrapper.m_PlayerActionsCallbackInterfaces.Remove(instance))
+            if (m_Wrapper.m_WorldActionsCallbackInterfaces.Remove(instance))
                 UnregisterCallbacks(instance);
         }
 
@@ -1404,21 +1404,21 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <remarks>
         /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
         /// </remarks>
-        /// <seealso cref="PlayerActions.AddCallbacks(IPlayerActions)" />
-        /// <seealso cref="PlayerActions.RemoveCallbacks(IPlayerActions)" />
-        /// <seealso cref="PlayerActions.UnregisterCallbacks(IPlayerActions)" />
-        public void SetCallbacks(IPlayerActions instance)
+        /// <seealso cref="WorldActions.AddCallbacks(IWorldActions)" />
+        /// <seealso cref="WorldActions.RemoveCallbacks(IWorldActions)" />
+        /// <seealso cref="WorldActions.UnregisterCallbacks(IWorldActions)" />
+        public void SetCallbacks(IWorldActions instance)
         {
-            foreach (var item in m_Wrapper.m_PlayerActionsCallbackInterfaces)
+            foreach (var item in m_Wrapper.m_WorldActionsCallbackInterfaces)
                 UnregisterCallbacks(item);
-            m_Wrapper.m_PlayerActionsCallbackInterfaces.Clear();
+            m_Wrapper.m_WorldActionsCallbackInterfaces.Clear();
             AddCallbacks(instance);
         }
     }
     /// <summary>
-    /// Provides a new <see cref="PlayerActions" /> instance referencing this action map.
+    /// Provides a new <see cref="WorldActions" /> instance referencing this action map.
     /// </summary>
-    public PlayerActions @Player => new PlayerActions(this);
+    public WorldActions @World => new WorldActions(this);
 
     // Battle
     private readonly InputActionMap m_Battle;
@@ -1925,11 +1925,11 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     /// </summary>
     public MuninActions @Munin => new MuninActions(this);
     /// <summary>
-    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Player" which allows adding and removing callbacks.
+    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "World" which allows adding and removing callbacks.
     /// </summary>
-    /// <seealso cref="PlayerActions.AddCallbacks(IPlayerActions)" />
-    /// <seealso cref="PlayerActions.RemoveCallbacks(IPlayerActions)" />
-    public interface IPlayerActions
+    /// <seealso cref="WorldActions.AddCallbacks(IWorldActions)" />
+    /// <seealso cref="WorldActions.RemoveCallbacks(IWorldActions)" />
+    public interface IWorldActions
     {
         /// <summary>
         /// Method invoked when associated input action "Jump" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.

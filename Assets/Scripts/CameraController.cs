@@ -3,6 +3,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 
+public enum CameraState
+{
+    Forced,
+    ResearchClosestCamPoint,
+    OrbitAround
+}
+
 public class CameraController : MonoBehaviour
 {
     public static CameraController Instance { get; private set; }
@@ -14,8 +21,6 @@ public class CameraController : MonoBehaviour
     public float orbitDistance = 5f;
     public float orbitSpeed = 30f;
     public bool orbitX, orbitY = true, orbitZ;
-    private bool isOrbiting;
-    public bool IsOrbiting => isOrbiting;
 
     [Header("Path Follow")]
     [Range(0f, 1f)] public float pathPosition;
@@ -28,18 +33,34 @@ public class CameraController : MonoBehaviour
     private float pathTotalDuration = 0f;
 
     [Header("Managed Cameras")]
+    public CameraState currentCameraState = CameraState.ResearchClosestCamPoint; // ✅ Par défaut en recherche de point
     public List<Camera> managedCameras = new();
 
     private Camera activeCamera;
 
     [Header("Fixed Camera Points")]
+    public bool cameraHandlerEnabled = true; // ✅ Par défaut activé
     public List<Transform> cameraPositions; // auto from LevelCameraHandler tag
     public Transform forceCamPoint, forceLookPoint;
-    [HideInInspector] public bool isForcingCam;
 
     private string cameraTargetName;
     private Transform player;
     private EventsManager eventsManager;
+
+    [Header("Forced Camera Point Control")]
+    public bool isForcedCamMoving;
+
+    public Transform forcedCameraPoint; // drag ton Point_ForcedCameraDirection ici
+    public float forcedCamZoomSpeed = 5f;
+    public float forcedCamRotationSpeed = 50f;
+    public float forcedCamMinDistance = 2f;
+    public float forcedCamMaxDistance = 10f;
+    public float forcedCamMinPitch = -20f;
+    public float forcedCamMaxPitch = 60f;
+
+    private float forcedCamYaw = 0f;
+    private float forcedCamPitch = 20f;
+    private float forcedCamDistance = 5f;
 
     void Awake()
     {
@@ -62,13 +83,19 @@ public class CameraController : MonoBehaviour
 
     void Update()
     {
+        Vector2 fixedCameraMove = InputsManager.Instance.playerInputs.World.ForcedCamMove.ReadValue<Vector2>();
+
         if (cameraPositions == null || cameraPositions.Count == 0)
             UpdateCameraPositionsFromHandler();
 
         if (TimelineStatus.IsTimelinePlaying)
             return;
 
-        if (isOrbiting && orbitTarget != null && activeCamera != null)
+        // ✅ Si la MainCamera est désactivée → skip toute logique
+        if (Camera.main != null && !Camera.main.enabled)
+            return;
+
+        if (currentCameraState == CameraState.OrbitAround && orbitTarget != null && activeCamera != null)
         {
             UpdateOrbit();
             return;
@@ -118,7 +145,6 @@ public class CameraController : MonoBehaviour
 
         if (clampedTime >= pathTotalDuration)
         {
-            currentCameraPath = null;
             StopPathFollow();
         }
     }
@@ -162,6 +188,12 @@ public class CameraController : MonoBehaviour
 
     public void StopPathFollow()
     {
+        if (currentCameraPath != null)
+        {
+            currentCameraPath.StopSequence();  // ✅ fait IsPlaying = false + autres resets si tu veux
+            currentCameraPath = null;
+        }
+
         isFollowingPath = false;
         activeCamera = null;
     }
@@ -195,13 +227,18 @@ public class CameraController : MonoBehaviour
             activeCamera.transform.LookAt(orbitTarget);
         }
 
-        isOrbiting = true;
+        currentCameraState = CameraState.OrbitAround; // ✅ Maintenant géré par l'état
+        Debug.Log("[CameraController] OrbitAround démarré !");
     }
 
     public void StopOrbit()
     {
-        isOrbiting = false;
         orbitTarget = null;
+        if (currentCameraState == CameraState.OrbitAround)
+        {
+            currentCameraState = CameraState.ResearchClosestCamPoint;
+        }
+        Debug.Log("[CameraController] OrbitAround stoppé.");
     }
 
     private Camera FindCameraByTag(string cameraTag)
@@ -262,58 +299,118 @@ public class CameraController : MonoBehaviour
         currentTransition = null;
     }
 
-    void HandleCameraBehaviour()
+    public void ForceCam()
     {
-        if (InputsManager.Instance.playerInputs.Player.ForceCam.triggered)
-        {
-            isForcingCam = !isForcingCam;
-            if (isForcingCam) ApplyForcedCamera();
-            else ApplyClosestCamera();
-            return;
-        }
+        StopOrbit();
+        StopPathFollow();
 
-        if (isForcingCam) { ApplyForcedCamera(); return; }
+        // Plus de SmoothMoveAndLook pour Forced : on va suivre direct
+        if (currentTransition != null) StopCoroutine(currentTransition);
 
-        ApplyClosestCamera();
+        currentCameraState = CameraState.Forced;
+        cameraHandlerEnabled = false;
+
+        Debug.Log("[CameraController] ForcedCam ACTIVATED");
     }
 
-    void ApplyForcedCamera()
+    public void ReleaseCam()
     {
-        if (forceCamPoint == null || forceLookPoint == null || Camera.main == null) return;
+        currentCameraState = CameraState.ResearchClosestCamPoint;
+        cameraHandlerEnabled = true;
+        Debug.Log("[CameraController] ForcedCam DISABLED");
+    }
 
-        Vector3 desiredPos = forceCamPoint.position;
-        Quaternion desiredRot = Quaternion.LookRotation(forceLookPoint.position - desiredPos);
+    void HandleCameraBehaviour()
+    {
+        switch (currentCameraState)
+        {
+            case CameraState.Forced:
+                UpdateForcedCameraPoint();
+                FollowForcedCameraPoint();  // 🔑 Suivi direct, fluide
+                break;
 
-        if (currentTransition != null) StopCoroutine(currentTransition);
-        currentTransition = StartCoroutine(SmoothMoveAndLook(Camera.main.transform, desiredPos, desiredRot, 5f));
+            case CameraState.ResearchClosestCamPoint:
+                ApplyClosestCamera();
+                break;
+
+            default:
+                Debug.LogWarning($"[CameraController] Unhandled CameraState: {currentCameraState}");
+                break;
+        }
+    }
+
+    void FollowForcedCameraPoint()
+    {
+        if (forcedCameraPoint == null || forceLookPoint == null || Camera.main == null) return;
+
+        Transform cam = Camera.main.transform;
+
+        // Suivi direct (aucun blocage, aucun retard)
+        cam.position = Vector3.Lerp(cam.position, forcedCameraPoint.position, 10f * Time.deltaTime);
+        cam.rotation = Quaternion.Slerp(
+            cam.rotation,
+            Quaternion.LookRotation(forceLookPoint.position - cam.position),
+            10f * Time.deltaTime
+        );
+    }
+
+    void UpdateForcedCameraPoint()
+    {
+        if (forcedCameraPoint == null || player == null) return;
+
+        Vector2 input = InputsManager.Instance.playerInputs.World.ForcedCamMove.ReadValue<Vector2>();
+        isForcedCamMoving = input.magnitude > 0.1f;
+
+        forcedCamDistance -= input.y * forcedCamZoomSpeed * Time.deltaTime;
+        forcedCamDistance = Mathf.Clamp(forcedCamDistance, forcedCamMinDistance, forcedCamMaxDistance);
+
+        forcedCamYaw += input.x * forcedCamRotationSpeed * Time.deltaTime;
+        forcedCamPitch = Mathf.Clamp(forcedCamPitch, forcedCamMinPitch, forcedCamMaxPitch);
+
+        float yawRad = forcedCamYaw * Mathf.Deg2Rad;
+        float pitchRad = forcedCamPitch * Mathf.Deg2Rad;
+
+        float x = forcedCamDistance * Mathf.Sin(yawRad) * Mathf.Cos(pitchRad);
+        float y = forcedCamDistance * Mathf.Sin(pitchRad);
+        float z = forcedCamDistance * Mathf.Cos(yawRad) * Mathf.Cos(pitchRad);
+
+        forcedCameraPoint.position = player.position + new Vector3(x, y, z);
+        forcedCameraPoint.LookAt(player.position);
     }
 
     void ApplyClosestCamera()
     {
-        if (player == null || string.IsNullOrEmpty(cameraTargetName) || Camera.main == null) return;
-
-        Transform closest = null;
-        float minDist = float.MaxValue;
-        foreach (Transform cp in cameraPositions)
+        if (cameraHandlerEnabled)
         {
-            if (cp == null) continue;
-            float dist = Vector3.Distance(player.position, cp.position);
-            if (dist < minDist)
+            if (player == null || string.IsNullOrEmpty(cameraTargetName) || Camera.main == null) return;
+
+            Transform closest = null;
+            float minDist = float.MaxValue;
+            foreach (Transform cp in cameraPositions)
             {
-                minDist = dist;
-                closest = cp;
+                if (cp == null) continue;
+                float dist = Vector3.Distance(player.position, cp.position);
+                if (dist < minDist)
+                {
+                    minDist = dist;
+                    closest = cp;
+                }
+            }
+
+            if (closest != null)
+            {
+                Vector3 desiredPos = closest.position;
+                Transform look = FindChildRecursive(player, cameraTargetName);
+                if (look == null) return;
+                Quaternion desiredRot = Quaternion.LookRotation(look.position - desiredPos);
+
+                if (currentTransition != null) StopCoroutine(currentTransition);
+                currentTransition = StartCoroutine(SmoothMoveAndLook(Camera.main.transform, desiredPos, desiredRot, 2f));
             }
         }
-
-        if (closest != null)
+        else
         {
-            Vector3 desiredPos = closest.position;
-            Transform look = FindChildRecursive(player, cameraTargetName);
-            if (look == null) return;
-            Quaternion desiredRot = Quaternion.LookRotation(look.position - desiredPos);
-
-            if (currentTransition != null) StopCoroutine(currentTransition);
-            currentTransition = StartCoroutine(SmoothMoveAndLook(Camera.main.transform, desiredPos, desiredRot, 2f));
+            Debug.LogWarning("[CameraController] CameraHandler désactivé, pas de recherche de point.");
         }
     }
 
@@ -365,35 +462,5 @@ public class CameraController : MonoBehaviour
         }
 
         return 1f;
-    }
-
-    /// <summary>
-    /// Définit le depth pour MainCamera et BattleCamera selon l'ordre fixe [MainCamera, BattleCamera].
-    /// Exemple : SetCamerasDepth(1, 0) => MainCamera=1, BattleCamera=0
-    /// </summary>
-    public void SetCamerasDepth(float mainCameraDepth, float battleCameraDepth)
-    {
-        Camera mainCam = Camera.main;
-        Camera battleCam = FindCameraByTag("BattleCamera");
-
-        if (mainCam == null)
-        {
-            Debug.LogWarning("[CameraController] MainCamera introuvable !");
-        }
-        else
-        {
-            mainCam.depth = mainCameraDepth;
-        }
-
-        if (battleCam == null)
-        {
-            Debug.LogWarning("[CameraController] BattleCamera introuvable !");
-        }
-        else
-        {
-            battleCam.depth = battleCameraDepth;
-        }
-
-        Debug.Log($"[CameraController] Depth mis à jour : MainCamera={mainCameraDepth}, BattleCamera={battleCameraDepth}");
     }
 }

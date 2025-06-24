@@ -51,7 +51,7 @@ public class DialogueManager : MonoBehaviour
         {
             nameText.text = line.speakerName;
             yield return StartCoroutine(TypeLine(line.text));
-            yield return new WaitUntil(() => InputsManager.Instance.playerInputs.Player.Action.WasPressedThisFrame());
+            yield return new WaitUntil(() => InputsManager.Instance.playerInputs.World.Action.WasPressedThisFrame());
         }
 
         GetComponent<Animator>()?.Play("DialogueBoxClose");
@@ -78,7 +78,7 @@ public class DialogueManager : MonoBehaviour
             dialogueText.text += letter;
             yield return new WaitForSeconds(typingSpeed);
 
-            if (InputsManager.Instance.playerInputs.Player.Action.WasPressedThisFrame())
+            if (InputsManager.Instance.playerInputs.World.Action.WasPressedThisFrame())
             {
                 skipRequested = true;
             }

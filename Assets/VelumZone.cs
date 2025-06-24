@@ -4,12 +4,10 @@ using UnityEngine.Playables;
 public class VelumZone : MonoBehaviour
 {
     [Header("References")]
-    private Level_CameraHandler cameraHandler;
     private PlayableDirector timeline;
 
     private void Start()
     {
-        cameraHandler = FindFirstObjectByType<Level_CameraHandler>();
         timeline = transform.GetChild(0).GetComponent<PlayableDirector>();
     }
 

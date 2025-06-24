@@ -143,6 +143,12 @@ public class GameManager : MonoBehaviour
     //GameManager.Instance.gameData.SaveToFile();      // Sauvegarde
     //GameManager.Instance.gameData.LoadFromFile();     // Chargement
 
+    public void ChangeGameState(GameState newState)
+    {
+        CurrentState = newState;
+        Debug.Log($"Changement d'état du jeu vers : {newState}");
+    }
+
     public void AddXPToSquad(int xp)
     {
         gameData.squadXP += xp;
