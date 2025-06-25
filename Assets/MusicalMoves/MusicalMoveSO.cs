@@ -35,6 +35,9 @@ public class MusicalMoveSO : ScriptableObject
     public float castDistance;
     public bool stayInPlace = false;
 
+    [Header("Placement autour de la cible")]
+    public RelativePosition relativePosition = RelativePosition.Front;
+
     [Header("VFX")]
     public GameObject introVFXPrefab;
     public GameObject hitVFXPrefab;
@@ -53,3 +56,5 @@ public class MusicalMoveSO : ScriptableObject
 }
 
 public enum MusicalEffectType { Damage, Heal, Buff, Debuff }
+
+public enum RelativePosition { Front, Back, Left, Right }

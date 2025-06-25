@@ -24,6 +24,8 @@ public class CharacterData : ScriptableObject, ITargetable
     public int baseStrength;
     public int baseDefense;
     public int baseMusicalGauge;
+    public int baseReflex;
+    public float baseMobility;
 
     [Header("Animation Idle en attaque")]
     public string battleIdleAnimationName;
@@ -45,7 +47,9 @@ public class CharacterData : ScriptableObject, ITargetable
     public GameObject hitEffect;
     public GameObject deathEffect;
 
-    // Ajoute une référence au GameObject source
+        currentReflex = baseReflex;
+        currentMobility = baseMobility;
+    // Ajoute une rÃ©fÃ©rence au GameObject source
     public MonoBehaviour owner;
 
     private void OnEnable()

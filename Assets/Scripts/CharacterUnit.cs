@@ -22,6 +22,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public int currentStrength;
     public int currentDefense;
+    public int currentReflex;
+    public float currentMobility;
 
     public int currentMusicalGauge;
 
@@ -46,6 +48,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentInitiative = Data.baseInitiative;
         currentStrength = Data.baseStrength;
         currentDefense = Data.baseDefense;
+        currentReflex = Data.baseReflex;
+        currentMobility = Data.baseMobility;
         currentMusicalGauge = Data.baseMusicalGauge;
 
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -56,7 +60,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (spriteRenderer != null && Data.portrait != null)
             spriteRenderer.sprite = Data.portrait;
 
-        //// Setup de líAnimator
+        //// Setup de l‚ÄôAnimator
         //if (animator != null)
         //{
         //    if (Data.animatorController != null)
@@ -78,13 +82,13 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             mpBar.SetValue(Data.currentMP);
         }
 
-        // Instanciation de líUI personnalisÈe
+        // Instanciation de l‚ÄôUI personnalis√©e
         if (Data.uiPrefab != null && Data.characterType == CharacterType.SquadUnit)
         {
             GameObject uiInstance = Instantiate(Data.uiPrefab, transform);
             uiInstance.name = "SquadUnit_UI";
 
-            // Tu peux ajuster la position par dÈfaut si nÈcessaire :
+            // Tu peux ajuster la position par d√©faut si n√©cessaire :
             uiInstance.transform.localPosition = Vector3.zero;
             uiInstance.transform.localRotation = Quaternion.identity;
             uiInstance.transform.localScale = Vector3.one;
@@ -243,16 +247,16 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         if (squad == null || squad.Count == 0)
         {
-            Debug.LogWarning("[EnemyAI] Aucun joueur valide ‡ cibler.");
+            Debug.LogWarning("[EnemyAI] Aucun joueur valide √† cibler.");
             return null;
         }
 
-        // PrioritÈ 1 : cible avec le moins de PV
+        // Priorit√© 1 : cible avec le moins de PV
         var lowestHPUnit = squad.OrderBy(u => u.Data.currentHP).FirstOrDefault();
         if (lowestHPUnit != null)
             return lowestHPUnit;
 
-        // PrioritÈ 2 : cible ayant infligÈ le plus de dÈg‚ts ‡ cet ennemi (si tu as un systËme de suivi de dÈg‚ts)
+        // Priorit√© 2 : cible ayant inflig√© le plus de d√©g√¢ts √† cet ennemi (si tu as un syst√®me de suivi de d√©g√¢ts)
         // Exemple fictif : si tu avais un dictionnaire `Dictionary<CharacterUnit, int> damageReceivedFrom`
         // Tu peux remplacer par ta propre logique de suivi.
         /*
