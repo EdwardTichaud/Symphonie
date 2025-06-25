@@ -406,6 +406,11 @@ public class NewBattleManager : MonoBehaviour
     {
         if (currentBattleState != BattleState.VictoryScreen_Await && currentBattleState != BattleState.VictoryScreen_CanContinue && currentBattleState != BattleState.GameOverScreen_Await && currentBattleState != BattleState.GameOverScreen_CanContinue)
         {
+            if (unit.TryGetComponent<FatigueSystem>(out var fatigue) && fatigue.IsAsleep)
+            {
+                EndTurn();
+                yield break;
+            }
             isTurnResolving = true;
 
             // 1) On stocke l’unité qui jouait juste avant (champ de classe)
@@ -478,6 +483,7 @@ public class NewBattleManager : MonoBehaviour
             yield break;
         }
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
+        caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
         move.ApplyEffect(caster, target);
 
         // Ajout du système de rage manuellement
@@ -491,11 +497,14 @@ public class NewBattleManager : MonoBehaviour
             }
         }
 
-        currentCharacterUnit.currentATB = 0f;
+currentCharacterUnit.currentATB = 0f;
     }
 
     public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
     {
+        InventoryManager.Instance.UseItem(item, target);
+        caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
+        currentCharacterUnit.currentATB = 0f;
         yield return null;
     }
 

@@ -24,6 +24,8 @@ public class CharacterData : ScriptableObject, ITargetable
     public int baseStrength;
     public int baseDefense;
     public int baseMusicalGauge;
+    public int baseFatigue;
+    public int maxFatigue;
     public int baseRage;
     public int maxRage;
     public float rageDamageMultiplier = 0.1f;
