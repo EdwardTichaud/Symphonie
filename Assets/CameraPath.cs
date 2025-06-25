@@ -137,7 +137,6 @@ public bool triggered;
             cachedPreviewCam = GameObject.FindGameObjectWithTag(cameraTag)?.GetComponent<Camera>();
         return cachedPreviewCam;
     }
-    #endregion
 
     #region Calcul du chemin
     /// <summary>
