@@ -463,6 +463,11 @@ public class NewBattleManager : MonoBehaviour
     {
         Debug.Log($"{caster} exécute le mouvement {move.moveName} sur {target}");
         ToggleMenuContainers(false, false, false);
+        if (!HasSpaceForMove(caster, target, move))
+        {
+            Debug.LogWarning("[ExecuteMoveOnTarget] Pas assez d'espace pour executer le mouvement.");
+            yield break;
+        }
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
         move.ApplyEffect(target);
         currentCharacterUnit.currentATB = 0f;
@@ -471,6 +476,33 @@ public class NewBattleManager : MonoBehaviour
     public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
     {
         yield return null;
+    }
+
+    private bool HasSpaceForMove(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
+    {
+        Vector3 direction = target.transform.forward;
+        switch (move.relativePosition)
+        {
+            case RelativePosition.Back:
+                direction = -target.transform.forward;
+                break;
+            case RelativePosition.Left:
+                direction = -target.transform.right;
+                break;
+            case RelativePosition.Right:
+                direction = target.transform.right;
+                break;
+        }
+
+        Vector3 destination = target.transform.position + direction * move.castDistance;
+        Collider[] hits = Physics.OverlapSphere(destination, 0.5f);
+        foreach (var h in hits)
+        {
+            CharacterUnit cu = h.GetComponentInParent<CharacterUnit>();
+            if (cu != null && cu != caster && cu != target)
+                return false;
+        }
+        return true;
     }
 
     public void EndTurn()
