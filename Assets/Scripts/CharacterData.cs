@@ -26,6 +26,8 @@ public class CharacterData : ScriptableObject, ITargetable
     public int baseMusicalGauge;
     public int baseReflex;
     public float baseMobility;
+    public int maxRage;
+    public int maxFatigue;
 
     [Header("Animation Idle en attaque")]
     public string battleIdleAnimationName;
@@ -41,14 +43,16 @@ public class CharacterData : ScriptableObject, ITargetable
     public int currentStrength;
     public int currentDefense;
     public bool isPlayerControlled;
+    public int currentRage;
+    public int currentFatigue;
+    public float currentReflex;
+    public float currentMobility;
 
     [Header("Effets visuels et sonores")]
     public AudioClip hitSound;
     public GameObject hitEffect;
     public GameObject deathEffect;
 
-    public float currentReflex;
-    public float currentMobility;
     // Ajoute une référence au GameObject source
     public MonoBehaviour owner;
 
@@ -60,7 +64,11 @@ public class CharacterData : ScriptableObject, ITargetable
         currentMP = baseMP;
         currentStrength = baseStrength;
         currentDefense = baseDefense;
-    }
+        currentRage = 0;
+        currentFatigue = 0;
+        currentReflex = 0;
+        currentMobility = 0;
+}
 
     public Transform GetTransform()
     {
@@ -69,3 +77,4 @@ public class CharacterData : ScriptableObject, ITargetable
 }
 
 public enum CharacterType { SquadUnit, EnemyUnit }
+
