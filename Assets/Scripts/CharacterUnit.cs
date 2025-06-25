@@ -44,6 +44,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private bool deathTriggered;
     public bool isReadyToParry;
 
+    #region Cycle de Vie
+    /// <summary>
+    /// Initialise toutes les statistiques du personnage selon sa fiche.
+    /// </summary>
     public void Initialize(CharacterData characterData)
     {
         Data = characterData;
@@ -123,11 +127,17 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         }
     }
 
+    /// <summary>
+    /// Vérifie régulièrement l'état de mort du personnage.
+    /// </summary>
     void Update()
     {
         HandleDeath();
     }
 
+    /// <summary>
+    /// Inflige des dégâts et met à jour l'UI correspondante.
+    /// </summary>
     public void TakeDamage(int amount)
     {
         currentHP = Mathf.Max(currentHP - amount, 0);
@@ -137,11 +147,17 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         GetComponent<RageSystem>()?.AddRage(amount);
     }
 
+    /// <summary>
+    /// Appelé quand la cible pare une attaque.
+    /// </summary>
     public void TakeParry()
     {
         // This method should be called when the currentTargetCharacter successfully parries an attack
     }
 
+    /// <summary>
+    /// Déclenche la mort lorsque les PV atteignent zéro.
+    /// </summary>
     void HandleDeath()
     {
         if (currentHP <= 0 && !deathTriggered)
@@ -150,6 +166,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         }
     }
 
+    /// <summary>
+    /// Joue l'animation et les effets de mort, puis retire l'unité du combat.
+    /// </summary>
     void PlayDeath()
     {
         deathTriggered = true;
@@ -167,6 +186,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         NewBattleManager.Instance.activeCharacterUnits.Remove(this); // facultatif
     }
 
+    /// <summary>
+    /// Soigne l'unité et met à jour la barre de vie.
+    /// </summary>
     public void Heal(int amount)
     {
         currentHP = Mathf.Min(currentHP + amount, Data.baseHP + currentVitality);
@@ -297,4 +319,5 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         return squad[Random.Range(0, squad.Count)]; // Fallback random
     }
 
+    #endregion
 }

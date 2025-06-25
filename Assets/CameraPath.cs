@@ -19,6 +19,7 @@ public class CameraPath : MonoBehaviour
     public bool autoPreview = false;
 
     private float previewTime = 0f;
+    private Camera cachedPreviewCam;
 
 public bool IsPlaying = false;
 public bool triggered;
@@ -77,7 +78,7 @@ public bool triggered;
                 previewPosition = GetPathPositionFromTime(t);
             }
 
-            Camera previewCam = GameObject.FindGameObjectWithTag(cameraTag)?.GetComponent<Camera>();
+            Camera previewCam = GetPreviewCamera();
             if (previewCam != null)
             {
                 Vector3 pos;
@@ -124,6 +125,17 @@ public bool triggered;
             Handles.Label(mid, $"⏱ {durations[i]:0.00}s");
 #endif
         }
+    }
+    #endregion
+
+    /// <summary>
+    /// Récupère et met en cache la caméra pour l'aperçu.
+    /// </summary>
+    private Camera GetPreviewCamera()
+    {
+        if (cachedPreviewCam == null || !cachedPreviewCam.CompareTag(cameraTag))
+            cachedPreviewCam = GameObject.FindGameObjectWithTag(cameraTag)?.GetComponent<Camera>();
+        return cachedPreviewCam;
     }
     #endregion
 

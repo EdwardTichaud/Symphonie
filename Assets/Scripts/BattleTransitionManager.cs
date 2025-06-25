@@ -40,6 +40,10 @@ public class BattleTransitionManager : MonoBehaviour
 
     private Camera battleCamera;
 
+    #region Initialisation
+    /// <summary>
+    /// Prépare les références globales du gestionnaire de transition.
+    /// </summary>
     private void Awake()
     {
         if (Instance == null)
@@ -58,6 +62,12 @@ public class BattleTransitionManager : MonoBehaviour
         battleCamera = GameObject.FindGameObjectWithTag(battleCameraTag)?.GetComponent<Camera>();
     }
 
+    #endregion
+
+    #region Transition
+    /// <summary>
+    /// Lance toutes les étapes de la transition vers le mode combat.
+    /// </summary>
     public void StartCombatTransition()
     {
         StopAllCoroutines();
@@ -73,6 +83,9 @@ public class BattleTransitionManager : MonoBehaviour
         Debug.Log("[BattleTransitionManager] Transition de combat démarrée.");
     }
 
+    /// <summary>
+    /// Enchaîne les différentes étapes visuelles et logiques de la transition.
+    /// </summary>
     private IEnumerator TransitionRoutine()
     {
         yield return SlowTimeScale(to: 0.1f, speed: 2f);
@@ -191,6 +204,9 @@ public class BattleTransitionManager : MonoBehaviour
         //yield return FadeToTransparent(1f);
     }
 
+    /// <summary>
+    /// Libère les références caméras et visuels temporaires après la transition.
+    /// </summary>
     private void ResetCameraAndVisuals()
     {
         battleCamera = null;
@@ -229,7 +245,6 @@ public class BattleTransitionManager : MonoBehaviour
             Time.timeScale -= Time.unscaledDeltaTime * speed;
             if (Time.timeScale <= to + epsilon)
                 Time.timeScale = to;
-            yield break;
 
             yield return new WaitForEndOfFrame();
         }
@@ -282,6 +297,9 @@ public class BattleTransitionManager : MonoBehaviour
     private IEnumerator AnimateMaskCircle(RectTransform mask, float duration)
     {
         float elapsed = 0f;
+        ParticleSystem.ShapeModule shape = default;
+        if (maskRingParticles != null)
+            shape = maskRingParticles.shape;
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
@@ -291,7 +309,6 @@ public class BattleTransitionManager : MonoBehaviour
 
             if (maskRingParticles != null)
             {
-                var shape = maskRingParticles.shape;
                 shape.radius = size / 2f;
             }
             yield return null;
@@ -301,7 +318,6 @@ public class BattleTransitionManager : MonoBehaviour
 
         if (maskRingParticles != null)
         {
-            var shape = maskRingParticles.shape;
             shape.radius = maskTargetSize / 2f;
             maskRingParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
@@ -310,6 +326,9 @@ public class BattleTransitionManager : MonoBehaviour
     private IEnumerator AnimateMaskCircleReverse(RectTransform mask, float duration)
     {
         float elapsed = 0f;
+        ParticleSystem.ShapeModule shape = default;
+        if (maskRingParticles != null)
+            shape = maskRingParticles.shape;
         while (elapsed < duration)
         {
             elapsed += Time.unscaledDeltaTime;
@@ -319,7 +338,6 @@ public class BattleTransitionManager : MonoBehaviour
 
             if (maskRingParticles != null)
             {
-                var shape = maskRingParticles.shape;
                 shape.radius = size / 2f;
             }
 
@@ -330,7 +348,6 @@ public class BattleTransitionManager : MonoBehaviour
 
         if (maskRingParticles != null)
         {
-            var shape = maskRingParticles.shape;
             shape.radius = 0f;
             maskRingParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
@@ -375,9 +392,14 @@ public class BattleTransitionManager : MonoBehaviour
     private void HideVictoryPanel() => NewBattleManager.Instance.victoryScreen?.transform.GetChild(0).gameObject.SetActive(false);
     private void HideGameOverPanel() => NewBattleManager.Instance.gameOverScreen?.transform.GetChild(0).gameObject.SetActive(false);
 
+    /// <summary>
+    /// Nettoie le flag de participation au combat pour tous les ennemis.
+    /// </summary>
     public void ResetBattleFlagsOnAllEnemies()
     {
         foreach (var enemy in FindObjectsOfType<Enemy>())
             enemy.wasPartOfLastBattle = false;
     }
+
+    #endregion
 }
