@@ -158,6 +158,9 @@ public class NewBattleManager : MonoBehaviour
     public GameObject currentItemsMenuContainer;
     public List<Transform> currentItemsMenuSlots;
 
+    [Header("Interception")]
+    public float interceptionRange = 1.5f;
+
     [Header("Victory Screen")]
     public RenderTexture VictoryScreenImage;
 
@@ -468,8 +471,16 @@ public class NewBattleManager : MonoBehaviour
             Debug.LogWarning("[ExecuteMoveOnTarget] Pas assez d'espace pour executer le mouvement.");
             yield break;
         }
+        var interceptor = CheckForInterception(caster, target, interceptionRange);
+        if (interceptor != null)
+        {
+            yield return InterceptRoutine(interceptor, caster);
+            yield break;
+        }
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
-        move.ApplyEffect(target);
+        move.ApplyEffect(caster, target);
+
+        // Ajout du système de rage manuellement
         var rage = caster.GetComponent<RageSystem>();
         if (rage != null && move.effectType == MusicalEffectType.Damage)
         {
@@ -479,6 +490,7 @@ public class NewBattleManager : MonoBehaviour
                 target.TakeDamage(bonus);
             }
         }
+
         currentCharacterUnit.currentATB = 0f;
     }
 
@@ -513,6 +525,36 @@ public class NewBattleManager : MonoBehaviour
                 return false;
         }
         return true;
+    }
+
+    private CharacterUnit CheckForInterception(CharacterUnit caster, CharacterUnit target, float range)
+    {
+        foreach (var unit in activeCharacterUnits)
+        {
+            if (unit == null || unit == caster || unit == target) continue;
+            if (unit.Data.isPlayerControlled == caster.Data.isPlayerControlled) continue;
+
+            if (Vector3.Distance(unit.transform.position, caster.transform.position) <= range)
+            {
+                float chance = unit.currentReflex / (unit.currentReflex + caster.currentReflex + 1f);
+                if (Random.value < chance)
+                    return unit;
+            }
+        }
+        return null;
+    }
+
+    private IEnumerator InterceptRoutine(CharacterUnit interceptor, CharacterUnit caster)
+    {
+        if (interceptor == null) yield break;
+
+        var move = interceptor.GetRandomMusicalAttack();
+        if (move != null)
+        {
+            ActionUIDisplayManager.Instance.DisplayAttackName(move.moveName);
+            yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, interceptor, caster);
+            move.ApplyEffect(interceptor, caster);
+        }
     }
 
     public void EndTurn()

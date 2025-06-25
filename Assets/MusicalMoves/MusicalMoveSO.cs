@@ -42,15 +42,19 @@ public class MusicalMoveSO : ScriptableObject
     public GameObject introVFXPrefab;
     public GameObject hitVFXPrefab;
 
-    public void ApplyEffect(CharacterUnit target)
+    public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {
+        int finalValue = effectValue;
+        if (caster != null)
+            finalValue += caster.currentPower;
+
         if (effectType == MusicalEffectType.Damage && target.Data.characterType == CharacterType.EnemyUnit)
         {
-            target.TakeDamage(effectValue);
+            target.TakeDamage(finalValue);
         }
         else if (effectType == MusicalEffectType.Heal && target.Data.characterType == CharacterType.SquadUnit)
         {
-            target.Heal(effectValue);
+            target.Heal(finalValue);
         }
     }
 }

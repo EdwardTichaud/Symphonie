@@ -26,6 +26,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public int currentDefense;
     public int currentReflex;
     public float currentMobility;
+    public int currentPower;
+    public int currentStability;
+    public int currentVitality;
+    public int currentSagacity;
 
     public int currentMusicalGauge;
 
@@ -45,7 +49,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         characterType = characterData.characterType;
 
         // Initialisation des stats
-        currentHP = Data.baseHP;
+        currentPower = Data.basePower;
+        currentStability = Data.baseStability;
+        currentVitality = Data.baseVitality;
+        currentSagacity = Data.baseSagacity;
+        currentHP = Data.baseHP + currentVitality;
+        Data.currentHP = currentHP;
         currentMP = Data.baseMP;
         currentRage = Data.baseRage;
         currentInitiative = Data.baseInitiative;
@@ -76,8 +85,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // UI HP/MP
         if (hpBar != null)
         {
-            hpBar.SetMaxValue(Data.baseHP);
-            hpBar.SetValue(Data.currentHP);
+            hpBar.SetMaxValue(Data.baseHP + currentVitality);
+            hpBar.SetValue(currentHP);
         }
         if (mpBar != null)
         {
@@ -115,6 +124,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void TakeDamage(int amount)
     {
         currentHP = Mathf.Max(currentHP - amount, 0);
+        Data.currentHP = currentHP;
         if (hpBar != null) hpBar.SetValue(currentHP);
         PlayDamageFeedback();
         GetComponent<RageSystem>()?.AddRage(amount);
@@ -152,8 +162,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public void Heal(int amount)
     {
-        Data.currentHP = Mathf.Min(Data.currentHP + amount, Data.baseHP);
-        if (hpBar != null) hpBar.SetValue(Data.currentHP);
+        currentHP = Mathf.Min(currentHP + amount, Data.baseHP + currentVitality);
+        Data.currentHP = currentHP;
+        if (hpBar != null) hpBar.SetValue(currentHP);
     }
 
     public void ApplyBuff(int value)
