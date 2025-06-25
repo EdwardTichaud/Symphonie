@@ -335,6 +335,8 @@ public class RhythmQTEManager : MonoBehaviour
         var first = NewBattleManager.Instance.currentTargetCharacter;
         return first != null ? first.transform : null;
     }
+
+    #endregion
 }
 
 public enum DefenseResult { Parry, Dodge, Jump, Miss }

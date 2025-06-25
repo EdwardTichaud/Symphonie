@@ -128,8 +128,6 @@ public class CameraController : MonoBehaviour
         }
     }
 
-    }
-
     /// <summary>
     /// Fait tourner la caméra autour de la cible. Incompatible avec PathFollow actif.
     /// </summary>
@@ -146,8 +144,6 @@ public class CameraController : MonoBehaviour
         activeCamera.transform.position = orbitTarget.position + offset.normalized * orbitDistance;
 
         activeCamera.transform.LookAt(orbitTarget);
-    }
-
     }
 
     /// <summary>
@@ -487,6 +483,8 @@ public class CameraController : MonoBehaviour
             Debug.LogWarning("[CameraController] CameraHandler désactivé, pas de recherche de point.");
         }
     }
+
+    #endregion
 
     #region Utilitaires
     /// <summary>
