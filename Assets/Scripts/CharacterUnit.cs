@@ -104,6 +104,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         {
             fatigueBar.SetMaxValue(Data.maxFatigue);
             fatigueBar.SetValue(currentFatigue);
+        }
+
         if (rageBar != null)
         {
             rageBar.SetMaxValue(Data.maxRage);

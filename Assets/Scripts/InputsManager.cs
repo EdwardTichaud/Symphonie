@@ -96,6 +96,8 @@ public class InputsManager : MonoBehaviour
             m.Enable();
     }
 
+    #endregion
+
     #region Inputs
     /// <summary>
     /// Callback de validation des actions de combat.

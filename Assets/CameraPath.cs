@@ -137,8 +137,6 @@ public bool triggered;
             cachedPreviewCam = GameObject.FindGameObjectWithTag(cameraTag)?.GetComponent<Camera>();
         return cachedPreviewCam;
     }
-    #endregion
-
     #region Calcul du chemin
     /// <summary>
     /// Calcule la position le long de la courbe pour un paramètre t entre 0 et 1.
