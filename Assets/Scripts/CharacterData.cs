@@ -24,6 +24,9 @@ public class CharacterData : ScriptableObject, ITargetable
     public int baseStrength;
     public int baseDefense;
     public int baseMusicalGauge;
+    public int baseRage;
+    public int maxRage;
+    public float rageDamageMultiplier = 0.1f;
     public int baseReflex;
     public float baseMobility;
 
@@ -49,6 +52,7 @@ public class CharacterData : ScriptableObject, ITargetable
 
     public float currentReflex;
     public float currentMobility;
+    public int currentRage;
     // Ajoute une référence au GameObject source
     public MonoBehaviour owner;
 
@@ -60,6 +64,7 @@ public class CharacterData : ScriptableObject, ITargetable
         currentMP = baseMP;
         currentStrength = baseStrength;
         currentDefense = baseDefense;
+        currentRage = baseRage;
     }
 
     public Transform GetTransform()
