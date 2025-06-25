@@ -47,8 +47,8 @@ public class CharacterData : ScriptableObject, ITargetable
     public GameObject hitEffect;
     public GameObject deathEffect;
 
-        currentReflex = baseReflex;
-        currentMobility = baseMobility;
+    public float currentReflex;
+    public float currentMobility;
     // Ajoute une référence au GameObject source
     public MonoBehaviour owner;
 
