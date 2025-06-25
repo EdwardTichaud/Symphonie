@@ -7,6 +7,8 @@
 //     Changes to this file may cause incorrect behavior and will be lost if
 //     the code is regenerated.
 // </auto-generated>
+
+// Fichier généré automatiquement. Les méthodes internes ne sont pas détaillées ici.
 //------------------------------------------------------------------------------
 
 using System;

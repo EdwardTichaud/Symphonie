@@ -55,6 +55,8 @@ public class NewBattleManager : MonoBehaviour
 {
     public static NewBattleManager Instance { get; private set; }
 
+    // Ce script étant très volumineux, seuls les points d'entrée principaux sont commentés ci-dessous.
+
     // Initialisation de la scene de combat et spawn des unités ---------------------------
     [Tooltip("Nom exact de la scène de combat à charger (sans extension)")]
     public string battleSceneName = "BattleScene";
@@ -167,6 +169,10 @@ public class NewBattleManager : MonoBehaviour
     // -----------------------------------------------------------------------------------
 
     #region Initialization
+    #region Cycle de Vie
+    /// <summary>
+    /// Initialise le singleton et persiste à travers les scènes.
+    /// </summary>
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -178,6 +184,9 @@ public class NewBattleManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    /// <summary>
+    /// Instancie le curseur de cible au lancement de la scène de combat.
+    /// </summary>
     private void Start()
     {
         if (targetCursorPrefab != null)
@@ -187,11 +196,16 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Gère les sélections de cible pendant le combat.
+    /// </summary>
     private void Update()
     {
         HandleTargetCursor();
         HandleTargetNavigation();
     }
+
+    #endregion
 
     public void ChangeBattleState(BattleState newState)
     {

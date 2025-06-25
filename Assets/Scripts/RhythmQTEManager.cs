@@ -39,6 +39,10 @@ public class RhythmQTEManager : MonoBehaviour
 
     [SerializeField] private bool easyMode = false;
 
+    #region Initialisation
+    /// <summary>
+    /// Configure l'instance unique et mémorise le fixedDeltaTime de départ.
+    /// </summary>
     private void Awake()
     {
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
@@ -47,6 +51,9 @@ public class RhythmQTEManager : MonoBehaviour
     }
 
     // Séquence du Musicalmove - Ajouter autant de méthodes que d'effets durant le move
+    /// <summary>
+    /// Orchestration complète d'un MusicalMove du déplacement à la résolution.
+    /// </summary>
     public IEnumerator MusicalMoveRoutine(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
     {
         Debug.Log("Début de la séquence du MusicalMove: " + move + " de " + caster.name);
@@ -77,6 +84,9 @@ public class RhythmQTEManager : MonoBehaviour
         Debug.Log("Fin de la séquence du MusicalMove: " + move + " de " + caster.name);
     }
 
+    /// <summary>
+    /// Gère la séquence d'utilisation d'un objet en combat.
+    /// </summary>
     public IEnumerator ItemRoutine(ItemData item, CharacterUnit caster, CharacterUnit target)
     {
 

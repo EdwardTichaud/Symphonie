@@ -10,6 +10,10 @@ public class InputsManager : MonoBehaviour
 
     private InputActionMap[] allMaps;
 
+    #region Initialisation
+    /// <summary>
+    /// Instancie l'asset d'inputs et configure le singleton.
+    /// </summary>
     void Awake()
     {
         playerInputs = new PlayerInputs();
@@ -35,6 +39,9 @@ public class InputsManager : MonoBehaviour
         };
     }
 
+    /// <summary>
+    /// Active le mapping World au démarrage et trouve le contrôleur.
+    /// </summary>
     void Start()
     {
         ActivateOnly(playerInputs.World.Get());
@@ -42,6 +49,9 @@ public class InputsManager : MonoBehaviour
         controller = FindFirstObjectByType<CharacterController3D>();
     }
 
+    /// <summary>
+    /// Abonne les actions aux différents callbacks.
+    /// </summary>
     public void SetInputs()
     {
         var battle = playerInputs.Battle;
@@ -56,6 +66,9 @@ public class InputsManager : MonoBehaviour
 
     }
 
+    /// <summary>
+    /// Désabonne tous les callbacks des actions.
+    /// </summary>
     public void ResetInputs()
     {
         var battle = playerInputs.Battle;
@@ -69,6 +82,9 @@ public class InputsManager : MonoBehaviour
         world.ForceCam.performed -= OnForceCamInput;
     }
 
+    /// <summary>
+    /// Active uniquement les maps données et désactive les autres.
+    /// </summary>
     public void ActivateOnly(params InputActionMap[] mapsToEnable)
     {
         // 1) on désactive tout
@@ -81,6 +97,9 @@ public class InputsManager : MonoBehaviour
     }
 
     #region Inputs
+    /// <summary>
+    /// Callback de validation des actions de combat.
+    /// </summary>
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
@@ -104,6 +123,9 @@ public class InputsManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Sélectionne l'option 1 dans les menus.
+    /// </summary>
     private void OnSelect1(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
@@ -146,6 +168,9 @@ public class InputsManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Sélectionne l'option 2 dans les menus.
+    /// </summary>
     private void OnSelect2(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
@@ -188,6 +213,9 @@ public class InputsManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Sélectionne l'option 3 dans les menus.
+    /// </summary>
     private void OnSelect3(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;

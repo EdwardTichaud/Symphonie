@@ -55,11 +55,18 @@ public class CharacterController3D : MonoBehaviour
     public float autoAlignSpeed = 5f;    // Vitesse du recadrage
     private float idleTimer = 0f;
 
+    #region Cycle de Vie
+    /// <summary>
+    /// Récupère le CharacterController associé.
+    /// </summary>
     void Start()
     {
         controller = GetComponent<CharacterController>();
     }
 
+    /// <summary>
+    /// Gère les entrées et le mouvement à chaque frame.
+    /// </summary>
     void Update()
     {
         if (!controller.enabled) return;
@@ -70,6 +77,9 @@ public class CharacterController3D : MonoBehaviour
         ApplyGravity();
     }
 
+    /// <summary>
+    /// Lit les entrées du joueur et met à jour les états locaux.
+    /// </summary>
     private void ReadInputs()
     {
         Vector2 moveInput = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
@@ -88,6 +98,9 @@ public class CharacterController3D : MonoBehaviour
             jumpRequested = true;
     }
 
+    /// <summary>
+    /// Applique la bonne logique de déplacement selon le mode choisi.
+    /// </summary>
     private void HandleMovement()
     {
         Vector2 moveInput = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
@@ -111,6 +124,9 @@ public class CharacterController3D : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Mouvement adapté aux caméras fixes.
+    /// </summary>
     private void HandleFixedCameraMovement(Vector2 moveInput)
     {
         Vector3 camForward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
@@ -134,6 +150,9 @@ public class CharacterController3D : MonoBehaviour
         controller.Move(moveDir * speed * Time.deltaTime);
     }
 
+    /// <summary>
+    /// Mouvement en vue TPS épaulière avec auto alignement.
+    /// </summary>
     private void HandleTPSOverShoulderMovement(Vector2 moveInput)
     {
         Vector3 camForward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
@@ -183,6 +202,9 @@ public class CharacterController3D : MonoBehaviour
 
     private float turnSmoothVelocity;
 
+    /// <summary>
+    /// Vérifie s'il y a du sol devant pour éviter les chutes.
+    /// </summary>
     private bool IsGroundAhead(Vector3 direction)
     {
         Vector3 origin = transform.position + Vector3.up * 0.1f;
@@ -196,6 +218,9 @@ public class CharacterController3D : MonoBehaviour
         return false;
     }
 
+    /// <summary>
+    /// Gère la gravité et l'état de saut du personnage.
+    /// </summary>
     private void ApplyGravity()
     {
         if (controller.isGrounded && velocity.y < 0)
@@ -207,4 +232,6 @@ public class CharacterController3D : MonoBehaviour
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
     }
+
+    #endregion
 }
