@@ -11,6 +11,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public HPBar hpBar;
     public MPBar mpBar;
     public FatigueBar fatigueBar;
+    public RageBar rageBar;
 
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
@@ -20,11 +21,16 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public int currentHP;
     public int currentMP;
+    public int currentRage;
 
     public int currentStrength;
     public int currentDefense;
     public int currentReflex;
     public float currentMobility;
+    public int currentPower;
+    public int currentStability;
+    public int currentVitality;
+    public int currentSagacity;
 
     public int currentMusicalGauge;
     public int currentFatigue;
@@ -45,8 +51,14 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         characterType = characterData.characterType;
 
         // Initialisation des stats
-        currentHP = Data.baseHP;
+        currentPower = Data.basePower;
+        currentStability = Data.baseStability;
+        currentVitality = Data.baseVitality;
+        currentSagacity = Data.baseSagacity;
+        currentHP = Data.baseHP + currentVitality;
+        Data.currentHP = currentHP;
         currentMP = Data.baseMP;
+        currentRage = Data.baseRage;
         currentInitiative = Data.baseInitiative;
         currentStrength = Data.baseStrength;
         currentDefense = Data.baseDefense;
@@ -76,8 +88,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // UI HP/MP
         if (hpBar != null)
         {
-            hpBar.SetMaxValue(Data.baseHP);
-            hpBar.SetValue(Data.currentHP);
+            hpBar.SetMaxValue(Data.baseHP + currentVitality);
+            hpBar.SetValue(currentHP);
         }
         if (mpBar != null)
         {
@@ -88,6 +100,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         {
             fatigueBar.SetMaxValue(Data.maxFatigue);
             fatigueBar.SetValue(currentFatigue);
+        if (rageBar != null)
+        {
+            rageBar.SetMaxValue(Data.maxRage);
+            rageBar.SetValue(currentRage);
         }
 
         // Instanciation de l’UI personnalisée
@@ -115,8 +131,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void TakeDamage(int amount)
     {
         currentHP = Mathf.Max(currentHP - amount, 0);
+        Data.currentHP = currentHP;
         if (hpBar != null) hpBar.SetValue(currentHP);
         PlayDamageFeedback();
+        GetComponent<RageSystem>()?.AddRage(amount);
     }
 
     public void TakeParry()
@@ -151,8 +169,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public void Heal(int amount)
     {
-        Data.currentHP = Mathf.Min(Data.currentHP + amount, Data.baseHP);
-        if (hpBar != null) hpBar.SetValue(Data.currentHP);
+        currentHP = Mathf.Min(currentHP + amount, Data.baseHP + currentVitality);
+        Data.currentHP = currentHP;
+        if (hpBar != null) hpBar.SetValue(currentHP);
     }
 
     public void ApplyBuff(int value)

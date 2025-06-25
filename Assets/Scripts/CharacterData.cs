@@ -26,8 +26,15 @@ public class CharacterData : ScriptableObject, ITargetable
     public int baseMusicalGauge;
     public int baseFatigue;
     public int maxFatigue;
+    public int baseRage;
+    public int maxRage;
+    public float rageDamageMultiplier = 0.1f;
     public int baseReflex;
     public float baseMobility;
+    public int basePower;
+    public int baseStability;
+    public int baseVitality;
+    public int baseSagacity;
 
     [Header("Animation Idle en attaque")]
     public string battleIdleAnimationName;
@@ -42,6 +49,10 @@ public class CharacterData : ScriptableObject, ITargetable
     public int currentMP;
     public int currentStrength;
     public int currentDefense;
+    public int currentPower;
+    public int currentStability;
+    public int currentVitality;
+    public int currentSagacity;
     public bool isPlayerControlled;
 
     [Header("Effets visuels et sonores")]
@@ -51,6 +62,7 @@ public class CharacterData : ScriptableObject, ITargetable
 
     public float currentReflex;
     public float currentMobility;
+    public int currentRage;
     // Ajoute une référence au GameObject source
     public MonoBehaviour owner;
 
@@ -58,10 +70,17 @@ public class CharacterData : ScriptableObject, ITargetable
     {
         // Assure que, quand on clone, on part des bonnes valeurs de base
         currentInitiative = baseInitiative;
-        currentHP = baseHP;
+        currentHP = baseHP + baseVitality;
         currentMP = baseMP;
         currentStrength = baseStrength;
         currentDefense = baseDefense;
+        currentRage = baseRage;
+        currentPower = basePower;
+        currentStability = baseStability;
+        currentVitality = baseVitality;
+        currentSagacity = baseSagacity;
+        currentReflex = baseReflex;
+        currentMobility = baseMobility;
     }
 
     public Transform GetTransform()
