@@ -10,6 +10,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     [Header("UI Components")]
     public HPBar hpBar;
     public MPBar mpBar;
+    public FatigueBar fatigueBar;
 
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
@@ -26,6 +27,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public float currentMobility;
 
     public int currentMusicalGauge;
+    public int currentFatigue;
 
     // Gestion de l'initiative
     public int currentInitiative;
@@ -51,6 +53,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentReflex = Data.baseReflex;
         currentMobility = Data.baseMobility;
         currentMusicalGauge = Data.baseMusicalGauge;
+        currentFatigue = Data.baseFatigue;
 
         spriteRenderer = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
@@ -80,6 +83,11 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         {
             mpBar.SetMaxValue(Data.baseMP);
             mpBar.SetValue(Data.currentMP);
+        }
+        if (fatigueBar != null)
+        {
+            fatigueBar.SetMaxValue(Data.maxFatigue);
+            fatigueBar.SetValue(currentFatigue);
         }
 
         // Instanciation de l’UI personnalisée

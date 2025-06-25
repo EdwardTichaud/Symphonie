@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbc0c89b53ea7e246ba03cfe31f29194, type: 3}
+  m_Name: Character_Thalia
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterData
+  characterName: Thalia
+  portrait: {fileID: 0}
+  characterType: 0
+  characterWorldModel: {fileID: 1, guid: 9156fc4daf8647e1afa202ad3db84f16, type: 3}
+  characterBattleModel: {fileID: 1, guid: 79414cd7f4f145ed9d97b030cefc89e3, type: 3}
+  uiPrefab: {fileID: 1, guid: e75d5223a4c441a39a1a9c09594a746e, type: 3}
+  baseInitiative: 1
+  baseRange: 5
+  baseHP: 80
+  baseMP: 40
+  baseStrength: 1
+  baseDefense: 1
+  baseMusicalGauge: 0
+  baseFatigue: 0
+  maxFatigue: 3
+  battleIdleAnimationName: Idle
+  musicalAttacks:
+  - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
+  currentInitiative: 1
+  currentRange: 0
+  currentHP: 80
+  currentMP: 40
+  currentStrength: 1
+  currentDefense: 1
+  isPlayerControlled: 1
+  hitSound: {fileID: 0}
+  hitEffect: {fileID: 0}
+  deathEffect: {fileID: 0}
+  owner: {fileID: 0}
