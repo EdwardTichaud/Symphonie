@@ -24,6 +24,11 @@ public class CharacterData : ScriptableObject, ITargetable
     public int baseStrength;
     public int baseDefense;
     public int baseMusicalGauge;
+    public int baseFatigue;
+    public int maxFatigue;
+    public int baseRage;
+    public int maxRage;
+    public float rageDamageMultiplier = 0.1f;
     public int baseReflex;
     public float baseMobility;
     public int maxRage;
@@ -42,6 +47,10 @@ public class CharacterData : ScriptableObject, ITargetable
     public int currentMP;
     public int currentStrength;
     public int currentDefense;
+    public int currentPower;
+    public int currentStability;
+    public int currentVitality;
+    public int currentSagacity;
     public bool isPlayerControlled;
     public int currentRage;
     public int currentFatigue;
@@ -60,15 +69,18 @@ public class CharacterData : ScriptableObject, ITargetable
     {
         // Assure que, quand on clone, on part des bonnes valeurs de base
         currentInitiative = baseInitiative;
-        currentHP = baseHP;
+        currentHP = baseHP + baseVitality;
         currentMP = baseMP;
         currentStrength = baseStrength;
         currentDefense = baseDefense;
-        currentRage = 0;
-        currentFatigue = 0;
-        currentReflex = 0;
-        currentMobility = 0;
-}
+        currentRage = baseRage;
+        currentPower = basePower;
+        currentStability = baseStability;
+        currentVitality = baseVitality;
+        currentSagacity = baseSagacity;
+        currentReflex = baseReflex;
+        currentMobility = baseMobility;
+    }
 
     public Transform GetTransform()
     {

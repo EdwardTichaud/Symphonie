@@ -10,36 +10,33 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cbc0c89b53ea7e246ba03cfe31f29194, type: 3}
-  m_Name: Character_Lucian
+  m_Name: Character_Thalia
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
-  characterName: Lucian
-  portrait: {fileID: 21300000, guid: 8ab4da823478182499c477bef0f7ed92, type: 3}
+  characterName: Thalia
+  portrait: {fileID: 0}
   characterType: 0
-  characterWorldModel: {fileID: 4337991090481084248, guid: a6ebbd885ebce1f488e4eac835c634cc, type: 3}
-  characterBattleModel: {fileID: 901204007372340786, guid: 48bc122d024634b4789a14a245e83484, type: 3}
-  uiPrefab: {fileID: 3846142824151221159, guid: 1628c0cad48b698449208b44838d9c2c, type: 3}
+  characterWorldModel: {fileID: 1, guid: 9156fc4daf8647e1afa202ad3db84f16, type: 3}
+  characterBattleModel: {fileID: 1, guid: 79414cd7f4f145ed9d97b030cefc89e3, type: 3}
+  uiPrefab: {fileID: 1, guid: e75d5223a4c441a39a1a9c09594a746e, type: 3}
   baseInitiative: 1
-  baseRange: 10
-  baseHP: 100
-  baseMP: 50
+  baseRange: 5
+  baseHP: 80
+  baseMP: 40
   baseStrength: 1
   baseDefense: 1
   baseMusicalGauge: 0
-  baseRage: 0
-  maxRage: 100
-  rageDamageMultiplier: 0.1
+  baseFatigue: 0
+  maxFatigue: 3
   battleIdleAnimationName: Idle
   musicalAttacks:
   - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
-  - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
   currentInitiative: 1
   currentRange: 0
-  currentHP: 100
-  currentMP: 50
+  currentHP: 80
+  currentMP: 40
   currentStrength: 1
   currentDefense: 1
   isPlayerControlled: 1
-  currentRage: 0
   hitSound: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}

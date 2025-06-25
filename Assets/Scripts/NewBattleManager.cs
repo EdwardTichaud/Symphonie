@@ -55,6 +55,8 @@ public class NewBattleManager : MonoBehaviour
 {
     public static NewBattleManager Instance { get; private set; }
 
+    // Ce script étant très volumineux, seuls les points d'entrée principaux sont commentés ci-dessous.
+
     // Initialisation de la scene de combat et spawn des unités ---------------------------
     [Tooltip("Nom exact de la scène de combat à charger (sans extension)")]
     public string battleSceneName = "BattleScene";
@@ -158,12 +160,19 @@ public class NewBattleManager : MonoBehaviour
     public GameObject currentItemsMenuContainer;
     public List<Transform> currentItemsMenuSlots;
 
+    [Header("Interception")]
+    public float interceptionRange = 1.5f;
+
     [Header("Victory Screen")]
     public RenderTexture VictoryScreenImage;
 
     // -----------------------------------------------------------------------------------
 
     #region Initialization
+    #region Cycle de Vie
+    /// <summary>
+    /// Initialise le singleton et persiste à travers les scènes.
+    /// </summary>
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -175,6 +184,9 @@ public class NewBattleManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    /// <summary>
+    /// Instancie le curseur de cible au lancement de la scène de combat.
+    /// </summary>
     private void Start()
     {
         if (targetCursorPrefab != null)
@@ -184,11 +196,16 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Gère les sélections de cible pendant le combat.
+    /// </summary>
     private void Update()
     {
         HandleTargetCursor();
         HandleTargetNavigation();
     }
+
+    #endregion
 
     public void ChangeBattleState(BattleState newState)
     {
@@ -403,6 +420,11 @@ public class NewBattleManager : MonoBehaviour
     {
         if (currentBattleState != BattleState.VictoryScreen_Await && currentBattleState != BattleState.VictoryScreen_CanContinue && currentBattleState != BattleState.GameOverScreen_Await && currentBattleState != BattleState.GameOverScreen_CanContinue)
         {
+            if (unit.TryGetComponent<FatigueSystem>(out var fatigue) && fatigue.IsAsleep)
+            {
+                EndTurn();
+                yield break;
+            }
             isTurnResolving = true;
 
             // 1) On stocke l’unité qui jouait juste avant (champ de classe)
@@ -468,13 +490,35 @@ public class NewBattleManager : MonoBehaviour
             Debug.LogWarning("[ExecuteMoveOnTarget] Pas assez d'espace pour executer le mouvement.");
             yield break;
         }
+        var interceptor = CheckForInterception(caster, target, interceptionRange);
+        if (interceptor != null)
+        {
+            yield return InterceptRoutine(interceptor, caster);
+            yield break;
+        }
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
-        move.ApplyEffect(target);
-        currentCharacterUnit.currentATB = 0f;
+        caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
+        move.ApplyEffect(caster, target);
+
+        // Ajout du système de rage manuellement
+        var rage = caster.GetComponent<RageSystem>();
+        if (rage != null && move.effectType == MusicalEffectType.Damage)
+        {
+            int bonus = rage.CalculateBonusDamage();
+            if (bonus > 0)
+            {
+                target.TakeDamage(bonus);
+            }
+        }
+
+currentCharacterUnit.currentATB = 0f;
     }
 
     public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
     {
+        InventoryManager.Instance.UseItem(item, target);
+        caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
+        currentCharacterUnit.currentATB = 0f;
         yield return null;
     }
 
@@ -504,6 +548,36 @@ public class NewBattleManager : MonoBehaviour
                 return false;
         }
         return true;
+    }
+
+    private CharacterUnit CheckForInterception(CharacterUnit caster, CharacterUnit target, float range)
+    {
+        foreach (var unit in activeCharacterUnits)
+        {
+            if (unit == null || unit == caster || unit == target) continue;
+            if (unit.Data.isPlayerControlled == caster.Data.isPlayerControlled) continue;
+
+            if (Vector3.Distance(unit.transform.position, caster.transform.position) <= range)
+            {
+                float chance = unit.currentReflex / (unit.currentReflex + caster.currentReflex + 1f);
+                if (Random.value < chance)
+                    return unit;
+            }
+        }
+        return null;
+    }
+
+    private IEnumerator InterceptRoutine(CharacterUnit interceptor, CharacterUnit caster)
+    {
+        if (interceptor == null) yield break;
+
+        var move = interceptor.GetRandomMusicalAttack();
+        if (move != null)
+        {
+            ActionUIDisplayManager.Instance.DisplayAttackName(move.moveName);
+            yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, interceptor, caster);
+            move.ApplyEffect(interceptor, caster);
+        }
     }
 
     public void EndTurn()

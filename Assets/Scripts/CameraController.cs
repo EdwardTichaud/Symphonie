@@ -62,6 +62,10 @@ public class CameraController : MonoBehaviour
     private float forcedCamPitch = 20f;
     private float forcedCamDistance = 5f;
 
+    #region Initialisation
+    /// <summary>
+    /// Prépare les références et recherches initiales. Conflit possible si plusieurs contrôleurs existent.
+    /// </summary>
     void Awake()
     {
         Instance = this;
@@ -75,12 +79,21 @@ public class CameraController : MonoBehaviour
         FindManagedCameras();
     }
 
+    /// <summary>
+    /// Synchronise les points de caméra dans l'éditeur. Aucune redondance connue.
+    /// </summary>
     void OnValidate()
     {
         UpdateCameraPositionsFromHandler();
         FindManagedCameras();
     }
 
+    #endregion
+
+    #region Boucle Principale
+    /// <summary>
+    /// Gère l'état de la caméra à chaque frame. Peut entrer en conflit avec OrbitAround ou PathFollow actifs.
+    /// </summary>
     void Update()
     {
         Vector2 fixedCameraMove = InputsManager.Instance.playerInputs.World.ForcedCamMove.ReadValue<Vector2>();
@@ -115,6 +128,11 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    }
+
+    /// <summary>
+    /// Fait tourner la caméra autour de la cible. Incompatible avec PathFollow actif.
+    /// </summary>
     void UpdateOrbit()
     {
         Vector3 axis = new Vector3(orbitX ? 1f : 0f, orbitY ? 1f : 0f, orbitZ ? 1f : 0f);
@@ -130,6 +148,11 @@ public class CameraController : MonoBehaviour
         activeCamera.transform.LookAt(orbitTarget);
     }
 
+    }
+
+    /// <summary>
+    /// Suit le chemin défini par CameraPath. Conflit direct avec le mode orbite.
+    /// </summary>
     void UpdatePathFollow()
     {
         pathElapsedTime += Time.deltaTime;
@@ -198,6 +221,12 @@ public class CameraController : MonoBehaviour
         activeCamera = null;
     }
 
+    #endregion
+
+    #region Mode Orbite
+    /// <summary>
+    /// Démarre un mouvement orbital autour d'une cible. Conflit avec PathFollow et ForceCam.
+    /// </summary>
     public void OrbitAround(string cameraTag, Transform target, float distance = 5f, float speed = 30f, bool x = false, bool y = true, bool z = false)
     {
         StopOrbit();
@@ -231,6 +260,9 @@ public class CameraController : MonoBehaviour
         Debug.Log("[CameraController] OrbitAround démarré !");
     }
 
+    /// <summary>
+    /// Interrompt le mouvement orbital et remet la recherche de point actif.
+    /// </summary>
     public void StopOrbit()
     {
         orbitTarget = null;
@@ -241,6 +273,12 @@ public class CameraController : MonoBehaviour
         Debug.Log("[CameraController] OrbitAround stoppé.");
     }
 
+    #endregion
+
+    #region Recherche Caméra
+    /// <summary>
+    /// Retourne la caméra correspondant au tag fourni.
+    /// </summary>
     private Camera FindCameraByTag(string cameraTag)
     {
         foreach (Camera cam in managedCameras)
@@ -251,6 +289,9 @@ public class CameraController : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Met à jour la liste des caméras gérées par cet objet.
+    /// </summary>
     private void FindManagedCameras()
     {
         managedCameras.Clear();
@@ -258,6 +299,10 @@ public class CameraController : MonoBehaviour
         managedCameras.AddRange(allCams);
     }
 
+    /// <summary>
+    /// Déplace la caméra principale vers la position et la rotation cibles avec interpolation.
+    /// Peut interférer avec ForceCam si celui-ci est actif.
+    /// </summary>
     public Coroutine SetCameraTarget(string positionName, string lookAtName, float transitionSpeed = 2f)
     {
         StopOrbit();
@@ -280,6 +325,9 @@ public class CameraController : MonoBehaviour
         return currentTransition;
     }
 
+    /// <summary>
+    /// Coroutine interne pour interpoler position et rotation.
+    /// </summary>
     IEnumerator SmoothMoveAndLook(Transform targetTransform, Vector3 targetPos, Quaternion targetRot, float speed)
     {
         float t = 0f;
@@ -299,6 +347,13 @@ public class CameraController : MonoBehaviour
         currentTransition = null;
     }
 
+    #endregion
+
+    #region Caméra Forcée
+    /// <summary>
+    /// Désactive la logique automatique pour forcer un point de vue fixe.
+    /// Conflit avec OrbitAround et PathFollow.
+    /// </summary>
     public void ForceCam()
     {
         StopOrbit();
@@ -313,6 +368,9 @@ public class CameraController : MonoBehaviour
         Debug.Log("[CameraController] ForcedCam ACTIVATED");
     }
 
+    /// <summary>
+    /// Réactive la gestion automatique de la caméra après un mode forcé.
+    /// </summary>
     public void ReleaseCam()
     {
         currentCameraState = CameraState.ResearchClosestCamPoint;
@@ -320,6 +378,12 @@ public class CameraController : MonoBehaviour
         Debug.Log("[CameraController] ForcedCam DISABLED");
     }
 
+    #endregion
+
+    #region Comportement
+    /// <summary>
+    /// Sélectionne quelle logique appliquer selon l'état courant.
+    /// </summary>
     void HandleCameraBehaviour()
     {
         switch (currentCameraState)
@@ -339,6 +403,9 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Suit le point forcé en douceur. Redondant avec SmoothMoveAndLook pour la logique de lerp.
+    /// </summary>
     void FollowForcedCameraPoint()
     {
         if (forcedCameraPoint == null || forceLookPoint == null || Camera.main == null) return;
@@ -354,6 +421,9 @@ public class CameraController : MonoBehaviour
         );
     }
 
+    /// <summary>
+    /// Calcule la position du point forcé en fonction des entrées utilisateur.
+    /// </summary>
     void UpdateForcedCameraPoint()
     {
         if (forcedCameraPoint == null || player == null) return;
@@ -378,6 +448,10 @@ public class CameraController : MonoBehaviour
         forcedCameraPoint.LookAt(player.position);
     }
 
+    /// <summary>
+    /// Choisit et applique la caméra la plus proche du joueur.
+    /// Peut entrer en conflit avec ForceCam.
+    /// </summary>
     void ApplyClosestCamera()
     {
         if (cameraHandlerEnabled)
@@ -414,6 +488,10 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    #region Utilitaires
+    /// <summary>
+    /// Récupère dynamiquement les positions caméra à partir du handler dédié.
+    /// </summary>
     void UpdateCameraPositionsFromHandler()
     {
         GameObject handler = GameObject.FindGameObjectWithTag("LevelCameraHandler");
@@ -427,6 +505,9 @@ public class CameraController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Recherche récursive d'un enfant portant le nom indiqué.
+    /// </summary>
     Transform FindChildRecursive(Transform parent, string targetName)
     {
         if (parent == null) return null;
@@ -440,6 +521,9 @@ public class CameraController : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Convertit un temps écoulé en position normalisée sur le chemin actuel.
+    /// </summary>
     private float GetPathPositionFromTime(float elapsedTime)
     {
         if (currentCameraPath == null || currentCameraPath.durations == null || currentCameraPath.durations.Count == 0)
@@ -463,4 +547,6 @@ public class CameraController : MonoBehaviour
 
         return 1f;
     }
+
+    #endregion
 }
