@@ -100,7 +100,22 @@ public class RhythmQTEManager : MonoBehaviour
         float elapsed = 0f;
         float maxDuration = move.maxRunDuration;
 
-        Vector3 targetPosition = target.transform.position + target.transform.forward * move.castDistance;
+        Vector3 offsetDir = target.transform.forward;
+        switch (move.relativePosition)
+        {
+            case RelativePosition.Back:
+                offsetDir = -target.transform.forward;
+                break;
+            case RelativePosition.Left:
+                offsetDir = -target.transform.right;
+                break;
+            case RelativePosition.Right:
+                offsetDir = target.transform.right;
+                break;
+        }
+
+        float mobilityBonus = caster.currentMobility;
+        Vector3 targetPosition = target.transform.position + offsetDir * (move.castDistance + mobilityBonus);
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         animator.Play(move.musicalMoveRunAnimationName);
