@@ -20,12 +20,25 @@ public class CameraPath : MonoBehaviour
 
     private float previewTime = 0f;
 
-    public bool IsPlaying = false;
-    public bool triggered;
+public bool IsPlaying = false;
+public bool triggered;
 
+    #region Initialisation
+    /// <summary>
+    /// Mise à jour automatique des points lorsqu'une propriété change dans l'éditeur.
+    /// Aucun conflit connu avec les autres méthodes.
+    /// </summary>
     private void OnValidate() => UpdatePoints();
+
+    /// <summary>
+    /// S'assure que la liste des points est prête au démarrage du jeu.
+    /// </summary>
     private void Awake() => UpdatePoints();
 
+    /// <summary>
+    /// Synchronise la collection de points et de durées avec les enfants du GameObject.
+    /// Peut entrer en conflit si des enfants sont modifiés pendant l'exécution.
+    /// </summary>
     public void UpdatePoints()
     {
         int childCount = transform.childCount;
@@ -44,7 +57,13 @@ public class CameraPath : MonoBehaviour
         while (durations.Count > segmentCount)
             durations.RemoveAt(durations.Count - 1);
     }
+    #endregion
 
+    #region Aperçu dans l'éditeur
+    /// <summary>
+    /// Affiche en temps réel la position de la caméra pour prévisualiser le chemin.
+    /// Ne doit pas être utilisée en jeu pour éviter les conflits de contrôle caméra.
+    /// </summary>
     private void Update()
     {
         #if UNITY_EDITOR
@@ -76,6 +95,9 @@ public class CameraPath : MonoBehaviour
         #endif
     }
 
+    /// <summary>
+    /// Dessine la trajectoire et les tangentes du chemin dans la scène.
+    /// </summary>
     private void OnDrawGizmos()
     {
         if (points.Count < 2) return;
@@ -103,7 +125,13 @@ public class CameraPath : MonoBehaviour
 #endif
         }
     }
+    #endregion
 
+    #region Calcul du chemin
+    /// <summary>
+    /// Calcule la position le long de la courbe pour un paramètre t entre 0 et 1.
+    /// Aucun conflit connu avec d'autres méthodes.
+    /// </summary>
     public Vector3 EvaluatePosition(float t)
     {
         int numSegments = points.Count - 1;
@@ -122,6 +150,10 @@ public class CameraPath : MonoBehaviour
         return Bezier(a, b, c, d, localT);
     }
 
+    /// <summary>
+    /// Calcule la rotation désirée le long du chemin. Utilise les options de LookAt si présentes.
+    /// Peut entrer en conflit si plusieurs objets contrôlent l'orientation de la caméra.
+    /// </summary>
     public Quaternion EvaluateRotation(float t)
     {
         int numSegments = points.Count - 1;
@@ -172,12 +204,20 @@ public class CameraPath : MonoBehaviour
         return Quaternion.Slerp(pathRotation, lookAtRotation, blendFactor);
     }
 
+    /// <summary>
+    /// Retourne simultanément la position et la rotation calculées pour un paramètre t.
+    /// Redondant avec les appels séparés de <see cref="EvaluatePosition"/> et <see cref="EvaluateRotation"/>.
+    /// </summary>
     public void EvaluatePath(float t, out Vector3 pos, out Quaternion rot)
     {
         pos = EvaluatePosition(t);
         rot = EvaluateRotation(t);
     }
 
+    /// <summary>
+    /// Convertit un temps écoulé en position normalisée sur le chemin.
+    /// Utile pour l'aperçu automatique. Ne rentre pas en conflit avec les autres méthodes.
+    /// </summary>
     public float GetPathPositionFromTime(float elapsedTime)
     {
         float total = GetTotalDuration();
@@ -197,6 +237,10 @@ public class CameraPath : MonoBehaviour
         return 1f;
     }
 
+    /// <summary>
+    /// Calcule la durée totale du trajet en sommant chaque segment.
+    /// Aucune redondance connue.
+    /// </summary>
     public float GetTotalDuration()
     {
         float total = 0f;
@@ -205,6 +249,11 @@ public class CameraPath : MonoBehaviour
         return total;
     }
 
+    #region Lecture de la séquence
+    /// <summary>
+    /// Lance la lecture de la trajectoire par la caméra associée.
+    /// Ignore l'appel si la séquence a déjà été déclenchée.
+    /// </summary>
     public void PlaySequence(float startPosition = 0f)
     {
         if (triggered)
@@ -237,11 +286,20 @@ public class CameraPath : MonoBehaviour
         controller.StartPathFollow(this, cameraTag, startPosition);
     }
 
+    /// <summary>
+    /// Arrête la lecture en cours. Ne réinitialise pas l'état "triggered".
+    /// Peut donc nécessiter un reset manuel pour relancer.
+    /// </summary>
     public void StopSequence()
     {
         IsPlaying = false;
     }
 
+    #endregion
+
+    /// <summary>
+    /// Fonction utilitaire de calcul de courbe de Bézier cubique.
+    /// </summary>
     private Vector3 Bezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
     {
         float u = 1 - t;
@@ -255,6 +313,7 @@ public class CameraPath : MonoBehaviour
              + 3 * u * tt * p2
              + ttt * p3;
     }
+    #endregion
 }
 
 [System.Serializable]
