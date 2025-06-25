@@ -31,8 +31,10 @@ public class CharacterData : ScriptableObject, ITargetable
     public float rageDamageMultiplier = 0.1f;
     public int baseReflex;
     public float baseMobility;
-    public int maxRage;
-    public int maxFatigue;
+    public float baseVitality;
+    public int basePower;
+    public int baseStability;
+    public int baseSagacity;
 
     [Header("Animation Idle en attaque")]
     public string battleIdleAnimationName;
