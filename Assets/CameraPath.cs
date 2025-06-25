@@ -126,6 +126,7 @@ public bool triggered;
 #endif
         }
     }
+    #endregion
 
     /// <summary>
     /// Récupère et met en cache la caméra pour l'aperçu.
