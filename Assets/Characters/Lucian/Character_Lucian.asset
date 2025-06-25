@@ -25,6 +25,9 @@ MonoBehaviour:
   baseStrength: 1
   baseDefense: 1
   baseMusicalGauge: 0
+  baseRage: 0
+  maxRage: 100
+  rageDamageMultiplier: 0.1
   battleIdleAnimationName: Idle
   musicalAttacks:
   - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
@@ -36,6 +39,7 @@ MonoBehaviour:
   currentStrength: 1
   currentDefense: 1
   isPlayerControlled: 1
+  currentRage: 0
   hitSound: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}

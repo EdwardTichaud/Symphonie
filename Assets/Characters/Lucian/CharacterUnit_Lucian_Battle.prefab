@@ -146,6 +146,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5387018186125168565}
   - component: {fileID: 2868098831747274196}
+  - component: {fileID: 6769647812387645000}
   m_Layer: 6
   m_Name: CharacterUnit_Lucian_Battle
   m_TagString: Player
@@ -185,6 +186,7 @@ MonoBehaviour:
   Data: {fileID: 0}
   hpBar: {fileID: 0}
   mpBar: {fileID: 0}
+  rageBar: {fileID: 0}
   characterType: 0
   currentHP: 0
   currentMP: 0
@@ -195,6 +197,18 @@ MonoBehaviour:
   currentATB: 0
   ATBMax: 100
   isReadyToParry: 0
+--- !u!114 &6769647812387645000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2489b6fdd4b4a97ba03c619498bec01, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!1 &3325568263149963469
 GameObject:
   m_ObjectHideFlags: 0

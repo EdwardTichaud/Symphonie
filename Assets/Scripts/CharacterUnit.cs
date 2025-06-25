@@ -10,6 +10,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     [Header("UI Components")]
     public HPBar hpBar;
     public MPBar mpBar;
+    public RageBar rageBar;
 
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
@@ -19,6 +20,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public int currentHP;
     public int currentMP;
+    public int currentRage;
 
     public int currentStrength;
     public int currentDefense;
@@ -54,6 +56,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentHP = Data.baseHP + currentVitality;
         Data.currentHP = currentHP;
         currentMP = Data.baseMP;
+        currentRage = Data.baseRage;
         currentInitiative = Data.baseInitiative;
         currentStrength = Data.baseStrength;
         currentDefense = Data.baseDefense;
@@ -90,6 +93,11 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             mpBar.SetMaxValue(Data.baseMP);
             mpBar.SetValue(Data.currentMP);
         }
+        if (rageBar != null)
+        {
+            rageBar.SetMaxValue(Data.maxRage);
+            rageBar.SetValue(currentRage);
+        }
 
         // Instanciation de l’UI personnalisée
         if (Data.uiPrefab != null && Data.characterType == CharacterType.SquadUnit)
@@ -119,6 +127,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         Data.currentHP = currentHP;
         if (hpBar != null) hpBar.SetValue(currentHP);
         PlayDamageFeedback();
+        GetComponent<RageSystem>()?.AddRage(amount);
     }
 
     public void TakeParry()

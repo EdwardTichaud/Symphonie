@@ -479,6 +479,18 @@ public class NewBattleManager : MonoBehaviour
         }
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
         move.ApplyEffect(caster, target);
+
+        // Ajout du système de rage manuellement
+        var rage = caster.GetComponent<RageSystem>();
+        if (rage != null && move.effectType == MusicalEffectType.Damage)
+        {
+            int bonus = rage.CalculateBonusDamage();
+            if (bonus > 0)
+            {
+                target.TakeDamage(bonus);
+            }
+        }
+
         currentCharacterUnit.currentATB = 0f;
     }
 
