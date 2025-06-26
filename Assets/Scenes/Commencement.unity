@@ -584,27 +584,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4546306238349753647, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 4.931885
+      value: 4.175049
       objectReference: {fileID: 0}
     - target: {fileID: 4546306238349753647, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.5093994
+      value: -2.713745
       objectReference: {fileID: 0}
     - target: {fileID: 4546306238349753647, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.39867496
+      value: -0.36712226
       objectReference: {fileID: 0}
     - target: {fileID: 4546306238349753647, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.48061848
+      value: 0.6498633
       objectReference: {fileID: 0}
     - target: {fileID: 4546306238349753647, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.08643154
+      value: -0.17786181
       objectReference: {fileID: 0}
     - target: {fileID: 4546306238349753647, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.7762692
+      value: 0.6412988
       objectReference: {fileID: 0}
     - target: {fileID: 5021491593266416669, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
       propertyPath: m_Name
@@ -1521,6 +1521,7 @@ Transform:
   - {fileID: 718937002}
   - {fileID: 2141815839}
   - {fileID: 7753012475513106440}
+  - {fileID: 1561625587}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &963528265
@@ -7962,6 +7963,37 @@ MonoBehaviour:
   blendDistance: 0
   weight: 1
   sharedProfile: {fileID: 11400000, guid: 9760afa2b265e394e9cb5a9cdad62305, type: 2}
+--- !u!1 &1561625586
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1561625587}
+  m_Layer: 0
+  m_Name: SquadManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1561625587
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1561625586}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 905039931}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1584354840
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -9558,6 +9590,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 905039931}
     m_Modifications:
+    - target: {fileID: 72461504841951084, guid: 3236d256a56c62142b05ea41a0e25736, type: 3}
+      propertyPath: gameData
+      value: 
+      objectReference: {fileID: 11400000, guid: 87dabbaaef9d09c42b90f48877d42457, type: 2}
     - target: {fileID: 286236534661353855, guid: 3236d256a56c62142b05ea41a0e25736, type: 3}
       propertyPath: m_Name
       value: GameManager
