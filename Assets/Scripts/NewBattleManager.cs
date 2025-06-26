@@ -499,7 +499,6 @@ public class NewBattleManager : MonoBehaviour
             yield break;
         }
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
-        caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
         move.ApplyEffect(caster, target);
 
         // Ajout du système de rage manuellement

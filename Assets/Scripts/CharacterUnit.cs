@@ -116,7 +116,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         Data.currentHP = currentHP;
         if (hpBar != null) hpBar.SetValue(currentHP);
         PlayDamageFeedback();
-        GetComponent<RageSystem>()?.AddRage(amount);
+        if (Data != null && Data.gameplayType == GameplayType.Rage)
+        {
+            GetComponent<RageSystem>()?.AddRage(amount);
+        }
     }
 
     /// <summary>

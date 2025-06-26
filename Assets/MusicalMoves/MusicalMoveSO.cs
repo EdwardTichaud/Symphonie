@@ -57,10 +57,9 @@ public class MusicalMoveSO : ScriptableObject
             target.Heal(finalValue);
         }
 
-        if(caster.Data.gameplayType == GameplayType.Fatigue)
+        if (caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
-            Debug.Log($"Applying fatigue effect: {finalValue} to {caster.name}");
-            caster.currentRage += finalValue;
+            caster.GetComponent<FatigueSystem>()?.OnActionPerformed(fatigueCost);
         }
     }
 }
