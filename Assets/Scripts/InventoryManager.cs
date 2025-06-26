@@ -5,15 +5,6 @@ using UnityEngine;
 public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager Instance { get; private set; }
-
-        if (GameManager.Instance != null && GameManager.Instance.gameData != null)
-        {
-            allItems = GameManager.Instance.gameData.allItems;
-            inventoryItems = GameManager.Instance.gameData.inventoryItems;
-        }
-
-            GameManager.Instance.gameData.inventoryItems.Add(item);
-        GameManager.Instance.gameData.inventoryItems.Remove(item);
     [Header("Tous les items du jeu (à assigner dans l’inspecteur ou à charger dynamiquement)")]
     [SerializeField] private List<ItemData> allItems = new();
 
