@@ -18,24 +18,24 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public CharacterType characterType;
 
-    public int currentHP;
-    public int currentMP;
-    public int currentRage;
+    public float currentHP;
+    public float currentMP;
+    public float currentRage;
 
-    public int currentStrength;
-    public int currentDefense;
-    public int currentReflex;
+    public float currentStrength;
+    public float currentDefense;
+    public float currentReflex;
     public float currentMobility;
-    public int currentPower;
-    public int currentStability;
-    public int currentVitality;
-    public int currentSagacity;
+    public float currentPower;
+    public float currentStability;
+    public float currentVitality;
+    public float currentSagacity;
 
-    public int currentMusicalGauge;
-    public int currentFatigue;
+    public float currentMusicalGauge;
+    public float currentFatigue;
 
     // Gestion de l'initiative
-    public int currentInitiative;
+    public float currentInitiative;
     public float currentATB = 0f;
     public float ATBMax = 100f;
     public bool IsReady => currentATB >= ATBMax && currentHP > 0;
@@ -60,14 +60,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentSagacity = Data.baseSagacity;
         currentHP = Data.baseHP + currentVitality;
         Data.currentHP = currentHP;
-        currentMP = Data.baseMP;
         currentRage = Data.baseRage;
         currentInitiative = Data.baseInitiative;
         currentStrength = Data.baseStrength;
         currentDefense = Data.baseDefense;
         currentReflex = Data.baseReflex;
         currentMobility = Data.baseMobility;
-        currentMusicalGauge = Data.baseMusicalGauge;
         currentFatigue = Data.baseFatigue;
 
         spriteRenderer = GetComponent<SpriteRenderer>();
@@ -78,27 +76,13 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (spriteRenderer != null && Data.portrait != null)
             spriteRenderer.sprite = Data.portrait;
 
-        //// Setup de l’Animator
-        //if (animator != null)
-        //{
-        //    if (Data.animatorController != null)
-        //        animator.runtimeAnimatorController = Data.animatorController;
-
-        //    if (Data.animatorAvatar != null)
-        //        animator.avatar = Data.animatorAvatar;
-        //}
-
-        // UI HP/MP
+        // UI HP
         if (hpBar != null)
         {
             hpBar.SetMaxValue(Data.baseHP + currentVitality);
             hpBar.SetValue(currentHP);
         }
-        if (mpBar != null)
-        {
-            mpBar.SetMaxValue(Data.baseMP);
-            mpBar.SetValue(Data.currentMP);
-        }
+
         if (customBar != null)
         {
             customBar.SetMaxValue(Data.maxFatigue);
@@ -126,7 +110,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// <summary>
     /// Inflige des dégâts et met à jour l'UI correspondante.
     /// </summary>
-    public void TakeDamage(int amount)
+    public void TakeDamage(float amount)
     {
         currentHP = Mathf.Max(currentHP - amount, 0);
         Data.currentHP = currentHP;
@@ -177,27 +161,27 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// <summary>
     /// Soigne l'unité et met à jour la barre de vie.
     /// </summary>
-    public void Heal(int amount)
+    public void Heal(float amount)
     {
         currentHP = Mathf.Min(currentHP + amount, Data.baseHP + currentVitality);
         Data.currentHP = currentHP;
         if (hpBar != null) hpBar.SetValue(currentHP);
     }
 
-    public void ApplyBuff(int value)
+    public void ApplyBuff(float value)
     {
 
     }
-    public void RemoveBuff(int value)
+    public void RemoveBuff(float value)
     {
 
     }
 
-    public void ApplyDebuff(int value)
+    public void ApplyDebuff(float value)
     {
 
     }
-    public void RemoveDebuff(int value)
+    public void RemoveDebuff(float value)
     {
 
     }
@@ -294,7 +278,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             return lowestHPUnit;
 
         // Priorité 2 : cible ayant infligé le plus de dégâts à cet ennemi (si tu as un système de suivi de dégâts)
-        // Exemple fictif : si tu avais un dictionnaire `Dictionary<CharacterUnit, int> damageReceivedFrom`
+        // Exemple fictif : si tu avais un dictionnaire `Dictionary<CharacterUnit, float> damageReceivedFrom`
         // Tu peux remplacer par ta propre logique de suivi.
         /*
         if (damageReceivedFrom.Count > 0)

@@ -5,6 +5,6 @@ using UnityEngine.Events;
 
 public interface IDebuffable
 {
-    public void ApplyDebuff(int value);
-    public void RemoveDebuff(int value);
+    public void ApplyDebuff(float value);
+    public void RemoveDebuff(float value);
 }

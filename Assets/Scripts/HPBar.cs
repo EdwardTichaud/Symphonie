@@ -13,7 +13,7 @@ public class HPBar : MonoBehaviour
     /// Définit la valeur et la limite maximale de la barre.
     /// </summary>
     /// <param name="max">Valeur maximale (vie max)</param>
-    public void SetMaxValue(int max)
+    public void SetMaxValue(float max)
     {
         if (slider != null)
         {
@@ -26,7 +26,7 @@ public class HPBar : MonoBehaviour
     /// Met à jour la valeur courante de la barre.
     /// </summary>
     /// <param name="current">Valeur actuelle (vie restante)</param>
-    public void SetValue(int current)
+    public void SetValue(float current)
     {
         if (slider != null)
         {

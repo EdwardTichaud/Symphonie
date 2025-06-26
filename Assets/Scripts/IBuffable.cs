@@ -5,6 +5,6 @@ using UnityEngine.Events;
 
 public interface IBuffable
 {
-    public void ApplyBuff(int value);
-    public void RemoveBuff(int value);
+    public void ApplyBuff(float value);
+    public void RemoveBuff(float value);
 }

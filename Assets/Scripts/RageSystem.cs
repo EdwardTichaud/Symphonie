@@ -10,7 +10,7 @@ public class RageSystem : MonoBehaviour
         unit = GetComponent<CharacterUnit>();
     }
 
-    public void AddRage(int damage)
+    public void AddRage(float damage)
     {
         if (unit == null || unit.Data == null) return;
         unit.currentRage = Mathf.Clamp(unit.currentRage + damage, unit.Data.baseRage, unit.Data.maxRage);
@@ -18,7 +18,7 @@ public class RageSystem : MonoBehaviour
             unit.customBar.SetValue(unit.currentRage);
     }
 
-    public int CalculateBonusDamage()
+    public float CalculateBonusDamage()
     {
         if (unit == null || unit.Data == null) return 0;
         return Mathf.RoundToInt(unit.currentRage * unit.Data.rageDamageMultiplier);

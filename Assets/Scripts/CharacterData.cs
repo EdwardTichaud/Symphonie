@@ -7,7 +7,7 @@ public class CharacterData : ScriptableObject, ITargetable
     public string characterName;
     public Sprite portrait;
     public CharacterType characterType;
-    public GameplayType gameplayType = GameplayType.Fatigue;
+    public GameplayType gameplayType = GameplayType.Rage;
     public GameObject characterWorldModel;
     public GameObject characterBattleModel;
 
@@ -15,24 +15,30 @@ public class CharacterData : ScriptableObject, ITargetable
     public int battlefieldIndex = 0; // Indice du battlefield dans la zone
 
     [Header("Stats")]
-    public int baseInitiative;
-    public float baseRange;
-    public int baseHP;
-    public int baseMP;
-    public int baseStrength;
-    public int baseDefense;
-    public int baseMusicalGauge;
-    public int baseFatigue;
-    public int maxFatigue;
-    public int baseRage;
-    public int maxRage;
-    public float rageDamageMultiplier = 0.1f;
-    public int baseReflex;
+    [Header("Attributs")]
+    public float baseReflex;
     public float baseMobility;
-    public int baseVitality;
-    public int basePower;
-    public int baseStability;
-    public int baseSagacity;
+    public float baseVitality;
+    public float basePower;
+    public float baseStability;
+    public float baseSagacity;
+
+    [Header("Common Stats")]
+    public float baseInitiative;
+    public float baseRange;
+    public float baseHP;
+    public float baseStrength;
+    public float baseDefense;
+
+    [Header("Custom Stats")]
+    [Header("Lucian")]
+    public float baseRage;
+    public float maxRage;
+    public float rageDamageMultiplier;
+
+    [Header("Thalia")]
+    public float baseFatigue;
+    public float maxFatigue;
 
     [Header("Animation Idle en attaque")]
     public string battleIdleAnimationName;
@@ -41,19 +47,18 @@ public class CharacterData : ScriptableObject, ITargetable
     public MusicalMoveSO[] musicalAttacks;
 
     [Header("Etat (runtime)")]
-    public int currentInitiative;
+    public float currentInitiative;
     public float currentRange;
-    public int currentHP;
-    public int currentMP;
-    public int currentStrength;
-    public int currentDefense;
-    public int currentPower;
-    public int currentStability;
-    public int currentVitality;
-    public int currentSagacity;
+    public float currentHP;
+    public float currentStrength;
+    public float currentDefense;
+    public float currentPower;
+    public float currentStability;
+    public float currentVitality;
+    public float currentSagacity;
     public bool isPlayerControlled;
-    public int currentRage;
-    public int currentFatigue;
+    public float currentRage;
+    public float currentFatigue;
     public float currentReflex;
     public float currentMobility;
 
@@ -70,7 +75,6 @@ public class CharacterData : ScriptableObject, ITargetable
         // Assure que, quand on clone, on part des bonnes valeurs de base
         currentInitiative = baseInitiative;
         currentHP = baseHP + baseVitality;
-        currentMP = baseMP;
         currentStrength = baseStrength;
         currentDefense = baseDefense;
         currentRage = baseRage;
@@ -80,6 +84,8 @@ public class CharacterData : ScriptableObject, ITargetable
         currentSagacity = baseSagacity;
         currentReflex = baseReflex;
         currentMobility = baseMobility;
+        currentRange = baseRange;
+        currentFatigue = baseFatigue;
     }
 
     public Transform GetTransform()

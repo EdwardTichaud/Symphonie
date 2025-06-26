@@ -5,5 +5,5 @@ using UnityEngine.Events;
 
 public interface IHealable
 {
-    public void Heal(int heal);
+    public void Heal(float heal);
 }

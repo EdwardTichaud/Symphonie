@@ -30,7 +30,7 @@ public class CustomBar : MonoBehaviour
         }
     }
 
-    public void SetMaxValue(int max)
+    public void SetMaxValue(float max)
     {
         if (slider != null)
         {
@@ -39,7 +39,7 @@ public class CustomBar : MonoBehaviour
         }
     }
 
-    public void SetValue(int current)
+    public void SetValue(float current)
     {
         if (slider != null)
         {

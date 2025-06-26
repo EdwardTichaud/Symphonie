@@ -19,9 +19,8 @@ public class MusicalMoveSO : ScriptableObject
     public string[] musicalMoveIntroAnimationNames;
     public string[] musicalMoveAnimationNames;
 
-   [Header("Coût et Dégâts")]
-    public int mpCost = 5;
-    public int power = 10;
+    [Header("Coût et Dégâts")]
+    public float power = 0;
 
     [Header("Ciblage")]
     public TargetType targetType = TargetType.SingleEnemy;
@@ -44,7 +43,7 @@ public class MusicalMoveSO : ScriptableObject
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {
-        int finalValue = effectValue;
+        float finalValue = effectValue;
         if (caster != null)
             finalValue += caster.currentPower;
 
@@ -55,6 +54,12 @@ public class MusicalMoveSO : ScriptableObject
         else if (effectType == MusicalEffectType.Heal && target.Data.characterType == CharacterType.SquadUnit)
         {
             target.Heal(finalValue);
+        }
+
+        if(caster.Data.gameplayType == GameplayType.Fatigue)
+        {
+            Debug.Log($"Applying fatigue effect: {finalValue} to {caster.name}");
+            caster.currentRage += finalValue;
         }
     }
 }

@@ -5,5 +5,5 @@ using UnityEngine.Events;
 
 public interface IDamageable
 {
-    public void TakeDamage(int damage);
+    public void TakeDamage(float damage);
 }

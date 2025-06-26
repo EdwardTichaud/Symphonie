@@ -506,7 +506,7 @@ public class NewBattleManager : MonoBehaviour
         var rage = caster.GetComponent<RageSystem>();
         if (rage != null && move.effectType == MusicalEffectType.Damage)
         {
-            int bonus = rage.CalculateBonusDamage();
+            float bonus = rage.CalculateBonusDamage();
             if (bonus > 0)
             {
                 target.TakeDamage(bonus);
