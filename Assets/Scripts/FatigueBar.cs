@@ -16,6 +16,19 @@ public class FatigueBar : MonoBehaviour
     public float shakeMagnitude = 2f;
 
     private Coroutine shakeRoutine;
+    private bool isShaking;
+    private RectTransform target;
+    private Vector3 originalPos;
+
+    private void Awake()
+    {
+        if (slider != null)
+        {
+            target = slider.GetComponent<RectTransform>();
+            if (target != null)
+                originalPos = target.localPosition;
+        }
+    }
 
     public void SetMaxValue(int max)
     {
@@ -33,34 +46,48 @@ public class FatigueBar : MonoBehaviour
             slider.value = value;
 
             if (value >= slider.maxValue)
-                TriggerShake();
+                StartShake();
+            else
+                StopShake();
         }
     }
 
-    private void TriggerShake()
+    private void StartShake()
     {
-        if (shakeRoutine != null)
-            StopCoroutine(shakeRoutine);
+        if (isShaking)
+            return;
 
-        shakeRoutine = StartCoroutine(ShakeCoroutine());
+        isShaking = true;
+        if (shakeRoutine == null)
+            shakeRoutine = StartCoroutine(ShakeCoroutine());
+    }
+
+    private void StopShake()
+    {
+        if (!isShaking)
+            return;
+
+        isShaking = false;
+        if (shakeRoutine != null)
+        {
+            StopCoroutine(shakeRoutine);
+            shakeRoutine = null;
+        }
+        if (target != null)
+            target.localPosition = originalPos;
     }
 
     private IEnumerator ShakeCoroutine()
     {
-        RectTransform target = slider.GetComponent<RectTransform>();
         if (target == null)
             yield break;
 
-        Vector3 originalPos = target.localPosition;
-        float elapsed = 0f;
-
-        while (elapsed < shakeDuration)
+        while (isShaking)
         {
             float x = Random.Range(-shakeMagnitude, shakeMagnitude);
             float y = Random.Range(-shakeMagnitude, shakeMagnitude);
             target.localPosition = originalPos + new Vector3(x, y, 0f);
-            elapsed += Time.unscaledDeltaTime;
-            yield return null;
+            yield return new WaitForSeconds(shakeDuration);
         }
 
         target.localPosition = originalPos;
