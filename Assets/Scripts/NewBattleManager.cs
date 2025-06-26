@@ -613,10 +613,10 @@ currentCharacterUnit.currentATB = 0f;
             if (unit.Data.uiPrefab != null)
             {
                 GameObject squadUnitCustomUI = Instantiate(unit.Data.uiPrefab);
-                squadUnitCustomUI.SetParent(slot.transform);
-                squadUnitCustomUI.localPosition = Vector3.zero;
-                squadUnitCustomUI.localRotation = Quaternion.identity;
-                squadUnitCustomUI.localScale = Vector3.one;
+                squadUnitCustomUI.transform.SetParent(slot.transform);
+                squadUnitCustomUI.transform.localPosition = Vector3.zero;
+                squadUnitCustomUI.transform.localRotation = Quaternion.identity;
+                squadUnitCustomUI.transform.localScale = Vector3.one;
             }
         }
     }
