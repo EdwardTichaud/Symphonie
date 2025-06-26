@@ -135,6 +135,20 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     void Update()
     {
         HandleDeath();
+        HandleBar();
+    }
+
+    void HandleBar()
+    {
+        if (fatigueBar != null)
+        {
+            fatigueBar.SetValue(currentFatigue);
+        }
+
+        if (rageBar != null)
+        {
+            rageBar.SetValue(currentRage);
+        }
     }
 
     /// <summary>
