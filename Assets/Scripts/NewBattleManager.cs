@@ -251,7 +251,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         // Seuls les trois premiers membres de la squad peuvent participer au combat
-        var squad = GameManager.Instance.gameData.squadCharacters;
+        var squad = SquadManager.Instance != null ? SquadManager.Instance.SquadCharacters : new List<CharacterData>();
         int maxSquadMembers = Mathf.Min(3, squad.Count);
         for (int i = 0; i < maxSquadMembers && i < playerSpawnPoints.Count; i++)
         {

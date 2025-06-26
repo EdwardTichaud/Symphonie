@@ -9,10 +9,6 @@ using System.Linq;
 [CreateAssetMenu(fileName = "GameData", menuName = "Symphonie/GameData")]
 public class GameData : ScriptableObject
 {
-    public List<CharacterData> allCharacters = new List<CharacterData>();
-    public List<CharacterData> squadCharacters = new List<CharacterData>();
-    public List<ItemData> allItems = new List<ItemData>();
-    public List<ItemData> inventoryItems = new List<ItemData>();
     public List<int> defeatedEnemies = new List<int>();
     public int squadLevel;
     public int squadXP;
@@ -22,7 +18,6 @@ public class GameData : ScriptableObject
         var save = new GameDataSave
         {
             defeatedEnemyIDs = new List<int>(defeatedEnemies),
-            inventoryItemIDs = inventoryItems.Select(i => i.itemID).ToList(), // Assure-toi que itemID est unique
             squadLevel = squadLevel,
             squadXP = squadXP
         };
@@ -52,25 +47,11 @@ public class GameData : ScriptableObject
         squadLevel = loaded.squadLevel;
         squadXP = loaded.squadXP;
 
-        inventoryItems.Clear();
-        foreach (string id in loaded.inventoryItemIDs)
-        {
-            var item = allItems.FirstOrDefault(i => i.itemID == id);
-            if (item != null)
-                inventoryItems.Add(item);
-            else
-                Debug.LogWarning($"[GameData] Item ID introuvable : {id}");
-        }
-
         Debug.Log($"[GameData] Données chargées depuis : {path}");
     }
 
     public void ResetGameData()
     {
-        allCharacters.Clear();
-        squadCharacters.Clear();
-        allItems.Clear();
-        inventoryItems.Clear();
         defeatedEnemies.Clear();
         squadLevel = 0;
         squadXP = 0;
@@ -82,7 +63,6 @@ public class GameData : ScriptableObject
 public class GameDataSave
 {
     public List<int> defeatedEnemyIDs = new();
-    public List<string> inventoryItemIDs = new();
     public int squadLevel;
     public int squadXP;
 }
@@ -130,13 +110,6 @@ public class GameManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
-
-        if (gameData != null && gameData.squadCharacters.Count == 0 && gameData.allCharacters.Count > 0)
-        {
-            var first = gameData.allCharacters[0];
-            gameData.squadCharacters.Add(first);
-            Debug.Log($"{first.characterName} ajouté par défaut à la squad.");
-        }
     }
 
     // A implémenter
@@ -163,14 +136,13 @@ public class GameManager : MonoBehaviour
 
     public void AddItemToInventory(ItemData item)
     {
-        if (!gameData.allItems.Contains(item))
+        if (InventoryManager.Instance == null)
         {
-            Debug.LogWarning($"Item {item.itemName} non reconnu dans allItems !");
+            Debug.LogWarning("[GameManager] InventoryManager non disponible.");
             return;
         }
 
-        gameData.inventoryItems.Add(item);
-        Debug.Log($"[Inventory] Ajouté à l'inventaire : {item.itemName}");
+        InventoryManager.Instance.AddItem(new List<ItemData> { item });
     }
 
     public void AddItemsToInventory(List<ItemData> items)
