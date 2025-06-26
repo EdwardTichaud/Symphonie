@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: Character_Thalia
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Thalia
-  portrait: {fileID: 0}
+  portrait: {fileID: 21300000, guid: 2db772b866712494da8b20c372bb9e92, type: 3}
   characterType: 0
-  characterWorldModel: {fileID: 1, guid: 9156fc4daf8647e1afa202ad3db84f16, type: 3}
-  characterBattleModel: {fileID: 1, guid: 79414cd7f4f145ed9d97b030cefc89e3, type: 3}
+  characterWorldModel: {fileID: 23947754543557898, guid: 131ee47cd8164b341a40af7b2461abb4, type: 3}
+  characterBattleModel: {fileID: 901204007372340786, guid: 48bc122d024634b4789a14a245e83484, type: 3}
+  battlefieldIndex: 0
   uiPrefab: {fileID: 100000, guid: 176f9b32a51d47e995509c485871b1b7, type: 3}
   baseInitiative: 1
   baseRange: 5
@@ -27,6 +28,15 @@ MonoBehaviour:
   baseMusicalGauge: 0
   baseFatigue: 0
   maxFatigue: 3
+  baseRage: 0
+  maxRage: 0
+  rageDamageMultiplier: 0.1
+  baseReflex: 0
+  baseMobility: 0
+  baseVitality: 0
+  basePower: 0
+  baseStability: 0
+  baseSagacity: 0
   battleIdleAnimationName: Idle
   musicalAttacks:
   - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
@@ -36,7 +46,15 @@ MonoBehaviour:
   currentMP: 40
   currentStrength: 1
   currentDefense: 1
+  currentPower: 0
+  currentStability: 0
+  currentVitality: 0
+  currentSagacity: 0
   isPlayerControlled: 1
+  currentRage: 0
+  currentFatigue: 0
+  currentReflex: 0
+  currentMobility: 0
   hitSound: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
