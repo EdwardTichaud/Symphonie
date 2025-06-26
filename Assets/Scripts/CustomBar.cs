@@ -4,9 +4,9 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// Composant UI pour afficher la barre de rage d'une unité.
+/// Composant UI pour afficher la barre personalisée d'une unité.
 /// </summary>
-public class RageBar : MonoBehaviour
+public class CustomBar : MonoBehaviour
 {
     [Header("Référence Slider")]
     public Slider slider;

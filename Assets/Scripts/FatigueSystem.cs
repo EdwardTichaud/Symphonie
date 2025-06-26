@@ -21,8 +21,8 @@ public class FatigueSystem : MonoBehaviour
     {
         if (unit == null) return;
         unit.currentFatigue++;
-        if (unit.fatigueBar != null)
-            unit.fatigueBar.SetValue(unit.currentFatigue);
+        if (unit.customBar != null)
+            unit.customBar.SetValue(unit.currentFatigue);
         if (unit.currentFatigue >= unit.Data.maxFatigue && routine == null)
         {
             routine = StartCoroutine(SleepRoutine());
@@ -34,8 +34,8 @@ public class FatigueSystem : MonoBehaviour
         isAsleep = true;
         yield return new WaitForSeconds(asleepDuration);
         unit.currentFatigue = unit.Data.baseFatigue;
-        if (unit.fatigueBar != null)
-            unit.fatigueBar.SetValue(unit.currentFatigue);
+        if (unit.customBar != null)
+            unit.customBar.SetValue(unit.currentFatigue);
         isAsleep = false;
         routine = null;
     }

@@ -14,8 +14,8 @@ public class RageSystem : MonoBehaviour
     {
         if (unit == null || unit.Data == null) return;
         unit.currentRage = Mathf.Clamp(unit.currentRage + damage, unit.Data.baseRage, unit.Data.maxRage);
-        if (unit.rageBar != null)
-            unit.rageBar.SetValue(unit.currentRage);
+        if (unit.customBar != null)
+            unit.customBar.SetValue(unit.currentRage);
     }
 
     public int CalculateBonusDamage()

@@ -13,9 +13,6 @@ public class CharacterData : ScriptableObject, ITargetable
     [Header("Battlefield")]
     public int battlefieldIndex = 0; // Indice du battlefield dans la zone
 
-    [Header("UI")]
-    public GameObject uiPrefab;
-
     [Header("Stats")]
     public int baseInitiative;
     public float baseRange;

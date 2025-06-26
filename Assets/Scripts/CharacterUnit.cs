@@ -10,8 +10,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     [Header("UI Components")]
     public HPBar hpBar;
     public MPBar mpBar;
-    public FatigueBar fatigueBar;
-    public RageBar rageBar;
+    public CustomBar customBar;
 
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
@@ -100,32 +99,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             mpBar.SetMaxValue(Data.baseMP);
             mpBar.SetValue(Data.currentMP);
         }
-        if (fatigueBar != null)
+        if (customBar != null)
         {
-            fatigueBar.SetMaxValue(Data.maxFatigue);
-            fatigueBar.SetValue(currentFatigue);
-        }
-
-        if (rageBar != null)
-        {
-            rageBar.SetMaxValue(Data.maxRage);
-            rageBar.SetValue(currentRage);
-        }
-
-        // Instanciation de l’UI personnalisée
-        if (Data.uiPrefab != null && Data.characterType == CharacterType.SquadUnit)
-        {
-            GameObject uiInstance = Instantiate(Data.uiPrefab, transform);
-            uiInstance.name = "SquadUnit_UI";
-
-            // Tu peux ajuster la position par défaut si nécessaire :
-            uiInstance.transform.localPosition = Vector3.zero;
-            uiInstance.transform.localRotation = Quaternion.identity;
-            uiInstance.transform.localScale = Vector3.one;
-        }
-        else if(Data.characterType == CharacterType.EnemyUnit)
-        {
-            return; // Pas d'UI pour les ennemis
+            customBar.SetMaxValue(Data.maxFatigue);
+            customBar.SetValue(currentFatigue);
         }
     }
 
@@ -135,19 +112,14 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     void Update()
     {
         HandleDeath();
-        HandleBar();
+        HandleCustomBarValue();
     }
 
-    void HandleBar()
+    void HandleCustomBarValue()
     {
-        if (fatigueBar != null)
+        if (customBar != null)
         {
-            fatigueBar.SetValue(currentFatigue);
-        }
-
-        if (rageBar != null)
-        {
-            rageBar.SetValue(currentRage);
+            customBar.SetValue(currentFatigue);
         }
     }
 
