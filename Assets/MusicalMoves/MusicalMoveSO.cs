@@ -21,6 +21,7 @@ public class MusicalMoveSO : ScriptableObject
 
     [Header("Coût et Dégâts")]
     public float power = 0;
+    public float fatigueCost = 1;
 
     [Header("Ciblage")]
     public TargetType targetType = TargetType.SingleEnemy;
