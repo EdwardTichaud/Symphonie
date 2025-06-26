@@ -7,6 +7,7 @@ public class CharacterData : ScriptableObject, ITargetable
     public string characterName;
     public Sprite portrait;
     public CharacterType characterType;
+    public GameplayType gameplayType = GameplayType.Fatigue;
     public GameObject characterWorldModel;
     public GameObject characterBattleModel;
 
@@ -88,4 +89,5 @@ public class CharacterData : ScriptableObject, ITargetable
 }
 
 public enum CharacterType { SquadUnit, EnemyUnit }
+public enum GameplayType { Rage, Fatigue }
 
