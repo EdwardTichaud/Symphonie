@@ -242,9 +242,11 @@ public class BattleTransitionManager : MonoBehaviour
 
         while (Time.timeScale - to > epsilon)
         {
-            Time.timeScale -= Time.unscaledDeltaTime * speed;
-            if (Time.timeScale <= to + epsilon)
-                Time.timeScale = to;
+            float newScale = Time.timeScale - Time.unscaledDeltaTime * speed;
+            if (newScale <= to + epsilon)
+                newScale = to;
+            // Empêche toute valeur négative due au calcul
+            Time.timeScale = Mathf.Max(0f, newScale);
 
             yield return new WaitForEndOfFrame();
         }
