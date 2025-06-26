@@ -6,7 +6,15 @@ public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager Instance { get; private set; }
 
-    [Header("Tous les items du jeu (à assigner dans l’inspecteur ou à charger dynamiquement)")]
+        if (GameManager.Instance != null && GameManager.Instance.gameData != null)
+        {
+            allItems = GameManager.Instance.gameData.allItems;
+            inventoryItems = GameManager.Instance.gameData.inventoryItems;
+        }
+
+            GameManager.Instance.gameData.inventoryItems.Add(item);
+        GameManager.Instance.gameData.inventoryItems.Remove(item);
+    [Header("Tous les items du jeu (Ã  assigner dans lâ€™inspecteur ou Ã  charger dynamiquement)")]
     [SerializeField] private List<ItemData> allItems = new();
 
     [Header("Items actuellement en inventaire")]
@@ -28,23 +36,23 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Renvoie la liste complète des items disponibles dans le jeu.
+    /// Renvoie la liste complÃ¨te des items disponibles dans le jeu.
     /// </summary>
     public IReadOnlyList<ItemData> GetAllItems() => allItems;
 
     /// <summary>
-    /// Renvoie la liste des items que le joueur possède.
+    /// Renvoie la liste des items que le joueur possÃ¨de.
     /// </summary>
     public IReadOnlyList<ItemData> GetInventoryItems() => inventoryItems;
 
     /// <summary>
-    /// Renvoie la liste des items possédés et utilisables en combat.
+    /// Renvoie la liste des items possÃ©dÃ©s et utilisables en combat.
     /// </summary>
     public List<ItemData> GetUsableItems()
         => inventoryItems.Where(item => item.isUsableInBattle).ToList();
 
     /// <summary>
-    /// Ajoute un item à l'inventaire (uniquement si c'est un item valide du jeu).
+    /// Ajoute un item Ã  l'inventaire (uniquement si c'est un item valide du jeu).
     /// </summary>
     public void AddItem(List<ItemData> items)
     {
@@ -62,13 +70,13 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Utilise un item (et l'enlève de l'inventaire). La cible doit être définie à l'avance.
+    /// Utilise un item (et l'enlÃ¨ve de l'inventaire). La cible doit Ãªtre dÃ©finie Ã  l'avance.
     /// </summary>
     public void UseItem(ItemData item, CharacterUnit target)
     {
         if (!inventoryItems.Contains(item))
         {
-            Debug.LogWarning($"Impossible d'utiliser {item.itemName} : non trouvé en inventaire.");
+            Debug.LogWarning($"Impossible d'utiliser {item.itemName} : non trouvÃ© en inventaire.");
             return;
         }
 
@@ -82,7 +90,7 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public void PreviewItemEffect(ItemData item, CharacterUnit target)
     {
-        Debug.Log($"[Inventory] Aperçu de l'effet de {item.itemName} sur {target.Data.characterName}");
+        Debug.Log($"[Inventory] AperÃ§u de l'effet de {item.itemName} sur {target.Data.characterName}");
         item.ApplyEffect(target);
     }
 }
