@@ -609,14 +609,14 @@ currentCharacterUnit.currentATB = 0f;
             ui.Initialize(unit);
             timelineUIObjects.Add(ui);
 
-            // Attache l'UI personnalisée de l'unité à sa timeline
-            Transform customUI = unit.transform.Find("SquadUnit_UI");
-            if (customUI != null)
+            // Instancie et attache l'UI personnalisée de l'unité à sa timeline
+            if (unit.Data.uiPrefab != null)
             {
-                customUI.SetParent(slot.transform, worldPositionStays: false);
-                customUI.localPosition = Vector3.zero;
-                customUI.localRotation = Quaternion.identity;
-                customUI.localScale = Vector3.one;
+                GameObject squadUnitCustomUI = Instantiate(unit.Data.uiPrefab);
+                squadUnitCustomUI.SetParent(slot.transform);
+                squadUnitCustomUI.localPosition = Vector3.zero;
+                squadUnitCustomUI.localRotation = Quaternion.identity;
+                squadUnitCustomUI.localScale = Vector3.one;
             }
         }
     }
