@@ -10,28 +10,28 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8caee409dd862bf429bf43fff5538c9f, type: 3}
-  m_Name: MusicalMove_Rhapsodie
+  m_Name: MusicalMove_Empty
   m_EditorClassIdentifier: 
-  moveName: Rhapsodie
-  moveType: 1
-  moveIcon: {fileID: 21300000, guid: f507f03eb80bcbf49bb458bd6a54bd9a, type: 3}
+  moveName: Empty
+  moveType: 0
+  moveIcon: {fileID: 21300000, guid: f9619563aba8b7542abf0aabdc638afe, type: 3}
   description: 
-  musicalMoveTargetingAnimationName: Rhapsodie_Targetting
-  musicalMoveRunAnimationName: Rhapsodie_Run
+  musicalMoveTargetingAnimationName: Sforzando_Targeting
+  musicalMoveRunAnimationName: Sforzando_Run
   maxRunDuration: 0.5
   stayFaceToTarget: 0
   musicalMoveIntroAnimationNames: []
   musicalMoveAnimationNames:
-  - Rhapsodie_Move
+  - Sforzando_Move
   power: 10
   fatigueCost: 1
   targetType: 1
   defaultTargetType: 1
   effectType: 0
-  effectValue: 10
+  effectValue: 20
   moveSpeed: 20
-  castDistance: 1.5
-  stayInPlace: 0
+  castDistance: 2
+  stayInPlace: 1
   relativePosition: 0
   introVFXPrefab: {fileID: 0}
   hitVFXPrefab: {fileID: 0}

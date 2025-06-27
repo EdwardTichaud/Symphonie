@@ -8,7 +8,7 @@ public class MusicalMoveSO : ScriptableObject
 {
     [Header("Identité")]
     public string moveName;
-    public enum MoveType { Attack, Parry, Dodge }
+    public enum MoveType { Empty, Attack, Parry, Dodge}
     public MoveType moveType;
     public Sprite moveIcon;
     [TextArea] public string description;

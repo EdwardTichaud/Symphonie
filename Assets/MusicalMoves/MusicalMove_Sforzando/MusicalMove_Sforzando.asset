@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MusicalMove_Sforzando
   m_EditorClassIdentifier: 
   moveName: Sforzando
-  moveType: 0
+  moveType: 1
   moveIcon: {fileID: 21300000, guid: 33cd3b491748050418115b4d3a0b6534, type: 3}
   description: 
   musicalMoveTargetingAnimationName: Sforzando_Targeting
@@ -23,8 +23,8 @@ MonoBehaviour:
   musicalMoveIntroAnimationNames: []
   musicalMoveAnimationNames:
   - Sforzando_Move
-  mpCost: 5
   power: 10
+  fatigueCost: 1
   targetType: 1
   defaultTargetType: 1
   effectType: 0
@@ -32,5 +32,6 @@ MonoBehaviour:
   moveSpeed: 20
   castDistance: 2
   stayInPlace: 1
+  relativePosition: 0
   introVFXPrefab: {fileID: 0}
   hitVFXPrefab: {fileID: 0}
