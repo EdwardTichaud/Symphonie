@@ -9,7 +9,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     [Header("UI Components")]
     public HPBar hpBar;
-    public MPBar mpBar;
     public CustomBar customBar;
 
     private SpriteRenderer spriteRenderer;
