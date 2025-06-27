@@ -40,5 +40,7 @@ public class ZoneManager : MonoBehaviour
         Debug.Log($"[ZoneManager] Nouvelle zone courante : {newZone.zoneName}");
 
         ZoneNameDisplay.Instance.ShowCurrentZoneInfo();
+
+        AudioManager.Instance.PlayExplorationMusic(newZone.zoneMusic);
     }
 }
