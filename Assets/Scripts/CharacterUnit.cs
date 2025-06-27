@@ -56,7 +56,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentStability = Data.baseStability;
         currentVitality = Data.baseVitality;
         currentSagacity = Data.baseSagacity;
-        currentHP = Data.baseHP + currentVitality;
+        // Les HP doivent rester persistants entre les combats
+        if (Data.currentHP <= 0)
+            Data.currentHP = Data.baseHP + currentVitality;
+        currentHP = Data.currentHP;
         currentRage = Data.baseRage;
         currentInitiative = Data.baseInitiative;
         currentStrength = Data.baseStrength;
