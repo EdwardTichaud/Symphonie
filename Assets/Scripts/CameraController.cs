@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 
-public enum CameraState
+public enum WorldCameraState
 {
     Forced,
     ResearchClosestCamPoint,
@@ -32,7 +32,7 @@ public class CameraController : MonoBehaviour
     [Range(0f, 1f)] public float pathPosition;
     private bool isFollowingPath;
     public bool IsFollowingPath => isFollowingPath;
-    private CameraPath currentCameraPath;
+    public CameraPath currentCameraPath;
     [SerializeField] private float followLerpSpeed = 5f;
     [SerializeField] private float rotateLerpSpeed = 5f;
     private float pathElapsedTime = 0f;
@@ -42,8 +42,8 @@ public class CameraController : MonoBehaviour
     private Transform forcedLookTarget;
 
     [Header("Managed Cameras")]
-    public CameraState currentCameraState = CameraState.ResearchClosestCamPoint; // ✅ Par défaut en recherche de point
     public List<Camera> managedCameras = new();
+    public WorldCameraState currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint; // ✅ Par défaut en recherche de point    
 
     private Camera activeCamera;
 
@@ -117,7 +117,7 @@ public class CameraController : MonoBehaviour
         if (Camera.main != null && !Camera.main.enabled)
             return;
 
-        if (currentCameraState == CameraState.OrbitAround && orbitTarget != null && activeCamera != null)
+        if (currentWorldCameraState == WorldCameraState.OrbitAround && orbitTarget != null && activeCamera != null)
         {
             UpdateOrbit();
             return;
@@ -297,7 +297,7 @@ public class CameraController : MonoBehaviour
             activeCamera.transform.LookAt(orbitTarget);
         }
 
-        currentCameraState = CameraState.OrbitAround; // ✅ Maintenant géré par l'état
+        currentWorldCameraState = WorldCameraState.OrbitAround; // ✅ Maintenant géré par l'état
         Debug.Log("[CameraController] OrbitAround démarré !");
     }
 
@@ -307,9 +307,9 @@ public class CameraController : MonoBehaviour
     public void StopOrbit()
     {
         orbitTarget = null;
-        if (currentCameraState == CameraState.OrbitAround)
+        if (currentWorldCameraState == WorldCameraState.OrbitAround)
         {
-            currentCameraState = CameraState.ResearchClosestCamPoint;
+            currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint;
         }
         Debug.Log("[CameraController] OrbitAround stoppé.");
     }
@@ -415,7 +415,7 @@ public class CameraController : MonoBehaviour
         // Plus de SmoothMoveAndLook pour Forced : on va suivre direct
         if (currentTransition != null) StopCoroutine(currentTransition);
 
-        currentCameraState = CameraState.Forced;
+        currentWorldCameraState = WorldCameraState.Forced;
         cameraHandlerEnabled = false;
 
         Debug.Log("[CameraController] ForcedCam ACTIVATED");
@@ -426,7 +426,7 @@ public class CameraController : MonoBehaviour
     /// </summary>
     public void ReleaseCam()
     {
-        currentCameraState = CameraState.ResearchClosestCamPoint;
+        currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint;
         cameraHandlerEnabled = true;
         Debug.Log("[CameraController] ForcedCam DISABLED");
     }
@@ -439,19 +439,19 @@ public class CameraController : MonoBehaviour
     /// </summary>
     void HandleCameraBehaviour()
     {
-        switch (currentCameraState)
+        switch (currentWorldCameraState)
         {
-            case CameraState.Forced:
+            case WorldCameraState.Forced:
                 UpdateForcedCameraPoint();
                 FollowForcedCameraPoint();  // 🔑 Suivi direct, fluide
                 break;
 
-            case CameraState.ResearchClosestCamPoint:
+            case WorldCameraState.ResearchClosestCamPoint:
                 ApplyClosestCamera();
                 break;
 
             default:
-                Debug.LogWarning($"[CameraController] Unhandled CameraState: {currentCameraState}");
+                Debug.LogWarning($"[CameraController] Unhandled WorldCameraState: {currentWorldCameraState}");
                 break;
         }
     }

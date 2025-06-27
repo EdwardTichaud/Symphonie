@@ -1411,7 +1411,7 @@ currentCharacterUnit.currentATB = 0f;
         }
 
         CameraController cc = CameraController.Instance;
-        if (cc != null && (cc.IsFollowingPath || cc.currentCameraState != CameraState.ResearchClosestCamPoint))
+        if (cc != null && (cc.IsFollowingPath || cc.currentWorldCameraState != WorldCameraState.ResearchClosestCamPoint))
         {
             return; // Laisse la main au CameraController pour éviter les conflits
         }

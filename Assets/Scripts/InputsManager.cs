@@ -297,7 +297,7 @@ public class InputsManager : MonoBehaviour
     private void OnForceCamInput(InputAction.CallbackContext ctx)
     {
         CameraController cc = CameraController.Instance;
-        if (cc.currentCameraState != CameraState.Forced)
+        if (cc.currentWorldCameraState != WorldCameraState.Forced)
         {
             cc.ForceCam();
             controller.movementMode = CharacterController3D.MovementMode.TPSOverShoulder;
