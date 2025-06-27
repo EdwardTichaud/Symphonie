@@ -32,6 +32,9 @@ public class CameraController : MonoBehaviour
     private float pathElapsedTime = 0f;
     private float pathTotalDuration = 0f;
 
+    private bool forceLookAt;
+    private Transform forcedLookTarget;
+
     [Header("Managed Cameras")]
     public CameraState currentCameraState = CameraState.ResearchClosestCamPoint; // ✅ Par défaut en recherche de point
     public List<Camera> managedCameras = new();
@@ -159,6 +162,11 @@ public class CameraController : MonoBehaviour
         Quaternion rot;
         currentCameraPath.EvaluatePath(pathPosition, out pos, out rot);
 
+        if (forceLookAt && forcedLookTarget != null)
+        {
+            rot = Quaternion.LookRotation(forcedLookTarget.position - pos);
+        }
+
         activeCamera.transform.position = Vector3.Lerp(activeCamera.transform.position, pos, followLerpSpeed * Time.deltaTime);
         activeCamera.transform.rotation = Quaternion.Slerp(activeCamera.transform.rotation, rot, rotateLerpSpeed * Time.deltaTime);
 
@@ -203,6 +211,23 @@ public class CameraController : MonoBehaviour
             activeCamera.transform.position = pos;
             activeCamera.transform.rotation = rot;
         }
+
+        forceLookAt = false;
+        forcedLookTarget = null;
+    }
+
+    public void StartPathFollow(CameraPath path, string cameraTag, Transform pathPositionTransform, bool forcelookAtTarget, Transform targetToLook, bool alignImmediately = false)
+    {
+        float startPos = 0f;
+        if (pathPositionTransform != null)
+        {
+            startPos = path.GetClosestPathPosition(pathPositionTransform.position);
+        }
+
+        StartPathFollow(path, cameraTag, startPos, alignImmediately);
+
+        forceLookAt = forcelookAtTarget;
+        forcedLookTarget = targetToLook;
     }
 
     public void StopPathFollow()
@@ -215,6 +240,8 @@ public class CameraController : MonoBehaviour
 
         isFollowingPath = false;
         activeCamera = null;
+        forceLookAt = false;
+        forcedLookTarget = null;
     }
 
     #endregion

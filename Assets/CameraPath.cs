@@ -260,6 +260,32 @@ public bool triggered;
         return total;
     }
 
+    /// <summary>
+    /// Retourne la position normalisée sur le chemin la plus proche du point donné.
+    /// </summary>
+    public float GetClosestPathPosition(Vector3 worldPos, int samples = 20)
+    {
+        if (points.Count < 2)
+            return 0f;
+
+        float bestT = 0f;
+        float bestDist = float.MaxValue;
+
+        for (int i = 0; i <= samples; i++)
+        {
+            float t = (float)i / samples;
+            Vector3 p = EvaluatePosition(t);
+            float dist = Vector3.Distance(worldPos, p);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                bestT = t;
+            }
+        }
+
+        return bestT;
+    }
+
     #region Lecture de la séquence
     /// <summary>
     /// Lance la lecture de la trajectoire par la caméra associée.
