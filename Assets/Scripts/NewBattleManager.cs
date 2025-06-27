@@ -1049,11 +1049,11 @@ public class NewBattleManager : MonoBehaviour
             var move = skillChoices[i];
             UpdateButton(currentSkillsMenuSlots[i], move.moveName, move.moveIcon);
         }
-        // Désactive les slots restants
+
+        // Indique les emplacements vides
         for (int j = skillChoices.Count; j < currentSkillsMenuSlots.Count; j++)
         {
-            if (currentSkillsMenuSlots[j].childCount > 0)
-                currentSkillsMenuSlots[j].GetChild(0).gameObject.SetActive(false);
+            UpdateButton(currentSkillsMenuSlots[j], "Indisponible", null);
         }
     }
 
@@ -1071,6 +1071,12 @@ public class NewBattleManager : MonoBehaviour
         {
             var item = itemChoices[i];
             UpdateButton(currentItemsMenuSlots[i], item.itemName, item.itemIcon);
+        }
+
+        // Indique les emplacements vides
+        for (int j = itemChoices.Count; j < currentItemsMenuSlots.Count; j++)
+        {
+            UpdateButton(currentItemsMenuSlots[j], "Indisponible", null);
         }
     }
 
