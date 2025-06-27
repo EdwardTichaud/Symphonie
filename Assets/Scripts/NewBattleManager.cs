@@ -77,6 +77,7 @@ public class NewBattleManager : MonoBehaviour
 
     [Header("Début de combat")]
     [SerializeField] private CameraPath firstStrikeCameraPath;
+    [SerializeField] private GameObject firstStrikeEffect;
 
     [Header("Fin de combat")]
     public GameObject victoryScreen;
@@ -419,6 +420,12 @@ public class NewBattleManager : MonoBehaviour
     private IEnumerator FirstStrikeSequenceRoutine(CharacterUnit unit)
     {
         ChangeBattleState(BattleState.FirstStrikeSequence);
+        if (firstStrikeEffect == null)
+            firstStrikeEffect = GameObject.Find("FirstStrikeEffect");
+        if (firstStrikeEffect != null)
+            firstStrikeEffect.SetActive(true);
+        else
+            Debug.LogWarning("[BattleTurnManager] FirstStrikeEffect introuvable.");
         Transform target = FindChildRecursive(unit.transform, "spine_03");
         Transform position = FindChildRecursive(unit.transform, "spine_03");
         CameraController.Instance.StartPathFollow(
