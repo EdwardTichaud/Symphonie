@@ -478,6 +478,11 @@ public class NewBattleManager : MonoBehaviour
 
         ChangeCurrentCharacterUnit(characterUnit);
 
+        // S'assure que la BattleCamera peut se déplacer librement
+        CameraController cc = CameraController.Instance;
+        if (cc != null && cc.currentWorldCameraState != WorldCameraState.ResearchClosestCamPoint)
+            cc.ReleaseCam();
+
         if (characterUnit.Data.characterType == CharacterType.SquadUnit)
             ChangeBattleState(BattleState.SquadUnit_MainMenu);
         else if (characterUnit.Data.characterType == CharacterType.EnemyUnit)
