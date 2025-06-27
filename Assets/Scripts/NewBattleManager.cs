@@ -397,10 +397,14 @@ public class NewBattleManager : MonoBehaviour
             .OrderByDescending(u => u.currentInitiative)
             .FirstOrDefault();
         if (firstPlayer != null && firstStrikeCameraPath != null)
-            PlayFirstStrikeSequence(firstPlayer);
-
-        // 7) Lancement de la boucle de tours
-        StartCoroutine(TurnLoop());
+        {
+            StartCoroutine(FirstStrikeSequenceRoutine(firstPlayer));
+        }
+        else
+        {
+            // Pas de séquence d'intro, on démarre directement la boucle des tours
+            StartCoroutine(TurnLoop());
+        }
     }
 
     private IEnumerator TurnLoop()
@@ -1303,8 +1307,12 @@ currentCharacterUnit.currentATB = 0f;
                 //isFollowingCurrentTarget = true;
                 //desiredTransform = GameObject.Find("BattleScene_Camera_BattleIntro").transform;
                 break;
+            case BattleState.FirstStrikeSequence:
+                isFollowingCurrentTarget = false;
+                desiredTransform = null;
+                break;
             case BattleState.SquadUnit_MainMenu:
-                isFollowingCurrentTarget = false;                
+                isFollowingCurrentTarget = false;
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_MainMenu");
                 OrientTransformTowardEnemyGroupSmoothXY(desiredTransform, 180f);
                 if (desiredTransform == null)
@@ -1487,6 +1495,14 @@ currentCharacterUnit.currentATB = 0f;
         firstStrikeCameraPath.IsPlaying = true;
         firstStrikeCameraPath.triggered = true;
         controller.StartPathFollow(firstStrikeCameraPath, firstStrikeCameraPath.cameraTag, player.transform, true, player.transform, true);
+    }
+
+    private IEnumerator FirstStrikeSequenceRoutine(CharacterUnit player)
+    {
+        ChangeBattleState(BattleState.FirstStrikeSequence);
+        PlayFirstStrikeSequence(player);
+        yield return new WaitUntil(() => !CameraController.IsAnyPathPlaying);
+        StartCoroutine(TurnLoop());
     }
 
     public void ResetBattleInfos()
