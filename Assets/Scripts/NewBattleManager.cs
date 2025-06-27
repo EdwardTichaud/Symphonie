@@ -1304,8 +1304,8 @@ currentCharacterUnit.currentATB = 0f;
                 {
                     cP.PlaySequence();
                 }
-                //isFollowingCurrentTarget = true;
-                //desiredTransform = GameObject.Find("BattleScene_Camera_BattleIntro").transform;
+                isFollowingCurrentTarget = false;
+                desiredTransform = null;
                 break;
             case BattleState.FirstStrikeSequence:
                 isFollowingCurrentTarget = false;
