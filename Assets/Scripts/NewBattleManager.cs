@@ -111,7 +111,6 @@ public class NewBattleManager : MonoBehaviour
 
     [Header("FirstStrike")]
     [SerializeField] private CameraPath firstStrikeCameraPath;
-    private Transform firstStrikeTransform;
 
     // Curseur
     private int currentTargetIndex = 0;
@@ -932,7 +931,7 @@ currentCharacterUnit.currentATB = 0f;
         else if (characterUnit.Data.characterType == CharacterType.EnemyUnit)
             ChangeBattleState(BattleState.EnemyUnit_Reflexion);
 
-        Debug.Log("Initialisation du menu de combat avec l'unité : " + characterUnit.Data.characterName);
+            Debug.Log("Initialisation du menu de combat avec l'unité : " + characterUnit.Data.characterName);
 
         if (currentCharacterUnit != null)
             ToggleMenuContainers(false, false, false);
@@ -1468,8 +1467,7 @@ currentCharacterUnit.currentATB = 0f;
             return;
 
         // Positionne le GameObject du CameraPath sur l'unité qui initie le combat
-        firstStrikeCameraPath.transform.position = player.transform.position;
-        firstStrikeTransform = player.transform;
+        firstStrikeCameraPath.transform.position = player.transform.position + new Vector3(0,1.5f,0);
 
         foreach (var point in firstStrikeCameraPath.points)
         {
@@ -1506,6 +1504,7 @@ currentCharacterUnit.currentATB = 0f;
         ChangeBattleState(BattleState.FirstStrikeSequence);
         PlayFirstStrikeSequence(player);
         yield return new WaitUntil(() => !firstStrikeCameraPath.IsPlaying);
+        ChangeBattleState(BattleState.Initialization);
         StartCoroutine(TurnLoop());
     }
 

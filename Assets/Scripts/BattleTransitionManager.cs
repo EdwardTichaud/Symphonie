@@ -158,7 +158,7 @@ public class BattleTransitionManager : MonoBehaviour
         {
             Debug.Log("[BattleTransitionManager] Attente de la fin du CameraPath Intro Combat...");
             yield return null;
-        }       
+        }
 
         NewBattleManager.Instance.LaunchBattle();
     }
