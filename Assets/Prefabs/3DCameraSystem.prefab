@@ -1,37 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &716168539930023393
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1451224961538177924}
-  m_Layer: 0
-  m_Name: MainCam
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1451224961538177924
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 716168539930023393}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 6564914095726041747}
-  m_Father: {fileID: 8880738752486701099}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &7196895587682077381
 GameObject:
   m_ObjectHideFlags: 0
@@ -62,8 +30,8 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1451224961538177924}
-  - {fileID: 410173247621364276}
+  - {fileID: 6564914095726041747}
+  - {fileID: 1003267776368270276}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &8018669232544184903
@@ -78,19 +46,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2c5b96ad58d96c41ba3af11e5d1c8bb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  orbitTarget: {fileID: 0}
-  orbitDistance: 5
-  orbitSpeed: 30
-  orbitX: 0
-  orbitY: 1
-  orbitZ: 0
-  pathPosition: 0
-  followLerpSpeed: 5
-  rotateLerpSpeed: 5
-  currentCameraState: 1
   managedCameras:
   - {fileID: 5679955348845280201}
   - {fileID: 7190180004927539597}
+  currentWorldCameraState: 1
+  pathPosition: 0
+  isFollowingPath: 0
+  currentCameraPath: {fileID: 0}
+  followLerpSpeed: 5
+  rotateLerpSpeed: 5
   cameraHandlerEnabled: 1
   cameraPositions:
   - {fileID: 0}
@@ -109,45 +73,19 @@ MonoBehaviour:
   forcedCamMaxDistance: 10
   forcedCamMinPitch: -20
   forcedCamMaxPitch: 60
---- !u!1 &7851524876657217561
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 410173247621364276}
-  m_Layer: 0
-  m_Name: BattleCamera
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &410173247621364276
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7851524876657217561}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1003267776368270276}
-  m_Father: {fileID: 8880738752486701099}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  orbitTarget: {fileID: 0}
+  orbitDistance: 5
+  orbitSpeed: 30
+  orbitX: 0
+  orbitY: 1
+  orbitZ: 0
 --- !u!1001 &3148169675375206620
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1451224961538177924}
+    m_TransformParent: {fileID: 8880738752486701099}
     m_Modifications:
     - target: {fileID: 5263326846403154470, guid: 8655ab6c68faefd47a60878c5fb4b708, type: 3}
       propertyPath: m_Name
@@ -175,15 +113,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8118803985585011279, guid: 8655ab6c68faefd47a60878c5fb4b708, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 8118803985585011279, guid: 8655ab6c68faefd47a60878c5fb4b708, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 8118803985585011279, guid: 8655ab6c68faefd47a60878c5fb4b708, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 8118803985585011279, guid: 8655ab6c68faefd47a60878c5fb4b708, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -218,7 +156,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 410173247621364276}
+    m_TransformParent: {fileID: 8880738752486701099}
     m_Modifications:
     - target: {fileID: 1317646707542602812, guid: 5773d17d74a25fa4abe5b47a54add6d7, type: 3}
       propertyPath: m_IsActive

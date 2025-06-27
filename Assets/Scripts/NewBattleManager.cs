@@ -418,9 +418,10 @@ public class NewBattleManager : MonoBehaviour
     {
         ChangeBattleState(BattleState.FirstStrikeSequence);
         Transform target = FindChildRecursive(unit.transform, "spine_03");
+        Transform position = FindChildRecursive(unit.transform, "spine_03");
         CameraController.Instance.StartPathFollow(
             firstStrikeCameraPath,
-            unit.transform,
+            position,
             forceLook: true,
             targetToLook: target,
             alignImmediately: false
