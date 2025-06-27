@@ -41,6 +41,12 @@ public class MusicalMoveSO : ScriptableObject
     [Header("VFX")]
     public GameObject introVFXPrefab;
     public GameObject hitVFXPrefab;
+    [Tooltip("Utiliser la téléportation à la place du déplacement classique")]
+    public bool useTeleportation = false;
+    [Tooltip("VFX joué au point de départ de la téléportation")]
+    public GameObject teleportStartVFXPrefab;
+    [Tooltip("VFX joué au point d'arrivée de la téléportation")]
+    public GameObject teleportEndVFXPrefab;
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {
