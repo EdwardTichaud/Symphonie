@@ -15,27 +15,43 @@ MonoBehaviour:
   characterName: Perfecteur
   portrait: {fileID: 21300000, guid: eb6881f2886581344a4925efc11c19ee, type: 3}
   characterType: 1
+  gameplayType: 0
   characterWorldModel: {fileID: 785885411600899343, guid: 12a95245f8913904dbf705866d13f395, type: 3}
   characterBattleModel: {fileID: 901204007372340786, guid: 987fb89310be6ff409301d43e2849b07, type: 3}
-  battlefieldIndex: 1
-  uiPrefab: {fileID: 0}
+  battlefieldIndex: 0
+  baseReflex: 0
+  baseMobility: 0
+  baseVitality: 0
+  basePower: 0
+  baseStability: 0
+  baseSagacity: 0
   baseInitiative: 1
   baseRange: 2
   baseHP: 20
-  baseMP: 100
   baseStrength: 1
   baseDefense: 1
-  baseMusicalGauge: 0
+  baseRage: 0
+  maxRage: 0
+  rageDamageMultiplier: 0
+  baseFatigue: 0
+  maxFatigue: 0
   battleIdleAnimationName: Idle
   musicalAttacks:
   - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
   currentInitiative: 1
-  currentRange: 0
+  currentRange: 2
   currentHP: 20
-  currentMP: 100
   currentStrength: 1
   currentDefense: 1
+  currentPower: 0
+  currentStability: 0
+  currentVitality: 0
+  currentSagacity: 0
   isPlayerControlled: 0
+  currentRage: 0
+  currentFatigue: 0
+  currentReflex: 0
+  currentMobility: 0
   hitSound: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
