@@ -15,36 +15,33 @@ MonoBehaviour:
   characterName: Lucian
   portrait: {fileID: 21300000, guid: 8ab4da823478182499c477bef0f7ed92, type: 3}
   characterType: 0
+  gameplayType: 0
   characterWorldModel: {fileID: 4337991090481084248, guid: a6ebbd885ebce1f488e4eac835c634cc, type: 3}
   characterBattleModel: {fileID: 901204007372340786, guid: 48bc122d024634b4789a14a245e83484, type: 3}
   battlefieldIndex: 0
-  uiPrefab: {fileID: 100000, guid: a9a7d357a3b7bd742a89ddcfc72eb502, type: 3}
-  baseInitiative: 1
-  baseRange: 10
-  baseHP: 100
-  baseMP: 50
-  baseStrength: 1
-  baseDefense: 1
-  baseMusicalGauge: 0
-  baseFatigue: 0
-  maxFatigue: 0
-  baseRage: 0
-  maxRage: 100
-  rageDamageMultiplier: 0.1
   baseReflex: 0
   baseMobility: 0
   baseVitality: 0
   basePower: 0
   baseStability: 0
   baseSagacity: 0
+  baseInitiative: 1
+  baseRange: 10
+  baseHP: 100
+  baseStrength: 1
+  baseDefense: 1
+  baseRage: 0
+  maxRage: 100
+  rageDamageMultiplier: 0.1
+  baseFatigue: 0
+  maxFatigue: 0
   battleIdleAnimationName: Idle
   musicalAttacks:
   - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
   - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
   currentInitiative: 1
-  currentRange: 0
+  currentRange: 10
   currentHP: 100
-  currentMP: 50
   currentStrength: 1
   currentDefense: 1
   currentPower: 0
