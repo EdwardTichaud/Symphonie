@@ -43,7 +43,7 @@ public class CameraController : MonoBehaviour
 
     [Header("Managed Cameras")]
     public List<Camera> managedCameras = new();
-    public WorldCameraState currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint; // ✅ Par défaut en recherche de point    
+    public WorldCameraState currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint; // ✅ Par défaut en recherche de point
 
     private Camera activeCamera;
 
