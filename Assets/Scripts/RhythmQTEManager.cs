@@ -100,6 +100,51 @@ public class RhythmQTEManager : MonoBehaviour
     {
         Debug.Log("Déplacement de " + caster.name + " vers " + target.name);
 
+        // Gestion de la téléportation éventuelle
+        if (move.useTeleportation)
+        {
+            Vector3 offsetDir = target.transform.forward;
+            switch (move.relativePosition)
+            {
+                case RelativePosition.Back:
+                    offsetDir = -target.transform.forward;
+                    break;
+                case RelativePosition.Left:
+                    offsetDir = -target.transform.right;
+                    break;
+                case RelativePosition.Right:
+                    offsetDir = target.transform.right;
+                    break;
+            }
+
+            float mobilityBonus = caster.currentMobility;
+            Vector3 targetPosition = target.transform.position + offsetDir * (move.castDistance + mobilityBonus);
+
+            if (move.teleportStartVFXPrefab != null)
+                Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
+
+            caster.transform.position = targetPosition;
+
+            if (move.teleportEndVFXPrefab != null)
+                Instantiate(move.teleportEndVFXPrefab, targetPosition, Quaternion.identity);
+
+            if (move.stayFaceToTarget && target != null)
+            {
+                Vector3 lookDirection = (target.transform.position - caster.transform.position).normalized;
+                if (lookDirection != Vector3.zero)
+                    caster.transform.forward = lookDirection;
+            }
+            else
+            {
+                if (offsetDir != Vector3.zero)
+                    caster.transform.forward = offsetDir;
+            }
+
+            yield return null;
+            Debug.Log("Fin du déplacement de " + caster.name);
+            yield break;
+        }
+
         // Si l'animation de course n'est pas assignée, on logue un warning et on sort
         if (move.musicalMoveRunAnimationName == null)
         {
@@ -165,41 +210,58 @@ public class RhythmQTEManager : MonoBehaviour
     {
         Debug.Log("Retour de " + caster.name + " vers sa position parent");
 
-        if (move.musicalMoveRunAnimationName == null)
+        if (move.useTeleportation)
         {
-            Debug.LogWarning($"[ReturnToInitialPosition] musicalMoveRunAnimationName n'est pas assigné dans {move.name} !");
-            yield break;
-        }
+            Vector3 initialPosition = caster.transform.parent.position;
 
-        Animator animator = caster.GetComponentInChildren<Animator>();
-        animator.Play(move.musicalMoveRunAnimationName);
+            if (move.teleportStartVFXPrefab != null)
+                Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
 
-        Vector3 initialPosition = caster.transform.parent.position;
+            caster.transform.position = initialPosition;
 
-        while (Vector3.Distance(caster.transform.position, initialPosition) > 0.1f)
-        {
-            float step = move.moveSpeed * Time.deltaTime;
-            Vector3 moveDirection = (initialPosition - caster.transform.position).normalized;
-            caster.transform.position = Vector3.MoveTowards(caster.transform.position, initialPosition, step);
-
-            if (move.stayFaceToTarget && target != null)
-            {
-                Vector3 toTarget = (target.transform.position - caster.transform.position).normalized;
-                if (toTarget != Vector3.zero)
-                    caster.transform.forward = toTarget;
-            }
-            else
-            {
-                if (moveDirection != Vector3.zero)
-                    caster.transform.forward = Vector3.RotateTowards(
-                        caster.transform.forward,
-                        moveDirection,
-                        step,
-                        0f
-                    );
-            }
+            if (move.teleportEndVFXPrefab != null)
+                Instantiate(move.teleportEndVFXPrefab, initialPosition, Quaternion.identity);
 
             yield return null;
+        }
+        else
+        {
+            if (move.musicalMoveRunAnimationName == null)
+            {
+                Debug.LogWarning($"[ReturnToInitialPosition] musicalMoveRunAnimationName n'est pas assigné dans {move.name} !");
+                yield break;
+            }
+
+            Animator animator = caster.GetComponentInChildren<Animator>();
+            animator.Play(move.musicalMoveRunAnimationName);
+
+            Vector3 initialPosition = caster.transform.parent.position;
+
+            while (Vector3.Distance(caster.transform.position, initialPosition) > 0.1f)
+            {
+                float step = move.moveSpeed * Time.deltaTime;
+                Vector3 moveDirection = (initialPosition - caster.transform.position).normalized;
+                caster.transform.position = Vector3.MoveTowards(caster.transform.position, initialPosition, step);
+
+                if (move.stayFaceToTarget && target != null)
+                {
+                    Vector3 toTarget = (target.transform.position - caster.transform.position).normalized;
+                    if (toTarget != Vector3.zero)
+                        caster.transform.forward = toTarget;
+                }
+                else
+                {
+                    if (moveDirection != Vector3.zero)
+                        caster.transform.forward = Vector3.RotateTowards(
+                            caster.transform.forward,
+                            moveDirection,
+                            step,
+                            0f
+                        );
+                }
+
+                yield return null;
+            }
         }
 
         if (move.stayFaceToTarget && target != null)
