@@ -1401,6 +1401,12 @@ currentCharacterUnit.currentATB = 0f;
             }
         }
 
+        CameraController cc = CameraController.Instance;
+        if (cc != null && (cc.IsFollowingPath || cc.currentCameraState != CameraState.ResearchClosestCamPoint))
+        {
+            return; // Laisse la main au CameraController pour éviter les conflits
+        }
+
         if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)
         {
             Vector3 midPoint = (currentCharacterUnit.transform.position + currentTargetCharacter.transform.position) / 2f;
