@@ -1225,10 +1225,15 @@ public class NewBattleManager : MonoBehaviour
                     Vector3 cursorPos = currentTargetCharacter.transform.position +
                                        offsetDir * (currentMove.castDistance + mobilityBonus);
                     targetCursor.transform.position = cursorPos;
+
+                    float requiredDistance = Vector3.Distance(currentCharacterUnit.transform.position, cursorPos);
+                    bool inRange = requiredDistance <= currentCharacterUnit.Data.currentRange;
+                    UpdateTargetCursorColor(inRange);
                 }
                 else
                 {
                     targetCursor.transform.position = currentTargetCharacter.transform.position;
+                    UpdateTargetCursorColor(true);
                 }
             }
         }
@@ -1238,6 +1243,7 @@ public class NewBattleManager : MonoBehaviour
             {
                 targetCursor.transform.position = Vector3.zero;
                 targetCursor.SetActive(false);
+                UpdateTargetCursorColor(true);
             }
         }
     }
@@ -1542,6 +1548,18 @@ public class NewBattleManager : MonoBehaviour
         {
             targetCursor = Instantiate(targetCursorPrefab, transform.position, Quaternion.identity);
             targetCursor.SetActive(false);
+        }
+    }
+
+    void UpdateTargetCursorColor(bool inRange)
+    {
+        if (targetCursor == null) return;
+
+        ParticleSystem[] systems = targetCursor.GetComponentsInChildren<ParticleSystem>();
+        foreach (var ps in systems)
+        {
+            var main = ps.main;
+            main.startColor = inRange ? Color.white : Color.red;
         }
     }
 
