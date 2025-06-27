@@ -176,7 +176,7 @@ public class BattleTransitionManager : MonoBehaviour
         GameManager.Instance.ChangeGameState(GameState.Exploration);
 
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
-        playerDetection.ResetDetection();
+        playerDetection.ResetDetection(1f);
 
         battleRevealMask.SetActive(true);
         RectTransform maskRect = battleRevealMask.GetComponent<RectTransform>();
