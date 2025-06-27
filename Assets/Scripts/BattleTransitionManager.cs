@@ -169,9 +169,11 @@ public class BattleTransitionManager : MonoBehaviour
 
         //yield return FadeToBlack(2f);
 
-        //var worldEnemies = FindObjectsOfType<Enemy>().Where(e => e.wasPartOfLastBattle).ToList();
-        //foreach (var enemy in worldEnemies)
-        //    enemy?.DissolveFadeOff();
+        var worldEnemies = FindObjectsOfType<Enemy>().Where(e => e.wasPartOfLastBattle).ToList();
+        foreach (var enemy in worldEnemies)
+        {
+            Destroy(enemy);
+        }
 
         GameManager.Instance.ChangeGameState(GameState.Exploration);
 
