@@ -54,20 +54,28 @@ public class EventSignalReceiver : MonoBehaviour
         moveDirection = Vector3.zero;
     }
 
-    public void StartCameraSequence(CameraPath path)
+    public void StartCameraSequence(CameraPath path, Transform referenceTransform = null, Transform startFrom = null, bool forceLookAt = false, Transform lookAtTarget = null, bool alignImmediately = true)
     {
         if (path == null)
         {
             Debug.LogWarning("[EventSignalReceiver] CameraPath non fourni !");
             return;
         }
+
         if (CameraController.IsAnyPathPlaying)
         {
             Debug.Log("[EventSignalReceiver] CameraPath déjà en cours - séquence ignorée.");
             return;
         }
 
-        CameraController.Instance.StartPathFollow(path, path.cameraTag);
+        CameraController.Instance.StartPathFollow(
+            path,
+            referenceTransform,
+            startFrom,
+            forceLook: forceLookAt,
+            targetToLook: lookAtTarget,
+            alignImmediately: alignImmediately
+        );
     }
 
     public void ExpandPlayerDetecttion()

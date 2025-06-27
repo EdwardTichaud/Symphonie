@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 using TMPro;
 using UnityEngine.Playables;
 
+#region TargetType
 public enum TargetType
 {
     Self,
@@ -16,8 +17,9 @@ public enum TargetType
     SingleAlly,
     AllAllies
 }
+#endregion
 
-// États du combat -------------------------------------------------------------------
+#region BattleState
 public enum BattleState
 {
     None,
@@ -51,73 +53,61 @@ public enum BattleState
     GameOverScreen_Await,
     GameOverScreen_CanContinue,
 }
+#endregion
 
 public class NewBattleManager : MonoBehaviour
 {
     public static NewBattleManager Instance { get; private set; }
 
-    // Ce script étant très volumineux, seuls les points d'entrée principaux sont commentés ci-dessous.
+    [Header("État du combat")]
+    public BattleState currentBattleState;
 
-    // Initialisation de la scene de combat et spawn des unités ---------------------------
-    [Tooltip("Nom exact de la scène de combat à charger (sans extension)")]
-    public string battleSceneName = "BattleScene";
-
-    [Header("Joueurs")]
+    [Header("Apparition des SquadUnits")]
     public GameObject squadUnitRay;
     private List<Transform> playerSpawnPoints = new List<Transform>();
 
-    [Header("Ennemis")]
+    [Header("Apparition des ennemis")]
+    public GameObject enemyUnitRay;
     private List<Transform> enemySpawnPoints = new List<Transform>();
     public List<CharacterData> enemyTemplates = new List<CharacterData>();
 
-    [Header("Ordre d'initialisation des unités")]
-    [SerializeField] private Transform initializationRoot;
-    public List<CharacterUnit> activeCharacterUnits = new List<CharacterUnit>();
+    [Header("Listes des unités en combat en fonction de leur état")]
+    public List<CharacterUnit> unitsInBattle = new(); // Toutes les unités du combat quelque soit leur état
+    public List<CharacterUnit> activeCharacterUnits = new List<CharacterUnit>(); // Unités actives en combat (HP > 0)
 
-    public BattleState currentBattleState;
+    [Header("Début de combat")]
+    [SerializeField] private CameraPath firstStrikeCameraPath;
 
-    // -----------------------------------------------------------------------------------
-    [SerializeField] private GroupFocus currentGroupFocus = GroupFocus.None;
-    private enum GroupFocus { None, Squad, Enemies }
-
+    [Header("Fin de combat")]
     public GameObject victoryScreen;
     public GameObject gameOverScreen;
+    public RenderTexture VictoryScreenImage;
+    public RenderTexture GameOverScreenImage;
 
-    // -----------------------------------------------------------------------------------
-    // Gestion des tours de jeu ----------------------------------------------------------
     [Header("Timeline UI")]
     public RectTransform timelineContainer;
     public GameObject timelineUnitPrefab;
     public List<BattleTimelineUnit> timelineUIObjects = new();
 
     private CharacterUnit previousUnit; // Champ de classe, pas une variable locale
-    public CharacterUnit currentCharacterUnit;
+    [HideInInspector] public CharacterUnit currentCharacterUnit;
     private bool isTurnResolving = false;
 
-    public List<CharacterUnit> unitsInBattle = new();
-
     private const float ATB_THRESHOLD = 100f;
-    // -----------------------------------------------------------------------------------
 
-    // Gestion de l’interface utilisateur de combat --------------------------------------
     [Header("Sprites des touches")]
     [SerializeField] private Sprite inputSprite1;
     [SerializeField] private Sprite inputSprite2;
     [SerializeField] private Sprite inputSprite3;
     [SerializeField] private Sprite inputSprite4;
 
-    [Header("UI Prefab")]
-    [SerializeField] private GameObject buttonPrefab;
-
-    [Header("FirstStrike")]
-    [SerializeField] private CameraPath firstStrikeCameraPath;
-
-    // Curseur
+    [Header("Gestion du curseur de cible")]
+    public GameObject targetCursorPrefab;
+    [HideInInspector] public GameObject targetCursor;
+    private List<CharacterUnit> filteredUnits = new();
     private int currentTargetIndex = 0;
     private float navigationCooldown = 0.3f;
     private float lastNavTime = 0f;
-
-    //Permet de détecter les changements de target--------------------------------------------
     private CharacterUnit _currentTargetCharacter;
     public CharacterUnit currentTargetCharacter
     {
@@ -130,15 +120,11 @@ public class NewBattleManager : MonoBehaviour
     }
     //-------------------------------------------------------------------------------------
 
-    public GameObject targetCursorPrefab;
-    public GameObject targetCursor;
-    private List<CharacterUnit> filteredUnits = new();
-
     // Caméra
     [Header("Caméra de combat")]
-    public Transform battleCameraTransform;
+    [HideInInspector] public Transform battleCameraTransform;
     public float cameraSmoothSpeed = 5f;
-    public Transform desiredTransform;
+    [HideInInspector] public Transform desiredTransform;
     private Vector3 desiredPosition;
     private Quaternion desiredRotation;
     public bool isFollowingCurrentTarget = false;
@@ -147,11 +133,11 @@ public class NewBattleManager : MonoBehaviour
     private Transform orbitCenter;
 
     // Compétences et items disponibles pour l’unité qui joue
+    // Garder en public
     [HideInInspector] public List<MusicalMoveSO> skillChoices = new List<MusicalMoveSO>();
     [HideInInspector] public List<ItemData> itemChoices = new List<ItemData>();
-
-    public MusicalMoveSO currentMove;
-    public ItemData currentItem;
+    [HideInInspector] public MusicalMoveSO currentMove;
+    [HideInInspector] public ItemData currentItem;
     public int currentMenuIndex;
 
     // Menus personnalisés pour l’unité qui joue
@@ -164,16 +150,9 @@ public class NewBattleManager : MonoBehaviour
     public GameObject currentItemsMenuContainer;
     public List<Transform> currentItemsMenuSlots;
 
-    [Header("Interception")]
-    public float interceptionRange = 1.5f;
-
-    [Header("Victory Screen")]
-    public RenderTexture VictoryScreenImage;
-
     // -----------------------------------------------------------------------------------
 
-    #region Initialization
-    #region Cycle de Vie
+    #region Awake/Start/Update()
     /// <summary>
     /// Initialise le singleton et persiste à travers les scènes.
     /// </summary>
@@ -193,11 +172,7 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private void Start()
     {
-        if (targetCursorPrefab != null)
-        {
-            targetCursor = Instantiate(targetCursorPrefab, transform.position, Quaternion.identity);
-            targetCursor.SetActive(false);
-        }
+        EnsureTargetCursor();
     }
 
     /// <summary>
@@ -208,27 +183,9 @@ public class NewBattleManager : MonoBehaviour
         HandleTargetCursor();
         HandleTargetNavigation();
     }
-
     #endregion
 
-    public void ChangeBattleState(BattleState newState)
-    {
-        currentBattleState = newState;
-        Debug.Log("Nouvel état de combat: " + newState);
-        UpdateCameraBehaviour(newState);
-    }
-
-    public void LaunchBattle()
-    {
-        activeCharacterUnits = unitsInBattle
-            .Where(u => u.currentHP > 0)
-            .ToList();
-
-        StartBattle(activeCharacterUnits);
-
-        Debug.Log("[NewBattleManager] Lancement du combat dans la scène : " + battleSceneName);
-    }
-
+    #region Initialisation du champs de bataille
     public void SpawnAll()
     {
         if (activeCharacterUnits.Count > 0)
@@ -274,6 +231,10 @@ public class NewBattleManager : MonoBehaviour
             unitGO.transform.SetParent(spawnPoint, worldPositionStays: true);
             unitGO.name = $"SquadUnit_{i}";
 
+            // ✅ Spawn du rayon à la bonne position
+            if (squadUnitRay != null)
+                Instantiate(squadUnitRay, offset, Quaternion.identity);
+
             var unit = unitGO.GetComponent<CharacterUnit>();
             unit.Initialize(pc);
             unitsInBattle.Add(unit);
@@ -306,14 +267,15 @@ public class NewBattleManager : MonoBehaviour
                 continue;
             }
 
-            if (squadUnitRay != null)
-                Instantiate(squadUnitRay, spawnPoint.position, Quaternion.identity);
-
             Vector3 offset = spawnPoint.position + spawnPoint.forward * 4f;
 
             var unitGO = Instantiate(enemyData.characterBattleModel, offset, Quaternion.Euler(0f, 180f, 0f));
             unitGO.transform.SetParent(spawnPoint, worldPositionStays: true);
             unitGO.name = $"EnemyUnit_{i}";
+
+            // ✅ Spawn du rayon à la bonne position
+            if (enemyUnitRay != null)
+                Instantiate(enemyUnitRay, offset, Quaternion.identity);
 
             var eu = unitGO.GetComponent<CharacterUnit>();
             eu.Initialize(enemyData);
@@ -323,7 +285,9 @@ public class NewBattleManager : MonoBehaviour
             StartCoroutine(AnimateSpawn(unitGO, spawnPoint.position, animationDuration));
         }
     }
+    #endregion
 
+    #region Mise en scène de la scène de bataille
     private IEnumerator AnimateSpawn(GameObject unitGO, Vector3 targetPosition, float duration)
     {
         Vector3 startPos = unitGO.transform.position;
@@ -360,52 +324,105 @@ public class NewBattleManager : MonoBehaviour
     }
     #endregion
 
-    #region Gestion des tours de jeu
-
-    void StartBattle(List<CharacterUnit> characters)
+    #region Démarrage du combat
+    public IEnumerator StartBattle()
     {
-        Debug.Log("[BattleTurnManager] Démarrage du combat avec " + characters.Count + " unités");
+        Debug.Log("[BattleTurnManager] Démarrage du combat");
 
-        // 1) On ne garde que ceux dont le HP est > 0
-        unitsInBattle = characters.Where(c => c.currentHP > 0).ToList();
+        //0 Liste "unitsInBattle" construite avec SpawnAll
 
-        // 2) On initialise l’UI de timeline
+        //1 Filtrer pour ne garder que les unités dont les HP sont > 0
+        activeCharacterUnits = ReturnActiveUnits();
+
+        //2 Initialise l’UI de timeline
         InitializeTimelineUI(unitsInBattle);
 
-        // 3) On affecte currentTargetCharacter au premier ennemi de la liste
-        currentTargetCharacter = unitsInBattle
-            .FirstOrDefault(u => !u.Data.isPlayerControlled && u.currentHP > 0);
+        //3 Affecter currentTarget au premier ennemi de la liste
+        SetDefaultCurrentTarget();
 
-        // 4) Si aucun ennemi n’est présent, on peut mettre à null ou garder un fallback
+        //4 Réinitialise les ATB
+        ResetAllATB();
+
+        //5 Détermine quel joueur joue en premier
+        CharacterUnit firstPlayer = ReturnFirstStrikeCharacter();
+
+        //6 Joue la séquence de premier tour
+        if (firstPlayer != null && firstStrikeCameraPath != null)
+        {
+            yield return FirstStrikeSequenceRoutine(firstPlayer);
+        }
+
+        //7 Démarre la boucle de tours
+        StartCoroutine(TurnLoop());
+
+        //// Change l’état du jeu
+        //GameManager.Instance.ChangeGameState(GameState.StartBattle);
+    }
+
+    //1 Filtrer pour ne garder que les unités dont les HP sont > 0
+    private List<CharacterUnit> ReturnActiveUnits()
+    {
+        List<CharacterUnit> activeCharacterUnits = unitsInBattle.Where(c => c.currentHP > 0).ToList();
+        return activeCharacterUnits;
+    }
+
+    //2 Initialise l’UI de timeline
+    private void InitializeTimelineUI(List<CharacterUnit> characters)
+    {
+        foreach (var go in timelineUIObjects)
+            Destroy(go.gameObject);
+        timelineUIObjects.Clear();
+
+        foreach (var unit in characters)
+        {
+            var slot = Instantiate(timelineUnitPrefab, timelineContainer);
+            var ui = slot.GetComponent<BattleTimelineUnit>();
+            ui.Initialize(unit);
+            timelineUIObjects.Add(ui);
+        }
+    }
+
+    //3 Affecter currentTarget au premier ennemi de la liste
+    private void SetDefaultCurrentTarget()
+    {
+        currentTargetCharacter = activeCharacterUnits.FirstOrDefault(u => !u.Data.isPlayerControlled && u.currentHP > 0);
+
         if (currentTargetCharacter == null)
         {
             Debug.LogWarning("[BattleTurnManager] Aucun ennemi actif trouvé pour currentTargetCharacter.");
         }
+    }
 
-        // 5) On réinitialise les ATB
-        foreach (var unit in unitsInBattle)
+    //4 Réinitialise les ATB
+    private void ResetAllATB()
+    {
+        foreach (var unit in activeCharacterUnits)
         {
             unit.currentATB = 0f;
         }
+    }
 
-        GameManager.Instance.ChangeGameState(GameState.StartBattle);
-
-        // 6) Camera First Strike sur le premier joueur
-        CharacterUnit firstPlayer = unitsInBattle
+    //5 Détermine quel joueur joue en premier
+    private CharacterUnit ReturnFirstStrikeCharacter()
+    {
+        CharacterUnit firstPlayer = activeCharacterUnits
             .Where(u => u.Data.isPlayerControlled)
             .OrderByDescending(u => u.currentInitiative)
             .FirstOrDefault();
-        if (firstPlayer != null && firstStrikeCameraPath != null)
-        {
-            StartCoroutine(FirstStrikeSequenceRoutine(firstPlayer));
-        }
-        else
-        {
-            // Pas de séquence d'intro, on démarre directement la boucle des tours
-            StartCoroutine(TurnLoop());
-        }
+
+        return firstPlayer;
     }
 
+    //6 Joue la séquence de premier tour
+    private IEnumerator FirstStrikeSequenceRoutine(CharacterUnit unit)
+    {
+        ChangeBattleState(BattleState.FirstStrikeSequence);
+        Transform target = FindChildRecursive(unit, "spine_03");
+        CameraController.Instance.StartPathFollow(firstStrikeCameraPath, unit.transform, true, target, false);
+        yield return new WaitForSeconds(firstStrikeCameraPath.GetTotalDuration());
+    }
+
+    //7 Démarre la boucle de tours
     private IEnumerator TurnLoop()
     {
         while (true)
@@ -420,18 +437,50 @@ public class NewBattleManager : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
         }
     }
+    #endregion
 
+    #region Gestion des tours de combat
     private CharacterUnit CalculateNextUnit()
     {
         while (true)
         {
-            foreach (var unit in unitsInBattle.Where(u => u.currentHP > 0))
+            foreach (var unit in activeCharacterUnits)
             {
                 unit.currentATB += unit.currentInitiative;
                 if (unit.currentATB >= ATB_THRESHOLD)
                     return unit;
             }
         }
+    }
+
+    public void StartSquadUnitTurn(CharacterUnit characterUnit)
+    {
+        Debug.Log("Initialisation du menu de combat avec l'unité : " + characterUnit.Data.characterName);
+
+        if (currentBattleState == BattleState.None
+            || currentBattleState == BattleState.VictoryScreen_Await
+            || currentBattleState == BattleState.VictoryScreen_CanContinue
+            || currentBattleState == BattleState.GameOverScreen_Await
+            || currentBattleState == BattleState.GameOverScreen_CanContinue)
+        {
+            return;
+        }
+
+        if (characterUnit.Data.characterType == CharacterType.SquadUnit)
+            ChangeBattleState(BattleState.SquadUnit_MainMenu);
+        else if (characterUnit.Data.characterType == CharacterType.EnemyUnit)
+            ChangeBattleState(BattleState.EnemyUnit_Reflexion);
+
+        if (currentCharacterUnit != null)
+            ToggleMenuContainers(false, false, false);
+
+        ChangeCurrentCharacterUnit(characterUnit);
+
+        SetupCurrentUnitMenus(); // prépare les panels de l’unité
+        ShowMainMenu(); // montre le menu principal
+
+        InputsManager.Instance.playerInputs.Battle.Enable();
+        OrientAllUnitsTowardEnemyGroupSmooth();
     }
 
     private IEnumerator ExecuteTurn(CharacterUnit unit)
@@ -461,7 +510,7 @@ public class NewBattleManager : MonoBehaviour
 
             if (unit.Data.isPlayerControlled)
             {
-                Initialize(unit);
+                StartSquadUnitTurn(unit);
                 yield return new WaitUntil(() => !isTurnResolving);
             }
             else
@@ -476,6 +525,27 @@ public class NewBattleManager : MonoBehaviour
         else
         {
             yield break;
+        }
+    }
+
+    private void UpdateTimelineHighlight(CharacterUnit activeUnit)
+    {
+        foreach (var ui in timelineUIObjects)
+        {
+            bool isCurrent = activeUnit != null && ui.characterData == activeUnit.Data;
+            ui.SetHighlight(isCurrent);
+        }
+    }
+
+    public void RemoveFromTimeline(CharacterUnit deadUnit)
+    {
+        activeCharacterUnits.Remove(deadUnit);
+
+        var ui = timelineUIObjects.FirstOrDefault(x => x.characterData == deadUnit.Data);
+        if (ui != null)
+        {
+            timelineUIObjects.Remove(ui);
+            Destroy(ui.gameObject);
         }
     }
 
@@ -508,7 +578,7 @@ public class NewBattleManager : MonoBehaviour
             Debug.LogWarning("[ExecuteMoveOnTarget] Pas assez d'espace pour executer le mouvement.");
             yield break;
         }
-        var interceptor = CheckForInterception(caster, target, interceptionRange);
+        var interceptor = CheckForInterception(caster, target, caster.Data.currentInterceptionRange);
         if (interceptor != null)
         {
             yield return InterceptRoutine(interceptor, caster);
@@ -528,7 +598,7 @@ public class NewBattleManager : MonoBehaviour
             }
         }
 
-currentCharacterUnit.currentATB = 0f;
+        currentCharacterUnit.currentATB = 0f;
     }
 
     public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
@@ -610,34 +680,12 @@ currentCharacterUnit.currentATB = 0f;
         isTurnResolving = false;
         HandleEndOfBattle();
     }
+    #endregion
 
-    private void InitializeTimelineUI(List<CharacterUnit> characters)
-    {
-        foreach (var go in timelineUIObjects)
-            Destroy(go.gameObject);
-        timelineUIObjects.Clear();
-
-        foreach (var unit in characters)
-        {
-            var slot = Instantiate(timelineUnitPrefab, timelineContainer);
-            var ui = slot.GetComponent<BattleTimelineUnit>();
-            ui.Initialize(unit);
-            timelineUIObjects.Add(ui);
-        }
-    }
-
-    private void UpdateTimelineHighlight(CharacterUnit activeUnit)
-    {
-        foreach (var ui in timelineUIObjects)
-        {
-            bool isCurrent = activeUnit != null && ui.characterData == activeUnit.Data;
-            ui.SetHighlight(isCurrent);
-        }
-    }
-
+    #region Gestion de l'orientation des unités
     public void OrientAllUnitsTowardCenter(CharacterUnit activeUnit)
     {
-        foreach (var unit in unitsInBattle)
+        foreach (var unit in activeCharacterUnits)
         {
             if (unit == null || unit == activeUnit)
                 continue;
@@ -666,7 +714,7 @@ currentCharacterUnit.currentATB = 0f;
 
     public void OrientAllUnitsTowardEnemyGroupSmooth(float rotationSpeed = 360f)
     {
-        foreach (var unit in unitsInBattle)
+        foreach (var unit in activeCharacterUnits)
         {
             if (unit == null || unit.Data.currentHP <= 0)
                 continue;
@@ -710,16 +758,13 @@ currentCharacterUnit.currentATB = 0f;
         }
     }
 
-    #region Gestion de l'orientation de la caméra quand aucune chatacterUnit n'est ciblée
     public void OrientTransformTowardEnemyGroupSmoothXY(Transform targetTransform, float rotationSpeed = 360f)
     {
-        if (unitsInBattle == null || unitsInBattle.Count == 0)
+        if (activeCharacterUnits == null || activeCharacterUnits.Count == 0)
             return;
 
         // Trouve tous les ennemis vivants (ou l'inverse si la cible est un ennemi)
-        var enemies = unitsInBattle
-            .Where(u => u != null && u.Data.currentHP > 0 && !u.Data.isPlayerControlled)
-            .ToList();
+        var enemies = activeCharacterUnits.Where(u => u != null && !u.Data.isPlayerControlled).ToList();
 
         if (enemies.Count == 0)
             return;
@@ -764,7 +809,6 @@ currentCharacterUnit.currentATB = 0f;
         Vector3 finalEuler = targetRotation.eulerAngles;
         target.rotation = Quaternion.Euler(finalEuler.x, finalEuler.y, 0f);
     }
-    #endregion
 
 
     private IEnumerator RotateUnitSmoothly(CharacterUnit unit, Quaternion targetRotation, float rotationSpeed)
@@ -783,19 +827,9 @@ currentCharacterUnit.currentATB = 0f;
         // Orientation finale propre (uniquement sur l’axe Y)
         unit.transform.rotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
     }
+    #endregion
 
-    public void RemoveFromTimeline(CharacterUnit deadUnit)
-    {
-        activeCharacterUnits.Remove(deadUnit);
-
-        var ui = timelineUIObjects.FirstOrDefault(x => x.characterData == deadUnit.Data);
-        if (ui != null)
-        {
-            timelineUIObjects.Remove(ui);
-            Destroy(ui.gameObject);
-        }
-    }
-
+    #region Gestion de la fin du combat
     private void HandleEndOfBattle()
     {
         if (currentBattleState == BattleState.None
@@ -821,7 +855,7 @@ currentCharacterUnit.currentATB = 0f;
         {
             Debug.Log("[BattleTurnManager] 🎉 Tous les ennemis sont vaincus !");
             ChangeBattleState(BattleState.VictoryScreen_Await);
-            StartCoroutine(ReduceTimeAndShowVictoryPanel());            
+            StartCoroutine(ReduceTimeAndShowVictoryPanel());
         }
         else if (allSquadDead)
         {
@@ -911,39 +945,6 @@ currentCharacterUnit.currentATB = 0f;
                 Destroy(unit.gameObject);
 
         unitsInBattle.Clear();
-    }
-    #endregion
-
-    #region Gestion de l'interface utilisateur de combat
-    public void Initialize(CharacterUnit characterUnit)
-    {
-        if (currentBattleState == BattleState.None
-            || currentBattleState == BattleState.VictoryScreen_Await
-            || currentBattleState == BattleState.VictoryScreen_CanContinue
-            || currentBattleState == BattleState.GameOverScreen_Await
-            || currentBattleState == BattleState.GameOverScreen_CanContinue)
-        {
-            return;
-        }
-
-        if (characterUnit.Data.characterType == CharacterType.SquadUnit)
-            ChangeBattleState(BattleState.SquadUnit_MainMenu);
-        else if (characterUnit.Data.characterType == CharacterType.EnemyUnit)
-            ChangeBattleState(BattleState.EnemyUnit_Reflexion);
-
-            Debug.Log("Initialisation du menu de combat avec l'unité : " + characterUnit.Data.characterName);
-
-        if (currentCharacterUnit != null)
-            ToggleMenuContainers(false, false, false);
-
-        // Réinitialise l’unité active
-        currentCharacterUnit = characterUnit;
-
-        SetupCurrentUnitMenus(); // prépare les panels de l’unité
-        ShowMainMenu(); // montre le menu principal
-
-        InputsManager.Instance.playerInputs.Battle.Enable();
-        OrientAllUnitsTowardEnemyGroupSmooth();
     }
     #endregion
 
@@ -1461,50 +1462,25 @@ currentCharacterUnit.currentATB = 0f;
         };
     }
 
-    private void PlayFirstStrikeSequence(CharacterUnit player)
+    public void ChangeBattleState(BattleState newState)
     {
-        if (player == null || firstStrikeCameraPath == null)
-            return;
-
-        // Positionne le GameObject du CameraPath sur l'unité qui initie le combat
-        firstStrikeCameraPath.transform.position = player.transform.position + new Vector3(0,1.5f,0);
-
-        foreach (var point in firstStrikeCameraPath.points)
-        {
-            if (point.useLookAt)
-                point.targetToLook = FindChildRecursive(player.transform, "spine_03");
-        }
-
-        Camera cam = GameObject.FindGameObjectWithTag(firstStrikeCameraPath.cameraTag)?.GetComponent<Camera>();
-        if (cam == null)
-        {
-            Debug.LogError($"[FirstStrike] Aucune caméra taggée '{firstStrikeCameraPath.cameraTag}' trouvée !");
-            return;
-        }
-
-        var controller = cam.GetComponentInParent<CameraController>();
-        if (controller == null)
-        {
-            Debug.LogError("[FirstStrike] CameraController manquant pour la caméra de combat !");
-            return;
-        }
-        if (CameraController.IsAnyPathPlaying)
-        {
-            Debug.Log("[FirstStrike] CameraPath déjà en cours - intro ignorée.");
-            return;
-        }
-
-        firstStrikeCameraPath.IsPlaying = true;
-        firstStrikeCameraPath.triggered = true;
-        controller.StartPathFollow(firstStrikeCameraPath, firstStrikeCameraPath.cameraTag, player.transform, true, player.transform, true);
+        currentBattleState = newState;
+        Debug.Log("Nouvel état de combat: " + newState);
+        UpdateCameraBehaviour(newState);
     }
 
-    private IEnumerator FirstStrikeSequenceRoutine(CharacterUnit player)
+    private void ChangeCurrentCharacterUnit(CharacterUnit newCurrentCharacterUnit)
     {
-        ChangeBattleState(BattleState.FirstStrikeSequence);
-        PlayFirstStrikeSequence(player);
-        yield return new WaitUntil(() => !firstStrikeCameraPath.IsPlaying);
-        StartCoroutine(TurnLoop());
+        currentCharacterUnit = newCurrentCharacterUnit;
+    }
+
+    void EnsureTargetCursor()
+    {
+        if (targetCursorPrefab != null)
+        {
+            targetCursor = Instantiate(targetCursorPrefab, transform.position, Quaternion.identity);
+            targetCursor.SetActive(false);
+        }
     }
 
     public void ResetBattleInfos()

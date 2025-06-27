@@ -152,7 +152,7 @@ public class BattleTransitionManager : MonoBehaviour
         worldRiftTweener.TweenToZeroRoutine();
         yield return battleRiftTweener.TweenToZeroRoutine();
 
-        NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization);
+        NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization); // Lance CameraPathIntro
 
         while (battleIntroPath.IsPlaying)
         {
@@ -160,7 +160,7 @@ public class BattleTransitionManager : MonoBehaviour
             yield return null;
         }
 
-        NewBattleManager.Instance.LaunchBattle();
+        yield return NewBattleManager.Instance.StartBattle();
     }
 
     public IEnumerator ExitVictoryScreenAndBattle()

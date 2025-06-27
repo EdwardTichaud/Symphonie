@@ -187,63 +187,72 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Lance le suivi du chemin pour la caméra correspondant au tag.
+    /// Démarre un CameraPath avec flexibilité maximale.
     /// </summary>
-    public void StartPathFollow(CameraPath path, string cameraTag, float startPosition = 0f, bool alignImmediately = true)
+    /// <param name="path">Le CameraPath à suivre.</param>
+    /// <param name="referenceTransform">Transform utilisé pour le placement relatif du path (optionnel).</param>
+    /// <param name="startFromTransform">Point de départ sur le path (le plus proche du Transform donné).</param>
+    /// <param name="forceLook">Si true, la caméra regardera targetToLook tout au long du chemin.</param>
+    /// <param name="targetToLook">Cible à regarder si forceLook est activé.</param>
+    /// <param name="alignImmediately">Si true, la caméra s'aligne immédiatement au début du path.</param>
+    public void StartPathFollow(CameraPath path, Transform referenceTransform = null, Transform startFromTransform = null, bool forceLook = false, Transform targetToLook = null, bool alignImmediately = true)
     {
         if (isFollowingPath)
         {
-            Debug.Log("[CameraController] CameraPath déjà en cours, appel ignoré.");
+            Debug.Log("[CameraController] CameraPath déjà en cours - appel ignoré.");
             return;
         }
 
         StopOrbit();
 
-        Camera cam = FindCameraByTag(cameraTag);
+        Camera cam = FindCameraByTag(path.cameraTag);
         if (cam == null)
         {
-            Debug.LogError($"[CameraController] Aucun Camera trouvé avec le tag '{cameraTag}' !");
+            Debug.LogError($"[CameraController] Aucun Camera trouvé avec le tag '{path.cameraTag}' !");
             return;
         }
 
         if (path.points == null || path.points.Count < 2 || path.durations == null || path.durations.Count != path.points.Count - 1)
         {
-            Debug.LogError($"[CameraController] Path invalid or durations mismatch!");
+            Debug.LogError("[CameraController] Path invalide ou durées incorrectes !");
             return;
         }
 
         currentCameraPath = path;
-        pathElapsedTime = Mathf.Clamp01(startPosition) * path.GetTotalDuration();
+        activeCamera = cam;
+
+        // Place dynamiquement le GameObject du CameraPath s’il y a une référence
+        if (referenceTransform != null)
+            path.transform.position = referenceTransform.position;
+
+        // Calcule la position de départ sur la courbe
+        if (startFromTransform != null)
+        {
+            float closestT = path.GetClosestPathPosition(startFromTransform.position);
+            pathElapsedTime = closestT * path.GetTotalDuration();
+        }
+        else
+        {
+            pathElapsedTime = 0f;
+        }
+
         pathTotalDuration = path.GetTotalDuration();
+        pathPosition = GetPathPositionFromTime(pathElapsedTime);
         isFollowingPath = true;
 
-        activeCamera = cam;
+        this.forceLookAt = forceLook;
+        this.forcedLookTarget = targetToLook;
 
         if (alignImmediately)
         {
-            pathPosition = GetPathPositionFromTime(pathElapsedTime);
             path.EvaluatePath(pathPosition, out Vector3 pos, out Quaternion rot);
-
+            if (forceLook && targetToLook != null)
+            {
+                rot = Quaternion.LookRotation(targetToLook.position - pos);
+            }
             activeCamera.transform.position = pos;
             activeCamera.transform.rotation = rot;
         }
-
-        forceLookAt = false;
-        forcedLookTarget = null;
-    }
-
-    public void StartPathFollow(CameraPath path, string cameraTag, Transform pathPositionTransform, bool forcelookAtTarget, Transform targetToLook, bool alignImmediately = false)
-    {
-        float startPos = 0f;
-        if (pathPositionTransform != null)
-        {
-            startPos = path.GetClosestPathPosition(pathPositionTransform.position);
-        }
-
-        StartPathFollow(path, cameraTag, startPos, alignImmediately);
-
-        forceLookAt = forcelookAtTarget;
-        forcedLookTarget = targetToLook;
     }
 
     public void StopPathFollow()

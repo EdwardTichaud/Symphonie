@@ -29,6 +29,9 @@ public class CharacterData : ScriptableObject, ITargetable
     public float baseHP;
     public float baseStrength;
     public float baseDefense;
+    public float baseSpeed;
+    public float baseInterceptionRange;
+    public float baseInterceptionChance;
 
     [Header("Custom Stats")]
     [Header("Lucian")]
@@ -61,6 +64,9 @@ public class CharacterData : ScriptableObject, ITargetable
     public float currentFatigue;
     public float currentReflex;
     public float currentMobility;
+    public float currentSpeed;
+    public float currentInterceptionRange;
+    public float currentInterceptionChance;
 
     [Header("Effets visuels et sonores")]
     public AudioClip hitSound;
