@@ -417,8 +417,14 @@ public class NewBattleManager : MonoBehaviour
     private IEnumerator FirstStrikeSequenceRoutine(CharacterUnit unit)
     {
         ChangeBattleState(BattleState.FirstStrikeSequence);
-        Transform target = FindChildRecursive(unit, "spine_03");
-        CameraController.Instance.StartPathFollow(firstStrikeCameraPath, unit.transform, true, target, false);
+        Transform target = FindChildRecursive(unit.transform, "spine_03");
+        CameraController.Instance.StartPathFollow(
+            firstStrikeCameraPath,
+            unit.transform,
+            forceLook: true,
+            targetToLook: target,
+            alignImmediately: false
+        );
         yield return new WaitForSeconds(firstStrikeCameraPath.GetTotalDuration());
     }
 
