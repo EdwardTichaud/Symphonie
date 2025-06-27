@@ -50,27 +50,42 @@ MonoBehaviour:
   battleSceneName: BattleScene
   squadUnitRay: {fileID: 248577220576592601, guid: 7d39bfaa4040e054783cece41ba02801, type: 3}
   enemyTemplates: []
+  initializationRoot: {fileID: 0}
   activeCharacterUnits: []
   currentBattleState: 0
+  currentGroupFocus: 0
   victoryScreen: {fileID: 0}
   gameOverScreen: {fileID: 0}
   timelineContainer: {fileID: 0}
   timelineUnitPrefab: {fileID: 2361378650977482155, guid: f4df227ff56f0ef479b12913669cd903, type: 3}
   timelineUIObjects: []
   currentCharacterUnit: {fileID: 0}
+  unitsInBattle: []
   inputSprite1: {fileID: 21300000, guid: 33cbbe0051549c14a8670101deea4c8c, type: 3}
   inputSprite2: {fileID: 21300000, guid: d4083608ba2cd6f43ad8bd262b380eac, type: 3}
   inputSprite3: {fileID: 21300000, guid: f450c5a75855c3e4e89f8acf1545fa52, type: 3}
   inputSprite4: {fileID: 21300000, guid: 5cbf9b362cca19643a59021e8a16fb80, type: 3}
   buttonPrefab: {fileID: 513355491535574096, guid: f7ecb10da95aa864e96a8b2010ddc43d, type: 3}
-  currentMenuState: 0
-  currentGroupFocus: 0
-  currentTargetCharacter: {fileID: 0}
+  firstStrikeCameraPath: {fileID: 0}
   targetCursorPrefab: {fileID: 6183295993981524567, guid: cefcba0bfb810e4488eafe9f6e66b9be, type: 3}
   targetCursor: {fileID: 0}
+  battleCameraTransform: {fileID: 0}
+  cameraSmoothSpeed: 5
+  desiredTransform: {fileID: 0}
+  isFollowingCurrentTarget: 0
+  skillChoices: []
+  itemChoices: []
   currentMove: {fileID: 0}
   currentItem: {fileID: 0}
   currentMenuIndex: 0
+  currentMainMenuContainer: {fileID: 0}
+  currentMainMenuSlots: []
+  currentSkillsMenuContainer: {fileID: 0}
+  currentSkillsMenuSlots: []
+  currentItemsMenuContainer: {fileID: 0}
+  currentItemsMenuSlots: []
+  interceptionRange: 1.5
+  VictoryScreenImage: {fileID: 8400000, guid: 3c33ee4a0b457ed4fad4d2f9fc1598e7, type: 2}
 --- !u!114 &4662704560674311386
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -85,12 +100,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentMove: {fileID: 0}
   audioSource: {fileID: 0}
-  parryWindow: 0.2
-  dodgeWindow: 0.3
-  jumpWindow: 0.5
-  landingWindow: 0.5
-  anticipationTime: 0.5
-  inputWindow: 0.2
   slowMotionFactor: 0.25
   qteCirclePrefab: {fileID: 8455065410536213309, guid: 86e0b5a2d15fd3f44b031a8529e62ba5, type: 3}
   qteUIParent: {fileID: 0}

@@ -22,6 +22,7 @@ public enum BattleState
 {
     None,
     Initialization,
+    FirstStrikeSequence,
     NewTurn,
     EndTurn,
 
