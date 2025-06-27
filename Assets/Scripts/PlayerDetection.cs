@@ -125,13 +125,23 @@ public class PlayerDetection : MonoBehaviour
     /// Réinitialise tous les paramètres de détection aux valeurs de base,
     /// pour repartir proprement après un combat.
     /// </summary>
-    public void ResetDetection()
+    public void ResetDetection(float delay = 1f)
+    {
+        StartCoroutine(ResetDetectionRoutine(delay));
+    }
+
+    private IEnumerator ResetDetectionRoutine(float delay)
     {
         currentDetectionRadius = baseDetectionRadius;
-        detectionOn = true;
         battleEngaged = false;
         detectedEnemies.Clear();
+        detectionOn = false;
 
+        Debug.Log($"[PlayerDetection] Réinitialisation en cours, détection réactivée dans {delay} s.");
+
+        yield return new WaitForSeconds(delay);
+
+        detectionOn = true;
         Debug.Log("[PlayerDetection] Détection réinitialisée.");
     }
 
