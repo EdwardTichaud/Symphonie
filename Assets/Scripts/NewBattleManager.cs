@@ -1301,8 +1301,6 @@ public class NewBattleManager : MonoBehaviour
             }
         }
 
-        currentBattleState = newState;
-
         switch (currentBattleState)
         {
             case BattleState.Initialization:
@@ -1324,7 +1322,7 @@ public class NewBattleManager : MonoBehaviour
                 OrientTransformTowardEnemyGroupSmoothXY(desiredTransform, 180f);
                 if (desiredTransform == null)
                 {
-                    Debug.LogWarning("[BattleCameraManager] Aucun point 'Camera_MainMenu' trouvé.");
+                    Debug.LogError("[BattleCameraManager] Aucun point 'Camera_MainMenu' trouvé.");
                 }
                 break;
 
@@ -1333,7 +1331,7 @@ public class NewBattleManager : MonoBehaviour
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_SkillsMenu");
                 if (desiredTransform == null)
                 {
-                    Debug.LogWarning("[BattleCameraManager] Aucun point 'Camera_SkillsMenu' trouvé.");
+                    Debug.LogError("[BattleCameraManager] Aucun point 'Camera_SkillsMenu' trouvé.");
                 }
                 break;
 
@@ -1342,7 +1340,7 @@ public class NewBattleManager : MonoBehaviour
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_ItemsMenu");
                 if (desiredTransform == null)
                 {
-                    Debug.LogWarning("[BattleCameraManager] Aucun point 'Camera_ItemsMenu' trouvé.");
+                    Debug.LogError("[BattleCameraManager] Aucun point 'Camera_ItemsMenu' trouvé.");
                 }
                 break;
 
