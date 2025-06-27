@@ -1504,7 +1504,6 @@ currentCharacterUnit.currentATB = 0f;
         ChangeBattleState(BattleState.FirstStrikeSequence);
         PlayFirstStrikeSequence(player);
         yield return new WaitUntil(() => !firstStrikeCameraPath.IsPlaying);
-        ChangeBattleState(BattleState.Initialization);
         StartCoroutine(TurnLoop());
     }
 
