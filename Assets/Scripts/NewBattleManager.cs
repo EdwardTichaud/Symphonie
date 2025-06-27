@@ -390,6 +390,14 @@ public class NewBattleManager : MonoBehaviour
 
         GameManager.Instance.ChangeGameState(GameState.StartBattle);
 
+        // 6) Camera First Strike sur le premier joueur
+        CharacterUnit firstPlayer = unitsInBattle
+            .Where(u => u.Data.isPlayerControlled)
+            .OrderByDescending(u => u.currentInitiative)
+            .FirstOrDefault();
+        if (firstPlayer != null && firstStrikeCameraPath != null)
+            PlayFirstStrikeSequence(firstPlayer);
+
         // 7) Lancement de la boucle de tours
         StartCoroutine(TurnLoop());
     }
@@ -1437,6 +1445,36 @@ currentCharacterUnit.currentATB = 0f;
             2 => inputSprite3,
             _ => null,
         };
+    }
+
+    private void PlayFirstStrikeSequence(CharacterUnit player)
+    {
+        if (player == null || firstStrikeCameraPath == null)
+            return;
+
+        foreach (var point in firstStrikeCameraPath.points)
+        {
+            if (point.useLookAt)
+                point.targetToLook = player.transform;
+        }
+
+        Camera cam = GameObject.FindGameObjectWithTag(firstStrikeCameraPath.cameraTag)?.GetComponent<Camera>();
+        if (cam == null)
+        {
+            Debug.LogError($"[FirstStrike] Aucune caméra taggée '{firstStrikeCameraPath.cameraTag}' trouvée !");
+            return;
+        }
+
+        var controller = cam.GetComponentInParent<CameraController>();
+        if (controller == null)
+        {
+            Debug.LogError("[FirstStrike] CameraController manquant pour la caméra de combat !");
+            return;
+        }
+
+        firstStrikeCameraPath.IsPlaying = true;
+        firstStrikeCameraPath.triggered = true;
+        controller.StartPathFollow(firstStrikeCameraPath, firstStrikeCameraPath.cameraTag, player.transform, true, player.transform, true);
     }
 
     public void ResetBattleInfos()
