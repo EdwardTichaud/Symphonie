@@ -19452,7 +19452,7 @@ GameObject:
   - component: {fileID: 7271750186808955562}
   m_Layer: 6
   m_Name: FX_TargetCursor_Tornado
-  m_TagString: Untagged
+  m_TagString: TargetCursor
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -19471,6 +19471,7 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 6899506778559529987}
+  - {fileID: 1256639004363798582}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!198 &2286038194894043203
@@ -24285,6 +24286,37 @@ ParticleSystemRenderer:
   m_MeshWeighting2: 1
   m_MeshWeighting3: 1
   m_MaskInteraction: 0
+--- !u!1 &7011377600727304728
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1256639004363798582}
+  m_Layer: 6
+  m_Name: Camera_TargetedPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1256639004363798582
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7011377600727304728}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.087424986, y: -0, z: -0, w: 0.9961712}
+  m_LocalPosition: {x: 0, y: 1.98, z: -4.02}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3221104296617969309}
+  m_LocalEulerAnglesHint: {x: 10.031, y: 0, z: 0}
 --- !u!1 &7478842178258676273
 GameObject:
   m_ObjectHideFlags: 0

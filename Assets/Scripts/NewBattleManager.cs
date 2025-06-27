@@ -1420,22 +1420,22 @@ public class NewBattleManager : MonoBehaviour
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_PerformingMusicalMove:
