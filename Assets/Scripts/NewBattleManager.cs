@@ -1185,12 +1185,44 @@ public class NewBattleManager : MonoBehaviour
         //    return;
         //}
 
-        if (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill || currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem)
+        bool isSkillTargeting =
+            currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
+            currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill;
+
+        bool isItemTargeting =
+            currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem ||
+            currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem;
+
+        if (isSkillTargeting || isItemTargeting)
         {
             if (targetCursor != null && currentTargetCharacter != null)
             {
                 targetCursor.SetActive(true);
-                targetCursor.transform.position = currentTargetCharacter.transform.position;
+                if (isSkillTargeting && currentMove != null)
+                {
+                    Vector3 offsetDir = currentTargetCharacter.transform.forward;
+                    switch (currentMove.relativePosition)
+                    {
+                        case RelativePosition.Back:
+                            offsetDir = -currentTargetCharacter.transform.forward;
+                            break;
+                        case RelativePosition.Left:
+                            offsetDir = -currentTargetCharacter.transform.right;
+                            break;
+                        case RelativePosition.Right:
+                            offsetDir = currentTargetCharacter.transform.right;
+                            break;
+                    }
+
+                    float mobilityBonus = currentCharacterUnit.currentMobility;
+                    Vector3 cursorPos = currentTargetCharacter.transform.position +
+                                       offsetDir * (currentMove.castDistance + mobilityBonus);
+                    targetCursor.transform.position = cursorPos;
+                }
+                else
+                {
+                    targetCursor.transform.position = currentTargetCharacter.transform.position;
+                }
             }
         }
         else
