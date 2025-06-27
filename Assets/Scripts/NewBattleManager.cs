@@ -1477,6 +1477,11 @@ currentCharacterUnit.currentATB = 0f;
             Debug.LogError("[FirstStrike] CameraController manquant pour la caméra de combat !");
             return;
         }
+        if (CameraController.IsAnyPathPlaying)
+        {
+            Debug.Log("[FirstStrike] CameraPath déjà en cours - intro ignorée.");
+            return;
+        }
 
         firstStrikeCameraPath.IsPlaying = true;
         firstStrikeCameraPath.triggered = true;

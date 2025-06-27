@@ -14,6 +14,12 @@ public class CameraController : MonoBehaviour
 {
     public static CameraController Instance { get; private set; }
 
+    /// <summary>
+    /// Indique si un CameraPath est actuellement suivi.
+    /// Permet aux autres scripts de connaître la priorité caméra.
+    /// </summary>
+    public static bool IsAnyPathPlaying => Instance != null && Instance.isFollowingPath;
+
     private Coroutine currentTransition;
 
     [Header("Orbit Settings")]
@@ -181,6 +187,12 @@ public class CameraController : MonoBehaviour
     /// </summary>
     public void StartPathFollow(CameraPath path, string cameraTag, float startPosition = 0f, bool alignImmediately = true)
     {
+        if (isFollowingPath)
+        {
+            Debug.Log("[CameraController] CameraPath déjà en cours, appel ignoré.");
+            return;
+        }
+
         StopOrbit();
 
         Camera cam = FindCameraByTag(cameraTag);
@@ -252,6 +264,12 @@ public class CameraController : MonoBehaviour
     /// </summary>
     public void OrbitAround(string cameraTag, Transform target, float distance = 5f, float speed = 30f, bool x = false, bool y = true, bool z = false)
     {
+        if (isFollowingPath)
+        {
+            Debug.Log("[CameraController] CameraPath en cours - OrbitAround ignoré.");
+            return;
+        }
+
         StopOrbit();
         StopPathFollow();
 
@@ -328,6 +346,12 @@ public class CameraController : MonoBehaviour
     /// </summary>
     public Coroutine SetCameraTarget(string positionName, string lookAtName, float transitionSpeed = 2f)
     {
+        if (isFollowingPath)
+        {
+            Debug.Log("[CameraController] CameraPath en cours - SetCameraTarget ignoré.");
+            return null;
+        }
+
         StopOrbit();
         StopPathFollow();
 
@@ -379,6 +403,12 @@ public class CameraController : MonoBehaviour
     /// </summary>
     public void ForceCam()
     {
+        if (isFollowingPath)
+        {
+            Debug.Log("[CameraController] CameraPath en cours - ForceCam ignoré.");
+            return;
+        }
+
         StopOrbit();
         StopPathFollow();
 

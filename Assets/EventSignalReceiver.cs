@@ -11,7 +11,7 @@ public class EventSignalReceiver : MonoBehaviour
 
     private void Start()
     {
-        // Cache le joueur pour Èviter le Find() en boucle
+        // Cache le joueur pour √©viter le Find() en boucle
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
@@ -23,7 +23,7 @@ public class EventSignalReceiver : MonoBehaviour
     {
         if (playerTransform != null && moveDirection != Vector3.zero)
         {
-            // DÈplace dans l'espace local du joueur (avant, arriËre, cÙtÈ)
+            // D√©place dans l'espace local du joueur (avant, arri√®re, c√¥t√©)
             Vector3 localMove = playerTransform.TransformDirection(moveDirection);
             playerTransform.position += localMove * moveSpeed * Time.deltaTime;
         }
@@ -61,6 +61,11 @@ public class EventSignalReceiver : MonoBehaviour
             Debug.LogWarning("[EventSignalReceiver] CameraPath non fourni !");
             return;
         }
+        if (CameraController.IsAnyPathPlaying)
+        {
+            Debug.Log("[EventSignalReceiver] CameraPath d√©j√† en cours - s√©quence ignor√©e.");
+            return;
+        }
 
         CameraController.Instance.StartPathFollow(path, path.cameraTag);
     }
@@ -76,12 +81,12 @@ public class EventSignalReceiver : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("[EventSignalReceiver] PlayerDetection non trouvÈ sur le joueur !");
+                Debug.LogWarning("[EventSignalReceiver] PlayerDetection non trouv√© sur le joueur !");
             }
         }
         else
         {
-            Debug.LogWarning("[EventSignalReceiver] Joueur non trouvÈ !");
+            Debug.LogWarning("[EventSignalReceiver] Joueur non trouv√© !");
         }
     }
 }
