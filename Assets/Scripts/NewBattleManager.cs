@@ -1472,7 +1472,7 @@ currentCharacterUnit.currentATB = 0f;
         foreach (var point in firstStrikeCameraPath.points)
         {
             if (point.useLookAt)
-                point.targetToLook = player.transform;
+                point.targetToLook = FindChildRecursive(player.transform, "spine_03");
         }
 
         Camera cam = GameObject.FindGameObjectWithTag(firstStrikeCameraPath.cameraTag)?.GetComponent<Camera>();
