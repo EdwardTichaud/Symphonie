@@ -108,6 +108,10 @@ public class NewBattleManager : MonoBehaviour
     [Header("UI Prefab")]
     [SerializeField] private GameObject buttonPrefab;
 
+    [Header("FirstStrike")]
+    [SerializeField] private CameraPath firstStrikeCameraPath;
+    private Transform firstStrikeTransform;
+
     // Curseur
     private int currentTargetIndex = 0;
     private float navigationCooldown = 0.3f;
