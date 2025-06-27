@@ -16,26 +16,26 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private AudioSource audioSource;
     private Animator animator;
 
-    public CharacterType characterType;
+    public CharacterType characterType => Data.characterType;
 
-    public float currentHP;
+    public float currentHP { get => Data.currentHP; set => Data.currentHP = value; }
     public float currentMP;
-    public float currentRage;
+    public float currentRage { get => Data.currentRage; set => Data.currentRage = value; }
 
-    public float currentStrength;
-    public float currentDefense;
-    public float currentReflex;
-    public float currentMobility;
-    public float currentPower;
-    public float currentStability;
-    public float currentVitality;
-    public float currentSagacity;
+    public float currentStrength { get => Data.currentStrength; set => Data.currentStrength = value; }
+    public float currentDefense { get => Data.currentDefense; set => Data.currentDefense = value; }
+    public float currentReflex { get => Data.currentReflex; set => Data.currentReflex = value; }
+    public float currentMobility { get => Data.currentMobility; set => Data.currentMobility = value; }
+    public float currentPower { get => Data.currentPower; set => Data.currentPower = value; }
+    public float currentStability { get => Data.currentStability; set => Data.currentStability = value; }
+    public float currentVitality { get => Data.currentVitality; set => Data.currentVitality = value; }
+    public float currentSagacity { get => Data.currentSagacity; set => Data.currentSagacity = value; }
 
     public float currentMusicalGauge;
-    public float currentFatigue;
+    public float currentFatigue { get => Data.currentFatigue; set => Data.currentFatigue = value; }
 
     // Gestion de l'initiative
-    public float currentInitiative;
+    public float currentInitiative { get => Data.currentInitiative; set => Data.currentInitiative = value; }
     public float currentATB = 0f;
     public float ATBMax = 100f;
     public bool IsReady => currentATB >= ATBMax && currentHP > 0;
@@ -51,7 +51,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         Data = characterData;
         Data.owner = this;
-        characterType = characterData.characterType;
 
         // Initialisation des stats
         currentPower = Data.basePower;
@@ -59,7 +58,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentVitality = Data.baseVitality;
         currentSagacity = Data.baseSagacity;
         currentHP = Data.baseHP + currentVitality;
-        Data.currentHP = currentHP;
         currentRage = Data.baseRage;
         currentInitiative = Data.baseInitiative;
         currentStrength = Data.baseStrength;
@@ -113,7 +111,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void TakeDamage(float amount)
     {
         currentHP = Mathf.Max(currentHP - amount, 0);
-        Data.currentHP = currentHP;
         if (hpBar != null) hpBar.SetValue(currentHP);
         PlayDamageFeedback();
         if (Data != null && Data.gameplayType == GameplayType.Rage)
@@ -167,7 +164,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void Heal(float amount)
     {
         currentHP = Mathf.Min(currentHP + amount, Data.baseHP + currentVitality);
-        Data.currentHP = currentHP;
         if (hpBar != null) hpBar.SetValue(currentHP);
     }
 
