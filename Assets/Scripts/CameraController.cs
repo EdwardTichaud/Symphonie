@@ -30,7 +30,7 @@ public class CameraController : MonoBehaviour
 
     [Header("Path Follow")]
     [Range(0f, 1f)] public float pathPosition;
-    private bool isFollowingPath;
+    public bool isFollowingPath;
     public bool IsFollowingPath => isFollowingPath;
     public CameraPath currentCameraPath;
     [SerializeField] private float followLerpSpeed = 5f;
