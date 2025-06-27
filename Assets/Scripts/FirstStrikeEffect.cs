@@ -40,6 +40,6 @@ public class FirstStrikeEffect : MonoBehaviour
         transform.position += Vector3.left * speed * Time.unscaledDeltaTime;
 
         if (transform.position.x <= endX)
-            Destroy(gameObject);
+            gameObject.SetActive(false);
     }
 }
