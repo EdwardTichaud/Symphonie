@@ -1467,6 +1467,10 @@ currentCharacterUnit.currentATB = 0f;
         if (player == null || firstStrikeCameraPath == null)
             return;
 
+        // Positionne le GameObject du CameraPath sur l'unité qui initie le combat
+        firstStrikeCameraPath.transform.position = player.transform.position;
+        firstStrikeTransform = player.transform;
+
         foreach (var point in firstStrikeCameraPath.points)
         {
             if (point.useLookAt)
