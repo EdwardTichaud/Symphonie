@@ -473,15 +473,15 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        if (characterUnit.Data.characterType == CharacterType.SquadUnit)
-            ChangeBattleState(BattleState.SquadUnit_MainMenu);
-        else if (characterUnit.Data.characterType == CharacterType.EnemyUnit)
-            ChangeBattleState(BattleState.EnemyUnit_Reflexion);
-
         if (currentCharacterUnit != null)
             ToggleMenuContainers(false, false, false);
 
         ChangeCurrentCharacterUnit(characterUnit);
+
+        if (characterUnit.Data.characterType == CharacterType.SquadUnit)
+            ChangeBattleState(BattleState.SquadUnit_MainMenu);
+        else if (characterUnit.Data.characterType == CharacterType.EnemyUnit)
+            ChangeBattleState(BattleState.EnemyUnit_Reflexion);
 
         SetupCurrentUnitMenus(); // prépare les panels de l’unité
         ShowMainMenu(); // montre le menu principal
