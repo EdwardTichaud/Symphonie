@@ -22,11 +22,11 @@ public class CameraController : MonoBehaviour
 
     private Coroutine currentTransition;
 
-    [Header("Orbit Settings")]
-    public Transform orbitTarget;
-    public float orbitDistance = 5f;
-    public float orbitSpeed = 30f;
-    public bool orbitX, orbitY = true, orbitZ;
+    [Header("---------- Common ----------")]
+
+    [Header("Managed Cameras")]
+    public List<Camera> managedCameras = new();
+    public WorldCameraState currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint; // ✅ Par défaut en recherche de point
 
     [Header("Path Follow")]
     [Range(0f, 1f)] public float pathPosition;
@@ -37,15 +37,11 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float rotateLerpSpeed = 5f;
     private float pathElapsedTime = 0f;
     private float pathTotalDuration = 0f;
-
     private bool forceLookAt;
     private Transform forcedLookTarget;
-
-    [Header("Managed Cameras")]
-    public List<Camera> managedCameras = new();
-    public WorldCameraState currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint; // ✅ Par défaut en recherche de point
-
     private Camera activeCamera;
+
+    [Header("---------- World Camera ----------")]
 
     [Header("Fixed Camera Points")]
     public bool cameraHandlerEnabled = true; // ✅ Par défaut activé
@@ -70,6 +66,14 @@ public class CameraController : MonoBehaviour
     private float forcedCamYaw = 0f;
     private float forcedCamPitch = 20f;
     private float forcedCamDistance = 5f;
+
+    [Header("Orbit Settings")]
+    public Transform orbitTarget;
+    public float orbitDistance = 5f;
+    public float orbitSpeed = 30f;
+    public bool orbitX, orbitY = true, orbitZ;
+
+    //[Header("---------- BattleCamera ----------")]
 
     #region Initialisation
     /// <summary>
