@@ -4,12 +4,13 @@ using TMPro;
 
 public class BattleTimelineUnit : MonoBehaviour
 {
-    [Header("Références UI")]
+    [Header("RÃ©fÃ©rences UI")]
     [SerializeField] private Image portraitImage;
     [SerializeField] private TextMeshProUGUI nameText;
     [SerializeField] private Image hpBarImage;
     [SerializeField] private TextMeshProUGUI hpText;
     [SerializeField] private Slider atbSlider;
+    [SerializeField] private CustomBar customBar;
 
     [Header("Couleurs")]
     [SerializeField] private Image backgroundImage;
@@ -23,7 +24,7 @@ public class BattleTimelineUnit : MonoBehaviour
     {
         if (unit == null || unit.Data == null)
         {
-            Debug.LogWarning("[TimelineUnit] Unité invalide.");
+            Debug.LogWarning("[TimelineUnit] UnitÃ© invalide.");
             return;
         }
 
@@ -35,6 +36,21 @@ public class BattleTimelineUnit : MonoBehaviour
 
         // HP
         UpdateHPBar();
+
+        // Custom bar (Rage/Fatigue)
+        if (customBar != null)
+        {
+            if (characterData.gameplayType == GameplayType.Rage)
+            {
+                customBar.SetMaxValue(characterData.maxRage);
+                customBar.SetValue(unit.currentRage);
+            }
+            else if (characterData.gameplayType == GameplayType.Fatigue)
+            {
+                customBar.SetMaxValue(characterData.maxFatigue);
+                customBar.SetValue(unit.currentFatigue);
+            }
+        }
 
         // ATB
         if (atbSlider != null)
@@ -54,6 +70,24 @@ public class BattleTimelineUnit : MonoBehaviour
         if (unit != null && atbSlider != null)
         {
             atbSlider.value = unit.currentATB;
+        }
+    }
+
+    public void UpdateCustomBar()
+    {
+        var unit = NewBattleManager.Instance.activeCharacterUnits
+            .Find(u => u.Data == characterData);
+
+        if (unit == null || customBar == null)
+            return;
+
+        if (characterData.gameplayType == GameplayType.Rage)
+        {
+            customBar.SetValue(unit.currentRage);
+        }
+        else if (characterData.gameplayType == GameplayType.Fatigue)
+        {
+            customBar.SetValue(unit.currentFatigue);
         }
     }
 
