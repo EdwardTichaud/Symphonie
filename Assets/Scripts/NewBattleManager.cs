@@ -139,6 +139,8 @@ public class NewBattleManager : MonoBehaviour
     [HideInInspector] public MusicalMoveSO currentMove;
     [HideInInspector] public ItemData currentItem;
     public int currentMenuIndex;
+    // Sélection nulle pour remplir les emplacements vides
+    public MusicalMoveSO emptyMove;
 
     // Menus personnalisés pour l’unité qui joue
     public GameObject currentMainMenuContainer;
@@ -1049,11 +1051,13 @@ public class NewBattleManager : MonoBehaviour
             var move = skillChoices[i];
             UpdateButton(currentSkillsMenuSlots[i], move.moveName, move.moveIcon);
         }
-
         // Indique les emplacements vides
         for (int j = skillChoices.Count; j < currentSkillsMenuSlots.Count; j++)
         {
-            UpdateButton(currentSkillsMenuSlots[j], "Indisponible", null);
+            if (emptyMove != null)
+                UpdateButton(currentSkillsMenuSlots[j], emptyMove.moveName, emptyMove.moveIcon);
+            else
+                UpdateButton(currentSkillsMenuSlots[j], "Indisponible", null);
         }
     }
 
@@ -1076,7 +1080,10 @@ public class NewBattleManager : MonoBehaviour
         // Indique les emplacements vides
         for (int j = itemChoices.Count; j < currentItemsMenuSlots.Count; j++)
         {
-            UpdateButton(currentItemsMenuSlots[j], "Indisponible", null);
+            if (emptyMove != null)
+                UpdateButton(currentItemsMenuSlots[j], emptyMove.moveName, emptyMove.moveIcon);
+            else
+                UpdateButton(currentItemsMenuSlots[j], "Indisponible", null);
         }
     }
 
