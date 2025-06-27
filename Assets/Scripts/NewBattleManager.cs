@@ -1221,9 +1221,10 @@ public class NewBattleManager : MonoBehaviour
                             break;
                     }
 
-                    float mobilityBonus = currentCharacterUnit.currentMobility;
+                    // Positionne le curseur à exactement castDistance (castRange)
+                    // par rapport à la cible, sans appliquer le bonus de mobilité
                     Vector3 cursorPos = currentTargetCharacter.transform.position +
-                                       offsetDir * (currentMove.castDistance + mobilityBonus);
+                                       offsetDir * currentMove.castDistance;
                     targetCursor.transform.position = cursorPos;
 
                     float requiredDistance = Vector3.Distance(currentCharacterUnit.transform.position, cursorPos);
