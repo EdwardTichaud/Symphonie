@@ -21,7 +21,8 @@ public class VictoryPanelManager : MonoBehaviour
             xpText = GetComponentsInChildren<TextMeshProUGUI>(true)
                 .FirstOrDefault(t => t.name.ToLower().Contains("xp"));
         }
-        if (xpIcon == null)
+
+if (xpIcon == null)
         {
             xpIcon = GetComponentsInChildren<Image>(true)
                 .FirstOrDefault(i => i.name.ToLower().Contains("xpicon"));
@@ -91,5 +92,22 @@ public class VictoryPanelManager : MonoBehaviour
 
         if (timeText != null)
             timeText.text = System.TimeSpan.FromSeconds(duration).ToString("mm':'ss");
+
+        if (itemsText == null)
+        {
+            itemsText = GetComponentsInChildren<TextMeshProUGUI>(true)
+                .FirstOrDefault(t => t.name.ToLower().Contains("item"));
+        }
+    }
+
+    public void DisplayRewards(int xp, List<ItemData> items)
+    {
+        if (xpText != null)
+            xpText.text = $"+{xp} XP";
+
+        if (itemsText != null)
+            itemsText.text = items.Count > 0
+                ? string.Join(", ", items.Select(i => i.itemName))
+                : "";
     }
 }

@@ -1024,6 +1024,7 @@ public class NewBattleManager : MonoBehaviour
         GameManager.Instance?.AddItemsToInventory(rewardItems);
 
         var panel = victoryScreen.GetComponentInChildren<VictoryPanelManager>();
+
         float duration = Time.time - battleStartTime;
         int totalEnemies = GameManager.Instance != null ? GameManager.Instance.gameData.enemiesDefeatedCount : 0;
         panel?.DisplayVictory(rewardXP, rewardItems, totalEnemies, duration, mvpUnit, maxTurnDamage);
