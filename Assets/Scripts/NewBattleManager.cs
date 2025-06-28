@@ -85,6 +85,10 @@ public class NewBattleManager : MonoBehaviour
     public RenderTexture VictoryScreenImage;
     public RenderTexture GameOverScreenImage;
 
+    [Header("Récompenses")]
+    public List<ItemData> rewardItems = new();
+    public int rewardXP = 0;
+
     [Header("Timeline UI")]
     public RectTransform timelineContainer;
     public GameObject timelineUnitPrefab;
@@ -570,6 +574,12 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
+    public void OnEnemyDefeated(CharacterUnit enemy)
+    {
+        rewardItems.AddRange(enemy.lootItems);
+        rewardXP += enemy.experienceReward;
+    }
+
     private IEnumerator EnemyTurnWithQTE(CharacterUnit enemy)
     {
         ChangeBattleState(BattleState.EnemyUnit_PerformingMusicalMove);
@@ -587,6 +597,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         ActionUIDisplayManager.Instance.DisplayAttackName(move.moveName);
+        MusicalCodexManager.Instance?.TryAddNewMelody(move);
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
     }
 
@@ -978,6 +989,12 @@ public class NewBattleManager : MonoBehaviour
         //Prendre une photo de la dernière frame de la mort de l'ennemi avant VictoryScreen
 
         victoryScreen.transform.GetChild(0).gameObject.SetActive(true);
+
+        GameManager.Instance?.AddXPToSquad(rewardXP);
+        GameManager.Instance?.AddItemsToInventory(rewardItems);
+
+        var panel = victoryScreen.GetComponentInChildren<VictoryPanelManager>();
+        panel?.DisplayRewards(rewardXP, rewardItems);
 
         // Applique la RenderTexture sur le RawImage du panel
         RawImage img = victoryScreen.transform.GetChild(0).GetComponent<RawImage>();
@@ -1617,6 +1634,9 @@ public class NewBattleManager : MonoBehaviour
         currentCharacterUnit = null;
         unitsInBattle.Clear();
         activeCharacterUnits.Clear();
+
+        rewardItems.Clear();
+        rewardXP = 0;
 
         // Réinitialisation UI timeline
         //foreach (var ui in timelineUIObjects)

@@ -12,6 +12,7 @@ public class GameData : ScriptableObject
     public List<int> defeatedEnemies = new List<int>();
     public int squadLevel;
     public int squadXP;
+    public int enemiesDefeatedCount;
 
     public void SaveToFile(string fileName = "save.json")
     {
@@ -19,7 +20,8 @@ public class GameData : ScriptableObject
         {
             defeatedEnemyIDs = new List<int>(defeatedEnemies),
             squadLevel = squadLevel,
-            squadXP = squadXP
+            squadXP = squadXP,
+            enemiesDefeatedCount = enemiesDefeatedCount
         };
 
         string json = JsonUtility.ToJson(save, true);
@@ -46,6 +48,7 @@ public class GameData : ScriptableObject
         defeatedEnemies = new List<int>(loaded.defeatedEnemyIDs);
         squadLevel = loaded.squadLevel;
         squadXP = loaded.squadXP;
+        enemiesDefeatedCount = loaded.enemiesDefeatedCount;
 
         Debug.Log($"[GameData] Données chargées depuis : {path}");
     }
@@ -55,6 +58,7 @@ public class GameData : ScriptableObject
         defeatedEnemies.Clear();
         squadLevel = 0;
         squadXP = 0;
+        enemiesDefeatedCount = 0;
         Debug.Log("GameData has been reset.");
     }
 }
@@ -65,6 +69,7 @@ public class GameDataSave
     public List<int> defeatedEnemyIDs = new();
     public int squadLevel;
     public int squadXP;
+    public int enemiesDefeatedCount;
 }
 
 public enum GameState
@@ -160,5 +165,11 @@ public class GameManager : MonoBehaviour
             gameData.defeatedEnemies.Add(enemyID);
             Debug.Log($"[GameManager] Ennemi {enemyID} marqué comme vaincu.");
         }
+    }
+
+    public void IncrementEnemiesDefeated()
+    {
+        gameData.enemiesDefeatedCount++;
+        Debug.Log($"[GameManager] Ennemis vaincus : {gameData.enemiesDefeatedCount}");
     }
 }

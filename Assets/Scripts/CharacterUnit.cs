@@ -42,6 +42,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private bool deathTriggered;
     public bool isReadyToParry;
 
+    [Header("Récompenses de combat")]
+    public List<ItemData> lootItems = new();
+    public int experienceReward = 0;
+
     #region Cycle de Vie
     /// <summary>
     /// Initialise toutes les statistiques du personnage selon sa fiche.
@@ -158,6 +162,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         }
         NewBattleManager.Instance.RemoveFromTimeline(this);
         NewBattleManager.Instance.activeCharacterUnits.Remove(this); // facultatif
+
+        if (Data.characterType == CharacterType.EnemyUnit)
+        {
+            GameManager.Instance?.IncrementEnemiesDefeated();
+            NewBattleManager.Instance?.OnEnemyDefeated(this);
+        }
     }
 
     /// <summary>
