@@ -26,10 +26,13 @@ MonoBehaviour:
   baseStability: 0
   baseSagacity: 0
   baseInitiative: 1
-  baseRange: 10
+  baseRange: 2
   baseHP: 100
   baseStrength: 1
   baseDefense: 1
+  baseSpeed: 0
+  baseInterceptionRange: 0
+  baseInterceptionChance: 0
   baseRage: 0
   maxRage: 100
   rageDamageMultiplier: 0.1
@@ -40,7 +43,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
   - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
   currentInitiative: 1
-  currentRange: 10
+  currentRange: 2
   currentHP: 100
   currentStrength: 1
   currentDefense: 1
@@ -53,6 +56,9 @@ MonoBehaviour:
   currentFatigue: 0
   currentReflex: 0
   currentMobility: 0
+  currentSpeed: 0
+  currentInterceptionRange: 0
+  currentInterceptionChance: 0
   hitSound: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
