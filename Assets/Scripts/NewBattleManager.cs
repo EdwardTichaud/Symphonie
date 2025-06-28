@@ -89,6 +89,11 @@ public class NewBattleManager : MonoBehaviour
     public List<ItemData> rewardItems = new();
     public int rewardXP = 0;
 
+    private float battleStartTime = 0f;
+    private int currentTurnDamage = 0;
+    private int maxTurnDamage = 0;
+    private CharacterUnit mvpUnit;
+
     [Header("Timeline UI")]
     public RectTransform timelineContainer;
     public GameObject timelineUnitPrefab;
@@ -336,6 +341,11 @@ public class NewBattleManager : MonoBehaviour
     {
         Debug.Log("[BattleTurnManager] Démarrage du combat");
 
+        battleStartTime = Time.time;
+        currentTurnDamage = 0;
+        maxTurnDamage = 0;
+        mvpUnit = null;
+
         //0 Liste "unitsInBattle" construite avec SpawnAll
 
         //1 Filtrer pour ne garder que les unités dont les HP sont > 0
@@ -477,6 +487,8 @@ public class NewBattleManager : MonoBehaviour
     {
         Debug.Log("Initialisation du menu de combat avec l'unité : " + characterUnit.Data.characterName);
 
+        currentTurnDamage = 0;
+
         if (currentBattleState == BattleState.None
             || currentBattleState == BattleState.VictoryScreen_Await
             || currentBattleState == BattleState.VictoryScreen_CanContinue
@@ -580,6 +592,14 @@ public class NewBattleManager : MonoBehaviour
         rewardXP += enemy.experienceReward;
     }
 
+    public void RegisterDamage(CharacterUnit caster, float amount)
+    {
+        if (caster == null || caster.Data.characterType != CharacterType.SquadUnit)
+            return;
+
+        currentTurnDamage += Mathf.RoundToInt(amount);
+    }
+
     private IEnumerator EnemyTurnWithQTE(CharacterUnit enemy)
     {
         ChangeBattleState(BattleState.EnemyUnit_PerformingMusicalMove);
@@ -646,6 +666,10 @@ public class NewBattleManager : MonoBehaviour
             yield break;
         }
         InventoryManager.Instance.UseItem(item, target);
+        if (item.effectType == ItemEffectType.Damage)
+        {
+            RegisterDamage(caster, item.effectValue);
+        }
         caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
         currentCharacterUnit.currentATB = 0f;
         yield return null;
@@ -749,6 +773,12 @@ public class NewBattleManager : MonoBehaviour
         {
             Debug.Log($"[BattleTurnManager] Fin du tour de {currentCharacterUnit.name}");
             currentCharacterUnit.currentATB = 0f;
+
+            if (currentCharacterUnit.Data.characterType == CharacterType.SquadUnit && currentTurnDamage > maxTurnDamage)
+            {
+                maxTurnDamage = currentTurnDamage;
+                mvpUnit = currentCharacterUnit;
+            }
         }
 
         ChangeBattleState(BattleState.EndTurn);
@@ -994,7 +1024,10 @@ public class NewBattleManager : MonoBehaviour
         GameManager.Instance?.AddItemsToInventory(rewardItems);
 
         var panel = victoryScreen.GetComponentInChildren<VictoryPanelManager>();
-        panel?.DisplayRewards(rewardXP, rewardItems);
+
+        float duration = Time.time - battleStartTime;
+        int totalEnemies = GameManager.Instance != null ? GameManager.Instance.gameData.enemiesDefeatedCount : 0;
+        panel?.DisplayVictory(rewardXP, rewardItems, totalEnemies, duration, mvpUnit, maxTurnDamage);
 
         // Applique la RenderTexture sur le RawImage du panel
         RawImage img = victoryScreen.transform.GetChild(0).GetComponent<RawImage>();
@@ -1637,6 +1670,11 @@ public class NewBattleManager : MonoBehaviour
 
         rewardItems.Clear();
         rewardXP = 0;
+
+        battleStartTime = 0f;
+        maxTurnDamage = 0;
+        currentTurnDamage = 0;
+        mvpUnit = null;
 
         // Réinitialisation UI timeline
         //foreach (var ui in timelineUIObjects)
