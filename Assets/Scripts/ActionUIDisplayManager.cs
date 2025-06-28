@@ -90,6 +90,11 @@ public class ActionUIDisplayManager : MonoBehaviour
         ShowMessage("Appuyez en rythme !");
     }
 
+    public void DisplayInstruction_TargetTooFar()
+    {
+        ShowMessage("Cible trop éloignée");
+    }
+
     private void ShowMessage(string message)
     {
         if (currentDisplayRoutine != null)

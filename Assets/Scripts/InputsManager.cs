@@ -107,12 +107,22 @@ public class InputsManager : MonoBehaviour
         NewBattleManager bm = NewBattleManager.Instance;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill)
         {
+            if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentMove))
+            {
+                ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
+                return;
+            }
             bm.ChangeBattleState(BattleState.SquadUnit_PerformingMusicalMove);
             bm.StartCoroutine(bm.ExecuteMoveOnTarget(bm.currentMove, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem)
         {
+            if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentItem))
+            {
+                ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
+                return;
+            }
             bm.ChangeBattleState(BattleState.SquadUnit_UseItem);
             bm.StartCoroutine(bm.UseItemOnTarget(bm.currentItem, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
