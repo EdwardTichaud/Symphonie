@@ -9,6 +9,7 @@ public class VictoryPanelManager : MonoBehaviour
     public Image xpIcon;
     public TextMeshProUGUI xpText;
     public Transform itemsContainer;
+    public TextMeshProUGUI itemsText;
     public TextMeshProUGUI enemiesText;
     public TextMeshProUGUI maxDamageText;
     public Image mvpImage;
