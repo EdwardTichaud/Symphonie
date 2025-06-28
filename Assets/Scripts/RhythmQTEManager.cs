@@ -103,30 +103,30 @@ public class RhythmQTEManager : MonoBehaviour
         // Gestion de la téléportation éventuelle
         if (move.useTeleportation)
         {
-            Vector3 offsetDir = target.transform.forward;
+            Vector3 teleportOffsetDir = target.transform.forward;
             switch (move.relativePosition)
             {
                 case RelativePosition.Back:
-                    offsetDir = -target.transform.forward;
+                    teleportOffsetDir = -target.transform.forward;
                     break;
                 case RelativePosition.Left:
-                    offsetDir = -target.transform.right;
+                    teleportOffsetDir = -target.transform.right;
                     break;
                 case RelativePosition.Right:
-                    offsetDir = target.transform.right;
+                    teleportOffsetDir = target.transform.right;
                     break;
             }
 
-            float mobilityBonus = caster.currentMobility;
-            Vector3 targetPosition = target.transform.position + offsetDir * (move.castDistance + mobilityBonus);
+            float teleportMobilityBonus = caster.currentMobility;
+            Vector3 teleportTargetPosition = target.transform.position + teleportOffsetDir * (move.castDistance + teleportMobilityBonus);
 
             if (move.teleportStartVFXPrefab != null)
                 Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
 
-            caster.transform.position = targetPosition;
+            caster.transform.position = teleportTargetPosition;
 
             if (move.teleportEndVFXPrefab != null)
-                Instantiate(move.teleportEndVFXPrefab, targetPosition, Quaternion.identity);
+                Instantiate(move.teleportEndVFXPrefab, teleportTargetPosition, Quaternion.identity);
 
             if (move.stayFaceToTarget && target != null)
             {
@@ -136,8 +136,8 @@ public class RhythmQTEManager : MonoBehaviour
             }
             else
             {
-                if (offsetDir != Vector3.zero)
-                    caster.transform.forward = offsetDir;
+                if (teleportOffsetDir != Vector3.zero)
+                    caster.transform.forward = teleportOffsetDir;
             }
 
             yield return null;
@@ -210,9 +210,10 @@ public class RhythmQTEManager : MonoBehaviour
     {
         Debug.Log("Retour de " + caster.name + " vers sa position parent");
 
+        Vector3 initialPosition = caster.transform.parent.position;
+
         if (move.useTeleportation)
         {
-            Vector3 initialPosition = caster.transform.parent.position;
 
             if (move.teleportStartVFXPrefab != null)
                 Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
@@ -234,8 +235,6 @@ public class RhythmQTEManager : MonoBehaviour
 
             Animator animator = caster.GetComponentInChildren<Animator>();
             animator.Play(move.musicalMoveRunAnimationName);
-
-            Vector3 initialPosition = caster.transform.parent.position;
 
             while (Vector3.Distance(caster.transform.position, initialPosition) > 0.1f)
             {
