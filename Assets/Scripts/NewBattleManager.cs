@@ -594,6 +594,11 @@ public class NewBattleManager : MonoBehaviour
     {
         Debug.Log($"{caster} exécute le mouvement {move.moveName} sur {target}");
         ToggleMenuContainers(false, false, false);
+        if (!IsTargetInRange(caster, target, move))
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
+            yield break;
+        }
         if (!HasSpaceForMove(caster, target, move))
         {
             Debug.LogWarning("[ExecuteMoveOnTarget] Pas assez d'espace pour executer le mouvement.");
@@ -624,6 +629,11 @@ public class NewBattleManager : MonoBehaviour
 
     public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
     {
+        if (!IsTargetInRange(caster, target, item))
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
+            yield break;
+        }
         InventoryManager.Instance.UseItem(item, target);
         caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
         currentCharacterUnit.currentATB = 0f;
@@ -656,6 +666,33 @@ public class NewBattleManager : MonoBehaviour
                 return false;
         }
         return true;
+    }
+
+    public bool IsTargetInRange(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
+    {
+        Vector3 offsetDir = target.transform.forward;
+        switch (move.relativePosition)
+        {
+            case RelativePosition.Back:
+                offsetDir = -target.transform.forward;
+                break;
+            case RelativePosition.Left:
+                offsetDir = -target.transform.right;
+                break;
+            case RelativePosition.Right:
+                offsetDir = target.transform.right;
+                break;
+        }
+
+        Vector3 desiredPos = target.transform.position + offsetDir * move.castDistance;
+        float requiredDistance = Vector3.Distance(caster.transform.position, desiredPos);
+        return requiredDistance <= caster.Data.currentRange;
+    }
+
+    public bool IsTargetInRange(CharacterUnit caster, CharacterUnit target, ItemData item)
+    {
+        float requiredDistance = Vector3.Distance(caster.transform.position, target.transform.position);
+        return requiredDistance <= caster.Data.currentRange;
     }
 
     private CharacterUnit CheckForInterception(CharacterUnit caster, CharacterUnit target, float range)
