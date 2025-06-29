@@ -24,9 +24,9 @@ public class MusicalMoveSO : ScriptableObject
     public float fatigueCost = 1;
 
     [Header("Ciblage")]
-    public AvailableTargetType targetType = AvailableTargetType.SingleEnemy;
-    public AvailableTargetType defaultTargetType = AvailableTargetType.SingleEnemy;
-    public List<AvailableTargetType> availableTargetTypes = new List<AvailableTargetType>() { AvailableTargetType.SingleEnemy };
+    public TargetType targetType = TargetType.SingleEnemy;
+    public TargetType defaultTargetType = TargetType.SingleEnemy;
+    public List<TargetType> availableTargetTypes = new List<TargetType>() { TargetType.SingleEnemy };
 
     [Header("Effet appliqué")]
     public MusicalEffectType effectType = MusicalEffectType.Damage;

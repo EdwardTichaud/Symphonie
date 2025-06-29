@@ -8,8 +8,8 @@ using UnityEngine.InputSystem;
 using TMPro;
 using UnityEngine.Playables;
 
-#region AvailableTargetType
-public enum AvailableTargetType
+#region TargetType
+public enum TargetType
 {
     Self,
     SingleEnemy,
@@ -1401,15 +1401,15 @@ public class NewBattleManager : MonoBehaviour
         if (!isSkillTargeting && !isItemTargeting)
             return;
 
-        AvailableTargetType type = isSkillTargeting ? currentMove.targetType : currentItem.targetType;
+        TargetType type = isSkillTargeting ? currentMove.targetType : currentItem.targetType;
 
-        if (type == AvailableTargetType.Self)
+        if (type == TargetType.Self)
         {
             currentTargetCharacter = currentCharacterUnit;
             return;
         }
 
-        bool targetEnemies = type == AvailableTargetType.SingleEnemy || type == AvailableTargetType.AllEnemies;
+        bool targetEnemies = type == TargetType.SingleEnemy || type == TargetType.AllEnemies;
         CharacterType requiredType = targetEnemies ? CharacterType.EnemyUnit : CharacterType.SquadUnit;
 
         filteredUnits = activeCharacterUnits
@@ -1516,13 +1516,13 @@ public class NewBattleManager : MonoBehaviour
         move.targetType = move.defaultTargetType;
         switch (move.defaultTargetType)
         {
-            case AvailableTargetType.Self:
+            case TargetType.Self:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
                 currentTargetCharacter = currentCharacterUnit;
                 currentTargetIndex = 0;
                 break;
 
-            case AvailableTargetType.SingleEnemy:
+            case TargetType.SingleEnemy:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill);
 
                 currentTargetCharacter = activeCharacterUnits
@@ -1530,7 +1530,7 @@ public class NewBattleManager : MonoBehaviour
                 currentTargetIndex = 0;
                 break;
 
-            case AvailableTargetType.AllEnemies:
+            case TargetType.AllEnemies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
 
                 currentTargetCharacter = activeCharacterUnits
@@ -1539,7 +1539,7 @@ public class NewBattleManager : MonoBehaviour
                 break;
                 break;
 
-            case AvailableTargetType.SingleAlly:
+            case TargetType.SingleAlly:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
                 break;
 
@@ -1548,7 +1548,7 @@ public class NewBattleManager : MonoBehaviour
                 currentTargetIndex = 0;
                 break;
 
-            case AvailableTargetType.AllAllies:
+            case TargetType.AllAllies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
 
                 currentTargetCharacter = activeCharacterUnits
@@ -1569,13 +1569,13 @@ public class NewBattleManager : MonoBehaviour
         item.targetType = item.defaultTargetType;
         switch (item.defaultTargetType)
         {
-            case AvailableTargetType.Self:
+            case TargetType.Self:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
                 currentTargetCharacter = currentCharacterUnit;
                 currentTargetIndex = 0;
                 break;
 
-            case AvailableTargetType.SingleEnemy:
+            case TargetType.SingleEnemy:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem);
 
                 currentTargetCharacter = activeCharacterUnits
@@ -1583,21 +1583,21 @@ public class NewBattleManager : MonoBehaviour
                 currentTargetIndex = 0;
                 break;
 
-            case AvailableTargetType.AllEnemies:
+            case TargetType.AllEnemies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
                 currentTargetIndex = 0;
                 break;
 
-            case AvailableTargetType.SingleAlly:
+            case TargetType.SingleAlly:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
                 currentTargetIndex = 0;
                 break;
 
-            case AvailableTargetType.AllAllies:
+            case TargetType.AllAllies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
