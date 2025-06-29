@@ -73,7 +73,9 @@ public class PassTurnUI : MonoBehaviour
 
         while (elapsed < fadeDuration)
         {
-            elapsed += Time.deltaTime;
+            // Utilise unscaledDeltaTime pour ignorer le timeScale
+            // et assurer l'affichage même si le jeu est en pause
+            elapsed += Time.unscaledDeltaTime;
             canvasGroup.alpha = Mathf.Clamp01(elapsed / fadeDuration);
             yield return null;
         }
