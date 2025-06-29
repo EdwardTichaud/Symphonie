@@ -316,6 +316,8 @@ public class InputsManager : MonoBehaviour
             StopCoroutine(passRoutine);
             passRoutine = null;
         }
+
+        passTurnUI?.ResetProgressSmooth();
     }
 
     private IEnumerator PassTurnRoutine()
@@ -326,6 +328,7 @@ public class InputsManager : MonoBehaviour
             if (!playerInputs.Battle.Back.IsPressed())
             {
                 passRoutine = null;
+                passTurnUI?.ResetProgressSmooth();
                 yield break;
             }
 
