@@ -48,6 +48,10 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("VFX joué au point d'arrivée de la téléportation")]
     public GameObject teleportEndVFXPrefab;
 
+    [Header("Camera")]
+    [Tooltip("Trajectoire de caméra à instancier lors de l'utilisation du move")]
+    public GameObject cameraPathPrefab;
+
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {
         float finalValue = effectValue;

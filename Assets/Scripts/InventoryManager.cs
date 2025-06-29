@@ -73,6 +73,24 @@ public class InventoryManager : MonoBehaviour
         }
 
         Debug.Log($"[Inventory] Utilisation de l'objet : {item.itemName} sur {target.Data.characterName}");
+
+        if (item.cameraPathPrefab != null && target != null
+            && NewBattleManager.Instance != null
+            && NewBattleManager.Instance.currentBattleState != BattleState.None)
+        {
+            GameObject pathGO = Instantiate(item.cameraPathPrefab, target.transform.position, target.transform.rotation, target.transform);
+            CameraPath camPath = pathGO.GetComponent<CameraPath>();
+            if (camPath != null)
+            {
+                CameraController.Instance.StartPathFollow(camPath, target, alignImmediately: false);
+                Destroy(pathGO, camPath.GetTotalDuration() + 0.5f);
+            }
+            else
+            {
+                Debug.LogWarning("[InventoryManager] CameraPath component manquant sur le prefab de l'item.");
+            }
+        }
+
         item.ApplyEffect(target);
         inventoryItems.Remove(item);
     }

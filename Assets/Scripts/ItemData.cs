@@ -48,6 +48,10 @@ public class ItemData : ScriptableObject
     [Header("VFX")]
     public GameObject introVFXPrefab;
 
+    [Header("Camera")]
+    [Tooltip("Trajectoire de caméra à instancier lors de l'utilisation de l'item")]
+    public GameObject cameraPathPrefab;
+
     [Header("QTE Pattern")]
     public List<float> beatPattern;
 
