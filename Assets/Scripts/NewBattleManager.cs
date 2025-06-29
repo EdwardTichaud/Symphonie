@@ -828,6 +828,8 @@ public class NewBattleManager : MonoBehaviour
         }
 
         ChangeBattleState(BattleState.EndTurn);
+        // Cache tous les menus à la fin du tour
+        ToggleMenuContainers(false, false, false);
         UpdateTimelineHighlight(null);
         isTurnResolving = false;
         HandleEndOfBattle();
