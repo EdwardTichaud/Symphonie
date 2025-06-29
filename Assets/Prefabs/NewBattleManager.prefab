@@ -54,11 +54,13 @@ MonoBehaviour:
   unitsInBattle: []
   activeCharacterUnits: []
   firstStrikeCameraPath: {fileID: 0}
-  firstStrikeEffect: {fileID: 0}
+  firstStrikeEffect: {fileID: 100000, guid: 1b4e5c63c6bd40e088ef5c2e3c765d3b, type: 3}
   victoryScreen: {fileID: 0}
   gameOverScreen: {fileID: 0}
   VictoryScreenImage: {fileID: 8400000, guid: 3c33ee4a0b457ed4fad4d2f9fc1598e7, type: 2}
   GameOverScreenImage: {fileID: 8400000, guid: 3c33ee4a0b457ed4fad4d2f9fc1598e7, type: 2}
+  rewardItems: []
+  rewardXP: 0
   timelineContainer: {fileID: 0}
   timelineUnitPrefab: {fileID: 2361378650977482155, guid: f4df227ff56f0ef479b12913669cd903, type: 3}
   timelineUIObjects: []
