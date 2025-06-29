@@ -1,19 +1,36 @@
 using UnityEngine;
 using TMPro;
 
-public class DamagePopupBehaviour : MonoBehaviour
+public class DamagePopup : MonoBehaviour
 {
     [Header("Animation")]
     public float floatSpeed = 1f;
     public float duration = 1.5f;
     public Vector3 offset = new Vector3(0, 2f, 0);
 
-    [Header("Références")]
+    [Header("RÃ©fÃ©rences")]
     public TextMeshProUGUI textMesh;
 
     private float elapsed = 0f;
     private Camera mainCam;
     private CanvasGroup canvasGroup;
+
+    private static DamagePopup popupPrefab;
+
+    public static void Show(Vector3 position, int amount)
+    {
+        if (popupPrefab == null)
+            popupPrefab = Resources.Load<DamagePopup>("DamagePopup");
+
+        if (popupPrefab == null)
+        {
+            Debug.LogError("DamagePopup prefab introuvable dans un dossier Resources.");
+            return;
+        }
+
+        DamagePopup instance = Instantiate(popupPrefab, position, Quaternion.identity);
+        instance.Initialize(amount);
+    }
 
     public void Initialize(int amount)
     {
@@ -21,7 +38,7 @@ public class DamagePopupBehaviour : MonoBehaviour
         mainCam = Camera.main;
         canvasGroup = GetComponent<CanvasGroup>();
 
-        // Position de départ + offset vertical
+        // Position de dÃ©part + offset vertical
         transform.position += offset;
     }
 
@@ -29,14 +46,14 @@ public class DamagePopupBehaviour : MonoBehaviour
     {
         if (mainCam != null)
         {
-            // Toujours face à la caméra
+            // Toujours face Ã  la camÃ©ra
             transform.rotation = Quaternion.LookRotation(transform.position - mainCam.transform.position);
         }
 
         // Animation vers le haut
         transform.position += Vector3.up * floatSpeed * Time.deltaTime;
 
-        // Fade out après 'duration'
+        // Fade out aprÃ¨s 'duration'
         elapsed += Time.deltaTime;
         if (elapsed >= duration)
         {
