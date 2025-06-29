@@ -140,6 +140,10 @@ public class InputsManager : MonoBehaviour
                 return;
             }
 
+            if (bm.currentItem != null && bm.currentItem.itemTargetingAnimation != null)
+                bm.currentCharacterUnit.GetComponentInChildren<Animator>()
+                    .Play(bm.currentItem.itemTargetingAnimation.name);
+
             bm.ChangeBattleState(BattleState.SquadUnit_UseItem);
             bm.StartCoroutine(bm.UseItemOnTarget(bm.currentItem, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
