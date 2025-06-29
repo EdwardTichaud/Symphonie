@@ -1,12 +1,18 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEditor;
+using System.Collections;
 
 public class InputsManager : MonoBehaviour
 {
     public static InputsManager Instance { get; private set; }
     public PlayerInputs playerInputs;
     private CharacterController3D controller;
+
+    [Header("Pass Turn")]
+    public PassTurnUI passTurnUI;
+    public float passHoldDuration = 3f;
+    private Coroutine passRoutine;
 
     private InputActionMap[] allMaps;
 
@@ -58,7 +64,9 @@ public class InputsManager : MonoBehaviour
         battle.Select1.performed += OnSelect1;
         battle.Select2.performed += OnSelect2;
         battle.Select3.performed += OnSelect3;
+        battle.Back.started += OnBackStarted;
         battle.Back.performed += OnBackInput;
+        battle.Back.canceled += OnBackCanceled;
         battle.Confirm.performed += OnConfirm;
 
         var world = playerInputs.World;
@@ -75,7 +83,9 @@ public class InputsManager : MonoBehaviour
         battle.Select1.performed -= OnSelect1;
         battle.Select2.performed -= OnSelect2;
         battle.Select3.performed -= OnSelect3;
+        battle.Back.started -= OnBackStarted;
         battle.Back.performed -= OnBackInput;
+        battle.Back.canceled -= OnBackCanceled;
         battle.Confirm.performed -= OnConfirm;
 
         var world = playerInputs.World;
@@ -282,6 +292,48 @@ public class InputsManager : MonoBehaviour
         {
             bm.OpenItemMenu();
         }
+    }
+
+    private void OnBackStarted(InputAction.CallbackContext ctx)
+    {
+        NewBattleManager bm = NewBattleManager.Instance;
+        if (bm.currentBattleState == BattleState.SquadUnit_MainMenu && passRoutine == null)
+        {
+            passRoutine = StartCoroutine(PassTurnRoutine());
+        }
+    }
+
+    private void OnBackCanceled(InputAction.CallbackContext ctx)
+    {
+        if (passRoutine != null)
+        {
+            StopCoroutine(passRoutine);
+            passRoutine = null;
+            passTurnUI?.Hide();
+        }
+    }
+
+    private IEnumerator PassTurnRoutine()
+    {
+        passTurnUI?.Show();
+        float elapsed = 0f;
+        while (elapsed < passHoldDuration)
+        {
+            if (!playerInputs.Battle.Back.IsPressed())
+            {
+                passTurnUI?.Hide();
+                passRoutine = null;
+                yield break;
+            }
+
+            elapsed += Time.unscaledDeltaTime;
+            passTurnUI?.SetProgress(elapsed / passHoldDuration);
+            yield return null;
+        }
+
+        passTurnUI?.Hide();
+        passRoutine = null;
+        NewBattleManager.Instance.EndTurn();
     }
 
     private void OnEnemiesGroupSelection()
