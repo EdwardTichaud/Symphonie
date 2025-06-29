@@ -151,6 +151,7 @@ public class NewBattleManager : MonoBehaviour
     [HideInInspector] public List<ItemData> itemChoices = new List<ItemData>();
     [HideInInspector] public MusicalMoveSO currentMove;
     [HideInInspector] public ItemData currentItem;
+    [HideInInspector] public TargetType currentItemTargetType;
     public int currentMenuIndex;
     // Sélection nulle pour remplir les emplacements vides
     public MusicalMoveSO emptyMove;
@@ -1401,7 +1402,7 @@ public class NewBattleManager : MonoBehaviour
         if (!isSkillTargeting && !isItemTargeting)
             return;
 
-        TargetType type = isSkillTargeting ? currentMove.targetType : currentItem.targetType;
+        TargetType type = isSkillTargeting ? currentMove.targetType : currentItemTargetType;
 
         if (type == TargetType.Self)
         {
@@ -1566,7 +1567,7 @@ public class NewBattleManager : MonoBehaviour
     public void HandleTargetSelection(ItemData item)
     {
         currentItem = item;
-        item.targetType = item.defaultTargetType;
+        currentItemTargetType = item.defaultTargetType;
         switch (item.defaultTargetType)
         {
             case TargetType.Self:
