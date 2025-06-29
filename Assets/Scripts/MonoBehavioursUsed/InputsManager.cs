@@ -361,7 +361,7 @@ public class InputsManager : MonoBehaviour
                     desired = TargetType.SingleEnemy;
                 else if (bm.currentItem.targetTypes.Contains(TargetType.AllEnemies))
                     desired = TargetType.AllEnemies;
-                bm.currentItem.targetType = desired;
+                bm.currentItemTargetType = desired;
             }
             bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
 
@@ -388,7 +388,7 @@ public class InputsManager : MonoBehaviour
                     desired = TargetType.SingleAlly;
                 else if (bm.currentItem.targetTypes.Contains(TargetType.AllAllies))
                     desired = TargetType.AllAllies;
-                bm.currentItem.targetType = desired;
+                bm.currentItemTargetType = desired;
             }
             bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
 
