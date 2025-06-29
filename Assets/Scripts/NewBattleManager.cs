@@ -365,6 +365,9 @@ public class NewBattleManager : MonoBehaviour
         //3 Affecter currentTarget au premier ennemi de la liste
         SetDefaultCurrentTarget();
 
+        // S'assure que le curseur de cible existe pour ce nouveau combat
+        EnsureTargetCursor();
+
         //4 Réinitialise les ATB
         ResetAllATB();
 
@@ -1719,6 +1722,7 @@ public class NewBattleManager : MonoBehaviour
         if (targetCursor != null)
         {
             Destroy(targetCursor);
+            targetCursor = null;
         }
     }
     #endregion
