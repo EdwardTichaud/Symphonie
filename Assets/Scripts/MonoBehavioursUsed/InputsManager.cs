@@ -116,24 +116,30 @@ public class InputsManager : MonoBehaviour
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
-        if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill)
+        if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
+            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
+            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
+            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
         {
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentMove))
             {
                 ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
                 return;
             }
+
             bm.ChangeBattleState(BattleState.SquadUnit_PerformingMusicalMove);
             bm.StartCoroutine(bm.ExecuteMoveOnTarget(bm.currentMove, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
         }
-        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem)
+        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem
+                 || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem)
         {
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentItem))
             {
                 ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
                 return;
             }
+
             bm.ChangeBattleState(BattleState.SquadUnit_UseItem);
             bm.StartCoroutine(bm.UseItemOnTarget(bm.currentItem, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
