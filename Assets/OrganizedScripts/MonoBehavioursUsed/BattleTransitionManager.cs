@@ -203,6 +203,11 @@ public class BattleTransitionManager : MonoBehaviour
 
         battleIntroPath.triggered = false;
 
+        if (Application.isPlaying && !Application.isEditor && SaveAndLoadManager.Instance != null)
+        {
+            SaveAndLoadManager.Instance.AutoSave();
+        }
+
         //yield return FadeToTransparent(1f);
     }
 
