@@ -82,7 +82,7 @@ public class InventoryManager : MonoBehaviour
             CameraPath camPath = pathGO.GetComponent<CameraPath>();
             if (camPath != null)
             {
-                CameraController.Instance.StartPathFollow(camPath, target, alignImmediately: false);
+                CameraController.Instance.StartPathFollow(camPath, target.transform, alignImmediately: false);
                 Destroy(pathGO, camPath.GetTotalDuration() + 0.5f);
             }
             else
