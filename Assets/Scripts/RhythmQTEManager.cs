@@ -143,17 +143,17 @@ public class RhythmQTEManager : MonoBehaviour
             if (move.teleportEndVFXPrefab != null)
                 Instantiate(move.teleportEndVFXPrefab, teleportTargetPosition, Quaternion.identity);
 
-            if (move.stayFaceToTarget && target != null)
-            {
-                Vector3 lookDirection = (target.transform.position - caster.transform.position).normalized;
-                if (lookDirection != Vector3.zero)
-                    caster.transform.forward = lookDirection;
-            }
-            else
-            {
-                if (teleportOffsetDir != Vector3.zero)
-                    caster.transform.forward = teleportOffsetDir;
-            }
+            Vector3 lookDir = Vector3.zero;
+            if (target != null)
+                lookDir = (target.transform.position - caster.transform.position).normalized;
+
+
+            if (lookDir != Vector3.zero)
+                caster.transform.forward = lookDir;
+            else if (teleportOffsetDir != Vector3.zero)
+                caster.transform.forward = teleportOffsetDir;
+
+            NewBattleManager.Instance?.OrientAllUnitsTowardClosestOpponent();
 
             yield return null;
             Debug.Log("Fin du déplacement de " + caster.name);
@@ -219,6 +219,7 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         Debug.Log("Fin du déplacement de " + caster.name);
+        NewBattleManager.Instance?.OrientAllUnitsTowardClosestOpponent();
     }
 
     private IEnumerator ReturnToInitialPosition(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
@@ -292,6 +293,7 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         Debug.Log("Le caster a terminé son retour.");
+        NewBattleManager.Instance?.OrientAllUnitsTowardClosestOpponent();
     }
 
     IEnumerator PlayMoveAnimations(string[] animationClips, CharacterUnit caster)
