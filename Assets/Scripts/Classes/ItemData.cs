@@ -132,6 +132,10 @@ public class ItemData : ScriptableObject
                 }
                 break;
 
+            case ItemEffectType.ExtendEffects:
+                InventoryManager.Instance?.ExtendAllModifiers(target, 2f);
+                break;
+
             default:
                 Debug.LogWarning($"[ItemData] Type d'effet inconnu : {effectType}");
                 break;
@@ -139,7 +143,7 @@ public class ItemData : ScriptableObject
     }
 }
 
-public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange }
+public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange, ExtendEffects }
 public enum BuffStatType { None, Strength, Defense, Initiative }
 public enum DebuffStatType { None, Strength, Defense, Initiative }
 public enum TimingBoostType { None, ParryWindow, DodgeWindow }

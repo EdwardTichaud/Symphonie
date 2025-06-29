@@ -13,6 +13,15 @@ public class InventoryManager : MonoBehaviour
     [Header("Items actuellement en inventaire")]
     [SerializeField] private List<ItemData> inventoryItems = new();
 
+    private class StatModifier
+    {
+        public BuffStatType stat;
+        public float value;
+        public float remainingDuration;
+    }
+
+    private readonly Dictionary<CharacterUnit, List<StatModifier>> activeModifiers = new();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -128,8 +137,22 @@ public class InventoryManager : MonoBehaviour
     private IEnumerator ApplyStatModifier(CharacterUnit target, BuffStatType stat, float value, float duration)
     {
         ModifyStat(target, stat, value);
-        yield return new WaitForSeconds(duration);
+        var modifier = new StatModifier { stat = stat, value = value, remainingDuration = duration };
+        if (!activeModifiers.TryGetValue(target, out var list))
+        {
+            list = new List<StatModifier>();
+            activeModifiers[target] = list;
+        }
+        list.Add(modifier);
+        while (modifier.remainingDuration > 0f)
+        {
+            modifier.remainingDuration -= Time.deltaTime;
+            yield return null;
+        }
         ModifyStat(target, stat, -value);
+        list.Remove(modifier);
+        if (list.Count == 0)
+            activeModifiers.Remove(target);
     }
 
     private void ModifyStat(CharacterUnit target, BuffStatType stat, float delta)
@@ -157,5 +180,17 @@ public class InventoryManager : MonoBehaviour
             BuffStatType.Initiative => target.Data.baseInitiative,
             _ => 0f,
         };
+    }
+
+    public void ExtendAllModifiers(CharacterUnit target, float additionalDuration)
+    {
+        if (target == null)
+            return;
+
+        if (activeModifiers.TryGetValue(target, out var list))
+        {
+            foreach (var mod in list)
+                mod.remainingDuration += additionalDuration;
+        }
     }
 }
