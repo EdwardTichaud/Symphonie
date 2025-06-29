@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -102,5 +103,59 @@ public class InventoryManager : MonoBehaviour
     {
         Debug.Log($"[Inventory] Aperçu de l'effet de {item.itemName} sur {target.Data.characterName}");
         item.ApplyEffect(target);
+    }
+
+    public void ApplyBuff(CharacterUnit target, BuffStatType stat, int amount, float duration, bool isPercentage)
+    {
+        if (target == null || stat == BuffStatType.None || amount == 0)
+            return;
+
+        float baseValue = GetBaseStat(target, stat);
+        float value = isPercentage ? baseValue * amount / 100f : amount;
+        StartCoroutine(ApplyStatModifier(target, stat, value, duration));
+    }
+
+    public void ApplyDebuff(CharacterUnit target, DebuffStatType stat, int amount, float duration, bool isPercentage)
+    {
+        if (target == null || stat == DebuffStatType.None || amount == 0)
+            return;
+
+        float baseValue = GetBaseStat(target, (BuffStatType)stat);
+        float value = isPercentage ? baseValue * amount / 100f : amount;
+        StartCoroutine(ApplyStatModifier(target, (BuffStatType)stat, -value, duration));
+    }
+
+    private IEnumerator ApplyStatModifier(CharacterUnit target, BuffStatType stat, float value, float duration)
+    {
+        ModifyStat(target, stat, value);
+        yield return new WaitForSeconds(duration);
+        ModifyStat(target, stat, -value);
+    }
+
+    private void ModifyStat(CharacterUnit target, BuffStatType stat, float delta)
+    {
+        switch (stat)
+        {
+            case BuffStatType.Strength:
+                target.currentStrength += delta;
+                break;
+            case BuffStatType.Defense:
+                target.currentDefense += delta;
+                break;
+            case BuffStatType.Initiative:
+                target.currentInitiative += delta;
+                break;
+        }
+    }
+
+    private float GetBaseStat(CharacterUnit target, BuffStatType stat)
+    {
+        return stat switch
+        {
+            BuffStatType.Strength => target.Data.baseStrength,
+            BuffStatType.Defense => target.Data.baseDefense,
+            BuffStatType.Initiative => target.Data.baseInitiative,
+            _ => 0f,
+        };
     }
 }
