@@ -42,7 +42,6 @@ public class ItemData : ScriptableObject
     public float timingDuration;
 
     [Header("Ciblage")]
-    public AvailableTargetType targetType = AvailableTargetType.SingleAlly;
     public AvailableTargetType defaultTargetType = AvailableTargetType.SingleAlly;
     public List<AvailableTargetType> availableTargetTypes = new List<AvailableTargetType>() { AvailableTargetType.SingleAlly };
 
