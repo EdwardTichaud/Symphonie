@@ -349,17 +349,17 @@ public class InputsManager : MonoBehaviour
             TargetType desired = TargetType.SingleEnemy;
             if (bm.currentMove != null)
             {
-                if (bm.currentMove.availableTargetTypes.Contains(TargetType.SingleEnemy))
+                if (bm.currentMove.targetTypes.Contains(TargetType.SingleEnemy))
                     desired = TargetType.SingleEnemy;
-                else if (bm.currentMove.availableTargetTypes.Contains(TargetType.AllEnemies))
+                else if (bm.currentMove.targetTypes.Contains(TargetType.AllEnemies))
                     desired = TargetType.AllEnemies;
                 bm.currentMove.targetType = desired;
             }
             if (bm.currentItem != null)
             {
-                if (bm.currentItem.availableTargetTypes.Contains(TargetType.SingleEnemy))
+                if (bm.currentItem.targetTypes.Contains(TargetType.SingleEnemy))
                     desired = TargetType.SingleEnemy;
-                else if (bm.currentItem.availableTargetTypes.Contains(TargetType.AllEnemies))
+                else if (bm.currentItem.targetTypes.Contains(TargetType.AllEnemies))
                     desired = TargetType.AllEnemies;
                 bm.currentItem.targetType = desired;
             }
@@ -376,17 +376,17 @@ public class InputsManager : MonoBehaviour
             TargetType desired = TargetType.SingleAlly;
             if (bm.currentMove != null)
             {
-                if (bm.currentMove.availableTargetTypes.Contains(TargetType.SingleAlly))
+                if (bm.currentMove.targetTypes.Contains(TargetType.SingleAlly))
                     desired = TargetType.SingleAlly;
-                else if (bm.currentMove.availableTargetTypes.Contains(TargetType.AllAllies))
+                else if (bm.currentMove.targetTypes.Contains(TargetType.AllAllies))
                     desired = TargetType.AllAllies;
                 bm.currentMove.targetType = desired;
             }
             if (bm.currentItem != null)
             {
-                if (bm.currentItem.availableTargetTypes.Contains(TargetType.SingleAlly))
+                if (bm.currentItem.targetTypes.Contains(TargetType.SingleAlly))
                     desired = TargetType.SingleAlly;
-                else if (bm.currentItem.availableTargetTypes.Contains(TargetType.AllAllies))
+                else if (bm.currentItem.targetTypes.Contains(TargetType.AllAllies))
                     desired = TargetType.AllAllies;
                 bm.currentItem.targetType = desired;
             }

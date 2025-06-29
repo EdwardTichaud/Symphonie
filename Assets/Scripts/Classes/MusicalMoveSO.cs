@@ -26,7 +26,7 @@ public class MusicalMoveSO : ScriptableObject
     [Header("Ciblage")]
     public TargetType targetType = TargetType.SingleEnemy;
     public TargetType defaultTargetType = TargetType.SingleEnemy;
-    public List<TargetType> availableTargetTypes = new List<TargetType>() { TargetType.SingleEnemy };
+    public List<TargetType> targetTypes = new List<TargetType>() { TargetType.SingleEnemy };
 
     [Header("Effet appliqué")]
     public MusicalEffectType effectType = MusicalEffectType.Damage;
