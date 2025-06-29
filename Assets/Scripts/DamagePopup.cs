@@ -15,23 +15,6 @@ public class DamagePopup : MonoBehaviour
     private Camera mainCam;
     private CanvasGroup canvasGroup;
 
-    private static DamagePopup popupPrefab;
-
-    public static void Show(Vector3 position, int amount)
-    {
-        if (popupPrefab == null)
-            popupPrefab = Resources.Load<DamagePopup>("DamagePopup");
-
-        if (popupPrefab == null)
-        {
-            Debug.LogError("DamagePopup prefab introuvable dans un dossier Resources.");
-            return;
-        }
-
-        DamagePopup instance = Instantiate(popupPrefab, position, Quaternion.identity);
-        instance.Initialize(amount);
-    }
-
     public void Initialize(int amount)
     {
         textMesh.text = amount.ToString();
