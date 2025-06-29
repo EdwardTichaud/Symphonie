@@ -42,8 +42,8 @@ public class ItemData : ScriptableObject
     public float timingDuration;
 
     [Header("Ciblage")]
-    public AvailableTargetType defaultTargetType = AvailableTargetType.SingleAlly;
-    public List<AvailableTargetType> availableTargetTypes = new List<AvailableTargetType>() { AvailableTargetType.SingleAlly };
+    public TargetType defaultTargetType = TargetType.SingleAlly;
+    public List<TargetType> availableTargetTypes = new List<TargetType>() { TargetType.SingleAlly };
 
     [Header("VFX")]
     public GameObject introVFXPrefab;

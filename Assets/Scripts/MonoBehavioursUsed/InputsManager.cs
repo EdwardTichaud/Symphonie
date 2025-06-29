@@ -346,21 +346,21 @@ public class InputsManager : MonoBehaviour
         NewBattleManager bm = NewBattleManager.Instance;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad)
         {
-            AvailableTargetType desired = AvailableTargetType.SingleEnemy;
+            TargetType desired = TargetType.SingleEnemy;
             if (bm.currentMove != null)
             {
-                if (bm.currentMove.availableTargetTypes.Contains(AvailableTargetType.SingleEnemy))
-                    desired = AvailableTargetType.SingleEnemy;
-                else if (bm.currentMove.availableTargetTypes.Contains(AvailableTargetType.AllEnemies))
-                    desired = AvailableTargetType.AllEnemies;
+                if (bm.currentMove.availableTargetTypes.Contains(TargetType.SingleEnemy))
+                    desired = TargetType.SingleEnemy;
+                else if (bm.currentMove.availableTargetTypes.Contains(TargetType.AllEnemies))
+                    desired = TargetType.AllEnemies;
                 bm.currentMove.targetType = desired;
             }
             if (bm.currentItem != null)
             {
-                if (bm.currentItem.availableTargetTypes.Contains(AvailableTargetType.SingleEnemy))
-                    desired = AvailableTargetType.SingleEnemy;
-                else if (bm.currentItem.availableTargetTypes.Contains(AvailableTargetType.AllEnemies))
-                    desired = AvailableTargetType.AllEnemies;
+                if (bm.currentItem.availableTargetTypes.Contains(TargetType.SingleEnemy))
+                    desired = TargetType.SingleEnemy;
+                else if (bm.currentItem.availableTargetTypes.Contains(TargetType.AllEnemies))
+                    desired = TargetType.AllEnemies;
                 bm.currentItem.targetType = desired;
             }
             bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
@@ -373,21 +373,21 @@ public class InputsManager : MonoBehaviour
         NewBattleManager bm = NewBattleManager.Instance;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
         {
-            AvailableTargetType desired = AvailableTargetType.SingleAlly;
+            TargetType desired = TargetType.SingleAlly;
             if (bm.currentMove != null)
             {
-                if (bm.currentMove.availableTargetTypes.Contains(AvailableTargetType.SingleAlly))
-                    desired = AvailableTargetType.SingleAlly;
-                else if (bm.currentMove.availableTargetTypes.Contains(AvailableTargetType.AllAllies))
-                    desired = AvailableTargetType.AllAllies;
+                if (bm.currentMove.availableTargetTypes.Contains(TargetType.SingleAlly))
+                    desired = TargetType.SingleAlly;
+                else if (bm.currentMove.availableTargetTypes.Contains(TargetType.AllAllies))
+                    desired = TargetType.AllAllies;
                 bm.currentMove.targetType = desired;
             }
             if (bm.currentItem != null)
             {
-                if (bm.currentItem.availableTargetTypes.Contains(AvailableTargetType.SingleAlly))
-                    desired = AvailableTargetType.SingleAlly;
-                else if (bm.currentItem.availableTargetTypes.Contains(AvailableTargetType.AllAllies))
-                    desired = AvailableTargetType.AllAllies;
+                if (bm.currentItem.availableTargetTypes.Contains(TargetType.SingleAlly))
+                    desired = TargetType.SingleAlly;
+                else if (bm.currentItem.availableTargetTypes.Contains(TargetType.AllAllies))
+                    desired = TargetType.AllAllies;
                 bm.currentItem.targetType = desired;
             }
             bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
