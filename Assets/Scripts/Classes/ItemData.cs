@@ -88,27 +88,41 @@ public class ItemData : ScriptableObject
         switch (effectType)
         {
             case ItemEffectType.Heal:
-
+                if (target != null)
+                {
+                    float amount = healIsPercentage
+                        ? (target.Data.baseHP + target.currentVitality) * healAmount / 100f
+                        : healAmount;
+                    target.Heal(amount);
+                }
                 break;
 
             case ItemEffectType.Revive:
-
+                if (target != null && target.currentHP <= 0)
+                {
+                    float maxHP = target.Data.baseHP + target.currentVitality;
+                    float amount = maxHP * revivePercentage / 100f;
+                    target.currentHP = Mathf.Clamp(amount, 0f, maxHP);
+                    if (target.hpBar != null)
+                        target.hpBar.SetValue(target.currentHP);
+                }
                 break;
 
             case ItemEffectType.Buff:
-
+                InventoryManager.Instance?.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
                 break;
 
             case ItemEffectType.Debuff:
-
+                InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, buffDuration, buffIsPercentage);
                 break;
 
             case ItemEffectType.BoostTiming:
-
+                Debug.Log("[ItemData] Effet BoostTiming non implémenté.");
                 break;
 
             case ItemEffectType.Damage:
-
+                if (target != null)
+                    target.TakeDamage(effectValue);
                 break;
 
             case ItemEffectType.IncreaseRange:
