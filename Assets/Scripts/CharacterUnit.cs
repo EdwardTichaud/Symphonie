@@ -284,23 +284,18 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             return null;
         }
 
-        // Priorité 1 : cible avec le moins de PV
+        // Priorité : cible ayant infligé le plus de dégâts au cours du combat
+        var topDamageDealer = NewBattleManager.Instance.GetTopDamageDealer();
+        if (topDamageDealer != null)
+            return topDamageDealer;
+
+        // Sinon, cible avec le moins de PV
         var lowestHPUnit = squad.OrderBy(u => u.Data.currentHP).FirstOrDefault();
         if (lowestHPUnit != null)
             return lowestHPUnit;
 
-        // Priorité 2 : cible ayant infligé le plus de dégâts à cet ennemi (si tu as un système de suivi de dégâts)
-        // Exemple fictif : si tu avais un dictionnaire `Dictionary<CharacterUnit, float> damageReceivedFrom`
-        // Tu peux remplacer par ta propre logique de suivi.
-        /*
-        if (damageReceivedFrom.Count > 0)
-        {
-            var topAggro = damageReceivedFrom.OrderByDescending(kvp => kvp.Value).First().Key;
-            return topAggro;
-        }
-        */
-
-        return squad[Random.Range(0, squad.Count)]; // Fallback random
+        // Fallback aléatoire
+        return squad[Random.Range(0, squad.Count)];
     }
 
     #endregion

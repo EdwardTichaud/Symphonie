@@ -93,6 +93,7 @@ public class NewBattleManager : MonoBehaviour
     private int currentTurnDamage = 0;
     private int maxTurnDamage = 0;
     private CharacterUnit mvpUnit;
+    private Dictionary<CharacterUnit, int> totalDamageDealt = new();
 
     [Header("Timeline UI")]
     public RectTransform timelineContainer;
@@ -345,11 +346,18 @@ public class NewBattleManager : MonoBehaviour
         currentTurnDamage = 0;
         maxTurnDamage = 0;
         mvpUnit = null;
+        totalDamageDealt.Clear();
 
         //0 Liste "unitsInBattle" construite avec SpawnAll
 
         //1 Filtrer pour ne garder que les unités dont les HP sont > 0
         activeCharacterUnits = ReturnActiveUnits();
+
+        foreach (var unit in activeCharacterUnits.Where(u => u.Data.isPlayerControlled))
+        {
+            if (!totalDamageDealt.ContainsKey(unit))
+                totalDamageDealt[unit] = 0;
+        }
 
         //2 Initialise l’UI de timeline
         InitializeTimelineUI(unitsInBattle);
@@ -597,7 +605,30 @@ public class NewBattleManager : MonoBehaviour
         if (caster == null || caster.Data.characterType != CharacterType.SquadUnit)
             return;
 
-        currentTurnDamage += Mathf.RoundToInt(amount);
+        int dmg = Mathf.RoundToInt(amount);
+        currentTurnDamage += dmg;
+
+        if (!totalDamageDealt.ContainsKey(caster))
+            totalDamageDealt[caster] = 0;
+        totalDamageDealt[caster] += dmg;
+    }
+
+    public CharacterUnit GetTopDamageDealer()
+    {
+        if (totalDamageDealt.Count == 0)
+            return null;
+
+        int maxDamage = totalDamageDealt.Values.Max();
+        var candidates = totalDamageDealt
+            .Where(kvp => kvp.Value == maxDamage)
+            .Select(kvp => kvp.Key)
+            .Where(u => u != null && u.currentHP > 0)
+            .ToList();
+
+        if (candidates.Count == 0)
+            return null;
+
+        return candidates.OrderBy(u => u.Data.currentHP).First();
     }
 
     private IEnumerator EnemyTurnWithQTE(CharacterUnit enemy)
@@ -606,6 +637,7 @@ public class NewBattleManager : MonoBehaviour
         yield return new WaitForSeconds(1f);
 
         var move = enemy.GetRandomMusicalAttack();
+        currentMove = move;
         var target = enemy.SelectTargetFromSquad();
 
         _currentTargetCharacter = target;

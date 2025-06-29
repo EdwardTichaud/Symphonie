@@ -18,16 +18,16 @@ public class AnimationEventsManager : MonoBehaviour
     {
         target = NewBattleManager.Instance?.currentTargetCharacter;
         move = NewBattleManager.Instance?.currentMove;
-        if (target != null)
+        if (target == null || move == null)
+            return;
+
+        if (target.isReadyToParry)
         {
-            if(target.isReadyToParry)
-            {
-                transform.parent.GetComponent<CharacterUnit>().TakeParry();
-            }
-            else
-            {
-                target.TakeDamage(move.power);
-            }                
+            transform.parent.GetComponent<CharacterUnit>().TakeParry();
+        }
+        else
+        {
+            target.TakeDamage(move.power);
         }
     }
 
