@@ -823,7 +823,7 @@ public class NewBattleManager : MonoBehaviour
         isTurnResolving = false;
         HandleEndOfBattle();
 
-        PassTurnUI.Instance.Hide();
+        PassTurnUI.Instance.Hide(); // Bouclage
     }
     #endregion
 
@@ -1164,6 +1164,7 @@ public class NewBattleManager : MonoBehaviour
 
     public void ShowMainMenu()
     {
+        PassTurnUI.Instance.Show();
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectItemSkillOrPass();
         ChangeBattleState(BattleState.SquadUnit_MainMenu);
         ToggleMenuContainers(true, false, false);
@@ -1178,6 +1179,7 @@ public class NewBattleManager : MonoBehaviour
 
     public void OpenSkillsMenu()
     {
+        PassTurnUI.Instance.Hide();
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectSkill();
         ChangeBattleState(BattleState.SquadUnit_SkillsMenu);
         ToggleMenuContainers(false, true, false);
