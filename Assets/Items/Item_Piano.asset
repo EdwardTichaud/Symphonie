@@ -15,12 +15,13 @@ MonoBehaviour:
   itemID: 
   itemName: 
   description: 
-  icon: {fileID: 0}
+  itemIcon: {fileID: 0}
   effectValue: 10
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
   stayInPlace: 0
+  itemTargetingAnimationName: UseItemPreparation_Start
   effectType: 0
   healAmount: 0
   healIsPercentage: 0
@@ -34,8 +35,10 @@ MonoBehaviour:
   timingType: 0
   timingBoostAmount: 0
   timingDuration: 0
-  targetType: 3
+  defaultTargetType: 3
+  targetTypes: 03000000
   introVFXPrefab: {fileID: 0}
+  cameraPathPrefab: {fileID: 0}
   beatPattern: []
   currentCaster: {fileID: 0}
   currentTarget: {fileID: 0}

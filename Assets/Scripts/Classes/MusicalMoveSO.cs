@@ -12,7 +12,7 @@ public class MusicalMoveSO : ScriptableObject
     public MoveType moveType;
     public Sprite moveIcon;
     [TextArea] public string description;
-    public string musicalMoveTargetingAnimationName;
+    public AnimationClip musicalMoveTargetingAnimation;
     public string musicalMoveRunAnimationName;
     public float maxRunDuration = 0.5f;
     public bool stayFaceToTarget;

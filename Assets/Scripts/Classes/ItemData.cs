@@ -17,7 +17,7 @@ public class ItemData : ScriptableObject
     public float castDistance;
     public bool stayInPlace;
 
-    public string itemTargetingAnimationName;
+    public AnimationClip itemTargetingAnimation;
 
     public ItemEffectType effectType;
 
