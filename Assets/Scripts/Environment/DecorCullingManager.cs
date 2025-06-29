@@ -10,10 +10,22 @@ public class DecorCullingManager : MonoBehaviour
     [Tooltip("Marge de sécurité autour des décors (en mètres).")]
     public float margin = 5f;
 
-    private readonly List<DecorCullingObject> objects = new();
+    [Tooltip("Nom du layer utilisé pour le culling.")]
+    public string layerName = "World_Culling";
+
+    private class TrackedObject
+    {
+        public GameObject gameObject;
+        public Renderer[] renderers;
+        public Collider[] colliders;
+        public BoundingSphere baseSphere;
+    }
+
+    private readonly List<TrackedObject> objects = new();
     private CullingGroup cullingGroup;
     private BoundingSphere[] spheres = new BoundingSphere[0];
     private Camera targetCamera;
+    private int layerMask;
 
     private void Awake()
     {
@@ -22,6 +34,7 @@ public class DecorCullingManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
@@ -29,6 +42,18 @@ public class DecorCullingManager : MonoBehaviour
         cullingGroup = new CullingGroup();
         cullingGroup.onStateChanged += OnStateChanged;
         cullingGroup.targetCamera = targetCamera;
+
+        // Obtenir le LayerMask depuis le nom
+        layerMask = LayerMask.NameToLayer(layerName);
+        if (layerMask < 0)
+        {
+            Debug.LogError($"Layer \"{layerName}\" n'existe pas. Ajoute-le dans les settings Unity.");
+            enabled = false;
+            return;
+        }
+
+        RegisterAllLayeredObjects();
+        UpdateSpheres();
     }
 
     private void LateUpdate()
@@ -40,23 +65,37 @@ public class DecorCullingManager : MonoBehaviour
         }
     }
 
-    public void RegisterObject(DecorCullingObject obj)
+    private void RegisterAllLayeredObjects()
     {
-        if (!objects.Contains(obj))
+        GameObject[] allObjects = FindObjectsOfType<GameObject>(true);
+        foreach (GameObject obj in allObjects)
         {
-            objects.Add(obj);
-            UpdateSpheres();
+            if (obj.layer == layerMask)
+                RegisterObject(obj);
         }
     }
 
-    public void UnregisterObject(DecorCullingObject obj)
+    private void RegisterObject(GameObject obj)
     {
-        int index = objects.IndexOf(obj);
-        if (index >= 0)
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>(true);
+        Collider[] colliders = obj.GetComponentsInChildren<Collider>(true);
+
+        if (renderers.Length == 0)
+            return;
+
+        Bounds bounds = renderers[0].bounds;
+        foreach (var r in renderers)
+            bounds.Encapsulate(r.bounds);
+
+        var tracked = new TrackedObject
         {
-            objects.RemoveAt(index);
-            UpdateSpheres();
-        }
+            gameObject = obj,
+            renderers = renderers,
+            colliders = colliders,
+            baseSphere = new BoundingSphere(bounds.center, bounds.extents.magnitude)
+        };
+
+        objects.Add(tracked);
     }
 
     private void UpdateSpheres()
@@ -64,16 +103,24 @@ public class DecorCullingManager : MonoBehaviour
         spheres = new BoundingSphere[objects.Count];
         for (int i = 0; i < objects.Count; i++)
         {
-            spheres[i] = objects[i].GetSphere(margin);
+            BoundingSphere sphere = objects[i].baseSphere;
+            spheres[i] = new BoundingSphere(sphere.position, sphere.radius + margin);
         }
+
         cullingGroup.SetBoundingSpheres(spheres);
-        cullingGroup.SetBoundingSphereCount(objects.Count);
+        cullingGroup.SetBoundingSphereCount(spheres.Length);
     }
 
     private void OnStateChanged(CullingGroupEvent evt)
     {
         bool visible = evt.isVisible;
-        objects[evt.index].SetVisible(visible);
+        TrackedObject obj = objects[evt.index];
+
+        foreach (var r in obj.renderers)
+            r.enabled = visible;
+
+        foreach (var c in obj.colliders)
+            c.enabled = visible;
     }
 
     private void OnDestroy()
