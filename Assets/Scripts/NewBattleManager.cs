@@ -526,6 +526,15 @@ public class NewBattleManager : MonoBehaviour
 
         SetupCurrentUnitMenus(); // prépare les panels de l’unité
         ShowMainMenu(); // montre le menu principal
+        if (characterUnit.Data.isPlayerControlled)
+        {
+            SetupCurrentUnitMenus(); // prépare les panels de l’unité
+            ShowMainMenu(); // montre le menu principal
+        }
+        else
+        {
+            ToggleMenuContainers(false, false, false); // s'assure que les menus sont cachés
+        }
 
         InputsManager.Instance.playerInputs.Battle.Enable();
         OrientAllUnitsTowardEnemyGroupSmooth();
