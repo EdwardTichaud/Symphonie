@@ -730,8 +730,12 @@ public class NewBattleManager : MonoBehaviour
             RegisterDamage(caster, item.effectValue);
         }
         caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
-        currentCharacterUnit.currentATB = 0f;
+        // L'utilisation d'un objet ne met plus fin immédiatement au tour
+        // On laisse l'ATB inchangé pour permettre l'exécution d'un mouvement ensuite
         yield return null;
+
+        // Retour au menu principal pour choisir une autre action
+        ShowMainMenu();
     }
 
     private bool HasSpaceForMove(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
