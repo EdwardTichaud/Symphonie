@@ -4,7 +4,7 @@ public class DamagePopupManager : MonoBehaviour
 {
     public static DamagePopupManager Instance { get; private set; }
 
-    [SerializeField] private DamagePopup damagePopupPrefab;
+    [SerializeField] private GameObject damagePopupPrefab;
 
     void Awake()
     {
@@ -25,7 +25,7 @@ public class DamagePopupManager : MonoBehaviour
             return;
         }
 
-        DamagePopup popup = Instantiate(damagePopupPrefab, position, Quaternion.identity, transform);
-        popup.Initialize(amount);
+        GameObject popup = Instantiate(damagePopupPrefab, NewBattleManager.Instance.currentTargetCharacter.transform.position, Quaternion.identity);
+        popup.GetComponent<DamagePopup>().Initialize(amount);
     }
 }
