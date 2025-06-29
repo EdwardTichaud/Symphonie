@@ -537,7 +537,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         InputsManager.Instance.playerInputs.Battle.Enable();
-        OrientAllUnitsTowardEnemyGroupSmooth();
+        OrientAllUnitsTowardClosestOpponent();
 
         PassTurnUI.Instance.Show();
     }
@@ -563,7 +563,7 @@ public class NewBattleManager : MonoBehaviour
             ChangeBattleState(BattleState.NewTurn);
 
             Debug.Log($"[BattleTurnManager] Tour de {unit.name} (ATB: {unit.currentATB})");
-            OrientAllUnitsTowardEnemyGroupSmooth();
+            OrientAllUnitsTowardClosestOpponent();
 
             yield return new WaitForSeconds(0.5f);
 
@@ -945,6 +945,45 @@ public class NewBattleManager : MonoBehaviour
 
         // Lancer la coroutine pour tourner en douceur
         StartCoroutine(RotateTransformSmoothlyXY(targetTransform, filteredRotation, rotationSpeed));
+    }
+
+    public void OrientUnitTowardClosestOpponent(CharacterUnit unit, float rotationSpeed = 360f)
+    {
+        if (unit == null || unit.Data == null || unit.currentHP <= 0)
+            return;
+
+        CharacterUnit targetUnit = null;
+
+        if (unit == currentCharacterUnit && currentTargetCharacter != null && currentTargetCharacter.currentHP > 0)
+        {
+            targetUnit = currentTargetCharacter;
+        }
+        else
+        {
+            var enemies = unitsInBattle
+                .Where(u => u != null && u.currentHP > 0 && u.Data.isPlayerControlled != unit.Data.isPlayerControlled)
+                .OrderBy(u => Vector3.Distance(unit.transform.position, u.transform.position));
+
+            targetUnit = enemies.FirstOrDefault();
+        }
+
+        if (targetUnit == null)
+            return;
+
+        Vector3 direction = (targetUnit.transform.position - unit.transform.position).normalized;
+        if (direction == Vector3.zero)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        StartCoroutine(RotateUnitSmoothly(unit, targetRotation, rotationSpeed));
+    }
+
+    public void OrientAllUnitsTowardClosestOpponent(float rotationSpeed = 360f)
+    {
+        foreach (var unit in activeCharacterUnits)
+        {
+            OrientUnitTowardClosestOpponent(unit, rotationSpeed);
+        }
     }
 
     private IEnumerator RotateTransformSmoothlyXY(Transform target, Quaternion targetRotation, float speed)
