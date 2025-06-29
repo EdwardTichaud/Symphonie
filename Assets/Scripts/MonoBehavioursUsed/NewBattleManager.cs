@@ -1392,33 +1392,32 @@ public class NewBattleManager : MonoBehaviour
     #region Gestion de la navigation dans les menus
     private void HandleTargetNavigation()
     {
-        bool isEnemyTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
-                                currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem;
+        bool isSkillTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
+                                currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill;
 
-        bool isSquadTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
-                                currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem;
+        bool isItemTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem ||
+                               currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem;
 
-        if (!isEnemyTargeting && !isSquadTargeting)
+        if (!isSkillTargeting && !isItemTargeting)
             return;
 
-        CharacterType requiredType = isEnemyTargeting ? CharacterType.EnemyUnit : CharacterType.SquadUnit;
+        TargetType type = isSkillTargeting ? currentMove.targetType : currentItem.targetType;
 
-        // 🔍 DEBUG : ce que contient activeCharacterUnits
-        Debug.Log($"[TargetNav] Active Units = {activeCharacterUnits.Count}");
-        foreach (var unit in activeCharacterUnits)
+        if (type == TargetType.Self)
         {
-            Debug.Log($"[TargetNav] Unit = {unit.name}, type = {unit.characterType}, active = {unit.gameObject.activeInHierarchy}");
+            currentTargetCharacter = currentCharacterUnit;
+            return;
         }
 
-        // 🔧 Ajustement pour tests : enlève gameObject.activeInHierarchy pour isoler le souci
+        bool targetEnemies = type == TargetType.SingleEnemy || type == TargetType.AllEnemies;
+        CharacterType requiredType = targetEnemies ? CharacterType.EnemyUnit : CharacterType.SquadUnit;
+
         filteredUnits = activeCharacterUnits
-            .Where(u => u.characterType == requiredType) // Retire le test d'activité temporairement
-            .Take(3)
+            .Where(u => u.characterType == requiredType && u.currentHP > 0)
             .ToList();
 
         if (filteredUnits.Count == 0)
         {
-            Debug.LogWarning("[TargetNav] Aucune unité filtrée trouvée !");
             return;
         }
 
@@ -1513,13 +1512,13 @@ public class NewBattleManager : MonoBehaviour
 
     public void HandleTargetSelection(MusicalMoveSO move)
     {
+        currentMove = move;
+        move.targetType = move.defaultTargetType;
         switch (move.defaultTargetType)
         {
             case TargetType.Self:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
-
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetCharacter = currentCharacterUnit;
                 currentTargetIndex = 0;
                 break;
 
@@ -1566,13 +1565,13 @@ public class NewBattleManager : MonoBehaviour
 
     public void HandleTargetSelection(ItemData item)
     {
+        currentItem = item;
+        item.targetType = item.defaultTargetType;
         switch (item.defaultTargetType)
         {
             case TargetType.Self:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
-
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetCharacter = currentCharacterUnit;
                 currentTargetIndex = 0;
                 break;
 
