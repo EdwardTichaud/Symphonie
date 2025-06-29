@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &178733098578418903
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4120021835176124660}
+  m_Layer: 6
+  m_Name: Camera_UseItem_Prepare
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4120021835176124660
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 178733098578418903}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.046033636, y: 0.9165256, z: -0.17780952, w: 0.3553106}
+  m_LocalPosition: {x: -1.141, y: 2.483, z: 1.59}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4246028710237056507}
+  m_LocalEulerAnglesHint: {x: 17.051, y: 135.704, z: -12.734}
 --- !u!1 &217202170993013829
 GameObject:
   m_ObjectHideFlags: 0
@@ -128,6 +159,7 @@ Transform:
   - {fileID: 1355150122335268480}
   - {fileID: 2713457328879743947}
   - {fileID: 2141796926636771426}
+  - {fileID: 4120021835176124660}
   - {fileID: 8474772870969508239}
   - {fileID: 3413617060918782972}
   - {fileID: 7437796999110152934}
@@ -185,18 +217,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Data: {fileID: 0}
   hpBar: {fileID: 0}
-  mpBar: {fileID: 0}
-  rageBar: {fileID: 0}
-  characterType: 0
-  currentHP: 0
+  customBar: {fileID: 0}
   currentMP: 0
-  currentStrength: 0
-  currentDefense: 0
   currentMusicalGauge: 0
-  currentInitiative: 0
   currentATB: 0
   ATBMax: 100
   isReadyToParry: 0
+  lootItems: []
+  experienceReward: 0
 --- !u!114 &6769647812387645000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -207,8 +235,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b2489b6fdd4b4a97ba03c619498bec01, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &3325568263149963469
 GameObject:
   m_ObjectHideFlags: 0
@@ -327,8 +355,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7182649117659710025}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.14089389, z: -0, w: -0.9900247}
-  m_LocalPosition: {x: -3.8667417, y: -0.16893911, z: -9.087725}
+  m_LocalRotation: {x: -0, y: 0.5039928, z: -0, w: -0.86370784}
+  m_LocalPosition: {x: 7.957313, y: -0.16893625, z: -5.849753}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

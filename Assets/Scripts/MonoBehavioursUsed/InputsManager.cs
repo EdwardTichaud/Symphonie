@@ -118,8 +118,9 @@ public class InputsManager : MonoBehaviour
         NewBattleManager bm = NewBattleManager.Instance;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
-            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
-            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
+            //|| bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
+            //|| bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies
+            )
         {
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentMove))
             {
@@ -132,8 +133,8 @@ public class InputsManager : MonoBehaviour
             bm.ToggleMenuContainers(false, false, false);
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem
-                 || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem)
-        {
+            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem)
+            {
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentItem))
             {
                 ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
@@ -144,7 +145,7 @@ public class InputsManager : MonoBehaviour
                 bm.currentCharacterUnit.GetComponentInChildren<Animator>()
                     .Play(bm.currentItem.itemTargetingAnimation.name);
 
-            bm.ChangeBattleState(BattleState.SquadUnit_UseItem);
+            bm.ChangeBattleState(BattleState.SquadUnit_Item_Use);
             bm.StartCoroutine(bm.UseItemOnTarget(bm.currentItem, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
         }

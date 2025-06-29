@@ -39,12 +39,14 @@ public enum BattleState
     SquadUnit_TargetSelectionAmongEnemiesForSkill,
     SquadUnit_TargetSelectionAmongEnemiesForItem,
     SquadUnit_PerformingMusicalMove,
-    SquadUnit_UseItem,
+    SquadUnit_Item_Prepare,
+    SquadUnit_Item_Use,
 
     // EnemyUnit Turn
     EnemyUnit_Reflexion,
     EnemyUnit_PerformingMusicalMove,
-    EnemyUnit_UseItem,
+    EnemyUnit_Item_Prepare,
+    EnemyUnit_Item_Use,
 
     // Game Over
     VictoryScreen_Await,
@@ -1713,11 +1715,11 @@ public class NewBattleManager : MonoBehaviour
                 isFollowingCurrentTarget = true;
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
                 break;
-            case BattleState.SquadUnit_UseItem:
+            case BattleState.SquadUnit_Item_Use:
                 isFollowingCurrentTarget = true;
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
                 break;
-            case BattleState.EnemyUnit_UseItem:
+            case BattleState.EnemyUnit_Item_Use:
                 isFollowingCurrentTarget = true;
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
                 break;
