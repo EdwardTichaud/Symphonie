@@ -88,27 +88,34 @@ public class ItemData : ScriptableObject
         switch (effectType)
         {
             case ItemEffectType.Heal:
-                
+
                 break;
 
             case ItemEffectType.Revive:
-                
+
                 break;
 
             case ItemEffectType.Buff:
-                
+
                 break;
 
             case ItemEffectType.Debuff:
-               
+
                 break;
 
             case ItemEffectType.BoostTiming:
-                
+
                 break;
 
             case ItemEffectType.Damage:
-                
+
+                break;
+
+            case ItemEffectType.IncreaseRange:
+                if (target != null)
+                {
+                    target.Data.currentRange += effectValue;
+                }
                 break;
 
             default:
@@ -118,7 +125,7 @@ public class ItemData : ScriptableObject
     }
 }
 
-public enum ItemEffectType { Heal, Revive, Buff, Debuff, BoostTiming, Damage }
+public enum ItemEffectType { Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange }
 public enum BuffStatType { Strength, Defense, Initiative }
 public enum DebuffStatType { Strength, Defense, Initiative }
 public enum TimingBoostType { ParryWindow, DodgeWindow }
