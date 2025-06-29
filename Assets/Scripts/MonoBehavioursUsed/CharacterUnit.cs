@@ -41,6 +41,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     private bool deathTriggered;
     public bool isReadyToParry;
+    [HideInInspector] public bool isInterceptionImmune = false;
+    [HideInInspector] public int interceptionImmunityTurns = 0;
 
     [Header("Récompenses de combat")]
     public List<ItemData> lootItems = new();
