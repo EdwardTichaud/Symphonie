@@ -118,6 +118,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         currentHP = Mathf.Max(currentHP - amount, 0);
         if (hpBar != null) hpBar.SetValue(currentHP);
+        DamagePopup.Show(transform.position, Mathf.RoundToInt(amount));
         PlayDamageFeedback();
         if (Data != null && Data.gameplayType == GameplayType.Rage)
         {
