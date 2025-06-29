@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System.Collections;
 
 /// <summary>
 /// Affiche une jauge circulaire permettant de passer le tour.
@@ -12,12 +11,17 @@ public class PassTurnUI : MonoBehaviour
     public Image progressImage;
     public TextMeshProUGUI label;
 
+    void Start()
+    {
+        Hide();
+    }
+
     /// <summary>
-    /// Affiche la jauge et réinitialise l'avancement, avec un fondu progressif.
+    /// Affiche la jauge et réinitialise l'avancement.
     /// </summary>
     public void Show()
     {
-        gameObject.SetActive(true);
+        transform.GetChild(0).gameObject.SetActive(true);
         SetProgress(0f);
     }
 
@@ -26,7 +30,7 @@ public class PassTurnUI : MonoBehaviour
     /// </summary>
     public void Hide()
     {
-        gameObject.SetActive(false);
+        transform.GetChild(0).gameObject.SetActive(false);
     }
 
     /// <summary>
