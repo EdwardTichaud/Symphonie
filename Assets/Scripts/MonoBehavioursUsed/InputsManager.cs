@@ -172,7 +172,7 @@ public class InputsManager : MonoBehaviour
                 bm.HandleTargetSelection(bm.currentMove);
 
                 if (bm.currentMove.musicalMoveTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation);
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation.name);
             }
             else
             {
@@ -188,7 +188,7 @@ public class InputsManager : MonoBehaviour
                 bm.HandleTargetSelection(bm.currentItem);
 
                 if (bm.currentItem.itemTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation);
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
             }
             else
             {
@@ -217,7 +217,7 @@ public class InputsManager : MonoBehaviour
                 bm.HandleTargetSelection(bm.currentMove);
 
                 if (bm.currentMove.musicalMoveTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation);
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation.name);
             }
             else
             {
@@ -233,7 +233,7 @@ public class InputsManager : MonoBehaviour
                 bm.HandleTargetSelection(bm.currentItem);
 
                 if (bm.currentItem.itemTargetingAnimation)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation);
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
             }
             else
             {
@@ -258,7 +258,7 @@ public class InputsManager : MonoBehaviour
                 bm.HandleTargetSelection(bm.currentMove);
 
                 if (bm.currentMove.musicalMoveTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation);
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation.name);
             }
             else
             {
@@ -274,7 +274,7 @@ public class InputsManager : MonoBehaviour
                 bm.HandleTargetSelection(bm.currentItem);
 
                 if (bm.currentItem.itemTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation);
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
             }
             else
             {
