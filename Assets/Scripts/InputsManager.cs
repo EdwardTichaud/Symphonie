@@ -12,6 +12,7 @@ public class InputsManager : MonoBehaviour
     [Header("Pass Turn")]
     public PassTurnUI passTurnUI;
     public float passHoldDuration = 3f;
+    public Pulse passTurnPulse;
     private Coroutine passRoutine;
 
     private InputActionMap[] allMaps;
@@ -299,12 +300,17 @@ public class InputsManager : MonoBehaviour
         NewBattleManager bm = NewBattleManager.Instance;
         if (bm.currentBattleState == BattleState.SquadUnit_MainMenu && passRoutine == null)
         {
+            if (passTurnPulse != null)
+                passTurnPulse.pulseSpeed = 0f;
             passRoutine = StartCoroutine(PassTurnRoutine());
         }
     }
 
     private void OnBackCanceled(InputAction.CallbackContext ctx)
     {
+        if (passTurnPulse != null)
+            passTurnPulse.pulseSpeed = 2f;
+
         if (passRoutine != null)
         {
             StopCoroutine(passRoutine);
