@@ -10,11 +10,35 @@ public class FatigueSystem : MonoBehaviour
     public float asleepDuration = 2f;
     private bool isAsleep;
     private Coroutine routine;
+    private bool wasDamagedWhileAsleep;
     public bool IsAsleep => isAsleep;
+    public bool WasDamagedWhileAsleep => wasDamagedWhileAsleep;
 
     private void Awake()
     {
         unit = GetComponent<CharacterUnit>();
+    }
+
+    public void Sleep(float duration)
+    {
+        if (routine != null)
+            StopCoroutine(routine);
+        routine = StartCoroutine(SleepRoutine(duration));
+    }
+
+    public void WakeUp()
+    {
+        if (routine != null)
+            StopCoroutine(routine);
+        isAsleep = false;
+        wasDamagedWhileAsleep = false;
+        routine = null;
+    }
+
+    public void MarkDamagedWhileAsleep()
+    {
+        if (isAsleep)
+            wasDamagedWhileAsleep = true;
     }
 
     public void OnActionPerformed(float amount = 1f)
@@ -27,14 +51,15 @@ public class FatigueSystem : MonoBehaviour
             unit.customBar.SetValue(unit.currentFatigue);
         if (unit.currentFatigue >= unit.Data.maxFatigue && routine == null)
         {
-            routine = StartCoroutine(SleepRoutine());
+            routine = StartCoroutine(SleepRoutine(asleepDuration));
         }
     }
 
-    private IEnumerator SleepRoutine()
+    private IEnumerator SleepRoutine(float duration)
     {
         isAsleep = true;
-        yield return new WaitForSeconds(asleepDuration);
+        wasDamagedWhileAsleep = false;
+        yield return new WaitForSeconds(duration);
         unit.currentFatigue = unit.Data.baseFatigue;
         if (unit.customBar != null)
             unit.customBar.SetValue(unit.currentFatigue);

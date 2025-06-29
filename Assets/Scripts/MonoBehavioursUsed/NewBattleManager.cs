@@ -553,8 +553,15 @@ public class NewBattleManager : MonoBehaviour
         {
             if (unit.TryGetComponent<FatigueSystem>(out var fatigue) && fatigue.IsAsleep)
             {
-                EndTurn();
-                yield break;
+                if (fatigue.WasDamagedWhileAsleep)
+                {
+                    fatigue.WakeUp();
+                }
+                else
+                {
+                    EndTurn();
+                    yield break;
+                }
             }
             isTurnResolving = true;
 

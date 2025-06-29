@@ -52,6 +52,9 @@ public class ItemData : ScriptableObject
     [Tooltip("Trajectoire de caméra à instancier lors de l'utilisation de l'item")]
     public GameObject cameraPathPrefab;
 
+    [Header("Sleep Settings")]
+    public float sleepDuration = 2f;
+
     [Header("QTE Pattern")]
     public List<float> beatPattern;
 
@@ -132,6 +135,20 @@ public class ItemData : ScriptableObject
                 }
                 break;
 
+            case ItemEffectType.Sleep:
+                if (target != null && target.TryGetComponent<FatigueSystem>(out var sleepSystem))
+                {
+                    sleepSystem.Sleep(sleepDuration);
+                }
+                break;
+
+            case ItemEffectType.WakeUp:
+                if (target != null && target.TryGetComponent<FatigueSystem>(out var fs))
+                {
+                    fs.WakeUp();
+                }
+                break;
+
             default:
                 Debug.LogWarning($"[ItemData] Type d'effet inconnu : {effectType}");
                 break;
@@ -139,7 +156,7 @@ public class ItemData : ScriptableObject
     }
 }
 
-public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange }
+public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange, Sleep, WakeUp }
 public enum BuffStatType { None, Strength, Defense, Initiative }
 public enum DebuffStatType { None, Strength, Defense, Initiative }
 public enum TimingBoostType { None, ParryWindow, DodgeWindow }

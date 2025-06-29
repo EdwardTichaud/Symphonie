@@ -120,6 +120,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (hpBar != null) hpBar.SetValue(currentHP);
         DamagePopupManager.Instance?.ShowDamage(transform.position, Mathf.RoundToInt(amount));
         PlayDamageFeedback();
+        if (TryGetComponent<FatigueSystem>(out var fatigue))
+        {
+            fatigue.MarkDamagedWhileAsleep();
+        }
         if (Data != null && Data.gameplayType == GameplayType.Rage)
         {
             GetComponent<RageSystem>()?.AddRage(amount);
