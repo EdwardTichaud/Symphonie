@@ -158,4 +158,12 @@ public class InventoryManager : MonoBehaviour
             _ => 0f,
         };
     }
+
+    public void ApplyInterceptionImmunity(CharacterUnit target, int turns)
+    {
+        if (target == null)
+            return;
+        target.isInterceptionImmune = true;
+        target.interceptionImmunityTurns = Mathf.Max(target.interceptionImmunityTurns, turns);
+    }
 }
