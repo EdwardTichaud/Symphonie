@@ -103,6 +103,7 @@ public class NewBattleManager : MonoBehaviour
     private CharacterUnit previousUnit; // Champ de classe, pas une variable locale
     [HideInInspector] public CharacterUnit currentCharacterUnit;
     private bool isTurnResolving = false;
+    private bool interceptionSucceeded = false;
 
     private const float ATB_THRESHOLD = 100f;
 
@@ -114,6 +115,7 @@ public class NewBattleManager : MonoBehaviour
 
     [Header("Gestion du curseur de cible")]
     public GameObject targetCursorPrefab;
+    [Tooltip("Prefab affichant la fenêtre d'interception")] public GameObject interceptionSignalPrefab;
     [HideInInspector] public GameObject targetCursor;
     private List<CharacterUnit> filteredUnits = new();
     private int currentTargetIndex = 0;
@@ -662,6 +664,13 @@ public class NewBattleManager : MonoBehaviour
             yield break;
         }
 
+        if (move.interceptable)
+        {
+            yield return TryPlayerInterception(enemy, target, move);
+            if (interceptionSucceeded)
+                yield break;
+        }
+
         ActionUIDisplayManager.Instance.DisplayAttackName(move.moveName);
         MusicalCodexManager.Instance?.TryAddNewMelody(move);
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
@@ -681,11 +690,14 @@ public class NewBattleManager : MonoBehaviour
             Debug.LogWarning("[ExecuteMoveOnTarget] Pas assez d'espace pour executer le mouvement.");
             yield break;
         }
-        var interceptor = CheckForInterception(caster, target, caster.Data.currentInterceptionRange);
-        if (interceptor != null)
+        if (move.interceptable)
         {
-            yield return InterceptRoutine(interceptor, caster);
-            yield break;
+            var interceptor = CheckForInterception(caster, target, caster.Data.currentInterceptionRange);
+            if (interceptor != null)
+            {
+                yield return InterceptRoutine(interceptor, caster);
+                yield break;
+            }
         }
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
         move.ApplyEffect(caster, target);
@@ -791,6 +803,71 @@ public class NewBattleManager : MonoBehaviour
             }
         }
         return null;
+    }
+
+    private CharacterUnit FindPlayerInterceptor(CharacterUnit caster, CharacterUnit target, float range)
+    {
+        CharacterUnit best = null;
+        float bestChance = 0f;
+        foreach (var unit in activeCharacterUnits)
+        {
+            if (unit == null || unit == caster || unit == target) continue;
+            if (!unit.Data.isPlayerControlled) continue;
+
+            if (Vector3.Distance(unit.transform.position, caster.transform.position) <= range)
+            {
+                float chance = unit.currentReflex / (unit.currentReflex + caster.currentReflex + 1f);
+                if (chance > bestChance)
+                {
+                    bestChance = chance;
+                    best = unit;
+                }
+            }
+        }
+        return best;
+    }
+
+    private IEnumerator TryPlayerInterception(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
+    {
+        interceptionSucceeded = false;
+        var interceptor = FindPlayerInterceptor(caster, target, caster.Data.currentInterceptionRange);
+        if (interceptor == null)
+            yield break;
+
+        float chance = interceptor.currentReflex / (interceptor.currentReflex + caster.currentReflex + 1f);
+        float window = Mathf.Lerp(0.2f, 1.5f, chance);
+
+        GameObject signalObj = null;
+        if (interceptionSignalPrefab != null)
+        {
+            signalObj = Instantiate(interceptionSignalPrefab, target.transform.position + Vector3.up * 2f, Quaternion.identity, target.transform);
+            var sig = signalObj.GetComponent<InterceptionSignal>();
+            if (sig != null)
+                sig.StartSignal(window);
+        }
+
+        var action = new InputAction(binding: "<Gamepad>/leftShoulder");
+        action.Enable();
+        bool pressed = false;
+        action.performed += _ => pressed = true;
+
+        float elapsed = 0f;
+        while (elapsed < window)
+        {
+            if (pressed)
+            {
+                if (signalObj != null) Destroy(signalObj);
+                action.Disable();
+                yield return InterceptRoutine(interceptor, caster);
+                interceptionSucceeded = true;
+                yield break;
+            }
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (signalObj != null) Destroy(signalObj);
+        action.Disable();
     }
 
     private IEnumerator InterceptRoutine(CharacterUnit interceptor, CharacterUnit caster)

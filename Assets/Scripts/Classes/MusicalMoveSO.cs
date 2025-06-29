@@ -34,6 +34,8 @@ public class MusicalMoveSO : ScriptableObject
     public float moveSpeed = 20f;
     public float castDistance;
     public bool stayInPlace = false;
+    [Tooltip("Si faux, le move ne peut pas être intercepté")]
+    public bool interceptable = true;
 
     [Header("Placement autour de la cible")]
     public RelativePosition relativePosition = RelativePosition.Front;
