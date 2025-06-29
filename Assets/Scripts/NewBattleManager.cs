@@ -1125,7 +1125,7 @@ public class NewBattleManager : MonoBehaviour
 
     public void ShowMainMenu()
     {
-        ActionUIDisplayManager.Instance.DisplayInstruction_SelectItemOrSkill();
+        ActionUIDisplayManager.Instance.DisplayInstruction_SelectItemSkillOrPass();
         ChangeBattleState(BattleState.SquadUnit_MainMenu);
         ToggleMenuContainers(true, false, false);
 
