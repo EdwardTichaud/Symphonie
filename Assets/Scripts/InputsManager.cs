@@ -11,7 +11,7 @@ public class InputsManager : MonoBehaviour
 
     [Header("Pass Turn")]
     public PassTurnUI passTurnUI;
-    public float passHoldDuration = 3f;
+    public float passHoldDuration = 2f;
     public Pulse passTurnPulse;
     private Coroutine passRoutine;
 
