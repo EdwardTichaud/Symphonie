@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 /// <summary>
 /// Affiche une jauge circulaire permettant de passer le tour.
@@ -12,6 +13,12 @@ public class PassTurnUI : MonoBehaviour
     [Header("UI Elements")]
     public Image progressImage;
     public TextMeshProUGUI label;
+
+    [Header("Settings")]
+    [Tooltip("Vitesse à laquelle la jauge revient à zéro lorsqu'aucune entrée n'est détectée.")]
+    public float resetSpeed = 2f;
+
+    private Coroutine resetRoutine;
 
     private void Awake()
     {
@@ -52,7 +59,33 @@ public class PassTurnUI : MonoBehaviour
     /// </summary>
     public void SetProgress(float t)
     {
+        if (resetRoutine != null)
+        {
+            StopCoroutine(resetRoutine);
+            resetRoutine = null;
+        }
         if (progressImage != null)
             progressImage.fillAmount = Mathf.Clamp01(t);
+    }
+
+    /// <summary>
+    /// Lance la diminution progressive de la jauge jusqu'à 0.
+    /// </summary>
+    public void ResetProgressSmooth()
+    {
+        if (resetRoutine != null)
+            StopCoroutine(resetRoutine);
+
+        resetRoutine = StartCoroutine(ResetRoutine());
+    }
+
+    private IEnumerator ResetRoutine()
+    {
+        while (progressImage != null && progressImage.fillAmount > 0f)
+        {
+            progressImage.fillAmount = Mathf.Max(0f, progressImage.fillAmount - Time.unscaledDeltaTime * resetSpeed);
+            yield return null;
+        }
+        resetRoutine = null;
     }
 }
