@@ -1,63 +1,42 @@
 using UnityEngine;
 using TMPro;
 
-public class DamagePopup : MonoBehaviour
+public class DamagePopupBehaviour : MonoBehaviour
 {
-    public float floatSpeed = 0.5f;
-    public float duration = 1f;
-    public Color textColor = Color.red;
+    [Header("Animation")]
+    public float floatSpeed = 1f;
+    public float duration = 1.5f;
+    public Vector3 offset = new Vector3(0, 2f, 0);
 
-    private TextMeshProUGUI text;
+    [Header("Références")]
+    public TextMeshProUGUI textMesh;
+
+    private float elapsed = 0f;
+    private Camera mainCam;
     private CanvasGroup canvasGroup;
-    private float elapsed;
 
-    public static void Show(Vector3 worldPosition, int amount)
+    public void Initialize(int amount)
     {
-        // Crée l'objet principal
-        var obj = new GameObject("DamagePopup");
-        obj.transform.position = worldPosition;
+        textMesh.text = amount.ToString();
+        mainCam = Camera.main;
+        canvasGroup = GetComponent<CanvasGroup>();
 
-        // Applique le layer "Battle_UI"
-        int uiLayer = LayerMask.NameToLayer("Battle_UI");
-        if (uiLayer == -1)
-        {
-            Debug.LogWarning("Layer 'Battle_UI' not found. Please define it in Project Settings > Tags and Layers.");
-            uiLayer = 0; // fallback to Default
-        }
-        obj.layer = uiLayer;
-
-        // Configure le Canvas en World Space
-        var canvas = obj.AddComponent<Canvas>();
-        canvas.renderMode = RenderMode.WorldSpace;
-        var camObj = GameObject.FindGameObjectWithTag("BattleCamera");
-        if (camObj != null)
-            canvas.worldCamera = camObj.GetComponent<Camera>();
-
-        obj.AddComponent<CanvasRenderer>();
-        var group = obj.AddComponent<CanvasGroup>();
-
-        // Ajoute le texte
-        var textObj = new GameObject("Text");
-        textObj.transform.SetParent(obj.transform, false);
-        textObj.layer = uiLayer;
-
-        var tmp = textObj.AddComponent<TextMeshProUGUI>();
-        tmp.text = amount.ToString();
-        tmp.alignment = TextAlignmentOptions.Center;
-        tmp.fontSize = 40;
-
-        // Applique l'échelle adaptée au World Space
-        obj.transform.localScale = Vector3.one * 0.015f;
-
-        // Initialise le script
-        var popup = obj.AddComponent<DamagePopup>();
-        popup.text = tmp;
-        popup.canvasGroup = group;
+        // Position de départ + offset vertical
+        transform.position += offset;
     }
 
-    private void Update()
+    void Update()
     {
+        if (mainCam != null)
+        {
+            // Toujours face à la caméra
+            transform.rotation = Quaternion.LookRotation(transform.position - mainCam.transform.position);
+        }
+
+        // Animation vers le haut
         transform.position += Vector3.up * floatSpeed * Time.deltaTime;
+
+        // Fade out après 'duration'
         elapsed += Time.deltaTime;
         if (elapsed >= duration)
         {
