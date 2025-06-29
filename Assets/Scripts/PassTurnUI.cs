@@ -20,6 +20,9 @@ public class PassTurnUI : MonoBehaviour
 
     private void Awake()
     {
+        if (canvasGroup == null)
+            canvasGroup = GetComponent<CanvasGroup>();
+
         if (canvasGroup != null)
             canvasGroup.alpha = 0f;
     }
