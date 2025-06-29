@@ -1677,13 +1677,23 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad:
-                isFollowingCurrentTarget = false;
-                desiredTransform = GameObject.Find("Camera_FocusSquad").transform;
+                if (currentItem != null) {
+                    desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
+                    isFollowingCurrentTarget = true;
+                } else {
+                    desiredTransform = GameObject.Find("Camera_FocusSquad").transform;
+                    isFollowingCurrentTarget = false;
+                }
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies:
-                isFollowingCurrentTarget = false;
-                desiredTransform = GameObject.Find("Camera_FocusEnemies").transform;
+                if (currentItem != null) {
+                    desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
+                    isFollowingCurrentTarget = true;
+                } else {
+                    desiredTransform = GameObject.Find("Camera_FocusEnemies").transform;
+                    isFollowingCurrentTarget = false;
+                }
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
@@ -1692,8 +1702,8 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
-                isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
+                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
+                isFollowingCurrentTarget = true;
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
@@ -1702,8 +1712,8 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
-                isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
+                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
+                isFollowingCurrentTarget = true;
                 break;
 
             case BattleState.SquadUnit_PerformingMusicalMove:
@@ -1755,14 +1765,24 @@ public class NewBattleManager : MonoBehaviour
 
         if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)
         {
-            Vector3 midPoint = (currentCharacterUnit.transform.position + currentTargetCharacter.transform.position) / 2f;
-            Vector3 offset = Vector3.up * 3f - currentCharacterUnit.transform.forward * 5f;
+            if (desiredTransform != null)
+            {
+                // Reste sur l'ancre mais suit la cible du regard
+                battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
+                Quaternion targetRotation = Quaternion.LookRotation(currentTargetCharacter.transform.position - battleCameraTransform.position);
+                battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
+            }
+            else
+            {
+                Vector3 midPoint = (currentCharacterUnit.transform.position + currentTargetCharacter.transform.position) / 2f;
+                Vector3 offset = Vector3.up * 3f - currentCharacterUnit.transform.forward * 5f;
 
-            Vector3 targetPosition = midPoint + offset;
-            Quaternion targetRotation = Quaternion.LookRotation(midPoint - battleCameraTransform.position);
+                Vector3 targetPosition = midPoint + offset;
+                Quaternion targetRotation = Quaternion.LookRotation(midPoint - battleCameraTransform.position);
 
-            battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, targetPosition, Time.deltaTime * cameraSmoothSpeed);
-            battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
+                battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, targetPosition, Time.deltaTime * cameraSmoothSpeed);
+                battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
+            }
         }
         else if (desiredTransform != null)
         {
