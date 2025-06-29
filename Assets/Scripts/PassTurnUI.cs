@@ -7,9 +7,23 @@ using TMPro;
 /// </summary>
 public class PassTurnUI : MonoBehaviour
 {
+    public static PassTurnUI Instance { get; private set; }
+
     [Header("UI Elements")]
     public Image progressImage;
     public TextMeshProUGUI label;
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
 
     void Start()
     {

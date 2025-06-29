@@ -315,19 +315,16 @@ public class InputsManager : MonoBehaviour
         {
             StopCoroutine(passRoutine);
             passRoutine = null;
-            passTurnUI?.Hide();
         }
     }
 
     private IEnumerator PassTurnRoutine()
     {
-        passTurnUI?.Show();
         float elapsed = 0f;
         while (elapsed < passHoldDuration)
         {
             if (!playerInputs.Battle.Back.IsPressed())
             {
-                passTurnUI?.Hide();
                 passRoutine = null;
                 yield break;
             }
@@ -337,7 +334,6 @@ public class InputsManager : MonoBehaviour
             yield return null;
         }
 
-        passTurnUI?.Hide();
         passRoutine = null;
         NewBattleManager.Instance.EndTurn();
     }

@@ -529,6 +529,8 @@ public class NewBattleManager : MonoBehaviour
 
         InputsManager.Instance.playerInputs.Battle.Enable();
         OrientAllUnitsTowardEnemyGroupSmooth();
+
+        PassTurnUI.Instance.Show();
     }
 
     private IEnumerator ExecuteTurn(CharacterUnit unit)
@@ -820,6 +822,8 @@ public class NewBattleManager : MonoBehaviour
         UpdateTimelineHighlight(null);
         isTurnResolving = false;
         HandleEndOfBattle();
+
+        PassTurnUI.Instance.Hide();
     }
     #endregion
 
