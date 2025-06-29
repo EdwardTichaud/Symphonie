@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System.Collections;
 
 /// <summary>
 /// Affiche une jauge circulaire permettant de passer le tour.
@@ -12,6 +13,11 @@ public class PassTurnUI : MonoBehaviour
     public Image progressImage;
     public TextMeshProUGUI label;
 
+    [Header("Fade Settings")]
+    public float fadeDuration = 1f;
+
+    private Coroutine fadeCoroutine;
+
     private void Awake()
     {
         if (canvasGroup != null)
@@ -19,13 +25,15 @@ public class PassTurnUI : MonoBehaviour
     }
 
     /// <summary>
-    /// Affiche la jauge et réinitialise l'avancement.
+    /// Affiche la jauge et réinitialise l'avancement, avec un fondu progressif.
     /// </summary>
     public void Show()
     {
         gameObject.SetActive(true);
-        if (canvasGroup != null)
-            canvasGroup.alpha = 1f;
+        if (fadeCoroutine != null)
+            StopCoroutine(fadeCoroutine);
+
+        fadeCoroutine = StartCoroutine(FadeIn());
         SetProgress(0f);
     }
 
@@ -34,8 +42,12 @@ public class PassTurnUI : MonoBehaviour
     /// </summary>
     public void Hide()
     {
+        if (fadeCoroutine != null)
+            StopCoroutine(fadeCoroutine);
+
         if (canvasGroup != null)
             canvasGroup.alpha = 0f;
+
         gameObject.SetActive(false);
     }
 
@@ -46,5 +58,26 @@ public class PassTurnUI : MonoBehaviour
     {
         if (progressImage != null)
             progressImage.fillAmount = Mathf.Clamp01(t);
+    }
+
+    /// <summary>
+    /// Fait apparaître progressivement la jauge.
+    /// </summary>
+    private IEnumerator FadeIn()
+    {
+        if (canvasGroup == null)
+            yield break;
+
+        canvasGroup.alpha = 0f;
+        float elapsed = 0f;
+
+        while (elapsed < fadeDuration)
+        {
+            elapsed += Time.deltaTime;
+            canvasGroup.alpha = Mathf.Clamp01(elapsed / fadeDuration);
+            yield return null;
+        }
+
+        canvasGroup.alpha = 1f;
     }
 }
