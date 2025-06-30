@@ -8,6 +8,7 @@ public class CharacterData : ScriptableObject, ITargetable
     public Sprite portrait;
     public CharacterType characterType;
     public GameplayType gameplayType = GameplayType.Rage;
+    public HarmonicType harmonicType = HarmonicType.Lumiere;
     public GameObject characterWorldModel;
     public GameObject characterBattleModel;
 

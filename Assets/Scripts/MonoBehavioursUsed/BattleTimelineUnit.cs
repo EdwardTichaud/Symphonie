@@ -11,6 +11,7 @@ public class BattleTimelineUnit : MonoBehaviour
     [SerializeField] private TextMeshProUGUI hpText;
     [SerializeField] private Slider atbSlider;
     [SerializeField] private CustomBar customBar;
+    [SerializeField] private TextMeshProUGUI harmonicsText;
 
     [Header("Couleurs")]
     [SerializeField] private Image backgroundImage;
@@ -59,7 +60,14 @@ public class BattleTimelineUnit : MonoBehaviour
             atbSlider.value = unit.currentATB;
         }
 
+        UpdateHarmonicsDisplay();
+
         SetHighlight(false);
+    }
+
+    void Update()
+    {
+        UpdateHarmonicsDisplay();
     }
 
     public void UpdateATBGauge()
@@ -89,6 +97,18 @@ public class BattleTimelineUnit : MonoBehaviour
         {
             customBar.SetValue(unit.currentFatigue);
         }
+    }
+
+    public void UpdateHarmonicsDisplay()
+    {
+        var unit = NewBattleManager.Instance.activeCharacterUnits
+            .Find(u => u.Data == characterData);
+
+        if (unit == null || harmonicsText == null)
+            return;
+
+        int count = unit.GetHarmonicCount(unit.Data.harmonicType);
+        harmonicsText.text = count.ToString();
     }
 
     public void UpdateHPBar()

@@ -31,7 +31,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public float currentSagacity { get => Data.currentSagacity; set => Data.currentSagacity = value; }
 
     public float currentMusicalGauge;
-    public int currentHarmonics = 0;
+    // Nouvelle réserve d'harmoniques par type
+    public Dictionary<HarmonicType, int> harmonicReserve = new();
     public float currentFatigue { get => Data.currentFatigue; set => Data.currentFatigue = value; }
 
     // Gestion de l'initiative
@@ -74,7 +75,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentReflex = Data.baseReflex;
         currentMobility = Data.baseMobility;
         currentFatigue = Data.baseFatigue;
-        currentHarmonics = 1;
+
+        harmonicReserve.Clear();
+        AddHarmonic(Data.harmonicType);
 
         spriteRenderer = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
@@ -301,6 +304,26 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         // Fallback aléatoire
         return squad[Random.Range(0, squad.Count)];
+    }
+
+    public void AddHarmonic(HarmonicType type, int amount = 1)
+    {
+        if (!harmonicReserve.ContainsKey(type))
+            harmonicReserve[type] = 0;
+        harmonicReserve[type] += amount;
+    }
+
+    public bool ConsumeHarmonic(HarmonicType type, int amount = 1)
+    {
+        if (!harmonicReserve.ContainsKey(type) || harmonicReserve[type] < amount)
+            return false;
+        harmonicReserve[type] -= amount;
+        return true;
+    }
+
+    public int GetHarmonicCount(HarmonicType type)
+    {
+        return harmonicReserve.ContainsKey(type) ? harmonicReserve[type] : 0;
     }
 
     #endregion
