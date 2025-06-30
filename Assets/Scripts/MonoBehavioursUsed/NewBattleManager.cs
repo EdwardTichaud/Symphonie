@@ -624,6 +624,7 @@ public class NewBattleManager : MonoBehaviour
     {
         rewardItems.AddRange(enemy.lootItems);
         rewardXP += enemy.experienceReward;
+        HandleEndOfBattle();
     }
 
     public void RegisterDamage(CharacterUnit caster, float amount)
