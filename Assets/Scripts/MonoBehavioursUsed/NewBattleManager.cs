@@ -551,6 +551,11 @@ public class NewBattleManager : MonoBehaviour
     {
         if (currentBattleState != BattleState.VictoryScreen_Await && currentBattleState != BattleState.VictoryScreen_CanContinue && currentBattleState != BattleState.GameOverScreen_Await && currentBattleState != BattleState.GameOverScreen_CanContinue)
         {
+            if (unit.TryGetComponent<SleepStatus>(out var sleep) && sleep.IsAsleep)
+            {
+                EndTurn();
+                yield break;
+            }
             if (unit.TryGetComponent<FatigueSystem>(out var fatigue) && fatigue.IsAsleep)
             {
                 EndTurn();

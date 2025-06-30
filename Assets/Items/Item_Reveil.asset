@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 133a8786c2756524a9bd962bbc0f1ff8, type: 3}
+  m_Name: Item_Reveil
+  m_EditorClassIdentifier:
+  itemID: Reveil
+  itemName: Reveil
+  description: "R\xE9veille une unit\xE9 endormie."
+  itemIcon: {fileID: 0}
+  effectValue: 0
+  isUsableInBattle: 1
+  moveSpeed: 0
+  castDistance: 0
+  stayInPlace: 0
+  itemTargetingAnimationName: UseItemPreparation_Start
+  effectType: 11
+  healAmount: 0
+  healIsPercentage: 0
+  revivePercentage: 50
+  buffStat: 0
+  debuffStat: 0
+  buffAmount: 0
+  debuffAmount: 0
+  buffDuration: 0
+  buffIsPercentage: 0
+  timingType: 0
+  timingBoostAmount: 0
+  timingDuration: 0
+  defaultTargetType: 3
+  targetTypes: 03000000
+  introVFXPrefab: {fileID: 0}
