@@ -166,4 +166,15 @@ public class InventoryManager : MonoBehaviour
         target.isInterceptionImmune = true;
         target.interceptionImmunityTurns = Mathf.Max(target.interceptionImmunityTurns, turns);
     }
+
+    public void ExtendEffectDurations(CharacterUnit target, int additionalTurns)
+    {
+        if (target == null || additionalTurns <= 0)
+            return;
+
+        if (target.interceptionImmunityTurns > 0)
+            target.interceptionImmunityTurns += additionalTurns;
+
+        // TODO: étendre la durée des autres effets quand ils seront implémentés
+    }
 }
