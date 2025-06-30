@@ -31,6 +31,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public float currentSagacity { get => Data.currentSagacity; set => Data.currentSagacity = value; }
 
     public float currentMusicalGauge;
+    public int currentHarmonics = 0;
     public float currentFatigue { get => Data.currentFatigue; set => Data.currentFatigue = value; }
 
     // Gestion de l'initiative
@@ -73,6 +74,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentReflex = Data.baseReflex;
         currentMobility = Data.baseMobility;
         currentFatigue = Data.baseFatigue;
+        currentHarmonics = 1;
 
         spriteRenderer = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
