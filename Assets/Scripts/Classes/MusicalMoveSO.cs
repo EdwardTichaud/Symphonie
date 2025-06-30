@@ -22,6 +22,7 @@ public class MusicalMoveSO : ScriptableObject
     [Header("Coût et Dégâts")]
     public float power = 0;
     public float fatigueCost = 1;
+    public int harmonicCost = 1;
 
     [Header("Ciblage")]
     public TargetType targetType = TargetType.SingleEnemy;
@@ -74,6 +75,13 @@ public class MusicalMoveSO : ScriptableObject
         {
             InventoryManager.Instance?.ApplySleep(target);
         }
+        else if (effectType == MusicalEffectType.WakeUpAll)
+        {
+            foreach (var unit in NewBattleManager.Instance.activeCharacterUnits)
+            {
+                InventoryManager.Instance?.RemoveSleep(unit);
+            }
+        }
 
         if (caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
@@ -82,6 +90,6 @@ public class MusicalMoveSO : ScriptableObject
     }
 }
 
-public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep }
+public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll }
 
 public enum RelativePosition { Front, Back, Left, Right }

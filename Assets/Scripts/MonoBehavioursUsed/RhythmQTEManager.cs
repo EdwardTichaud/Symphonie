@@ -94,7 +94,7 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         isActive = false;
-        NewBattleManager.Instance.EndTurn();
+        NewBattleManager.Instance.AfterMusicalMove(move, caster);
 
         Debug.Log("Fin de la séquence du MusicalMove: " + move + " de " + caster.name);
     }

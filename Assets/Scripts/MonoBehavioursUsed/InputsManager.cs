@@ -173,6 +173,12 @@ public class InputsManager : MonoBehaviour
             if (bm.skillChoices.Count > 0)
             {
                 bm.currentMove = bm.skillChoices[0];
+                if (bm.currentCharacterUnit.currentHarmonics < bm.currentMove.harmonicCost)
+                {
+                    ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+                    bm.ShowMainMenu();
+                    return;
+                }
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentMove);
 
@@ -218,6 +224,12 @@ public class InputsManager : MonoBehaviour
             if (bm.skillChoices.Count > 1)
             {
                 bm.currentMove = bm.skillChoices[1];
+                if (bm.currentCharacterUnit.currentHarmonics < bm.currentMove.harmonicCost)
+                {
+                    ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+                    bm.ShowMainMenu();
+                    return;
+                }
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentMove);
 
@@ -259,6 +271,12 @@ public class InputsManager : MonoBehaviour
             if (bm.skillChoices.Count > 2)
             {
                 bm.currentMove = bm.skillChoices[2];
+                if (bm.currentCharacterUnit.currentHarmonics < bm.currentMove.harmonicCost)
+                {
+                    ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+                    bm.ShowMainMenu();
+                    return;
+                }
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentMove);
 

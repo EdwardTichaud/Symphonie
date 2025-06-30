@@ -100,6 +100,11 @@ public class ActionUIDisplayManager : MonoBehaviour
         ShowMessage("Cible trop éloignée");
     }
 
+    public void DisplayInstruction_NotEnoughHarmonics()
+    {
+        ShowMessage("Pas assez d'harmoniques");
+    }
+
     private void ShowMessage(string message)
     {
         if (currentDisplayRoutine != null)
