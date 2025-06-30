@@ -88,71 +88,108 @@ public class ItemData : ScriptableObject
         switch (effectType)
         {
             case ItemEffectType.Heal:
-                if (target != null)
-                {
-                    float amount = healIsPercentage
-                        ? (target.Data.baseHP + target.currentVitality) * healAmount / 100f
-                        : healAmount;
-                    target.Heal(amount);
-                }
+                ApplyHeal(target);
                 break;
-
             case ItemEffectType.Revive:
-                if (target != null && target.currentHP <= 0)
-                {
-                    float maxHP = target.Data.baseHP + target.currentVitality;
-                    float amount = maxHP * revivePercentage / 100f;
-                    target.currentHP = Mathf.Clamp(amount, 0f, maxHP);
-                    if (target.hpBar != null)
-                        target.hpBar.SetValue(target.currentHP);
-                }
+                ApplyRevive(target);
                 break;
-
             case ItemEffectType.Buff:
-                InventoryManager.Instance?.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
+                ApplyBuff(target);
                 break;
-
             case ItemEffectType.Debuff:
-                InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, buffDuration, buffIsPercentage);
+                ApplyDebuff(target);
                 break;
-
             case ItemEffectType.BoostTiming:
                 Debug.Log("[ItemData] Effet BoostTiming non implémenté.");
                 break;
-
             case ItemEffectType.Damage:
-                if (target != null)
-                    target.TakeDamage(effectValue);
+                ApplyDamage(target);
                 break;
-
             case ItemEffectType.IncreaseRange:
-                if (target != null)
-                {
-                    target.Data.currentRange += effectValue;
-                }
+                ApplyIncreaseRange(target);
                 break;
-
-
             case ItemEffectType.PreventInterception:
-                InventoryManager.Instance?.ApplyInterceptionImmunity(target, Mathf.RoundToInt(buffDuration));
+                ApplyInterceptionImmunity(target);
                 break;
-
             case ItemEffectType.ExtendEffects:
-                InventoryManager.Instance?.ExtendEffectDurations(target, Mathf.RoundToInt(buffDuration));
+                ApplyExtendEffects(target);
                 break;
-
             case ItemEffectType.Sleep:
-                InventoryManager.Instance?.ApplySleep(target);
+                ApplySleep(target);
                 break;
-
             case ItemEffectType.WakeUp:
-                InventoryManager.Instance?.RemoveSleep(target);
+                ApplyWakeUp(target);
                 break;
-
             default:
                 Debug.LogWarning($"[ItemData] Type d'effet inconnu : {effectType}");
                 break;
         }
+    }
+
+    private void ApplyHeal(CharacterUnit target)
+    {
+        if (target == null)
+            return;
+
+        float amount = healIsPercentage
+            ? (target.Data.baseHP + target.currentVitality) * healAmount / 100f
+            : healAmount;
+
+        target.Heal(amount);
+    }
+
+    private void ApplyRevive(CharacterUnit target)
+    {
+        if (target == null || target.currentHP > 0)
+            return;
+
+        float maxHP = target.Data.baseHP + target.currentVitality;
+        float amount = maxHP * revivePercentage / 100f;
+        target.currentHP = Mathf.Clamp(amount, 0f, maxHP);
+        if (target.hpBar != null)
+            target.hpBar.SetValue(target.currentHP);
+    }
+
+    private void ApplyBuff(CharacterUnit target)
+    {
+        InventoryManager.Instance?.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
+    }
+
+    private void ApplyDebuff(CharacterUnit target)
+    {
+        InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, buffDuration, buffIsPercentage);
+    }
+
+    private void ApplyDamage(CharacterUnit target)
+    {
+        if (target != null)
+            target.TakeDamage(effectValue);
+    }
+
+    private void ApplyIncreaseRange(CharacterUnit target)
+    {
+        if (target != null)
+            target.Data.currentRange += effectValue;
+    }
+
+    private void ApplyInterceptionImmunity(CharacterUnit target)
+    {
+        InventoryManager.Instance?.ApplyInterceptionImmunity(target, Mathf.RoundToInt(buffDuration));
+    }
+
+    private void ApplyExtendEffects(CharacterUnit target)
+    {
+        InventoryManager.Instance?.ExtendEffectDurations(target, Mathf.RoundToInt(buffDuration));
+    }
+
+    private void ApplySleep(CharacterUnit target)
+    {
+        InventoryManager.Instance?.ApplySleep(target);
+    }
+
+    private void ApplyWakeUp(CharacterUnit target)
+    {
+        InventoryManager.Instance?.RemoveSleep(target);
     }
 }
 
