@@ -15,36 +15,36 @@ MonoBehaviour:
   characterName: Thalia
   portrait: {fileID: 21300000, guid: 2db772b866712494da8b20c372bb9e92, type: 3}
   characterType: 0
+  gameplayType: 0
+  harmonicType: 0
   characterWorldModel: {fileID: 23947754543557898, guid: 131ee47cd8164b341a40af7b2461abb4, type: 3}
   characterBattleModel: {fileID: 901204007372340786, guid: 48bc122d024634b4789a14a245e83484, type: 3}
   battlefieldIndex: 0
-  uiPrefab: {fileID: 100000, guid: 176f9b32a51d47e995509c485871b1b7, type: 3}
-  baseInitiative: 1
-  baseRange: 5
-  baseHP: 80
-  baseMP: 40
-  baseStrength: 1
-  baseDefense: 1
-  baseMusicalGauge: 0
-  baseFatigue: 0
-  maxFatigue: 3
-  baseRage: 0
-  maxRage: 0
-  rageDamageMultiplier: 0.1
   baseReflex: 0
   baseMobility: 0
   baseVitality: 0
   basePower: 0
   baseStability: 0
   baseSagacity: 0
+  baseInitiative: 1
+  baseRange: 5
+  baseHP: 80
+  baseStrength: 1
+  baseDefense: 1
+  baseSpeed: 0
+  baseInterceptionRange: 0
+  baseInterceptionChance: 0
+  baseRage: 0
+  maxRage: 0
+  rageDamageMultiplier: 0.1
+  baseFatigue: 0
+  maxFatigue: 3
   battleIdleAnimationName: Idle
   musicalAttacks:
-  - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
-  - {fileID: 11400000, guid: ab188af9-f88e-46c0-a7fd-f9e2bdfd3ea2, type: 2}
+  - {fileID: 11400000, guid: 7340a29c848f98838cf392beb2c0575e, type: 2}
   currentInitiative: 1
-  currentRange: 0
+  currentRange: 5
   currentHP: 80
-  currentMP: 40
   currentStrength: 1
   currentDefense: 1
   currentPower: 0
@@ -56,6 +56,9 @@ MonoBehaviour:
   currentFatigue: 0
   currentReflex: 0
   currentMobility: 0
+  currentSpeed: 0
+  currentInterceptionRange: 0
+  currentInterceptionChance: 0
   hitSound: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
