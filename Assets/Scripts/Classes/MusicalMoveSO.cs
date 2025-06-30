@@ -70,6 +70,10 @@ public class MusicalMoveSO : ScriptableObject
         {
             target.Heal(finalValue);
         }
+        else if (effectType == MusicalEffectType.Sleep)
+        {
+            InventoryManager.Instance?.ApplySleep(target);
+        }
 
         if (caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
@@ -78,6 +82,6 @@ public class MusicalMoveSO : ScriptableObject
     }
 }
 
-public enum MusicalEffectType { Damage, Heal, Buff, Debuff }
+public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep }
 
 public enum RelativePosition { Front, Back, Left, Right }
