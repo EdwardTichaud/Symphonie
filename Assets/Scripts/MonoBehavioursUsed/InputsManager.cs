@@ -173,7 +173,7 @@ public class InputsManager : MonoBehaviour
             if (bm.skillChoices.Count > 0)
             {
                 bm.currentMove = bm.skillChoices[0];
-                if (bm.currentCharacterUnit.currentHarmonics < bm.currentMove.harmonicCost)
+                if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
                     bm.ShowMainMenu();
@@ -224,7 +224,7 @@ public class InputsManager : MonoBehaviour
             if (bm.skillChoices.Count > 1)
             {
                 bm.currentMove = bm.skillChoices[1];
-                if (bm.currentCharacterUnit.currentHarmonics < bm.currentMove.harmonicCost)
+                if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
                     bm.ShowMainMenu();
@@ -271,7 +271,7 @@ public class InputsManager : MonoBehaviour
             if (bm.skillChoices.Count > 2)
             {
                 bm.currentMove = bm.skillChoices[2];
-                if (bm.currentCharacterUnit.currentHarmonics < bm.currentMove.harmonicCost)
+                if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
                     bm.ShowMainMenu();

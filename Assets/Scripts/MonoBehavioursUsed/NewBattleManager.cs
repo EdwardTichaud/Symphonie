@@ -519,7 +519,7 @@ public class NewBattleManager : MonoBehaviour
 
         ChangeCurrentCharacterUnit(characterUnit);
 
-        characterUnit.currentHarmonics += 1;
+        characterUnit.AddHarmonic(characterUnit.Data.harmonicType);
 
         // S'assure que la BattleCamera peut se déplacer librement
         CameraController cc = CameraController.Instance;
@@ -945,7 +945,7 @@ public class NewBattleManager : MonoBehaviour
     {
         if (caster != null)
         {
-            caster.currentHarmonics = Mathf.Max(0, caster.currentHarmonics - move.harmonicCost);
+            caster.ConsumeHarmonic(caster.Data.harmonicType, move.harmonicCost);
         }
 
         if (!caster.Data.isPlayerControlled)
@@ -954,7 +954,7 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        bool hasSkill = caster.Data.musicalAttacks.Any(m => caster.currentHarmonics >= m.harmonicCost);
+        bool hasSkill = caster.Data.musicalAttacks.Any(m => caster.GetHarmonicCount(caster.Data.harmonicType) >= m.harmonicCost);
         bool hasItem = InventoryManager.Instance.GetUsableItems().Count > 0;
 
         if (!hasSkill && !hasItem)
