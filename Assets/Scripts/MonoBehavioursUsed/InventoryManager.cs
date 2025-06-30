@@ -177,4 +177,23 @@ public class InventoryManager : MonoBehaviour
 
         // TODO: étendre la durée des autres effets quand ils seront implémentés
     }
+
+    public void ApplySleep(CharacterUnit target)
+    {
+        if (target == null)
+            return;
+        var sleep = target.GetComponent<SleepStatus>();
+        if (sleep == null)
+            sleep = target.gameObject.AddComponent<SleepStatus>();
+        sleep.Sleep();
+    }
+
+    public void RemoveSleep(CharacterUnit target)
+    {
+        if (target == null)
+            return;
+        var sleep = target.GetComponent<SleepStatus>();
+        if (sleep != null)
+            sleep.WakeUp();
+    }
 }

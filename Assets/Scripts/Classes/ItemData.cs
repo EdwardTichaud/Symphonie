@@ -141,6 +141,14 @@ public class ItemData : ScriptableObject
                 InventoryManager.Instance?.ExtendEffectDurations(target, Mathf.RoundToInt(buffDuration));
                 break;
 
+            case ItemEffectType.Sleep:
+                InventoryManager.Instance?.ApplySleep(target);
+                break;
+
+            case ItemEffectType.WakeUp:
+                InventoryManager.Instance?.RemoveSleep(target);
+                break;
+
             default:
                 Debug.LogWarning($"[ItemData] Type d'effet inconnu : {effectType}");
                 break;
@@ -148,7 +156,7 @@ public class ItemData : ScriptableObject
     }
 }
 
-public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange, PreventInterception, ExtendEffects }
+public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange, PreventInterception, ExtendEffects, Sleep, WakeUp }
 public enum BuffStatType { None, Strength, Defense, Initiative }
 public enum DebuffStatType { None, Strength, Defense, Initiative }
 public enum TimingBoostType { None, ParryWindow, DodgeWindow }
