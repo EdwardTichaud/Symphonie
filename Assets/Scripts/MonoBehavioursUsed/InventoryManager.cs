@@ -7,9 +7,6 @@ public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager Instance { get; private set; }
 
-    [Header("Tous les items du jeu (à assigner dans l’inspecteur ou à charger dynamiquement)")]
-    [SerializeField] private List<ItemData> allItems = new();
-
     [Header("Items actuellement en inventaire")]
     [SerializeField] private List<ItemData> inventoryItems = new();
 
@@ -29,11 +26,6 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Renvoie la liste complète des items disponibles dans le jeu.
-    /// </summary>
-    public IReadOnlyList<ItemData> GetAllItems() => allItems;
-
-    /// <summary>
     /// Renvoie la liste des items que le joueur possède.
     /// </summary>
     public IReadOnlyList<ItemData> GetInventoryItems() => inventoryItems;
@@ -51,12 +43,6 @@ public class InventoryManager : MonoBehaviour
     {
         foreach (ItemData item in items)
         {
-            if (!allItems.Contains(item))
-            {
-                Debug.LogWarning($"L'item {item.itemName} n'existe pas dans la liste des items du jeu !");
-                return;
-            }
-
             inventoryItems.Add(item);
             Debug.Log($"[Inventory] Ajout de l'objet : {item.itemName}");
         }        
