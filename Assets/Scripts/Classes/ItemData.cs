@@ -132,8 +132,13 @@ public class ItemData : ScriptableObject
                 }
                 break;
 
+
             case ItemEffectType.PreventInterception:
                 InventoryManager.Instance?.ApplyInterceptionImmunity(target, Mathf.RoundToInt(buffDuration));
+                break;
+
+            case ItemEffectType.ExtendEffects:
+                InventoryManager.Instance?.ExtendEffectDurations(target, Mathf.RoundToInt(buffDuration));
                 break;
 
             default:
@@ -143,7 +148,7 @@ public class ItemData : ScriptableObject
     }
 }
 
-public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange, PreventInterception }
+public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange, PreventInterception, ExtendEffects }
 public enum BuffStatType { None, Strength, Defense, Initiative }
 public enum DebuffStatType { None, Strength, Defense, Initiative }
 public enum TimingBoostType { None, ParryWindow, DodgeWindow }
