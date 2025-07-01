@@ -15,7 +15,8 @@ public enum TargetType
     SingleEnemy,
     AllEnemies,
     SingleAlly,
-    AllAllies
+    AllAllies,
+    All
 }
 #endregion
 
