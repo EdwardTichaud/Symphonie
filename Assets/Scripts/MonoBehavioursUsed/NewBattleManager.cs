@@ -809,8 +809,9 @@ public class NewBattleManager : MonoBehaviour
 
     public bool IsTargetInRange(CharacterUnit caster, CharacterUnit target, ItemData item)
     {
-        float requiredDistance = Vector3.Distance(caster.transform.position, target.transform.position);
-        return requiredDistance <= caster.Data.currentRange;
+        // Les items peuvent être utilisés à n'importe quelle portée
+        // Cette fonction renvoie donc toujours vrai
+        return true;
     }
 
     private CharacterUnit CheckForInterception(CharacterUnit caster, CharacterUnit target, float range)
@@ -969,6 +970,13 @@ public class NewBattleManager : MonoBehaviour
         if (caster != null)
         {
             caster.ConsumeHarmonic(caster.Data.harmonicType, move.harmonicCost);
+
+            // Si l'unité n'a plus d'harmonique, son tour se termine immédiatement
+            if (caster.GetHarmonicCount(caster.Data.harmonicType) <= 0)
+            {
+                EndTurn();
+                return;
+            }
         }
 
         if (!caster.Data.isPlayerControlled)
