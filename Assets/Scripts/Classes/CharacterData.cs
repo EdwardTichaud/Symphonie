@@ -102,5 +102,5 @@ public class CharacterData : ScriptableObject, ITargetable
 }
 
 public enum CharacterType { SquadUnit, EnemyUnit }
-public enum GameplayType { Rage, Fatigue }
+public enum GameplayType { Rage, Fatigue, Concentration }
 

@@ -1,5 +1,6 @@
 public enum HarmonicType
 {
     Lumiere,
-    Brume
+    Brume,
+    Souffle
 }
