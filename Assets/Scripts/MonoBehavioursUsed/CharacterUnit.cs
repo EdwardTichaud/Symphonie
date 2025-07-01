@@ -96,8 +96,17 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         if (customBar != null)
         {
-            customBar.SetMaxValue(Data.maxFatigue);
-            customBar.SetValue(currentFatigue);
+            var concentration = GetComponent<ConcentrationSystem>();
+            if (concentration != null)
+            {
+                customBar.SetMaxValue(concentration.maxConcentration);
+                customBar.SetValue(concentration.currentConcentration);
+            }
+            else
+            {
+                customBar.SetMaxValue(Data.maxFatigue);
+                customBar.SetValue(currentFatigue);
+            }
         }
     }
 
@@ -114,7 +123,11 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         if (customBar != null)
         {
-            customBar.SetValue(currentFatigue);
+            var concentration = GetComponent<ConcentrationSystem>();
+            if (concentration != null)
+                customBar.SetValue(concentration.currentConcentration);
+            else
+                customBar.SetValue(currentFatigue);
         }
     }
 
@@ -128,6 +141,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         DamagePopupManager.Instance?.ShowDamage(transform.position, Mathf.RoundToInt(amount));
         PlayDamageFeedback();
         GetComponent<SleepStatus>()?.OnDamageTaken();
+        GetComponent<ConcentrationSystem>()?.OnDamageTaken(amount);
         if (Data != null && Data.gameplayType == GameplayType.Rage)
         {
             GetComponent<RageSystem>()?.AddRage(amount);
