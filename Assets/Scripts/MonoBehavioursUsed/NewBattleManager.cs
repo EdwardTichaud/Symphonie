@@ -1599,48 +1599,37 @@ public class NewBattleManager : MonoBehaviour
             case TargetType.Self:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
                 currentTargetCharacter = currentCharacterUnit;
-                currentTargetIndex = 0;
                 break;
 
             case TargetType.SingleEnemy:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill);
-
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
-                currentTargetIndex = 0;
                 break;
 
             case TargetType.AllEnemies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
-
                 currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
-                currentTargetIndex = 0;
-                break;
+                    .FirstOrDefault(u => u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
                 break;
 
             case TargetType.SingleAlly:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
-                break;
-
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
-                currentTargetIndex = 0;
                 break;
 
             case TargetType.AllAllies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
-
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
-                currentTargetIndex = 0;
-                break;
                 break;
 
             default:
                 Debug.LogWarning($"[BattleTurnManager] Type de cible par défaut non géré : {move.defaultTargetType}");
                 return;
         }
+        currentTargetIndex = 0;
     }
 
     public void HandleTargetSelection(ItemData item)
@@ -1652,42 +1641,37 @@ public class NewBattleManager : MonoBehaviour
             case TargetType.Self:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
                 currentTargetCharacter = currentCharacterUnit;
-                currentTargetIndex = 0;
                 break;
 
             case TargetType.SingleEnemy:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem);
-
                 currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
-                currentTargetIndex = 0;
+                    .FirstOrDefault(u => u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
                 break;
 
             case TargetType.AllEnemies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
                 currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
-                currentTargetIndex = 0;
+                    .FirstOrDefault(u => u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
                 break;
 
             case TargetType.SingleAlly:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
-                currentTargetIndex = 0;
                 break;
 
             case TargetType.AllAllies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
-                currentTargetIndex = 0;
                 break;
 
             default:
                 Debug.LogWarning($"[BattleTurnManager] Type de cible par défaut non géré : {item.defaultTargetType}");
                 return;
         }
+        currentTargetIndex = 0;
 
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
     }

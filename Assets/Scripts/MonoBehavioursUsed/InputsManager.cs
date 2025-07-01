@@ -69,6 +69,8 @@ public class InputsManager : MonoBehaviour
         battle.Back.performed += OnBackInput;
         battle.Back.canceled += OnBackCanceled;
         battle.Confirm.performed += OnConfirm;
+        battle.EnemiesGroupSelection.performed += OnEnemiesGroupSelection;
+        battle.SquadGroupSelection.performed += OnSquadGroupSelection;
 
         var world = playerInputs.World;
         world.ForceCam.performed += OnForceCamInput;
@@ -88,6 +90,8 @@ public class InputsManager : MonoBehaviour
         battle.Back.performed -= OnBackInput;
         battle.Back.canceled -= OnBackCanceled;
         battle.Confirm.performed -= OnConfirm;
+        battle.EnemiesGroupSelection.performed -= OnEnemiesGroupSelection;
+        battle.SquadGroupSelection.performed -= OnSquadGroupSelection;
 
         var world = playerInputs.World;
         world.ForceCam.performed -= OnForceCamInput;
@@ -370,7 +374,7 @@ public class InputsManager : MonoBehaviour
         NewBattleManager.Instance.EndTurn();
     }
 
-    private void OnEnemiesGroupSelection()
+    private void OnEnemiesGroupSelection(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad)
@@ -397,7 +401,7 @@ public class InputsManager : MonoBehaviour
         }
     }
 
-    private void OnSquadGroupSelection()
+    private void OnSquadGroupSelection(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
