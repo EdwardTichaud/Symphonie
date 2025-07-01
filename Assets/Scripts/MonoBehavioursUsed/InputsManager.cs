@@ -400,22 +400,53 @@ public class InputsManager : MonoBehaviour
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad)
         {
             TargetType desired = TargetType.SingleEnemy;
+            bool allowed = false;
             if (bm.currentMove != null)
             {
                 if (bm.currentMove.targetTypes.Contains(TargetType.SingleEnemy))
+                {
                     desired = TargetType.SingleEnemy;
+                    allowed = true;
+                }
                 else if (bm.currentMove.targetTypes.Contains(TargetType.AllEnemies))
+                {
                     desired = TargetType.AllEnemies;
-                bm.currentMove.targetType = desired;
+                    allowed = true;
+                }
+                else if (bm.currentMove.targetTypes.Contains(TargetType.All))
+                {
+                    desired = TargetType.All;
+                    allowed = true;
+                }
+
+                if (allowed)
+                    bm.currentMove.targetType = desired;
             }
             if (bm.currentItem != null)
             {
+                bool itemAllowed = false;
                 if (bm.currentItem.targetTypes.Contains(TargetType.SingleEnemy))
+                {
                     desired = TargetType.SingleEnemy;
+                    itemAllowed = true;
+                }
                 else if (bm.currentItem.targetTypes.Contains(TargetType.AllEnemies))
+                {
                     desired = TargetType.AllEnemies;
-                bm.currentItemTargetType = desired;
+                    itemAllowed = true;
+                }
+                else if (bm.currentItem.targetTypes.Contains(TargetType.All))
+                {
+                    desired = TargetType.All;
+                    itemAllowed = true;
+                }
+                if (itemAllowed)
+                    bm.currentItemTargetType = desired;
+                allowed = allowed || itemAllowed;
             }
+            if (!allowed)
+                return;
+
             bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
 
         }
@@ -427,22 +458,53 @@ public class InputsManager : MonoBehaviour
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
         {
             TargetType desired = TargetType.SingleAlly;
+            bool allowed = false;
             if (bm.currentMove != null)
             {
                 if (bm.currentMove.targetTypes.Contains(TargetType.SingleAlly))
+                {
                     desired = TargetType.SingleAlly;
+                    allowed = true;
+                }
                 else if (bm.currentMove.targetTypes.Contains(TargetType.AllAllies))
+                {
                     desired = TargetType.AllAllies;
-                bm.currentMove.targetType = desired;
+                    allowed = true;
+                }
+                else if (bm.currentMove.targetTypes.Contains(TargetType.All))
+                {
+                    desired = TargetType.All;
+                    allowed = true;
+                }
+
+                if (allowed)
+                    bm.currentMove.targetType = desired;
             }
             if (bm.currentItem != null)
             {
+                bool itemAllowed = false;
                 if (bm.currentItem.targetTypes.Contains(TargetType.SingleAlly))
+                {
                     desired = TargetType.SingleAlly;
+                    itemAllowed = true;
+                }
                 else if (bm.currentItem.targetTypes.Contains(TargetType.AllAllies))
+                {
                     desired = TargetType.AllAllies;
-                bm.currentItemTargetType = desired;
+                    itemAllowed = true;
+                }
+                else if (bm.currentItem.targetTypes.Contains(TargetType.All))
+                {
+                    desired = TargetType.All;
+                    itemAllowed = true;
+                }
+                if (itemAllowed)
+                    bm.currentItemTargetType = desired;
+                allowed = allowed || itemAllowed;
             }
+            if (!allowed)
+                return;
+
             bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
 
         }

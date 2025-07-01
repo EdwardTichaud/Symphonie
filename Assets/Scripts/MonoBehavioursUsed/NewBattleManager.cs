@@ -120,6 +120,7 @@ public class NewBattleManager : MonoBehaviour
     public GameObject targetCursorPrefab;
     [Tooltip("Prefab affichant la fenêtre d'interception")] public GameObject interceptionSignalPrefab;
     [HideInInspector] public GameObject targetCursor;
+    [HideInInspector] public List<GameObject> multiTargetCursors = new List<GameObject>();
     private List<CharacterUnit> filteredUnits = new();
     private int currentTargetIndex = 0;
     private float navigationCooldown = 0.3f;
@@ -1528,12 +1529,6 @@ public class NewBattleManager : MonoBehaviour
 
     private void HandleTargetCursor()
     {
-        //if (currentTargetCharacter != null && currentTargetCharacter.currentHP <= 0)
-        //{
-        //    targetCursor.SetActive(false);
-        //    return;
-        //}
-
         bool isSkillTargeting =
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill;
@@ -1542,8 +1537,50 @@ public class NewBattleManager : MonoBehaviour
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem ||
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem;
 
-        if (isSkillTargeting || isItemTargeting)
+        if (!(isSkillTargeting || isItemTargeting))
         {
+            if (targetCursor != null)
+            {
+                targetCursor.transform.position = Vector3.zero;
+                targetCursor.SetActive(false);
+            }
+            HideMultiTargetCursors();
+            UpdateTargetCursorColor(true);
+            return;
+        }
+
+        TargetType type = isSkillTargeting ? currentMove.targetType : currentItemTargetType;
+
+        if (type == TargetType.AllEnemies || type == TargetType.AllAllies || type == TargetType.All)
+        {
+            targetCursor?.SetActive(false);
+
+            IEnumerable<CharacterUnit> targets = activeCharacterUnits.Where(u => u.currentHP > 0);
+            if (type == TargetType.AllEnemies)
+                targets = targets.Where(u => u.characterType == CharacterType.EnemyUnit);
+            else if (type == TargetType.AllAllies)
+                targets = targets.Where(u => u.characterType == CharacterType.SquadUnit);
+
+            List<CharacterUnit> targetList = targets.ToList();
+            EnsureMultiTargetCursors(targetList.Count);
+
+            for (int i = 0; i < multiTargetCursors.Count; i++)
+            {
+                if (i < targetList.Count)
+                {
+                    multiTargetCursors[i].SetActive(true);
+                    multiTargetCursors[i].transform.position = targetList[i].transform.position;
+                }
+                else
+                {
+                    multiTargetCursors[i].SetActive(false);
+                }
+            }
+        }
+        else
+        {
+            HideMultiTargetCursors();
+
             if (targetCursor != null && currentTargetCharacter != null)
             {
                 targetCursor.SetActive(true);
@@ -1563,8 +1600,6 @@ public class NewBattleManager : MonoBehaviour
                             break;
                     }
 
-                    // Positionne le curseur à exactement castDistance (castRange)
-                    // par rapport à la cible, sans appliquer le bonus de mobilité
                     Vector3 cursorPos = currentTargetCharacter.transform.position +
                                        offsetDir * currentMove.castDistance;
                     targetCursor.transform.position = cursorPos;
@@ -1578,15 +1613,6 @@ public class NewBattleManager : MonoBehaviour
                     targetCursor.transform.position = currentTargetCharacter.transform.position;
                     UpdateTargetCursorColor(true);
                 }
-            }
-        }
-        else
-        {
-            if (targetCursor != null)
-            {
-                targetCursor.transform.position = Vector3.zero;
-                targetCursor.SetActive(false);
-                UpdateTargetCursorColor(true);
             }
         }
     }
@@ -1624,6 +1650,11 @@ public class NewBattleManager : MonoBehaviour
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                break;
+
+            case TargetType.All:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
+                currentTargetCharacter = activeCharacterUnits.FirstOrDefault(u => u.currentHP > 0);
                 break;
 
             default:
@@ -1666,6 +1697,11 @@ public class NewBattleManager : MonoBehaviour
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                break;
+
+            case TargetType.All:
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
+                currentTargetCharacter = activeCharacterUnits.FirstOrDefault(u => u.currentHP > 0);
                 break;
 
             default:
@@ -1895,6 +1931,35 @@ public class NewBattleManager : MonoBehaviour
         {
             targetCursor = Instantiate(targetCursorPrefab, transform.position, Quaternion.identity);
             targetCursor.SetActive(false);
+        }
+    }
+
+    void EnsureMultiTargetCursors(int count)
+    {
+        if (targetCursorPrefab == null) return;
+
+        while (multiTargetCursors.Count < count)
+        {
+            GameObject cursor = Instantiate(targetCursorPrefab, transform.position, Quaternion.identity);
+            cursor.SetActive(false);
+            multiTargetCursors.Add(cursor);
+        }
+
+        for (int i = multiTargetCursors.Count - 1; i >= count; i--)
+        {
+            Destroy(multiTargetCursors[i]);
+            multiTargetCursors.RemoveAt(i);
+        }
+    }
+
+    void HideMultiTargetCursors()
+    {
+        foreach (var cursor in multiTargetCursors)
+        {
+            if (cursor != null)
+            {
+                cursor.SetActive(false);
+            }
         }
     }
 
