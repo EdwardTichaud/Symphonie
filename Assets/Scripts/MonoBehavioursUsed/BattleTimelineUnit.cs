@@ -38,7 +38,7 @@ public class BattleTimelineUnit : MonoBehaviour
         // HP
         UpdateHPBar();
 
-        // Custom bar (Rage/Fatigue)
+        // Custom bar (Rage/Fatigue/Concentration)
         if (customBar != null)
         {
             if (characterData.gameplayType == GameplayType.Rage)
@@ -50,6 +50,11 @@ public class BattleTimelineUnit : MonoBehaviour
             {
                 customBar.SetMaxValue(characterData.maxFatigue);
                 customBar.SetValue(unit.currentFatigue);
+            }
+            else if (unit.TryGetComponent<ConcentrationSystem>(out var c))
+            {
+                customBar.SetMaxValue(c.maxConcentration);
+                customBar.SetValue(c.currentConcentration);
             }
         }
 
@@ -96,6 +101,10 @@ public class BattleTimelineUnit : MonoBehaviour
         else if (characterData.gameplayType == GameplayType.Fatigue)
         {
             customBar.SetValue(unit.currentFatigue);
+        }
+        else if (unit.TryGetComponent<ConcentrationSystem>(out var c))
+        {
+            customBar.SetValue(c.currentConcentration);
         }
     }
 

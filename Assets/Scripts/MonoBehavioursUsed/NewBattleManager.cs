@@ -724,6 +724,16 @@ public class NewBattleManager : MonoBehaviour
             }
         }
 
+        var concentration = caster.GetComponent<ConcentrationSystem>();
+        if (concentration != null && move.effectType == MusicalEffectType.Damage)
+        {
+            float bonus = concentration.CalculateBonusDamage(move.effectValue + caster.currentPower);
+            if (bonus > 0)
+            {
+                target.TakeDamage(bonus);
+            }
+        }
+
         currentCharacterUnit.currentATB = 0f;
     }
 
@@ -814,6 +824,10 @@ public class NewBattleManager : MonoBehaviour
 
             if (Vector3.Distance(unit.transform.position, caster.transform.position) <= range)
             {
+                var conc = unit.GetComponent<ConcentrationSystem>();
+                if (conc != null && conc.IsFull)
+                    return unit;
+
                 float chance = unit.currentReflex / (unit.currentReflex + caster.currentReflex + 1f);
                 if (Random.value < chance)
                     return unit;
@@ -835,6 +849,10 @@ public class NewBattleManager : MonoBehaviour
 
             if (Vector3.Distance(unit.transform.position, caster.transform.position) <= range)
             {
+                var conc = unit.GetComponent<ConcentrationSystem>();
+                if (conc != null && conc.IsFull)
+                    return unit;
+
                 float chance = unit.currentReflex / (unit.currentReflex + caster.currentReflex + 1f);
                 if (chance > bestChance)
                 {
@@ -854,6 +872,14 @@ public class NewBattleManager : MonoBehaviour
         var interceptor = FindPlayerInterceptor(caster, target, caster.Data.currentInterceptionRange);
         if (interceptor == null)
             yield break;
+
+        var conc = interceptor.GetComponent<ConcentrationSystem>();
+        if (conc != null && conc.IsFull)
+        {
+            yield return InterceptRoutine(interceptor, caster);
+            interceptionSucceeded = true;
+            yield break;
+        }
 
         float chance = interceptor.currentReflex / (interceptor.currentReflex + caster.currentReflex + 1f);
         float window = Mathf.Lerp(0.2f, 1.5f, chance);
