@@ -313,19 +313,39 @@ public class InputsManager : MonoBehaviour
     private void OnBackInput(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
-        if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu || bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
+
+        if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu ||
+            bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
         {
             bm.ShowMainMenu();
+            return;
         }
-        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill)
+
+        if (IsSkillTargetSelectionState(bm.currentBattleState))
         {
             bm.OpenSkillsMenu();
             bm.currentCharacterUnit.GetComponentInChildren<Animator>().SetTrigger("exitAction");
         }
-        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem)
+        else if (IsItemTargetSelectionState(bm.currentBattleState))
         {
             bm.OpenItemMenu();
         }
+    }
+
+    private bool IsSkillTargetSelectionState(BattleState state)
+    {
+        return state == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
+               state == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
+               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && NewBattleManager.Instance.currentMove != null) ||
+               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && NewBattleManager.Instance.currentMove != null);
+    }
+
+    private bool IsItemTargetSelectionState(BattleState state)
+    {
+        return state == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem ||
+               state == BattleState.SquadUnit_TargetSelectionAmongSquadForItem ||
+               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && NewBattleManager.Instance.currentItem != null) ||
+               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && NewBattleManager.Instance.currentItem != null);
     }
 
     private void OnBackStarted(InputAction.CallbackContext ctx)
