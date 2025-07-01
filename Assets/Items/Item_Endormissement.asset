@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 133a8786c2756524a9bd962bbc0f1ff8, type: 3}
   m_Name: Item_Endormissement
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   itemID: Endormissement
   itemName: Endormissement
   description: "Endort la cible jusqu\xE0 ce qu'elle subisse des d\xE9g\xE2ts."
@@ -21,7 +21,7 @@ MonoBehaviour:
   moveSpeed: 0
   castDistance: 0
   stayInPlace: 0
-  itemTargetingAnimationName: UseItemPreparation_Start
+  itemTargetingAnimation: {fileID: 0}
   effectType: 10
   healAmount: 0
   healIsPercentage: 0
@@ -38,3 +38,17 @@ MonoBehaviour:
   defaultTargetType: 1
   targetTypes: 0100000003000000
   introVFXPrefab: {fileID: 0}
+  cameraPathPrefab: {fileID: 0}
+  beatPattern: []
+  currentCaster: {fileID: 0}
+  currentTarget: {fileID: 0}
+  cameraStartLocalPosition: {x: 0, y: 0, z: 0}
+  cameraStartLocalEulerAngles: {x: 0, y: 0, z: 0}
+  cameraEndLocalPosition: {x: 0, y: 0, z: 0}
+  cameraEndLocalEulerAngles: {x: 0, y: 0, z: 0}
+  cameraTransitionDuration: 0.5
+  notes: []
+  introAnimationClip: {fileID: 0}
+  animationClip: {fileID: 0}
+  visualEffect: {fileID: 0}
+  introClip: {fileID: 0}

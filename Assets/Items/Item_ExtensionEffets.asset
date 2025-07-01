@@ -13,15 +13,15 @@ MonoBehaviour:
   m_Name: Item_ExtensionEffets
   m_EditorClassIdentifier: 
   itemID: ExtensionEffets
-  itemName: "Extension d'Effets"
-  description: "Prolonge de deux tours tous les effets actifs de la cible."
+  itemName: Extension d'Effets
+  description: Prolonge de deux tours tous les effets actifs de la cible.
   itemIcon: {fileID: 0}
   effectValue: 0
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
   stayInPlace: 0
-  itemTargetingAnimationName: UseItemPreparation_Start
+  itemTargetingAnimation: {fileID: 0}
   effectType: 9
   healAmount: 0
   healIsPercentage: 0
@@ -35,8 +35,8 @@ MonoBehaviour:
   timingType: 0
   timingBoostAmount: 0
   timingDuration: 0
-  defaultTargetType: 3
-  targetTypes: 03000000
+  defaultTargetType: 5
+  targetTypes: 05000000
   introVFXPrefab: {fileID: 0}
   cameraPathPrefab: {fileID: 0}
   beatPattern: []
