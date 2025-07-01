@@ -921,12 +921,8 @@ public class NewBattleManager : MonoBehaviour
     {
         if (interceptor == null) yield break;
 
-        // Trigger the "intercepted" animation on the caster
-        var casterAnim = caster.GetComponentInChildren<Animator>();
-        if (casterAnim != null)
-        {
-            casterAnim.SetTrigger("intercepted");
-        }
+        caster?.PlayInterceptedAnimation();
+        interceptor?.PlayInterceptionAnimation();
 
         var move = interceptor.GetRandomMusicalAttack();
         if (move != null)
