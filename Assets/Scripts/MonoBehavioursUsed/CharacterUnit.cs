@@ -11,6 +11,11 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public HPBar hpBar;
     public CustomBar customBar;
 
+    [Header("Animations")]
+    public AnimationClip hurtAnimation;
+    public AnimationClip interceptedAnimation;
+    public AnimationClip interceptionAnimation;
+
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
     private Animator animator;
@@ -144,6 +149,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (hpBar != null) hpBar.SetValue(currentHP);
         DamagePopupManager.Instance?.ShowDamage(transform.position, Mathf.RoundToInt(amount));
         PlayDamageFeedback();
+        PlayHurtAnimation();
         GetComponent<SleepStatus>()?.OnDamageTaken();
         GetComponent<ConcentrationSystem>()?.OnDamageTaken(amount);
         if (Data != null && Data.gameplayType == GameplayType.Rage)
@@ -271,6 +277,16 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         transform.position = start;
     }
+
+    void PlayAnimationClip(AnimationClip clip)
+    {
+        if (animator != null && clip != null)
+            animator.Play(clip.name);
+    }
+
+    public void PlayHurtAnimation() => PlayAnimationClip(hurtAnimation);
+    public void PlayInterceptedAnimation() => PlayAnimationClip(interceptedAnimation);
+    public void PlayInterceptionAnimation() => PlayAnimationClip(interceptionAnimation);
 
     void PlayDamageFeedback()
     {
