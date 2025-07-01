@@ -82,6 +82,13 @@ public class MusicalMoveSO : ScriptableObject
                 InventoryManager.Instance?.RemoveSleep(unit);
             }
         }
+        else if (effectType == MusicalEffectType.LoyaltyMark)
+        {
+            var mark = target.GetComponent<LoyaltyMark>();
+            if (mark == null)
+                mark = target.gameObject.AddComponent<LoyaltyMark>();
+            mark.SetProtector(caster);
+        }
 
         if (caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
@@ -90,6 +97,6 @@ public class MusicalMoveSO : ScriptableObject
     }
 }
 
-public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll }
+public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark }
 
 public enum RelativePosition { Front, Back, Left, Right }

@@ -136,6 +136,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void TakeDamage(float amount)
     {
+        var mark = GetComponent<LoyaltyMark>();
+        if (mark != null && mark.RedirectDamage(amount))
+            return;
+
         currentHP = Mathf.Max(currentHP - amount, 0);
         if (hpBar != null) hpBar.SetValue(currentHP);
         DamagePopupManager.Instance?.ShowDamage(transform.position, Mathf.RoundToInt(amount));

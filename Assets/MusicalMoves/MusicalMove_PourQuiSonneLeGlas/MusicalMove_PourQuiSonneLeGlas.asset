@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8caee409dd862bf429bf43fff5538c9f, type: 3}
+  m_Name: MusicalMove_PourQuiSonneLeGlas
+  m_EditorClassIdentifier: 
+  moveName: Pour qui sonne le glas
+  moveType: 2
+  moveIcon: {fileID: 0}
+  description: Applique une marque de loyauté sur un allié.
+  musicalMoveTargetingAnimationName: 
+  musicalMoveRunAnimationName: 
+  maxRunDuration: 0
+  stayFaceToTarget: 0
+  musicalMoveIntroAnimationNames: []
+  musicalMoveAnimationNames: []
+  power: 0
+  fatigueCost: 1
+  harmonicCost: 1
+  targetType: 3
+  defaultTargetType: 3
+  targetTypes:
+  - 3
+  effectType: 6
+  effectValue: 0
+  moveSpeed: 0
+  castDistance: 0
+  stayInPlace: 1
+  relativePosition: 0
+  introVFXPrefab: {fileID: 0}
+  hitVFXPrefab: {fileID: 0}
