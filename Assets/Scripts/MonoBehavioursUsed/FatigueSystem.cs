@@ -11,10 +11,12 @@ public class FatigueSystem : MonoBehaviour
     private bool isAsleep;
     private Coroutine routine;
     public bool IsAsleep => isAsleep;
+    private UnitStateEffects stateEffects;
 
     private void Awake()
     {
         unit = GetComponent<CharacterUnit>();
+        stateEffects = GetComponent<UnitStateEffects>();
     }
 
     public void OnActionPerformed(float amount = 1f)
@@ -34,10 +36,12 @@ public class FatigueSystem : MonoBehaviour
     private IEnumerator SleepRoutine()
     {
         isAsleep = true;
+        stateEffects?.EnterState();
         yield return new WaitForSeconds(asleepDuration);
         unit.currentFatigue = unit.Data.baseFatigue;
         if (unit.customBar != null)
             unit.customBar.SetValue(unit.currentFatigue);
+        stateEffects?.ExitState();
         isAsleep = false;
         routine = null;
     }
