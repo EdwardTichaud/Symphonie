@@ -168,8 +168,7 @@ public class InventoryManager : MonoBehaviour
     {
         if (target == null)
             return;
-        var sleep = target.GetComponent<SleepStatus>();
-        if (sleep == null)
+        if (!target.TryGetComponent<SleepStatus>(out var sleep))
             sleep = target.gameObject.AddComponent<SleepStatus>();
         sleep.Sleep();
     }
