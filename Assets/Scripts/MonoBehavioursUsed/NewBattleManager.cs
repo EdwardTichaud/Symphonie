@@ -724,6 +724,8 @@ public class NewBattleManager : MonoBehaviour
             {
                 target.TakeDamage(bonus);
             }
+            if (rage.IsEnraged)
+                rage.ConsumeRage();
         }
 
         var concentration = caster.GetComponent<ConcentrationSystem>();
