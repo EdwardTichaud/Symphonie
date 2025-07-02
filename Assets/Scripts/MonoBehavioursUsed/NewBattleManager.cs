@@ -1668,6 +1668,15 @@ public class NewBattleManager : MonoBehaviour
     {
         currentItem = item;
         currentItemTargetType = item.defaultTargetType;
+
+        bool canTargetEnemies = item.targetTypes.Contains(TargetType.SingleEnemy) ||
+                               item.targetTypes.Contains(TargetType.AllEnemies) ||
+                               item.targetTypes.Contains(TargetType.All);
+        bool canTargetAllies = item.targetTypes.Contains(TargetType.SingleAlly) ||
+                              item.targetTypes.Contains(TargetType.AllAllies) ||
+                              item.targetTypes.Contains(TargetType.All);
+        bool allowGroupSwitch = canTargetEnemies && canTargetAllies;
+
         switch (item.defaultTargetType)
         {
             case TargetType.Self:
@@ -1676,7 +1685,10 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case TargetType.SingleEnemy:
-                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem);
+                if (allowGroupSwitch)
+                    ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
+                else
+                    ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem);
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
                 break;
@@ -1688,7 +1700,10 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case TargetType.SingleAlly:
-                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
+                if (allowGroupSwitch)
+                    ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
+                else
+                    ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
                 currentTargetCharacter = activeCharacterUnits
                     .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
                 break;
@@ -1710,7 +1725,10 @@ public class NewBattleManager : MonoBehaviour
         }
         currentTargetIndex = 0;
 
-        ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
+        if (allowGroupSwitch)
+            ActionUIDisplayManager.Instance.DisplayInstruction_SelectGroup();
+        else
+            ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
     }
     #endregion
 
