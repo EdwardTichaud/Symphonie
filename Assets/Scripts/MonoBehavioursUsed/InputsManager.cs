@@ -448,6 +448,7 @@ public class InputsManager : MonoBehaviour
                 return;
 
             bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
+            bm.SetCurrentTargetToFirst(CharacterType.EnemyUnit);
 
         }
     }
@@ -506,6 +507,7 @@ public class InputsManager : MonoBehaviour
                 return;
 
             bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
+            bm.SetCurrentTargetToFirst(CharacterType.SquadUnit);
 
         }
     }

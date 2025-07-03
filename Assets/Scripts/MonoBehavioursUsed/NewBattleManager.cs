@@ -2066,6 +2066,13 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
+    public void SetCurrentTargetToFirst(CharacterType type)
+    {
+        currentTargetIndex = 0;
+        currentTargetCharacter = activeCharacterUnits
+            .FirstOrDefault(u => u.characterType == type && u.currentHP > 0);
+    }
+
     public void ResetBattleInfos()
     {
         // Réinitialise l’état du combat
