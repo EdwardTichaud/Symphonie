@@ -23,6 +23,7 @@ public class MusicalMoveSO : ScriptableObject
     public float power = 0;
     public float fatigueCost = 1;
     public int harmonicCost = 1;
+    public int harmonicGeneration = 0;
 
     [Header("Ciblage")]
     public TargetType targetType = TargetType.SingleEnemy;
