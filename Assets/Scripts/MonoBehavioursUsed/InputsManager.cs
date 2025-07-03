@@ -120,11 +120,7 @@ public class InputsManager : MonoBehaviour
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
-        if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
-            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
-            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
-            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies
-            )
+        if (IsSkillTargetSelectionState(bm.currentBattleState))
         {
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentMove))
             {
@@ -136,8 +132,7 @@ public class InputsManager : MonoBehaviour
             bm.StartCoroutine(bm.ExecuteMoveOnTarget(bm.currentMove, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
         }
-        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem
-            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem)
+        else if (IsItemTargetSelectionState(bm.currentBattleState))
             {
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentItem))
             {
@@ -334,18 +329,18 @@ public class InputsManager : MonoBehaviour
 
     private bool IsSkillTargetSelectionState(BattleState state)
     {
-        return state == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
-               state == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
-               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && NewBattleManager.Instance.currentMove != null) ||
-               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && NewBattleManager.Instance.currentMove != null);
+        return state == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
+               ((state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad ||
+                 state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies) &&
+                NewBattleManager.Instance.currentMove != null);
     }
 
     private bool IsItemTargetSelectionState(BattleState state)
     {
-        return state == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem ||
-               state == BattleState.SquadUnit_TargetSelectionAmongSquadForItem ||
-               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && NewBattleManager.Instance.currentItem != null) ||
-               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && NewBattleManager.Instance.currentItem != null);
+        return state == BattleState.SquadUnit_TargetSelectionAmongSquadForItem ||
+               ((state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad ||
+                 state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies) &&
+                NewBattleManager.Instance.currentItem != null);
     }
 
     private void OnBackStarted(InputAction.CallbackContext ctx)
