@@ -183,7 +183,11 @@ public class InputsManager : MonoBehaviour
                     bm.ShowMainMenu();
                     return;
                 }
-                bm.StartCoroutine(bm.ShowMoveInfoAndHandleSelection(bm.currentMove));
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentMove);
+
+                if (bm.currentMove.musicalMoveTargetingAnimation != null)
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation.name);
             }
             else
             {
@@ -195,7 +199,11 @@ public class InputsManager : MonoBehaviour
             if (bm.itemChoices.Count > 0)
             {
                 bm.currentItem = bm.itemChoices[0];
-                bm.StartCoroutine(bm.ShowItemInfoAndHandleSelection(bm.currentItem));
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentItem);
+
+                if (bm.currentItem.itemTargetingAnimation != null)
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
             }
             else
             {
@@ -226,7 +234,11 @@ public class InputsManager : MonoBehaviour
                     bm.ShowMainMenu();
                     return;
                 }
-                bm.StartCoroutine(bm.ShowMoveInfoAndHandleSelection(bm.currentMove));
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentMove);
+
+                if (bm.currentMove.musicalMoveTargetingAnimation != null)
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation.name);
             }
             else
             {
@@ -238,7 +250,11 @@ public class InputsManager : MonoBehaviour
             if (bm.itemChoices.Count > 1)
             {
                 bm.currentItem = bm.itemChoices[1];
-                bm.StartCoroutine(bm.ShowItemInfoAndHandleSelection(bm.currentItem));
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentItem);
+
+                if (bm.currentItem.itemTargetingAnimation)
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
             }
             else
             {
@@ -265,7 +281,11 @@ public class InputsManager : MonoBehaviour
                     bm.ShowMainMenu();
                     return;
                 }
-                bm.StartCoroutine(bm.ShowMoveInfoAndHandleSelection(bm.currentMove));
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentMove);
+
+                if (bm.currentMove.musicalMoveTargetingAnimation != null)
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation.name);
             }
             else
             {
@@ -277,7 +297,11 @@ public class InputsManager : MonoBehaviour
             if (bm.itemChoices.Count > 2)
             {
                 bm.currentItem = bm.itemChoices[2];
-                bm.StartCoroutine(bm.ShowItemInfoAndHandleSelection(bm.currentItem));
+                bm.ToggleMenuContainers(false, false, false);
+                bm.HandleTargetSelection(bm.currentItem);
+
+                if (bm.currentItem.itemTargetingAnimation != null)
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
             }
             else
             {
