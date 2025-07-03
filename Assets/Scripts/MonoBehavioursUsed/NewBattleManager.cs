@@ -1019,6 +1019,27 @@ public class NewBattleManager : MonoBehaviour
             OpenSkillsMenu();
         }
     }
+
+    public IEnumerator ShowItemInfoAndHandleSelection(ItemData item)
+    {
+        string message = item.description;
+        InfoBoxManager.Instance.OpenInfoBox(item.itemName, message, item.itemIcon);
+        while (!InfoBoxManager.Instance.choix.HasValue)
+            yield return null;
+
+        if (InfoBoxManager.Instance.choix.Value)
+        {
+            ToggleMenuContainers(false, false, false);
+            HandleTargetSelection(item);
+
+            if (item.itemTargetingAnimation != null)
+                currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(item.itemTargetingAnimation.name);
+        }
+        else
+        {
+            OpenItemMenu();
+        }
+    }
     #endregion
 
     #region Gestion de l'orientation des unités
