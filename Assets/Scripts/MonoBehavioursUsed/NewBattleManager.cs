@@ -1629,8 +1629,11 @@ public class NewBattleManager : MonoBehaviour
             if (targetCursor != null && currentTargetCharacter != null)
             {
                 targetCursor.SetActive(true);
+
                 if (isSkillTargeting && currentMove != null)
                 {
+                    // Les attaques spéciales utilisent un décalage en fonction
+                    // de la position relative et de la distance de lancement.
                     Vector3 offsetDir = currentTargetCharacter.transform.forward;
                     switch (currentMove.relativePosition)
                     {
@@ -1652,6 +1655,13 @@ public class NewBattleManager : MonoBehaviour
                     float requiredDistance = Vector3.Distance(currentCharacterUnit.transform.position, cursorPos);
                     bool inRange = requiredDistance <= currentCharacterUnit.Data.currentRange;
                     UpdateTargetCursorColor(inRange);
+                }
+                else if (isItemTargeting)
+                {
+                    // Les items n'utilisent aucun décalage : le curseur se place
+                    // directement sur la cible.
+                    targetCursor.transform.position = currentTargetCharacter.transform.position;
+                    UpdateTargetCursorColor(true);
                 }
                 else
                 {
