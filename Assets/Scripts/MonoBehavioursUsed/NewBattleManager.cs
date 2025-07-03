@@ -974,6 +974,7 @@ public class NewBattleManager : MonoBehaviour
         if (caster != null)
         {
             caster.ConsumeHarmonic(caster.Data.harmonicType, move.harmonicCost);
+            caster.AddHarmonic(caster.Data.harmonicType, move.harmonicGeneration);
 
             // Si l'unité n'a plus d'harmonique, son tour se termine immédiatement
             if (caster.GetHarmonicCount(caster.Data.harmonicType) <= 0)
@@ -996,6 +997,27 @@ public class NewBattleManager : MonoBehaviour
             EndTurn();
         else
             ShowMainMenu();
+    }
+
+    public IEnumerator ShowMoveInfoAndHandleSelection(MusicalMoveSO move)
+    {
+        string message = $"{move.description}\nCoût : {move.harmonicCost} harmonique(s)\nGénère : {move.harmonicGeneration} harmonique(s)";
+        InfoBoxManager.Instance.OpenInfoBox(move.moveName, message, move.moveIcon);
+        while (!InfoBoxManager.Instance.choix.HasValue)
+            yield return null;
+
+        if (InfoBoxManager.Instance.choix.Value)
+        {
+            ToggleMenuContainers(false, false, false);
+            HandleTargetSelection(move);
+
+            if (move.musicalMoveTargetingAnimation != null)
+                currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(move.musicalMoveTargetingAnimation.name);
+        }
+        else
+        {
+            OpenSkillsMenu();
+        }
     }
     #endregion
 
