@@ -1423,6 +1423,10 @@ public class NewBattleManager : MonoBehaviour
         ChangeBattleState(BattleState.SquadUnit_MainMenu);
         ToggleMenuContainers(true, false, false);
 
+        // Réinitialise les actions sélectionnées afin d'éviter des conflits
+        currentMove = null;
+        currentItem = null;
+
         Debug.Log($"[ShowMainMenu] Nombre de slots = {currentMainMenuSlots.Count}");
         for (int i = 0; i < currentMainMenuSlots.Count; i++)
             Debug.Log($"Slot {i} = {currentMainMenuSlots[i].name}, enfants : {currentMainMenuSlots[i].childCount}");
@@ -1436,6 +1440,8 @@ public class NewBattleManager : MonoBehaviour
         PassTurnUI.Instance.Hide();
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectSkill();
         ChangeBattleState(BattleState.SquadUnit_SkillsMenu);
+        // S'assure qu'aucun item n'est en cours de sélection
+        currentItem = null;
         ToggleMenuContainers(false, true, false);
         currentMenuIndex = 0;
 
@@ -1461,6 +1467,8 @@ public class NewBattleManager : MonoBehaviour
     {
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectItem();
         ChangeBattleState(BattleState.SquadUnit_ItemsMenu);
+        // S'assure qu'aucune compétence n'est en cours de sélection
+        currentMove = null;
         ToggleMenuContainers(false, false, true);
         currentMenuIndex = 0;
 
@@ -1683,6 +1691,7 @@ public class NewBattleManager : MonoBehaviour
     public void HandleTargetSelection(MusicalMoveSO move)
     {
         currentMove = move;
+        currentItem = null; // on annule la sélection d'item précédente
         move.targetType = move.defaultTargetType;
         switch (move.defaultTargetType)
         {
@@ -1730,6 +1739,7 @@ public class NewBattleManager : MonoBehaviour
     public void HandleTargetSelection(ItemData item)
     {
         currentItem = item;
+        currentMove = null; // on annule la sélection de compétence précédente
         currentItemTargetType = item.defaultTargetType;
 
         bool canTargetEnemies = item.targetTypes.Contains(TargetType.SingleEnemy) ||
