@@ -792,6 +792,11 @@ public class NewBattleManager : MonoBehaviour
 
     public bool IsTargetInRange(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
     {
+        if (caster == null || target == null || move == null)
+        {
+            Debug.LogWarning("[IsTargetInRange] caster, target ou move manquant.");
+            return false;
+        }
         Vector3 offsetDir = target.transform.forward;
         switch (move.relativePosition)
         {
