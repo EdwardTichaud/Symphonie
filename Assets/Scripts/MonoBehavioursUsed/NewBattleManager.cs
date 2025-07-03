@@ -1520,10 +1520,14 @@ public class NewBattleManager : MonoBehaviour
     private void HandleTargetNavigation()
     {
         bool isSkillTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
-                                currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill;
+                                currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
+                                (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentMove != null) ||
+                                (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentMove != null);
 
         bool isItemTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem ||
-                               currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem;
+                               currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem ||
+                               (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
+                               (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentItem != null);
 
         if (!isSkillTargeting && !isItemTargeting)
             return;
@@ -1576,11 +1580,15 @@ public class NewBattleManager : MonoBehaviour
     {
         bool isSkillTargeting =
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
-            currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill;
+            currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
+            (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentMove != null) ||
+            (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentMove != null);
 
         bool isItemTargeting =
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem ||
-            currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem;
+            currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem ||
+            (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
+            (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentItem != null);
 
         if (!(isSkillTargeting || isItemTargeting))
         {
