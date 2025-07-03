@@ -120,8 +120,11 @@ public class InputsManager : MonoBehaviour
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
-
-        if (IsSkillTargetSelectionState(bm.currentBattleState))
+        if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
+            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
+            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
+            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies
+            )
         {
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentMove))
             {
@@ -133,8 +136,9 @@ public class InputsManager : MonoBehaviour
             bm.StartCoroutine(bm.ExecuteMoveOnTarget(bm.currentMove, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
         }
-        else if (IsItemTargetSelectionState(bm.currentBattleState))
-        {
+        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem
+            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem)
+            {
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentItem))
             {
                 ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
