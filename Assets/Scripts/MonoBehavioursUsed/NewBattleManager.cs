@@ -35,10 +35,13 @@ public enum BattleState
     SquadUnit_ItemsMenu,
     SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad,
     SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies,
+<<<<<<< Updated upstream
     SquadUnit_TargetSelectionAmongSquadForSkill,
     SquadUnit_TargetSelectionAmongSquadForItem,
     SquadUnit_TargetSelectionAmongEnemiesForSkill,
     SquadUnit_TargetSelectionAmongEnemiesForItem,
+=======
+>>>>>>> Stashed changes
     SquadUnit_PerformingMusicalMove,
     SquadUnit_Item_Prepare,
     SquadUnit_Item_Use,
@@ -1519,6 +1522,7 @@ public class NewBattleManager : MonoBehaviour
     #region Gestion de la navigation dans les menus
     private void HandleTargetNavigation()
     {
+<<<<<<< Updated upstream
         bool isSkillTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
                                 currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
                                 (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentMove != null) ||
@@ -1527,6 +1531,12 @@ public class NewBattleManager : MonoBehaviour
         bool isItemTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem ||
                                currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem ||
                                (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
+=======
+        bool isSkillTargeting = (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentMove != null) ||
+                                (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentMove != null);
+
+        bool isItemTargeting = (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
+>>>>>>> Stashed changes
                                (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentItem != null);
 
         if (!isSkillTargeting && !isItemTargeting)
@@ -1579,14 +1589,22 @@ public class NewBattleManager : MonoBehaviour
     private void HandleTargetCursor()
     {
         bool isSkillTargeting =
+<<<<<<< Updated upstream
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
+=======
+            
+>>>>>>> Stashed changes
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentMove != null) ||
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentMove != null);
 
         bool isItemTargeting =
+<<<<<<< Updated upstream
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem ||
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem ||
+=======
+            
+>>>>>>> Stashed changes
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentItem != null);
 
