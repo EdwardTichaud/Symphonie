@@ -122,8 +122,8 @@ public class InputsManager : MonoBehaviour
         NewBattleManager bm = NewBattleManager.Instance;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
-            //|| bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
-            //|| bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies
+            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
+            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies
             )
         {
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentMove))
