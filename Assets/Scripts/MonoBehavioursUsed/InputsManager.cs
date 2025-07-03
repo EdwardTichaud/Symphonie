@@ -329,18 +329,16 @@ public class InputsManager : MonoBehaviour
 
     private bool IsSkillTargetSelectionState(BattleState state)
     {
-        return state == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
-               ((state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad ||
-                 state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies) &&
-                NewBattleManager.Instance.currentMove != null);
+        return (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad ||
+                state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies) &&
+               NewBattleManager.Instance.currentMove != null;
     }
 
     private bool IsItemTargetSelectionState(BattleState state)
     {
-        return state == BattleState.SquadUnit_TargetSelectionAmongSquadForItem ||
-               ((state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad ||
-                 state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies) &&
-                NewBattleManager.Instance.currentItem != null);
+        return (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad ||
+                state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies) &&
+               NewBattleManager.Instance.currentItem != null;
     }
 
     private void OnBackStarted(InputAction.CallbackContext ctx)

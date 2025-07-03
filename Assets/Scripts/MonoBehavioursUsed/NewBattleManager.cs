@@ -35,8 +35,8 @@ public enum BattleState
     SquadUnit_ItemsMenu,
     SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad,
     SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies,
-    SquadUnit_TargetSelectionAmongSquadForSkill,
-    SquadUnit_TargetSelectionAmongSquadForItem,
+    SquadUnit_MusicalMove_Prepare,
+
     SquadUnit_PerformingMusicalMove,
     SquadUnit_Item_Prepare,
     SquadUnit_Item_Use,
@@ -1530,13 +1530,13 @@ public class NewBattleManager : MonoBehaviour
     #region Gestion de la navigation dans les menus
     private void HandleTargetNavigation()
     {
-        bool isSkillTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
-                                (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentMove != null) ||
-                                (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentMove != null);
+        bool isSkillTargeting =
+            (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentMove != null) ||
+            (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentMove != null);
 
-        bool isItemTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem ||
-                               (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
-                               (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentItem != null);
+        bool isItemTargeting =
+            (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
+            (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentItem != null);
 
         if (!isSkillTargeting && !isItemTargeting)
             return;
@@ -1588,12 +1588,10 @@ public class NewBattleManager : MonoBehaviour
     private void HandleTargetCursor()
     {
         bool isSkillTargeting =
-            currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentMove != null) ||
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentMove != null);
 
         bool isItemTargeting =
-            currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem ||
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentItem != null);
 
@@ -1695,16 +1693,11 @@ public class NewBattleManager : MonoBehaviour
         switch (move.defaultTargetType)
         {
             case TargetType.Self:
-                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
                 currentTargetCharacter = currentCharacterUnit;
                 break;
 
             case TargetType.SingleEnemy:
-                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
-                break;
-
             case TargetType.AllEnemies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
                 currentTargetCharacter = activeCharacterUnits
@@ -1712,11 +1705,6 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case TargetType.SingleAlly:
-                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
-                break;
-
             case TargetType.AllAllies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
                 currentTargetCharacter = activeCharacterUnits
@@ -1752,7 +1740,7 @@ public class NewBattleManager : MonoBehaviour
         switch (item.defaultTargetType)
         {
             case TargetType.Self:
-                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
+                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
                 currentTargetCharacter = currentCharacterUnit;
                 break;
 
@@ -1769,14 +1757,6 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case TargetType.SingleAlly:
-                if (allowGroupSwitch)
-                    ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
-                else
-                    ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
-                break;
-
             case TargetType.AllAllies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
                 currentTargetCharacter = activeCharacterUnits
@@ -1877,15 +1857,6 @@ public class NewBattleManager : MonoBehaviour
                 }
                 break;
 
-            case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
-                isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
-                break;
-
-            case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
-                isFollowingCurrentTarget = true;
-                break;
 
 
             case BattleState.SquadUnit_PerformingMusicalMove:
