@@ -120,15 +120,10 @@ public class InputsManager : MonoBehaviour
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
-<<<<<<< Updated upstream
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
-            //|| bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
-            //|| bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies
-=======
-        if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
+            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies
->>>>>>> Stashed changes
             )
         {
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentMove))
@@ -140,14 +135,10 @@ public class InputsManager : MonoBehaviour
             bm.ChangeBattleState(BattleState.SquadUnit_PerformingMusicalMove);
             bm.StartCoroutine(bm.ExecuteMoveOnTarget(bm.currentMove, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
-<<<<<<< Updated upstream
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem)
-            {
-=======
-
->>>>>>> Stashed changes
+        {
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentItem))
             {
                 ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
@@ -343,24 +334,16 @@ public class InputsManager : MonoBehaviour
 
     private bool IsSkillTargetSelectionState(BattleState state)
     {
-<<<<<<< Updated upstream
         return state == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
                state == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
-=======
-        return 
->>>>>>> Stashed changes
                (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && NewBattleManager.Instance.currentMove != null) ||
                (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && NewBattleManager.Instance.currentMove != null);
     }
 
     private bool IsItemTargetSelectionState(BattleState state)
     {
-<<<<<<< Updated upstream
         return state == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem ||
                state == BattleState.SquadUnit_TargetSelectionAmongSquadForItem ||
-=======
-        return 
->>>>>>> Stashed changes
                (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && NewBattleManager.Instance.currentItem != null) ||
                (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && NewBattleManager.Instance.currentItem != null);
     }
