@@ -195,11 +195,7 @@ public class InputsManager : MonoBehaviour
             if (bm.itemChoices.Count > 0)
             {
                 bm.currentItem = bm.itemChoices[0];
-                bm.ToggleMenuContainers(false, false, false);
-                bm.HandleTargetSelection(bm.currentItem);
-
-                if (bm.currentItem.itemTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
+                bm.StartCoroutine(bm.ShowItemInfoAndHandleSelection(bm.currentItem));
             }
             else
             {
@@ -242,11 +238,7 @@ public class InputsManager : MonoBehaviour
             if (bm.itemChoices.Count > 1)
             {
                 bm.currentItem = bm.itemChoices[1];
-                bm.ToggleMenuContainers(false, false, false);
-                bm.HandleTargetSelection(bm.currentItem);
-
-                if (bm.currentItem.itemTargetingAnimation)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
+                bm.StartCoroutine(bm.ShowItemInfoAndHandleSelection(bm.currentItem));
             }
             else
             {
@@ -285,11 +277,7 @@ public class InputsManager : MonoBehaviour
             if (bm.itemChoices.Count > 2)
             {
                 bm.currentItem = bm.itemChoices[2];
-                bm.ToggleMenuContainers(false, false, false);
-                bm.HandleTargetSelection(bm.currentItem);
-
-                if (bm.currentItem.itemTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
+                bm.StartCoroutine(bm.ShowItemInfoAndHandleSelection(bm.currentItem));
             }
             else
             {
