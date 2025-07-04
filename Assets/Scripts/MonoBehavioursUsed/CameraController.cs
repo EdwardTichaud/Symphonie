@@ -149,6 +149,17 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
+    /// Effectue les ajustements de caméra en fin de frame pour éviter les conflits.
+    /// </summary>
+    void LateUpdate()
+    {
+        if (Application.isPlaying && currentWorldCameraState == WorldCameraState.Forced)
+        {
+            FollowForcedCameraPoint();
+        }
+    }
+
+    /// <summary>
     /// Fait tourner la caméra autour de la cible. Incompatible avec PathFollow actif.
     /// </summary>
     void UpdateOrbit()
@@ -463,7 +474,6 @@ public class CameraController : MonoBehaviour
         {
             case WorldCameraState.Forced:
                 UpdateForcedCameraPoint();
-                FollowForcedCameraPoint();  // 🔑 Suivi direct, fluide
                 break;
 
             case WorldCameraState.ResearchClosestCamPoint:
