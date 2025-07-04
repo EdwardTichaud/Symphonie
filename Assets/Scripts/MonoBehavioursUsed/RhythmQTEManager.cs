@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System;
 
 public class RhythmQTEManager : MonoBehaviour
 {
@@ -36,6 +37,11 @@ public class RhythmQTEManager : MonoBehaviour
     // QTE Effect
     public AudioClip successSFX;
     public AudioClip failSFX;
+
+    private CharacterUnit currentCaster;
+    private CharacterUnit currentTarget;
+    private int pendingNotes = 0;
+    private bool qteActive = false;
 
     [SerializeField] private bool easyMode = false;
 
@@ -86,6 +92,22 @@ public class RhythmQTEManager : MonoBehaviour
             yield return PlayMoveAnimations(move.musicalMoveAnimationNames, caster);
         }
 
+        currentMove = move;
+        currentCaster = caster;
+        currentTarget = target;
+        pendingNotes = move.notes != null ? move.notes.Count : 0;
+
+        if (pendingNotes == 0)
+        {
+            move.ApplyEffect(caster, target);
+        }
+        else
+        {
+            // Attend que toutes les notes aient été jouées via les événements d'animation
+            while (pendingNotes > 0)
+                yield return null;
+        }
+
         yield return caster.GetComponentInChildren<Animator>().GetCurrentAnimatorStateInfo(0).length; // Attend la fin de l’animation d’attaque
 
         if (!move.stayInPlace)
@@ -95,6 +117,10 @@ public class RhythmQTEManager : MonoBehaviour
 
         isActive = false;
         NewBattleManager.Instance.AfterMusicalMove(move, caster);
+
+        currentMove = null;
+        currentCaster = null;
+        currentTarget = null;
 
         Debug.Log("Fin de la séquence du MusicalMove: " + move + " de " + caster.name);
     }
@@ -321,13 +347,33 @@ public class RhythmQTEManager : MonoBehaviour
         Debug.Log("Toutes les animations sont terminées.");
     }
 
-    public void TriggerQTE(float windowDelay)
+    public void TriggerNote(int index)
     {
-        StartCoroutine(QTEWindowRoutine(windowDelay));
+        if (currentMove == null || currentCaster == null || currentTarget == null)
+            return;
+        if (currentMove.notes == null || index < 0 || index >= currentMove.notes.Count)
+            return;
+
+        var note = currentMove.notes[index];
+        if (note.clip != null)
+            audioSource.PlayOneShot(note.clip);
+
+        StartCoroutine(WaitForQTE(note.rhythm, success =>
+        {
+            currentMove.ApplyEffect(currentCaster, currentTarget, success);
+            pendingNotes = Mathf.Max(0, pendingNotes - 1);
+        }));
     }
 
-    private IEnumerator QTEWindowRoutine(float windowDelay)
+
+    public void TriggerQTE(float windowDelay)
     {
+        StartCoroutine(WaitForQTE(windowDelay, _ => { }));
+    }
+
+    private IEnumerator WaitForQTE(float windowDelay, System.Action<bool> callback)
+    {
+        qteActive = true;
         float slowestTimeScale = 0f;
         float transitionDuration = 0.1f;
         float holdDuration = windowDelay / 1000f; // convertit en secondes
@@ -382,15 +428,7 @@ public class RhythmQTEManager : MonoBehaviour
         confirm.Disable();
         Destroy(qteVisual);
 
-        // 💥 Résultat
-        if (success)
-        {
-            //
-        }
-        else
-        {
-            //
-        }
+        callback?.Invoke(success);
 
         // 🔺 Retour au temps normal
         t = 0f;
@@ -405,6 +443,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         Time.timeScale = normalTimeScale;
         Time.fixedDeltaTime = defaultFixedDeltaTime;
+        qteActive = false;
     }
 
 
