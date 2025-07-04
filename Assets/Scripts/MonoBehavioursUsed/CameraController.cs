@@ -81,6 +81,13 @@ public class CameraController : MonoBehaviour
     /// </summary>
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("[CameraController] Instance en double détectée, destruction de l'objet en trop.");
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
         player = GameObject.FindGameObjectWithTag("Player")?.transform;
         if (player == null) Debug.LogError("[CameraController] Player not found!");
