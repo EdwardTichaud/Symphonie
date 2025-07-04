@@ -19,6 +19,18 @@ public class MusicalMoveSO : ScriptableObject
     public string[] musicalMoveIntroAnimationNames;
     public string[] musicalMoveAnimationNames;
 
+    [System.Serializable]
+    public class NoteData
+    {
+        public AudioClip clip;
+        [Tooltip("Durée de la fenêtre QTE pour cette note (en secondes)")]
+        public float rhythm = 0.5f;
+    }
+
+    [Header("Partition musicale")]
+    [Range(2, 6)]
+    public List<NoteData> notes = new();
+
     [Header("Coût et Dégâts")]
     public float power = 0;
     public float fatigueCost = 1;
@@ -59,9 +71,17 @@ public class MusicalMoveSO : ScriptableObject
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {
+        ApplyEffect(caster, target, false);
+    }
+
+    public void ApplyEffect(CharacterUnit caster, CharacterUnit target, bool isCritical)
+    {
         float finalValue = effectValue;
         if (caster != null)
             finalValue += caster.currentPower;
+
+        if (isCritical)
+            finalValue *= 2f;
 
         if (effectType == MusicalEffectType.Damage && target.Data.characterType == CharacterType.EnemyUnit)
         {

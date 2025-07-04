@@ -713,7 +713,8 @@ public class NewBattleManager : MonoBehaviour
             }
         }
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
-        move.ApplyEffect(caster, target);
+        if (move.notes == null || move.notes.Count == 0)
+            move.ApplyEffect(caster, target);
 
         // Ajout du système de rage manuellement
         var rage = caster.GetComponent<RageSystem>();
@@ -939,7 +940,8 @@ public class NewBattleManager : MonoBehaviour
         {
             ActionUIDisplayManager.Instance.DisplayAttackName(move.moveName);
             yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, interceptor, caster);
-            move.ApplyEffect(interceptor, caster);
+            if (move.notes == null || move.notes.Count == 0)
+                move.ApplyEffect(interceptor, caster);
         }
     }
 

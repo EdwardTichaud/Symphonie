@@ -13,6 +13,11 @@ public class AnimationEventsManager : MonoBehaviour
     {
         RhythmQTEManager.Instance?.TriggerQTE(windowDelay);
     }
+
+    public void TriggerNote(int noteIndex)
+    {
+        RhythmQTEManager.Instance?.TriggerNote(noteIndex);
+    }
     
     public void TryToDamage()
     {
