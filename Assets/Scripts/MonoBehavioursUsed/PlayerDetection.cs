@@ -28,12 +28,18 @@ public class PlayerDetection : MonoBehaviour
     public List<CharacterData> detectedEnemies = new List<CharacterData>();
     public bool detectionOn = true;
 
+    [Header("Effets sonores")]
+    [Tooltip("Clip vocal joué lors de la première détection d'un ennemi")]
+    public AudioClip firstDetectionVoice;
+    private bool firstEnemyDetected;
+
     [Header("State")]
     public bool battleEngaged;
 
     private void Awake()
     {
         currentDetectionRadius = baseDetectionRadius;
+        firstEnemyDetected = false;
     }
 
     private void Update()
@@ -66,7 +72,13 @@ public class PlayerDetection : MonoBehaviour
         if (initialHits.Length == 0)
             return; // aucun ennemi trouvé dans le rayon de base
 
-        // 3) Premier ennemi détecté → on désactive detectionOn et on agrandit le rayon
+        // 3) Premier ennemi détecté → on joue l'effet vocal puis on agrandit le rayon
+        if (!firstEnemyDetected && firstDetectionVoice != null)
+        {
+            AudioManager.Instance?.PlayVoice(firstDetectionVoice);
+            firstEnemyDetected = true;
+        }
+
         detectionOn = false;
         currentDetectionRadius = currentDetectionRadius + detectionExpansion;
 
@@ -136,6 +148,7 @@ public class PlayerDetection : MonoBehaviour
         battleEngaged = false;
         detectedEnemies.Clear();
         detectionOn = false;
+        firstEnemyDetected = false;
 
         Debug.Log($"[PlayerDetection] Réinitialisation en cours, détection réactivée dans {delay} s.");
 
