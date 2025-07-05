@@ -90,7 +90,6 @@ public class BattleTransitionManager : MonoBehaviour
     {
         yield return SlowTimeScale(to: 0.1f, speed: 2f);
         yield return new WaitForSecondsRealtime(worldRiftTweener.tweenDuration);
-        yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
 
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         int battlefieldIndex = playerDetection.detectedEnemies[0].battlefieldIndex;
@@ -161,6 +160,7 @@ public class BattleTransitionManager : MonoBehaviour
         }
 
         yield return NewBattleManager.Instance.StartBattle();
+        yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
     }
 
     public IEnumerator ExitVictoryScreenAndBattle()
