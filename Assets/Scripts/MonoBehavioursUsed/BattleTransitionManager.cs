@@ -72,6 +72,8 @@ public class BattleTransitionManager : MonoBehaviour
     {
         StopAllCoroutines();
 
+        CombatSkyboxManager.Instance?.ApplyBattleSkybox();
+
         AudioClip randomClip = battleMusics[Random.Range(0, battleMusics.Count)];
         AudioManager.Instance.TransitionToCombat(randomClip);
         StartCoroutine(PlayTransitionSoundsSequentially());
@@ -166,6 +168,8 @@ public class BattleTransitionManager : MonoBehaviour
     public IEnumerator ExitVictoryScreenAndBattle()
     {
         Time.timeScale = 1f;
+
+        CombatSkyboxManager.Instance?.RestoreDefaultSkybox();
 
         //yield return FadeToBlack(2f);
 
