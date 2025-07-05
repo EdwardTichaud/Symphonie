@@ -110,6 +110,11 @@ public class MusicalMoveSO : ScriptableObject
                 mark = target.gameObject.AddComponent<LoyaltyMark>();
             mark.SetProtector(caster);
         }
+        else if (effectType == MusicalEffectType.LinkMark)
+        {
+            if (target.GetComponent<LinkMark>() == null)
+                target.gameObject.AddComponent<LinkMark>();
+        }
 
         if (caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
@@ -118,6 +123,6 @@ public class MusicalMoveSO : ScriptableObject
     }
 }
 
-public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark }
+public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark }
 
 public enum RelativePosition { Front, Back, Left, Right }

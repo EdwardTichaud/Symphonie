@@ -446,6 +446,22 @@ public class RhythmQTEManager : MonoBehaviour
         qteActive = false;
     }
 
+    /// <summary>
+    /// Exécute un MusicalMove sur toutes les cibles marquées par Link.
+    /// </summary>
+    public IEnumerator MusicalMoveOnMarkedTargets(MusicalMoveSO move, CharacterUnit caster)
+    {
+        var targets = NewBattleManager.Instance.activeCharacterUnits
+            .Where(u => u.GetComponent<LinkMark>() != null && u.currentHP > 0 && u != caster)
+            .OrderBy(u => Vector3.Distance(caster.transform.position, u.transform.position))
+            .ToList();
+
+        foreach (var target in targets)
+        {
+            yield return MusicalMoveRoutine(move, caster, target);
+        }
+    }
+
 
     private Transform FindTargetForMove(MusicalMoveSO move)
     {
