@@ -71,6 +71,7 @@ public class CharacterData : ScriptableObject, ITargetable
 
     [Header("Effets visuels et sonores")]
     public AudioClip hitSound;
+    public AudioClip interceptedSound;
     public GameObject hitEffect;
     public GameObject deathEffect;
 

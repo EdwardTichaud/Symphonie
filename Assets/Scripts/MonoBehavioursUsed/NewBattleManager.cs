@@ -933,6 +933,8 @@ public class NewBattleManager : MonoBehaviour
         if (interceptor == null) yield break;
 
         caster?.PlayInterceptedAnimation();
+        caster?.PlayInterceptedSound();
+        caster?.ClearAllHarmonics();
         interceptor?.PlayInterceptionAnimation();
 
         var move = interceptor.GetRandomMusicalAttack();

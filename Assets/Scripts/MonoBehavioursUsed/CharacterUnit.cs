@@ -236,6 +236,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             audioSource.PlayOneShot(Data.hitSound);
     }
 
+    public void PlayInterceptedSound()
+    {
+        if (Data.interceptedSound != null && audioSource != null)
+            audioSource.PlayOneShot(Data.interceptedSound);
+    }
+
     public IEnumerator PlayDamageFlash()
     {
         if (spriteRenderer == null) yield break;
@@ -358,6 +364,13 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public int GetHarmonicCount(HarmonicType type)
     {
         return harmonicReserve.ContainsKey(type) ? harmonicReserve[type] : 0;
+    }
+
+    public void ClearAllHarmonics()
+    {
+        var keys = harmonicReserve.Keys.ToList();
+        foreach (var key in keys)
+            harmonicReserve[key] = 0;
     }
 
     #endregion
