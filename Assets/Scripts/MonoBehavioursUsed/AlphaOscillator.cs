@@ -7,7 +7,7 @@ public class AlphaOscillator : MonoBehaviour
 {
     [Range(0f, 1f)] public float minAlpha = 0.2f;
     [Range(0f, 1f)] public float maxAlpha = 1f;
-    public float speed = 1f;
+    public float speed = 3f;
     public bool autoStart = true;
 
     private float t;
