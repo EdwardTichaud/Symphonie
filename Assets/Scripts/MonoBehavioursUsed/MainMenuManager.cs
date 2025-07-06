@@ -49,6 +49,7 @@ public class MainMenuManager : MonoBehaviour
         playerInputs.World.Enable();
 
         playerInputs.Menu.Confirm.performed += OnConfirm;
+        playerInputs.Menu.Return.performed += OnReturn;
 
         if (menuContainer != null)
         {
@@ -62,6 +63,8 @@ public class MainMenuManager : MonoBehaviour
     {
         if (playerInputs.Menu.Confirm != null)
             playerInputs.Menu.Confirm.performed -= OnConfirm;
+        if (playerInputs.Menu.Return != null)
+            playerInputs.Menu.Return.performed -= OnReturn;
         playerInputs.World.Disable();
         playerInputs.Menu.Disable();
         if (menuCursor != null)
@@ -165,6 +168,43 @@ public class MainMenuManager : MonoBehaviour
     public void QuitGame()
     {
         Application.Quit();
+    }
+
+    private void OnReturn(InputAction.CallbackContext ctx)
+    {
+        if (waitingForInput)
+            return;
+
+        if (loadMenu != null && loadMenu.gameObject.activeSelf)
+        {
+            CloseLoadMenu();
+            return;
+        }
+
+        HideMenu();
+    }
+
+    private void CloseLoadMenu()
+    {
+        if (loadMenu != null)
+            loadMenu.gameObject.SetActive(false);
+    }
+
+    private void HideMenu()
+    {
+        waitingForInput = true;
+
+        if (pressA != null)
+        {
+            pressA.gameObject.SetActive(true);
+            pressA.alpha = 0.5f;
+        }
+
+        if (menuContainer != null)
+            menuContainer.SetActive(false);
+
+        if (menuCursor != null)
+            menuCursor.SetActive(false);
     }
 
     private void HandleNavigation()
