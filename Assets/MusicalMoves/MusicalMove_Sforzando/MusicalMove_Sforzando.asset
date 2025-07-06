@@ -16,7 +16,7 @@ MonoBehaviour:
   moveType: 1
   moveIcon: {fileID: 21300000, guid: 33cd3b491748050418115b4d3a0b6534, type: 3}
   description: 
-  musicalMoveTargetingAnimationName: Sforzando_Targeting
+  musicalMoveTargetingAnimation: {fileID: 0}
   musicalMoveRunAnimationName: Sforzando_Run
   maxRunDuration: 0.5
   stayFaceToTarget: 0
@@ -25,13 +25,21 @@ MonoBehaviour:
   - Sforzando_Move
   power: 10
   fatigueCost: 1
+  harmonicCost: 2
+  harmonicGeneration: 0
   targetType: 1
   defaultTargetType: 1
+  targetTypes: 01000000
   effectType: 0
   effectValue: 20
   moveSpeed: 20
   castDistance: 2
   stayInPlace: 1
+  interceptable: 1
   relativePosition: 0
   introVFXPrefab: {fileID: 0}
   hitVFXPrefab: {fileID: 0}
+  useTeleportation: 0
+  teleportStartVFXPrefab: {fileID: 0}
+  teleportEndVFXPrefab: {fileID: 0}
+  cameraPathPrefab: {fileID: 0}

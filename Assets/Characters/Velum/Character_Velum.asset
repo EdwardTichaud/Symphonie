@@ -15,26 +15,50 @@ MonoBehaviour:
   characterName: Velum
   portrait: {fileID: 21300000, guid: 838686c3abb4a47f1879faee23881935, type: 3}
   characterType: 1
+  gameplayType: 0
+  harmonicType: 0
   characterWorldModel: {fileID: 785885411600899343, guid: 802e5e27001e5e449a55016c90fd2d03, type: 3}
   characterBattleModel: {fileID: 901204007372340786, guid: 44469757a1eb6364cbbae62170301c78, type: 3}
-  uiPrefab: {fileID: 0}
+  battlefieldIndex: 0
+  baseReflex: 0
+  baseMobility: 0
+  baseVitality: 0
+  basePower: 0
+  baseStability: 0
+  baseSagacity: 0
   baseInitiative: 1
   baseRange: 2
   baseHP: 20
-  baseMP: 100
   baseStrength: 1
   baseDefense: 1
-  baseMusicalGauge: 0
+  baseSpeed: 0
+  baseInterceptionRange: 2
+  baseInterceptionChance: 10
+  baseRage: 0
+  maxRage: 0
+  rageDamageMultiplier: 0
+  baseFatigue: 0
+  maxFatigue: 0
   battleIdleAnimationName: Idle
   musicalAttacks:
   - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
   currentInitiative: 1
-  currentRange: 0
+  currentRange: 2
   currentHP: 20
-  currentMP: 100
   currentStrength: 1
   currentDefense: 1
+  currentPower: 0
+  currentStability: 0
+  currentVitality: 0
+  currentSagacity: 0
   isPlayerControlled: 0
+  currentRage: 0
+  currentFatigue: 0
+  currentReflex: 0
+  currentMobility: 0
+  currentSpeed: 0
+  currentInterceptionRange: 0
+  currentInterceptionChance: 0
   hitSound: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
