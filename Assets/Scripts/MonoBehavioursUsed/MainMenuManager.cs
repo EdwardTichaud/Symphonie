@@ -7,7 +7,7 @@ using UnityEngine.InputSystem;
 public class MainMenuManager : MonoBehaviour
 {
     [Header("UI Elements")]
-    public CanvasGroup pressAnyKeyGroup;
+    public CanvasGroup pressA;
     public GameObject menuContainer;
     public SaveLoadMenu loadMenu;
     public float fadeSpeed = 2f;
@@ -15,20 +15,24 @@ public class MainMenuManager : MonoBehaviour
 
     private bool waitingForInput = true;
     private float timer = 0f;
+    private PlayerInputs playerInputs;
     private PlayerInputs.MenuActions menuActions;
+
+    void Awake()
+    {
+        playerInputs = new PlayerInputs();
+    }
 
     private void Start()
     {
-        if (pressAnyKeyGroup != null)
-            pressAnyKeyGroup.alpha = 0.5f;
+        if (pressA != null)
+            pressA.alpha = 0.5f;
         if (menuContainer != null)
             menuContainer.SetActive(false);
         if (loadMenu != null)
             loadMenu.gameObject.SetActive(false);
 
-        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Menu.Get());
-
-        menuActions = InputsManager.Instance.playerInputs.Menu;
+        menuActions = playerInputs.Menu;
         menuActions.Confirm.performed += OnConfirm;
     }
 
@@ -44,8 +48,8 @@ public class MainMenuManager : MonoBehaviour
         {
             timer += Time.deltaTime * fadeSpeed;
             float alpha = 0.25f + 0.25f * (1 + Mathf.Sin(timer));
-            if (pressAnyKeyGroup != null)
-                pressAnyKeyGroup.alpha = alpha;
+            if (pressA != null)
+                pressA.alpha = alpha;
         }
     }
 
@@ -58,8 +62,8 @@ public class MainMenuManager : MonoBehaviour
     private void ShowMenu()
     {
         waitingForInput = false;
-        if (pressAnyKeyGroup != null)
-            pressAnyKeyGroup.gameObject.SetActive(false);
+        if (pressA != null)
+            pressA.gameObject.SetActive(false);
         if (menuContainer != null)
             menuContainer.SetActive(true);
     }
