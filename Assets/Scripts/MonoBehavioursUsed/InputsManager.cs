@@ -42,7 +42,8 @@ public class InputsManager : MonoBehaviour
             playerInputs.Inventory.Get(),
             playerInputs.Battle.Get(),
             playerInputs.Munin.Get(),
-            playerInputs.InfoBox.Get()
+            playerInputs.InfoBox.Get(),
+            playerInputs.Menu.Get()
         };
     }
 

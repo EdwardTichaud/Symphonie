@@ -15,7 +15,7 @@ public class MusicalMoveSO : ScriptableObject
     public AnimationClip musicalMoveTargetingAnimation;
     public string musicalMoveRunAnimationName;
     public float maxRunDuration = 0.5f;
-    public bool stayFaceToTarget;
+    public bool stayFaceToTarget = true;
     public string[] musicalMoveIntroAnimationNames;
     public string[] musicalMoveAnimationNames;
 

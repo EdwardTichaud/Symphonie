@@ -11,6 +11,7 @@ public class MainMenuManager : MonoBehaviour
     public GameObject menuContainer;
     public SaveLoadMenu loadMenu;
     public float fadeSpeed = 2f;
+    public GameObject menuCursor;
 
     private bool waitingForInput = true;
     private float timer = 0f;
@@ -23,6 +24,8 @@ public class MainMenuManager : MonoBehaviour
             menuContainer.SetActive(false);
         if (loadMenu != null)
             loadMenu.gameObject.SetActive(false);
+
+        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Menu.Get());
     }
 
     private void Update()
