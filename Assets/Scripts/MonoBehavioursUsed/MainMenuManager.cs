@@ -13,6 +13,14 @@ public class MainMenuManager : MonoBehaviour
     public float fadeSpeed = 2f;
     public GameObject menuCursor;
 
+    [Header("Navigation")]
+    public Vector3 cursorOffset = new Vector3(-150f, 0f, 0f);
+    public float navigationCooldown = 0.25f;
+
+    private Transform[] menuItems;
+    private int currentIndex = 0;
+    private float lastNavTime = 0f;
+
     private bool waitingForInput = true;
     private float timer = 0f;
     private PlayerInputs playerInputs;
@@ -30,16 +38,30 @@ public class MainMenuManager : MonoBehaviour
             menuContainer.SetActive(false);
         if (loadMenu != null)
             loadMenu.gameObject.SetActive(false);
+        if (menuCursor != null)
+            menuCursor.SetActive(false);
 
         playerInputs.Menu.Enable();
+        playerInputs.World.Enable();
 
         playerInputs.Menu.Confirm.performed += OnConfirm;
+
+        if (menuContainer != null)
+        {
+            menuItems = new Transform[menuContainer.transform.childCount];
+            for (int i = 0; i < menuItems.Length; i++)
+                menuItems[i] = menuContainer.transform.GetChild(i);
+        }
     }
 
     private void OnDestroy()
     {
         if (playerInputs.Menu.Confirm != null)
             playerInputs.Menu.Confirm.performed -= OnConfirm;
+        playerInputs.World.Disable();
+        playerInputs.Menu.Disable();
+        if (menuCursor != null)
+            menuCursor.SetActive(false);
     }
 
     private void Update()
@@ -50,6 +72,10 @@ public class MainMenuManager : MonoBehaviour
             float alpha = 0.25f + 0.25f * (1 + Mathf.Sin(timer));
             if (pressA != null)
                 pressA.alpha = alpha;
+        }
+        else
+        {
+            HandleNavigation();
         }
     }
 
@@ -67,6 +93,9 @@ public class MainMenuManager : MonoBehaviour
             pressA.gameObject.SetActive(false);
         if (menuContainer != null)
             menuContainer.SetActive(true);
+
+        currentIndex = 0;
+        UpdateCursor();
     }
 
     public void ContinueGame()
@@ -102,5 +131,36 @@ public class MainMenuManager : MonoBehaviour
     public void QuitGame()
     {
         Application.Quit();
+    }
+
+    private void HandleNavigation()
+    {
+        if (menuItems == null || menuItems.Length == 0) return;
+
+        Vector2 input = playerInputs.World.Move.ReadValue<Vector2>();
+        if (Time.time - lastNavTime < navigationCooldown)
+            return;
+
+        if (input.y > 0.5f)
+        {
+            currentIndex = (currentIndex - 1 + menuItems.Length) % menuItems.Length;
+            lastNavTime = Time.time;
+            UpdateCursor();
+        }
+        else if (input.y < -0.5f)
+        {
+            currentIndex = (currentIndex + 1) % menuItems.Length;
+            lastNavTime = Time.time;
+            UpdateCursor();
+        }
+    }
+
+    private void UpdateCursor()
+    {
+        if (menuCursor == null || menuItems == null || currentIndex >= menuItems.Length)
+            return;
+
+        menuCursor.SetActive(true);
+        menuCursor.transform.position = menuItems[currentIndex].position + cursorOffset;
     }
 }
