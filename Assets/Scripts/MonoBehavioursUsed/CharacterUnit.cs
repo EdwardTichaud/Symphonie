@@ -22,7 +22,17 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public CharacterType characterType => Data.characterType;
 
-    public float currentHP { get => Data.currentHP; set => Data.currentHP = value; }
+    private float _currentHP;
+    public float currentHP
+    {
+        get => _currentHP;
+        set
+        {
+            _currentHP = value;
+            if (Data != null)
+                Data.currentHP = value;
+        }
+    }
     public float currentMP;
     public float currentRage { get => Data.currentRage; set => Data.currentRage = value; }
 

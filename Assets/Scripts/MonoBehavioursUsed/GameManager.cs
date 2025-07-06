@@ -172,4 +172,10 @@ public class GameManager : MonoBehaviour
         gameData.enemiesDefeatedCount++;
         Debug.Log($"[GameManager] Ennemis vaincus : {gameData.enemiesDefeatedCount}");
     }
+
+    public void ResetEnemiesDefeatedCount()
+    {
+        gameData.enemiesDefeatedCount = 0;
+        Debug.Log("[GameManager] Compteur d'ennemis vaincus réinitialisé.");
+    }
 }
