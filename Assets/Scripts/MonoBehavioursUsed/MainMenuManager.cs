@@ -102,10 +102,15 @@ public class MainMenuManager : MonoBehaviour
     private void ShowMenu()
     {
         waitingForInput = false;
+
         if (pressA != null)
             pressA.gameObject.SetActive(false);
+
         if (menuContainer != null)
+        {
             menuContainer.SetActive(true);
+            Canvas.ForceUpdateCanvases(); // 🩹 <- ceci force le layout immédiatement
+        }
 
         currentIndex = 0;
         UpdateCursor();
@@ -182,7 +187,7 @@ public class MainMenuManager : MonoBehaviour
         {
             txt.ForceMeshUpdate();
             float textWidth = txt.preferredWidth;
-            offset.x = -(textWidth / 2f + 200f);
+            offset.x = -(textWidth / 2f + 100f);
         }
 
         cursorTargetPosition = menuItems[currentIndex].position + offset;
