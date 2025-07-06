@@ -109,7 +109,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fce31430dd00ed849959b9d922f55304, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  cameraTag: MainCamera
+  cameraTag: BattleCamera
   points:
   - point: {fileID: 3467794778507511245}
     outTangent: {x: 0, y: 0, z: 1}
@@ -129,7 +129,7 @@ MonoBehaviour:
   durations:
   - 1
   - 1
-  previewPosition: 0
+  previewPosition: 0.028
   autoPreview: 0
   IsPlaying: 0
   triggered: 0

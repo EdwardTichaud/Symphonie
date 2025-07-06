@@ -92,7 +92,7 @@ public class CameraController : MonoBehaviour
         player = GameObject.FindGameObjectWithTag("Player")?.transform;
         if (player == null) Debug.LogError("[CameraController] Player not found!");
 
-        cameraTargetName = FindChildRecursive(player, "spine_03")?.name;
+        cameraTargetName = FindChildRecursive(player, "Point_Chest")?.name;
         eventsManager = FindFirstObjectByType<EventsManager>();
 
         UpdateCameraPositionsFromHandler();
