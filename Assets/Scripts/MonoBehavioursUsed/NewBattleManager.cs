@@ -349,6 +349,8 @@ public class NewBattleManager : MonoBehaviour
     {
         Debug.Log("[BattleTurnManager] Démarrage du combat");
 
+        GameManager.Instance?.ResetEnemiesDefeatedCount();
+
         battleStartTime = Time.time;
         currentTurnDamage = 0;
         maxTurnDamage = 0;
