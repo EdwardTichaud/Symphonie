@@ -751,7 +751,7 @@ public class NewBattleManager : MonoBehaviour
             ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
             yield break;
         }
-        InventoryManager.Instance.UseItem(item, target);
+        InventoryManager.Instance.UseItem(item, caster, target);
         if (item.effectType == ItemEffectType.Damage)
         {
             RegisterDamage(caster, item.effectValue);

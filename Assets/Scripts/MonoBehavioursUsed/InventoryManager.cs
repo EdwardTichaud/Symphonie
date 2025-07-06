@@ -51,7 +51,7 @@ public class InventoryManager : MonoBehaviour
     /// <summary>
     /// Utilise un item (et l'enlève de l'inventaire). La cible doit être définie à l'avance.
     /// </summary>
-    public void UseItem(ItemData item, CharacterUnit target)
+    public void UseItem(ItemData item, CharacterUnit caster, CharacterUnit target)
     {
         if (!inventoryItems.Contains(item))
         {
@@ -61,15 +61,20 @@ public class InventoryManager : MonoBehaviour
 
         Debug.Log($"[Inventory] Utilisation de l'objet : {item.itemName} sur {target.Data.characterName}");
 
-        if (item.cameraPathPrefab != null && target != null
+        if (item.cameraPathPrefab != null && caster != null
             && NewBattleManager.Instance != null
             && NewBattleManager.Instance.currentBattleState != BattleState.None)
         {
-            GameObject pathGO = Instantiate(item.cameraPathPrefab, target.transform.position, target.transform.rotation, target.transform);
+            GameObject pathGO = Instantiate(
+                item.cameraPathPrefab,
+                caster.transform.position,
+                caster.transform.rotation,
+                caster.transform);
+
             CameraPath camPath = pathGO.GetComponent<CameraPath>();
             if (camPath != null)
             {
-                CameraController.Instance.StartPathFollow(camPath, target.transform, alignImmediately: false);
+                CameraController.Instance.StartPathFollow(camPath, caster.transform, alignImmediately: false);
                 Destroy(pathGO, camPath.GetTotalDuration() + 0.5f);
             }
             else
