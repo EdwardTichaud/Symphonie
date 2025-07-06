@@ -95,8 +95,24 @@ public class MainMenuManager : MonoBehaviour
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
         if (waitingForInput)
+        {
             Debug.Log("Bouton A pressé");
             ShowMenu();
+            return;
+        }
+
+        switch (currentIndex)
+        {
+            case 0:
+                ContinueGame();
+                break;
+            case 1:
+                OpenLoadMenu();
+                break;
+            case 3:
+                QuitGame();
+                break;
+        }
     }
 
     private void ShowMenu()
