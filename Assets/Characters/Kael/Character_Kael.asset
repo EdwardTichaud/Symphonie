@@ -44,7 +44,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ffffffff000000000000000000000001, type: 2}
   currentInitiative: 1
   currentRange: 5
-  currentHP: 60
+  currentHP: 90
   currentStrength: 1
   currentDefense: 1
   currentPower: 0
@@ -60,6 +60,7 @@ MonoBehaviour:
   currentInterceptionRange: 1
   currentInterceptionChance: 0
   hitSound: {fileID: 0}
+  interceptedSound: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   owner: {fileID: 0}

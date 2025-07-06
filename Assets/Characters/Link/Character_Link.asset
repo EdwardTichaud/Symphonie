@@ -32,8 +32,8 @@ MonoBehaviour:
   baseStrength: 1
   baseDefense: 1
   baseSpeed: 0
-  baseInterceptionRange: 1
-  baseInterceptionChance: 0
+  baseInterceptionRange: 2
+  baseInterceptionChance: 10
   baseRage: 0
   maxRage: 0
   rageDamageMultiplier: 0
@@ -61,6 +61,7 @@ MonoBehaviour:
   currentInterceptionRange: 1
   currentInterceptionChance: 0
   hitSound: {fileID: 0}
+  interceptedSound: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   owner: {fileID: 0}

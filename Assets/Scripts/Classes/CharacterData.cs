@@ -32,7 +32,6 @@ public class CharacterData : ScriptableObject, ITargetable
     public float baseDefense;
     public float baseSpeed;
     public float baseInterceptionRange;
-    public float baseInterceptionChance;
 
     [Header("Custom Stats")]
     [Header("Lucian")]

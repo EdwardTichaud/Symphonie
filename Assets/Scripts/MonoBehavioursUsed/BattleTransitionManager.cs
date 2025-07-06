@@ -155,6 +155,8 @@ public class BattleTransitionManager : MonoBehaviour
 
         NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization); // Lance CameraPathIntro
 
+        yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
+
         while (battleIntroPath.IsPlaying)
         {
             Debug.Log("[BattleTransitionManager] Attente de la fin du CameraPath Intro Combat...");
@@ -162,7 +164,6 @@ public class BattleTransitionManager : MonoBehaviour
         }
 
         yield return NewBattleManager.Instance.StartBattle();
-        yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
     }
 
     public IEnumerator ExitVictoryScreenAndBattle()
