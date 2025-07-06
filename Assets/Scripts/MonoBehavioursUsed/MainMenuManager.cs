@@ -14,8 +14,12 @@ public class MainMenuManager : MonoBehaviour
     public GameObject menuCursor;
 
     [Header("Navigation")]
-    public Vector3 cursorOffset = new Vector3(-150f, 0f, 0f);
+    public Vector3 cursorOffset = new Vector3(-300f, 0f, 0f);
     public float navigationCooldown = 0.25f;
+
+    [Header("Cursor Smooth Movement")]
+    public float cursorLerpSpeed = 10f;
+    private Vector3 cursorTargetPosition;
 
     private Transform[] menuItems;
     private int currentIndex = 0;
@@ -76,6 +80,15 @@ public class MainMenuManager : MonoBehaviour
         else
         {
             HandleNavigation();
+        }
+
+        if (menuCursor.activeSelf)
+        {
+            menuCursor.transform.position = Vector3.Lerp(
+                menuCursor.transform.position,
+                cursorTargetPosition,
+                Time.deltaTime * cursorLerpSpeed
+            );
         }
     }
 
@@ -163,13 +176,21 @@ public class MainMenuManager : MonoBehaviour
         menuCursor.SetActive(true);
 
         Vector3 offset = cursorOffset;
+
         TextMeshProUGUI txt = menuItems[currentIndex].GetComponentInChildren<TextMeshProUGUI>();
         if (txt != null)
         {
-            float width = txt.preferredWidth;
-            offset.x = -(width / 2f + 2f);
+            txt.ForceMeshUpdate();
+            float textWidth = txt.preferredWidth;
+            offset.x = -(textWidth / 2f + 200f);
         }
 
-        menuCursor.transform.position = menuItems[currentIndex].position + offset;
+        cursorTargetPosition = menuItems[currentIndex].position + offset;
+
+        // 🔥 Force la position immédiate au moment de l'activation du menu
+        if (!menuCursor.activeInHierarchy || !menuCursor.activeSelf)
+        {
+            menuCursor.transform.position = cursorTargetPosition;
+        }
     }
 }
