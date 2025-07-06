@@ -33,7 +33,19 @@ public class SaveAndLoadManager : MonoBehaviour
             yield break;
 
         foreach (var file in Directory.GetFiles(saveDirectory, "*.json"))
-            yield return Path.GetFileNameWithoutExtension(file);
+            if(!file.EndsWith(".info.json"))
+                yield return Path.GetFileNameWithoutExtension(file);
+    }
+
+    public IEnumerable<SaveInfo> GetAllSaveInfos()
+    {
+        foreach (var file in Directory.GetFiles(saveDirectory, "*.info.json"))
+        {
+            string json = File.ReadAllText(file);
+            SaveInfo info = JsonUtility.FromJson<SaveInfo>(json);
+            info.saveName = Path.GetFileNameWithoutExtension(file).Replace(".info", "");
+            yield return info;
+        }
     }
 
     public void SaveGame(string saveName, bool confirmOverwrite = true)
@@ -49,22 +61,43 @@ public class SaveAndLoadManager : MonoBehaviour
 
         if (File.Exists(fullPath) && confirmOverwrite && InfoBoxManager.Instance != null)
         {
-            StartCoroutine(SaveWithConfirmation(relativePath));
+            StartCoroutine(SaveWithConfirmation(saveName, relativePath));
         }
         else
         {
-            GameManager.Instance.gameData.SaveToFile(relativePath);
+            StartCoroutine(SaveRoutine(saveName, relativePath));
         }
     }
 
-    private IEnumerator SaveWithConfirmation(string relativePath)
+    private IEnumerator SaveWithConfirmation(string saveName, string relativePath)
     {
         InfoBoxManager.Instance.OpenInfoBox("Sauvegarde", "Écraser la sauvegarde existante ?", null);
         while (!InfoBoxManager.Instance.choix.HasValue)
             yield return null;
 
         if (InfoBoxManager.Instance.choix.Value)
-            GameManager.Instance.gameData.SaveToFile(relativePath);
+            yield return SaveRoutine(saveName, relativePath);
+    }
+
+    private IEnumerator SaveRoutine(string saveName, string relativePath)
+    {
+        GameManager.Instance.gameData.SaveToFile(relativePath);
+
+        yield return new WaitForEndOfFrame();
+
+        SaveInfo info = new SaveInfo
+        {
+            saveName = saveName,
+            zoneName = ZoneManager.Instance != null && ZoneManager.Instance.currentZone != null ? ZoneManager.Instance.currentZone.zoneName : "Inconnue",
+            dateTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            screenshotFile = saveName + ".png"
+        };
+
+        string screenshotPath = Path.Combine(saveDirectory, info.screenshotFile);
+        ScreenCapture.CaptureScreenshot(screenshotPath);
+
+        string infoPath = Path.Combine(saveDirectory, saveName + ".info.json");
+        File.WriteAllText(infoPath, JsonUtility.ToJson(info, true));
     }
 
     public void LoadGame(string saveName)
@@ -85,6 +118,6 @@ public class SaveAndLoadManager : MonoBehaviour
             return;
 
         string name = "autosave_" + DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        GameManager.Instance.gameData.SaveToFile(Path.Combine("Saves", name + ".json"));
+        StartCoroutine(SaveRoutine(name, Path.Combine("Saves", name + ".json")));
     }
 }

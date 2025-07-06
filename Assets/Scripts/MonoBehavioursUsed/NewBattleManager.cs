@@ -713,7 +713,8 @@ public class NewBattleManager : MonoBehaviour
             }
         }
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
-        move.ApplyEffect(caster, target);
+        if (move.notes == null || move.notes.Count == 0)
+            move.ApplyEffect(caster, target);
 
         // Ajout du système de rage manuellement
         var rage = caster.GetComponent<RageSystem>();
@@ -883,11 +884,16 @@ public class NewBattleManager : MonoBehaviour
         if (interceptor == null)
             yield break;
 
+        Debug.Log($"[Interception] {interceptor.name} tente d'intercepter {caster.name} ({move.moveName})");
+        ActionUIDisplayManager.Instance.DisplayInterceptionAttempt();
+
         var conc = interceptor.GetComponent<ConcentrationSystem>();
         if (conc != null && conc.IsFull)
         {
             yield return InterceptRoutine(interceptor, caster);
             interceptionSucceeded = true;
+            Debug.Log("[Interception] Réussite automatique grâce à la concentration pleine.");
+            ActionUIDisplayManager.Instance.DisplayInterceptionResult(true);
             yield break;
         }
 
@@ -917,6 +923,8 @@ public class NewBattleManager : MonoBehaviour
                 action.Disable();
                 yield return InterceptRoutine(interceptor, caster);
                 interceptionSucceeded = true;
+                Debug.Log("[Interception] Interception réussie !");
+                ActionUIDisplayManager.Instance.DisplayInterceptionResult(true);
                 yield break;
             }
             elapsed += Time.unscaledDeltaTime;
@@ -925,6 +933,8 @@ public class NewBattleManager : MonoBehaviour
 
         if (signalObj != null) Destroy(signalObj);
         action.Disable();
+        Debug.Log("[Interception] Interception échouée.");
+        ActionUIDisplayManager.Instance.DisplayInterceptionResult(false);
     }
 
     private IEnumerator InterceptRoutine(CharacterUnit interceptor, CharacterUnit caster)
@@ -932,6 +942,8 @@ public class NewBattleManager : MonoBehaviour
         if (interceptor == null) yield break;
 
         caster?.PlayInterceptedAnimation();
+        caster?.PlayInterceptedSound();
+        caster?.ClearAllHarmonics();
         interceptor?.PlayInterceptionAnimation();
 
         var move = interceptor.GetRandomMusicalAttack();
@@ -939,7 +951,8 @@ public class NewBattleManager : MonoBehaviour
         {
             ActionUIDisplayManager.Instance.DisplayAttackName(move.moveName);
             yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, interceptor, caster);
-            move.ApplyEffect(interceptor, caster);
+            if (move.notes == null || move.notes.Count == 0)
+                move.ApplyEffect(interceptor, caster);
         }
     }
 

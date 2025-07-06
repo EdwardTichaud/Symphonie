@@ -81,6 +81,13 @@ public class CameraController : MonoBehaviour
     /// </summary>
     void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning("[CameraController] Instance en double détectée, destruction de l'objet en trop.");
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
         player = GameObject.FindGameObjectWithTag("Player")?.transform;
         if (player == null) Debug.LogError("[CameraController] Player not found!");
@@ -138,6 +145,17 @@ public class CameraController : MonoBehaviour
             player ??= GameObject.FindGameObjectWithTag("Player")?.transform;
             eventsManager ??= FindFirstObjectByType<EventsManager>();
             HandleCameraBehaviour();
+        }
+    }
+
+    /// <summary>
+    /// Effectue les ajustements de caméra en fin de frame pour éviter les conflits.
+    /// </summary>
+    void LateUpdate()
+    {
+        if (Application.isPlaying && currentWorldCameraState == WorldCameraState.Forced)
+        {
+            FollowForcedCameraPoint();
         }
     }
 
@@ -456,7 +474,6 @@ public class CameraController : MonoBehaviour
         {
             case WorldCameraState.Forced:
                 UpdateForcedCameraPoint();
-                FollowForcedCameraPoint();  // 🔑 Suivi direct, fluide
                 break;
 
             case WorldCameraState.ResearchClosestCamPoint:
