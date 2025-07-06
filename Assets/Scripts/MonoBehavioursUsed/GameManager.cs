@@ -117,10 +117,6 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    // A implémenter
-    //GameManager.Instance.gameData.SaveToFile();      // Sauvegarde
-    //GameManager.Instance.gameData.LoadFromFile();     // Chargement
-
     public void ChangeGameState(GameState newState)
     {
         CurrentState = newState;
