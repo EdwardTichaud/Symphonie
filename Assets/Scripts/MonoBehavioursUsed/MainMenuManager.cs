@@ -161,6 +161,15 @@ public class MainMenuManager : MonoBehaviour
             return;
 
         menuCursor.SetActive(true);
-        menuCursor.transform.position = menuItems[currentIndex].position + cursorOffset;
+
+        Vector3 offset = cursorOffset;
+        TextMeshProUGUI txt = menuItems[currentIndex].GetComponentInChildren<TextMeshProUGUI>();
+        if (txt != null)
+        {
+            float width = txt.preferredWidth;
+            offset.x = -(width / 2f + 2f);
+        }
+
+        menuCursor.transform.position = menuItems[currentIndex].position + offset;
     }
 }
