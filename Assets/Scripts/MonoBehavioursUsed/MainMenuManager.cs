@@ -15,6 +15,7 @@ public class MainMenuManager : MonoBehaviour
 
     private bool waitingForInput = true;
     private float timer = 0f;
+    private PlayerInputs.MenuActions menuActions;
 
     private void Start()
     {
@@ -26,6 +27,15 @@ public class MainMenuManager : MonoBehaviour
             loadMenu.gameObject.SetActive(false);
 
         InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Menu.Get());
+
+        menuActions = InputsManager.Instance.playerInputs.Menu;
+        menuActions.Confirm.performed += OnConfirm;
+    }
+
+    private void OnDestroy()
+    {
+        if (menuActions.Confirm != null)
+            menuActions.Confirm.performed -= OnConfirm;
     }
 
     private void Update()
@@ -36,9 +46,13 @@ public class MainMenuManager : MonoBehaviour
             float alpha = 0.25f + 0.25f * (1 + Mathf.Sin(timer));
             if (pressAnyKeyGroup != null)
                 pressAnyKeyGroup.alpha = alpha;
-            if (Keyboard.current.anyKey.wasPressedThisFrame)
-                ShowMenu();
         }
+    }
+
+    private void OnConfirm(InputAction.CallbackContext ctx)
+    {
+        if (waitingForInput)
+            ShowMenu();
     }
 
     private void ShowMenu()
