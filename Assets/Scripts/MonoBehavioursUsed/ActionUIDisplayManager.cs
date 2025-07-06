@@ -105,6 +105,17 @@ public class ActionUIDisplayManager : MonoBehaviour
         ShowMessage("Pas assez d'harmoniques");
     }
 
+    public void DisplayInterceptionResult(bool success)
+    {
+        string message = success ? "Interception réussie !" : "Interception échouée";
+        ShowMessage(message);
+    }
+
+    public void DisplayInterceptionAttempt()
+    {
+        ShowMessage("Tentative d'interception...");
+    }
+
     private void ShowMessage(string message)
     {
         if (currentDisplayRoutine != null)
