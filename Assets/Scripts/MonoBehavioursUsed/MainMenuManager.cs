@@ -16,7 +16,6 @@ public class MainMenuManager : MonoBehaviour
     private bool waitingForInput = true;
     private float timer = 0f;
     private PlayerInputs playerInputs;
-    private PlayerInputs.MenuActions menuActions;
 
     void Awake()
     {
@@ -32,14 +31,15 @@ public class MainMenuManager : MonoBehaviour
         if (loadMenu != null)
             loadMenu.gameObject.SetActive(false);
 
-        menuActions = playerInputs.Menu;
-        menuActions.Confirm.performed += OnConfirm;
+        playerInputs.Menu.Enable();
+
+        playerInputs.Menu.Confirm.performed += OnConfirm;
     }
 
     private void OnDestroy()
     {
-        if (menuActions.Confirm != null)
-            menuActions.Confirm.performed -= OnConfirm;
+        if (playerInputs.Menu.Confirm != null)
+            playerInputs.Menu.Confirm.performed -= OnConfirm;
     }
 
     private void Update()
@@ -56,6 +56,7 @@ public class MainMenuManager : MonoBehaviour
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
         if (waitingForInput)
+            Debug.Log("Bouton A pressé");
             ShowMenu();
     }
 
