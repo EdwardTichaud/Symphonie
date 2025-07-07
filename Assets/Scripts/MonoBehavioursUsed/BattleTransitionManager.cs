@@ -143,25 +143,38 @@ public class BattleTransitionManager : MonoBehaviour
         while (NewBattleManager.Instance.unitsInBattle.Count <= 0)
             yield return null;
 
-        GameObject introCam = GameObject.Find("BattleScene_Camera_BattleIntro");
-        PlayableDirector introDirector = introCam ? introCam.GetComponentInChildren<PlayableDirector>() : null;
-        if (introDirector != null)
-        {
-            TimelineManager.Instance.PlayTimeline(introDirector);
-            while (TimelineManager.Instance.IsTimelinePlaying)
-                yield return null;
-        }
-        else
-        {
-            Debug.LogWarning("[BattleTransitionManager] Timeline d'intro introuvable.");
-        }
-
         worldRiftTweener.TweenToZeroRoutine();
         yield return battleRiftTweener.TweenToZeroRoutine();
 
         NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization);
 
         yield return NewBattleManager.Instance.StartBattle();
+
+        GameObject introCam = GameObject.Find("BattleScene_Camera_BattleIntro");
+        if (introCam != null)
+        {
+            var firstUnit = NewBattleManager.Instance.activeCharacterUnits
+                .OrderByDescending(u => u.currentInitiative)
+                .FirstOrDefault();
+            if (firstUnit != null)
+                introCam.transform.position = firstUnit.transform.position;
+
+            PlayableDirector introDirector = introCam.GetComponentInChildren<PlayableDirector>();
+            if (introDirector != null)
+            {
+                TimelineManager.Instance.PlayTimeline(introDirector);
+                while (TimelineManager.Instance.IsTimelinePlaying)
+                    yield return null;
+            }
+            else
+            {
+                Debug.LogWarning("[BattleTransitionManager] Timeline d'intro introuvable.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[BattleTransitionManager] BattleScene_Camera_BattleIntro introuvable.");
+        }
     }
 
     public IEnumerator ExitVictoryScreenAndBattle()
