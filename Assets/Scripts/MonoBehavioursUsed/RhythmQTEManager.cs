@@ -65,19 +65,20 @@ public class RhythmQTEManager : MonoBehaviour
         Debug.Log("Début de la séquence du MusicalMove: " + move + " de " + caster.name);
         isActive = true;
 
-        if (move.timelineAsset != null && TimelineLauncher.Instance != null)
-        {
-            TimelineLauncher.Instance.PlayTimeline(move.timelineAsset, caster.gameObject);
-        }
+        GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
 
-        if (move.musicalMoveIntroAnimationNames.Length > 0)
+        if (move.timelineAsset != null && TimelineLauncher.Instance != null && casterAnimatorGO != null)
+        {
+            TimelineLauncher.Instance.PlayTimeline(move.timelineAsset, casterAnimatorGO);
+        }
+        else if (move.musicalMoveIntroAnimationNames.Length > 0)
         {
             yield return PlayMoveAnimations(move.musicalMoveIntroAnimationNames, caster);
         }
 
         yield return MoveTo(caster, target, move); // Déplacement vers l’ennemi
 
-        if (move.musicalMoveAnimationNames.Length > 0)
+        if (move.timelineAsset == null && move.musicalMoveAnimationNames.Length > 0)
         {
             yield return PlayMoveAnimations(move.musicalMoveAnimationNames, caster);
         }
@@ -98,7 +99,8 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
         }
 
-        yield return caster.GetComponentInChildren<Animator>().GetCurrentAnimatorStateInfo(0).length; // Attend la fin de l’animation d’attaque
+        if (move.timelineAsset == null)
+            yield return caster.GetComponentInChildren<Animator>().GetCurrentAnimatorStateInfo(0).length; // Attend la fin de l’animation d’attaque
 
         if (!move.stayInPlace)
         {
