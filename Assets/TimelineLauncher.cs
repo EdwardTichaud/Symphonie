@@ -30,6 +30,13 @@ public class TimelineLauncher : MonoBehaviour
             return;
         }
 
+        if (cameraObject == null)
+        {
+            cameraObject = GameObject.FindGameObjectWithTag("BattleCamera");
+            if (cameraObject == null && Camera.main != null)
+                cameraObject = Camera.main.gameObject;
+        }
+
         director.playableAsset = timelineAsset;
 
         foreach (var output in timelineAsset.outputs)

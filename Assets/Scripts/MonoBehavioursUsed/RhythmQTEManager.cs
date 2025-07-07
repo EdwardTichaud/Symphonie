@@ -95,6 +95,11 @@ public class RhythmQTEManager : MonoBehaviour
             }
         }
 
+        if (move.timelineAsset != null && TimelineLauncher.Instance != null)
+        {
+            TimelineLauncher.Instance.PlayTimeline(move.timelineAsset, caster.gameObject);
+        }
+
         if (move.musicalMoveIntroAnimationNames.Length > 0)
         {
             yield return PlayMoveAnimations(move.musicalMoveIntroAnimationNames, caster);
