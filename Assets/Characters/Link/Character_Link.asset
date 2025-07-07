@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: Character_Link
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Link
-  portrait: {fileID: 0}
+  portrait: {fileID: 21300000, guid: 2f02241410539ce47a9425ba21b4faa3, type: 3}
   characterType: 0
   gameplayType: 0
   harmonicType: 0
   characterWorldModel: {fileID: 0}
-  characterBattleModel: {fileID: 901204007372340786, guid: 48bc122d024634b4789a14a245e83484, type: 3}
+  characterBattleModel: {fileID: 901204007372340786, guid: 516a13f5ad90e764ca16beb19bf08c5d, type: 3}
   battlefieldIndex: 0
   baseReflex: 0
   baseMobility: 0
@@ -42,9 +42,10 @@ MonoBehaviour:
   musicalAttacks:
   - {fileID: 11400000, guid: 569e2f6c75b54c48a2168cd683ef5a5b, type: 2}
   - {fileID: 11400000, guid: 056fa00282444ed5922b42e8f67ffa55, type: 2}
+  - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
   currentInitiative: 1
   currentRange: 5
-  currentHP: 90
+  currentHP: 50
   currentStrength: 1
   currentDefense: 1
   currentPower: 0

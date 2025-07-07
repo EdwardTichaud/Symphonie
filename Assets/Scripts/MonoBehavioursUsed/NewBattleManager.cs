@@ -439,7 +439,7 @@ public class NewBattleManager : MonoBehaviour
     }
 
     //5 Détermine quel joueur joue en premier
-    private CharacterUnit ReturnFirstStrikeCharacter()
+    public CharacterUnit ReturnFirstStrikeCharacter()
     {
         CharacterUnit firstPlayer = activeCharacterUnits
             .Where(u => u.Data.isPlayerControlled)

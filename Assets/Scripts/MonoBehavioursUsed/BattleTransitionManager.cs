@@ -136,26 +136,16 @@ public class BattleTransitionManager : MonoBehaviour
             maskRingParticles.Play();
         }
 
-        yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
+        StartCoroutine(AnimateMaskCircle(maskRect, revealDuration));
 
-        yield return AnimateMaskCircle(maskRect, revealDuration);
-
-        while (NewBattleManager.Instance.unitsInBattle.Count <= 0)
-            yield return null;
-
-        worldRiftTweener.TweenToZeroRoutine();
-        yield return battleRiftTweener.TweenToZeroRoutine();
+        StartCoroutine(RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f));
 
         NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization);
-
-        yield return NewBattleManager.Instance.StartBattle();
+        CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
 
         GameObject introCam = GameObject.Find("BattleScene_Camera_BattleIntro");
         if (introCam != null)
         {
-            var firstUnit = NewBattleManager.Instance.activeCharacterUnits
-                .OrderByDescending(u => u.currentInitiative)
-                .FirstOrDefault();
             if (firstUnit != null)
                 introCam.transform.position = firstUnit.transform.position;
 
@@ -163,8 +153,7 @@ public class BattleTransitionManager : MonoBehaviour
             if (introDirector != null)
             {
                 TimelineManager.Instance.PlayTimeline(introDirector);
-                while (TimelineManager.Instance.IsTimelinePlaying)
-                    yield return null;
+                yield return new WaitForSecondsRealtime(1.8f);
             }
             else
             {
@@ -175,6 +164,14 @@ public class BattleTransitionManager : MonoBehaviour
         {
             Debug.LogWarning("[BattleTransitionManager] BattleScene_Camera_BattleIntro introuvable.");
         }
+
+        while (NewBattleManager.Instance.unitsInBattle.Count <= 0)
+            yield return null;
+
+        worldRiftTweener.TweenToZeroRoutine();
+        yield return battleRiftTweener.TweenToZeroRoutine();
+
+        yield return NewBattleManager.Instance.StartBattle();
     }
 
     public IEnumerator ExitVictoryScreenAndBattle()
