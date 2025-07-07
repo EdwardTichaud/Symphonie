@@ -99,7 +99,11 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
         }
 
-        if (move.timelineAsset == null)
+        if (move.timelineAsset != null)
+        {
+            yield return new WaitForSeconds((float)move.timelineAsset.duration); // Attend la fin de la Timeline
+        }
+        else
         {
             float animLength = caster.GetComponentInChildren<Animator>()
                 .GetCurrentAnimatorStateInfo(0).length;
