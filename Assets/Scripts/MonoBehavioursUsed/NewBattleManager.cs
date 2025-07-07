@@ -1907,43 +1907,6 @@ public class NewBattleManager : MonoBehaviour
                 }
                 break;
 
-            case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
-                isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
-                break;
-
-            case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
-                isFollowingCurrentTarget = true;
-                break;
-
-            case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
-                isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
-                break;
-
-            case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
-                isFollowingCurrentTarget = true;
-                break;
-
-            case BattleState.SquadUnit_PerformingMusicalMove:
-                isFollowingCurrentTarget = true;
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
-                break;
-
-            case BattleState.EnemyUnit_PerformingMusicalMove:
-                isFollowingCurrentTarget = true;
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
-                break;
-            case BattleState.SquadUnit_Item_Use:
-                isFollowingCurrentTarget = true;
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
-                break;
-            case BattleState.EnemyUnit_Item_Use:
-                isFollowingCurrentTarget = true;
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_Move_1");
-                break;
             case BattleState.VictoryScreen_Await:
                 isFollowingCurrentTarget = false;
                 desiredTransform = GameObject.Find("Camera_Victory").transform;
