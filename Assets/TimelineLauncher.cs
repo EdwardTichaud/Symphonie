@@ -32,6 +32,20 @@ public class TimelineLauncher : MonoBehaviour
 
         director.playableAsset = timelineAsset;
 
+        GameObject cameraGO = null;
+        Transform cameraParent = null;
+        if (!string.IsNullOrEmpty(cameraTag))
+        {
+            cameraGO = GameObject.FindGameObjectWithTag(cameraTag);
+            cameraParent = cameraGO != null ? cameraGO.transform.parent : null;
+
+            if (caster != null && cameraParent != null)
+            {
+                cameraParent.position = caster.transform.position;
+                cameraParent.rotation = caster.transform.rotation;
+            }
+        }
+
         foreach (var output in timelineAsset.outputs)
         {
             string trackName = output.streamName;
@@ -41,9 +55,8 @@ public class TimelineLauncher : MonoBehaviour
             {
                 BindObjectToTrack(output, caster);
             }
-            else if (trackName.ToLower().Contains("Camera") && cameraTag != null)
+            else if (trackName.ToLower().Contains("Camera") && cameraGO != null)
             {
-                GameObject cameraGO = GameObject.FindGameObjectWithTag(cameraTag);
                 BindObjectToTrack(output, cameraGO);
             }
             else
