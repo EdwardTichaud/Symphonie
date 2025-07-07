@@ -89,6 +89,11 @@ public class InventoryManager : MonoBehaviour
             }
         }
 
+        if (item.timelineAsset != null && TimelineLauncher.Instance != null)
+        {
+            TimelineLauncher.Instance.PlayTimeline(item.timelineAsset, caster.gameObject);
+        }
+
         item.ApplyEffect(target);
         inventoryItems.Remove(item);
     }

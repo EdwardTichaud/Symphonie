@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Timeline;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Callbacks;
@@ -68,6 +69,10 @@ public class MusicalMoveSO : ScriptableObject
     [Header("Camera")]
     [Tooltip("Trajectoire de caméra à instancier lors de l'utilisation du move")]
     public GameObject cameraPathPrefab;
+
+    [Header("Timeline")]
+    [Tooltip("Timeline à jouer lors de l'exécution du move")]
+    public TimelineAsset timelineAsset;
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {

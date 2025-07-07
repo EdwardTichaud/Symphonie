@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.Timeline;
 using System.Collections.Generic;
 
 [CreateAssetMenu(fileName = "New Item", menuName = "Symphonie/Item")]
@@ -51,6 +52,10 @@ public class ItemData : ScriptableObject
     [Header("Camera")]
     [Tooltip("Trajectoire de caméra à instancier lors de l'utilisation de l'item")]
     public GameObject cameraPathPrefab;
+
+    [Header("Timeline")]
+    [Tooltip("Timeline à jouer lors de l'utilisation de l'item")]
+    public TimelineAsset timelineAsset;
 
     [Header("QTE Pattern")]
     public List<float> beatPattern;
