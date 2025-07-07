@@ -580,6 +580,7 @@ public class InputsManagerEditor : Editor
                 DrawMapStatus("Battle", mgr.playerInputs.Battle.Get());
                 DrawMapStatus("Munin", mgr.playerInputs.Munin.Get());
                 DrawMapStatus("InfoBox", mgr.playerInputs.InfoBox.Get());
+                DrawMapStatus("Menu", mgr.playerInputs.Menu.Get());
                 EditorGUILayout.Space();
             }
         }
