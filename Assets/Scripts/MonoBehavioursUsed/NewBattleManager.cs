@@ -1907,6 +1907,26 @@ public class NewBattleManager : MonoBehaviour
                 }
                 break;
 
+            case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
+                isFollowingCurrentTarget = false;
+                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
+                break;
+
+            case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
+                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
+                isFollowingCurrentTarget = true;
+                break;
+
+            case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
+                isFollowingCurrentTarget = false;
+                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
+                break;
+
+            case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
+                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
+                isFollowingCurrentTarget = true;
+                break;
+
             case BattleState.VictoryScreen_Await:
                 isFollowingCurrentTarget = false;
                 desiredTransform = GameObject.Find("Camera_Victory").transform;
