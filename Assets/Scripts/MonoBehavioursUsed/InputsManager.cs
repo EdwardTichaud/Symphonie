@@ -552,6 +552,10 @@ public class InputsManagerEditor : Editor
 
     public override void OnInspectorGUI()
     {
+        // Sécurité : on vérifie que l'objet sérialisé existe toujours
+        if (serializedObject == null)
+            return;
+
         serializedObject.Update();
 
         // Affiche l'inspecteur par défaut
@@ -566,6 +570,7 @@ public class InputsManagerEditor : Editor
             // Pour chaque instance sélectionnée
             foreach (var obj in targets)
             {
+                if (obj == null) continue;
                 var mgr = obj as InputsManager;
                 if (mgr == null) continue;
 
