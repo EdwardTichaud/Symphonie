@@ -63,7 +63,7 @@ public class InventoryManager : MonoBehaviour
 
         if (item.timelineAsset != null && TimelineLauncher.Instance != null)
         {
-            TimelineLauncher.Instance.PlayTimeline(item.timelineAsset, caster.gameObject);
+            TimelineLauncher.Instance.PlayTimeline(item.timelineAsset, caster.gameObject, "BattleCamera");
         }
 
         item.ApplyEffect(target);

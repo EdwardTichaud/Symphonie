@@ -22,19 +22,12 @@ public class TimelineLauncher : MonoBehaviour
     /// <summary>
     /// Lance une timeline en associant dynamiquement des GameObjects aux tracks, en fonction des noms de track.
     /// </summary>
-    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, GameObject cameraObject = null)
+    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag)
     {
         if (timelineAsset == null || director == null)
         {
             Debug.LogError("[TimelineLauncher] TimelineAsset ou Director manquant !");
             return;
-        }
-
-        if (cameraObject == null)
-        {
-            cameraObject = GameObject.FindGameObjectWithTag("BattleCamera");
-            if (cameraObject == null && Camera.main != null)
-                cameraObject = Camera.main.gameObject;
         }
 
         director.playableAsset = timelineAsset;
@@ -48,9 +41,10 @@ public class TimelineLauncher : MonoBehaviour
             {
                 BindObjectToTrack(output, caster);
             }
-            else if (trackName.ToLower().Contains("Camera") && cameraObject != null)
+            else if (trackName.ToLower().Contains("Camera") && cameraTag != null)
             {
-                BindObjectToTrack(output, cameraObject);
+                GameObject cameraGO = GameObject.FindGameObjectWithTag(cameraTag);
+                BindObjectToTrack(output, cameraGO);
             }
             else
             {

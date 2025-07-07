@@ -69,7 +69,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (move.timelineAsset != null && TimelineLauncher.Instance != null && casterAnimatorGO != null)
         {
-            TimelineLauncher.Instance.PlayTimeline(move.timelineAsset, casterAnimatorGO);
+            TimelineLauncher.Instance.PlayTimeline(move.timelineAsset, casterAnimatorGO, "BattleCamera");
         }
         else if (move.musicalMoveIntroAnimationNames.Length > 0)
         {
