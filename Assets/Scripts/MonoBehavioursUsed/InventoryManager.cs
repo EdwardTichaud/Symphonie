@@ -61,34 +61,6 @@ public class InventoryManager : MonoBehaviour
 
         Debug.Log($"[Inventory] Utilisation de l'objet : {item.itemName} sur {target.Data.characterName}");
 
-        if (item.cameraPathPrefab != null && caster != null
-            && NewBattleManager.Instance != null
-            && NewBattleManager.Instance.currentBattleState != BattleState.None)
-        {
-            GameObject pathGO = Instantiate(
-                item.cameraPathPrefab,
-                caster.transform.position,
-                caster.transform.rotation,
-                caster.transform);
-
-            CameraPath camPath = pathGO.GetComponent<CameraPath>();
-            if (camPath != null)
-            {
-                foreach (var point in camPath.points)
-                {
-                    if (point != null && point.useLookAt)
-                        point.targetToLook = caster.transform;
-                }
-
-                CameraController.Instance.StartPathFollow(camPath, caster.transform, alignImmediately: false);
-                Destroy(pathGO, camPath.GetTotalDuration() + 0.5f);
-            }
-            else
-            {
-                Debug.LogWarning("[InventoryManager] CameraPath component manquant sur le prefab de l'item.");
-            }
-        }
-
         if (item.timelineAsset != null && TimelineLauncher.Instance != null)
         {
             TimelineLauncher.Instance.PlayTimeline(item.timelineAsset, caster.gameObject);

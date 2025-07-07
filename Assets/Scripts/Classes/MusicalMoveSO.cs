@@ -66,9 +66,6 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("VFX joué au point d'arrivée de la téléportation")]
     public GameObject teleportEndVFXPrefab;
 
-    [Header("Camera")]
-    [Tooltip("Trajectoire de caméra à instancier lors de l'utilisation du move")]
-    public GameObject cameraPathPrefab;
 
     [Header("Timeline")]
     [Tooltip("Timeline à jouer lors de l'exécution du move")]

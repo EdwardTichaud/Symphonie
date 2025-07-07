@@ -49,25 +49,12 @@ public class ItemData : ScriptableObject
     [Header("VFX")]
     public GameObject introVFXPrefab;
 
-    [Header("Camera")]
-    [Tooltip("Trajectoire de caméra à instancier lors de l'utilisation de l'item")]
-    public GameObject cameraPathPrefab;
-
     [Header("Timeline")]
     [Tooltip("Timeline à jouer lors de l'utilisation de l'item")]
     public TimelineAsset timelineAsset;
 
     [Header("QTE Pattern")]
     public List<float> beatPattern;
-
-    [Header("Caméra - Séquence de positionnement relatif au lanceur")]
-    public Transform currentCaster;
-    public Transform currentTarget;
-    public Vector3 cameraStartLocalPosition;
-    public Vector3 cameraStartLocalEulerAngles;
-    public Vector3 cameraEndLocalPosition;
-    public Vector3 cameraEndLocalEulerAngles;
-    public float cameraTransitionDuration = 0.5f;
 
     [System.Serializable]
     public class NoteVariant

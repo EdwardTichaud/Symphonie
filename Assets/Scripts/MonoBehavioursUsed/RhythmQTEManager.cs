@@ -65,36 +65,6 @@ public class RhythmQTEManager : MonoBehaviour
         Debug.Log("Début de la séquence du MusicalMove: " + move + " de " + caster.name);
         isActive = true;
 
-        if (move.cameraPathPrefab != null && caster != null)
-        {
-            GameObject pathGO = Instantiate(
-                move.cameraPathPrefab,
-                caster.transform.position,
-                caster.transform.rotation,
-                caster.transform);
-
-            CameraPath camPath = pathGO.GetComponent<CameraPath>();
-            if (camPath != null)
-            {
-                foreach (var point in camPath.points)
-                {
-                    if (point != null && point.useLookAt)
-                        point.targetToLook = caster.transform;
-                }
-
-                CameraController.Instance.StartPathFollow(
-                    camPath,
-                    caster.transform,
-                    alignImmediately: false);
-
-                Destroy(pathGO, camPath.GetTotalDuration() + 0.5f);
-            }
-            else
-            {
-                Debug.LogWarning("[RhythmQTEManager] CameraPath component manquant sur le prefab du move.");
-            }
-        }
-
         if (move.timelineAsset != null && TimelineLauncher.Instance != null)
         {
             TimelineLauncher.Instance.PlayTimeline(move.timelineAsset, caster.gameObject);
