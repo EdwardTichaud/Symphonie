@@ -1176,6 +1176,22 @@ public class NewBattleManager : MonoBehaviour
         StartCoroutine(RotateTransformSmoothlyXY(targetTransform, filteredRotation, rotationSpeed));
     }
 
+    public void OrientTransformTowardUnitSmoothXY(Transform targetTransform, CharacterUnit unit, float rotationSpeed = 360f)
+    {
+        if (targetTransform == null || unit == null)
+            return;
+
+        Vector3 direction = (unit.transform.position - targetTransform.position).normalized;
+        if (direction == Vector3.zero)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        Vector3 euler = targetRotation.eulerAngles;
+        Quaternion filteredRotation = Quaternion.Euler(euler.x, euler.y, 0f);
+
+        StartCoroutine(RotateTransformSmoothlyXY(targetTransform, filteredRotation, rotationSpeed));
+    }
+
     public void OrientUnitTowardClosestOpponent(CharacterUnit unit, float rotationSpeed = 360f)
     {
         if (unit == null || unit.Data == null || unit.currentHP <= 0)
@@ -1917,6 +1933,25 @@ public class NewBattleManager : MonoBehaviour
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
                 isFollowingCurrentTarget = true;
+                break;
+
+            case BattleState.EnemyUnit_Reflexion:
+            case BattleState.EnemyUnit_PerformingMusicalMove:
+            case BattleState.EnemyUnit_Item_Prepare:
+            case BattleState.EnemyUnit_Item_Use:
+                isFollowingCurrentTarget = false;
+                GameObject enemyCam = GameObject.Find("BattleScene_Camera_EnemyTurn");
+                if (enemyCam != null)
+                {
+                    desiredTransform = enemyCam.transform;
+                    if (currentCharacterUnit != null)
+                        OrientTransformTowardUnitSmoothXY(desiredTransform, currentCharacterUnit);
+                }
+                else
+                {
+                    desiredTransform = null;
+                    Debug.LogWarning("[BattleCameraManager] BattleScene_Camera_EnemyTurn introuvable.");
+                }
                 break;
 
             case BattleState.VictoryScreen_Await:
