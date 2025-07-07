@@ -460,6 +460,7 @@ public class NewBattleManager : MonoBehaviour
         else
             Debug.LogWarning("[BattleTurnManager] FirstStrikeEffect introuvable.");
         GameObject fsCam = GameObject.Find("BattleScene_Camera_FirstStrike");
+        fsCam.transform.position = unit.transform.position + Vector3.up * 2f;
         PlayableDirector fsDirector = fsCam ? fsCam.GetComponentInChildren<PlayableDirector>() : null;
         if (fsDirector != null)
         {
