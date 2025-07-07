@@ -2,12 +2,14 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
 using System.Collections.Generic;
+using System.Collections;
 
 public class TimelineLauncher : MonoBehaviour
 {
     public static TimelineLauncher Instance { get; private set; }
 
     [SerializeField] private PlayableDirector director;
+    private Coroutine followCoroutine;
 
     private void Awake()
     {
@@ -66,6 +68,13 @@ public class TimelineLauncher : MonoBehaviour
         }
 
         director.Play();
+
+        if (caster != null && cameraParent != null)
+        {
+            if (followCoroutine != null)
+                StopCoroutine(followCoroutine);
+            followCoroutine = StartCoroutine(FollowCaster(cameraParent, caster.transform));
+        }
     }
 
     private void BindObjectToTrack(PlayableBinding output, GameObject go)
@@ -81,6 +90,19 @@ public class TimelineLauncher : MonoBehaviour
         else
         {
             director.SetGenericBinding(output.sourceObject, go);
+        }
+    }
+
+    private IEnumerator FollowCaster(Transform cameraParent, Transform caster)
+    {
+        while (director != null && director.state == PlayState.Playing)
+        {
+            if (cameraParent != null && caster != null)
+            {
+                cameraParent.position = caster.position;
+                cameraParent.rotation = caster.rotation;
+            }
+            yield return null;
         }
     }
 }
