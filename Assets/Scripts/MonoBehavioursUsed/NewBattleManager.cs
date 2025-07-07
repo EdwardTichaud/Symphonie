@@ -460,16 +460,18 @@ public class NewBattleManager : MonoBehaviour
             firstStrikeEffect.SetActive(true);
         else
             Debug.LogWarning("[BattleTurnManager] FirstStrikeEffect introuvable.");
-        Transform target = FindChildRecursive(unit.transform, "spine_03");
-        Transform position = FindChildRecursive(unit.transform, "spine_03");
-        CameraController.Instance.StartPathFollow(
-            firstStrikeCameraPath,
-            position,
-            forceLook: true,
-            targetToLook: target,
-            alignImmediately: false
-        );
-        yield return new WaitForSeconds(firstStrikeCameraPath.GetTotalDuration());
+        GameObject fsCam = GameObject.Find("BattleScene_Camera_FirstStrike");
+        PlayableDirector fsDirector = fsCam ? fsCam.GetComponentInChildren<PlayableDirector>() : null;
+        if (fsDirector != null)
+        {
+            TimelineManager.Instance.PlayTimeline(fsDirector);
+            while (TimelineManager.Instance.IsTimelinePlaying)
+                yield return null;
+        }
+        else
+        {
+            Debug.LogWarning("[BattleTurnManager] Timeline FirstStrike introuvable.");
+        }
     }
 
     //7 Démarre la boucle de tours

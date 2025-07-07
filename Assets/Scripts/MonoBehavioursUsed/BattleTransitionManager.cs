@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Playables;
 
 public class BattleTransitionManager : MonoBehaviour
 {
@@ -157,10 +158,17 @@ public class BattleTransitionManager : MonoBehaviour
 
         yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
 
-        while (battleIntroPath.IsPlaying)
+        GameObject introCam = GameObject.Find("BattleScene_Camera_BattleIntro");
+        PlayableDirector introDirector = introCam ? introCam.GetComponentInChildren<PlayableDirector>() : null;
+        if (introDirector != null)
         {
-            Debug.Log("[BattleTransitionManager] Attente de la fin du CameraPath Intro Combat...");
-            yield return null;
+            TimelineManager.Instance.PlayTimeline(introDirector);
+            while (TimelineManager.Instance.IsTimelinePlaying)
+                yield return null;
+        }
+        else
+        {
+            Debug.LogWarning("[BattleTransitionManager] Timeline d'intro introuvable.");
         }
 
         yield return NewBattleManager.Instance.StartBattle();
