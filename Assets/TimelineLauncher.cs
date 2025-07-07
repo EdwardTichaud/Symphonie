@@ -36,10 +36,12 @@ public class TimelineLauncher : MonoBehaviour
 
         GameObject cameraGO = null;
         Transform cameraParent = null;
+        GameObject cameraRoot = null;
         if (!string.IsNullOrEmpty(cameraTag))
         {
             cameraGO = GameObject.FindGameObjectWithTag(cameraTag);
             cameraParent = cameraGO != null ? cameraGO.transform.parent : null;
+            cameraRoot = cameraParent != null ? cameraParent.gameObject : cameraGO;
 
             if (caster != null && cameraParent != null)
             {
@@ -59,7 +61,7 @@ public class TimelineLauncher : MonoBehaviour
             }
             else if (trackName.ToLower().Contains("camera") && cameraTag != null)
             {
-                BindObjectToTrack(output, cameraGO);
+                BindObjectToTrack(output, cameraRoot);
             }
             else
             {
