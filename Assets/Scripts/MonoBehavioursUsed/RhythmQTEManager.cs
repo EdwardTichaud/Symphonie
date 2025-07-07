@@ -100,7 +100,11 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         if (move.timelineAsset == null)
-            yield return caster.GetComponentInChildren<Animator>().GetCurrentAnimatorStateInfo(0).length; // Attend la fin de l’animation d’attaque
+        {
+            float animLength = caster.GetComponentInChildren<Animator>()
+                .GetCurrentAnimatorStateInfo(0).length;
+            yield return new WaitForSeconds(animLength); // Attend explicitement la fin de l’animation d’attaque
+        }
 
         if (!move.stayInPlace)
         {
