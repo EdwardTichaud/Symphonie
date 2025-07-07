@@ -79,7 +79,6 @@ public class NewBattleManager : MonoBehaviour
     public List<CharacterUnit> activeCharacterUnits = new List<CharacterUnit>(); // Unités actives en combat (HP > 0)
 
     [Header("Début de combat")]
-    [SerializeField] private CameraPath firstStrikeCameraPath;
     [SerializeField] private GameObject firstStrikeEffect;
 
     [Header("Fin de combat")]
@@ -384,7 +383,7 @@ public class NewBattleManager : MonoBehaviour
         CharacterUnit firstPlayer = ReturnFirstStrikeCharacter();
 
         //6 Joue la séquence de premier tour
-        if (firstPlayer != null && firstStrikeCameraPath != null)
+        if (firstPlayer != null)
         {
             yield return FirstStrikeSequenceRoutine(firstPlayer);
         }
@@ -1842,19 +1841,6 @@ public class NewBattleManager : MonoBehaviour
 
         switch (currentBattleState)
         {
-            case BattleState.Initialization:
-                CameraPath cP = GameObject.Find("BattleScene_Camera_BattleIntro").GetComponent<CameraPath>();
-                if (!cP.IsPlaying && !cP.triggered)
-                {
-                    cP.PlaySequence();
-                }
-                isFollowingCurrentTarget = false;
-                desiredTransform = null;
-                break;
-            case BattleState.FirstStrikeSequence:
-                isFollowingCurrentTarget = false;
-                desiredTransform = null;
-                break;
             case BattleState.SquadUnit_MainMenu:
                 isFollowingCurrentTarget = false;
                 desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_MainMenu");

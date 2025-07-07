@@ -93,6 +93,7 @@ public class BattleTransitionManager : MonoBehaviour
     {
         yield return SlowTimeScale(to: 0.1f, speed: 2f);
         yield return new WaitForSecondsRealtime(worldRiftTweener.tweenDuration);
+        yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
 
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         int battlefieldIndex = playerDetection.detectedEnemies[0].battlefieldIndex;
@@ -155,8 +156,6 @@ public class BattleTransitionManager : MonoBehaviour
         yield return battleRiftTweener.TweenToZeroRoutine();
 
         NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization); // Lance CameraPathIntro
-
-        yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
 
         GameObject introCam = GameObject.Find("BattleScene_Camera_BattleIntro");
         PlayableDirector introDirector = introCam ? introCam.GetComponentInChildren<PlayableDirector>() : null;
