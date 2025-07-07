@@ -55,11 +55,7 @@ public class TimelineLauncher : MonoBehaviour
             {
                 BindObjectToTrack(output, caster);
             }
-<<<<<<< Updated upstream
-            else if (trackName.ToLower().Contains("Camera") && cameraGO != null)
-=======
             else if (trackName.ToLower().Contains("camera") && cameraTag != null)
->>>>>>> Stashed changes
             {
                 BindObjectToTrack(output, cameraGO);
             }
