@@ -76,7 +76,17 @@ public class RhythmQTEManager : MonoBehaviour
             CameraPath camPath = pathGO.GetComponent<CameraPath>();
             if (camPath != null)
             {
-                CameraController.Instance.StartPathFollow(camPath, caster.transform, alignImmediately: false);
+                foreach (var point in camPath.points)
+                {
+                    if (point != null && point.useLookAt)
+                        point.targetToLook = caster.transform;
+                }
+
+                CameraController.Instance.StartPathFollow(
+                    camPath,
+                    caster.transform,
+                    alignImmediately: false);
+
                 Destroy(pathGO, camPath.GetTotalDuration() + 0.5f);
             }
             else
