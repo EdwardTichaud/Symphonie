@@ -44,11 +44,11 @@ public class TimelineLauncher : MonoBehaviour
             string trackName = output.streamName;
             System.Type type = output.outputTargetType;
 
-            if (trackName.ToLower().Contains("caster") && caster != null)
+            if (trackName.ToLower().Contains("Caster") && caster != null)
             {
                 BindObjectToTrack(output, caster);
             }
-            else if (trackName.ToLower().Contains("camera") && cameraObject != null)
+            else if (trackName.ToLower().Contains("Camera") && cameraObject != null)
             {
                 BindObjectToTrack(output, cameraObject);
             }
