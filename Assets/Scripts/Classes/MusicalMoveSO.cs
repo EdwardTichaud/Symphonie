@@ -38,6 +38,10 @@ public class MusicalMoveSO : ScriptableObject
     public int harmonicCost = 1;
     public int harmonicGeneration = 0;
 
+    [Header("Temps de recharge")]
+    [Tooltip("Nombre de tours avant de pouvoir réutiliser le move")]
+    public int cooldown = 0;
+
     [Header("Ciblage")]
     public TargetType targetType = TargetType.SingleEnemy;
     public TargetType defaultTargetType = TargetType.SingleEnemy;

@@ -184,6 +184,12 @@ public class InputsManager : MonoBehaviour
                     bm.ShowMainMenu();
                     return;
                 }
+                if (bm.currentCharacterUnit.IsMoveOnCooldown(bm.currentMove))
+                {
+                    ActionUIDisplayManager.Instance.DisplayInstruction_MoveOnCooldown();
+                    bm.ShowMainMenu();
+                    return;
+                }
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentMove);
 
@@ -235,6 +241,12 @@ public class InputsManager : MonoBehaviour
                     bm.ShowMainMenu();
                     return;
                 }
+                if (bm.currentCharacterUnit.IsMoveOnCooldown(bm.currentMove))
+                {
+                    ActionUIDisplayManager.Instance.DisplayInstruction_MoveOnCooldown();
+                    bm.ShowMainMenu();
+                    return;
+                }
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentMove);
 
@@ -279,6 +291,12 @@ public class InputsManager : MonoBehaviour
                 if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+                    bm.ShowMainMenu();
+                    return;
+                }
+                if (bm.currentCharacterUnit.IsMoveOnCooldown(bm.currentMove))
+                {
+                    ActionUIDisplayManager.Instance.DisplayInstruction_MoveOnCooldown();
                     bm.ShowMainMenu();
                     return;
                 }

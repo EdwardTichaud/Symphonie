@@ -105,6 +105,11 @@ public class ActionUIDisplayManager : MonoBehaviour
         ShowMessage("Pas assez d'harmoniques");
     }
 
+    public void DisplayInstruction_MoveOnCooldown()
+    {
+        ShowMessage("Compétence en recharge");
+    }
+
     public void DisplayInterceptionResult(bool success)
     {
         string message = success ? "Interception réussie !" : "Interception échouée";
