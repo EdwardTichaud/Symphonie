@@ -48,6 +48,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public float currentMusicalGauge;
     // Nouvelle réserve d'harmoniques par type
     public Dictionary<HarmonicType, int> harmonicReserve = new();
+    public Dictionary<MusicalMoveSO, int> moveCooldowns = new();
     public float currentFatigue { get => Data.currentFatigue; set => Data.currentFatigue = value; }
 
     // Gestion de l'initiative
@@ -381,6 +382,24 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         var keys = harmonicReserve.Keys.ToList();
         foreach (var key in keys)
             harmonicReserve[key] = 0;
+    }
+
+    public void ReduceCooldowns()
+    {
+        var keys = moveCooldowns.Keys.ToList();
+        foreach (var key in keys)
+            moveCooldowns[key] = Mathf.Max(0, moveCooldowns[key] - 1);
+    }
+
+    public bool IsMoveOnCooldown(MusicalMoveSO move)
+    {
+        return moveCooldowns.ContainsKey(move) && moveCooldowns[move] > 0;
+    }
+
+    public void SetMoveCooldown(MusicalMoveSO move)
+    {
+        if (move.cooldown > 0)
+            moveCooldowns[move] = move.cooldown;
     }
 
     #endregion

@@ -572,6 +572,8 @@ public class NewBattleManager : MonoBehaviour
                 EndTurn();
                 yield break;
             }
+
+            unit.ReduceCooldowns();
             isTurnResolving = true;
 
             // 1) On stocke l’unité qui jouait juste avant (champ de classe)
@@ -1000,6 +1002,7 @@ public class NewBattleManager : MonoBehaviour
         {
             caster.ConsumeHarmonic(caster.Data.harmonicType, move.harmonicCost);
             caster.AddHarmonic(caster.Data.harmonicType, move.harmonicGeneration);
+            caster.SetMoveCooldown(move);
 
             // Si l'unité n'a plus d'harmonique, son tour se termine immédiatement
             if (caster.GetHarmonicCount(caster.Data.harmonicType) <= 0)
