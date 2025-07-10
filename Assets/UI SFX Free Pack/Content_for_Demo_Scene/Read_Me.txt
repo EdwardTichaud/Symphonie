@@ -1,1 +1,0 @@
-This unitypackage contain a demo scene where you can test UI sounds.
