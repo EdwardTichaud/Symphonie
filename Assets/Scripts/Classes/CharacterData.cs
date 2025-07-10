@@ -74,6 +74,12 @@ public class CharacterData : ScriptableObject, ITargetable
     public GameObject hitEffect;
     public GameObject deathEffect;
 
+    [Header("Effets de téléportation")]
+    public GameObject TPEffect_Start;
+    public GameObject TPEffect_Destination;
+    [Header("Animations de déplacement")]
+    public AnimationClip moveClip;
+
     // Ajoute une référence au GameObject source
     public MonoBehaviour owner;
 
