@@ -21,6 +21,21 @@ public class BattleTimelineUnit : MonoBehaviour
 
     [HideInInspector] public CharacterData characterData;
 
+    [SerializeField] private CanvasGroup canvasGroup;
+
+    private float baseScale = 1f;
+    private float highlightMultiplier = 1f;
+
+    private void Awake()
+    {
+        if (canvasGroup == null)
+        {
+            canvasGroup = GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = gameObject.AddComponent<CanvasGroup>();
+        }
+    }
+
     public void Initialize(CharacterUnit unit)
     {
         if (unit == null || unit.Data == null)
@@ -138,6 +153,22 @@ public class BattleTimelineUnit : MonoBehaviour
         if (backgroundImage != null)
             backgroundImage.color = active ? highlightColor : normalColor;
 
-        transform.localScale = active ? Vector3.one * 1.15f : Vector3.one;
+        highlightMultiplier = active ? 1.15f : 1f;
+        ApplyScale();
+    }
+
+    public void SetAppearance(float scale, float alpha)
+    {
+        baseScale = scale;
+        if (canvasGroup != null)
+            canvasGroup.alpha = alpha;
+
+        ApplyScale();
+    }
+
+    private void ApplyScale()
+    {
+        transform.localScale = Vector3.one * baseScale * highlightMultiplier;
     }
 }
+
