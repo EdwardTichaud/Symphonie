@@ -91673,7 +91673,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!4 &1422825525 stripped
 Transform:
@@ -97335,8 +97335,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 441482e8936e35048a1dffac814e3ef8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Profile: {fileID: 11400000, guid: 8ba92e2dd7f884a0f88b98fa2d235fe7, type: 2}
-  m_StaticLightingSkyUniqueID: 4
+  m_Profile: {fileID: 11400000, guid: 9760afa2b265e394e9cb5a9cdad62305, type: 2}
+  m_StaticLightingSkyUniqueID: 1
   m_StaticLightingCloudsUniqueID: 0
   m_StaticLightingVolumetricClouds: 0
   bounces: 1
@@ -98818,34 +98818,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1003267776368270276, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -0.53
-      objectReference: {fileID: 0}
-    - target: {fileID: 1003267776368270276, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -2.99
-      objectReference: {fileID: 0}
-    - target: {fileID: 5600199164318241780, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: clearColorMode
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 5679955348845280201, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: m_Depth
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5679955348845280201, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: m_CullingMask.m_Bits
-      value: 4031
-      objectReference: {fileID: 0}
-    - target: {fileID: 7190180004927539597, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: m_Depth
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7190180004927539597, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: m_CullingMask.m_Bits
-      value: 4160
-      objectReference: {fileID: 0}
     - target: {fileID: 7196895587682077381, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_Name
       value: 3DCameraSystem
@@ -98862,30 +98834,6 @@ PrefabInstance:
       propertyPath: forcedCameraPoint
       value: 
       objectReference: {fileID: 615717986}
-    - target: {fileID: 8150160070828983842, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: clearColorMode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8150160070828983842, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: backgroundColorHDR.a
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 8150160070828983842, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: backgroundColorHDR.b
-      value: 1.8713396
-      objectReference: {fileID: 0}
-    - target: {fileID: 8150160070828983842, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: backgroundColorHDR.g
-      value: 0.6894409
-      objectReference: {fileID: 0}
-    - target: {fileID: 8150160070828983842, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: backgroundColorHDR.r
-      value: 0.24622889
-      objectReference: {fileID: 0}
-    - target: {fileID: 8150160070828983842, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-      propertyPath: volumeLayerMask.m_Bits
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 8880738752486701099, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -102012,15 +101960,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 133766338937950705, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 2.9951465
+      value: 2.5278535
       objectReference: {fileID: 0}
     - target: {fileID: 133766338937950705, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 2.9951465
+      value: 2.5278535
       objectReference: {fileID: 0}
     - target: {fileID: 133766338937950705, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_LocalScale.z
-      value: 2.9951465
+      value: 2.5278535
       objectReference: {fileID: 0}
     - target: {fileID: 1602380748598905964, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_Pivot.x
