@@ -179,12 +179,18 @@ public class AudioManager : MonoBehaviour
 
     public void PlaySfx(int index) => sfxSource.PlayOneShot(soundEffects[index]);
 
-    public void PlayVoice(int index) => voiceSource.PlayOneShot(voiceEffects[index]);
+    public void PlayVoice(int index) => PlayVoice(voiceEffects[index]);
 
     public void PlayVoice(AudioClip clip)
     {
-        voiceSource.clip = clip;
-        voiceSource.Play();
+        if (clip == null) return;
+
+        // Crée une nouvelle source audio à partir du modèle existant
+        AudioSource tempSource = Instantiate(voiceSource, transform);
+        tempSource.playOnAwake = false;
+        tempSource.clip = clip;
+        tempSource.Play();
+        Destroy(tempSource.gameObject, clip.length);
     }
 
     public void PlaySound(AudioClip clip) => sfxSource.PlayOneShot(clip);
