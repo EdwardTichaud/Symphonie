@@ -18,7 +18,7 @@ MonoBehaviour:
   description: 
   musicalMoveTargetingAnimation: {fileID: 0}
   musicalMoveRunAnimationName: Sforzando_Run
-  maxRunDuration: 0.5
+  maxRunDuration: 0
   stayFaceToTarget: 1
   musicalMoveIntroAnimationNames: []
   musicalMoveAnimationNames:
@@ -28,6 +28,7 @@ MonoBehaviour:
   fatigueCost: 1
   harmonicCost: 2
   harmonicGeneration: 0
+  cooldown: 0
   targetType: 1
   defaultTargetType: 1
   targetTypes: 01000000

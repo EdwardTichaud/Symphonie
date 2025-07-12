@@ -558,7 +558,6 @@ Transform:
   - {fileID: 1729386074}
   - {fileID: 376782067}
   - {fileID: 322157212984376061}
-  - {fileID: 2036324972}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &368522551
@@ -97350,37 +97349,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2036324971
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2036324972}
-  m_Layer: 6
-  m_Name: BattleScene_Camera_EnemyTurn
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2036324972
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2036324971}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 10, y: 10, z: 7}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 365784249}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2046017641
 GameObject:
   m_ObjectHideFlags: 0
@@ -101959,15 +101927,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 133766338937950705, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 2.831517
+      value: 2.6613722
       objectReference: {fileID: 0}
     - target: {fileID: 133766338937950705, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 2.831517
+      value: 2.6613722
       objectReference: {fileID: 0}
     - target: {fileID: 133766338937950705, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_LocalScale.z
-      value: 2.831517
+      value: 2.6613722
       objectReference: {fileID: 0}
     - target: {fileID: 1602380748598905964, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_Pivot.x
