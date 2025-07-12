@@ -28,7 +28,7 @@ MonoBehaviour:
   baseSagacity: 0
   baseInitiative: 1
   baseRange: 2
-  baseHP: 50
+  baseHP: 1
   baseStrength: 1
   baseDefense: 1
   baseSpeed: 0
@@ -43,7 +43,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
   currentInitiative: 1
   currentRange: 2
-  currentHP: 50
+  currentHP: 1
   currentStrength: 1
   currentDefense: 1
   currentPower: 0
@@ -60,6 +60,10 @@ MonoBehaviour:
   currentInterceptionChance: 0
   hitSound: {fileID: 0}
   interceptedSound: {fileID: 0}
+  prematureDeathTaunt: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
+  TPEffect_Start: {fileID: 0}
+  TPEffect_Destination: {fileID: 0}
+  moveClip: {fileID: 0}
   owner: {fileID: 0}
