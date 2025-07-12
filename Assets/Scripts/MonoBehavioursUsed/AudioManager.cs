@@ -17,6 +17,11 @@ public class AudioManager : MonoBehaviour
     [Header("Fade Settings")]
     public float fadeDuration = 2f;
 
+    [Header("Volume Settings")]
+    [Range(0f, 1f)] public float musicVolume = 1f;
+    [Range(0f, 1f)] public float sfxVolume = 1f;
+    [Range(0f, 1f)] public float voiceVolume = 1f;
+
     public static AudioManager Instance { get; private set; }
 
     private AudioSource currentMusicSource;
@@ -52,7 +57,34 @@ public class AudioManager : MonoBehaviour
 
         sfxSource.playOnAwake = false;
         voiceSource.playOnAwake = false;
+
+        SetMusicVolume(musicVolume);
+        SetSfxVolume(sfxVolume);
+        SetVoiceVolume(voiceVolume);
     }
+
+    #region \U0001F4E3 Volume
+
+    public void SetMusicVolume(float value)
+    {
+        musicVolume = Mathf.Clamp01(value);
+        musicSourceA.volume = musicVolume;
+        musicSourceB.volume = musicVolume;
+    }
+
+    public void SetSfxVolume(float value)
+    {
+        sfxVolume = Mathf.Clamp01(value);
+        sfxSource.volume = sfxVolume;
+    }
+
+    public void SetVoiceVolume(float value)
+    {
+        voiceVolume = Mathf.Clamp01(value);
+        voiceSource.volume = voiceVolume;
+    }
+
+    #endregion
 
     #region 🎵 Musique : Transitions
 
@@ -136,7 +168,7 @@ public class AudioManager : MonoBehaviour
 
         currentMusicSource.clip = newClip;
         currentMusicSource.time = 0f;
-        currentMusicSource.volume = 1f;
+        currentMusicSource.volume = musicVolume;
         currentMusicSource.Play();
     }
 
@@ -153,7 +185,6 @@ public class AudioManager : MonoBehaviour
         currentMusicSource = toSource;
         nextMusicSource = fromSource;
 
-        float startVol = fromSource.volume;
         float t = 0f;
 
         while (t < fadeDuration)
@@ -161,14 +192,14 @@ public class AudioManager : MonoBehaviour
             t += Time.deltaTime;
             float progress = t / fadeDuration;
 
-            toSource.volume = Mathf.Lerp(0f, startVol, progress);
-            fromSource.volume = Mathf.Lerp(startVol, 0f, progress);
+            toSource.volume = Mathf.Lerp(0f, musicVolume, progress);
+            fromSource.volume = Mathf.Lerp(musicVolume, 0f, progress);
             yield return null;
         }
 
         fromSource.Stop();
-        fromSource.volume = startVol;
-        toSource.volume = startVol;
+        fromSource.volume = musicVolume;
+        toSource.volume = musicVolume;
 
         crossfadeRoutine = null;
     }
