@@ -661,6 +661,7 @@ GameObject:
   - component: {fileID: 6704608758239574917}
   - component: {fileID: 3058706612077057277}
   - component: {fileID: 6706887188359050532}
+  - component: {fileID: 5503136611949732480}
   m_Layer: 12
   m_Name: TimelineUnit
   m_TagString: Untagged
@@ -725,6 +726,19 @@ MonoBehaviour:
   highlightColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   deadColor: {r: 1, g: 0, b: 0, a: 1}
   characterData: {fileID: 0}
+  canvasGroup: {fileID: 5503136611949732480}
+--- !u!225 &5503136611949732480
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2361378650977482155}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &4208187818869234359
 GameObject:
   m_ObjectHideFlags: 0

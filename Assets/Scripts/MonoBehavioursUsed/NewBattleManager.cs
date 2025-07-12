@@ -582,6 +582,7 @@ public class NewBattleManager : MonoBehaviour
             // 2) Mise à jour de l’unité courante
             currentCharacterUnit = unit;
             UpdateTimelineHighlight(unit);
+            UpdateTimelineWheel(unit);
 
             ChangeBattleState(BattleState.NewTurn);
 
@@ -616,6 +617,43 @@ public class NewBattleManager : MonoBehaviour
         {
             bool isCurrent = activeUnit != null && ui.characterData == activeUnit.Data;
             ui.SetHighlight(isCurrent);
+        }
+    }
+
+    private void UpdateTimelineWheel(CharacterUnit activeUnit)
+    {
+        if (activeUnit == null || timelineUIObjects.Count == 0)
+            return;
+
+        int currentIndex = timelineUIObjects.FindIndex(ui => ui.characterData == activeUnit.Data);
+        if (currentIndex == -1)
+            return;
+
+        // Positionne l'unité active en troisième position
+        while (currentIndex < 2)
+        {
+            var first = timelineUIObjects[0];
+            timelineUIObjects.RemoveAt(0);
+            timelineUIObjects.Add(first);
+            currentIndex++;
+        }
+        while (currentIndex > 2)
+        {
+            var last = timelineUIObjects[timelineUIObjects.Count - 1];
+            timelineUIObjects.RemoveAt(timelineUIObjects.Count - 1);
+            timelineUIObjects.Insert(0, last);
+            currentIndex--;
+        }
+
+        for (int i = 0; i < timelineUIObjects.Count; i++)
+        {
+            timelineUIObjects[i].transform.SetSiblingIndex(i);
+
+            int distance = Mathf.Abs(i - 2);
+            float t = Mathf.Clamp01(distance / 2f);
+            float scale = Mathf.Lerp(1f, 0.8f, t);
+            float alpha = Mathf.Lerp(1f, 0.2f, t);
+            timelineUIObjects[i].SetAppearance(scale, alpha);
         }
     }
 
@@ -1407,7 +1445,6 @@ public class NewBattleManager : MonoBehaviour
         // 1) Essaye de récupérer la BattleCamera par tag
         Transform battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").transform;
 
-        // 2) Cherche le panneau MainMenu_Panel, de façon récursive (plutôt que Find("MainMenu_Panel"))
         Transform mainPanel = FindChildRecursive(battleCamera, "MainMenu_Panel");
         if (mainPanel == null)
         {
