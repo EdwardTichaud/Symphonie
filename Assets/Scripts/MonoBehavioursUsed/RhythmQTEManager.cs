@@ -275,8 +275,6 @@ public class RhythmQTEManager : MonoBehaviour
             else if (teleportOffsetDir != Vector3.zero)
                 caster.transform.forward = teleportOffsetDir;
 
-            NewBattleManager.Instance?.OrientAllUnitsTowardClosestOpponent();
-
             yield return null;
             Debug.Log("Fin du déplacement de " + caster.name);
             yield break;
@@ -336,7 +334,6 @@ public class RhythmQTEManager : MonoBehaviour
             }
 
             Debug.Log("Fin du déplacement de " + caster.name);
-            NewBattleManager.Instance?.OrientAllUnitsTowardClosestOpponent();
             yield break;
         }
 
@@ -369,7 +366,6 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         Debug.Log("Fin du déplacement de " + caster.name);
-        NewBattleManager.Instance?.OrientAllUnitsTowardClosestOpponent();
     }
 
     private IEnumerator ReturnToInitialPosition(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
@@ -456,7 +452,6 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         Debug.Log("Le caster a terminé son retour.");
-        NewBattleManager.Instance?.OrientAllUnitsTowardClosestOpponent();
     }
 
     IEnumerator PlayMoveAnimations(string[] animationClips, CharacterUnit caster)

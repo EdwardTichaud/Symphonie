@@ -132,6 +132,12 @@ public class NewBattleManager : MonoBehaviour
         {
             _currentTargetCharacter = value;
             UpdateCameraBehaviour(currentBattleState); // Met à jour la caméra quand la cible change
+
+            // Oriente l'unité en cours de jeu vers la nouvelle cible
+            if (currentCharacterUnit != null && _currentTargetCharacter != null)
+            {
+                OrientUnitTowardTarget(currentCharacterUnit, _currentTargetCharacter);
+            }
         }
     }
     //-------------------------------------------------------------------------------------
@@ -744,6 +750,9 @@ public class NewBattleManager : MonoBehaviour
             Debug.LogWarning("[ExecuteMoveOnTarget] Pas assez d'espace pour executer le mouvement.");
             yield break;
         }
+
+        OrientUnitTowardTarget(caster, target);
+
         if (move.interceptable && !caster.isInterceptionImmune)
         {
             var interceptor = CheckForInterception(caster, target, caster.Data.currentInterceptionRange);
@@ -788,6 +797,9 @@ public class NewBattleManager : MonoBehaviour
             ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
             yield break;
         }
+
+        OrientUnitTowardTarget(caster, target);
+
         // Animation ou Timeline d'utilisation
         yield return RhythmQTEManager.Instance.ItemRoutine(item, caster, target);
 
@@ -1226,6 +1238,19 @@ public class NewBattleManager : MonoBehaviour
         Quaternion filteredRotation = Quaternion.Euler(euler.x, euler.y, 0f);
 
         StartCoroutine(RotateTransformSmoothlyXY(targetTransform, filteredRotation, rotationSpeed));
+    }
+
+    public void OrientUnitTowardTarget(CharacterUnit unit, CharacterUnit target, float rotationSpeed = 360f)
+    {
+        if (unit == null || target == null || unit.currentHP <= 0 || target.currentHP <= 0)
+            return;
+
+        Vector3 direction = (target.transform.position - unit.transform.position).normalized;
+        if (direction == Vector3.zero)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction);
+        StartCoroutine(RotateUnitSmoothly(unit, targetRotation, rotationSpeed));
     }
 
     public void OrientUnitTowardClosestOpponent(CharacterUnit unit, float rotationSpeed = 360f)
