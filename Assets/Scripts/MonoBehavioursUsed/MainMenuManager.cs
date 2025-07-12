@@ -28,6 +28,7 @@ public class MainMenuManager : MonoBehaviour
     private bool waitingForInput = true;
     private float timer = 0f;
     private PlayerInputs playerInputs;
+    private Canvas parentCanvas;
 
     void Awake()
     {
@@ -50,6 +51,8 @@ public class MainMenuManager : MonoBehaviour
 
         playerInputs.Menu.Confirm.performed += OnConfirm;
         playerInputs.Menu.Return.performed += OnReturn;
+
+        parentCanvas = GetComponentInParent<Canvas>();
 
         if (menuContainer != null)
         {
@@ -246,7 +249,33 @@ public class MainMenuManager : MonoBehaviour
             offset.x = -(textWidth / 2f + 100f);
         }
 
-        cursorTargetPosition = menuItems[currentIndex].position + offset;
+        if (parentCanvas != null)
+        {
+            Vector3 screenPos = RectTransformUtility.WorldToScreenPoint(
+                parentCanvas.worldCamera,
+                menuItems[currentIndex].position
+            );
+            screenPos += offset;
+
+            RectTransform parentRect = menuCursor.transform.parent as RectTransform;
+            Vector3 worldPos;
+            if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
+                    parentRect,
+                    screenPos,
+                    parentCanvas.worldCamera,
+                    out worldPos))
+            {
+                cursorTargetPosition = worldPos;
+            }
+            else
+            {
+                cursorTargetPosition = menuItems[currentIndex].position + offset;
+            }
+        }
+        else
+        {
+            cursorTargetPosition = menuItems[currentIndex].position + offset;
+        }
 
         // 🔥 Force la position immédiate au moment de l'activation du menu
         if (!menuCursor.activeInHierarchy || !menuCursor.activeSelf)
