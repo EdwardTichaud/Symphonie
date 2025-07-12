@@ -5,6 +5,7 @@ public class StartManager : MonoBehaviour
     void Start()
     {
         ResetTimeScale();
+        ResetCamerasDepth();
     }
 
     void Update()

@@ -629,28 +629,22 @@ public class NewBattleManager : MonoBehaviour
         if (currentIndex == -1)
             return;
 
-        // Positionne l'unité active en troisième position
-        while (currentIndex < 2)
+        int count = timelineUIObjects.Count;
+
+        // Place l'unité active sous le curseur en tête de liste
+        int shift = (count - currentIndex) % count;
+        for (int i = 0; i < shift; i++)
         {
-            var first = timelineUIObjects[0];
-            timelineUIObjects.RemoveAt(0);
-            timelineUIObjects.Add(first);
-            currentIndex++;
-        }
-        while (currentIndex > 2)
-        {
-            var last = timelineUIObjects[timelineUIObjects.Count - 1];
-            timelineUIObjects.RemoveAt(timelineUIObjects.Count - 1);
+            var last = timelineUIObjects[count - 1];
+            timelineUIObjects.RemoveAt(count - 1);
             timelineUIObjects.Insert(0, last);
-            currentIndex--;
         }
 
-        for (int i = 0; i < timelineUIObjects.Count; i++)
+        for (int i = 0; i < count; i++)
         {
             timelineUIObjects[i].transform.SetSiblingIndex(i);
 
-            int distance = Mathf.Abs(i - 2);
-            float t = Mathf.Clamp01(distance / 2f);
+            float t = count > 1 ? Mathf.Clamp01((float)i / (count - 1)) : 0f;
             float scale = Mathf.Lerp(1f, 0.8f, t);
             float alpha = Mathf.Lerp(1f, 0.2f, t);
             timelineUIObjects[i].SetAppearance(scale, alpha);

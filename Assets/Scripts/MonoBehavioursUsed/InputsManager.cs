@@ -10,9 +10,8 @@ public class InputsManager : MonoBehaviour
     private CharacterController3D controller;
 
     [Header("Pass Turn")]
-    public PassTurnUI passTurnUI;
     public float passHoldDuration = 2f;
-    public Pulse passTurnPulse;
+    private Pulse passTurnPulse;
     private Coroutine passRoutine;
 
     private InputActionMap[] allMaps;
@@ -55,6 +54,7 @@ public class InputsManager : MonoBehaviour
         ActivateOnly(playerInputs.World.Get());
         SetInputs();
         controller = FindFirstObjectByType<CharacterController3D>();
+        passTurnPulse = PassTurnUI.Instance.gameObject.GetComponentInChildren<Pulse>();
     }
 
     /// <summary>
@@ -389,7 +389,7 @@ public class InputsManager : MonoBehaviour
             passRoutine = null;
         }
 
-        passTurnUI?.ResetProgressSmooth();
+        PassTurnUI.Instance.ResetProgressSmooth();
     }
 
     private IEnumerator PassTurnRoutine()
@@ -400,12 +400,12 @@ public class InputsManager : MonoBehaviour
             if (!playerInputs.Battle.Back.IsPressed())
             {
                 passRoutine = null;
-                passTurnUI?.ResetProgressSmooth();
+                PassTurnUI.Instance.ResetProgressSmooth();
                 yield break;
             }
 
             elapsed += Time.unscaledDeltaTime;
-            passTurnUI?.SetProgress(elapsed / passHoldDuration);
+            PassTurnUI.Instance.SetProgress(elapsed / passHoldDuration);
             yield return null;
         }
 
