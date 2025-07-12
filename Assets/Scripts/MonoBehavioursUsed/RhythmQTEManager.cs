@@ -291,6 +291,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         float elapsed = 0f;
         float maxDuration = move.maxRunDuration;
+        Vector3 startPosition = caster.transform.position;
 
         Vector3 offsetDir = target.transform.forward;
         switch (move.relativePosition)
@@ -316,10 +317,33 @@ public class RhythmQTEManager : MonoBehaviour
         else
             animator.Play(move.musicalMoveRunAnimationName);
 
+        float totalDistance = Vector3.Distance(startPosition, targetPosition);
+        float speed = maxDuration > 0f ? totalDistance / maxDuration : float.PositiveInfinity;
+
+        if (maxDuration <= 0f)
+        {
+            caster.transform.position = targetPosition;
+            Vector3 moveDir = (targetPosition - startPosition).normalized;
+            if (move.stayFaceToTarget && target != null)
+            {
+                Vector3 lookDirection = (target.transform.position - caster.transform.position).normalized;
+                if (lookDirection != Vector3.zero)
+                    caster.transform.forward = lookDirection;
+            }
+            else if (moveDir != Vector3.zero)
+            {
+                caster.transform.forward = moveDir;
+            }
+
+            Debug.Log("Fin du déplacement de " + caster.name);
+            NewBattleManager.Instance?.OrientAllUnitsTowardClosestOpponent();
+            yield break;
+        }
+
         while (Vector3.Distance(caster.transform.position, targetPosition) > 0.1f && elapsed < maxDuration)
         {
             Vector3 moveDirection = (targetPosition - caster.transform.position).normalized;
-            float step = move.moveSpeed * Time.deltaTime;
+            float step = speed * Time.deltaTime;
 
             caster.transform.position = Vector3.MoveTowards(caster.transform.position, targetPosition, step);
 
