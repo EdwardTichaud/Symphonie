@@ -1992,19 +1992,10 @@ public class NewBattleManager : MonoBehaviour
             case BattleState.EnemyUnit_PerformingMusicalMove:
             case BattleState.EnemyUnit_Item_Prepare:
             case BattleState.EnemyUnit_Item_Use:
+                // L'ancienne fonctionnalité fixant la caméra sur un point dédié
+                // lors du tour ennemi a été supprimée.
                 isFollowingCurrentTarget = false;
-                GameObject enemyCam = GameObject.Find("BattleScene_Camera_EnemyTurn");
-                if (enemyCam != null)
-                {
-                    desiredTransform = enemyCam.transform;
-                    if (currentCharacterUnit != null)
-                        OrientTransformTowardUnitSmoothXY(desiredTransform, currentCharacterUnit);
-                }
-                else
-                {
-                    desiredTransform = null;
-                    Debug.LogWarning("[BattleCameraManager] BattleScene_Camera_EnemyTurn introuvable.");
-                }
+                desiredTransform = null;
                 break;
 
             case BattleState.VictoryScreen_Await:
