@@ -36,6 +36,14 @@ public class ActionUIDisplayManager : MonoBehaviour
         currentDisplayRoutine = StartCoroutine(DisplayRoutine(attackName));
     }
 
+    public void DisplayActionMessage(string actorName, string actionName, string targetName)
+    {
+        string message = $"{actorName} utilise {actionName}";
+        if (!string.IsNullOrEmpty(targetName))
+            message += $" sur {targetName}";
+        ShowMessage(message);
+    }
+
     private IEnumerator DisplayRoutine(string name)
     {
         actionText.text = name;
