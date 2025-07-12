@@ -58,6 +58,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public bool IsReady => currentATB >= ATBMax && currentHP > 0;
 
     private bool deathTriggered;
+    public event System.Action<CharacterUnit> OnDeath;
     public bool isReadyToParry;
     [HideInInspector] public bool isInterceptionImmune = false;
     [HideInInspector] public int interceptionImmunityTurns = 0;
@@ -212,6 +213,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             GameManager.Instance?.IncrementEnemiesDefeated();
             NewBattleManager.Instance?.OnEnemyDefeated(this);
         }
+
+        OnDeath?.Invoke(this);
     }
 
     /// <summary>

@@ -65,6 +65,19 @@ public class RhythmQTEManager : MonoBehaviour
         Debug.Log("Début de la séquence du MusicalMove: " + move + " de " + caster.name);
         isActive = true;
 
+        bool tauntPlayed = false;
+        System.Action<CharacterUnit> deathHandler = null;
+        deathHandler = (dead) =>
+        {
+            if (!tauntPlayed && isActive && caster != null && caster.Data.prematureDeathTaunt != null)
+            {
+                AudioManager.Instance?.PlayVoice(caster.Data.prematureDeathTaunt);
+                tauntPlayed = true;
+            }
+        };
+        if (target != null)
+            target.OnDeath += deathHandler;
+
         GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
 
         if (move.timelineAsset != null && TimelineLauncher.Instance != null && casterAnimatorGO != null)
@@ -117,6 +130,9 @@ public class RhythmQTEManager : MonoBehaviour
 
         isActive = false;
         NewBattleManager.Instance.AfterMusicalMove(move, caster);
+
+        if (target != null)
+            target.OnDeath -= deathHandler;
 
         currentMove = null;
         currentCaster = null;
