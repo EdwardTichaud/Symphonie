@@ -181,7 +181,6 @@ public class InputsManager : MonoBehaviour
                 if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
-                    bm.ShowMainMenu();
                     return;
                 }
                 if (bm.currentCharacterUnit.IsMoveOnCooldown(bm.currentMove))
@@ -238,7 +237,6 @@ public class InputsManager : MonoBehaviour
                 if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
-                    bm.ShowMainMenu();
                     return;
                 }
                 if (bm.currentCharacterUnit.IsMoveOnCooldown(bm.currentMove))
@@ -291,7 +289,6 @@ public class InputsManager : MonoBehaviour
                 if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
-                    bm.ShowMainMenu();
                     return;
                 }
                 if (bm.currentCharacterUnit.IsMoveOnCooldown(bm.currentMove))

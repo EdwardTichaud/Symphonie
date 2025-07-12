@@ -1528,6 +1528,9 @@ public class NewBattleManager : MonoBehaviour
         {
             var move = skillChoices[i];
             UpdateButton(currentSkillsMenuSlots[i], move.moveName, move.moveIcon);
+
+            bool available = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= move.harmonicCost;
+            SetButtonAvailability(currentSkillsMenuSlots[i], available);
         }
         // Indique les emplacements vides
         for (int j = skillChoices.Count; j < currentSkillsMenuSlots.Count; j++)
@@ -1536,6 +1539,8 @@ public class NewBattleManager : MonoBehaviour
                 UpdateButton(currentSkillsMenuSlots[j], emptyMove.moveName, emptyMove.moveIcon);
             else
                 UpdateButton(currentSkillsMenuSlots[j], "Indisponible", null);
+
+            SetButtonAvailability(currentSkillsMenuSlots[j], false);
         }
     }
 
@@ -1597,6 +1602,19 @@ public class NewBattleManager : MonoBehaviour
 
         if (txt != null) txt.text = label;
         if (img != null) img.sprite = icon;
+    }
+
+    private void SetButtonAvailability(Transform slot, bool available)
+    {
+        if (slot == null)
+            return;
+
+        var txt = slot.GetComponentInChildren<TextMeshProUGUI>();
+        var img = slot.childCount > 3 ? slot.GetChild(3).GetComponent<Image>() : null;
+
+        Color color = available ? Color.white : Color.gray;
+        if (txt != null) txt.color = color;
+        if (img != null) img.color = color;
     }
     #endregion
 
