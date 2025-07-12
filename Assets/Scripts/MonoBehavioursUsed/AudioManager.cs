@@ -22,6 +22,11 @@ public class AudioManager : MonoBehaviour
     [Range(0f, 1f)] public float sfxVolume = 1f;
     [Range(0f, 1f)] public float voiceVolume = 1f;
 
+    [Header("Normalisation automatique")]
+    [Tooltip("Calcule un facteur pour que tous les clips aient un volume perçu similaire")]
+    public bool autoNormalize = true;
+    [Range(0f, 1f)] public float targetRms = 0.1f;
+
     public static AudioManager Instance { get; private set; }
 
     private AudioSource currentMusicSource;
@@ -34,6 +39,7 @@ public class AudioManager : MonoBehaviour
     private bool isInCombat = false;
 
     private Dictionary<AudioClip, float> explorationPlaybackPositions = new Dictionary<AudioClip, float>();
+    private Dictionary<AudioClip, float> normalizationCache = new Dictionary<AudioClip, float>();
 
     private void Awake()
     {
@@ -63,13 +69,44 @@ public class AudioManager : MonoBehaviour
         SetVoiceVolume(voiceVolume);
     }
 
+    private float GetNormalizationFactor(AudioClip clip)
+    {
+        if (!autoNormalize || clip == null)
+            return 1f;
+
+        if (normalizationCache.TryGetValue(clip, out float factor))
+            return factor;
+
+        try
+        {
+            float[] samples = new float[clip.samples * clip.channels];
+            clip.GetData(samples, 0);
+
+            double sumSq = 0;
+            for (int i = 0; i < samples.Length; i++)
+                sumSq += samples[i] * samples[i];
+
+            double rms = Mathf.Sqrt((float)(sumSq / samples.Length));
+            factor = rms > 0 ? targetRms / (float)rms : 1f;
+        }
+        catch
+        {
+            factor = 1f;
+        }
+
+        normalizationCache[clip] = factor;
+        return factor;
+    }
+
     #region \U0001F4E3 Volume
 
     public void SetMusicVolume(float value)
     {
         musicVolume = Mathf.Clamp01(value);
-        musicSourceA.volume = musicVolume;
-        musicSourceB.volume = musicVolume;
+        float factorA = GetNormalizationFactor(musicSourceA.clip);
+        float factorB = GetNormalizationFactor(musicSourceB.clip);
+        musicSourceA.volume = musicVolume * factorA;
+        musicSourceB.volume = musicVolume * factorB;
     }
 
     public void SetSfxVolume(float value)
@@ -168,17 +205,19 @@ public class AudioManager : MonoBehaviour
 
         currentMusicSource.clip = newClip;
         currentMusicSource.time = 0f;
-        currentMusicSource.volume = musicVolume;
+        currentMusicSource.volume = musicVolume * GetNormalizationFactor(newClip);
         currentMusicSource.Play();
     }
 
     private IEnumerator CrossfadeMusic(AudioClip newClip, float startTime)
     {
         AudioSource fromSource = currentMusicSource;
+        float fromFactor = GetNormalizationFactor(fromSource.clip);
         AudioSource toSource = (currentMusicSource == musicSourceA) ? musicSourceB : musicSourceA;
 
         toSource.clip = newClip;
         toSource.time = startTime;
+        float toFactor = GetNormalizationFactor(newClip);
         toSource.volume = 0f;
         toSource.Play();
 
@@ -192,14 +231,14 @@ public class AudioManager : MonoBehaviour
             t += Time.deltaTime;
             float progress = t / fadeDuration;
 
-            toSource.volume = Mathf.Lerp(0f, musicVolume, progress);
-            fromSource.volume = Mathf.Lerp(musicVolume, 0f, progress);
+            toSource.volume = Mathf.Lerp(0f, musicVolume * toFactor, progress);
+            fromSource.volume = Mathf.Lerp(musicVolume * fromFactor, 0f, progress);
             yield return null;
         }
 
         fromSource.Stop();
-        fromSource.volume = musicVolume;
-        toSource.volume = musicVolume;
+        fromSource.volume = musicVolume * GetNormalizationFactor(fromSource.clip);
+        toSource.volume = musicVolume * toFactor;
 
         crossfadeRoutine = null;
     }
@@ -208,7 +247,12 @@ public class AudioManager : MonoBehaviour
 
     #region 🔊 Effets
 
-    public void PlaySfx(int index) => sfxSource.PlayOneShot(soundEffects[index]);
+    public void PlaySfx(int index)
+    {
+        AudioClip clip = soundEffects[index];
+        float factor = GetNormalizationFactor(clip);
+        sfxSource.PlayOneShot(clip, factor);
+    }
 
     public void PlayVoice(int index) => PlayVoice(voiceEffects[index]);
 
@@ -220,11 +264,16 @@ public class AudioManager : MonoBehaviour
         AudioSource tempSource = Instantiate(voiceSource, transform);
         tempSource.playOnAwake = false;
         tempSource.clip = clip;
+        tempSource.volume = voiceVolume * GetNormalizationFactor(clip);
         tempSource.Play();
         Destroy(tempSource.gameObject, clip.length);
     }
 
-    public void PlaySound(AudioClip clip) => sfxSource.PlayOneShot(clip);
+    public void PlaySound(AudioClip clip)
+    {
+        float factor = GetNormalizationFactor(clip);
+        sfxSource.PlayOneShot(clip, factor);
+    }
 
     #endregion
 }
