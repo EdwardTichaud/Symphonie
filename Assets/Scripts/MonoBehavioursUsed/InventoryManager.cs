@@ -61,11 +61,6 @@ public class InventoryManager : MonoBehaviour
 
         Debug.Log($"[Inventory] Utilisation de l'objet : {item.itemName} sur {target.Data.characterName}");
 
-        if (item.timelineAsset != null && TimelineLauncher.Instance != null)
-        {
-            TimelineLauncher.Instance.PlayTimeline(item.timelineAsset, caster.gameObject, "BattleCamera");
-        }
-
         item.ApplyEffect(target);
         inventoryItems.Remove(item);
     }

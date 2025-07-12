@@ -127,13 +127,100 @@ public class RhythmQTEManager : MonoBehaviour
 
     /// <summary>
     /// Gère la séquence d'utilisation d'un objet en combat.
+    /// Cette routine reprend le même déroulé qu'un MusicalMove :
+    /// lecture d'une éventuelle introduction, déplacement optionnel,
+    /// animation principale puis retour à la position initiale.
     /// </summary>
     public IEnumerator ItemRoutine(ItemData item, CharacterUnit caster, CharacterUnit target)
     {
+        Debug.Log($"Début de la séquence d'utilisation de l'objet: {item.itemName} par {caster.name}");
+        isActive = true;
 
-        if (!item.stayInPlace)
+        Animator animator = caster.GetComponentInChildren<Animator>();
+
+        // Lecture d'une Timeline ou d'une animation d'intro
+        if (item.timelineAsset != null && TimelineLauncher.Instance != null && animator != null)
         {
+            TimelineLauncher.Instance.PlayTimeline(item.timelineAsset, animator.gameObject, "BattleCamera");
+            yield return new WaitForSeconds((float)item.timelineAsset.duration);
+        }
+        else if (item.introAnimationClip != null && animator != null)
+        {
+            animator.Play(item.introAnimationClip.name);
             yield return null;
+            float clipDuration = animator.GetCurrentAnimatorStateInfo(0).length;
+            yield return new WaitForSeconds(clipDuration);
+        }
+
+        // Déplacement éventuel du lanceur
+        if (!item.stayInPlace && caster != null && target != null)
+        {
+            yield return SimpleMoveTo(caster, target, item);
+        }
+
+        // Animation principale si pas de Timeline
+        if (item.timelineAsset == null && item.animationClip != null && animator != null)
+        {
+            animator.Play(item.animationClip.name);
+            yield return null;
+            float clipDuration = animator.GetCurrentAnimatorStateInfo(0).length;
+            yield return new WaitForSeconds(clipDuration);
+        }
+
+        // Retour à la position initiale si déplacement
+        if (!item.stayInPlace && caster != null)
+        {
+            yield return SimpleReturnToInitialPosition(caster, target, item);
+        }
+
+        isActive = false;
+        Debug.Log($"Fin de la séquence d'utilisation de l'objet: {item.itemName} par {caster.name}");
+    }
+
+    private IEnumerator SimpleMoveTo(CharacterUnit caster, CharacterUnit target, ItemData item)
+    {
+        Vector3 origin = caster.transform.position;
+        Vector3 destination = target.transform.position + target.transform.forward * item.castDistance;
+
+        Animator animator = caster.GetComponentInChildren<Animator>();
+        if (caster.Data.moveClip != null)
+            animator?.Play(caster.Data.moveClip.name);
+
+        while (Vector3.Distance(caster.transform.position, destination) > 0.1f)
+        {
+            Vector3 dir = (destination - caster.transform.position).normalized;
+            float step = item.moveSpeed * Time.deltaTime;
+            caster.transform.position = Vector3.MoveTowards(caster.transform.position, destination, step);
+            if (dir != Vector3.zero)
+                caster.transform.forward = dir;
+            yield return null;
+        }
+    }
+
+    private IEnumerator SimpleReturnToInitialPosition(CharacterUnit caster, CharacterUnit target, ItemData item)
+    {
+        Vector3 origin = caster.transform.parent.position;
+
+        Animator animator = caster.GetComponentInChildren<Animator>();
+        if (caster.Data.moveClip != null)
+            animator?.Play(caster.Data.moveClip.name);
+
+        while (Vector3.Distance(caster.transform.position, origin) > 0.1f)
+        {
+            Vector3 dir = (origin - caster.transform.position).normalized;
+            float step = item.moveSpeed * Time.deltaTime;
+            caster.transform.position = Vector3.MoveTowards(caster.transform.position, origin, step);
+            if (dir != Vector3.zero)
+                caster.transform.forward = dir;
+            yield return null;
+        }
+
+        // Après le retour, on réoriente éventuellement vers la cible
+        if (target != null)
+        {
+            Vector3 lookDir = (target.transform.position - caster.transform.position).normalized;
+            if (lookDir != Vector3.zero)
+                caster.transform.forward = lookDir;
         }
     }
 

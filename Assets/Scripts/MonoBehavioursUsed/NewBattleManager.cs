@@ -788,6 +788,9 @@ public class NewBattleManager : MonoBehaviour
             ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
             yield break;
         }
+        // Animation ou Timeline d'utilisation
+        yield return RhythmQTEManager.Instance.ItemRoutine(item, caster, target);
+
         InventoryManager.Instance.UseItem(item, caster, target);
         if (item.effectType == ItemEffectType.Damage)
         {
