@@ -90614,7 +90614,7 @@ PlayableDirector:
   m_InitialTime: 0
   m_SceneBindings:
   - key: {fileID: -4776175127404202534, guid: 72784fea13a73344ab4475f8f964f9ba, type: 2}
-    value: {fileID: 1523740036}
+    value: {fileID: 0}
   m_ExposedReferences:
     m_References: []
 --- !u!1001 &770412356
@@ -96778,11 +96778,6 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8617351967972887581, guid: b32dc67449b25b34ea120a04d3ca4ba1, type: 3}
   m_PrefabInstance: {fileID: 1513110327}
   m_PrefabAsset: {fileID: 0}
---- !u!95 &1523740036 stripped
-Animator:
-  m_CorrespondingSourceObject: {fileID: 4920133713163334701, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-  m_PrefabInstance: {fileID: 2802365080396213327}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1551092327 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4780225887106794448, guid: 6caa6274e5a30c545ab3c75cb5462021, type: 3}
@@ -98818,6 +98813,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 7190180004927539597, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
+      propertyPath: m_Depth
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7196895587682077381, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_Name
       value: 3DCameraSystem
@@ -101960,15 +101959,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 133766338937950705, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 2.8240669
+      value: 2.831517
       objectReference: {fileID: 0}
     - target: {fileID: 133766338937950705, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 2.8240669
+      value: 2.831517
       objectReference: {fileID: 0}
     - target: {fileID: 133766338937950705, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_LocalScale.z
-      value: 2.8240669
+      value: 2.831517
       objectReference: {fileID: 0}
     - target: {fileID: 1602380748598905964, guid: eedb51154f1283542ae799f34034779f, type: 3}
       propertyPath: m_Pivot.x
