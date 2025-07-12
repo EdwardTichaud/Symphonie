@@ -62,6 +62,13 @@ public class CharacterController3D : MonoBehaviour
     void Start()
     {
         controller = GetComponent<CharacterController>();
+
+        // S'assure qu'un masque de sol est défini pour ne pas bloquer le déplacement
+        if (groundLayer == 0)
+        {
+            groundLayer = LayerMask.GetMask("Default");
+            Debug.LogWarning("[CharacterController3D] 'groundLayer' non spécifié, utilisation du layer 'Default'.");
+        }
     }
 
     /// <summary>
@@ -211,7 +218,7 @@ public class CharacterController3D : MonoBehaviour
         float checkDistance = controller.radius + 0.1f;
         Vector3 checkPos = origin + direction * checkDistance;
 
-        if (Physics.Raycast(checkPos, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayer))
+        if (groundLayer == 0 || Physics.Raycast(checkPos, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayer))
         {
             return true;
         }
