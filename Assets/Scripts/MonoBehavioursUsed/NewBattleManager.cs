@@ -725,7 +725,7 @@ public class NewBattleManager : MonoBehaviour
                 yield break;
         }
 
-        ActionUIDisplayManager.Instance.DisplayAttackName(move.moveName);
+        ActionUIDisplayManager.Instance.DisplayActionMessage(enemy.Data.characterName, move.moveName, target.Data.characterName);
         MusicalCodexManager.Instance?.TryAddNewMelody(move);
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
     }
@@ -991,7 +991,7 @@ public class NewBattleManager : MonoBehaviour
         var move = interceptor.GetRandomMusicalAttack();
         if (move != null)
         {
-            ActionUIDisplayManager.Instance.DisplayAttackName(move.moveName);
+            ActionUIDisplayManager.Instance.DisplayActionMessage(interceptor.Data.characterName, move.moveName, caster.Data.characterName);
             yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, interceptor, caster);
             if (move.notes == null || move.notes.Count == 0)
                 move.ApplyEffect(interceptor, caster);
