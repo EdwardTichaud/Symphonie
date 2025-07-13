@@ -195,7 +195,6 @@ public class RhythmQTEManager : MonoBehaviour
 
     private IEnumerator SimpleMoveTo(CharacterUnit caster, CharacterUnit target, ItemData item)
     {
-        caster.PlayMoveStartSound();
         Vector3 origin = caster.transform.position;
         Vector3 destination = target.transform.position + target.transform.forward * item.castDistance;
         bool hasMovement = Vector3.Distance(origin, destination) > 0.01f;
@@ -221,7 +220,6 @@ public class RhythmQTEManager : MonoBehaviour
 
     private IEnumerator SimpleReturnToInitialPosition(CharacterUnit caster, CharacterUnit target, ItemData item)
     {
-        caster.PlayMoveStartSound();
         Vector3 origin = caster.transform.parent.position;
         bool hasMovement = Vector3.Distance(caster.transform.position, origin) > 0.01f;
         if (hasMovement)
@@ -255,7 +253,6 @@ public class RhythmQTEManager : MonoBehaviour
     private IEnumerator MoveTo(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
     {
         Debug.Log("Déplacement de " + caster.name + " vers " + target.name);
-        caster.PlayMoveStartSound();
 
         Vector3 startPosition = caster.transform.position;
 
