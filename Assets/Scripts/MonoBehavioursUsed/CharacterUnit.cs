@@ -256,6 +256,18 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             audioSource.PlayOneShot(Data.interceptedSound);
     }
 
+    public void PlayMoveStartSound()
+    {
+        if (Data.moveStartClip != null && audioSource != null)
+            audioSource.PlayOneShot(Data.moveStartClip);
+    }
+
+    public void PlayMoveEndSound()
+    {
+        if (Data.moveEndClip != null && audioSource != null)
+            audioSource.PlayOneShot(Data.moveEndClip);
+    }
+
     public IEnumerator PlayDamageFlash()
     {
         if (spriteRenderer == null) yield break;
