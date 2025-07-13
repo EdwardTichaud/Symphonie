@@ -11,17 +11,17 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 133a8786c2756524a9bd962bbc0f1ff8, type: 3}
   m_Name: Item_Reveil
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   itemID: Reveil
   itemName: Reveil
   description: "R\xE9veille une unit\xE9 endormie."
-  itemIcon: {fileID: 0}
+  itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
   effectValue: 0
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
   stayInPlace: 0
-  itemTargetingAnimationName: UseItemPreparation_Start
+  itemTargetingAnimation: {fileID: 0}
   effectType: 11
   healAmount: 0
   healIsPercentage: 0
@@ -38,3 +38,10 @@ MonoBehaviour:
   defaultTargetType: 3
   targetTypes: 03000000
   introVFXPrefab: {fileID: 0}
+  timelineAsset: {fileID: 0}
+  beatPattern: []
+  notes: []
+  introAnimationClip: {fileID: 0}
+  animationClip: {fileID: 0}
+  visualEffect: {fileID: 0}
+  introClip: {fileID: 0}

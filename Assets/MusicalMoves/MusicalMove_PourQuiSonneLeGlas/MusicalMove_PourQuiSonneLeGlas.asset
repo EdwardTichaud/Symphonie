@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveName: Pour qui sonne le glas
   moveType: 2
-  moveIcon: {fileID: 0}
+  moveIcon: {fileID: 21300000, guid: f507f03eb80bcbf49bb458bd6a54bd9a, type: 3}
   description: "Applique une marque de loyaut\xE9 sur un alli\xE9."
   musicalMoveTargetingAnimation: {fileID: 0}
   musicalMoveRunAnimationName: 
@@ -22,10 +22,12 @@ MonoBehaviour:
   stayFaceToTarget: 0
   musicalMoveIntroAnimationNames: []
   musicalMoveAnimationNames: []
+  notes: []
   power: 0
   fatigueCost: 1
   harmonicCost: 1
   harmonicGeneration: 0
+  cooldown: 0
   targetType: 3
   defaultTargetType: 3
   targetTypes: 03000000
@@ -41,4 +43,4 @@ MonoBehaviour:
   useTeleportation: 0
   teleportStartVFXPrefab: {fileID: 0}
   teleportEndVFXPrefab: {fileID: 0}
-  cameraPathPrefab: {fileID: 0}
+  timelineAsset: {fileID: 0}

@@ -14,23 +14,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveName: Empty
   moveType: 0
-  moveIcon: {fileID: 21300000, guid: f9619563aba8b7542abf0aabdc638afe, type: 3}
+  moveIcon: {fileID: 21300000, guid: f507f03eb80bcbf49bb458bd6a54bd9a, type: 3}
   description: 
-  musicalMoveTargetingAnimationName: 
+  musicalMoveTargetingAnimation: {fileID: 0}
   musicalMoveRunAnimationName: 
   maxRunDuration: 0
   stayFaceToTarget: 0
   musicalMoveIntroAnimationNames: []
   musicalMoveAnimationNames: []
+  notes: []
   power: 0
   fatigueCost: 0
+  harmonicCost: 1
+  harmonicGeneration: 0
+  cooldown: 0
   targetType: 1
   defaultTargetType: 1
+  targetTypes: 01000000
   effectType: 0
   effectValue: 0
   moveSpeed: 0
   castDistance: 0
   stayInPlace: 0
+  interceptable: 1
   relativePosition: 0
   introVFXPrefab: {fileID: 0}
   hitVFXPrefab: {fileID: 0}
+  useTeleportation: 0
+  teleportStartVFXPrefab: {fileID: 0}
+  teleportEndVFXPrefab: {fileID: 0}
+  timelineAsset: {fileID: 0}
