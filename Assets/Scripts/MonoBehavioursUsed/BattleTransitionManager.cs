@@ -36,7 +36,6 @@ public class BattleTransitionManager : MonoBehaviour
     [SerializeField] private AudioSource sfxSource;
 
     [Header("Music")]
-    [SerializeField] private List<AudioClip> battleMusics = new();
     [SerializeField] private AudioSource musicSource;
 
     private Camera battleCamera;
@@ -75,8 +74,17 @@ public class BattleTransitionManager : MonoBehaviour
 
         CombatSkyboxManager.Instance?.ApplyBattleSkybox();
 
-        AudioClip randomClip = battleMusics[Random.Range(0, battleMusics.Count)];
-        AudioManager.Instance.TransitionToCombat(randomClip);
+        AudioClip randomClip = null;
+        ZoneSO currentZone = ZoneManager.Instance != null ? ZoneManager.Instance.currentZone : null;
+        if (currentZone != null && currentZone.battleMusic != null && currentZone.battleMusic.Length > 0)
+        {
+            randomClip = currentZone.battleMusic[Random.Range(0, currentZone.battleMusic.Length)];
+        }
+
+        if (randomClip != null)
+            AudioManager.Instance.TransitionToCombat(randomClip);
+        else
+            Debug.LogWarning("[BattleTransitionManager] Aucune musique de combat trouvée pour la zone actuelle.");
         StartCoroutine(PlayTransitionSoundsSequentially());
         StartCoroutine(TransitionRoutine());
 
