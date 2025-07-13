@@ -594,6 +594,7 @@ public class NewBattleManager : MonoBehaviour
 
             Debug.Log($"[BattleTurnManager] Tour de {unit.name} (ATB: {unit.currentATB})");
             OrientAllUnitsTowardClosestOpponent();
+            unit.PlayIdleAnimation();
 
             yield return new WaitForSeconds(0.5f);
 
@@ -1029,6 +1030,7 @@ public class NewBattleManager : MonoBehaviour
                 maxTurnDamage = currentTurnDamage;
                 mvpUnit = currentCharacterUnit;
             }
+            currentCharacterUnit.PlayIdleAnimation();
         }
 
         ChangeBattleState(BattleState.EndTurn);
@@ -1314,6 +1316,13 @@ public class NewBattleManager : MonoBehaviour
 
     private IEnumerator RotateUnitSmoothly(CharacterUnit unit, Quaternion targetRotation, float rotationSpeed)
     {
+        Animator anim = unit.GetComponentInChildren<Animator>();
+        if (anim != null)
+        {
+            // Joue l'animation de rotation en boucle pendant la rotation
+            anim.Play("Turn 90");
+        }
+
         // Tant que l’angle entre la rotation actuelle et la target est > 0.5f
         while (Quaternion.Angle(unit.transform.rotation, targetRotation) > 0.5f)
         {
@@ -1327,6 +1336,12 @@ public class NewBattleManager : MonoBehaviour
 
         // Orientation finale propre (uniquement sur l’axe Y)
         unit.transform.rotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
+
+        // Lecture instantanée de l'animation "Exit" une fois la rotation terminée
+        if (anim != null)
+        {
+            anim.Play("Exit");
+        }
     }
     #endregion
 
