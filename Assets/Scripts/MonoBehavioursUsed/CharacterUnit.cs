@@ -369,6 +369,11 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void PlayHurtAnimation() => PlayAnimationClip(hurtAnimation);
     public void PlayInterceptedAnimation() => PlayAnimationClip(interceptedAnimation);
     public void PlayInterceptionAnimation() => PlayAnimationClip(interceptionAnimation);
+    public void PlayPrepareToUndergoAnimation()
+    {
+        if (animator != null)
+            animator.Play("prepareToUndergo");
+    }
 
     void PlayDamageFeedback()
     {

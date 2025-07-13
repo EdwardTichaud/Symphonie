@@ -76,7 +76,10 @@ public class RhythmQTEManager : MonoBehaviour
             }
         };
         if (target != null)
+        {
             target.OnDeath += deathHandler;
+            target.PlayPrepareToUndergoAnimation();
+        }
 
         GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
 
