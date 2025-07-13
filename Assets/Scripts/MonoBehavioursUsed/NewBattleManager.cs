@@ -853,30 +853,19 @@ public class NewBattleManager : MonoBehaviour
             Debug.LogWarning("[IsTargetInRange] caster, target ou move manquant.");
             return false;
         }
-        Vector3 offsetDir = target.transform.forward;
-        switch (move.relativePosition)
-        {
-            case RelativePosition.Back:
-                offsetDir = -target.transform.forward;
-                break;
-            case RelativePosition.Left:
-                offsetDir = -target.transform.right;
-                break;
-            case RelativePosition.Right:
-                offsetDir = target.transform.right;
-                break;
-        }
-
-        Vector3 desiredPos = target.transform.position + offsetDir * move.castDistance;
-        float requiredDistance = Vector3.Distance(caster.transform.position, desiredPos);
-        return requiredDistance <= caster.Data.currentRange;
+        float distance = Vector3.Distance(caster.transform.position, target.transform.position);
+        float maxReach = caster.Data.currentRange + move.castDistance;
+        return distance <= maxReach;
     }
 
     public bool IsTargetInRange(CharacterUnit caster, CharacterUnit target, ItemData item)
     {
-        // Les items peuvent être utilisés à n'importe quelle portée
-        // Cette fonction renvoie donc toujours vrai
-        return true;
+        if (caster == null || target == null || item == null)
+            return false;
+
+        float distance = Vector3.Distance(caster.transform.position, target.transform.position);
+        float maxReach = caster.Data.currentRange + item.castDistance;
+        return distance <= maxReach;
     }
 
     private CharacterUnit CheckForInterception(CharacterUnit caster, CharacterUnit target, float range)
@@ -1802,8 +1791,10 @@ public class NewBattleManager : MonoBehaviour
                                        offsetDir * currentMove.castDistance;
                     targetCursor.transform.position = cursorPos;
 
-                    float requiredDistance = Vector3.Distance(currentCharacterUnit.transform.position, cursorPos);
-                    bool inRange = requiredDistance <= currentCharacterUnit.Data.currentRange;
+                    float distance = Vector3.Distance(currentCharacterUnit.transform.position,
+                        currentTargetCharacter.transform.position);
+                    float maxReach = currentCharacterUnit.Data.currentRange + currentMove.castDistance;
+                    bool inRange = distance <= maxReach;
                     UpdateTargetCursorColor(inRange);
                 }
                 else if (isItemTargeting)
@@ -1811,7 +1802,11 @@ public class NewBattleManager : MonoBehaviour
                     // Les items n'utilisent aucun décalage : le curseur se place
                     // directement sur la cible.
                     targetCursor.transform.position = currentTargetCharacter.transform.position;
-                    UpdateTargetCursorColor(true);
+                    float distance = Vector3.Distance(currentCharacterUnit.transform.position,
+                        currentTargetCharacter.transform.position);
+                    float maxReach = currentCharacterUnit.Data.currentRange + currentItem.castDistance;
+                    bool inRange = distance <= maxReach;
+                    UpdateTargetCursorColor(inRange);
                 }
                 else
                 {
