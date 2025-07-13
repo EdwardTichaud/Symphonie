@@ -28,9 +28,16 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         get => _currentHP;
         set
         {
+            bool wasDead = _currentHP <= 0f;
             _currentHP = value;
             if (Data != null)
                 Data.currentHP = value;
+
+            if (wasDead && _currentHP > 0f && Data != null && Data.characterName == "Lucian")
+            {
+                BattleCameraShatter shatter = FindFirstObjectByType<BattleCameraShatter>();
+                shatter?.ResetEffect();
+            }
         }
     }
     public float currentMP;
