@@ -1096,8 +1096,15 @@ public class NewBattleManager : MonoBehaviour
             ToggleMenuContainers(false, false, false);
             HandleTargetSelection(item);
 
-            if (item.itemTargetingAnimation != null)
+            if (item.preparingTimeline != null && TimelineLauncher.Instance != null)
+            {
+                GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
+                TimelineLauncher.Instance.PlayTimeline(item.preparingTimeline, animGO, "BattleCamera");
+            }
+            else if (item.itemTargetingAnimation != null)
+            {
                 currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(item.itemTargetingAnimation.name);
+            }
         }
         else
         {

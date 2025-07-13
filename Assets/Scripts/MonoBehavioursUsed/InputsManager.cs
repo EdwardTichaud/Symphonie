@@ -146,9 +146,6 @@ public class InputsManager : MonoBehaviour
                 return;
             }
 
-            if (bm.currentItem != null && bm.currentItem.itemTargetingAnimation != null)
-                bm.currentCharacterUnit.GetComponentInChildren<Animator>()
-                    .Play(bm.currentItem.itemTargetingAnimation.name);
 
             bm.ChangeBattleState(BattleState.SquadUnit_Item_Use);
             bm.StartCoroutine(bm.UseItemOnTarget(bm.currentItem, bm.currentCharacterUnit, bm.currentTargetCharacter));
@@ -208,8 +205,15 @@ public class InputsManager : MonoBehaviour
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentItem);
 
-                if (bm.currentItem.itemTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
+                if (bm.currentItem.preparingTimeline != null && TimelineLauncher.Instance != null)
+                {
+                    GameObject animGO = bm.currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
+                    TimelineLauncher.Instance.PlayTimeline(bm.currentItem.preparingTimeline, animGO, "BattleCamera");
+                }
+                else if (bm.currentItem.itemTargetingAnimation != null)
+                {
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(bm.currentItem.itemTargetingAnimation.name);
+                }
             }
             else
             {
@@ -264,8 +268,15 @@ public class InputsManager : MonoBehaviour
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentItem);
 
-                if (bm.currentItem.itemTargetingAnimation)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
+                if (bm.currentItem.preparingTimeline != null && TimelineLauncher.Instance != null)
+                {
+                    GameObject animGO = bm.currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
+                    TimelineLauncher.Instance.PlayTimeline(bm.currentItem.preparingTimeline, animGO, "BattleCamera");
+                }
+                else if (bm.currentItem.itemTargetingAnimation)
+                {
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(bm.currentItem.itemTargetingAnimation.name);
+                }
             }
             else
             {
@@ -316,8 +327,15 @@ public class InputsManager : MonoBehaviour
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentItem);
 
-                if (bm.currentItem.itemTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentItem.itemTargetingAnimation.name);
+                if (bm.currentItem.preparingTimeline != null && TimelineLauncher.Instance != null)
+                {
+                    GameObject animGO = bm.currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
+                    TimelineLauncher.Instance.PlayTimeline(bm.currentItem.preparingTimeline, animGO, "BattleCamera");
+                }
+                else if (bm.currentItem.itemTargetingAnimation != null)
+                {
+                    bm.currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(bm.currentItem.itemTargetingAnimation.name);
+                }
             }
             else
             {
