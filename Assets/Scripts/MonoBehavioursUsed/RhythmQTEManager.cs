@@ -71,7 +71,7 @@ public class RhythmQTEManager : MonoBehaviour
         {
             if (!tauntPlayed && isActive && caster != null && caster.Data.prematureDeathTaunt != null)
             {
-                AudioManager.Instance?.PlayVoice(caster.Data.prematureDeathTaunt);
+                StartCoroutine(PlayTauntWithDelay(caster.Data.prematureDeathTaunt, 1f));
                 tauntPlayed = true;
             }
         };
@@ -656,6 +656,12 @@ public class RhythmQTEManager : MonoBehaviour
     {
         var first = NewBattleManager.Instance.currentTargetCharacter;
         return first != null ? first.transform : null;
+    }
+
+    private IEnumerator PlayTauntWithDelay(AudioClip clip, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        AudioManager.Instance?.PlayVoice(clip);
     }
 
     #endregion
