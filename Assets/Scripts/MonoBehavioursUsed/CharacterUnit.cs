@@ -258,14 +258,18 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public void PlayMoveStartSound()
     {
-        if (Data.moveStartClip != null && audioSource != null)
-            audioSource.PlayOneShot(Data.moveStartClip);
+        if (Data.moveStartClip != null)
+        {
+            AudioManager.Instance?.PlayTempSfx(Data.moveStartClip);
+        }
     }
 
     public void PlayMoveEndSound()
     {
-        if (Data.moveEndClip != null && audioSource != null)
-            audioSource.PlayOneShot(Data.moveEndClip);
+        if (Data.moveEndClip != null)
+        {
+            AudioManager.Instance?.PlayTempSfx(Data.moveEndClip);
+        }
     }
 
     public IEnumerator PlayDamageFlash()
