@@ -15,7 +15,7 @@ MonoBehaviour:
   characterName: Thalia
   portrait: {fileID: 21300000, guid: 2db772b866712494da8b20c372bb9e92, type: 3}
   characterType: 0
-  gameplayType: 0
+  gameplayType: 1
   harmonicType: 0
   characterWorldModel: {fileID: 23947754543557898, guid: 131ee47cd8164b341a40af7b2461abb4, type: 3}
   characterBattleModel: {fileID: 901204007372340786, guid: 48bc122d024634b4789a14a245e83484, type: 3}
@@ -43,7 +43,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7340a29c848f98838cf392beb2c0575e, type: 2}
   currentInitiative: 1
   currentRange: 5
-  currentHP: 80
+  currentHP: 50
   currentStrength: 1
   currentDefense: 1
   currentPower: 0
@@ -60,6 +60,17 @@ MonoBehaviour:
   currentInterceptionChance: 0
   hitSound: {fileID: 0}
   interceptedSound: {fileID: 0}
+  prematureDeathTaunt: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
+  TPEffect_Start: {fileID: 0}
+  TPEffect_Destination: {fileID: 0}
+  moveClip: {fileID: 0}
+  moveStartClip: {fileID: 0}
+  moveEndClip: {fileID: 0}
+  weepForLucianDeath: {fileID: 0}
+  weepForThaliaDeath: {fileID: 0}
+  weepForKaelDeath: {fileID: 0}
+  weepForLinkDeath: {fileID: 0}
+  weepForLunaDeath: {fileID: 0}
   owner: {fileID: 0}
