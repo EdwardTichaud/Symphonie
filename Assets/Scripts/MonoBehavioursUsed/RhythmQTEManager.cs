@@ -80,9 +80,9 @@ public class RhythmQTEManager : MonoBehaviour
 
         GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
 
-        if (move.timelineAsset != null && TimelineLauncher.Instance != null && casterAnimatorGO != null)
+        if (move.performingTimeline != null && TimelineLauncher.Instance != null && casterAnimatorGO != null)
         {
-            TimelineLauncher.Instance.PlayTimeline(move.timelineAsset, casterAnimatorGO, "BattleCamera");
+            TimelineLauncher.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, "BattleCamera");
         }
         else if (move.musicalMoveIntroAnimationNames.Length > 0)
         {
@@ -91,7 +91,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         yield return MoveTo(caster, target, move); // Déplacement vers l’ennemi
 
-        if (move.timelineAsset == null && move.musicalMoveAnimationNames.Length > 0)
+        if (move.performingTimeline == null && move.musicalMoveAnimationNames.Length > 0)
         {
             yield return PlayMoveAnimations(move.musicalMoveAnimationNames, caster);
         }
@@ -112,9 +112,9 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
         }
 
-        if (move.timelineAsset != null)
+        if (move.performingTimeline != null)
         {
-            yield return new WaitForSeconds((float)move.timelineAsset.duration); // Attend la fin de la Timeline
+            yield return new WaitForSeconds((float)move.performingTimeline.duration); // Attend la fin de la Timeline
         }
         else
         {
@@ -155,10 +155,10 @@ public class RhythmQTEManager : MonoBehaviour
         Animator animator = caster.GetComponentInChildren<Animator>();
 
         // Lecture d'une Timeline ou d'une animation d'intro
-        if (item.timelineAsset != null && TimelineLauncher.Instance != null && animator != null)
+        if (item.performingTimeline != null && TimelineLauncher.Instance != null && animator != null)
         {
-            TimelineLauncher.Instance.PlayTimeline(item.timelineAsset, animator.gameObject, "BattleCamera");
-            yield return new WaitForSeconds((float)item.timelineAsset.duration);
+            TimelineLauncher.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, "BattleCamera");
+            yield return new WaitForSeconds((float)item.performingTimeline.duration);
         }
         else if (item.introAnimationClip != null && animator != null)
         {
@@ -175,7 +175,7 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         // Animation principale si pas de Timeline
-        if (item.timelineAsset == null && item.animationClip != null && animator != null)
+        if (item.performingTimeline == null && item.animationClip != null && animator != null)
         {
             animator.Play(item.animationClip.name);
             yield return null;

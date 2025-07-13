@@ -50,8 +50,10 @@ public class ItemData : ScriptableObject
     public GameObject introVFXPrefab;
 
     [Header("Timeline")]
+    [Tooltip("Timeline jouée lors de la préparation de l'item")]
+    public TimelineAsset preparingTimeline;
     [Tooltip("Timeline à jouer lors de l'utilisation de l'item")]
-    public TimelineAsset timelineAsset;
+    public TimelineAsset performingTimeline;
 
     [Header("QTE Pattern")]
     public List<float> beatPattern;

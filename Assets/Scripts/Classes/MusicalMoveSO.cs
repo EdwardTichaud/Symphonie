@@ -72,8 +72,10 @@ public class MusicalMoveSO : ScriptableObject
 
 
     [Header("Timeline")]
+    [Tooltip("Timeline jouée lors de la préparation du move")]
+    public TimelineAsset preparingTimeline;
     [Tooltip("Timeline à jouer lors de l'exécution du move")]
-    public TimelineAsset timelineAsset;
+    public TimelineAsset performingTimeline;
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {
