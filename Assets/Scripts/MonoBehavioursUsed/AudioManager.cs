@@ -275,5 +275,17 @@ public class AudioManager : MonoBehaviour
         sfxSource.PlayOneShot(clip, factor);
     }
 
+    public void PlayTempSfx(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        AudioSource tempSource = Instantiate(sfxSource, transform);
+        tempSource.playOnAwake = false;
+        tempSource.clip = clip;
+        tempSource.volume = sfxVolume * GetNormalizationFactor(clip);
+        tempSource.Play();
+        Destroy(tempSource.gameObject, clip.length);
+    }
+
     #endregion
 }
