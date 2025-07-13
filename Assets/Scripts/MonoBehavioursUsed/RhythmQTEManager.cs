@@ -265,7 +265,7 @@ public class RhythmQTEManager : MonoBehaviour
         // Gestion de la téléportation éventuelle
         if (move.useTeleportation)
         {
-            bool hasMovement;
+            bool teleportHasMovement;
             Vector3 teleportOffsetDir = target.transform.forward;
             switch (move.relativePosition)
             {
@@ -282,8 +282,8 @@ public class RhythmQTEManager : MonoBehaviour
 
             float teleportMobilityBonus = caster.currentMobility;
             Vector3 teleportTargetPosition = target.transform.position + teleportOffsetDir * (move.castDistance + teleportMobilityBonus);
-            hasMovement = Vector3.Distance(startPosition, teleportTargetPosition) > 0.01f;
-            if (hasMovement)
+            teleportHasMovement = Vector3.Distance(startPosition, teleportTargetPosition) > 0.01f;
+            if (teleportHasMovement)
                 caster.PlayMoveStartSound();
 
             if (move.teleportStartVFXPrefab != null)
@@ -313,7 +313,7 @@ public class RhythmQTEManager : MonoBehaviour
             yield return null;
             Debug.Log("Fin du déplacement de " + caster.name);
 
-            if (hasMovement)
+            if (teleportHasMovement)
                 caster.PlayMoveEndSound();
             yield break;
         }
