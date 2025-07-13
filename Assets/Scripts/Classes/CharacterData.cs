@@ -85,6 +85,18 @@ public class CharacterData : ScriptableObject, ITargetable
     public AudioClip moveStartClip;
     public AudioClip moveEndClip;
 
+    [Header("Voix de deuil")]
+    [Tooltip("Lamentation jouée par ce personnage quand Lucian meurt")]
+    public AudioClip weepForLucianDeath;
+    [Tooltip("Lamentation jouée par ce personnage quand Thalia meurt")]
+    public AudioClip weepForThaliaDeath;
+    [Tooltip("Lamentation jouée par ce personnage quand Kael meurt")]
+    public AudioClip weepForKaelDeath;
+    [Tooltip("Lamentation jouée par ce personnage quand Link meurt")]
+    public AudioClip weepForLinkDeath;
+    [Tooltip("Lamentation jouée par ce personnage quand Luna meurt")]
+    public AudioClip weepForLunaDeath;
+
     // Ajoute une référence au GameObject source
     public MonoBehaviour owner;
 

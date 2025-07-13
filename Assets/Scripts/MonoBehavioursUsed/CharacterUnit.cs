@@ -214,7 +214,46 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             NewBattleManager.Instance?.OnEnemyDefeated(this);
         }
 
+        if (Data.isPlayerControlled)
+        {
+            PlayAllyWeep();
+
+            if (Data.characterName == "Lucian")
+            {
+                BattleCameraShatter shatter = FindFirstObjectByType<BattleCameraShatter>();
+                if (shatter != null)
+                    shatter.Break();
+            }
+        }
+
         OnDeath?.Invoke(this);
+    }
+
+    void PlayAllyWeep()
+    {
+        var allies = NewBattleManager.Instance.activeCharacterUnits
+            .Where(u => u.Data.isPlayerControlled && u != this && u.currentHP > 0)
+            .ToList();
+        if (allies.Count == 0)
+            return;
+
+        CharacterUnit randomAlly = allies[Random.Range(0, allies.Count)];
+        AudioClip clip = GetWeepClip(randomAlly.Data, Data.characterName);
+        if (clip != null)
+            AudioManager.Instance?.PlayVoice(clip);
+    }
+
+    AudioClip GetWeepClip(CharacterData allyData, string deadName)
+    {
+        return deadName switch
+        {
+            "Lucian" => allyData.weepForLucianDeath,
+            "Thalia" => allyData.weepForThaliaDeath,
+            "Kael" => allyData.weepForKaelDeath,
+            "Link" => allyData.weepForLinkDeath,
+            "Luna" => allyData.weepForLunaDeath,
+            _ => null,
+        };
     }
 
     /// <summary>
