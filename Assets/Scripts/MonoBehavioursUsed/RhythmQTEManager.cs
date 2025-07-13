@@ -198,6 +198,9 @@ public class RhythmQTEManager : MonoBehaviour
         caster.PlayMoveStartSound();
         Vector3 origin = caster.transform.position;
         Vector3 destination = target.transform.position + target.transform.forward * item.castDistance;
+        bool hasMovement = Vector3.Distance(origin, destination) > 0.01f;
+        if (hasMovement)
+            caster.PlayMoveStartSound();
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         if (caster.Data.moveClip != null)
@@ -212,13 +215,17 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = dir;
             yield return null;
         }
-        caster.PlayMoveEndSound();
+        if (hasMovement)
+            caster.PlayMoveEndSound();
     }
 
     private IEnumerator SimpleReturnToInitialPosition(CharacterUnit caster, CharacterUnit target, ItemData item)
     {
         caster.PlayMoveStartSound();
         Vector3 origin = caster.transform.parent.position;
+        bool hasMovement = Vector3.Distance(caster.transform.position, origin) > 0.01f;
+        if (hasMovement)
+            caster.PlayMoveStartSound();
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         if (caster.Data.moveClip != null)
@@ -241,7 +248,8 @@ public class RhythmQTEManager : MonoBehaviour
             if (lookDir != Vector3.zero)
                 caster.transform.forward = lookDir;
         }
-        caster.PlayMoveEndSound();
+        if (hasMovement)
+            caster.PlayMoveEndSound();
     }
 
     private IEnumerator MoveTo(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
@@ -249,12 +257,15 @@ public class RhythmQTEManager : MonoBehaviour
         Debug.Log("Déplacement de " + caster.name + " vers " + target.name);
         caster.PlayMoveStartSound();
 
+        Vector3 startPosition = caster.transform.position;
+
         if (caster.Data.TPEffect_Start != null)
             Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
 
         // Gestion de la téléportation éventuelle
         if (move.useTeleportation)
         {
+            bool hasMovement;
             Vector3 teleportOffsetDir = target.transform.forward;
             switch (move.relativePosition)
             {
@@ -271,6 +282,9 @@ public class RhythmQTEManager : MonoBehaviour
 
             float teleportMobilityBonus = caster.currentMobility;
             Vector3 teleportTargetPosition = target.transform.position + teleportOffsetDir * (move.castDistance + teleportMobilityBonus);
+            hasMovement = Vector3.Distance(startPosition, teleportTargetPosition) > 0.01f;
+            if (hasMovement)
+                caster.PlayMoveStartSound();
 
             if (move.teleportStartVFXPrefab != null)
                 Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
@@ -298,7 +312,9 @@ public class RhythmQTEManager : MonoBehaviour
 
             yield return null;
             Debug.Log("Fin du déplacement de " + caster.name);
-            caster.PlayMoveEndSound();
+
+            if (hasMovement)
+                caster.PlayMoveEndSound();
             yield break;
         }
 
@@ -311,7 +327,6 @@ public class RhythmQTEManager : MonoBehaviour
 
         float elapsed = 0f;
         float maxDuration = move.maxRunDuration;
-        Vector3 startPosition = caster.transform.position;
 
         Vector3 offsetDir = target.transform.forward;
         switch (move.relativePosition)
@@ -329,6 +344,9 @@ public class RhythmQTEManager : MonoBehaviour
 
         float mobilityBonus = caster.currentMobility;
         Vector3 targetPosition = target.transform.position + offsetDir * (move.castDistance + mobilityBonus);
+        bool hasMovement = Vector3.Distance(startPosition, targetPosition) > 0.01f;
+        if (hasMovement)
+            caster.PlayMoveStartSound();
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         AnimationClip clipToPlay = caster.Data.moveClip != null ? caster.Data.moveClip : null;
@@ -356,7 +374,10 @@ public class RhythmQTEManager : MonoBehaviour
             }
 
             Debug.Log("Fin du déplacement de " + caster.name);
-            caster.PlayMoveEndSound();
+
+            if (hasMovement)
+                caster.PlayMoveEndSound();
+
             yield break;
         }
 
@@ -389,18 +410,25 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         Debug.Log("Fin du déplacement de " + caster.name);
-        caster.PlayMoveEndSound();
+
+        if (hasMovement)
+            caster.PlayMoveEndSound();
+
     }
 
     private IEnumerator ReturnToInitialPosition(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
     {
         Debug.Log("Retour de " + caster.name + " vers sa position parent");
-        caster.PlayMoveStartSound();
+
+        Vector3 startPos = caster.transform.position;
+        Vector3 initialPosition = caster.transform.parent.position;
+        bool hasMovement = Vector3.Distance(startPos, initialPosition) > 0.01f;
+        if (hasMovement)
+            caster.PlayMoveStartSound();
+
 
         if (caster.Data.TPEffect_Start != null)
             Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
-
-        Vector3 initialPosition = caster.transform.parent.position;
 
         if (move.useTeleportation)
         {
@@ -420,7 +448,10 @@ public class RhythmQTEManager : MonoBehaviour
                 Instantiate(caster.Data.TPEffect_Destination, initialPosition, Quaternion.identity);
 
             yield return null;
-            caster.PlayMoveEndSound();
+
+            if (hasMovement)
+                caster.PlayMoveEndSound();
+
         }
         else
         {
@@ -477,7 +508,10 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = finalDirToParent;
         }
         Debug.Log("Le caster a terminé son retour.");
-        caster.PlayMoveEndSound();
+
+        if (hasMovement)
+            caster.PlayMoveEndSound();
+
     }
 
     IEnumerator PlayMoveAnimations(string[] animationClips, CharacterUnit caster)
