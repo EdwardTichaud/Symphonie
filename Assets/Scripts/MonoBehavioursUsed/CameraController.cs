@@ -121,7 +121,7 @@ public class CameraController : MonoBehaviour
         if (cameraPositions == null || cameraPositions.Count == 0)
             UpdateCameraPositionsFromHandler();
 
-        if (TimelineStatus.IsTimelinePlaying)
+        if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
             return;
 
         // ✅ Si la MainCamera est désactivée → skip toute logique

@@ -99,7 +99,7 @@ public class InteractionManager : MonoBehaviour
         }
 
         // ❗️ Ne pas détecter pendant une cinématique Timeline
-        if (TimelineStatus.IsTimelinePlaying)
+        if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
         {
             // Si une Timeline joue, désactive la UI si elle était active
             if (currentInteractable != null)
