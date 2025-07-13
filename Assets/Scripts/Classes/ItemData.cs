@@ -75,7 +75,7 @@ public class ItemData : ScriptableObject
     public GameObject visualEffect;
     public AudioClip introClip;
 
-    public void ApplyEffect(CharacterUnit target)
+    public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {
         switch (effectType)
         {
@@ -95,7 +95,7 @@ public class ItemData : ScriptableObject
                 Debug.Log("[ItemData] Effet BoostTiming non implémenté.");
                 break;
             case ItemEffectType.Damage:
-                ApplyDamage(target);
+                ApplyDamage(caster, target);
                 break;
             case ItemEffectType.IncreaseRange:
                 ApplyIncreaseRange(target);
@@ -152,10 +152,15 @@ public class ItemData : ScriptableObject
         InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, buffDuration, buffIsPercentage);
     }
 
-    private void ApplyDamage(CharacterUnit target)
+    private void ApplyDamage(CharacterUnit caster, CharacterUnit target)
     {
         if (target != null)
-            target.TakeDamage(effectValue);
+        {
+            float damage = effectValue;
+            if (caster != null)
+                damage *= caster.GetAttackMultiplier();
+            target.TakeDamage(damage);
+        }
     }
 
     private void ApplyIncreaseRange(CharacterUnit target)

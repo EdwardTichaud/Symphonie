@@ -61,7 +61,7 @@ public class InventoryManager : MonoBehaviour
 
         Debug.Log($"[Inventory] Utilisation de l'objet : {item.itemName} sur {target.Data.characterName}");
 
-        item.ApplyEffect(target);
+        item.ApplyEffect(caster, target);
         inventoryItems.Remove(item);
     }
 
@@ -71,7 +71,7 @@ public class InventoryManager : MonoBehaviour
     public void PreviewItemEffect(ItemData item, CharacterUnit target)
     {
         Debug.Log($"[Inventory] Aperçu de l'effet de {item.itemName} sur {target.Data.characterName}");
-        item.ApplyEffect(target);
+        item.ApplyEffect(null, target);
     }
 
     public void ApplyBuff(CharacterUnit target, BuffStatType stat, int amount, float duration, bool isPercentage)

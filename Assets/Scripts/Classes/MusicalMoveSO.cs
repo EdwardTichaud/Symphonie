@@ -84,7 +84,10 @@ public class MusicalMoveSO : ScriptableObject
     {
         float finalValue = effectValue;
         if (caster != null)
+        {
             finalValue += caster.currentPower;
+            finalValue *= caster.GetAttackMultiplier();
+        }
 
         if (isCritical)
             finalValue *= 2f;

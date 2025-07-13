@@ -32,7 +32,11 @@ public class AnimationEventsManager : MonoBehaviour
         }
         else
         {
-            target.TakeDamage(move.power);
+            CharacterUnit caster = transform.GetComponentInParent<CharacterUnit>();
+            float damage = move.power;
+            if (caster != null)
+                damage *= caster.GetAttackMultiplier();
+            target.TakeDamage(damage);
         }
     }
 
