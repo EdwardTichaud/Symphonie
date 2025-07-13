@@ -81,6 +81,10 @@ public class CharacterData : ScriptableObject, ITargetable
     [Header("Animations de déplacement")]
     public AnimationClip moveClip;
 
+    [Header("Sons de déplacement")]
+    public AudioClip moveStartClip;
+    public AudioClip moveEndClip;
+
     // Ajoute une référence au GameObject source
     public MonoBehaviour owner;
 
