@@ -467,6 +467,15 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             moveCooldowns[move] = move.cooldown;
     }
 
+    public float GetAttackMultiplier()
+    {
+        if (TryGetComponent<SleepStatus>(out var sleep) && sleep.IsAsleep && Data != null && Data.gameplayType == GameplayType.Fatigue)
+            return 2f;
+        if (TryGetComponent<FatigueSystem>(out var fatigue) && fatigue.IsAsleep && Data != null && Data.gameplayType == GameplayType.Fatigue)
+            return 2f;
+        return 1f;
+    }
+
     public void PlayIdleAnimation()
     {
         if (currentHP <= 0)
