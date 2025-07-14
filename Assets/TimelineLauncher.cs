@@ -9,6 +9,8 @@ public class TimelineLauncher : MonoBehaviour
     public static TimelineLauncher Instance { get; private set; }
 
     [SerializeField] private PlayableDirector director;
+    [SerializeField, Tooltip("Durée de transition vers le début de la timeline")]
+    private float transitionDuration = 0.5f; // temps de lerp avant lecture
     private Coroutine followCoroutine;
     public bool IsTimelineActive => director != null &&
         (director.state == PlayState.Playing || director.state == PlayState.Paused);
@@ -34,6 +36,11 @@ public class TimelineLauncher : MonoBehaviour
             return;
         }
 
+        StartCoroutine(PlayTimelineRoutine(timelineAsset, caster, cameraTag));
+    }
+
+    private IEnumerator PlayTimelineRoutine(TimelineAsset timelineAsset, GameObject caster, string cameraTag)
+    {
         director.playableAsset = timelineAsset;
         // On souhaite que la Timeline se joue une seule fois. Les animations en
         // loop continueront grâce à leur propre réglage de boucle, tandis que
@@ -59,8 +66,6 @@ public class TimelineLauncher : MonoBehaviour
         foreach (var output in timelineAsset.outputs)
         {
             string trackName = output.streamName;
-            System.Type type = output.outputTargetType;
-
             if (trackName.ToLower().Contains("caster") && caster != null)
             {
                 BindObjectToTrack(output, caster);
@@ -75,7 +80,40 @@ public class TimelineLauncher : MonoBehaviour
             }
         }
 
-        director.Play();
+        // --- Transition en douceur vers la première position de la Timeline ---
+        if (cameraRoot != null)
+        {
+            Transform cam = cameraRoot.transform;
+            Vector3 startPos = cam.position;
+            Quaternion startRot = cam.rotation;
+
+            // Évaluer la timeline à t=0 pour connaître la position initiale
+            Vector3 initPos = startPos;
+            Quaternion initRot = startRot;
+            double storedTime = director.time;
+            director.time = 0;
+            director.Evaluate();
+            Vector3 targetPos = cam.position;
+            Quaternion targetRot = cam.rotation;
+            cam.SetPositionAndRotation(initPos, initRot); // Revenir à l'état de départ
+            director.time = storedTime;
+
+            float t = 0f;
+            while (t < 1f)
+            {
+                t += Time.deltaTime / transitionDuration;
+                cam.position = Vector3.Lerp(initPos, targetPos, t);
+                cam.rotation = Quaternion.Slerp(initRot, targetRot, t);
+                yield return null;
+            }
+            cam.SetPositionAndRotation(targetPos, targetRot);
+        }
+
+        // On passe par le TimelineManager pour garantir la priorité
+        if (TimelineManager.Instance != null)
+            TimelineManager.Instance.PlayTimeline(director);
+        else
+            director.Play();
 
         if (caster != null && cameraParent != null)
         {
@@ -83,6 +121,9 @@ public class TimelineLauncher : MonoBehaviour
                 StopCoroutine(followCoroutine);
             followCoroutine = StartCoroutine(FollowCaster(cameraParent, caster.transform));
         }
+
+        // Attendre la fin pour laisser le CameraController reprendre la main
+        yield return new WaitWhile(() => director != null && director.state == PlayState.Playing);
     }
 
     private void BindObjectToTrack(PlayableBinding output, GameObject go)
