@@ -44,7 +44,9 @@ public class CharacterData : ScriptableObject, ITargetable
     public float maxFatigue;
 
     [Header("Animation Idle en attaque")]
-    public string battleIdleAnimationName;
+    // Clip d'animation à jouer pour l'idle en phase d'attaque
+    // Laisser nul pour utiliser l'animation par défaut "Idle"
+    public AnimationClip battleIdleAnimation;
 
     [Header("Musical Attacks")]
     public MusicalMoveSO[] musicalAttacks;
