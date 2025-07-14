@@ -162,8 +162,21 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     }
 
     /// <summary>
+    /// Implémentation minimale de <see cref="IDamageable"/> pour assurer la
+    /// compatibilité avec l'interface. On redirige vers la version complète
+    /// prenant en compte l'attaquant.
+    /// </summary>
+    /// <param name="amount">Quantité de dégâts subis.</param>
+    public void TakeDamage(float amount)
+    {
+        TakeDamage(amount, null);
+    }
+
+    /// <summary>
     /// Inflige des dégâts et met à jour l'UI correspondante.
     /// </summary>
+    /// <param name="amount">Quantité de dégâts subis.</param>
+    /// <param name="attacker">Transform de l'attaquant pour déterminer la direction.</param>
     public void TakeDamage(float amount, Transform attacker = null)
     {
         var mark = GetComponent<LoyaltyMark>();
