@@ -93,6 +93,8 @@ public class CharacterData : ScriptableObject, ITargetable
     public AnimationClip leftHitAnimation;            // Dégâts reçus par la gauche
     public AnimationClip rightHitAnimation;           // Dégâts reçus par la droite
 
+    public AnimationClip deathAnimation;
+
     // Animations liées à la téléportation
     public AnimationClip TPAnimation_Start;           // Jouée avant la téléportation
     public AnimationClip TPAnimation_Destination;     // Jouée après la téléportation

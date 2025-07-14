@@ -239,9 +239,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         Debug.Log(this + " handleDeath called, playing death animation.");
         if (animator != null)
         {
-            // CrossFade assure que l'animation de mort remplace correctement
-            // toute animation de blessure potentiellement en cours
-            animator.CrossFade("Death", 0.05f);
+            animator.Play(Data.deathAnimation.name);
         }
         NewBattleManager.Instance.RemoveFromTimeline(this);
         NewBattleManager.Instance.activeCharacterUnits.Remove(this); // facultatif
