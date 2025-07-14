@@ -82,10 +82,19 @@ public class CharacterData : ScriptableObject, ITargetable
     public AnimationClip moveClip;
 
     [Header("Animations spéciales")]
+    // Animation générique de dégâts
     public AnimationClip hitAnimation;                // Jouée quand l'unité subit des dégâts
+
+    // Animations spécifiques selon l'orientation de l'attaque
+    public AnimationClip frontHitAnimation;           // Dégâts reçus de face
+    public AnimationClip backHitAnimation;            // Dégâts reçus de dos
+    public AnimationClip leftHitAnimation;            // Dégâts reçus par la gauche
+    public AnimationClip rightHitAnimation;           // Dégâts reçus par la droite
+
+    // Animations liées à la téléportation
     public AnimationClip TPAnimation_Start;           // Jouée avant la téléportation
     public AnimationClip TPAnimation_Destination;     // Jouée après la téléportation
-    public AnimationClip prepareToUndergoAnimation;
+    public AnimationClip prepareToUndergoAnimation;   // Prépare la cible à subir un coup
 
     [Header("Sons de déplacement")]
     public AudioClip moveStartClip;

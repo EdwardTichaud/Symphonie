@@ -162,7 +162,8 @@ public class ItemData : ScriptableObject
             float damage = effectValue;
             if (caster != null)
                 damage *= caster.GetAttackMultiplier();
-            target.TakeDamage(damage);
+            // Précise la source pour jouer l'animation adéquate
+            target.TakeDamage(damage, caster != null ? caster.transform : null);
         }
     }
 
