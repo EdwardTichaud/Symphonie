@@ -1101,12 +1101,8 @@ public class NewBattleManager : MonoBehaviour
             ToggleMenuContainers(false, false, false);
             HandleTargetSelection(item);
 
-            if (itemPreparingTimeline != null && TimelineLauncher.Instance != null)
-            {
-                GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
-                TimelineLauncher.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
-            }
-            else if (item.itemTargetingAnimation != null)
+            // L'animation spécifique à l'objet prend le relais une fois la Timeline arrêtée
+            if (item.itemTargetingAnimation != null)
             {
                 currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(item.itemTargetingAnimation.name);
             }
@@ -1540,11 +1536,8 @@ public class NewBattleManager : MonoBehaviour
         ChangeBattleState(BattleState.SquadUnit_MainMenu);
         ToggleMenuContainers(true, false, false);
 
-        if (itemMenuTimelineActive && TimelineLauncher.Instance != null)
-        {
-            TimelineLauncher.Instance.StopTimeline();
-            itemMenuTimelineActive = false;
-        }
+        // Arrête la Timeline d'attente si elle était en cours
+        StopItemPreparingTimeline();
 
         // Réinitialise les actions sélectionnées afin d'éviter des conflits
         currentMove = null;
@@ -1600,13 +1593,8 @@ public class NewBattleManager : MonoBehaviour
         ToggleMenuContainers(false, false, true);
         currentMenuIndex = 0;
 
-        if (itemPreparingTimeline != null && TimelineLauncher.Instance != null)
-        {
-            GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
-            // Lance la Timeline d'animation qui tourne en boucle
-            TimelineLauncher.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
-            itemMenuTimelineActive = true;
-        }
+        // Démarre la Timeline d'attente de sélection d'objet
+        StartItemPreparingTimeline();
 
         itemChoices = InventoryManager.Instance.GetUsableItems();
 
@@ -1670,6 +1658,32 @@ public class NewBattleManager : MonoBehaviour
         Color color = available ? Color.white : Color.gray;
         if (txt != null) txt.color = color;
         if (img != null) img.color = color;
+    }
+
+    /// <summary>
+    /// Lance la Timeline d'attente de sélection d'objet si elle n'est pas déjà active.
+    /// </summary>
+    private void StartItemPreparingTimeline()
+    {
+        if (itemPreparingTimeline == null || TimelineLauncher.Instance == null || itemMenuTimelineActive)
+            return;
+
+        GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
+        // Démarre la Timeline qui boucle tant que le menu est ouvert
+        TimelineLauncher.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
+        itemMenuTimelineActive = true;
+    }
+
+    /// <summary>
+    /// Arrête la Timeline d'attente si elle est en cours d'exécution.
+    /// </summary>
+    private void StopItemPreparingTimeline()
+    {
+        if (!itemMenuTimelineActive || TimelineLauncher.Instance == null)
+            return;
+
+        TimelineLauncher.Instance.StopTimeline();
+        itemMenuTimelineActive = false;
     }
     #endregion
 
@@ -1893,11 +1907,8 @@ public class NewBattleManager : MonoBehaviour
 
     public void HandleTargetSelection(ItemData item)
     {
-        if (itemMenuTimelineActive && TimelineLauncher.Instance != null)
-        {
-            TimelineLauncher.Instance.StopTimeline();
-            itemMenuTimelineActive = false;
-        }
+        // Lorsque l'objet est choisi, on coupe la Timeline d'attente
+        StopItemPreparingTimeline();
         currentItem = item;
         currentMove = null; // on annule la sélection de compétence précédente
         currentItemTargetType = item.defaultTargetType;
