@@ -44,7 +44,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
   currentInitiative: 1
   currentRange: 6
-  currentHP: 50
+  currentHP: 10
   currentStrength: 1
   currentDefense: 1
   currentPower: 0
@@ -52,7 +52,7 @@ MonoBehaviour:
   currentVitality: 0
   currentSagacity: 0
   isPlayerControlled: 1
-  currentRage: 0
+  currentRage: 40
   currentFatigue: 0
   currentReflex: 0
   currentMobility: 0
@@ -67,7 +67,7 @@ MonoBehaviour:
   TPEffect_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
   TPEffect_Destination: {fileID: 0}
   moveClip: {fileID: 0}
-  hitAnimation: {fileID: 0}
+  hitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
   TPAnimation_Start: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
   TPAnimation_Destination: {fileID: 0}
   prepareToUndergoAnimation: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
