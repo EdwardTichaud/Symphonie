@@ -2108,7 +2108,7 @@ public class NewBattleManager : MonoBehaviour
 
             case BattleState.EnemyUnit_Reflexion:
                 isFollowingCurrentTarget = false;
-                desiredTransform = null;
+                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
                 break;
             case BattleState.EnemyUnit_PerformingMusicalMove:
                 // Place la caméra sur la cible et oriente-la vers l'ennemi
