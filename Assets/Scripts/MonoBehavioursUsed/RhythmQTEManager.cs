@@ -213,7 +213,10 @@ public class RhythmQTEManager : MonoBehaviour
             Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
 
         Animator animator = caster.GetComponentInChildren<Animator>();
-        if (caster.Data.moveClip != null)
+        // Animation de début de téléportation
+        if (caster.Data.TPAnimation_Start != null)
+            animator?.Play(caster.Data.TPAnimation_Start.name);
+        else if (caster.Data.moveClip != null)
             animator?.Play(caster.Data.moveClip.name);
 
         // Laisse un court délai pour jouer l'effet avant de déplacer
@@ -224,6 +227,8 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (caster.Data.TPEffect_Destination != null)
             Instantiate(caster.Data.TPEffect_Destination, destination, Quaternion.identity);
+        if (animator != null && caster.Data.TPAnimation_Destination != null)
+            animator.Play(caster.Data.TPAnimation_Destination.name);
 
         // Orientation vers la cible
         Vector3 dir = (target.transform.position - caster.transform.position).normalized;
@@ -248,7 +253,10 @@ public class RhythmQTEManager : MonoBehaviour
             Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
 
         Animator animator = caster.GetComponentInChildren<Animator>();
-        if (caster.Data.moveClip != null)
+        // Animation de début de téléportation retour
+        if (caster.Data.TPAnimation_Start != null)
+            animator?.Play(caster.Data.TPAnimation_Start.name);
+        else if (caster.Data.moveClip != null)
             animator?.Play(caster.Data.moveClip.name);
 
         // Laisse un court délai pour jouer l'effet avant de déplacer
@@ -258,6 +266,8 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (caster.Data.TPEffect_Destination != null)
             Instantiate(caster.Data.TPEffect_Destination, origin, Quaternion.identity);
+        if (animator != null && caster.Data.TPAnimation_Destination != null)
+            animator.Play(caster.Data.TPAnimation_Destination.name);
 
         // Orientation optionnelle vers la cible
         if (target != null)
@@ -308,8 +318,12 @@ public class RhythmQTEManager : MonoBehaviour
             if (move.teleportStartVFXPrefab != null)
                 Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
 
-            if (caster.Data.moveClip != null)
-                caster.GetComponentInChildren<Animator>()?.Play(caster.Data.moveClip.name);
+            Animator animator = caster.GetComponentInChildren<Animator>();
+            // Animation de début de téléportation
+            if (caster.Data.TPAnimation_Start != null)
+                animator?.Play(caster.Data.TPAnimation_Start.name);
+            else if (caster.Data.moveClip != null)
+                animator?.Play(caster.Data.moveClip.name);
 
             // Délai pour séparer départ et arrivée
             yield return new WaitForSeconds(teleportDelay);
@@ -321,6 +335,8 @@ public class RhythmQTEManager : MonoBehaviour
 
             if (caster.Data.TPEffect_Destination != null)
                 Instantiate(caster.Data.TPEffect_Destination, teleportTargetPosition, Quaternion.identity);
+            if (animator != null && caster.Data.TPAnimation_Destination != null)
+                animator.Play(caster.Data.TPAnimation_Destination.name);
 
             Vector3 lookDir = Vector3.zero;
             if (target != null)
@@ -360,8 +376,12 @@ public class RhythmQTEManager : MonoBehaviour
         if (move.teleportStartVFXPrefab != null)
             Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
 
-        if (caster.Data.moveClip != null)
-            caster.GetComponentInChildren<Animator>()?.Play(caster.Data.moveClip.name);
+        Animator animator = caster.GetComponentInChildren<Animator>();
+        // Animation de début de retour
+        if (caster.Data.TPAnimation_Start != null)
+            animator?.Play(caster.Data.TPAnimation_Start.name);
+        else if (caster.Data.moveClip != null)
+            animator?.Play(caster.Data.moveClip.name);
 
         // Délai avant de revenir à la position initiale
         yield return new WaitForSeconds(teleportDelay);
@@ -373,6 +393,8 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (caster.Data.TPEffect_Destination != null)
             Instantiate(caster.Data.TPEffect_Destination, initialPosition, Quaternion.identity);
+        if (animator != null && caster.Data.TPAnimation_Destination != null)
+            animator.Play(caster.Data.TPAnimation_Destination.name);
 
         yield return null;
 

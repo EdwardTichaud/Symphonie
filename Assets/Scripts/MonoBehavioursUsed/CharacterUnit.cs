@@ -366,7 +366,18 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             animator.Play(clip.name);
     }
 
-    public void PlayHurtAnimation() => PlayAnimationClip(hurtAnimation);
+    public void PlayHurtAnimation()
+    {
+        // Priorité à l'animation définie dans les données du personnage
+        if (Data != null && Data.hitAnimation != null)
+        {
+            PlayAnimationClip(Data.hitAnimation);
+        }
+        else
+        {
+            PlayAnimationClip(hurtAnimation);
+        }
+    }
     public void PlayInterceptedAnimation() => PlayAnimationClip(interceptedAnimation);
     public void PlayInterceptionAnimation() => PlayAnimationClip(interceptionAnimation);
     public void PlayPrepareToUndergoAnimation()
