@@ -19,26 +19,22 @@ public class MusicalCodexManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Tente d'ajouter une attaque musicale au Codex.
-    /// Retourne true si elle vient d'être découverte.
-    /// </summary>
-    public bool TryAddNewMelody(MusicalMoveSO move)
-    {
-        if (!knownMoves.Contains(move))
+        /// Tente d'ajouter une attaque musicale au Codex.
+        /// Retourne true si elle vient d'Ãªtre dÃ©couverte.
+        /// </summary>
+        public bool TryAddNewMelody(MusicalMoveSO move)
         {
-            knownMoves.Add(move);
-
-            // Affichage de découverte
-            ActionUIDisplayManager.Instance.DisplayMelodyDiscovery(move.moveName);
-
-            Debug.Log($"Nouvelle mélodie découverte : {move.moveName}");
-            return true;
+            if (!knownMoves.Contains(move))
+            {
+                knownMoves.Add(move);
+                Debug.Log($"Nouvelle mÃ©lodie dÃ©couverte : {move.moveName}");
+                return true;
+            }
+            return false;
         }
-        return false;
-    }
 
     /// <summary>
-    /// Vérifie si cette attaque est déjà connue.
+    /// VÃ©rifie si cette attaque est dÃ©jÃ  connue.
     /// </summary>
     public bool IsMelodyKnown(MusicalMoveSO move)
     {
