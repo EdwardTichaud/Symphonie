@@ -73,7 +73,7 @@ public class MusicalMoveSO : ScriptableObject
 
     [Header("Timing")]
     [Tooltip("Temps en secondes à attendre après la téléportation avant d'exécuter le move")]
-    public float startDelay = 0f;
+    public float startDelay = 2f;
 
 
     [Header("Timeline")]
