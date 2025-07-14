@@ -1603,6 +1603,7 @@ public class NewBattleManager : MonoBehaviour
         if (itemPreparingTimeline != null && TimelineLauncher.Instance != null)
         {
             GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
+            // Lance la Timeline d'animation qui tourne en boucle
             TimelineLauncher.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
             itemMenuTimelineActive = true;
         }
@@ -2095,7 +2096,9 @@ public class NewBattleManager : MonoBehaviour
 
         if (itemMenuTimelineActive)
         {
-            return; // Laisse la caméra figée à la fin de la Timeline d'objets
+            // La timeline contrôle la caméra tant que l'objet n'est pas choisi
+            return;
+
         }
 
         if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)

@@ -35,7 +35,8 @@ public class TimelineLauncher : MonoBehaviour
         }
 
         director.playableAsset = timelineAsset;
-        director.extrapolationMode = DirectorWrapMode.Hold;
+        // Permet à la Timeline de continuer à jouer en boucle  tant que l'on ne stoppe pas explicitement la PlayableDirector
+        director.extrapolationMode = DirectorWrapMode.Loop;
 
         GameObject cameraGO = null;
         Transform cameraParent = null;
