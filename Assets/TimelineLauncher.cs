@@ -10,6 +10,8 @@ public class TimelineLauncher : MonoBehaviour
 
     [SerializeField] private PlayableDirector director;
     private Coroutine followCoroutine;
+    public bool IsTimelineActive => director != null &&
+        (director.state == PlayState.Playing || director.state == PlayState.Paused);
 
     private void Awake()
     {
@@ -33,6 +35,7 @@ public class TimelineLauncher : MonoBehaviour
         }
 
         director.playableAsset = timelineAsset;
+        director.extrapolationMode = DirectorWrapMode.Hold;
 
         GameObject cameraGO = null;
         Transform cameraParent = null;
@@ -105,6 +108,14 @@ public class TimelineLauncher : MonoBehaviour
                 cameraParent.rotation = caster.rotation;
             }
             yield return null;
+        }
+    }
+
+    public void StopTimeline()
+    {
+        if (director != null && (director.state == PlayState.Playing || director.state == PlayState.Paused))
+        {
+            director.Stop();
         }
     }
 }
