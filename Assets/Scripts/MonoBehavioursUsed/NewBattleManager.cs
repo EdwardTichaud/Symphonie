@@ -2133,12 +2133,14 @@ public class NewBattleManager : MonoBehaviour
 
         }
 
-        if (lookAtCasterDuringTargetSelection && desiredTransform != null && currentCharacterUnit != null)
+        if (lookAtCasterDuringTargetSelection && desiredTransform != null && currentCharacterUnit != null && currentTargetCharacter != null)
         {
-            // La caméra se place sur la cible et regarde le lanceur
-            battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
-            Quaternion targetRotation = Quaternion.LookRotation(currentCharacterUnit.transform.position - battleCameraTransform.position);
-            battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
+            // Nouveau positionnement dynamique pour garder lanceur et cible dans le champ de vision
+            ComputeTargetSelectionCamera(out Vector3 camPos, out Quaternion camRot,
+                currentCharacterUnit.transform, currentTargetCharacter.transform);
+
+            battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, camPos, Time.deltaTime * cameraSmoothSpeed);
+            battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, camRot, Time.deltaTime * cameraSmoothSpeed);
         }
         else if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)
         {
@@ -2194,6 +2196,45 @@ public class NewBattleManager : MonoBehaviour
             2 => inputSprite3,
             _ => null,
         };
+    }
+
+    /// <summary>
+    /// Calcule dynamiquement une position de caméra afin que le lanceur et la cible
+    /// soient visibles simultanément avec une marge de sécurité.
+    /// </summary>
+    /// <param name="position">Position désirée pour la caméra.</param>
+    /// <param name="rotation">Rotation correspondante à appliquer.</param>
+    /// <param name="caster">Transform du lanceur de l'action.</param>
+    /// <param name="target">Transform de la cible sélectionnée.</param>
+    private void ComputeTargetSelectionCamera(out Vector3 position, out Quaternion rotation, Transform caster, Transform target)
+    {
+        if (caster == null || target == null)
+        {
+            // Sécurité : on garde la position actuelle si une référence manque
+            position = battleCameraTransform.position;
+            rotation = battleCameraTransform.rotation;
+            return;
+        }
+
+        // Point central entre le lanceur et la cible
+        Vector3 mid = (caster.position + target.position) * 0.5f;
+        Vector3 toTarget = target.position - caster.position;
+
+        // Direction latérale perpendiculaire pour éviter que l'un ne masque l'autre
+        Vector3 side = Vector3.Cross(Vector3.up, toTarget);
+        if (side == Vector3.zero)
+            side = Vector3.right; // Valeur par défaut si les deux sont alignés verticalement
+        side.Normalize();
+
+        float distance = toTarget.magnitude;
+        float distMultiplier = 1.2f;    // Marges pour ne pas coller aux bords
+        float heightMultiplier = 0.5f;  // Légère hauteur pour la lisibilité
+
+        // Position désirée à une distance proportionnelle à l'écart entre les deux
+        position = mid + side * distance * distMultiplier + Vector3.up * Mathf.Clamp(distance * heightMultiplier, 1f, 5f);
+
+        // Orientation vers le point central
+        rotation = Quaternion.LookRotation(mid - position, Vector3.up);
     }
 
     public void ChangeBattleState(BattleState newState)
