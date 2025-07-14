@@ -543,10 +543,11 @@ public class NewBattleManager : MonoBehaviour
 
         characterUnit.AddHarmonic(characterUnit.Data.harmonicType);
 
-        // S'assure que la BattleCamera peut se déplacer librement
+        // S'assure que la BattleCamera n'est pas contrôlée par le CameraController
+        // pour éviter les conflits lorsqu'on passe à la prochaine unité
         CameraController cc = CameraController.Instance;
-        if (cc != null && cc.currentWorldCameraState != WorldCameraState.ResearchClosestCamPoint)
-            cc.ReleaseCam();
+        if (cc != null && cc.currentWorldCameraState != WorldCameraState.Forced)
+            cc.ForceCam();
 
         if (characterUnit.Data.characterType == CharacterType.SquadUnit)
             ChangeBattleState(BattleState.SquadUnit_MainMenu);
@@ -2113,9 +2114,11 @@ public class NewBattleManager : MonoBehaviour
         }
 
         CameraController cc = CameraController.Instance;
-        if (cc != null && (cc.IsFollowingPath || cc.currentWorldCameraState != WorldCameraState.ResearchClosestCamPoint))
+        // Seule une timeline mondiale doit interrompre la caméra de combat.
+        // La WorldCamera peut rester forcée sans empêcher cette logique.
+        if (cc != null && cc.IsFollowingPath)
         {
-            return; // Laisse la main au CameraController pour éviter les conflits
+            return; // Cutscene en cours : on laisse la gestion au CameraController
         }
 
         if (itemMenuTimelineActive)
