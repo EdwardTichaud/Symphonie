@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using TMPro;
 using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 #region TargetType
 public enum TargetType
@@ -101,6 +102,9 @@ public class NewBattleManager : MonoBehaviour
     public RectTransform timelineContainer;
     public GameObject timelineUnitPrefab;
     public List<BattleTimelineUnit> timelineUIObjects = new();
+
+    [Header("Timeline d'objets")]
+    public TimelineAsset itemPreparingTimeline;
 
     private CharacterUnit previousUnit; // Champ de classe, pas une variable locale
     [HideInInspector] public CharacterUnit currentCharacterUnit;
@@ -1096,10 +1100,10 @@ public class NewBattleManager : MonoBehaviour
             ToggleMenuContainers(false, false, false);
             HandleTargetSelection(item);
 
-            if (item.preparingTimeline != null && TimelineLauncher.Instance != null)
+            if (itemPreparingTimeline != null && TimelineLauncher.Instance != null)
             {
                 GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
-                TimelineLauncher.Instance.PlayTimeline(item.preparingTimeline, animGO, "BattleCamera");
+                TimelineLauncher.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
             }
             else if (item.itemTargetingAnimation != null)
             {
@@ -1588,6 +1592,12 @@ public class NewBattleManager : MonoBehaviour
         currentMove = null;
         ToggleMenuContainers(false, false, true);
         currentMenuIndex = 0;
+
+        if (itemPreparingTimeline != null && TimelineLauncher.Instance != null)
+        {
+            GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
+            TimelineLauncher.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
+        }
 
         itemChoices = InventoryManager.Instance.GetUsableItems();
 
