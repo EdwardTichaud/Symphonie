@@ -86,15 +86,18 @@ public class RhythmQTEManager : MonoBehaviour
 
         GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
 
-        bool ignoreTimeline = caster.characterType == CharacterType.EnemyUnit;
+        // Si une Timeline est disponible, on la lit en adaptant la caméra selon le type de personnage
+        bool hasTimeline = move.performingTimeline != null && TimelineLauncher.Instance != null && casterAnimatorGO != null;
 
-        // Les ennemis ignorent la Timeline pour accélérer l'action
-        if (!ignoreTimeline && move.performingTimeline != null && TimelineLauncher.Instance != null && casterAnimatorGO != null)
+        if (hasTimeline)
         {
-            TimelineLauncher.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, "BattleCamera");
+            // Les ennemis utilisent la timeline mais sans animer la caméra (cameraTag nul)
+            string cameraTag = caster.characterType == CharacterType.EnemyUnit ? null : "BattleCamera";
+            TimelineLauncher.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, cameraTag);
         }
         else if (move.musicalMoveIntroAnimationNames.Length > 0)
         {
+            // En l'absence de Timeline, on joue les animations d'introduction définies
             yield return PlayMoveAnimations(move.musicalMoveIntroAnimationNames, caster);
         }
 
@@ -126,15 +129,17 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
         }
 
-        if (!ignoreTimeline && move.performingTimeline != null)
+        // Si une Timeline a été jouée, on attend sa durée avant de poursuivre
+        if (hasTimeline && move.performingTimeline != null)
         {
-            yield return new WaitForSeconds((float)move.performingTimeline.duration); // Attend la fin de la Timeline
+            yield return new WaitForSeconds((float)move.performingTimeline.duration);
         }
         else
         {
+            // Sinon on attend simplement la fin de l'animation actuelle
             float animLength = caster.GetComponentInChildren<Animator>()
                 .GetCurrentAnimatorStateInfo(0).length;
-            yield return new WaitForSeconds(animLength); // Attend explicitement la fin de l’animation d’attaque
+            yield return new WaitForSeconds(animLength);
         }
 
         if (!move.stayInPlace)
