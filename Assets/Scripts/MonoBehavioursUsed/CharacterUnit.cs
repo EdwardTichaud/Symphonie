@@ -187,6 +187,15 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (hpBar != null) hpBar.SetValue(currentHP);
         DamagePopupManager.Instance?.ShowDamage(transform.position, Mathf.RoundToInt(amount));
         PlayDamageFeedback();
+
+        // Si les PV tombent à zéro ou moins, on déclenche immédiatement la mort
+        // pour éviter que l'animation de blessure n'écrase l'animation de mort
+        if (currentHP <= 0 && !deathTriggered)
+        {
+            PlayDeath();
+            return;
+        }
+
         // Lance l'animation de blessure adaptée à la direction de l'attaquant
         PlayHurtAnimation(attacker);
         GetComponent<SleepStatus>()?.OnDamageTaken();
