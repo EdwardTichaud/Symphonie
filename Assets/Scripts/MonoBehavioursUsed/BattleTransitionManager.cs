@@ -185,6 +185,8 @@ public class BattleTransitionManager : MonoBehaviour
     public IEnumerator ExitVictoryScreenAndBattle()
     {
         Time.timeScale = 1f;
+        // Restauration du fixedDeltaTime après la pause du VictoryScreen
+        Time.fixedDeltaTime = 0.02f;
 
         CombatSkyboxManager.Instance?.RestoreDefaultSkybox();
 

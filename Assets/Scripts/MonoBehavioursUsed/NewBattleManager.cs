@@ -1426,23 +1426,30 @@ public class NewBattleManager : MonoBehaviour
 
         while (t < transitionDuration)
         {
+            // On utilise unscaledDeltaTime pour rendre la transition indépendante
+            // du Time.timeScale courant
             t += Time.unscaledDeltaTime;
             Time.timeScale = Mathf.Lerp(1f, 0.05f, t / transitionDuration);
             Time.fixedDeltaTime = Time.timeScale * 0.02f;
             yield return null;
         }
 
+        // On s'assure d'atteindre exactement 0.05 de timeScale pour la capture
         Time.timeScale = 0.05f;
         Time.fixedDeltaTime = 0.001f;
 
         TakeVictoryScreenshot(); // 👈 Capture ici immédiatement
 
         // Optionnel : attendre encore un peu avant d’afficher le panneau
-        yield return new WaitForSecondsRealtime(0.1f); // Soumis à timeScale
+        // On utilise un temps réel pour ne pas être affecté par le ralentissement
+        yield return new WaitForSecondsRealtime(0.1f);
 
         //Prendre une photo de la dernière frame de la mort de l'ennemi avant VictoryScreen
 
         victoryScreen.transform.GetChild(0).gameObject.SetActive(true);
+        // On met le temps en pause une fois le panneau affiché pour figer la scène
+        Time.timeScale = 0f;
+        Time.fixedDeltaTime = 0f;
 
         GameManager.Instance?.AddXPToSquad(rewardXP);
         GameManager.Instance?.AddItemsToInventory(rewardItems);
