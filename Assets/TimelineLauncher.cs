@@ -35,8 +35,10 @@ public class TimelineLauncher : MonoBehaviour
         }
 
         director.playableAsset = timelineAsset;
-        // Permet à la Timeline de continuer à jouer en boucle  tant que l'on ne stoppe pas explicitement la PlayableDirector
-        director.extrapolationMode = DirectorWrapMode.Loop;
+        // On souhaite que la Timeline se joue une seule fois. Les animations en
+        // loop continueront grâce à leur propre réglage de boucle, tandis que
+        // les autres resteront sur leur dernière frame.
+        director.extrapolationMode = DirectorWrapMode.Hold;
 
         GameObject cameraGO = null;
         Transform cameraParent = null;
