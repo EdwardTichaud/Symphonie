@@ -138,10 +138,12 @@ public class NewBattleManager : MonoBehaviour
         set
         {
             _currentTargetCharacter = value;
-            UpdateCameraBehaviour(currentBattleState); // Met à jour la caméra quand la cible change
+            // On met à jour immédiatement le comportement caméra
+            UpdateCameraBehaviour(currentBattleState);
 
-            // Oriente l'unité en cours de jeu vers la nouvelle cible
-            if (currentCharacterUnit != null && _currentTargetCharacter != null)
+            // Pendant la phase de ciblage, on ne souhaite plus orienter le lanceur
+            if (!IsTargetSelectionState(currentBattleState)
+                && currentCharacterUnit != null && _currentTargetCharacter != null)
             {
                 OrientUnitTowardTarget(currentCharacterUnit, _currentTargetCharacter);
             }
@@ -2315,6 +2317,20 @@ public class NewBattleManager : MonoBehaviour
             var main = ps.main;
             main.startColor = inRange ? Color.white : Color.red;
         }
+    }
+
+    /// <summary>
+    /// Indique si l'état donné correspond à une phase de sélection de cible.
+    /// Permet de conditionner certains comportements (orientation, caméra...).
+    /// </summary>
+    private bool IsTargetSelectionState(BattleState state)
+    {
+        return state == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
+               || state == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem
+               || state == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
+               || state == BattleState.SquadUnit_TargetSelectionAmongSquadForItem
+               || state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
+               || state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies;
     }
 
     public void SetCurrentTargetToFirst(CharacterType type)
