@@ -161,7 +161,8 @@ public class RhythmQTEManager : MonoBehaviour
         if (item.performingTimeline != null && TimelineLauncher.Instance != null && animator != null)
         {
             TimelineLauncher.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, "BattleCamera");
-            yield return new WaitForSeconds((float)item.performingTimeline.duration);
+            // ⏳ Attendre la fin effective de la Timeline avant de continuer
+            yield return new WaitUntil(() => !TimelineLauncher.Instance.IsTimelineActive);
         }
         else if (item.introAnimationClip != null && animator != null)
         {
