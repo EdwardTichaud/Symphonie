@@ -105,6 +105,8 @@ public class NewBattleManager : MonoBehaviour
 
     [Header("Timeline d'objets")]
     public TimelineAsset itemPreparingTimeline;
+    // Indique si la Timeline d'objets est en cours d'exécution
+    private bool itemMenuTimelineActive = false;
 
     private CharacterUnit previousUnit; // Champ de classe, pas une variable locale
     [HideInInspector] public CharacterUnit currentCharacterUnit;
@@ -1539,6 +1541,13 @@ public class NewBattleManager : MonoBehaviour
         ChangeBattleState(BattleState.SquadUnit_MainMenu);
         ToggleMenuContainers(true, false, false);
 
+        if (itemMenuTimelineActive && TimelineLauncher.Instance != null)
+        {
+            // On libère la caméra en stoppant la Timeline
+            TimelineLauncher.Instance.StopTimeline();
+            itemMenuTimelineActive = false;
+        }
+
         // Réinitialise les actions sélectionnées afin d'éviter des conflits
         currentMove = null;
         currentItem = null;
@@ -1596,7 +1605,9 @@ public class NewBattleManager : MonoBehaviour
         if (itemPreparingTimeline != null && TimelineLauncher.Instance != null)
         {
             GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
+            // Lance la Timeline d'animation qui tourne en boucle
             TimelineLauncher.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
+            itemMenuTimelineActive = true;
         }
 
         itemChoices = InventoryManager.Instance.GetUsableItems();
@@ -1884,6 +1895,12 @@ public class NewBattleManager : MonoBehaviour
 
     public void HandleTargetSelection(ItemData item)
     {
+        if (itemMenuTimelineActive && TimelineLauncher.Instance != null)
+        {
+            // On arrête la boucle d'animation puisque le joueur a fait son choix
+            TimelineLauncher.Instance.StopTimeline();
+            itemMenuTimelineActive = false;
+        }
         currentItem = item;
         currentMove = null; // on annule la sélection de compétence précédente
         currentItemTargetType = item.defaultTargetType;
@@ -2078,6 +2095,12 @@ public class NewBattleManager : MonoBehaviour
         if (cc != null && (cc.IsFollowingPath || cc.currentWorldCameraState != WorldCameraState.ResearchClosestCamPoint))
         {
             return; // Laisse la main au CameraController pour éviter les conflits
+        }
+
+        if (itemMenuTimelineActive)
+        {
+            // La timeline contrôle la caméra tant que l'objet n'est pas choisi
+            return;
         }
 
         if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)
