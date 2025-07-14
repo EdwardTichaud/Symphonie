@@ -2216,6 +2216,20 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
+        // Cas particulier : le lanceur se cible lui-même
+        if (caster == target)
+        {
+            // On recule la caméra dans l'axe opposé au regard pour ne pas être collé
+            float selfDistance = 3f;        // Distance d'éloignement par défaut
+            Vector3 backward = -target.forward * selfDistance;
+            Vector3 lateralOffset = target.right * 1.5f; // Décalage léger pour éviter d'être pile dessus
+            Vector3 heightOffset = Vector3.up * 2f;       // Légère prise de hauteur
+
+            position = target.position + backward + lateralOffset + heightOffset;
+            rotation = Quaternion.LookRotation(target.position - position, Vector3.up);
+            return;
+        }
+
         // Point central entre le lanceur et la cible
         Vector3 mid = (caster.position + target.position) * 0.5f;
         Vector3 toTarget = target.position - caster.position;
