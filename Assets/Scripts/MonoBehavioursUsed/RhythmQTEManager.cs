@@ -169,6 +169,12 @@ public class RhythmQTEManager : MonoBehaviour
         Debug.Log($"Début de la séquence d'utilisation de l'objet: {item.itemName} par {caster.name}");
         isActive = true;
 
+        if (caster == null || caster.IsDead)
+        {
+            isActive = false;
+            yield break;
+        }
+
         Animator animator = caster.GetComponentInChildren<Animator>();
 
         // Lecture d'une Timeline ou d'une animation d'intro
@@ -178,7 +184,7 @@ public class RhythmQTEManager : MonoBehaviour
             // ⏳ Attendre la fin effective de la Timeline avant de continuer
             yield return new WaitUntil(() => !TimelineLauncher.Instance.IsTimelineActive);
         }
-        else if (item.introAnimationClip != null && animator != null)
+        else if (item.introAnimationClip != null && animator != null && !caster.IsDead)
         {
             animator.Play(item.introAnimationClip.name);
             yield return null;
@@ -193,7 +199,7 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         // Animation principale si pas de Timeline
-        if (item.performingTimeline == null && item.animationClip != null && animator != null)
+        if (item.performingTimeline == null && item.animationClip != null && animator != null && !caster.IsDead)
         {
             animator.Play(item.animationClip.name);
             yield return null;
@@ -213,6 +219,9 @@ public class RhythmQTEManager : MonoBehaviour
 
     private IEnumerator SimpleMoveTo(CharacterUnit caster, CharacterUnit target, ItemData item)
     {
+        if (caster == null || caster.IsDead)
+            yield break;
+
         // Destination calculée selon la portée de l'objet
         Vector3 destination = target.transform.position + target.transform.forward * item.castDistance;
 
@@ -228,10 +237,13 @@ public class RhythmQTEManager : MonoBehaviour
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         // Animation de début de téléportation
-        if (caster.Data.TPAnimation_Start != null)
-            animator?.Play(caster.Data.TPAnimation_Start.name);
-        else if (caster.Data.moveClip != null)
-            animator?.Play(caster.Data.moveClip.name);
+        if (!caster.IsDead)
+        {
+            if (caster.Data.TPAnimation_Start != null)
+                animator?.Play(caster.Data.TPAnimation_Start.name);
+            else if (caster.Data.moveClip != null)
+                animator?.Play(caster.Data.moveClip.name);
+        }
 
         // Laisse un court délai pour jouer l'effet avant de déplacer
         yield return new WaitForSeconds(teleportDelay);
@@ -241,7 +253,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (hasMovement && caster.Data.TPEffect_Destination != null)
             Instantiate(caster.Data.TPEffect_Destination, destination, Quaternion.identity);
-        if (animator != null && caster.Data.TPAnimation_Destination != null)
+        if (animator != null && caster.Data.TPAnimation_Destination != null && !caster.IsDead)
             animator.Play(caster.Data.TPAnimation_Destination.name);
 
         // Orientation vers la cible
@@ -257,6 +269,9 @@ public class RhythmQTEManager : MonoBehaviour
 
     private IEnumerator SimpleReturnToInitialPosition(CharacterUnit caster, CharacterUnit target, ItemData item)
     {
+        if (caster == null || caster.IsDead)
+            yield break;
+
         Vector3 origin = caster.transform.parent.position;
         bool hasMovement = Vector3.Distance(caster.transform.position, origin) > 0.01f;
         if (hasMovement)
@@ -270,10 +285,13 @@ public class RhythmQTEManager : MonoBehaviour
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         // Animation de début de téléportation retour
-        if (caster.Data.TPAnimation_Start != null)
-            animator?.Play(caster.Data.TPAnimation_Start.name);
-        else if (caster.Data.moveClip != null)
-            animator?.Play(caster.Data.moveClip.name);
+        if (!caster.IsDead)
+        {
+            if (caster.Data.TPAnimation_Start != null)
+                animator?.Play(caster.Data.TPAnimation_Start.name);
+            else if (caster.Data.moveClip != null)
+                animator?.Play(caster.Data.moveClip.name);
+        }
 
         // Laisse un court délai pour jouer l'effet avant de déplacer
         yield return new WaitForSeconds(teleportDelay);
@@ -282,7 +300,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (hasMovement && caster.Data.TPEffect_Destination != null)
             Instantiate(caster.Data.TPEffect_Destination, origin, Quaternion.identity);
-        if (animator != null && caster.Data.TPAnimation_Destination != null)
+        if (animator != null && caster.Data.TPAnimation_Destination != null && !caster.IsDead)
             animator.Play(caster.Data.TPAnimation_Destination.name);
 
         // Orientation optionnelle vers la cible
@@ -301,6 +319,9 @@ public class RhythmQTEManager : MonoBehaviour
 
     private IEnumerator MoveTo(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
     {
+        if (caster == null || caster.IsDead)
+            yield break;
+
         Debug.Log("Déplacement de " + caster.name + " vers " + target.name);
 
         Vector3 startPosition = caster.transform.position;
@@ -339,10 +360,13 @@ public class RhythmQTEManager : MonoBehaviour
 
             Animator animator = caster.GetComponentInChildren<Animator>();
             // Animation de début de téléportation
-            if (caster.Data.TPAnimation_Start != null)
-                animator?.Play(caster.Data.TPAnimation_Start.name);
-            else if (caster.Data.moveClip != null)
-                animator?.Play(caster.Data.moveClip.name);
+            if (!caster.IsDead)
+            {
+                if (caster.Data.TPAnimation_Start != null)
+                    animator?.Play(caster.Data.TPAnimation_Start.name);
+                else if (caster.Data.moveClip != null)
+                    animator?.Play(caster.Data.moveClip.name);
+            }
 
             // Délai pour séparer départ et arrivée
             yield return new WaitForSeconds(teleportDelay);
@@ -354,7 +378,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             if (teleportHasMovement && caster.Data.TPEffect_Destination != null)
                 Instantiate(caster.Data.TPEffect_Destination, teleportTargetPosition, Quaternion.identity);
-            if (animator != null && caster.Data.TPAnimation_Destination != null)
+            if (animator != null && caster.Data.TPAnimation_Destination != null && !caster.IsDead)
                 animator.Play(caster.Data.TPAnimation_Destination.name);
 
             Vector3 lookDir = Vector3.zero;
@@ -399,10 +423,13 @@ public class RhythmQTEManager : MonoBehaviour
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         // Animation de début de retour
-        if (caster.Data.TPAnimation_Start != null)
-            animator?.Play(caster.Data.TPAnimation_Start.name);
-        else if (caster.Data.moveClip != null)
-            animator?.Play(caster.Data.moveClip.name);
+        if (!caster.IsDead)
+        {
+            if (caster.Data.TPAnimation_Start != null)
+                animator?.Play(caster.Data.TPAnimation_Start.name);
+            else if (caster.Data.moveClip != null)
+                animator?.Play(caster.Data.moveClip.name);
+        }
 
         // Délai avant de revenir à la position initiale
         yield return new WaitForSeconds(teleportDelay);
@@ -414,7 +441,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (hasMovement && caster.Data.TPEffect_Destination != null)
             Instantiate(caster.Data.TPEffect_Destination, initialPosition, Quaternion.identity);
-        if (animator != null && caster.Data.TPAnimation_Destination != null)
+        if (animator != null && caster.Data.TPAnimation_Destination != null && !caster.IsDead)
             animator.Play(caster.Data.TPAnimation_Destination.name);
 
         yield return null;
@@ -448,8 +475,9 @@ public class RhythmQTEManager : MonoBehaviour
 
         foreach (string clip in animationClips)
         {
-            // Lance le clip courant
-            animator.Play(clip);
+            // Lance le clip courant uniquement si l'unité est en vie
+            if (!caster.IsDead)
+                animator.Play(clip);
             Debug.Log("Animation jouée : " + clip);
 
             // On attend un frame pour laisser l’Animator passer à l’état du clip
