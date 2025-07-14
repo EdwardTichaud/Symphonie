@@ -105,6 +105,7 @@ public class NewBattleManager : MonoBehaviour
 
     [Header("Timeline d'objets")]
     public TimelineAsset itemPreparingTimeline;
+    private bool itemMenuTimelineActive = false;
 
     private CharacterUnit previousUnit; // Champ de classe, pas une variable locale
     [HideInInspector] public CharacterUnit currentCharacterUnit;
@@ -1539,6 +1540,12 @@ public class NewBattleManager : MonoBehaviour
         ChangeBattleState(BattleState.SquadUnit_MainMenu);
         ToggleMenuContainers(true, false, false);
 
+        if (itemMenuTimelineActive && TimelineLauncher.Instance != null)
+        {
+            TimelineLauncher.Instance.StopTimeline();
+            itemMenuTimelineActive = false;
+        }
+
         // Réinitialise les actions sélectionnées afin d'éviter des conflits
         currentMove = null;
         currentItem = null;
@@ -1597,6 +1604,7 @@ public class NewBattleManager : MonoBehaviour
         {
             GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
             TimelineLauncher.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
+            itemMenuTimelineActive = true;
         }
 
         itemChoices = InventoryManager.Instance.GetUsableItems();
@@ -1884,6 +1892,11 @@ public class NewBattleManager : MonoBehaviour
 
     public void HandleTargetSelection(ItemData item)
     {
+        if (itemMenuTimelineActive && TimelineLauncher.Instance != null)
+        {
+            TimelineLauncher.Instance.StopTimeline();
+            itemMenuTimelineActive = false;
+        }
         currentItem = item;
         currentMove = null; // on annule la sélection de compétence précédente
         currentItemTargetType = item.defaultTargetType;
@@ -2078,6 +2091,11 @@ public class NewBattleManager : MonoBehaviour
         if (cc != null && (cc.IsFollowingPath || cc.currentWorldCameraState != WorldCameraState.ResearchClosestCamPoint))
         {
             return; // Laisse la main au CameraController pour éviter les conflits
+        }
+
+        if (itemMenuTimelineActive)
+        {
+            return; // Laisse la caméra figée à la fin de la Timeline d'objets
         }
 
         if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)
