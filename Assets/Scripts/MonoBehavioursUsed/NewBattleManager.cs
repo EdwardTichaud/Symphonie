@@ -155,6 +155,8 @@ public class NewBattleManager : MonoBehaviour
     private Vector3 desiredPosition;
     private Quaternion desiredRotation;
     public bool isFollowingCurrentTarget = false;
+    // Indique si la caméra doit regarder le lanceur lors de la sélection de cible
+    private bool lookAtCasterDuringTargetSelection = false;
     private bool isOrbiting = false;
     private float currentOrbitAngle;
     private Transform orbitCenter;
@@ -1989,6 +1991,9 @@ public class NewBattleManager : MonoBehaviour
             }
         }
 
+        // Par défaut, on ne regarde pas le lanceur
+        lookAtCasterDuringTargetSelection = false;
+
         switch (currentBattleState)
         {
             case BattleState.SquadUnit_MainMenu:
@@ -2046,23 +2051,31 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
+                // Caméra sur la cible sélectionnée, regardant le lanceur
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
+                lookAtCasterDuringTargetSelection = true;
+                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
-                isFollowingCurrentTarget = true;
+                // Même comportement que pour une compétence
+                isFollowingCurrentTarget = false;
+                lookAtCasterDuringTargetSelection = true;
+                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
+                // Caméra sur l'ennemi sélectionné, regardant le lanceur
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(targetCursor.transform, "Camera_TargetedPoint");
+                lookAtCasterDuringTargetSelection = true;
+                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
-                isFollowingCurrentTarget = true;
+                // Identique pour un objet visant un ennemi
+                isFollowingCurrentTarget = false;
+                lookAtCasterDuringTargetSelection = true;
+                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
                 break;
 
             case BattleState.EnemyUnit_Reflexion:
@@ -2112,7 +2125,14 @@ public class NewBattleManager : MonoBehaviour
 
         }
 
-        if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)
+        if (lookAtCasterDuringTargetSelection && desiredTransform != null && currentCharacterUnit != null)
+        {
+            // La caméra se place sur la cible et regarde le lanceur
+            battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
+            Quaternion targetRotation = Quaternion.LookRotation(currentCharacterUnit.transform.position - battleCameraTransform.position);
+            battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
+        }
+        else if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)
         {
             if (desiredTransform != null)
             {
