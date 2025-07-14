@@ -744,11 +744,19 @@ public class NewBattleManager : MonoBehaviour
                 yield break;
         }
 
-        ActionUIDisplayManager.Instance.DisplayActionMessage(enemy.Data.characterName, move.moveName, target.Data.characterName);
-        MusicalCodexManager.Instance?.TryAddNewMelody(move);
+        bool alreadyKnown = MusicalCodexManager.Instance != null && MusicalCodexManager.Instance.IsMelodyKnown(move);
+        // Affiche le move que l'ennemi prépare
+        ActionUIDisplayManager.Instance.DisplayEnemyPreparation(enemy.Data.characterName, alreadyKnown ? move.moveName : null);
+
         // Laisse un délai pour que le joueur prenne connaissance de l'action
         yield return new WaitForSeconds(ENEMY_MOVE_DELAY);
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
+
+        // Ajoute le move au codex et affiche sa découverte si nécessaire
+        if (!alreadyKnown && MusicalCodexManager.Instance != null && MusicalCodexManager.Instance.TryAddNewMelody(move))
+        {
+            ActionUIDisplayManager.Instance.DisplayMoveDiscovery(move.moveName);
+        }
     }
 
     public IEnumerator ExecuteMoveOnTarget(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)

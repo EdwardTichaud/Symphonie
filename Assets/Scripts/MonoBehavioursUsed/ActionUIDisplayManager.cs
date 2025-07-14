@@ -52,10 +52,26 @@ public class ActionUIDisplayManager : MonoBehaviour
         displayGroup.alpha = 0;
     }
 
-    public void DisplayMelodyDiscovery(string melodyName)
+    /// <summary>
+    /// Affiche un message lorsque le joueur découvre une nouvelle attaque musicale.
+    /// </summary>
+    /// <param name="melodyName">Nom de l'attaque</param>
+    public void DisplayMoveDiscovery(string melodyName)
     {
-        string message = $"♪ Nouvelle mélodie découverte : {melodyName} ♪";
+        string message = $"Mouvement découvert : {melodyName}";
         StartCoroutine(DisplayRoutine(message));
+    }
+
+    /// <summary>
+    /// Affiche la préparation de l'attaque d'un ennemi.
+    /// Si moveName est null ou vide, indique qu'il s'agit d'un mouvement inconnu.
+    /// </summary>
+    public void DisplayEnemyPreparation(string enemyName, string moveName)
+    {
+        string message = string.IsNullOrEmpty(moveName)
+            ? $"{enemyName} s'apprête à jouer un mouvement inconnu"
+            : $"{enemyName} s'apprête à jouer {moveName}";
+        ShowMessage(message);
     }
 
     public void DisplayInstruction(string instruction)
