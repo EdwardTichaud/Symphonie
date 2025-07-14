@@ -86,7 +86,10 @@ public class RhythmQTEManager : MonoBehaviour
 
         GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
 
-        if (move.performingTimeline != null && TimelineLauncher.Instance != null && casterAnimatorGO != null)
+        bool ignoreTimeline = caster.characterType == CharacterType.EnemyUnit;
+
+        // Les ennemis ignorent la Timeline pour accélérer l'action
+        if (!ignoreTimeline && move.performingTimeline != null && TimelineLauncher.Instance != null && casterAnimatorGO != null)
         {
             TimelineLauncher.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, "BattleCamera");
         }
@@ -123,7 +126,7 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
         }
 
-        if (move.performingTimeline != null)
+        if (!ignoreTimeline && move.performingTimeline != null)
         {
             yield return new WaitForSeconds((float)move.performingTimeline.duration); // Attend la fin de la Timeline
         }
