@@ -16,6 +16,7 @@ public class ItemData : ScriptableObject
     public bool isUsableInBattle = true;
     public float moveSpeed;
     public float castDistance;
+
     [Tooltip("Si vrai, le lanceur reste à la position cible après l'action")] public bool stayInPlace;
 
     public AnimationClip itemTargetingAnimation;

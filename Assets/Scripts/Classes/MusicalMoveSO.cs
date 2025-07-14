@@ -53,7 +53,9 @@ public class MusicalMoveSO : ScriptableObject
 
     public float moveSpeed = 20f;
     public float castDistance;
+
     [Tooltip("Si vrai, le lanceur reste à la position cible en fin de move")] public bool stayInPlace = false;
+
     [Tooltip("Si faux, le move ne peut pas être intercepté")]
     public bool interceptable = true;
 

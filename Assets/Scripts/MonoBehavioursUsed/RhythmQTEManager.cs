@@ -130,8 +130,6 @@ public class RhythmQTEManager : MonoBehaviour
             yield return new WaitForSeconds(animLength); // Attend explicitement la fin de l’animation d’attaque
         }
 
-
-        // Retour à la position d'origine si le move ne demande pas de rester en place
         if (!move.stayInPlace)
             yield return ReturnToInitialPosition(move, caster, target);
 
@@ -359,7 +357,6 @@ public class RhythmQTEManager : MonoBehaviour
             Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
 
         // Téléportation de retour systématique
-
         if (move.teleportStartVFXPrefab != null)
             Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
 
