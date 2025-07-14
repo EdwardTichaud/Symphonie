@@ -113,6 +113,8 @@ public class NewBattleManager : MonoBehaviour
     private bool interceptionSucceeded = false;
 
     private const float ATB_THRESHOLD = 100f;
+    // Délai appliqué avant qu'un ennemi n'exécute réellement son attaque
+    private const float ENEMY_MOVE_DELAY = 1f;
 
     [Header("Sprites des touches")]
     [SerializeField] private Sprite inputSprite1;
@@ -719,8 +721,8 @@ public class NewBattleManager : MonoBehaviour
     private IEnumerator EnemyTurnWithQTE(CharacterUnit enemy)
     {
         ChangeBattleState(BattleState.EnemyUnit_PerformingMusicalMove);
-        yield return new WaitForSeconds(1f);
 
+        // Choix de l'attaque et de la cible
         var move = enemy.GetRandomMusicalAttack();
         currentMove = move;
         var target = enemy.SelectTargetFromSquad();
@@ -742,6 +744,8 @@ public class NewBattleManager : MonoBehaviour
 
         ActionUIDisplayManager.Instance.DisplayActionMessage(enemy.Data.characterName, move.moveName, target.Data.characterName);
         MusicalCodexManager.Instance?.TryAddNewMelody(move);
+        // Laisse un délai pour que le joueur prenne connaissance de l'action
+        yield return new WaitForSeconds(ENEMY_MOVE_DELAY);
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
     }
 
