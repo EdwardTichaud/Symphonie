@@ -16,6 +16,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public AnimationClip interceptedAnimation;
     public AnimationClip interceptionAnimation;
 
+    [Header("Animations de direction de dégâts")]
+    public AnimationClip frontHitAnimation;   // Touché de face
+    public AnimationClip backHitAnimation;    // Touché dans le dos
+    public AnimationClip leftHitAnimation;    // Touché par la gauche
+    public AnimationClip rightHitAnimation;   // Touché par la droite
+
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
     private Animator animator;
@@ -158,7 +164,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// <summary>
     /// Inflige des dégâts et met à jour l'UI correspondante.
     /// </summary>
-    public void TakeDamage(float amount)
+    public void TakeDamage(float amount, Transform attacker = null)
     {
         var mark = GetComponent<LoyaltyMark>();
         if (mark != null && mark.RedirectDamage(amount))
@@ -168,7 +174,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (hpBar != null) hpBar.SetValue(currentHP);
         DamagePopupManager.Instance?.ShowDamage(transform.position, Mathf.RoundToInt(amount));
         PlayDamageFeedback();
-        PlayHurtAnimation();
+        // Lance l'animation de blessure adaptée à la direction de l'attaquant
+        PlayHurtAnimation(attacker);
         GetComponent<SleepStatus>()?.OnDamageTaken();
         GetComponent<ConcentrationSystem>()?.OnDamageTaken(amount);
         if (Data != null && Data.gameplayType == GameplayType.Rage)
@@ -366,17 +373,34 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             animator.Play(clip.name);
     }
 
-    public void PlayHurtAnimation()
+    public void PlayHurtAnimation(Transform attacker = null)
     {
-        // Priorité à l'animation définie dans les données du personnage
-        if (Data != null && Data.hitAnimation != null)
+        AnimationClip clip = null;
+
+        // Si un attaquant est fourni, on détermine la direction du coup
+        if (attacker != null)
         {
-            PlayAnimationClip(Data.hitAnimation);
+            // Direction de la cible vers l'attaquant
+            Vector3 dir = (attacker.position - transform.position).normalized;
+            // Angle signé autour de l'axe Y pour savoir de quel côté vient l'attaque
+            float angle = Vector3.SignedAngle(transform.forward, dir, Vector3.up);
+
+            // Choix du clip en fonction de l'angle mesuré
+            if (Mathf.Abs(angle) <= 45f)
+                clip = Data?.frontHitAnimation ?? frontHitAnimation;
+            else if (Mathf.Abs(angle) > 135f)
+                clip = Data?.backHitAnimation ?? backHitAnimation;
+            else if (angle > 0f)
+                clip = Data?.rightHitAnimation ?? rightHitAnimation;
+            else
+                clip = Data?.leftHitAnimation ?? leftHitAnimation;
         }
-        else
-        {
-            PlayAnimationClip(hurtAnimation);
-        }
+
+        // Fallback sur les animations génériques si aucun clip spécifique n'est trouvé
+        if (clip == null)
+            clip = Data?.hitAnimation ?? hurtAnimation;
+
+        PlayAnimationClip(clip);
     }
     public void PlayInterceptedAnimation() => PlayAnimationClip(interceptedAnimation);
     public void PlayInterceptionAnimation() => PlayAnimationClip(interceptionAnimation);

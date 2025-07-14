@@ -101,7 +101,8 @@ public class MusicalMoveSO : ScriptableObject
 
         if (effectType == MusicalEffectType.Damage && target.Data.characterType == CharacterType.EnemyUnit)
         {
-            target.TakeDamage(finalValue);
+            // Transmission de la source pour déclencher l'animation directionnelle
+            target.TakeDamage(finalValue, caster != null ? caster.transform : null);
             NewBattleManager.Instance?.RegisterDamage(caster, finalValue);
         }
         else if (effectType == MusicalEffectType.Heal && target.Data.characterType == CharacterType.SquadUnit)

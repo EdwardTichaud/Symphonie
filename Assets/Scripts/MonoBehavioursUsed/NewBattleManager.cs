@@ -798,7 +798,7 @@ public class NewBattleManager : MonoBehaviour
             float bonus = rage.CalculateBonusDamage();
             if (bonus > 0)
             {
-                target.TakeDamage(bonus);
+                target.TakeDamage(bonus, caster.transform);
             }
             if (rage.IsEnraged)
                 rage.ConsumeRage();
@@ -810,7 +810,7 @@ public class NewBattleManager : MonoBehaviour
             float bonus = concentration.CalculateBonusDamage(move.effectValue + caster.currentPower);
             if (bonus > 0)
             {
-                target.TakeDamage(bonus);
+                target.TakeDamage(bonus, caster.transform);
             }
         }
 

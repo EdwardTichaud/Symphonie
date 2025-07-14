@@ -36,7 +36,8 @@ public class AnimationEventsManager : MonoBehaviour
             float damage = move.power;
             if (caster != null)
                 damage *= caster.GetAttackMultiplier();
-            target.TakeDamage(damage);
+            // On transmet la position de l'attaquant pour déterminer la bonne animation
+            target.TakeDamage(damage, caster != null ? caster.transform : null);
         }
     }
 
