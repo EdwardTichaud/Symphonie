@@ -161,6 +161,8 @@ public class NewBattleManager : MonoBehaviour
     public bool isFollowingCurrentTarget = false;
     // Indique si la caméra doit regarder le lanceur lors de la sélection de cible
     private bool lookAtCasterDuringTargetSelection = false;
+    // Indique si la caméra doit se placer sur la cible et regarder le lanceur (tour ennemi)
+    private bool lookAtCasterFromTargetPoint = false;
     private bool isOrbiting = false;
     private float currentOrbitAngle;
     private Transform orbitCenter;
@@ -729,7 +731,7 @@ public class NewBattleManager : MonoBehaviour
         currentMove = move;
         var target = enemy.SelectTargetFromSquad();
 
-        _currentTargetCharacter = target;
+        currentTargetCharacter = target;
 
         if (move == null || target == null)
         {
@@ -750,6 +752,8 @@ public class NewBattleManager : MonoBehaviour
 
         // Laisse un délai pour que le joueur prenne connaissance de l'action
         yield return new WaitForSeconds(ENEMY_MOVE_DELAY);
+        // On arrête de forcer la caméra sur la cible avant d'exécuter l'attaque
+        lookAtCasterFromTargetPoint = false;
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
 
         // Ajoute le move au codex et affiche sa découverte si nécessaire
@@ -2015,6 +2019,8 @@ public class NewBattleManager : MonoBehaviour
 
         // Par défaut, on ne regarde pas le lanceur
         lookAtCasterDuringTargetSelection = false;
+        // Désactive le focus spécial utilisé pendant le tour ennemi
+        lookAtCasterFromTargetPoint = false;
 
         switch (currentBattleState)
         {
@@ -2101,11 +2107,17 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case BattleState.EnemyUnit_Reflexion:
+                isFollowingCurrentTarget = false;
+                desiredTransform = null;
+                break;
             case BattleState.EnemyUnit_PerformingMusicalMove:
+                // Place la caméra sur la cible et oriente-la vers l'ennemi
+                isFollowingCurrentTarget = false;
+                lookAtCasterFromTargetPoint = true;
+                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                break;
             case BattleState.EnemyUnit_Item_Prepare:
             case BattleState.EnemyUnit_Item_Use:
-                // L'ancienne fonctionnalité fixant la caméra sur un point dédié
-                // lors du tour ennemi a été supprimée.
                 isFollowingCurrentTarget = false;
                 desiredTransform = null;
                 break;
@@ -2162,6 +2174,13 @@ public class NewBattleManager : MonoBehaviour
 
             battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, camPos, Time.deltaTime * cameraSmoothSpeed);
             battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, camRot, Time.deltaTime * cameraSmoothSpeed);
+        }
+        else if (lookAtCasterFromTargetPoint && desiredTransform != null && currentCharacterUnit != null)
+        {
+            // Positionne la caméra sur le point de la cible en regardant le lanceur
+            battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
+            Quaternion targetRotation = Quaternion.LookRotation(currentCharacterUnit.transform.position - battleCameraTransform.position);
+            battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
         }
         else if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)
         {
