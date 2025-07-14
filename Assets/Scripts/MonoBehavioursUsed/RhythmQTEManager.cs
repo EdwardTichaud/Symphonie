@@ -34,6 +34,9 @@ public class RhythmQTEManager : MonoBehaviour
     float maxDuration = 5f; // en secondes
     float elapsed = 0f;
 
+    // Délai entre les effets de téléportation départ et arrivée
+    private const float teleportDelay = 0.2f;
+
     // QTE Effect
     public AudioClip successSFX;
     public AudioClip failSFX;
@@ -127,9 +130,8 @@ public class RhythmQTEManager : MonoBehaviour
             yield return new WaitForSeconds(animLength); // Attend explicitement la fin de l’animation d’attaque
         }
 
-
-        // Retour systématique à la position d'origine
-        yield return ReturnToInitialPosition(move, caster, target);
+        if (!move.stayInPlace)
+            yield return ReturnToInitialPosition(move, caster, target);
 
         isActive = false;
         NewBattleManager.Instance.AfterMusicalMove(move, caster);
@@ -187,8 +189,8 @@ public class RhythmQTEManager : MonoBehaviour
             yield return new WaitForSeconds(clipDuration);
         }
 
-        // Retour à la position d'origine
-        if (caster != null)
+        // Retour à la position d'origine si l'objet ne demande pas de rester en place
+        if (caster != null && !item.stayInPlace)
         {
             yield return SimpleReturnToInitialPosition(caster, target, item);
         }
@@ -214,7 +216,10 @@ public class RhythmQTEManager : MonoBehaviour
         if (caster.Data.moveClip != null)
             animator?.Play(caster.Data.moveClip.name);
 
-        // Téléportation instantanée
+        // Laisse un court délai pour jouer l'effet avant de déplacer
+        yield return new WaitForSeconds(teleportDelay);
+
+        // Téléportation après le délai
         caster.transform.position = destination;
 
         if (caster.Data.TPEffect_Destination != null)
@@ -246,7 +251,9 @@ public class RhythmQTEManager : MonoBehaviour
         if (caster.Data.moveClip != null)
             animator?.Play(caster.Data.moveClip.name);
 
-        // Téléportation instantanée vers la position d'origine
+        // Laisse un court délai pour jouer l'effet avant de déplacer
+        yield return new WaitForSeconds(teleportDelay);
+        // Téléportation vers la position d'origine
         caster.transform.position = origin;
 
         if (caster.Data.TPEffect_Destination != null)
@@ -304,6 +311,9 @@ public class RhythmQTEManager : MonoBehaviour
             if (caster.Data.moveClip != null)
                 caster.GetComponentInChildren<Animator>()?.Play(caster.Data.moveClip.name);
 
+            // Délai pour séparer départ et arrivée
+            yield return new WaitForSeconds(teleportDelay);
+
             caster.transform.position = teleportTargetPosition;
 
             if (move.teleportEndVFXPrefab != null)
@@ -347,12 +357,14 @@ public class RhythmQTEManager : MonoBehaviour
             Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
 
         // Téléportation de retour systématique
-
         if (move.teleportStartVFXPrefab != null)
             Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
 
         if (caster.Data.moveClip != null)
             caster.GetComponentInChildren<Animator>()?.Play(caster.Data.moveClip.name);
+
+        // Délai avant de revenir à la position initiale
+        yield return new WaitForSeconds(teleportDelay);
 
         caster.transform.position = initialPosition;
 
