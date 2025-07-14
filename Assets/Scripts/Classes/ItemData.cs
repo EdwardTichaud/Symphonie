@@ -16,7 +16,7 @@ public class ItemData : ScriptableObject
     public bool isUsableInBattle = true;
     public float moveSpeed;
     public float castDistance;
-    public bool stayInPlace;
+    [Tooltip("Obsolète : les déplacements sont désormais instantanés")] public bool stayInPlace;
 
     public AnimationClip itemTargetingAnimation;
 

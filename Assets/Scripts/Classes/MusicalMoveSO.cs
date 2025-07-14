@@ -53,7 +53,7 @@ public class MusicalMoveSO : ScriptableObject
 
     public float moveSpeed = 20f;
     public float castDistance;
-    public bool stayInPlace = false;
+    [Tooltip("Obsolète : déplacement remplacé par la téléportation")] public bool stayInPlace = false;
     [Tooltip("Si faux, le move ne peut pas être intercepté")]
     public bool interceptable = true;
 
@@ -63,8 +63,7 @@ public class MusicalMoveSO : ScriptableObject
     [Header("VFX")]
     public GameObject introVFXPrefab;
     public GameObject hitVFXPrefab;
-    [Tooltip("Utiliser la téléportation à la place du déplacement classique")]
-    public bool useTeleportation = false;
+    [Tooltip("Obsolète : la téléportation est toujours active")] public bool useTeleportation = true;
     [Tooltip("VFX joué au point de départ de la téléportation")]
     public GameObject teleportStartVFXPrefab;
     [Tooltip("VFX joué au point d'arrivée de la téléportation")]

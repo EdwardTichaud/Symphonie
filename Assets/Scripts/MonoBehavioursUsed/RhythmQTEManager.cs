@@ -92,7 +92,8 @@ public class RhythmQTEManager : MonoBehaviour
             yield return PlayMoveAnimations(move.musicalMoveIntroAnimationNames, caster);
         }
 
-        yield return MoveTo(caster, target, move); // Déplacement vers l’ennemi
+        // Téléportation vers la position d'attaque
+        yield return MoveTo(caster, target, move);
 
         if (move.performingTimeline == null && move.musicalMoveAnimationNames.Length > 0)
         {
@@ -126,10 +127,9 @@ public class RhythmQTEManager : MonoBehaviour
             yield return new WaitForSeconds(animLength); // Attend explicitement la fin de l’animation d’attaque
         }
 
-        if (!move.stayInPlace)
-        {
-            yield return ReturnToInitialPosition(move, caster, target);
-        }
+
+        // Retour systématique à la position d'origine
+        yield return ReturnToInitialPosition(move, caster, target);
 
         isActive = false;
         NewBattleManager.Instance.AfterMusicalMove(move, caster);
@@ -172,8 +172,8 @@ public class RhythmQTEManager : MonoBehaviour
             yield return new WaitForSeconds(clipDuration);
         }
 
-        // Déplacement éventuel du lanceur
-        if (!item.stayInPlace && caster != null && target != null)
+        // Téléportation jusqu'à la cible
+        if (caster != null && target != null)
         {
             yield return SimpleMoveTo(caster, target, item);
         }
@@ -187,8 +187,8 @@ public class RhythmQTEManager : MonoBehaviour
             yield return new WaitForSeconds(clipDuration);
         }
 
-        // Retour à la position initiale si déplacement
-        if (!item.stayInPlace && caster != null)
+        // Retour à la position d'origine
+        if (caster != null)
         {
             yield return SimpleReturnToInitialPosition(caster, target, item);
         }
@@ -199,25 +199,34 @@ public class RhythmQTEManager : MonoBehaviour
 
     private IEnumerator SimpleMoveTo(CharacterUnit caster, CharacterUnit target, ItemData item)
     {
-        Vector3 origin = caster.transform.position;
+        // Destination calculée selon la portée de l'objet
         Vector3 destination = target.transform.position + target.transform.forward * item.castDistance;
-        bool hasMovement = Vector3.Distance(origin, destination) > 0.01f;
+
+        bool hasMovement = Vector3.Distance(caster.transform.position, destination) > 0.01f;
         if (hasMovement)
             caster.PlayMoveStartSound();
+
+        // Effets de départ de téléportation
+        if (caster.Data.TPEffect_Start != null)
+            Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         if (caster.Data.moveClip != null)
             animator?.Play(caster.Data.moveClip.name);
 
-        while (Vector3.Distance(caster.transform.position, destination) > 0.1f)
-        {
-            Vector3 dir = (destination - caster.transform.position).normalized;
-            float step = item.moveSpeed * Time.deltaTime;
-            caster.transform.position = Vector3.MoveTowards(caster.transform.position, destination, step);
-            if (dir != Vector3.zero)
-                caster.transform.forward = dir;
-            yield return null;
-        }
+        // Téléportation instantanée
+        caster.transform.position = destination;
+
+        if (caster.Data.TPEffect_Destination != null)
+            Instantiate(caster.Data.TPEffect_Destination, destination, Quaternion.identity);
+
+        // Orientation vers la cible
+        Vector3 dir = (target.transform.position - caster.transform.position).normalized;
+        if (dir != Vector3.zero)
+            caster.transform.forward = dir;
+
+        yield return null;
+
         if (hasMovement)
             caster.PlayMoveEndSound();
     }
@@ -229,27 +238,30 @@ public class RhythmQTEManager : MonoBehaviour
         if (hasMovement)
             caster.PlayMoveStartSound();
 
+        // Effets visuels de téléportation
+        if (caster.Data.TPEffect_Start != null)
+            Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
+
         Animator animator = caster.GetComponentInChildren<Animator>();
         if (caster.Data.moveClip != null)
             animator?.Play(caster.Data.moveClip.name);
 
-        while (Vector3.Distance(caster.transform.position, origin) > 0.1f)
-        {
-            Vector3 dir = (origin - caster.transform.position).normalized;
-            float step = item.moveSpeed * Time.deltaTime;
-            caster.transform.position = Vector3.MoveTowards(caster.transform.position, origin, step);
-            if (dir != Vector3.zero)
-                caster.transform.forward = dir;
-            yield return null;
-        }
+        // Téléportation instantanée vers la position d'origine
+        caster.transform.position = origin;
 
-        // Après le retour, on réoriente éventuellement vers la cible
+        if (caster.Data.TPEffect_Destination != null)
+            Instantiate(caster.Data.TPEffect_Destination, origin, Quaternion.identity);
+
+        // Orientation optionnelle vers la cible
         if (target != null)
         {
             Vector3 lookDir = (target.transform.position - caster.transform.position).normalized;
             if (lookDir != Vector3.zero)
                 caster.transform.forward = lookDir;
         }
+
+        yield return null;
+
         if (hasMovement)
             caster.PlayMoveEndSound();
     }
@@ -263,8 +275,7 @@ public class RhythmQTEManager : MonoBehaviour
         if (caster.Data.TPEffect_Start != null)
             Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
 
-        // Gestion de la téléportation éventuelle
-        if (move.useTeleportation)
+        // Téléportation obligatoire vers la cible
         {
             bool teleportHasMovement;
             Vector3 teleportOffsetDir = target.transform.forward;
@@ -319,102 +330,6 @@ public class RhythmQTEManager : MonoBehaviour
             yield break;
         }
 
-        // Si l'animation de course n'est pas assignée, on logue un warning et on sort
-        if (move.musicalMoveRunAnimationName == null)
-        {
-            Debug.LogWarning($"[MoveTo] musicalMoveRunAnimationName n'est pas assigné dans {move.name} !");
-            yield break;
-        }
-
-        float elapsed = 0f;
-        float maxDuration = move.maxRunDuration;
-
-        Vector3 offsetDir = target.transform.forward;
-        switch (move.relativePosition)
-        {
-            case RelativePosition.Back:
-                offsetDir = -target.transform.forward;
-                break;
-            case RelativePosition.Left:
-                offsetDir = -target.transform.right;
-                break;
-            case RelativePosition.Right:
-                offsetDir = target.transform.right;
-                break;
-        }
-
-        float mobilityBonus = caster.currentMobility;
-        Vector3 targetPosition = target.transform.position + offsetDir * (move.castDistance + mobilityBonus);
-        bool hasMovement = Vector3.Distance(startPosition, targetPosition) > 0.01f;
-        if (hasMovement)
-            caster.PlayMoveStartSound();
-
-        Animator animator = caster.GetComponentInChildren<Animator>();
-        AnimationClip clipToPlay = caster.Data.moveClip != null ? caster.Data.moveClip : null;
-        if (clipToPlay != null)
-            animator.Play(clipToPlay.name);
-        else
-            animator.Play(move.musicalMoveRunAnimationName);
-
-        float totalDistance = Vector3.Distance(startPosition, targetPosition);
-        float speed = maxDuration > 0f ? totalDistance / maxDuration : float.PositiveInfinity;
-
-        if (maxDuration <= 0f)
-        {
-            caster.transform.position = targetPosition;
-            Vector3 moveDir = (targetPosition - startPosition).normalized;
-            if (move.stayFaceToTarget && target != null)
-            {
-                Vector3 lookDirection = (target.transform.position - caster.transform.position).normalized;
-                if (lookDirection != Vector3.zero)
-                    caster.transform.forward = lookDirection;
-            }
-            else if (moveDir != Vector3.zero)
-            {
-                caster.transform.forward = moveDir;
-            }
-
-            Debug.Log("Fin du déplacement de " + caster.name);
-
-            if (hasMovement)
-                caster.PlayMoveEndSound();
-
-            yield break;
-        }
-
-        while (Vector3.Distance(caster.transform.position, targetPosition) > 0.1f && elapsed < maxDuration)
-        {
-            Vector3 moveDirection = (targetPosition - caster.transform.position).normalized;
-            float step = speed * Time.deltaTime;
-
-            caster.transform.position = Vector3.MoveTowards(caster.transform.position, targetPosition, step);
-
-            if (move.stayFaceToTarget && target != null)
-            {
-                Vector3 lookDirection = (target.transform.position - caster.transform.position).normalized;
-                if (lookDirection != Vector3.zero)
-                    caster.transform.forward = lookDirection;
-            }
-            else
-            {
-                if (moveDirection != Vector3.zero)
-                    caster.transform.forward = Vector3.RotateTowards(
-                        caster.transform.forward,
-                        moveDirection,
-                        step,
-                        0f
-                    );
-            }
-
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        Debug.Log("Fin du déplacement de " + caster.name);
-
-        if (hasMovement)
-            caster.PlayMoveEndSound();
-
     }
 
     private IEnumerator ReturnToInitialPosition(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
@@ -431,70 +346,26 @@ public class RhythmQTEManager : MonoBehaviour
         if (caster.Data.TPEffect_Start != null)
             Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
 
-        if (move.useTeleportation)
-        {
+        // Téléportation de retour systématique
 
-            if (move.teleportStartVFXPrefab != null)
-                Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
+        if (move.teleportStartVFXPrefab != null)
+            Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
 
-            if (caster.Data.moveClip != null)
-                caster.GetComponentInChildren<Animator>()?.Play(caster.Data.moveClip.name);
+        if (caster.Data.moveClip != null)
+            caster.GetComponentInChildren<Animator>()?.Play(caster.Data.moveClip.name);
 
-            caster.transform.position = initialPosition;
+        caster.transform.position = initialPosition;
 
-            if (move.teleportEndVFXPrefab != null)
-                Instantiate(move.teleportEndVFXPrefab, initialPosition, Quaternion.identity);
+        if (move.teleportEndVFXPrefab != null)
+            Instantiate(move.teleportEndVFXPrefab, initialPosition, Quaternion.identity);
 
-            if (caster.Data.TPEffect_Destination != null)
-                Instantiate(caster.Data.TPEffect_Destination, initialPosition, Quaternion.identity);
+        if (caster.Data.TPEffect_Destination != null)
+            Instantiate(caster.Data.TPEffect_Destination, initialPosition, Quaternion.identity);
 
-            yield return null;
+        yield return null;
 
-            if (hasMovement)
-                caster.PlayMoveEndSound();
-
-        }
-        else
-        {
-            if (move.musicalMoveRunAnimationName == null)
-            {
-                Debug.LogWarning($"[ReturnToInitialPosition] musicalMoveRunAnimationName n'est pas assigné dans {move.name} !");
-                yield break;
-            }
-
-            Animator animator = caster.GetComponentInChildren<Animator>();
-            AnimationClip clipToPlay = caster.Data.moveClip != null ? caster.Data.moveClip : null;
-            if (clipToPlay != null)
-                animator.Play(clipToPlay.name);
-            else
-                animator.Play(move.musicalMoveRunAnimationName);
-
-            while (Vector3.Distance(caster.transform.position, initialPosition) > 0.1f)
-            {
-                float step = move.moveSpeed * Time.deltaTime;
-                Vector3 moveDirection = (initialPosition - caster.transform.position).normalized;
-                caster.transform.position = Vector3.MoveTowards(caster.transform.position, initialPosition, step);
-
-                if (move.stayFaceToTarget && target != null)
-                {
-                    Vector3 toTarget = (target.transform.position - caster.transform.position).normalized;
-                    if (toTarget != Vector3.zero)
-                        caster.transform.forward = toTarget;
-                }
-                else
-                {
-                    if (moveDirection != Vector3.zero)
-                        caster.transform.forward = Vector3.RotateTowards(
-                            caster.transform.forward,
-                            moveDirection,
-                            step,
-                            0f
-                        );
-                }
-
-                yield return null;
-            }
-        }
+        if (hasMovement)
+            caster.PlayMoveEndSound();
 
         if (move.stayFaceToTarget && target != null)
         {
