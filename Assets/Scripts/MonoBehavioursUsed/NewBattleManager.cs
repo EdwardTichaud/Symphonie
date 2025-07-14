@@ -2114,7 +2114,12 @@ public class NewBattleManager : MonoBehaviour
         }
 
         CameraController cc = CameraController.Instance;
-        // Seule une timeline mondiale doit interrompre la caméra de combat.
+        // Si une Timeline globale contrôle la caméra (cutscene ou attaque),
+        // on laisse entièrement la main au TimelineManager.
+        if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
+            return;
+
+        // Seule une Timeline de la WorldCamera doit interrompre la BattleCamera.
         // La WorldCamera peut rester forcée sans empêcher cette logique.
         if (cc != null && cc.IsFollowingPath)
         {
