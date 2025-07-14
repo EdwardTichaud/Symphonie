@@ -105,7 +105,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         spriteRenderer = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
-        animator = GetComponent<Animator>();
+        animator = GetComponentInChildren<Animator>();
 
         // Setup graphique
         if (spriteRenderer != null && Data.portrait != null)
@@ -383,7 +383,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void PlayPrepareToUndergoAnimation()
     {
         if (animator != null)
-            animator.Play("prepareToUndergo");
+            animator.Play(Data.prepareToUndergoAnimation.name);
     }
 
     void PlayDamageFeedback()

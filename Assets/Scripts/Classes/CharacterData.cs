@@ -85,6 +85,7 @@ public class CharacterData : ScriptableObject, ITargetable
     public AnimationClip hitAnimation;                // Jouée quand l'unité subit des dégâts
     public AnimationClip TPAnimation_Start;           // Jouée avant la téléportation
     public AnimationClip TPAnimation_Destination;     // Jouée après la téléportation
+    public AnimationClip prepareToUndergoAnimation;
 
     [Header("Sons de déplacement")]
     public AudioClip moveStartClip;
