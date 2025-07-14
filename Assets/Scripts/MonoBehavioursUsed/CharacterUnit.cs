@@ -239,7 +239,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         Debug.Log(this + " handleDeath called, playing death animation.");
         if (animator != null)
         {
-            animator.Play("Death");
+            // CrossFade assure que l'animation de mort remplace correctement
+            // toute animation de blessure potentiellement en cours
+            animator.CrossFade("Death", 0.05f);
         }
         NewBattleManager.Instance.RemoveFromTimeline(this);
         NewBattleManager.Instance.activeCharacterUnits.Remove(this); // facultatif
@@ -392,7 +394,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     void PlayAnimationClip(AnimationClip clip)
     {
         if (animator != null && clip != null)
-            animator.Play(clip.name);
+        {
+            // CrossFade pour éviter d'interrompre brutalement l'animation en cours
+            animator.CrossFade(clip.name, 0.05f);
+        }
     }
 
     public void PlayHurtAnimation(Transform attacker = null)
@@ -429,7 +434,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void PlayPrepareToUndergoAnimation()
     {
         if (animator != null && Data.prepareToUndergoAnimation != null)
-            animator.Play(Data.prepareToUndergoAnimation.name);
+        {
+            // Utilise CrossFade pour garantir la bonne transition
+            animator.CrossFade(Data.prepareToUndergoAnimation.name, 0.05f);
+        }
     }
 
     void PlayDamageFeedback()
