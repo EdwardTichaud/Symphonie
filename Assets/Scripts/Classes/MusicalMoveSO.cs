@@ -71,6 +71,10 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("VFX joué au point d'arrivée de la téléportation")]
     public GameObject teleportEndVFXPrefab;
 
+    [Header("Timing")]
+    [Tooltip("Temps en secondes à attendre après la téléportation avant d'exécuter le move")]
+    public float startDelay = 0f;
+
 
     [Header("Timeline")]
     [Tooltip("Timeline jouée lors de la préparation du move")]
