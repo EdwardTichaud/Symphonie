@@ -210,11 +210,13 @@ public class RhythmQTEManager : MonoBehaviour
 
         bool hasMovement = Vector3.Distance(caster.transform.position, destination) > 0.01f;
         if (hasMovement)
+        {
+            // Déclenche uniquement le son et l'effet visuel si le déplacement est réel
             caster.PlayMoveStartSound();
 
-        // Effets de départ de téléportation
-        if (caster.Data.TPEffect_Start != null)
-            Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
+            if (caster.Data.TPEffect_Start != null)
+                Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
+        }
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         // Animation de début de téléportation
@@ -229,7 +231,7 @@ public class RhythmQTEManager : MonoBehaviour
         // Téléportation après le délai
         caster.transform.position = destination;
 
-        if (caster.Data.TPEffect_Destination != null)
+        if (hasMovement && caster.Data.TPEffect_Destination != null)
             Instantiate(caster.Data.TPEffect_Destination, destination, Quaternion.identity);
         if (animator != null && caster.Data.TPAnimation_Destination != null)
             animator.Play(caster.Data.TPAnimation_Destination.name);
@@ -250,11 +252,13 @@ public class RhythmQTEManager : MonoBehaviour
         Vector3 origin = caster.transform.parent.position;
         bool hasMovement = Vector3.Distance(caster.transform.position, origin) > 0.01f;
         if (hasMovement)
+        {
+            // Jouer le son et l'effet seulement s'il y a déplacement
             caster.PlayMoveStartSound();
 
-        // Effets visuels de téléportation
-        if (caster.Data.TPEffect_Start != null)
-            Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
+            if (caster.Data.TPEffect_Start != null)
+                Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
+        }
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         // Animation de début de téléportation retour
@@ -268,7 +272,7 @@ public class RhythmQTEManager : MonoBehaviour
         // Téléportation vers la position d'origine
         caster.transform.position = origin;
 
-        if (caster.Data.TPEffect_Destination != null)
+        if (hasMovement && caster.Data.TPEffect_Destination != null)
             Instantiate(caster.Data.TPEffect_Destination, origin, Quaternion.identity);
         if (animator != null && caster.Data.TPAnimation_Destination != null)
             animator.Play(caster.Data.TPAnimation_Destination.name);
@@ -293,9 +297,6 @@ public class RhythmQTEManager : MonoBehaviour
 
         Vector3 startPosition = caster.transform.position;
 
-        if (caster.Data.TPEffect_Start != null)
-            Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
-
         // Téléportation obligatoire vers la cible
         {
             bool teleportHasMovement;
@@ -317,7 +318,13 @@ public class RhythmQTEManager : MonoBehaviour
             Vector3 teleportTargetPosition = target.transform.position + teleportOffsetDir * (move.castDistance + teleportMobilityBonus);
             teleportHasMovement = Vector3.Distance(startPosition, teleportTargetPosition) > 0.01f;
             if (teleportHasMovement)
+            {
+                // Déclenche les effets uniquement en cas de déplacement
                 caster.PlayMoveStartSound();
+
+                if (caster.Data.TPEffect_Start != null)
+                    Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
+            }
 
             if (move.teleportStartVFXPrefab != null)
                 Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
@@ -337,7 +344,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (move.teleportEndVFXPrefab != null)
                 Instantiate(move.teleportEndVFXPrefab, teleportTargetPosition, Quaternion.identity);
 
-            if (caster.Data.TPEffect_Destination != null)
+            if (teleportHasMovement && caster.Data.TPEffect_Destination != null)
                 Instantiate(caster.Data.TPEffect_Destination, teleportTargetPosition, Quaternion.identity);
             if (animator != null && caster.Data.TPAnimation_Destination != null)
                 animator.Play(caster.Data.TPAnimation_Destination.name);
@@ -370,11 +377,13 @@ public class RhythmQTEManager : MonoBehaviour
         Vector3 initialPosition = caster.transform.parent.position;
         bool hasMovement = Vector3.Distance(startPos, initialPosition) > 0.01f;
         if (hasMovement)
+        {
+            // Éviter son et effet si aucun mouvement n'est nécessaire
             caster.PlayMoveStartSound();
 
-
-        if (caster.Data.TPEffect_Start != null)
-            Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
+            if (caster.Data.TPEffect_Start != null)
+                Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
+        }
 
         // Téléportation de retour systématique
         if (move.teleportStartVFXPrefab != null)
@@ -395,7 +404,7 @@ public class RhythmQTEManager : MonoBehaviour
         if (move.teleportEndVFXPrefab != null)
             Instantiate(move.teleportEndVFXPrefab, initialPosition, Quaternion.identity);
 
-        if (caster.Data.TPEffect_Destination != null)
+        if (hasMovement && caster.Data.TPEffect_Destination != null)
             Instantiate(caster.Data.TPEffect_Destination, initialPosition, Quaternion.identity);
         if (animator != null && caster.Data.TPAnimation_Destination != null)
             animator.Play(caster.Data.TPAnimation_Destination.name);
