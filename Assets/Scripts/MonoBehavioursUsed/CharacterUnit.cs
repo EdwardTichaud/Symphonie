@@ -542,8 +542,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         if (animator != null)
         {
-            string idleName = !string.IsNullOrEmpty(Data.battleIdleAnimationName)
-                ? Data.battleIdleAnimationName
+            // Si un clip est spécifié dans les données, on utilise son nom d'état
+            // Sinon on retombe sur l'animation "Idle" par défaut
+            string idleName = Data.battleIdleAnimation != null
+                ? Data.battleIdleAnimation.name
                 : "Idle";
             animator.Play(idleName);
         }
