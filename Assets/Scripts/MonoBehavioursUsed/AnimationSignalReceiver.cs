@@ -7,7 +7,7 @@ public class AnimatorEntry
     [Tooltip("ID unique pour identifier cet Animator (ex: Lucian, Door01, EnemyA)")]
     public string id;
 
-    [Tooltip("R�f�rence de l'Animator dans la sc�ne")]
+    [Tooltip("Référence de l'Animator dans la scène")]
     public Animator animator;
 }
 
@@ -31,6 +31,11 @@ public class AnimationSignalReceiver : MonoBehaviour
             Debug.LogWarning($"[AnimationSignalReceiver] No Animator found for ID: '{trigger.animatorID}'.");
             return;
         }
+
+        // Empêcher de jouer une animation si l'unité possède une CharacterUnit morte
+        var unit = entry.animator.GetComponentInParent<CharacterUnit>();
+        if (unit != null && unit.IsDead)
+            return;
 
         // Joue l'animation selon le mode choisi
         if (trigger.crossFadeDuration > 0f)

@@ -71,6 +71,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public bool IsReady => currentATB >= ATBMax && currentHP > 0;
 
     private bool deathTriggered;
+    /// <summary>
+    /// Indique si l'unité est définitivement morte
+    /// </summary>
+    public bool IsDead => deathTriggered || currentHP <= 0f;
     public event System.Action<CharacterUnit> OnDeath;
     public bool isReadyToParry;
     [HideInInspector] public bool isInterceptionImmune = false;
@@ -391,6 +395,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     void PlayAnimationClip(AnimationClip clip)
     {
+        // Ne rien jouer si l'unité est morte
+        if (IsDead)
+            return;
+
         if (animator != null && clip != null)
         {
             // CrossFade pour éviter d'interrompre brutalement l'animation en cours
@@ -431,6 +439,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void PlayInterceptionAnimation() => PlayAnimationClip(interceptionAnimation);
     public void PlayPrepareToUndergoAnimation()
     {
+        // Pas d'animation si l'unité est morte
+        if (IsDead)
+            return;
+
         if (animator != null && Data.prepareToUndergoAnimation != null)
         {
             // Utilise CrossFade pour garantir la bonne transition
