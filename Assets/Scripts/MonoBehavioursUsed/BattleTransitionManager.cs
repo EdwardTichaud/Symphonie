@@ -213,8 +213,13 @@ public class BattleTransitionManager : MonoBehaviour
             return false;
         }
 
-        if (battleCamera.transform.childCount > 0)
-            battleCamera.transform.GetChild(0).gameObject.SetActive(true);
+        // Active le GameObject principal de la caméra ainsi que tous ses enfants
+        // pour s'assurer que l'affichage se fasse correctement
+        battleCamera.gameObject.SetActive(true);
+        foreach (Transform child in battleCamera.transform)
+        {
+            child.gameObject.SetActive(true);
+        }
 
         var battleUICanvas = FindObjectsOfType<Canvas>().FirstOrDefault(c => c.renderMode == RenderMode.ScreenSpaceCamera);
         if (battleUICanvas != null)
