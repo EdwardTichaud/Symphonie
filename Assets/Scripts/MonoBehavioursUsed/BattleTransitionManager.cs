@@ -35,6 +35,9 @@ public class BattleTransitionManager : MonoBehaviour
     [Header("Music")]
     [SerializeField] private AudioSource musicSource;
 
+    [Header("Effet de transition verre brisé")]
+    [SerializeField] private GlassShatterTransition glassTransition;
+
     private Camera battleCamera;
     private MainCameraTextureManager mainCameraTextureManager; // gestionnaire des RT de la caméra principale
 
@@ -98,6 +101,10 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     private IEnumerator TransitionRoutine()
     {
+        // Effet de verre brisé sur la caméra principale avant toute action
+        if (glassTransition != null)
+            yield return StartCoroutine(glassTransition.Play());
+
         // Ralenti le temps pour la transition
         yield return SlowTimeScale(to: 0.1f, speed: 2f);
 
