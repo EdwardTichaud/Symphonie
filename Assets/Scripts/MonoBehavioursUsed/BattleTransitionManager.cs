@@ -105,7 +105,7 @@ public class BattleTransitionManager : MonoBehaviour
         SetupBattleCameraAndUI();
 
         // Le temps reprend son cours normal
-        StartCoroutine(RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f));
+        yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
 
         //Switch World vers Battle
         if (worldView != null && battleView != null)
@@ -246,6 +246,7 @@ public class BattleTransitionManager : MonoBehaviour
 
     private IEnumerator RestoreTimeScale(float from, float to, float speed)
     {
+        Debug.Log("Début de la restauration du temps");
         float epsilon = 0.001f;
 
         while (to - Time.timeScale > epsilon)
@@ -258,6 +259,7 @@ public class BattleTransitionManager : MonoBehaviour
         }
 
         Time.timeScale = to;
+        Debug.Log("Temps restauré");
     }
 
     private IEnumerator PlayTransitionSoundsSequentially()
