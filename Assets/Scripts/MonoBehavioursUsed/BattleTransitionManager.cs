@@ -102,12 +102,10 @@ public class BattleTransitionManager : MonoBehaviour
         NewBattleManager.Instance.SpawnAll();
 
         // Prépare les visuels de transition
-        if (!SetupBattleCameraAndUI())
-            yield break;
+        SetupBattleCameraAndUI();
 
         // Le temps reprend son cours normal
         StartCoroutine(RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f));
-
 
         //Switch World vers Battle
         if (worldView != null && battleView != null)
@@ -122,7 +120,7 @@ public class BattleTransitionManager : MonoBehaviour
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
 
         // Lance le mouvement d'intro de la caméra de combat
-        GameObject introCam = GameObject.Find("BattleScene_Camera_BattleIntro");
+        GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
         if (introCam != null)
         {
             if (firstUnit != null)
@@ -205,12 +203,11 @@ public class BattleTransitionManager : MonoBehaviour
         yield return new WaitForSecondsRealtime(0);
     }
 
-    private bool SetupBattleCameraAndUI()
+    void SetupBattleCameraAndUI()
     {
         if (battleCamera == null)
         {
             Debug.LogError($"[BattleTransitionManager] Caméra taggée '{battleCameraTag}' introuvable !");
-            return false;
         }
 
         // Active le GameObject principal de la caméra ainsi que tous ses enfants
@@ -226,8 +223,6 @@ public class BattleTransitionManager : MonoBehaviour
             battleUICanvas.worldCamera = battleCamera;
 
         GameObject.Find("BattleScene_TransitionCanvas")?.transform.GetChild(0).gameObject.SetActive(true);
-
-        return true;
     }
 
     private IEnumerator SlowTimeScale(float to, float speed)

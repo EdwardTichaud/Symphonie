@@ -20,6 +20,11 @@ public class TimeManager : MonoBehaviour
         {
             TogglePause();
         }
+
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            Debug.Log($"Current TimeScale: {Time.timeScale:F2}");
+        }
     }
 
     public void SetTimeScale(float newTimeScale)
