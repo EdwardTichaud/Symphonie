@@ -14,6 +14,14 @@ public class MainCameraTextureManager : MonoBehaviour
     [SerializeField] private RenderTexture worldView;
     [SerializeField] private RenderTexture battleView;
 
+    /// <summary>
+    /// Accès en lecture aux RenderTextures utilisées.
+    /// Permet à d'autres scripts (ex: effets de transition) d'utiliser
+    /// la texture du monde ou du combat.
+    /// </summary>
+    public RenderTexture WorldTexture => worldView;
+    public RenderTexture BattleTexture => battleView;
+
     private void Awake()
     {
         // Si aucun RawImage n'est assigné, on tente de le récupérer automatiquement
