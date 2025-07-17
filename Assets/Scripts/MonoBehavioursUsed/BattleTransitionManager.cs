@@ -11,22 +11,14 @@ public class BattleTransitionManager : MonoBehaviour
 
     private PlayerDetection playerDetection;
 
-    [Header("Rifters")]
-    [SerializeField] private WorldRiftMaterialTweener worldRiftTweener;
-    private BattleRiftMaterialTweener battleRiftTweener;
-
     [Header("Tags")]
     [SerializeField] private string battleCameraTag = "BattleCamera";
 
     [Header("Ressources Visuals")]
-    [SerializeField] private GameObject battleRevealMask;
-    [SerializeField] private float revealDuration = 1f;
+    [SerializeField] private GameObject worldView;
+    [SerializeField] private GameObject battleView;
     [SerializeField] private Image worldFadeOverlay;
     [SerializeField] private ParticleSystem maskRingParticles;
-    [SerializeField] private float maskTargetSize = 4500f;
-
-    [Header("Camera Intro")]
-    [SerializeField] CameraPath battleIntroPath;
 
     [Header("SFX")]
     [SerializeField] private List<AudioClip> transitionSFXClips = new();
@@ -35,11 +27,7 @@ public class BattleTransitionManager : MonoBehaviour
     [Header("Music")]
     [SerializeField] private AudioSource musicSource;
 
-    [Header("Effet de transition verre brisé")]
-    [SerializeField] private GlassShatterTransition glassTransition;
-
     private Camera battleCamera;
-    private MainCameraTextureManager mainCameraTextureManager; // gestionnaire des RT de la caméra principale
 
     #region Initialisation
     /// <summary>
@@ -61,7 +49,6 @@ public class BattleTransitionManager : MonoBehaviour
         worldFadeOverlay ??= GameObject.Find("WorldFadeOverlayPanel")?.GetComponent<Image>();
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         battleCamera = GameObject.FindGameObjectWithTag(battleCameraTag)?.GetComponent<Camera>();
-        mainCameraTextureManager = FindFirstObjectByType<MainCameraTextureManager>();
     }
 
     #endregion
@@ -101,17 +88,13 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     private IEnumerator TransitionRoutine()
     {
-        // Effet de verre brisé sur la caméra principale avant toute action
-        if (glassTransition != null)
-            yield return StartCoroutine(glassTransition.Play());
-
         // Ralenti le temps pour la transition
         yield return SlowTimeScale(to: 0.1f, speed: 2f);
 
         // Prépare le champs de combat
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         int battlefieldIndex = playerDetection.detectedEnemies[0].battlefieldIndex;
-        Transform battleFieldParent = GameObject.Find("BattleScene_Battlefields").transform;
+        Transform battleFieldParent = GameObject.Find("BattleScene/Battlefields").transform;
         GameObject currentBattlefield = Instantiate(ZoneManager.Instance.currentZone.battlefields[battlefieldIndex], battleFieldParent.position, Quaternion.identity);
         currentBattlefield.transform.SetParent(battleFieldParent, false);
         currentBattlefield.gameObject.SetActive(true);
@@ -125,6 +108,14 @@ public class BattleTransitionManager : MonoBehaviour
         // Le temps reprend son cours normal
         StartCoroutine(RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f));
 
+
+        //Switch World vers Battle
+        if (worldView != null && battleView != null)
+        {
+            worldView.SetActive(false);
+            battleView.SetActive(true);
+        }
+        // A améliorer plus tard
 
         // Change le statut du combat en "Initialisé"
         NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization);
@@ -182,9 +173,12 @@ public class BattleTransitionManager : MonoBehaviour
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         playerDetection.ResetDetection(1f);
 
-        battleRevealMask.SetActive(true);
-        RectTransform maskRect = battleRevealMask.GetComponent<RectTransform>();
-        maskRect.sizeDelta = Vector2.zero;
+        //Switch Battle vers World
+        if (worldView != null && battleView != null)
+        {
+            worldView.SetActive(true);
+            battleView.SetActive(false);
+        }
 
         if (maskRingParticles != null)
         {
@@ -192,20 +186,14 @@ public class BattleTransitionManager : MonoBehaviour
             maskRingParticles.Play();
         }
 
-        yield return AnimateMaskCircleReverse(maskRect, revealDuration);
-
         HideVictoryPanel();
         HideGameOverPanel();
         ResetBattleFlagsOnAllEnemies();
         NewBattleManager.Instance.ResetBattleInfos();
 
         AudioManager.Instance.ReturnFromBattle();
-        // Retour à la vue du monde sur la MainCamera
-        mainCameraTextureManager?.ShowWorldView();
 
         InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
-
-        battleIntroPath.triggered = false;
 
         if (Application.isPlaying && !Application.isEditor && SaveAndLoadManager.Instance != null)
         {
@@ -213,16 +201,8 @@ public class BattleTransitionManager : MonoBehaviour
         }
 
         //yield return FadeToTransparent(1f);
-    }
 
-    /// <summary>
-    /// Libère les références caméras et visuels temporaires après la transition.
-    /// </summary>
-    private void ResetCameraAndVisuals()
-    {
-        battleCamera = null;
-        battleRevealMask = null;
-        maskRingParticles = null;
+        yield return new WaitForSecondsRealtime(0);
     }
 
     private bool SetupBattleCameraAndUI()
@@ -280,15 +260,6 @@ public class BattleTransitionManager : MonoBehaviour
         Time.timeScale = to;
     }
 
-    private void EndVisualTransition()
-    {
-        //if (battleCamera != null)
-        //    battleCamera.targetTexture = null;
-
-        //if (worldFadeOverlay != null)
-        //    StartCoroutine(FadeToTransparent(0.5f));
-    }
-
     private IEnumerator PlayTransitionSoundsSequentially()
     {
         if (sfxSource == null || transitionSFXClips.Count == 0)
@@ -302,65 +273,6 @@ public class BattleTransitionManager : MonoBehaviour
             sfxSource.clip = clip;
             sfxSource.Play();
             yield return new WaitForSeconds(clip.length);
-        }
-    }
-
-    private IEnumerator AnimateMaskCircle(RectTransform mask, float duration)
-    {
-        float elapsed = 0f;
-        ParticleSystem.ShapeModule shape = default;
-        if (maskRingParticles != null)
-            shape = maskRingParticles.shape;
-        while (elapsed < duration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
-            float size = Mathf.Lerp(0f, maskTargetSize, t);
-            mask.sizeDelta = Vector2.one * size;
-
-            if (maskRingParticles != null)
-            {
-                shape.radius = size / 2f;
-            }
-            yield return null;
-        }
-
-        mask.sizeDelta = Vector2.one * maskTargetSize;
-
-        if (maskRingParticles != null)
-        {
-            shape.radius = maskTargetSize / 2f;
-            maskRingParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
-        }
-    }
-
-    private IEnumerator AnimateMaskCircleReverse(RectTransform mask, float duration)
-    {
-        float elapsed = 0f;
-        ParticleSystem.ShapeModule shape = default;
-        if (maskRingParticles != null)
-            shape = maskRingParticles.shape;
-        while (elapsed < duration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
-            float size = Mathf.Lerp(maskTargetSize, 0f, t); // inversé ici !
-            mask.sizeDelta = Vector2.one * size;
-
-            if (maskRingParticles != null)
-            {
-                shape.radius = size / 2f;
-            }
-
-            yield return null;
-        }
-
-        mask.sizeDelta = Vector2.zero;
-
-        if (maskRingParticles != null)
-        {
-            shape.radius = 0f;
-            maskRingParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
     }
 
