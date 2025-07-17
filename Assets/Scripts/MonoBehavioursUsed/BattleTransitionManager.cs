@@ -39,6 +39,7 @@ public class BattleTransitionManager : MonoBehaviour
     [SerializeField] private AudioSource musicSource;
 
     private Camera battleCamera;
+    private MainCameraTextureManager mainCameraTextureManager; // gestionnaire des RT de la caméra principale
 
     #region Initialisation
     /// <summary>
@@ -60,6 +61,7 @@ public class BattleTransitionManager : MonoBehaviour
         worldFadeOverlay ??= GameObject.Find("WorldFadeOverlayPanel")?.GetComponent<Image>();
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         battleCamera = GameObject.FindGameObjectWithTag(battleCameraTag)?.GetComponent<Camera>();
+        mainCameraTextureManager = FindFirstObjectByType<MainCameraTextureManager>();
     }
 
     #endregion
@@ -113,6 +115,8 @@ public class BattleTransitionManager : MonoBehaviour
         battleCamera = GameObject.FindGameObjectWithTag(battleCameraTag)?.GetComponent<Camera>();
         battleCamera.enabled = true;
         battleCamera.targetTexture = battleRenderTexture;
+        // Affiche la RenderTexture de combat sur la MainCamera
+        mainCameraTextureManager?.ShowBattleView();
 
         NewBattleManager.Instance.SpawnAll();
 
@@ -221,6 +225,8 @@ public class BattleTransitionManager : MonoBehaviour
         NewBattleManager.Instance.ResetBattleInfos();
 
         AudioManager.Instance.ReturnFromBattle();
+        // Retour à la vue du monde sur la MainCamera
+        mainCameraTextureManager?.ShowWorldView();
 
         InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
 
