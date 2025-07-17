@@ -11,9 +11,6 @@ public class BattleTransitionManager : MonoBehaviour
 
     private PlayerDetection playerDetection;
 
-    [Header("RT_Combat")]
-    [SerializeField] private RenderTexture battleRenderTexture;
-
     [Header("Rifters")]
     [SerializeField] private WorldRiftMaterialTweener worldRiftTweener;
     private BattleRiftMaterialTweener battleRiftTweener;
@@ -101,9 +98,10 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     private IEnumerator TransitionRoutine()
     {
+        // Ralenti le temps pour la transition
         yield return SlowTimeScale(to: 0.1f, speed: 2f);
-        yield return new WaitForSecondsRealtime(worldRiftTweener.tweenDuration);
 
+        // Prépare le champs de combat
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         int battlefieldIndex = playerDetection.detectedEnemies[0].battlefieldIndex;
         Transform battleFieldParent = GameObject.Find("BattleScene_Battlefields").transform;
@@ -111,50 +109,21 @@ public class BattleTransitionManager : MonoBehaviour
         currentBattlefield.transform.SetParent(battleFieldParent, false);
         currentBattlefield.gameObject.SetActive(true);
 
-        battleCamera = null;
-        battleCamera = GameObject.FindGameObjectWithTag(battleCameraTag)?.GetComponent<Camera>();
-        battleCamera.enabled = true;
-        battleCamera.targetTexture = battleRenderTexture;
-        // Affiche la RenderTexture de combat sur la MainCamera
-        mainCameraTextureManager?.ShowBattleView();
-
         NewBattleManager.Instance.SpawnAll();
 
+        // Prépare les visuels de transition
         if (!SetupBattleCameraAndUI())
             yield break;
 
-        battleRiftTweener = FindFirstObjectByType<BattleRiftMaterialTweener>();
-        if (battleRiftTweener == null)
-        {
-            Debug.LogError("[BattleTransitionManager] BattleRiftMaterialTweener introuvable !");
-            yield break;
-        }
-
-        battleRiftTweener.PlayCombatTween(50f, 0.1f, 1f);
-
-        if (battleRevealMask == null)
-        {
-            Debug.LogError("[BattleTransitionManager] CombatRevealMask introuvable !");
-            yield break;
-        }
-
-        battleRevealMask.SetActive(true);
-        RectTransform maskRect = battleRevealMask.GetComponent<RectTransform>();
-        maskRect.sizeDelta = Vector2.zero;
-
-        if (maskRingParticles != null)
-        {
-            maskRingParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            maskRingParticles.Play();
-        }
-
-        StartCoroutine(AnimateMaskCircle(maskRect, revealDuration));
-
+        // Le temps reprend son cours normal
         StartCoroutine(RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f));
 
+
+        // Change le statut du combat en "Initialisé"
         NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization);
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
 
+        // Lance le mouvement d'intro de la caméra de combat
         GameObject introCam = GameObject.Find("BattleScene_Camera_BattleIntro");
         if (introCam != null)
         {
@@ -177,12 +146,11 @@ public class BattleTransitionManager : MonoBehaviour
             Debug.LogWarning("[BattleTransitionManager] BattleScene_Camera_BattleIntro introuvable.");
         }
 
+        // Ne fait rien d'autre temps que toutes les unités n'ont pas spawn
         while (NewBattleManager.Instance.unitsInBattle.Count <= 0)
             yield return null;
 
-        worldRiftTweener.TweenToZeroRoutine();
-        yield return battleRiftTweener.TweenToZeroRoutine();
-
+        // Lance le combat
         yield return NewBattleManager.Instance.StartBattle();
     }
 
@@ -257,8 +225,6 @@ public class BattleTransitionManager : MonoBehaviour
             Debug.LogError($"[BattleTransitionManager] Caméra taggée '{battleCameraTag}' introuvable !");
             return false;
         }
-
-        battleCamera.targetTexture = battleRenderTexture;
 
         if (battleCamera.transform.childCount > 0)
             battleCamera.transform.GetChild(0).gameObject.SetActive(true);
