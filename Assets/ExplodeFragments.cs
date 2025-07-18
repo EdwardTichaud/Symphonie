@@ -1,29 +1,75 @@
 using UnityEngine;
 
-[ExecuteAlways]
-public class ExplodeFragments : MonoBehaviour
+public class FragmentExplosionToggle : MonoBehaviour
 {
-    public float force = 500f;
-    public float radius = 5f;
-    public float upwardsModifier = 0.5f;
+    public float explosionForce = 500f;
+    public float explosionRadius = 5f;
+    public float torqueForce = 50f;
+    public float upModifier = 0.1f;
+    public Vector3 explosionPosition;
 
-    public bool triggered = false;
+    private Rigidbody[] fragments;
+    private Vector3[] originalPositions;
+    private Quaternion[] originalRotations;
+    private bool exploded = false;
 
-    void Update()
+    void Start()
     {
-        if(triggered)
+        fragments = GetComponentsInChildren<Rigidbody>();
+        originalPositions = new Vector3[fragments.Length];
+        originalRotations = new Quaternion[fragments.Length];
+
+        for (int i = 0; i < fragments.Length; i++)
         {
-            triggered = false;
-            Explode();
+            originalPositions[i] = fragments[i].transform.localPosition;
+            originalRotations[i] = fragments[i].transform.localRotation;
+            fragments[i].isKinematic = true;
         }
     }
 
-    public void Explode()
+    void Update()
     {
-        Rigidbody[] fragments = GetComponentsInChildren<Rigidbody>();
+        if (Input.GetKeyDown(KeyCode.Alpha0))
+        {
+            if (!exploded)
+            {
+                Explode();
+            }
+            else
+            {
+                ResetFragments();
+            }
+
+            exploded = !exploded;
+        }
+    }
+
+    void Explode()
+    {
         foreach (var rb in fragments)
         {
-            rb.AddExplosionForce(force, transform.position, radius, upwardsModifier, ForceMode.Impulse);
+            rb.isKinematic = false;
+            rb.AddExplosionForce(explosionForce, explosionPosition, explosionRadius, upModifier);
+
+            Vector3 randomTorque = new Vector3(
+                Random.Range(-torqueForce, torqueForce),
+                Random.Range(-torqueForce, torqueForce),
+                Random.Range(-torqueForce, torqueForce)
+            );
+
+            rb.AddTorque(randomTorque, ForceMode.Impulse);
+        }
+    }
+
+    void ResetFragments()
+    {
+        for (int i = 0; i < fragments.Length; i++)
+        {
+            fragments[i].isKinematic = true;
+            fragments[i].transform.localPosition = originalPositions[i];
+            fragments[i].transform.localRotation = originalRotations[i];
+            fragments[i].linearVelocity = Vector3.zero;
+            fragments[i].angularVelocity = Vector3.zero;
         }
     }
 }
