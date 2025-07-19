@@ -11,6 +11,8 @@ public class MusicalMoveSO : ScriptableObject
     public string moveName;
     public enum MoveType { Empty, Attack, Buff, Debuff}
     public MoveType moveType;
+    [Tooltip("Vrai si l'attaque n'est disponible qu'en état Awake")]
+    public bool onlyAwake = false;
     public Sprite moveIcon;
     [TextArea] public string description;
     public AnimationClip musicalMoveTargetingAnimation;
