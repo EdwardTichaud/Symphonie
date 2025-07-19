@@ -1080,7 +1080,9 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        bool hasSkill = caster.Data.musicalAttacks.Any(m => caster.GetHarmonicCount(caster.Data.harmonicType) >= m.harmonicCost);
+        bool hasSkill = caster.Data.musicalAttacks.Any(m =>
+            (!m.onlyAwake || caster.IsAwake) &&
+            caster.GetHarmonicCount(caster.Data.harmonicType) >= m.harmonicCost);
         bool hasItem = InventoryManager.Instance.GetUsableItems().Count > 0;
 
         if (!hasSkill && !hasItem)
@@ -1589,7 +1591,9 @@ public class NewBattleManager : MonoBehaviour
         ToggleMenuContainers(false, true, false);
         currentMenuIndex = 0;
 
-        skillChoices = currentCharacterUnit.Data.musicalAttacks.ToList();
+        skillChoices = currentCharacterUnit.Data.musicalAttacks
+            .Where(m => !m.onlyAwake || currentCharacterUnit.IsAwake)
+            .ToList();
 
         // 7) Création des boutons de compétences
         for (int i = 0; i < skillChoices.Count && i < currentSkillsMenuSlots.Count; i++)
