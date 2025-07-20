@@ -27,7 +27,6 @@ public class BattleTransitionManager : MonoBehaviour
     [Header("Views")]
     public GameObject worldView;
     public GameObject battleView;
-
     #region Initialisation
     /// <summary>
     /// Prépare les références globales du gestionnaire de transition.
@@ -112,7 +111,6 @@ public class BattleTransitionManager : MonoBehaviour
         GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
         battleCamera?.transform.GetChild(2).gameObject.SetActive(true);
         battleCamera?.transform.GetChild(2).GetChild(0).GetComponent<ExplodeFragments>().ExplodeFragmentsMethod();
-        battleView.SetActive(true);
 
         // Lance le mouvement d'intro de la caméra de combat
         GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
@@ -210,8 +208,12 @@ public class BattleTransitionManager : MonoBehaviour
         battleCamera.gameObject.SetActive(true);
         foreach (Transform child in battleCamera.transform)
         {
-            child.gameObject.SetActive(true);
+            child.gameObject.SetActive(true); // Assure l'activation de tous les composants
         }
+
+        // Active spécifiquement l'objet "BattleTransition" (enfant #2)
+        if (battleCamera.transform.childCount > 2)
+            battleCamera.transform.GetChild(2).gameObject.SetActive(true);
 
         var battleUICanvas = FindObjectsOfType<Canvas>().FirstOrDefault(c => c.renderMode == RenderMode.ScreenSpaceCamera);
         if (battleUICanvas != null)
