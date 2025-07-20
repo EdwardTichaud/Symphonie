@@ -1546,6 +1546,16 @@ public class NewBattleManager : MonoBehaviour
             currentSkillsMenuSlots = (skillsSlotsParent != null)
                 ? skillsSlotsParent.Cast<Transform>().ToList()
                 : new List<Transform>();
+
+            // S'assure de disposer d'au moins 4 emplacements pour le move spécial
+            if (currentSkillsMenuSlots.Count > 0)
+            {
+                while (currentSkillsMenuSlots.Count < 4)
+                {
+                    Transform clone = Instantiate(currentSkillsMenuSlots[0], currentSkillsMenuSlots[0].parent);
+                    currentSkillsMenuSlots.Add(clone);
+                }
+            }
         }
 
         // 4) Panneau ItemsMenu_Panel
@@ -1602,6 +1612,10 @@ public class NewBattleManager : MonoBehaviour
             .Where(m => !m.onlyAwake || currentCharacterUnit.IsAwake)
             .ToList();
 
+        // Ajoute le move spécial s'il existe
+        if (currentCharacterUnit.Data.specialMusicalMove != null)
+            skillChoices.Add(currentCharacterUnit.Data.specialMusicalMove);
+
         // 7) Création des boutons de compétences
         for (int i = 0; i < skillChoices.Count && i < currentSkillsMenuSlots.Count; i++)
         {
@@ -1609,7 +1623,8 @@ public class NewBattleManager : MonoBehaviour
             UpdateButton(currentSkillsMenuSlots[i], move.moveName, move.moveIcon);
 
             bool available = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= move.harmonicCost;
-            SetButtonAvailability(currentSkillsMenuSlots[i], available);
+            bool highlight = move == currentCharacterUnit.Data.specialMusicalMove && available;
+            SetButtonAvailability(currentSkillsMenuSlots[i], available, highlight);
         }
         // Indique les emplacements vides
         for (int j = skillChoices.Count; j < currentSkillsMenuSlots.Count; j++)
@@ -1619,7 +1634,7 @@ public class NewBattleManager : MonoBehaviour
             else
                 UpdateButton(currentSkillsMenuSlots[j], "Indisponible", null);
 
-            SetButtonAvailability(currentSkillsMenuSlots[j], false);
+            SetButtonAvailability(currentSkillsMenuSlots[j], false, false);
         }
     }
 
@@ -1686,7 +1701,7 @@ public class NewBattleManager : MonoBehaviour
         if (img != null) img.sprite = icon;
     }
 
-    private void SetButtonAvailability(Transform slot, bool available)
+    private void SetButtonAvailability(Transform slot, bool available, bool highlight = false)
     {
         if (slot == null)
             return;
@@ -1694,7 +1709,7 @@ public class NewBattleManager : MonoBehaviour
         var txt = slot.GetComponentInChildren<TextMeshProUGUI>();
         var img = slot.childCount > 3 ? slot.GetChild(3).GetComponent<Image>() : null;
 
-        Color color = available ? Color.white : Color.gray;
+        Color color = available ? (highlight ? Color.yellow : Color.white) : Color.gray;
         if (txt != null) txt.color = color;
         if (img != null) img.color = color;
     }
