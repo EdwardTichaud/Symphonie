@@ -116,6 +116,10 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Lamentation jouée par ce personnage quand Luna meurt")]
     public AudioClip weepForLunaDeath;
 
+    [Header("Awake Mechanics")]
+    [Tooltip("Nombre d'harmoniques requis pour entrer en Awake")] public int resonancePoint = 1;
+    [Tooltip("Seuil minimal d'harmoniques avant de sortir d'Awake")] public int dissonancePoint = 0;
+
     // Ajoute une référence au GameObject source
     public MonoBehaviour owner;
 

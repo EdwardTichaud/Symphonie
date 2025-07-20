@@ -785,6 +785,13 @@ public class NewBattleManager : MonoBehaviour
             yield break;
         }
 
+        if (move.enterAwake && (caster.IsAwake ||
+            caster.GetHarmonicCount(caster.Data.harmonicType) < caster.Data.resonancePoint))
+        {
+            Debug.LogWarning("[ExecuteMoveOnTarget] Conditions d'Awake non remplies.");
+            yield break;
+        }
+
         OrientUnitTowardTarget(caster, target);
 
         if (move.interceptable && !caster.isInterceptionImmune)
@@ -1073,6 +1080,13 @@ public class NewBattleManager : MonoBehaviour
             caster.AddHarmonic(caster.Data.harmonicType, move.harmonicGeneration);
             caster.SetMoveCooldown(move);
 
+            // Activation du mode Awake si le move le permet
+            if (move.enterAwake && !caster.IsAwake &&
+                caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.resonancePoint)
+            {
+                caster.EnterAwakeState();
+            }
+
             // Si l'unité n'a plus d'harmonique, son tour se termine immédiatement
             if (caster.GetHarmonicCount(caster.Data.harmonicType) <= 0)
             {
@@ -1089,7 +1103,9 @@ public class NewBattleManager : MonoBehaviour
 
         bool hasSkill = caster.Data.musicalAttacks.Any(m =>
             (!m.onlyAwake || caster.IsAwake) &&
-            caster.GetHarmonicCount(caster.Data.harmonicType) >= m.harmonicCost);
+            (!m.enterAwake || !caster.IsAwake) &&
+            caster.GetHarmonicCount(caster.Data.harmonicType) >= m.harmonicCost &&
+            (!m.enterAwake || caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.resonancePoint));
         bool hasItem = InventoryManager.Instance.GetUsableItems().Count > 0;
 
         if (!hasSkill && !hasItem)
@@ -1600,6 +1616,7 @@ public class NewBattleManager : MonoBehaviour
 
         skillChoices = currentCharacterUnit.Data.musicalAttacks
             .Where(m => !m.onlyAwake || currentCharacterUnit.IsAwake)
+            .Where(m => !m.enterAwake || !currentCharacterUnit.IsAwake)
             .ToList();
 
         // 7) Création des boutons de compétences
@@ -1608,7 +1625,11 @@ public class NewBattleManager : MonoBehaviour
             var move = skillChoices[i];
             UpdateButton(currentSkillsMenuSlots[i], move.moveName, move.moveIcon);
 
-            bool available = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= move.harmonicCost;
+            bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= move.harmonicCost;
+            bool resonanceOk = true;
+            if (move.enterAwake)
+                resonanceOk = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.resonancePoint;
+            bool available = enoughHarmonic && resonanceOk;
             SetButtonAvailability(currentSkillsMenuSlots[i], available);
         }
         // Indique les emplacements vides

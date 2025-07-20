@@ -473,6 +473,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         var availableAttacks = Data.musicalAttacks
             .Where(m => !m.onlyAwake || IsAwake)
+            .Where(m => !m.enterAwake || !IsAwake)
+            .Where(m => !m.enterAwake || GetHarmonicCount(Data.harmonicType) >= Data.resonancePoint)
             .ToArray();
 
         if (availableAttacks == null || availableAttacks.Length == 0)
@@ -516,6 +518,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (!harmonicReserve.ContainsKey(type))
             harmonicReserve[type] = 0;
         harmonicReserve[type] += amount;
+        CheckDissonance();
     }
 
     public bool ConsumeHarmonic(HarmonicType type, int amount = 1)
@@ -523,6 +526,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (!harmonicReserve.ContainsKey(type) || harmonicReserve[type] < amount)
             return false;
         harmonicReserve[type] -= amount;
+        CheckDissonance();
         return true;
     }
 
@@ -536,6 +540,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         var keys = harmonicReserve.Keys.ToList();
         foreach (var key in keys)
             harmonicReserve[key] = 0;
+        CheckDissonance();
     }
 
     public void ReduceCooldowns()
@@ -554,6 +559,15 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         if (move.cooldown > 0)
             moveCooldowns[move] = move.cooldown;
+    }
+
+    /// <summary>
+    /// Vérifie si l'unité doit sortir de l'état Awake en fonction de ses harmoniques.
+    /// </summary>
+    private void CheckDissonance()
+    {
+        if (IsAwake && GetHarmonicCount(Data.harmonicType) < Data.dissonancePoint)
+            ExitAwakeState();
     }
 
     /// <summary>
