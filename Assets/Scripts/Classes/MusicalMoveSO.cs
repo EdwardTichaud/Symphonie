@@ -140,4 +140,4 @@ public class MusicalMoveSO : ScriptableObject
 
 public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark }
 
-public enum RelativePosition { Front, Back, Left, Right }
+public enum RelativePosition { Front, Back, Left, Right , NC}

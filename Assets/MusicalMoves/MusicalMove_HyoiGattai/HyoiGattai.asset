@@ -12,33 +12,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8caee409dd862bf429bf43fff5538c9f, type: 3}
   m_Name: HyoiGattai
   m_EditorClassIdentifier: 
-  moveName: 
-  moveType: 0
+  moveName: Hyoi Gattai
+  moveType: 2
   onlyAwake: 0
   moveIcon: {fileID: 0}
-  description: 
+  description: "Fusionne l'\xE2me du lanceur avec celui de son ange gardien."
   musicalMoveTargetingAnimation: {fileID: 0}
-  musicalMoveRunAnimationName: 
-  maxRunDuration: 0.5
   stayFaceToTarget: 1
-  musicalMoveIntroAnimationNames: []
-  musicalMoveAnimationNames: []
   notes: []
   power: 0
   fatigueCost: 1
   harmonicCost: 1
   harmonicGeneration: 0
   cooldown: 0
-  targetType: 1
-  defaultTargetType: 1
-  targetTypes: 01000000
-  effectType: 0
-  effectValue: 10
-  moveSpeed: 20
+  targetType: 0
+  defaultTargetType: 0
+  targetTypes: 00000000
+  effectType: 2
+  effectValue: 0
+  moveSpeed: 0
   castDistance: 0
   stayInPlace: 0
-  interceptable: 1
-  relativePosition: 0
+  interceptable: 0
+  relativePosition: 4
   introVFXPrefab: {fileID: 0}
   hitVFXPrefab: {fileID: 0}
   useTeleportation: 1
