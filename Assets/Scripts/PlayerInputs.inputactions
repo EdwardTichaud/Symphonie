@@ -501,6 +501,15 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "Awake",
+                    "type": "Button",
+                    "id": "ebda5f58-6ca8-4e8a-8d6b-927b6a9f00f4",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -809,6 +818,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "SquadGroupSelection",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "bc9399d1-ee5f-4e5d-a440-bac74cc0a054",
+                    "path": "<Gamepad>/select",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Awake",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ad0bcc7b-2c93-4b41-813e-151edb90b7b1",
+                    "path": "<Keyboard>/t",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Awake",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

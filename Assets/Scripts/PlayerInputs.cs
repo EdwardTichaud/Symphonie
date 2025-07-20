@@ -587,6 +587,15 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Awake"",
+                    ""type"": ""Button"",
+                    ""id"": ""ebda5f58-6ca8-4e8a-8d6b-927b6a9f00f4"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -897,6 +906,28 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""action"": ""SquadGroupSelection"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""bc9399d1-ee5f-4e5d-a440-bac74cc0a054"",
+                    ""path"": ""<Gamepad>/select"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Awake"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""ad0bcc7b-2c93-4b41-813e-151edb90b7b1"",
+                    ""path"": ""<Keyboard>/t"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Awake"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -1148,6 +1179,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_Battle_VerticalNav = m_Battle.FindAction("VerticalNav", throwIfNotFound: true);
         m_Battle_EnemiesGroupSelection = m_Battle.FindAction("EnemiesGroupSelection", throwIfNotFound: true);
         m_Battle_SquadGroupSelection = m_Battle.FindAction("SquadGroupSelection", throwIfNotFound: true);
+        m_Battle_Awake = m_Battle.FindAction("Awake", throwIfNotFound: true);
         // InfoBox
         m_InfoBox = asset.FindActionMap("InfoBox", throwIfNotFound: true);
         m_InfoBox_Cancel = m_InfoBox.FindAction("Cancel", throwIfNotFound: true);
@@ -1508,6 +1540,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_Battle_VerticalNav;
     private readonly InputAction m_Battle_EnemiesGroupSelection;
     private readonly InputAction m_Battle_SquadGroupSelection;
+    private readonly InputAction m_Battle_Awake;
     /// <summary>
     /// Provides access to input actions defined in input action map "Battle".
     /// </summary>
@@ -1559,6 +1592,10 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Battle/SquadGroupSelection".
         /// </summary>
         public InputAction @SquadGroupSelection => m_Wrapper.m_Battle_SquadGroupSelection;
+        /// <summary>
+        /// Provides access to the underlying input action "Battle/Awake".
+        /// </summary>
+        public InputAction @Awake => m_Wrapper.m_Battle_Awake;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1615,6 +1652,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @SquadGroupSelection.started += instance.OnSquadGroupSelection;
             @SquadGroupSelection.performed += instance.OnSquadGroupSelection;
             @SquadGroupSelection.canceled += instance.OnSquadGroupSelection;
+            @Awake.started += instance.OnAwake;
+            @Awake.performed += instance.OnAwake;
+            @Awake.canceled += instance.OnAwake;
         }
 
         /// <summary>
@@ -1656,6 +1696,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @SquadGroupSelection.started -= instance.OnSquadGroupSelection;
             @SquadGroupSelection.performed -= instance.OnSquadGroupSelection;
             @SquadGroupSelection.canceled -= instance.OnSquadGroupSelection;
+            @Awake.started -= instance.OnAwake;
+            @Awake.performed -= instance.OnAwake;
+            @Awake.canceled -= instance.OnAwake;
         }
 
         /// <summary>
@@ -2296,6 +2339,13 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnSquadGroupSelection(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Awake" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnAwake(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "InfoBox" which allows adding and removing callbacks.
