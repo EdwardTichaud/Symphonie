@@ -25,6 +25,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
     private Animator animator;
+    private AwakeState awakeState;
+
+    /// <summary>
+    /// Indique si l'unité est en état Awake (fusion avec l'ange gardien).
+    /// </summary>
+    public bool IsAwake => awakeState != null && awakeState.IsAwake;
 
     public CharacterType characterType => Data.characterType;
 
@@ -116,6 +122,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         spriteRenderer = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
         animator = GetComponentInChildren<Animator>();
+        awakeState = GetComponent<AwakeState>();
 
         // Setup graphique
         if (spriteRenderer != null && Data.portrait != null)
@@ -464,11 +471,13 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public MusicalMoveSO GetRandomMusicalAttack()
     {
-        var availableAttacks = Data.musicalAttacks;
+        var availableAttacks = Data.musicalAttacks
+            .Where(m => !m.onlyAwake || IsAwake)
+            .ToArray();
 
         if (availableAttacks == null || availableAttacks.Length == 0)
         {
-            Debug.LogWarning($"[CharacterUnit] {Data.characterName} n'a aucune attaque musicale disponible !");
+            Debug.LogWarning($"[CharacterUnit] {Data.characterName} n'a aucune attaque musicale disponible pour l'état actuel !");
             return null;
         }
 
@@ -545,6 +554,22 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         if (move.cooldown > 0)
             moveCooldowns[move] = move.cooldown;
+    }
+
+    /// <summary>
+    /// Active l'état Awake et applique les bonus correspondants.
+    /// </summary>
+    public void EnterAwakeState()
+    {
+        awakeState?.EnterAwake();
+    }
+
+    /// <summary>
+    /// Désactive l'état Awake et retire les bonus.
+    /// </summary>
+    public void ExitAwakeState()
+    {
+        awakeState?.ExitAwake();
     }
 
     public float GetAttackMultiplier()
