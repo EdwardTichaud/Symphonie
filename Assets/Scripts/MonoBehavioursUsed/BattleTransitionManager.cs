@@ -112,7 +112,8 @@ public class BattleTransitionManager : MonoBehaviour
 
         //Brise la caméra
         GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
-        battleCamera?.transform.GetChild(2).GetComponent<ExplodeFragments>().ExplodeFragmentsMethod();
+        battleCamera?.transform.GetChild(2).gameObject.SetActive(true);
+        battleCamera?.transform.GetChild(2).GetChild(0).GetComponent<ExplodeFragments>().ExplodeFragmentsMethod();
         battleView.SetActive(true);
 
         // Lance le mouvement d'intro de la caméra de combat
