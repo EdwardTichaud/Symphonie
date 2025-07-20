@@ -388,6 +388,9 @@ public class NewBattleManager : MonoBehaviour
 
         //2 Initialise l’UI de timeline
         InitializeTimelineUI(unitsInBattle);
+        // Cache l'UI de timeline jusqu'au premier tour du joueur
+        if (timelineContainer != null && timelineContainer.parent != null && timelineContainer.parent.parent != null)
+            timelineContainer.parent.parent.gameObject.SetActive(false);
 
         //3 Affecter currentTarget au premier ennemi de la liste
         SetDefaultCurrentTarget();
@@ -544,6 +547,10 @@ public class NewBattleManager : MonoBehaviour
 
         if (currentCharacterUnit != null)
             ToggleMenuContainers(false, false, false);
+
+        // Affiche la timeline et autres UI de combat lorsque le joueur démarre son tour
+        if (timelineContainer != null && timelineContainer.parent != null && timelineContainer.parent.parent != null)
+            timelineContainer.parent.parent.gameObject.SetActive(true);
 
         ChangeCurrentCharacterUnit(characterUnit);
 

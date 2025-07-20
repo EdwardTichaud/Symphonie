@@ -27,7 +27,6 @@ public class BattleTransitionManager : MonoBehaviour
     [Header("Views")]
     public GameObject worldView;
     public GameObject battleView;
-    public GameObject effectsView;
 
     #region Initialisation
     /// <summary>
@@ -112,10 +111,9 @@ public class BattleTransitionManager : MonoBehaviour
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
 
         //Brise la caméra
-        GameObject effectsCamera = GameObject.FindGameObjectWithTag("EffectsCamera");
-        effectsCamera?.transform.GetChild(0).GetChild(0).GetComponent<ExplodeFragments>().ExplodeFragmentsMethod();
+        GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+        battleCamera?.transform.GetChild(2).GetComponent<ExplodeFragments>().ExplodeFragmentsMethod();
         battleView.SetActive(true);
-        effectsView.SetActive(true);
 
         // Lance le mouvement d'intro de la caméra de combat
         GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
