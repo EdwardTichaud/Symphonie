@@ -11,12 +11,7 @@ public class BattleTransitionManager : MonoBehaviour
 
     private PlayerDetection playerDetection;
 
-    [Header("Tags")]
-    [SerializeField] private string battleCameraTag = "BattleCamera";
-
     [Header("Ressources Visuals")]
-    [SerializeField] private GameObject worldView;
-    [SerializeField] private GameObject battleView;
     [SerializeField] private Image worldFadeOverlay;
     [SerializeField] private ParticleSystem maskRingParticles;
 
@@ -28,6 +23,11 @@ public class BattleTransitionManager : MonoBehaviour
     [SerializeField] private AudioSource musicSource;
 
     private Camera battleCamera;
+
+    [Header("Views")]
+    public GameObject worldView;
+    public GameObject battleView;
+    public GameObject effectsView;
 
     #region Initialisation
     /// <summary>
@@ -48,7 +48,7 @@ public class BattleTransitionManager : MonoBehaviour
 
         worldFadeOverlay ??= GameObject.Find("WorldFadeOverlayPanel")?.GetComponent<Image>();
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
-        battleCamera = GameObject.FindGameObjectWithTag(battleCameraTag)?.GetComponent<Camera>();
+        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
     }
 
     #endregion
@@ -107,17 +107,15 @@ public class BattleTransitionManager : MonoBehaviour
         // Le temps reprend son cours normal
         yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
 
-        //Switch World vers Battle
-        if (worldView != null && battleView != null)
-        {
-            worldView.SetActive(false);
-            battleView.SetActive(true);
-        }
-        // A améliorer plus tard
-
         // Change le statut du combat en "Initialisé"
         NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization);
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
+
+        //Brise la caméra
+        GameObject effectsCamera = GameObject.FindGameObjectWithTag("EffectsCamera");
+        effectsCamera?.transform.GetChild(0).GetChild(0).GetComponent<ExplodeFragments>().ExplodeFragmentsMethod();
+        battleView.SetActive(true);
+        effectsView.SetActive(true);
 
         // Lance le mouvement d'intro de la caméra de combat
         GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
@@ -207,7 +205,7 @@ public class BattleTransitionManager : MonoBehaviour
     {
         if (battleCamera == null)
         {
-            Debug.LogError($"[BattleTransitionManager] Caméra taggée '{battleCameraTag}' introuvable !");
+            Debug.LogError($"[BattleTransitionManager] Caméra taggée BattleCamera' introuvable !");
         }
 
         // Active le GameObject principal de la caméra ainsi que tous ses enfants
