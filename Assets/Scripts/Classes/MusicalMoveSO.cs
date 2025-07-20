@@ -73,6 +73,9 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Temps en secondes à attendre après la téléportation avant d'exécuter le move")]
     public float startDelay = 2f;
 
+    [Header("Awake")]
+    [Tooltip("Si vrai, ce move fait entrer le lanceur en mode Awake")] public bool enterAwake = false;
+
 
     [Header("Timeline")]
     [Tooltip("Timeline jouée lors de la préparation du move")]

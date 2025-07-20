@@ -6,6 +6,10 @@ public class AwakeState : UnitStateEffects
     [Tooltip("Multiplicateur appliqué aux caractéristiques en mode Awake")]
     public float statMultiplier = 1.5f;
 
+    [Header("Aura")]
+    [Tooltip("Prefab de l'aura affichée en mode Awake")] public GameObject auraPrefab;
+    private GameObject auraInstance;
+
     private CharacterUnit unit;
     private bool isAwake;
 
@@ -22,6 +26,8 @@ public class AwakeState : UnitStateEffects
         if (isAwake) return;
         isAwake = true;
         ApplyStatBonus();
+        if (auraPrefab != null && auraInstance == null)
+            auraInstance = Instantiate(auraPrefab, transform.position, Quaternion.identity, transform);
         EnterState();
     }
 
@@ -30,6 +36,11 @@ public class AwakeState : UnitStateEffects
         if (!isAwake) return;
         isAwake = false;
         RemoveStatBonus();
+        if (auraInstance != null)
+        {
+            Destroy(auraInstance);
+            auraInstance = null;
+        }
         ExitState();
     }
 
