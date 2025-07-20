@@ -95,23 +95,6 @@ public class RhythmQTEManager : MonoBehaviour
             string cameraTag = caster.characterType == CharacterType.EnemyUnit ? null : "BattleCamera";
             TimelineLauncher.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, cameraTag);
         }
-        else if (move.musicalMoveIntroAnimationNames.Length > 0)
-        {
-            // En l'absence de Timeline, on joue les animations d'introduction définies
-            yield return PlayMoveAnimations(move.musicalMoveIntroAnimationNames, caster);
-        }
-
-        // Téléportation vers la position d'attaque
-        yield return MoveTo(caster, target, move);
-
-        // Attente supplémentaire définie par le move avant d'enchaîner
-        if (move.startDelay > 0f)
-            yield return new WaitForSeconds(move.startDelay);
-
-        if (move.performingTimeline == null && move.musicalMoveAnimationNames.Length > 0)
-        {
-            yield return PlayMoveAnimations(move.musicalMoveAnimationNames, caster);
-        }
 
         currentMove = move;
         currentCaster = caster;

@@ -16,11 +16,7 @@ public class MusicalMoveSO : ScriptableObject
     public Sprite moveIcon;
     [TextArea] public string description;
     public AnimationClip musicalMoveTargetingAnimation;
-    public string musicalMoveRunAnimationName;
-    public float maxRunDuration = 0.5f;
     public bool stayFaceToTarget = true;
-    public string[] musicalMoveIntroAnimationNames;
-    public string[] musicalMoveAnimationNames;
 
     [System.Serializable]
     public class NoteData
