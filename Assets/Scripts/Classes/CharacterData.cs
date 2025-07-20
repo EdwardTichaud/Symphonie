@@ -50,6 +50,7 @@ public class CharacterData : ScriptableObject, ITargetable
 
     [Header("Musical Attacks")]
     public MusicalMoveSO[] musicalAttacks;
+    [Tooltip("Attaque musicale toujours disponible")] public MusicalMoveSO specialMusicalMove;
 
     [Header("Etat (runtime)")]
     public float currentInitiative;
