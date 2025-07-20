@@ -56,6 +56,19 @@ public class ExplodeFragments : MonoBehaviour
 
     void Explode()
     {
+        fragments = GetComponentsInChildren<Rigidbody>();
+        originalPositions = new Vector3[fragments.Length];
+        originalRotations = new Quaternion[fragments.Length];
+        originalScales = new Vector3[fragments.Length];
+
+        for (int i = 0; i < fragments.Length; i++)
+        {
+            originalPositions[i] = fragments[i].transform.localPosition;
+            originalRotations[i] = fragments[i].transform.localRotation;
+            originalScales[i] = fragments[i].transform.localScale;
+            fragments[i].isKinematic = true;
+        }
+
         Vector3 worldExplosionPos = transform.TransformPoint(localExplosionPosition);
         Vector3 worldPushDir = transform.TransformDirection(localPushDirection).normalized;
 

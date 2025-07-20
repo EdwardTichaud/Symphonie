@@ -26,8 +26,7 @@ public class BattleTransitionManager : MonoBehaviour
 
     [Header("Views")]
     public GameObject worldView;
-    public GameObject battleView; // Vue utilisée pendant les combats
-
+    public GameObject battleView;
     #region Initialisation
     /// <summary>
     /// Prépare les références globales du gestionnaire de transition.
@@ -58,8 +57,6 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     public void StartCombatTransition()
     {
-        StopAllCoroutines();
-
         CombatSkyboxManager.Instance?.ApplyBattleSkybox();
 
         AudioClip randomClip = null;
@@ -88,7 +85,7 @@ public class BattleTransitionManager : MonoBehaviour
     private IEnumerator TransitionRoutine()
     {
         // Ralenti le temps pour la transition
-        yield return SlowTimeScale(to: 0.1f, speed: 2f);
+        StartCoroutine(SlowTimeScale(to: 0.1f, speed: 2f));
 
         // Prépare le champs de combat
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
@@ -104,18 +101,16 @@ public class BattleTransitionManager : MonoBehaviour
         SetupBattleCameraAndUI();
 
         // Le temps reprend son cours normal
-        yield return RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f);
+        StartCoroutine(RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f));
 
         // Change le statut du combat en "Initialisé"
         NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization);
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
 
-        // Activation des vues de combat
-        battleView.SetActive(true);
-
-        // Active le GameObject "BattleTransition" (enfant index 2 de la BattleCamera)
-        if (battleCamera != null && battleCamera.transform.childCount > 2)
-            battleCamera.transform.GetChild(2).gameObject.SetActive(true);
+        //Brise la caméra
+        GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+        battleCamera?.transform.GetChild(2).gameObject.SetActive(true);
+        battleCamera?.transform.GetChild(2).GetChild(0).GetComponent<ExplodeFragments>().ExplodeFragmentsMethod();
 
         // Lance le mouvement d'intro de la caméra de combat
         GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
