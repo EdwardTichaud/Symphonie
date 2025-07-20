@@ -134,6 +134,11 @@ public class MusicalMoveSO : ScriptableObject
             if (target.GetComponent<LinkMark>() == null)
                 target.gameObject.AddComponent<LinkMark>();
         }
+        else if (effectType == MusicalEffectType.EnterAwake)
+        {
+            // Le lanceur entre en mode Awake après l'exécution du move
+            caster?.EnterAwakeState();
+        }
 
         if (caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
@@ -142,6 +147,17 @@ public class MusicalMoveSO : ScriptableObject
     }
 }
 
-public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark }
+public enum MusicalEffectType
+{
+    Damage,
+    Heal,
+    Buff,
+    Debuff,
+    Sleep,
+    WakeUpAll,
+    LoyaltyMark,
+    LinkMark,
+    EnterAwake // Nouveau type d'effet pour faire entrer le lanceur en mode Awake
+}
 
 public enum RelativePosition { Front, Back, Left, Right }
