@@ -77,6 +77,12 @@ public class BattleTransitionManager : MonoBehaviour
         GameManager.Instance.CurrentState = GameState.BattleTransition;
         InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Battle.Get());
 
+        //Brise la caméra
+        GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+        battleCamera?.transform.GetChild(2).gameObject.SetActive(true);
+        battleCamera?.transform.GetChild(2).GetChild(0).GetComponent<ExplodeFragments>().ExplodeFragmentsMethod();
+        battleView.SetActive(true);
+
         Debug.Log("[BattleTransitionManager] Transition de combat démarrée.");
     }
 
@@ -107,12 +113,6 @@ public class BattleTransitionManager : MonoBehaviour
         // Change le statut du combat en "Initialisé"
         NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization);
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
-
-        //Brise la caméra
-        GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
-        battleCamera?.transform.GetChild(2).gameObject.SetActive(true);
-        battleCamera?.transform.GetChild(2).GetChild(0).GetComponent<ExplodeFragments>().ExplodeFragmentsMethod();
-        battleView.SetActive(true);
 
         // Lance le mouvement d'intro de la caméra de combat
         GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
