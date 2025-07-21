@@ -14,15 +14,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveName: Sforzando
   moveType: 1
+  onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: f507f03eb80bcbf49bb458bd6a54bd9a, type: 3}
   description: 
   musicalMoveTargetingAnimation: {fileID: 0}
-  musicalMoveRunAnimationName: Sforzando_Run
-  maxRunDuration: 0
   stayFaceToTarget: 1
-  musicalMoveIntroAnimationNames: []
-  musicalMoveAnimationNames:
-  - Sforzando_Move
   notes: []
   power: 10
   fatigueCost: 1
@@ -41,9 +37,10 @@ MonoBehaviour:
   relativePosition: 0
   introVFXPrefab: {fileID: 0}
   hitVFXPrefab: {fileID: 0}
-  useTeleportation: 0
-  teleportStartVFXPrefab: {fileID: 0}
+  useTeleportation: 1
+  teleportStartVFXPrefab: {fileID: 6184656141151889893, guid: 79d3634b81de0b747bee2ee9f3358e80, type: 3}
   teleportEndVFXPrefab: {fileID: 0}
   startDelay: 2
+  enterAwake: 0
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 11400000, guid: bc1a72aa23e36b84d8d545619e3b5f19, type: 2}
