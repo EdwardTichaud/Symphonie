@@ -77,11 +77,30 @@ public class BattleTransitionManager : MonoBehaviour
         GameManager.Instance.CurrentState = GameState.BattleTransition;
         InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Battle.Get());
 
-        //Brise la caméra
-        GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
-        battleCamera?.transform.GetChild(2).gameObject.SetActive(true);
-        battleCamera?.transform.GetChild(2).GetChild(0).GetComponent<ExplodeFragments>().ExplodeFragmentsMethod();
+        //Active d'abord la vue de combat afin que la caméra soit trouvable
         battleView.SetActive(true);
+
+        // Effet de caméra brisée au début de la transition
+        GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+        if (battleCamera != null)
+        {
+            Transform fractureParent = battleCamera.transform.GetChild(2);
+            fractureParent.gameObject.SetActive(true);
+
+            var explode = fractureParent.GetChild(0).GetComponent<ExplodeFragments>();
+            if (explode != null)
+            {
+                explode.ExplodeFragmentsMethod();
+            }
+            else
+            {
+                Debug.LogWarning("[BattleTransitionManager] Composant ExplodeFragments manquant sur la caméra.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[BattleTransitionManager] BattleCamera introuvable lors du démarrage de la transition.");
+        }
 
         Debug.Log("[BattleTransitionManager] Transition de combat démarrée.");
     }
