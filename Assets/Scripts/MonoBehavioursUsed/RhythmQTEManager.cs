@@ -84,7 +84,16 @@ public class RhythmQTEManager : MonoBehaviour
             target.PlayPrepareToUndergoAnimation();
         }
 
+        // Récupère le GameObject contenant l'Animator du lanceur
         GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
+
+        // --- Téléportation vers la position relative à la cible ---
+        // Cette étape était manquante, d'où l'absence de déplacement constatée.
+        if (caster != null && target != null)
+        {
+            // On attend la fin de la téléportation avant de poursuivre la séquence
+            yield return MoveTo(caster, target, move);
+        }
 
         // Si une Timeline est disponible, on la lit en adaptant la caméra selon le type de personnage
         bool hasTimeline = move.performingTimeline != null && TimelineLauncher.Instance != null && casterAnimatorGO != null;
