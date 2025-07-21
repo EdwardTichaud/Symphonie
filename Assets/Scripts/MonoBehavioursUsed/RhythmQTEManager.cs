@@ -249,7 +249,19 @@ public class RhythmQTEManager : MonoBehaviour
         yield return new WaitForSeconds(teleportDelay);
 
         // Téléportation après le délai
+        var charController = caster.GetComponent<CharacterController>();
+        bool ccState = false;
+        if (charController != null)
+        {
+            // Désactivation temporaire pour éviter les collisions lors de la téléportation
+            ccState = charController.enabled;
+            charController.enabled = false;
+        }
+
         caster.transform.position = destination;
+
+        if (charController != null)
+            charController.enabled = ccState;
 
         if (hasMovement && caster.Data.TPEffect_Destination != null)
             Instantiate(caster.Data.TPEffect_Destination, destination, Quaternion.identity);
@@ -296,7 +308,19 @@ public class RhythmQTEManager : MonoBehaviour
         // Laisse un court délai pour jouer l'effet avant de déplacer
         yield return new WaitForSeconds(teleportDelay);
         // Téléportation vers la position d'origine
+        var charController = caster.GetComponent<CharacterController>();
+        bool ccState = false;
+        if (charController != null)
+        {
+            // Suspension du CharacterController pour garantir la téléportation
+            ccState = charController.enabled;
+            charController.enabled = false;
+        }
+
         caster.transform.position = origin;
+
+        if (charController != null)
+            charController.enabled = ccState;
 
         if (hasMovement && caster.Data.TPEffect_Destination != null)
             Instantiate(caster.Data.TPEffect_Destination, origin, Quaternion.identity);
@@ -371,7 +395,19 @@ public class RhythmQTEManager : MonoBehaviour
             // Délai pour séparer départ et arrivée
             yield return new WaitForSeconds(teleportDelay);
 
+            var charController = caster.GetComponent<CharacterController>();
+            bool ccState = false;
+            if (charController != null)
+            {
+                // Empêche le CharacterController de bloquer la téléportation
+                ccState = charController.enabled;
+                charController.enabled = false;
+            }
+
             caster.transform.position = teleportTargetPosition;
+
+            if (charController != null)
+                charController.enabled = ccState;
 
             if (move.teleportEndVFXPrefab != null)
                 Instantiate(move.teleportEndVFXPrefab, teleportTargetPosition, Quaternion.identity);
@@ -434,7 +470,19 @@ public class RhythmQTEManager : MonoBehaviour
         // Délai avant de revenir à la position initiale
         yield return new WaitForSeconds(teleportDelay);
 
+        var charController = caster.GetComponent<CharacterController>();
+        bool ccState = false;
+        if (charController != null)
+        {
+            // On désactive temporairement le contrôleur pour ne pas être bloqué par la physique
+            ccState = charController.enabled;
+            charController.enabled = false;
+        }
+
         caster.transform.position = initialPosition;
+
+        if (charController != null)
+            charController.enabled = ccState;
 
         if (move.teleportEndVFXPrefab != null)
             Instantiate(move.teleportEndVFXPrefab, initialPosition, Quaternion.identity);
