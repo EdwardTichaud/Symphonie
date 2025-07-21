@@ -180,6 +180,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// <param name="amount">Quantité de dégâts subis.</param>
     public void TakeDamage(float amount)
     {
+        // Redirige vers la version complète en autorisant par défaut
+        // les éventuelles redirections de dégâts (LoyaltyMark, etc.).
         TakeDamage(amount, null);
     }
 
@@ -188,11 +190,16 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     /// <param name="amount">Quantité de dégâts subis.</param>
     /// <param name="attacker">Transform de l'attaquant pour déterminer la direction.</param>
-    public void TakeDamage(float amount, Transform attacker = null)
+    public void TakeDamage(float amount, Transform attacker = null, bool allowRedirect = true)
     {
-        var mark = GetComponent<LoyaltyMark>();
-        if (mark != null && mark.RedirectDamage(amount))
-            return;
+        // Si autorisé, on vérifie la présence d'une marque de loyauté qui
+        // pourrait rediriger les dégâts vers un protecteur.
+        if (allowRedirect)
+        {
+            var mark = GetComponent<LoyaltyMark>();
+            if (mark != null && mark.RedirectDamage(amount))
+                return;
+        }
 
         currentHP = Mathf.Max(currentHP - amount, 0);
         if (hpBar != null) hpBar.SetValue(currentHP);
