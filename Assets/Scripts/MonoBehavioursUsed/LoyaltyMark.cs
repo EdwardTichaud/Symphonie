@@ -13,7 +13,11 @@ public class LoyaltyMark : MonoBehaviour
     {
         if (protector == null || protector.currentHP <= 0)
             return false;
-        protector.TakeDamage(amount * 0.5f);
+
+        // On inflige la moitié des dégâts au protecteur sans déclencher une
+        // nouvelle redirection afin d'éviter les boucles infinies en cas de
+        // protection mutuelle.
+        protector.TakeDamage(amount * 0.5f, null, false);
         return true;
     }
 }

@@ -188,10 +188,13 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     /// <param name="amount">Quantité de dégâts subis.</param>
     /// <param name="attacker">Transform de l'attaquant pour déterminer la direction.</param>
-    public void TakeDamage(float amount, Transform attacker = null)
+    public void TakeDamage(float amount, Transform attacker = null, bool allowRedirect = true)
     {
+        // Vérifie la présence d'un marqueur de loyauté pouvant rediriger les dégâts.
+        // Le paramètre allowRedirect permet d'éviter une boucle infinie lorsque
+        // deux unités se protègent mutuellement.
         var mark = GetComponent<LoyaltyMark>();
-        if (mark != null && mark.RedirectDamage(amount))
+        if (allowRedirect && mark != null && mark.RedirectDamage(amount))
             return;
 
         currentHP = Mathf.Max(currentHP - amount, 0);
