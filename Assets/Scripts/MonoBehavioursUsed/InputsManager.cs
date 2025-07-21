@@ -66,6 +66,7 @@ public class InputsManager : MonoBehaviour
         battle.Select1.performed += OnSelect1;
         battle.Select2.performed += OnSelect2;
         battle.Select3.performed += OnSelect3;
+        battle.Awake.performed += OnAwake; // Appui sur la touche d'éveil
         battle.Back.started += OnBackStarted;
         battle.Back.performed += OnBackInput;
         battle.Back.canceled += OnBackCanceled;
@@ -87,6 +88,7 @@ public class InputsManager : MonoBehaviour
         battle.Select1.performed -= OnSelect1;
         battle.Select2.performed -= OnSelect2;
         battle.Select3.performed -= OnSelect3;
+        battle.Awake.performed -= OnAwake; // Désabonnement de la touche d'éveil
         battle.Back.started -= OnBackStarted;
         battle.Back.performed -= OnBackInput;
         battle.Back.canceled -= OnBackCanceled;
@@ -327,6 +329,33 @@ public class InputsManager : MonoBehaviour
                 Debug.LogWarning("[InputsManager] OnSelect3 ignoré : pas assez d'items !");
             }
         }
+    }
+
+    /// <summary>
+    /// Tente d'activer l'état Awake lorsque le joueur est dans le SkillsMenu.
+    /// </summary>
+    private void OnAwake(InputAction.CallbackContext ctx)
+    {
+        NewBattleManager bm = NewBattleManager.Instance;
+
+        if (bm.currentBattleState != BattleState.SquadUnit_SkillsMenu)
+            return; // Ignore l'input si le menu des compétences n'est pas actif
+
+        CharacterUnit unit = bm.currentCharacterUnit;
+        if (unit == null)
+            return;
+
+        // Vérifie la réserve d'harmonique nécessaire pour l'éveil
+        if (unit.GetHarmonicCount(unit.Data.harmonicType) < unit.Data.resonancePoint)
+        {
+            // Feedback si le joueur n'a pas assez d'harmonique
+            ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+            return;
+        }
+
+        // Active l'état Awake et rafraîchit les compétences disponibles
+        unit.EnterAwakeState();
+        bm.OpenSkillsMenu();
     }
 
     private void OnBackInput(InputAction.CallbackContext ctx)
