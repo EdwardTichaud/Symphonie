@@ -27,6 +27,7 @@ public class BattleTransitionManager : MonoBehaviour
     [Header("Views")]
     public GameObject worldView;
     public GameObject battleView;
+    public GameObject battleTransition;
 
     #region Initialisation
     /// <summary>
@@ -124,15 +125,11 @@ public class BattleTransitionManager : MonoBehaviour
             Transform fractureParent = battleCamera.transform.GetChild(2);
             fractureParent.gameObject.SetActive(true);
 
-            var explode = fractureParent.GetChild(0).GetComponent<ExplodeFragments>();
+            var explode = fractureParent.GetChild(0).GetComponent<Animator>();
             if (explode != null)
             {
-                // Lancer la fissuration + attendre la fin de l'explosion complète
-                yield return explode.FissureAndExplode();
+                explode.Play("Glass_Explode");
             }
-
-            // Petite pause après explosion pour enchaîner
-            yield return new WaitForSecondsRealtime(0.2f);
         }
 
         SetupBattleCameraAndUI();

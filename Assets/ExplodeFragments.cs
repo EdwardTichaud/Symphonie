@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections;
 
+[ExecuteAlways]
 public class ExplodeFragments : MonoBehaviour
 {
     public float explosionForce = 500f;
@@ -22,7 +23,19 @@ public class ExplodeFragments : MonoBehaviour
 
     void Start()
     {
+        CacheFragmentsData();
+    }
+
+    void OnEnable()
+    {
+        CacheFragmentsData();
+    }
+
+    private void CacheFragmentsData()
+    {
         fragments = GetComponentsInChildren<Rigidbody>();
+        if (fragments.Length == 0) return;
+
         originalPositions = new Vector3[fragments.Length];
         originalRotations = new Quaternion[fragments.Length];
         originalScales = new Vector3[fragments.Length];
@@ -32,7 +45,8 @@ public class ExplodeFragments : MonoBehaviour
             originalPositions[i] = fragments[i].transform.localPosition;
             originalRotations[i] = fragments[i].transform.localRotation;
             originalScales[i] = fragments[i].transform.localScale;
-            fragments[i].isKinematic = true;
+            if (Application.isPlaying)
+                fragments[i].isKinematic = true;
         }
     }
 
@@ -59,54 +73,42 @@ public class ExplodeFragments : MonoBehaviour
         Vector3 worldExplosionPos = transform.TransformPoint(localExplosionPosition);
         Vector3 worldPushDir = transform.TransformDirection(localPushDirection).normalized;
 
-        // Libérer les fragments
         foreach (var rb in fragments)
-        {
             rb.isKinematic = false;
-        }
 
-        // 1. Fissuration rapide
+        // Fissuration
         foreach (var rb in fragments)
         {
-            rb.AddExplosionForce(explosionForce * 0.1f, worldExplosionPos, explosionRadius, upModifier);
-            rb.AddForce(worldPushDir * pushMultiplier * 0.1f, ForceMode.Impulse);
+            Vector3 dir = (rb.transform.position - worldExplosionPos).normalized;
+            Vector3 finalDir = (dir + worldPushDir).normalized;
+            rb.AddForce(finalDir * (explosionForce * 0.1f), ForceMode.Impulse);
         }
 
-        // Laisser le temps au petit burst d'agir
         yield return new WaitForSeconds(0.2f);
 
-        // Stop mouvement pour figer la fissure
         foreach (var rb in fragments)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
 
-        // Attendre 2 secondes avant l'explosion finale
         yield return new WaitForSeconds(2f);
 
-        // 2. Explosion finale
+        // Explosion finale
         foreach (var rb in fragments)
         {
-            rb.AddExplosionForce(explosionForce, worldExplosionPos, explosionRadius, upModifier);
-            rb.AddForce(worldPushDir * pushMultiplier, ForceMode.Impulse);
+            Vector3 dir = (rb.transform.position - worldExplosionPos).normalized;
+            Vector3 finalDir = (dir + worldPushDir).normalized;
+            rb.AddForce(finalDir * explosionForce, ForceMode.Impulse);
             rb.AddTorque(Random.insideUnitSphere * torqueForce, ForceMode.Impulse);
         }
     }
 
-    IEnumerator ResetFragmentsSmooth()
+    private IEnumerator ResetFragmentsSmooth()
     {
         StopAllCoroutines();
         resetting = true;
 
-        foreach (var rb in fragments)
-        {
-            rb.isKinematic = true;
-            rb.linearVelocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-        }
-
-        float elapsed = 0f;
         Vector3[] startPositions = new Vector3[fragments.Length];
         Quaternion[] startRotations = new Quaternion[fragments.Length];
         Vector3[] startScales = new Vector3[fragments.Length];
@@ -116,8 +118,11 @@ public class ExplodeFragments : MonoBehaviour
             startPositions[i] = fragments[i].transform.localPosition;
             startRotations[i] = fragments[i].transform.localRotation;
             startScales[i] = fragments[i].transform.localScale;
+            fragments[i].linearVelocity = Vector3.zero;
+            fragments[i].angularVelocity = Vector3.zero;
         }
 
+        float elapsed = 0f;
         while (elapsed < resetDuration)
         {
             elapsed += Time.deltaTime;
@@ -131,6 +136,17 @@ public class ExplodeFragments : MonoBehaviour
             }
 
             yield return null;
+        }
+
+        // Snap final pour �viter tout d�calage
+        for (int i = 0; i < fragments.Length; i++)
+        {
+            fragments[i].transform.localPosition = originalPositions[i];
+            fragments[i].transform.localRotation = originalRotations[i];
+            fragments[i].transform.localScale = originalScales[i];
+            fragments[i].isKinematic = true;
+            fragments[i].linearVelocity = Vector3.zero;
+            fragments[i].angularVelocity = Vector3.zero;
         }
 
         resetting = false;
