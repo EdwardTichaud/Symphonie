@@ -82,10 +82,7 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     private IEnumerator TransitionRoutine()
     {
-        //// Ralenti le temps pour la transition
-        //StartCoroutine(SlowTimeScale(to: 0.1f, speed: 2f));
-
-        // Prépare le champs de combat
+        // Prépare le champ de bataille
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         int battlefieldIndex = playerDetection.detectedEnemies[0].battlefieldIndex;
         Transform battleFieldParent = GameObject.Find("BattleScene/Battlefields").transform;
@@ -95,10 +92,8 @@ public class BattleTransitionManager : MonoBehaviour
 
         NewBattleManager.Instance.SpawnAll();
 
-        //Active d'abord la vue de combat afin que la caméra soit trouvable
         battleView.SetActive(true);
 
-        // Lance le mouvement d'intro de la caméra de combat
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
         GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
         if (introCam != null)
@@ -122,7 +117,7 @@ public class BattleTransitionManager : MonoBehaviour
             Debug.LogWarning("[BattleTransitionManager] BattleScene_Camera_BattleIntro introuvable.");
         }
 
-        // Effet de caméra brisée au début de la transition
+        // Effet de fissuration + explosion caméra
         GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
         if (battleCamera != null)
         {
@@ -132,30 +127,27 @@ public class BattleTransitionManager : MonoBehaviour
             var explode = fractureParent.GetChild(0).GetComponent<ExplodeFragments>();
             if (explode != null)
             {
+                // Lancer la fissuration + attendre la fin de l'explosion complète
                 yield return explode.FissureAndExplode();
             }
+
+            // Petite pause après explosion pour enchaîner
+            yield return new WaitForSecondsRealtime(0.2f);
         }
 
-        // Prépare les visuels de transition
         SetupBattleCameraAndUI();
 
-        //// Le temps reprend son cours normal
-        //StartCoroutine(RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f));
-
-        // Passe en mode transition de combat
         GameManager.Instance.CurrentState = GameState.BattleTransition;
         InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Battle.Get());
 
-        // Change le statut du combat en "Initialisé"
         NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization);
 
-        // Ne fait rien d'autre temps que toutes les unités n'ont pas spawn
         while (NewBattleManager.Instance.unitsInBattle.Count <= 0)
             yield return null;
 
-        // Lance le combat
         yield return NewBattleManager.Instance.StartBattle();
     }
+
 
     public IEnumerator ExitVictoryScreenAndBattle()
     {

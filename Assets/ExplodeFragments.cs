@@ -56,43 +56,42 @@ public class ExplodeFragments : MonoBehaviour
 
     public IEnumerator FissureAndExplode()
     {
-        if (!exploded)
+        Vector3 worldExplosionPos = transform.TransformPoint(localExplosionPosition);
+        Vector3 worldPushDir = transform.TransformDirection(localPushDirection).normalized;
+
+        // Libérer les fragments
+        foreach (var rb in fragments)
         {
-            Vector3 worldExplosionPos = transform.TransformPoint(localExplosionPosition);
-            Vector3 worldPushDir = transform.TransformDirection(localPushDirection).normalized;
-
-            // Libérer les fragments
-            foreach (var rb in fragments)
-            {
-                rb.isKinematic = false;
-            }
-
-            // 1. Fissuration : petit burst
-            foreach (var rb in fragments)
-            {
-                rb.AddExplosionForce(explosionForce * 0.05f, worldExplosionPos, explosionRadius, upModifier);
-                rb.AddForce(worldPushDir * pushMultiplier * 0.05f, ForceMode.Impulse);
-            }
-            yield return new WaitForSeconds(2f);
-
-            // 2. Stop mouvement
-            foreach (var rb in fragments)
-            {
-                rb.linearVelocity = Vector3.zero;
-                rb.angularVelocity = Vector3.zero;
-            }
-            yield return new WaitForSeconds(2f);
-
-            // 3. Explosion finale
-            foreach (var rb in fragments)
-            {
-                rb.AddExplosionForce(explosionForce, worldExplosionPos, explosionRadius, upModifier);
-                rb.AddForce(worldPushDir * pushMultiplier, ForceMode.Impulse);
-                rb.AddTorque(Random.insideUnitSphere * torqueForce, ForceMode.Impulse);
-            }
+            rb.isKinematic = false;
         }
 
-        // Lancer la routine de shrink si besoin ici...
+        // 1. Fissuration rapide
+        foreach (var rb in fragments)
+        {
+            rb.AddExplosionForce(explosionForce * 0.1f, worldExplosionPos, explosionRadius, upModifier);
+            rb.AddForce(worldPushDir * pushMultiplier * 0.1f, ForceMode.Impulse);
+        }
+
+        // Laisser le temps au petit burst d'agir
+        yield return new WaitForSeconds(0.2f);
+
+        // Stop mouvement pour figer la fissure
+        foreach (var rb in fragments)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
+
+        // Attendre 2 secondes avant l'explosion finale
+        yield return new WaitForSeconds(2f);
+
+        // 2. Explosion finale
+        foreach (var rb in fragments)
+        {
+            rb.AddExplosionForce(explosionForce, worldExplosionPos, explosionRadius, upModifier);
+            rb.AddForce(worldPushDir * pushMultiplier, ForceMode.Impulse);
+            rb.AddTorque(Random.insideUnitSphere * torqueForce, ForceMode.Impulse);
+        }
     }
 
     IEnumerator ResetFragmentsSmooth()
