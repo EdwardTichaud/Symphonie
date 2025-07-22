@@ -95,31 +95,6 @@ public class BattleTransitionManager : MonoBehaviour
 
         battleView.SetActive(true);
 
-        CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
-        GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
-        if (introCam != null)
-        {
-            if (firstUnit != null)
-                introCam.transform.position = firstUnit.transform.position;
-
-            PlayableDirector introDirector = introCam.GetComponentInChildren<PlayableDirector>();
-            if (introDirector != null)
-            {
-                // On joue la Timeline d'introduction et on attend qu'elle se termine
-                // au lieu d'attendre un temps fixe qui pouvait provoquer un délai inutile
-                TimelineManager.Instance.PlayTimeline(introDirector);
-                yield return new WaitUntil(() => !TimelineManager.Instance.IsTimelinePlaying);
-            }
-            else
-            {
-                Debug.LogWarning("[BattleTransitionManager] Timeline d'intro introuvable.");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[BattleTransitionManager] BattleScene_Camera_BattleIntro introuvable.");
-        }
-
         // Effet de fissuration + explosion caméra
         GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
         if (battleCamera != null)
@@ -132,6 +107,32 @@ public class BattleTransitionManager : MonoBehaviour
             {
                 explode.Play("Glass_Explode");
             }
+        }
+
+        yield return new WaitForSecondsRealtime(0.5f);
+
+        CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
+        GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
+        if (introCam != null)
+        {
+            if (firstUnit != null)
+                introCam.transform.position = firstUnit.transform.position;
+
+            PlayableDirector introDirector = introCam.GetComponentInChildren<PlayableDirector>();
+            if (introDirector != null)
+            {
+                // On joue la Timeline d'introduction et on attend qu'elle se termine
+                TimelineManager.Instance.PlayTimeline(introDirector);
+                //yield return new WaitUntil(() => !TimelineManager.Instance.IsTimelinePlaying);
+            }
+            else
+            {
+                Debug.LogWarning("[BattleTransitionManager] Timeline d'intro introuvable.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[BattleTransitionManager] BattleScene_Camera_BattleIntro introuvable.");
         }
 
         SetupBattleCameraAndUI();
