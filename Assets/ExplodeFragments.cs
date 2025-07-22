@@ -15,10 +15,10 @@ public class ExplodeFragments : MonoBehaviour
     private Rigidbody[] fragments;
     private Vector3[] originalPositions;
     private Quaternion[] originalRotations;
+    private Vector3[] originalScales;
+
     private bool exploded = false;
     private bool resetting = false;
-
-    private Vector3[] originalScales;
 
     void Start()
     {
@@ -47,119 +47,57 @@ public class ExplodeFragments : MonoBehaviour
     public void ExplodeFragmentsMethod()
     {
         if (!exploded)
-            Explode();
+            StartCoroutine(FissureAndExplode());
         else
             StartCoroutine(ResetFragmentsSmooth());
 
         exploded = !exploded;
     }
 
-    void Explode()
+    public IEnumerator FissureAndExplode()
     {
-        fragments = GetComponentsInChildren<Rigidbody>();
-        originalPositions = new Vector3[fragments.Length];
-        originalRotations = new Quaternion[fragments.Length];
-        originalScales = new Vector3[fragments.Length];
-
-        for (int i = 0; i < fragments.Length; i++)
+        if (!exploded)
         {
-            originalPositions[i] = fragments[i].transform.localPosition;
-            originalRotations[i] = fragments[i].transform.localRotation;
-            originalScales[i] = fragments[i].transform.localScale;
-            fragments[i].isKinematic = true;
-        }
+            Vector3 worldExplosionPos = transform.TransformPoint(localExplosionPosition);
+            Vector3 worldPushDir = transform.TransformDirection(localPushDirection).normalized;
 
-        Vector3 worldExplosionPos = transform.TransformPoint(localExplosionPosition);
-        Vector3 worldPushDir = transform.TransformDirection(localPushDirection).normalized;
-
-        foreach (var rb in fragments)
-        {
-            rb.isKinematic = false;
-
-            Vector3 localOffset = rb.transform.position - worldExplosionPos;
-            float distance = localOffset.magnitude;
-            float multiplier = Mathf.Clamp01(1f - (distance / explosionRadius));
-
-            Vector3 appliedForce = worldPushDir * multiplier * pushMultiplier;
-
-            rb.AddExplosionForce(explosionForce, worldExplosionPos, explosionRadius, upModifier);
-            rb.AddForce(appliedForce, ForceMode.Impulse);
-
-            Vector3 randomTorque = new Vector3(
-                Random.Range(-torqueForce, torqueForce),
-                Random.Range(-torqueForce, torqueForce),
-                Random.Range(-torqueForce, torqueForce)
-            );
-
-            rb.AddTorque(randomTorque, ForceMode.Impulse);
-        }
-
-        StartCoroutine(ExplosionTimeScaleSequence());
-    }
-
-    IEnumerator ExplosionTimeScaleSequence()
-    {
-        yield return ApplyFragmentSlowdown(1f, 0.01f);
-        yield return ApplyFragmentSlowdown(0f, 0.5f);
-        yield return ApplyFragmentSlowdown(1f, 0.5f);
-        yield return ApplyFragmentSlowdown(0.2f, 1f);
-        yield return ApplyFragmentSlowdown(1f, 2f);
-
-        StartCoroutine(ShrinkFragments(1f));
-    }
-
-    IEnumerator ShrinkFragments(float shrinkDuration)
-    {
-        float elapsed = 0f;
-        Vector3[] initialScales = new Vector3[fragments.Length];
-
-        for (int i = 0; i < fragments.Length; i++)
-        {
-            initialScales[i] = fragments[i].transform.localScale;
-        }
-
-        while (elapsed < shrinkDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / shrinkDuration);
-
-            for (int i = 0; i < fragments.Length; i++)
-            {
-                fragments[i].transform.localScale = Vector3.Lerp(initialScales[i], Vector3.zero, t);
-            }
-
-            yield return null;
-        }
-    }
-
-    IEnumerator ApplyFragmentSlowdown(float slowFactor, float duration)
-    {
-        float elapsed = 0f;
-        while (elapsed < duration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-
+            // Libérer les fragments
             foreach (var rb in fragments)
             {
-                if (!rb.isKinematic)
-                {
-                    rb.linearVelocity *= slowFactor;
-                    rb.angularVelocity *= slowFactor;
-                }
+                rb.isKinematic = false;
             }
 
-            yield return null;
+            // 1. Fissuration : petit burst
+            foreach (var rb in fragments)
+            {
+                rb.AddExplosionForce(explosionForce * 0.05f, worldExplosionPos, explosionRadius, upModifier);
+                rb.AddForce(worldPushDir * pushMultiplier * 0.05f, ForceMode.Impulse);
+            }
+            yield return new WaitForSeconds(2f);
+
+            // 2. Stop mouvement
+            foreach (var rb in fragments)
+            {
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
+            yield return new WaitForSeconds(2f);
+
+            // 3. Explosion finale
+            foreach (var rb in fragments)
+            {
+                rb.AddExplosionForce(explosionForce, worldExplosionPos, explosionRadius, upModifier);
+                rb.AddForce(worldPushDir * pushMultiplier, ForceMode.Impulse);
+                rb.AddTorque(Random.insideUnitSphere * torqueForce, ForceMode.Impulse);
+            }
         }
+
+        // Lancer la routine de shrink si besoin ici...
     }
 
     IEnumerator ResetFragmentsSmooth()
     {
-        // Arrêter toutes les coroutines actives sur ce script
         StopAllCoroutines();
-
-        // Remettre Time.timeScale à 1 au cas où une ApplyTimeScale était active
-        Time.timeScale = 1f;
-
         resetting = true;
 
         foreach (var rb in fragments)
@@ -170,7 +108,6 @@ public class ExplodeFragments : MonoBehaviour
         }
 
         float elapsed = 0f;
-
         Vector3[] startPositions = new Vector3[fragments.Length];
         Quaternion[] startRotations = new Quaternion[fragments.Length];
         Vector3[] startScales = new Vector3[fragments.Length];

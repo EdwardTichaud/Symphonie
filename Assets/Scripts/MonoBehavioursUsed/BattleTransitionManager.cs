@@ -74,34 +74,6 @@ public class BattleTransitionManager : MonoBehaviour
         StartCoroutine(PlayTransitionSoundsSequentially());
         StartCoroutine(TransitionRoutine());
 
-        GameManager.Instance.CurrentState = GameState.BattleTransition;
-        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Battle.Get());
-
-        //Active d'abord la vue de combat afin que la caméra soit trouvable
-        battleView.SetActive(true);
-
-        // Effet de caméra brisée au début de la transition
-        GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
-        if (battleCamera != null)
-        {
-            Transform fractureParent = battleCamera.transform.GetChild(2);
-            fractureParent.gameObject.SetActive(true);
-
-            var explode = fractureParent.GetChild(0).GetComponent<ExplodeFragments>();
-            if (explode != null)
-            {
-                explode.ExplodeFragmentsMethod();
-            }
-            else
-            {
-                Debug.LogWarning("[BattleTransitionManager] Composant ExplodeFragments manquant sur la caméra.");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[BattleTransitionManager] BattleCamera introuvable lors du démarrage de la transition.");
-        }
-
         Debug.Log("[BattleTransitionManager] Transition de combat démarrée.");
     }
 
@@ -110,8 +82,8 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     private IEnumerator TransitionRoutine()
     {
-        // Ralenti le temps pour la transition
-        StartCoroutine(SlowTimeScale(to: 0.1f, speed: 2f));
+        //// Ralenti le temps pour la transition
+        //StartCoroutine(SlowTimeScale(to: 0.1f, speed: 2f));
 
         // Prépare le champs de combat
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
@@ -123,17 +95,11 @@ public class BattleTransitionManager : MonoBehaviour
 
         NewBattleManager.Instance.SpawnAll();
 
-        // Prépare les visuels de transition
-        SetupBattleCameraAndUI();
-
-        // Le temps reprend son cours normal
-        StartCoroutine(RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f));
-
-        // Change le statut du combat en "Initialisé"
-        NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization);
-        CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
+        //Active d'abord la vue de combat afin que la caméra soit trouvable
+        battleView.SetActive(true);
 
         // Lance le mouvement d'intro de la caméra de combat
+        CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
         GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
         if (introCam != null)
         {
@@ -155,6 +121,33 @@ public class BattleTransitionManager : MonoBehaviour
         {
             Debug.LogWarning("[BattleTransitionManager] BattleScene_Camera_BattleIntro introuvable.");
         }
+
+        // Effet de caméra brisée au début de la transition
+        GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+        if (battleCamera != null)
+        {
+            Transform fractureParent = battleCamera.transform.GetChild(2);
+            fractureParent.gameObject.SetActive(true);
+
+            var explode = fractureParent.GetChild(0).GetComponent<ExplodeFragments>();
+            if (explode != null)
+            {
+                yield return explode.FissureAndExplode();
+            }
+        }
+
+        // Prépare les visuels de transition
+        SetupBattleCameraAndUI();
+
+        //// Le temps reprend son cours normal
+        //StartCoroutine(RestoreTimeScale(from: 0.1f, to: 1f, speed: 2f));
+
+        // Passe en mode transition de combat
+        GameManager.Instance.CurrentState = GameState.BattleTransition;
+        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.Battle.Get());
+
+        // Change le statut du combat en "Initialisé"
+        NewBattleManager.Instance.ChangeBattleState(BattleState.Initialization);
 
         // Ne fait rien d'autre temps que toutes les unités n'ont pas spawn
         while (NewBattleManager.Instance.unitsInBattle.Count <= 0)
