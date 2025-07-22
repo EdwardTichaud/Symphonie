@@ -103,12 +103,37 @@ public class BattleTransitionManager : MonoBehaviour
         GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
         if (introCam != null)
         {
+            // Place la caméra d'intro au niveau du premier combattant si possible
             if (firstUnit != null)
                 introCam.transform.position = firstUnit.transform.position;
 
             PlayableDirector introDirector = introCam.GetComponentInChildren<PlayableDirector>();
             if (introDirector != null)
             {
+                // Récupère la caméra de combat pour lancer l'effet de fracture en même temps
+                GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+                if (battleCamera != null)
+                {
+                    Transform fractureParent = battleCamera.transform.GetChild(2);
+                    fractureParent.gameObject.SetActive(true);
+
+                    var explode = fractureParent.GetChild(0).GetComponent<ExplodeFragments>();
+                    if (explode != null)
+                    {
+                        // Démarre la fissure sans attendre son terme pour qu'elle se joue en parallèle
+                        StartCoroutine(explode.FissureAndExplode());
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[BattleTransitionManager] Composant ExplodeFragments introuvable.");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("[BattleTransitionManager] Caméra de combat introuvable pour l'effet de fracture.");
+                }
+
+                // Démarre la timeline d'intro
                 TimelineManager.Instance.PlayTimeline(introDirector);
                 yield return new WaitForSecondsRealtime(1.8f);
             }
@@ -120,20 +145,6 @@ public class BattleTransitionManager : MonoBehaviour
         else
         {
             Debug.LogWarning("[BattleTransitionManager] BattleScene_Camera_BattleIntro introuvable.");
-        }
-
-        // Effet de caméra brisée au début de la transition
-        GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
-        if (battleCamera != null)
-        {
-            Transform fractureParent = battleCamera.transform.GetChild(2);
-            fractureParent.gameObject.SetActive(true);
-
-            var explode = fractureParent.GetChild(0).GetComponent<ExplodeFragments>();
-            if (explode != null)
-            {
-                yield return explode.FissureAndExplode();
-            }
         }
 
         // Prépare les visuels de transition
