@@ -511,7 +511,9 @@ public class NewBattleManager : MonoBehaviour
             }
 
             yield return ExecuteTurn(CalculateNextUnit());
-            yield return new WaitForSeconds(0.2f);
+            // Utilisation du temps non affecté par le timeScale pour ne pas bloquer
+            // la boucle si le jeu est mis en pause (fin de combat par exemple)
+            yield return new WaitForSecondsRealtime(0.2f);
         }
     }
     #endregion
@@ -617,7 +619,8 @@ public class NewBattleManager : MonoBehaviour
             OrientAllUnitsTowardClosestOpponent();
             unit.PlayIdleAnimation();
 
-            yield return new WaitForSeconds(0.5f);
+            // Petite pause avant l'exécution du tour, indépendante du timeScale
+            yield return new WaitForSecondsRealtime(0.5f);
 
             if (unit.Data.isPlayerControlled)
             {
@@ -758,7 +761,8 @@ public class NewBattleManager : MonoBehaviour
         ActionUIDisplayManager.Instance.DisplayEnemyPreparation(enemy.Data.characterName, alreadyKnown ? move.moveName : null);
 
         // Laisse un délai pour que le joueur prenne connaissance de l'action
-        yield return new WaitForSeconds(ENEMY_MOVE_DELAY);
+        // On utilise ici un temps réel pour éviter tout blocage si le jeu est en pause
+        yield return new WaitForSecondsRealtime(ENEMY_MOVE_DELAY);
         // On arrête de forcer la caméra sur la cible avant d'exécuter l'attaque
         lookAtCasterFromTargetPoint = false;
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
@@ -1509,7 +1513,8 @@ public class NewBattleManager : MonoBehaviour
 
     IEnumerator ShowGameOverPanel()
     {
-        yield return new WaitForSeconds(0.5f); // Attente pour la transition
+        // Petite attente en temps réel pour laisser la transition se terminer
+        yield return new WaitForSecondsRealtime(0.5f); // Attente pour la transition
         gameOverScreen.transform.GetChild(0).gameObject.SetActive(true);
     }
 
