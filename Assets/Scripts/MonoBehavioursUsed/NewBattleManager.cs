@@ -1454,35 +1454,24 @@ public class NewBattleManager : MonoBehaviour
 
     private IEnumerator ReduceTimeAndShowVictoryPanel()
     {
-        float transitionDuration = 0.3f;
-        float t = 0f;
+        // Ralentissement progressif vers un arrêt complet en 2 secondes
+        if (BattleTransitionManager.Instance != null)
+            yield return BattleTransitionManager.Instance.StartCoroutine(
+                BattleTransitionManager.Instance.SlowTimeScale(0f, 0.5f));
+        else
+            Time.timeScale = 0f;
 
-        while (t < transitionDuration)
-        {
-            // On utilise unscaledDeltaTime pour rendre la transition indépendante
-            // du Time.timeScale courant
-            t += Time.unscaledDeltaTime;
-            Time.timeScale = Mathf.Lerp(1f, 0.05f, t / transitionDuration);
-            Time.fixedDeltaTime = Time.timeScale * 0.02f;
-            yield return null;
-        }
-
-        // On s'assure d'atteindre exactement 0.05 de timeScale pour la capture
-        Time.timeScale = 0.05f;
-        Time.fixedDeltaTime = 0.001f;
-
-        TakeVictoryScreenshot(); // 👈 Capture ici immédiatement
-
-        // Optionnel : attendre encore un peu avant d’afficher le panneau
-        // On utilise un temps réel pour ne pas être affecté par le ralentissement
-        yield return new WaitForSecondsRealtime(0.1f);
-
-        //Prendre une photo de la dernière frame de la mort de l'ennemi avant VictoryScreen
-
-        victoryScreen.transform.GetChild(0).gameObject.SetActive(true);
-        // On met le temps en pause une fois le panneau affiché pour figer la scène
-        Time.timeScale = 0f;
         Time.fixedDeltaTime = 0f;
+
+        // Capture de la dernière image avant d'afficher l'écran de victoire
+        TakeVictoryScreenshot();
+
+        // Activation du panneau VictoryScreen (animation en temps réel)
+        Transform victoryPanel = victoryScreen.transform.GetChild(0);
+        Animator victoryAnim = victoryPanel.GetComponent<Animator>();
+        if (victoryAnim != null)
+            victoryAnim.updateMode = AnimatorUpdateMode.UnscaledTime;
+        victoryPanel.gameObject.SetActive(true);
 
         GameManager.Instance?.AddXPToSquad(rewardXP);
         GameManager.Instance?.AddItemsToInventory(rewardItems);
@@ -1513,9 +1502,25 @@ public class NewBattleManager : MonoBehaviour
 
     IEnumerator ShowGameOverPanel()
     {
-        // Petite attente en temps réel pour laisser la transition se terminer
-        yield return new WaitForSecondsRealtime(0.5f); // Attente pour la transition
-        gameOverScreen.transform.GetChild(0).gameObject.SetActive(true);
+        // Ralentit le temps jusqu'à l'arrêt complet avant d'afficher le panneau
+        if (BattleTransitionManager.Instance != null)
+            yield return BattleTransitionManager.Instance.StartCoroutine(
+                BattleTransitionManager.Instance.SlowTimeScale(0f, 0.5f));
+        else
+            Time.timeScale = 0f;
+
+        Time.fixedDeltaTime = 0f;
+
+        // Activation du panneau GameOver (animation en temps réel)
+        Transform panel = gameOverScreen.transform.GetChild(0);
+        Animator anim = panel.GetComponent<Animator>();
+        if (anim != null)
+            anim.updateMode = AnimatorUpdateMode.UnscaledTime;
+        panel.gameObject.SetActive(true);
+
+        CleanupAllSpawnedUnits();
+
+        ChangeBattleState(BattleState.GameOverScreen_CanContinue);
     }
 
     private void CleanupAllSpawnedUnits()
