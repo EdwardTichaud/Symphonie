@@ -223,7 +223,7 @@ public class BattleTransitionManager : MonoBehaviour
         GameObject.Find("BattleScene_TransitionCanvas")?.transform.GetChild(0).gameObject.SetActive(true);
     }
 
-    private IEnumerator SlowTimeScale(float to, float speed)
+    public IEnumerator SlowTimeScale(float to, float speed)
     {
         float epsilon = 0.001f; // petit seuil pour éviter les flottants imprécis
 
