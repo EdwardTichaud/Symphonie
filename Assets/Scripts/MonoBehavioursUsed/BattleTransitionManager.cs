@@ -139,18 +139,11 @@ public class BattleTransitionManager : MonoBehaviour
 
         battleView.SetActive(true);
 
-        // Effet de fissuration + explosion caméra
-        GameObject battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
-        if (battleCamera != null)
+        if (battleTransition != null)
         {
-            Transform fractureParent = battleCamera.transform.GetChild(2);
-            fractureParent.gameObject.SetActive(true);
-
-            var explode = fractureParent.GetChild(0).GetComponent<Animator>();
-            if (explode != null)
-            {
-                explode.Play("Glass_Explode");
-            }
+            battleTransition.SetActive(true);
+            Animator glass = battleTransition.transform.GetChild(0).GetComponent<Animator>();
+            glass.Play("Glass_Explode");
         }
 
         yield return new WaitForSecondsRealtime(0.5f);

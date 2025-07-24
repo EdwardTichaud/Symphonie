@@ -44,24 +44,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e6e613ea4c469ae44b9ce54036925457, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  battleRenderTexture: {fileID: 8400000, guid: 6fd65131f735b574387633583cd31726, type: 2}
-  worldRiftTweener: {fileID: 0}
-  battleCameraTag: BattleCamera
-  battleRevealMask: {fileID: 0}
-  revealDuration: 1
   worldFadeOverlay: {fileID: 0}
   maskRingParticles: {fileID: 0}
-  maskTargetSize: 4500
-  cameraFocusTarget: {fileID: 0}
-  introRotationRadius: 8
-  introRotationSpeed: 60
-  introRotationHeight: 3
-  introDuration: 2
-  introZoomStart: 6
-  introZoomEnd: 12
-  startPoint: {fileID: 0}
-  endPoint: {fileID: 0}
   transitionSFXClips:
   - {fileID: 8300000, guid: 9d4f961144889094aabb116ea91be633, type: 3}
   sfxSource: {fileID: 0}
   musicSource: {fileID: 0}
+  worldView: {fileID: 0}
+  battleView: {fileID: 0}
+  battleTransition: {fileID: 0}
+  qteCircle: {fileID: 0}
+  battleTimeline: {fileID: 0}
+  passTurnButton: {fileID: 0}
+  actionDisplayPanel: {fileID: 0}
+  victoryScreen: {fileID: 0}
+  gameOverScreen: {fileID: 0}
