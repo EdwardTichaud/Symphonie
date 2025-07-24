@@ -1702,10 +1702,29 @@ public class NewBattleManager : MonoBehaviour
 
     public void ToggleMenuContainers(bool showMain, bool showSkills, bool showItems)
     {
-        if (currentCharacterUnit.Data == null) return;
+        // Sécurité supplémentaire : on vérifie que l'unité courante et ses données sont valides
+        if (currentCharacterUnit == null || currentCharacterUnit.Data == null)
+        {
+            Debug.LogWarning("[ToggleMenuContainers] currentCharacterUnit ou ses données sont null.");
+            return;
+        }
 
-        Transform battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").transform;
+        // Recherche de la caméra de combat ; on utilise l'opérateur null-conditional au cas où l'objet n'existe pas
+        Transform battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.transform;
+        if (battleCamera == null)
+        {
+            Debug.LogWarning("[ToggleMenuContainers] BattleCamera introuvable.");
+            return;
+        }
 
+        // On vérifie l'existence des enfants nécessaires pour éviter toute NullReferenceException
+        if (battleCamera.childCount == 0 || battleCamera.GetChild(0).childCount < 3)
+        {
+            Debug.LogWarning("[ToggleMenuContainers] Hiérarchie de la BattleCamera inattendue.");
+            return;
+        }
+
+        // Activation/désactivation des différents menus selon les paramètres
         battleCamera.transform.GetChild(0).GetChild(0).gameObject.SetActive(showMain);
         battleCamera.transform.GetChild(0).GetChild(1).gameObject.SetActive(showSkills);
         battleCamera.transform.GetChild(0).GetChild(2).gameObject.SetActive(showItems);
