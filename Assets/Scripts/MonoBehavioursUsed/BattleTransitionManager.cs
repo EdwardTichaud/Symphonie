@@ -29,6 +29,14 @@ public class BattleTransitionManager : MonoBehaviour
     public GameObject battleView;
     public GameObject battleTransition;
 
+    [Header("UI")]
+    [SerializeField] private GameObject qteCircle;
+    [SerializeField] private GameObject battleTimeline;
+    [SerializeField] private GameObject passTurnButton;
+    [SerializeField] private GameObject actionDisplayPanel;
+    [SerializeField] private GameObject victoryScreen;
+    [SerializeField] private GameObject gameOverScreen;
+
     #region Initialisation
     /// <summary>
     /// Prépare les références globales du gestionnaire de transition.
