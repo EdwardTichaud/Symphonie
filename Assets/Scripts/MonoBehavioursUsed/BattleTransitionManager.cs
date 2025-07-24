@@ -151,9 +151,8 @@ public class BattleTransitionManager : MonoBehaviour
 
     public IEnumerator ExitVictoryScreenAndBattle()
     {
-        Time.timeScale = 1f;
-        // Restauration du fixedDeltaTime après la pause du VictoryScreen
-        Time.fixedDeltaTime = 0.02f;
+        // Restauration progressive du temps vers la normale
+        yield return StartCoroutine(RestoreTimeScale(Time.timeScale, 1f, 2f));
 
         CombatSkyboxManager.Instance?.RestoreDefaultSkybox();
 
@@ -233,19 +232,19 @@ public class BattleTransitionManager : MonoBehaviour
             float newScale = Time.timeScale - Time.unscaledDeltaTime * speed;
             if (newScale <= to + epsilon)
                 newScale = to;
-            // Empêche toute valeur négative due au calcul
-            Time.timeScale = Mathf.Max(0f, newScale);
 
-            yield return new WaitForEndOfFrame();
+            Time.timeScale = Mathf.Max(0f, newScale);
+            Time.fixedDeltaTime = Time.timeScale * 0.02f;
+
+            yield return null;
         }
 
-        // Assure qu'à la fin, on a la bonne valeur pile
         Time.timeScale = to;
+        Time.fixedDeltaTime = Time.timeScale * 0.02f;
     }
 
     private IEnumerator RestoreTimeScale(float from, float to, float speed)
     {
-        Debug.Log("Début de la restauration du temps");
         float epsilon = 0.001f;
 
         while (to - Time.timeScale > epsilon)
@@ -254,11 +253,12 @@ public class BattleTransitionManager : MonoBehaviour
             if (Time.timeScale > to)
                 Time.timeScale = to;
 
-            yield return new WaitForEndOfFrame();
+            Time.fixedDeltaTime = Time.timeScale * 0.02f;
+            yield return null;
         }
 
         Time.timeScale = to;
-        Debug.Log("Temps restauré");
+        Time.fixedDeltaTime = 0.02f;
     }
 
     private IEnumerator PlayTransitionSoundsSequentially()

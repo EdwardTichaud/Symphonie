@@ -154,10 +154,12 @@ public class InputsManager : MonoBehaviour
             bm.ToggleMenuContainers(false, false, false);
         }
 
-        if (bm.currentBattleState == BattleState.VictoryScreen_CanContinue)
+        if (bm.currentBattleState == BattleState.VictoryScreen_CanContinue ||
+            bm.currentBattleState == BattleState.GameOverScreen_CanContinue)
         {
             bm.ChangeBattleState(BattleState.None);
-            BattleTransitionManager.Instance.StartCoroutine(BattleTransitionManager.Instance.ExitVictoryScreenAndBattle());
+            BattleTransitionManager.Instance.StartCoroutine(
+                BattleTransitionManager.Instance.ExitVictoryScreenAndBattle());
         }
     }
 

@@ -17,6 +17,10 @@ public class VictoryPanelManager : MonoBehaviour
 
     void Awake()
     {
+        // L'animation du panneau doit être indépendante du timeScale
+        Animator anim = GetComponent<Animator>();
+        if (anim != null)
+            anim.updateMode = AnimatorUpdateMode.UnscaledTime;
         if (xpText == null)
         {
             xpText = GetComponentsInChildren<TextMeshProUGUI>(true)
