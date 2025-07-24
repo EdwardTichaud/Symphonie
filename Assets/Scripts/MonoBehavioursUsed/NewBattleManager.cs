@@ -2074,6 +2074,14 @@ public class NewBattleManager : MonoBehaviour
             }
         }
 
+        // Vérifie que l'unité courante est bien définie. Sans elle,
+        // certaines positions de caméra ne peuvent pas être calculées.
+        if (currentCharacterUnit == null)
+        {
+            Debug.LogWarning("[BattleCameraManager] currentCharacterUnit est nul lors de la mise à jour de la caméra.");
+            return;
+        }
+
         // Par défaut, on ne regarde pas le lanceur
         lookAtCasterDuringTargetSelection = false;
         // Désactive le focus spécial utilisé pendant le tour ennemi
