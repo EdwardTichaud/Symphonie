@@ -554,6 +554,9 @@ public class NewBattleManager : MonoBehaviour
         if (timelineContainer != null && timelineContainer.parent != null && timelineContainer.parent.parent != null)
             timelineContainer.parent.parent.gameObject.SetActive(true);
 
+        // Affiche l'interface principale au premier tour du joueur
+        BattleTransitionManager.Instance?.ShowBattleUIIfNeeded();
+
         ChangeCurrentCharacterUnit(characterUnit);
 
         characterUnit.AddHarmonic(characterUnit.Data.harmonicType);

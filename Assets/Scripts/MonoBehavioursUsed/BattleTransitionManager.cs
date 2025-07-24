@@ -34,8 +34,43 @@ public class BattleTransitionManager : MonoBehaviour
     [SerializeField] private GameObject battleTimeline;
     [SerializeField] private GameObject passTurnButton;
     [SerializeField] private GameObject actionDisplayPanel;
+
+    private bool battleUIShown = false; // Suivi de l'affichage initial de l'UI
     [SerializeField] private GameObject victoryScreen;
     [SerializeField] private GameObject gameOverScreen;
+
+    /// <summary>
+    /// Cache les éléments d'interface de combat au début de la transition.
+    /// </summary>
+    public void HideBattleUI()
+    {
+        if (battleTimeline != null)
+            battleTimeline.SetActive(false);
+        if (passTurnButton != null)
+            passTurnButton.SetActive(false);
+        if (actionDisplayPanel != null)
+            actionDisplayPanel.SetActive(false);
+
+        battleUIShown = false;
+    }
+
+    /// <summary>
+    /// Affiche les éléments d'interface lorsque le joueur commence son premier tour.
+    /// </summary>
+    public void ShowBattleUIIfNeeded()
+    {
+        if (battleUIShown)
+            return;
+
+        if (battleTimeline != null)
+            battleTimeline.SetActive(true);
+        if (passTurnButton != null)
+            passTurnButton.SetActive(true);
+        if (actionDisplayPanel != null)
+            actionDisplayPanel.SetActive(true);
+
+        battleUIShown = true;
+    }
 
     #region Initialisation
     /// <summary>
@@ -69,6 +104,9 @@ public class BattleTransitionManager : MonoBehaviour
     {
         CombatSkyboxManager.Instance?.ApplyBattleSkybox();
 
+        // Masque l'interface jusqu'au premier tour du joueur
+        HideBattleUI();
+
         AudioClip randomClip = null;
         ZoneSO currentZone = ZoneManager.Instance != null ? ZoneManager.Instance.currentZone : null;
         if (currentZone != null && currentZone.battleMusic != null && currentZone.battleMusic.Length > 0)
@@ -99,8 +137,6 @@ public class BattleTransitionManager : MonoBehaviour
         currentBattlefield.transform.SetParent(battleFieldParent, false);
         currentBattlefield.gameObject.SetActive(true);
 
-        NewBattleManager.Instance.SpawnAll();
-
         battleView.SetActive(true);
 
         // Effet de fissuration + explosion caméra
@@ -118,6 +154,9 @@ public class BattleTransitionManager : MonoBehaviour
         }
 
         yield return new WaitForSecondsRealtime(0.5f);
+
+        // Les unités apparaissent après l'explosion
+        NewBattleManager.Instance.SpawnAll();
 
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
         GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
@@ -196,6 +235,9 @@ public class BattleTransitionManager : MonoBehaviour
         NewBattleManager.Instance.ResetBattleInfos();
 
         AudioManager.Instance.ReturnFromBattle();
+
+        // Cache l'interface de combat pour le retour à l'exploration
+        HideBattleUI();
 
         InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
 
