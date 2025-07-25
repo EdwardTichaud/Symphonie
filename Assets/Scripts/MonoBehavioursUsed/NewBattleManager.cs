@@ -1560,16 +1560,6 @@ public class NewBattleManager : MonoBehaviour
                 : new List<Transform>();
         }
 
-        // S'assure de disposer d'au moins 4 emplacements pour le move spécial
-        if (currentSkillsMenuSlots.Count > 0)
-        {
-            while (currentSkillsMenuSlots.Count < 4)
-            {
-                Transform clone = Instantiate(currentSkillsMenuSlots[0], currentSkillsMenuSlots[0].parent);
-                currentSkillsMenuSlots.Add(clone);
-            }
-        }
-
         // 3) Panneau SkillsMenu_Panel
         Transform skillsPanel = FindChildRecursive(battleCamera, "SkillsMenu_Panel");
         if (skillsPanel == null)
@@ -1585,6 +1575,17 @@ public class NewBattleManager : MonoBehaviour
             currentSkillsMenuSlots = (skillsSlotsParent != null)
                 ? skillsSlotsParent.Cast<Transform>().ToList()
                 : new List<Transform>();
+
+            // S'assure de disposer d'au moins 4 emplacements pour le move spécial
+            if (currentSkillsMenuSlots.Count > 0)
+            {
+                while (currentSkillsMenuSlots.Count < 4)
+                {
+                    // Clone le premier slot pour compléter la liste si besoin
+                    Transform clone = Instantiate(currentSkillsMenuSlots[0], currentSkillsMenuSlots[0].parent);
+                    currentSkillsMenuSlots.Add(clone);
+                }
+            }
         }
 
         // 4) Panneau ItemsMenu_Panel
@@ -1712,25 +1713,17 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        // Recherche de la caméra de combat ; on utilise l'opérateur null-conditional au cas où l'objet n'existe pas
-        Transform battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.transform;
-        if (battleCamera == null)
+        // Si les références aux menus ne sont pas initialisées, on interrompt l'action
+        if (currentMainMenuContainer == null || currentSkillsMenuContainer == null || currentItemsMenuContainer == null)
         {
-            Debug.LogWarning("[ToggleMenuContainers] BattleCamera introuvable.");
-            return;
-        }
-
-        // On vérifie l'existence des enfants nécessaires pour éviter toute NullReferenceException
-        if (battleCamera.childCount == 0 || battleCamera.GetChild(0).childCount < 3)
-        {
-            Debug.LogWarning("[ToggleMenuContainers] Hiérarchie de la BattleCamera inattendue.");
+            Debug.LogWarning("[ToggleMenuContainers] Menus non initialisés correctement.");
             return;
         }
 
         // Activation/désactivation des différents menus selon les paramètres
-        battleCamera.transform.GetChild(0).GetChild(0).gameObject.SetActive(showMain);
-        battleCamera.transform.GetChild(0).GetChild(1).gameObject.SetActive(showSkills);
-        battleCamera.transform.GetChild(0).GetChild(2).gameObject.SetActive(showItems);
+        currentMainMenuContainer.SetActive(showMain);
+        currentSkillsMenuContainer.SetActive(showSkills);
+        currentItemsMenuContainer.SetActive(showItems);
     }
 
     private void UpdateButton(Transform slot, string label, Sprite icon)
