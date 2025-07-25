@@ -44,6 +44,10 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     public void HideBattleUI()
     {
+        // Désactive le cercle de QTE s'il est présent pour éviter son apparition précoce
+        if (qteCircle != null)
+            qteCircle.SetActive(false);
+
         if (battleTimeline != null)
             battleTimeline.SetActive(false);
         if (passTurnButton != null)
@@ -61,6 +65,9 @@ public class BattleTransitionManager : MonoBehaviour
     {
         if (battleUIShown)
             return;
+
+        if (qteCircle != null)
+            qteCircle.SetActive(true);
 
         if (battleTimeline != null)
             battleTimeline.SetActive(true);
