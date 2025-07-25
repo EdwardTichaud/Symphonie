@@ -94,6 +94,15 @@ public class BattleTransitionManager : MonoBehaviour
         battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
     }
 
+    /// <summary>
+    /// S'assure que l'interface de combat est masquée au chargement de la scène.
+    /// </summary>
+    private void Start()
+    {
+        // On cache toutes les UI liées au combat tant que le joueur n'a pas débuté son premier tour.
+        HideBattleUI();
+    }
+
     #endregion
 
     #region Transition
