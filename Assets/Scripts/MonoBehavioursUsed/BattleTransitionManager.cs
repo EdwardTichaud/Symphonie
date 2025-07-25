@@ -170,9 +170,10 @@ public class BattleTransitionManager : MonoBehaviour
             PlayableDirector introDirector = introCam.GetComponentInChildren<PlayableDirector>();
             if (introDirector != null)
             {
-                // On joue la Timeline d'introduction et on attend qu'elle se termine
+                // On joue la Timeline d'introduction
                 TimelineManager.Instance.PlayTimeline(introDirector);
-                //yield return new WaitUntil(() => !TimelineManager.Instance.IsTimelinePlaying);
+                // On attend la fin de la timeline pour éviter l'affichage de l'UI pendant la cinématique
+                yield return new WaitUntil(() => !TimelineManager.Instance.IsTimelinePlaying);
             }
             else
             {
