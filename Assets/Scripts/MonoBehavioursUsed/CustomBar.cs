@@ -54,6 +54,11 @@ public class CustomBar : MonoBehaviour
 
     private void StartShake()
     {
+        // Si l'objet est désactivé dans la hiérarchie, on évite de lancer la coroutine
+        // afin d'empêcher l'erreur "Coroutine couldn't be started".
+        if (!isActiveAndEnabled)
+            return;
+
         if (isShaking)
             return;
 
