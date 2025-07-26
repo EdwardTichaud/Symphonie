@@ -206,6 +206,14 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         DamagePopupManager.Instance?.ShowDamage(transform.position, Mathf.RoundToInt(amount));
         PlayDamageFeedback();
 
+        // Message indiquant la gravité des dégâts subis
+        if (ActionUIDisplayManager.Instance != null)
+        {
+            float maxHP = Data.baseHP + currentVitality;
+            bool devastating = amount > maxHP * 0.2f;
+            ActionUIDisplayManager.Instance.DisplayDamage(Data.characterName, devastating);
+        }
+
         // Si les PV tombent à zéro ou moins, on déclenche immédiatement la mort
         // pour éviter que l'animation de blessure n'écrase l'animation de mort
         if (currentHP <= 0 && !deathTriggered)
@@ -229,7 +237,16 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void TakeParry()
     {
-        // This method should be called when the currentTargetCharacter successfully parries an attack
+        // Affiche un message de parade via l'UI
+        ActionUIDisplayManager.Instance?.DisplayParry(Data.characterName);
+    }
+
+    /// <summary>
+    /// Appelé quand la cible esquive une attaque.
+    /// </summary>
+    public void TakeDodge()
+    {
+        ActionUIDisplayManager.Instance?.DisplayDodge(Data.characterName);
     }
 
     /// <summary>
