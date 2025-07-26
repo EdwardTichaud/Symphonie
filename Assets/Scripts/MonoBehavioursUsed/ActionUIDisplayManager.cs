@@ -10,10 +10,8 @@ public class ActionUIDisplayManager : MonoBehaviour
     [Header("UI Elements")]
     public CanvasGroup displayGroup;
     public TextMeshProUGUI actionText;
-    public float displayDuration = 5f;
-    public float fadeDuration = 0.5f;
-
-    private Coroutine currentDisplayRoutine;
+    public float displayDuration = 5f;  // Durée potentielle d'affichage (non utilisée pour l'instant)
+    public float fadeDuration = 0.5f;    // Durée de fondu éventuel
 
     private void Awake()
     {
@@ -28,12 +26,11 @@ public class ActionUIDisplayManager : MonoBehaviour
             displayGroup.alpha = 0f;
     }
 
+    // Affiche simplement le nom d'une attaque
+    // Le message restera à l'écran jusqu'à ce qu'il soit remplacé
     public void DisplayAttackName(string attackName)
     {
-        if (currentDisplayRoutine != null)
-            StopCoroutine(currentDisplayRoutine);
-
-        currentDisplayRoutine = StartCoroutine(DisplayRoutine(attackName));
+        ShowMessage(attackName);
     }
 
     public void DisplayActionMessage(string actorName, string actionName, string targetName)
@@ -44,13 +41,6 @@ public class ActionUIDisplayManager : MonoBehaviour
         ShowMessage(message);
     }
 
-    private IEnumerator DisplayRoutine(string name)
-    {
-        actionText.text = name;
-        displayGroup.alpha = 1;
-        yield return new WaitForSeconds(displayDuration);
-        displayGroup.alpha = 0;
-    }
 
     /// <summary>
     /// Affiche un message lorsque le joueur découvre une nouvelle attaque musicale.
@@ -59,7 +49,7 @@ public class ActionUIDisplayManager : MonoBehaviour
     public void DisplayMoveDiscovery(string melodyName)
     {
         string message = $"Mouvement découvert : {melodyName}";
-        StartCoroutine(DisplayRoutine(message));
+        ShowMessage(message);
     }
 
     /// <summary>
@@ -134,6 +124,36 @@ public class ActionUIDisplayManager : MonoBehaviour
         ShowMessage("Compétence en recharge");
     }
 
+    /// <summary>
+    /// Affiche un message d'esquive.
+    /// </summary>
+    public void DisplayDodge(string unitName)
+    {
+        string message = $"{unitName} esquive !";
+        ShowMessage(message);
+    }
+
+    /// <summary>
+    /// Affiche un message de parade.
+    /// </summary>
+    public void DisplayParry(string unitName)
+    {
+        string message = $"{unitName} pare l'attaque !";
+        ShowMessage(message);
+    }
+
+    /// <summary>
+    /// Affiche un message lorsque l'unité subit des dégâts.
+    /// Utilise coup dévastateur si l'attaque est très puissante.
+    /// </summary>
+    public void DisplayDamage(string unitName, bool devastating)
+    {
+        string message = devastating
+            ? $"{unitName} subit un coup dévastateur !"
+            : $"{unitName} subit des dégâts.";
+        ShowMessage(message);
+    }
+
     public void DisplayInterceptionResult(bool success)
     {
         string message = success ? "Interception réussie !" : "Interception échouée";
@@ -145,11 +165,17 @@ public class ActionUIDisplayManager : MonoBehaviour
         ShowMessage("Tentative d'interception...");
     }
 
+    /// <summary>
+    /// Affiche un message à l'écran sans délai d'expiration.
+    /// Le texte reste visible jusqu'à ce qu'un autre message soit envoyé.
+    /// </summary>
     private void ShowMessage(string message)
     {
-        if (currentDisplayRoutine != null)
-            StopCoroutine(currentDisplayRoutine);
+        // Mise à jour immédiate du texte affiché
+        actionText.text = message;
 
-        currentDisplayRoutine = StartCoroutine(DisplayRoutine(message));
+        // On s'assure que le groupe est visible
+        if (displayGroup != null)
+            displayGroup.alpha = 1f;
     }
 }
