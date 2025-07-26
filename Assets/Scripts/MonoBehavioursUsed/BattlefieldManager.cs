@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 
 public class BattlefieldManager : MonoBehaviour
 {
@@ -6,6 +7,13 @@ public class BattlefieldManager : MonoBehaviour
 
     [Header("Zone active (copiée depuis ZoneManager)")]
     public ZoneSO currentZone;
+
+    // Références instanciées des battlefields courants pour éviter la création
+    // pendant la transition de combat
+    private readonly List<GameObject> instantiatedBattlefields = new();
+
+    // Parent dans la hiérarchie pour accueillir les battlefields instanciés
+    [SerializeField] private Transform battlefieldParent;
 
     private void Awake()
     {
@@ -16,6 +24,12 @@ public class BattlefieldManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Tente de trouver le parent des battlefields si non assigné dans
+        // l'inspecteur pour garantir la cohérence en jeu.
+        if (battlefieldParent == null)
+            battlefieldParent = GameObject
+                .Find("BattleScene/Battlefields")?.transform;
     }
 
     /// <summary>
@@ -31,6 +45,28 @@ public class BattlefieldManager : MonoBehaviour
 
         currentZone = zone;
 
+        // Détruit les battlefields précédemment instanciés pour libérer la mémoire
+        foreach (var bf in instantiatedBattlefields)
+            if (bf != null)
+                Destroy(bf);
+        instantiatedBattlefields.Clear();
+
+        if (battlefieldParent == null)
+            battlefieldParent = GameObject
+                .Find("BattleScene/Battlefields")?.transform;
+
+        // Instancie tous les battlefields dès le changement de zone pour éviter
+        // un chargement brutal lors de l'entrée en combat
+        foreach (var prefab in currentZone.battlefields)
+        {
+            if (prefab == null) continue;
+
+            var instance = Instantiate(prefab, battlefieldParent.position,
+                Quaternion.identity, battlefieldParent);
+            instance.SetActive(false);
+            instantiatedBattlefields.Add(instance);
+        }
+
         ActivateFirstBattlefieldInZone();
     }
 
@@ -45,10 +81,10 @@ public class BattlefieldManager : MonoBehaviour
             return;
         }
 
-        for (int i = 0; i < currentZone.battlefields.Count; i++)
+        for (int i = 0; i < instantiatedBattlefields.Count; i++)
         {
-            if (currentZone.battlefields[i] != null)
-                currentZone.battlefields[i].SetActive(i == 0);
+            if (instantiatedBattlefields[i] != null)
+                instantiatedBattlefields[i].SetActive(i == 0);
         }
 
         Debug.Log($"[BattlefieldManager] Premier battlefield activé pour : {currentZone.zoneName}");
@@ -59,22 +95,22 @@ public class BattlefieldManager : MonoBehaviour
     /// </summary>
     public void SetBattlefield(int index)
     {
-        if (currentZone == null || currentZone.battlefields.Count == 0)
+        if (currentZone == null || instantiatedBattlefields.Count == 0)
         {
             Debug.LogWarning("[BattlefieldManager] Zone invalide ou vide !");
             return;
         }
 
-        if (index < 0 || index >= currentZone.battlefields.Count)
+        if (index < 0 || index >= instantiatedBattlefields.Count)
         {
             Debug.LogWarning($"[BattlefieldManager] Index {index} invalide pour {currentZone.zoneName}");
             return;
         }
 
-        for (int i = 0; i < currentZone.battlefields.Count; i++)
+        for (int i = 0; i < instantiatedBattlefields.Count; i++)
         {
-            if (currentZone.battlefields[i] != null)
-                currentZone.battlefields[i].SetActive(i == index);
+            if (instantiatedBattlefields[i] != null)
+                instantiatedBattlefields[i].SetActive(i == index);
         }
 
         Debug.Log($"[BattlefieldManager] Battlefield #{index} activé pour {currentZone.zoneName}");
