@@ -497,7 +497,8 @@ public class RhythmQTEManager : MonoBehaviour
         if (note.clip != null)
             audioSource.PlayOneShot(note.clip);
 
-        StartCoroutine(WaitForQTE(note.rhythm, success =>
+        // Pas d'icône spécifique pour les notes, on passe null
+        StartCoroutine(WaitForQTE(note.rhythm, null, success =>
         {
             currentMove.ApplyEffect(currentCaster, currentTarget, success);
             pendingNotes = Mathf.Max(0, pendingNotes - 1);
@@ -507,10 +508,21 @@ public class RhythmQTEManager : MonoBehaviour
 
     public void TriggerQTE(float windowDelay)
     {
-        StartCoroutine(WaitForQTE(windowDelay, _ => { }));
+        // Appel historique sans icône
+        StartCoroutine(WaitForQTE(windowDelay, null, _ => { }));
     }
 
-    private IEnumerator WaitForQTE(float windowDelay, System.Action<bool> callback)
+    /// <summary>
+    /// Lance un QTE en précisant l'icône à afficher au centre du cercle.
+    /// </summary>
+    /// <param name="windowDelay">Durée de la fenêtre en millisecondes</param>
+    /// <param name="icon">Icône de l'input à afficher</param>
+    public void TriggerQTE(float windowDelay, Sprite icon)
+    {
+        StartCoroutine(WaitForQTE(windowDelay, icon, _ => { }));
+    }
+
+    private IEnumerator WaitForQTE(float windowDelay, Sprite icon, System.Action<bool> callback)
     {
         qteActive = true;
         float slowestTimeScale = 0f;
@@ -537,6 +549,19 @@ public class RhythmQTEManager : MonoBehaviour
         RectTransform dynamicCircle = qteVisual.transform.Find("Circle_Dynamic")?.GetComponent<RectTransform>();
         if (dynamicCircle != null)
             dynamicCircle.localScale = Vector3.one * qteStartScale;
+
+        // Ajoute dynamiquement l'icône si fournie
+        if (icon != null)
+        {
+            var iconGO = new GameObject("InputIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(UnityEngine.UI.Image));
+            iconGO.transform.SetParent(qteVisual.transform, false);
+            var rect = iconGO.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(64f, 64f);
+            var img = iconGO.GetComponent<UnityEngine.UI.Image>();
+            img.sprite = icon;
+        }
 
         float elapsed = 0f;
         bool success = false;
