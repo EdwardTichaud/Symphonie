@@ -9,4 +9,6 @@ public class QTETriggerSO : ScriptableObject
 {
     [Tooltip("Icône de l'input à afficher")] public Sprite inputIcon;
     [Tooltip("Fenêtre de saisie en millisecondes")] public float windowDelay = 200f;
+
+    [Tooltip("Position du visuel dans le canvas (pixels)")] public Vector2 uiPosition = Vector2.zero;
 }

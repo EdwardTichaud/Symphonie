@@ -498,7 +498,7 @@ public class RhythmQTEManager : MonoBehaviour
             audioSource.PlayOneShot(note.clip);
 
         // Pas d'icône spécifique pour les notes, on passe null
-        StartCoroutine(WaitForQTE(note.rhythm, null, success =>
+        StartCoroutine(WaitForQTE(note.rhythm, null, Vector2.zero, success =>
         {
             currentMove.ApplyEffect(currentCaster, currentTarget, success);
             pendingNotes = Mathf.Max(0, pendingNotes - 1);
@@ -509,7 +509,7 @@ public class RhythmQTEManager : MonoBehaviour
     public void TriggerQTE(float windowDelay)
     {
         // Appel historique sans icône
-        StartCoroutine(WaitForQTE(windowDelay, null, _ => { }));
+        StartCoroutine(WaitForQTE(windowDelay, null, Vector2.zero, _ => { }));
     }
 
     /// <summary>
@@ -519,10 +519,21 @@ public class RhythmQTEManager : MonoBehaviour
     /// <param name="icon">Icône de l'input à afficher</param>
     public void TriggerQTE(float windowDelay, Sprite icon)
     {
-        StartCoroutine(WaitForQTE(windowDelay, icon, _ => { }));
+        StartCoroutine(WaitForQTE(windowDelay, icon, Vector2.zero, _ => { }));
     }
 
-    private IEnumerator WaitForQTE(float windowDelay, Sprite icon, System.Action<bool> callback)
+    /// <summary>
+    /// Lance un QTE en précisant icône et position de l'affichage.
+    /// </summary>
+    /// <param name="windowDelay">Durée de la fenêtre en millisecondes</param>
+    /// <param name="icon">Icône de l'input à afficher</param>
+    /// <param name="position">Position du visuel dans le canvas</param>
+    public void TriggerQTE(float windowDelay, Sprite icon, Vector2 position)
+    {
+        StartCoroutine(WaitForQTE(windowDelay, icon, position, _ => { }));
+    }
+
+    private IEnumerator WaitForQTE(float windowDelay, Sprite icon, Vector2 position, System.Action<bool> callback)
     {
         qteActive = true;
         float slowestTimeScale = 0f;
@@ -546,6 +557,10 @@ public class RhythmQTEManager : MonoBehaviour
         Time.fixedDeltaTime = defaultFixedDeltaTime * slowestTimeScale;
 
         GameObject qteVisual = Instantiate(qteCirclePrefab, qteUIParent);
+        // Positionne le visuel selon la valeur fournie par le Trigger
+        var visualRect = qteVisual.GetComponent<RectTransform>();
+        if (visualRect != null)
+            visualRect.anchoredPosition = position;
         RectTransform dynamicCircle = qteVisual.transform.Find("Circle_Dynamic")?.GetComponent<RectTransform>();
         if (dynamicCircle != null)
             dynamicCircle.localScale = Vector3.one * qteStartScale;
