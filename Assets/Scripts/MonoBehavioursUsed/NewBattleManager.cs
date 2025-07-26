@@ -111,6 +111,8 @@ public class NewBattleManager : MonoBehaviour
     [HideInInspector] public CharacterUnit currentCharacterUnit;
     private bool isTurnResolving = false;
     private bool interceptionSucceeded = false;
+    // File d'attente de timelines à jouer entre deux tours
+    private readonly Queue<PlayableDirector> pendingTimelines = new();
 
     private const float ATB_THRESHOLD = 100f;
     // Délai appliqué avant qu'un ennemi n'exécute réellement son attaque
@@ -510,10 +512,43 @@ public class NewBattleManager : MonoBehaviour
                 yield break;
             }
 
+            // Avant de démarrer le prochain tour, on joue toutes les timelines en attente
+            if (pendingTimelines.Count > 0)
+                yield return PlayPendingTimelines();
+
             yield return ExecuteTurn(CalculateNextUnit());
             // Utilisation du temps non affecté par le timeScale pour ne pas bloquer
             // la boucle si le jeu est mis en pause (fin de combat par exemple)
             yield return new WaitForSecondsRealtime(0.2f);
+        }
+    }
+
+    /// <summary>
+    /// Ajoute une timeline à jouer avant le prochain tour.
+    /// </summary>
+    public void QueueConditionalTimeline(PlayableDirector director)
+    {
+        if (director != null)
+            pendingTimelines.Enqueue(director);
+    }
+
+    /// <summary>
+    /// Joue séquentiellement toutes les timelines en attente.
+    /// </summary>
+    private IEnumerator PlayPendingTimelines()
+    {
+        while (pendingTimelines.Count > 0)
+        {
+            var director = pendingTimelines.Dequeue();
+            BattleTransitionManager.Instance?.HideBattleUI();
+
+            TimelineManager.Instance.PlayTimeline(director);
+            while (TimelineManager.Instance.IsTimelinePlaying)
+                yield return null;
+
+            BattleTransitionManager.Instance?.ShowBattleUIIfNeeded();
+            // Petite pause pour éviter les enchaînements brusques
+            yield return new WaitForSecondsRealtime(0.1f);
         }
     }
     #endregion
