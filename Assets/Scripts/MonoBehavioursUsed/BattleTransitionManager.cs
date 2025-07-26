@@ -145,13 +145,10 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     private IEnumerator TransitionRoutine()
     {
-        // Prépare le champ de bataille
+        // Prépare le champ de bataille sans instanciation coûteuse
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         int battlefieldIndex = playerDetection.detectedEnemies[0].battlefieldIndex;
-        Transform battleFieldParent = GameObject.Find("BattleScene/Battlefields").transform;
-        GameObject currentBattlefield = Instantiate(ZoneManager.Instance.currentZone.battlefields[battlefieldIndex], battleFieldParent.position, Quaternion.identity);
-        currentBattlefield.transform.SetParent(battleFieldParent, false);
-        currentBattlefield.gameObject.SetActive(true);
+        BattlefieldManager.Instance.SetBattlefield(battlefieldIndex);
 
         battleView.SetActive(true);
 
