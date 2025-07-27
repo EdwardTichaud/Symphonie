@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Playables;
+using UnityEngine.Timeline;
 using System.Collections.Generic;
 
 /// <summary>
@@ -14,7 +15,7 @@ public class HPThresholdTimelineTrigger : MonoBehaviour
         [Tooltip("Seuil de PV en pourcentage (0-1). La timeline se déclenche lorsque les PV sont inférieurs ou égaux à ce ratio.")]
         public float hpRatio = 0.5f;
         [Tooltip("Timeline à jouer lorsque le seuil est atteint.")]
-        public PlayableDirector timeline;
+        public TimelineAsset timeline;
         [HideInInspector] public bool triggered = false;
     }
 
@@ -49,8 +50,13 @@ public class HPThresholdTimelineTrigger : MonoBehaviour
                     unitData.unit.currentHP <= unitData.unit.Data.baseHP * t.hpRatio)
                 {
                     t.triggered = true;
-                    // On ajoute la timeline à la file d'attente du gestionnaire de combat
-                    NewBattleManager.Instance.QueueConditionalTimeline(t.timeline);
+                    // Récupère l'Animator de l'unité pour binder correctement la timeline
+                    GameObject animatorGO = unitData.unit.GetComponentInChildren<Animator>()?.gameObject;
+                    // Enfile la timeline dans le gestionnaire pour qu'elle soit jouée au bon moment
+                    NewBattleManager.Instance.QueueConditionalTimeline(
+                        t.timeline,
+                        animatorGO,
+                        "BattleCamera");
                     break;
                 }
             }

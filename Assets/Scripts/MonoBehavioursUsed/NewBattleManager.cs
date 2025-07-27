@@ -112,7 +112,28 @@ public class NewBattleManager : MonoBehaviour
     private bool isTurnResolving = false;
     private bool interceptionSucceeded = false;
     // File d'attente de timelines à jouer entre deux tours
-    private readonly Queue<PlayableDirector> pendingTimelines = new();
+    /// <summary>
+    /// File d'attente des timelines à jouer en fin de tour.
+    /// Chaque entrée décrit l'asset à lancer et l'objet qui sert de référence pour les bindings.
+    /// </summary>
+    private readonly Queue<PendingTimeline> pendingTimelines = new();
+
+    /// <summary>
+    /// Structure stockant les informations nécessaires pour jouer une timeline via le TimelineLauncher.
+    /// </summary>
+    private struct PendingTimeline
+    {
+        public TimelineAsset asset;
+        public GameObject caster;
+        public string cameraTag;
+
+        public PendingTimeline(TimelineAsset asset, GameObject caster, string cameraTag)
+        {
+            this.asset = asset;
+            this.caster = caster;
+            this.cameraTag = cameraTag;
+        }
+    }
 
     private const float ATB_THRESHOLD = 100f;
     // Délai appliqué avant qu'un ennemi n'exécute réellement son attaque
@@ -526,10 +547,15 @@ public class NewBattleManager : MonoBehaviour
     /// <summary>
     /// Ajoute une timeline à jouer avant le prochain tour.
     /// </summary>
-    public void QueueConditionalTimeline(PlayableDirector director)
+    /// <param name="asset">Timeline à exécuter.</param>
+    /// <param name="caster">Objet de référence pour les bindings (Animator par exemple).</param>
+    /// <param name="cameraTag">Tag de la caméra à utiliser.</param>
+    public void QueueConditionalTimeline(TimelineAsset asset, GameObject caster, string cameraTag)
     {
-        if (director != null)
-            pendingTimelines.Enqueue(director);
+        if (asset == null)
+            return;
+
+        pendingTimelines.Enqueue(new PendingTimeline(asset, caster, cameraTag));
     }
 
     /// <summary>
@@ -539,12 +565,16 @@ public class NewBattleManager : MonoBehaviour
     {
         while (pendingTimelines.Count > 0)
         {
-            var director = pendingTimelines.Dequeue();
+            var data = pendingTimelines.Dequeue();
             BattleTransitionManager.Instance?.HideBattleUI();
 
-            TimelineManager.Instance.PlayTimeline(director);
-            while (TimelineManager.Instance.IsTimelinePlaying)
-                yield return null;
+            if (TimelineLauncher.Instance != null)
+            {
+                TimelineLauncher.Instance.PlayTimeline(data.asset, data.caster, data.cameraTag);
+                // Attente de la fin de la timeline avant de poursuivre
+                while (TimelineLauncher.Instance.IsTimelineActive)
+                    yield return null;
+            }
 
             BattleTransitionManager.Instance?.ShowBattleUIIfNeeded();
             // Petite pause pour éviter les enchaînements brusques
