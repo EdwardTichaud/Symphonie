@@ -1173,11 +1173,22 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        bool hasSkill = caster.Data.musicalAttacks.Any(m =>
+        //
+        // Vérifie si au moins une compétence reste utilisable pour le lanceur.
+        // On prend en compte les moves standards ainsi que le move spécial
+        // éventuel. On ignore ceux en cooldown pour éviter de terminer
+        // prématurément le tour.
+
+        IEnumerable<MusicalMoveSO> availableMoves = caster.Data.musicalAttacks;
+        if (caster.Data.specialMusicalMove != null)
+            availableMoves = availableMoves.Append(caster.Data.specialMusicalMove);
+
+        bool hasSkill = availableMoves.Any(m =>
             (!m.onlyAwake || caster.IsAwake) &&
             (!m.enterAwake || !caster.IsAwake) &&
             caster.GetHarmonicCount(caster.Data.harmonicType) >= m.harmonicCost &&
-            (!m.enterAwake || caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.resonancePoint));
+            (!m.enterAwake || caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.resonancePoint) &&
+            !caster.IsMoveOnCooldown(m));
         bool hasItem = InventoryManager.Instance.GetUsableItems().Count > 0;
 
         if (!hasSkill && !hasItem)
