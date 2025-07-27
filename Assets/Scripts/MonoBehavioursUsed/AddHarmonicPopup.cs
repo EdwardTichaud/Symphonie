@@ -28,9 +28,26 @@ public class AddHarmonicPopup : MonoBehaviour
     /// <param name="followTarget">Transform de l'unité concernée.</param>
     public void Initialize(int amount, Transform followTarget)
     {
+        // Récupère automatiquement la référence du texte si elle n'a pas été assignée dans l'inspecteur.
+        if (textMesh == null)
+        {
+            textMesh = GetComponentInChildren<TextMeshProUGUI>();
+            if (textMesh == null)
+            {
+                // Impossible d'afficher le popup sans texte, on log l'erreur et on quitte.
+                Debug.LogError("[AddHarmonicPopup] Aucun TextMeshProUGUI trouvé sur le prefab.");
+                return;
+            }
+        }
+
         textMesh.text = "+" + amount.ToString();
+
         mainCam = Camera.main;
+
         canvasGroup = GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
+
         target = followTarget;
         UpdatePosition();
     }
