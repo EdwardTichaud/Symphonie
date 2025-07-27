@@ -79,7 +79,7 @@ public class MusicalMoveSO : ScriptableObject
     public GameObject teleportEndVFXPrefab;
 
     [Header("Effets sonores")]
-    [Tooltip("Indice sonore lancé avant l'attaque pour avertir le joueur")]
+    [Tooltip("Son d'avertissement joué avant l'attaque pour prévenir le joueur")]
     public AudioClip warningClip;
 
     [Header("Timing")]

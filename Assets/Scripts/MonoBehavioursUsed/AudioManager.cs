@@ -13,6 +13,8 @@ public class AudioManager : MonoBehaviour
     public AudioSource musicSourceB;
     public AudioSource sfxSource;
     public AudioSource voiceSource;
+    // Nouvelle source dédiée aux sons d'avertissement
+    public AudioSource warningClipSource;
 
     [Header("Fade Settings")]
     public float fadeDuration = 2f;
@@ -41,6 +43,15 @@ public class AudioManager : MonoBehaviour
     private Dictionary<AudioClip, float> explorationPlaybackPositions = new Dictionary<AudioClip, float>();
     private Dictionary<AudioClip, float> normalizationCache = new Dictionary<AudioClip, float>();
 
+    /// <summary>
+    /// Met à jour le volume de la source d'avertissement en fonction de la musique.
+    /// </summary>
+    private void UpdateWarningVolume()
+    {
+        // Volume deux fois plus élevé que celui des sources de musique
+        warningClipSource.volume = musicVolume * 2f;
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -63,10 +74,12 @@ public class AudioManager : MonoBehaviour
 
         sfxSource.playOnAwake = false;
         voiceSource.playOnAwake = false;
+        warningClipSource.playOnAwake = false;
 
         SetMusicVolume(musicVolume);
         SetSfxVolume(sfxVolume);
         SetVoiceVolume(voiceVolume);
+        UpdateWarningVolume();
     }
 
     private float GetNormalizationFactor(AudioClip clip)
@@ -107,6 +120,7 @@ public class AudioManager : MonoBehaviour
         float factorB = GetNormalizationFactor(musicSourceB.clip);
         musicSourceA.volume = musicVolume * factorA;
         musicSourceB.volume = musicVolume * factorB;
+        UpdateWarningVolume();
     }
 
     public void SetSfxVolume(float value)
@@ -267,6 +281,17 @@ public class AudioManager : MonoBehaviour
         tempSource.volume = voiceVolume * GetNormalizationFactor(clip);
         tempSource.Play();
         Destroy(tempSource.gameObject, clip.length);
+    }
+
+    /// <summary>
+    /// Joue un clip d'avertissement en utilisant la source dédiée.
+    /// </summary>
+    public void PlayWarningClip(AudioClip clip)
+    {
+        if (clip == null) return;
+
+        float factor = GetNormalizationFactor(clip);
+        warningClipSource.PlayOneShot(clip, factor);
     }
 
     public void PlaySound(AudioClip clip)
