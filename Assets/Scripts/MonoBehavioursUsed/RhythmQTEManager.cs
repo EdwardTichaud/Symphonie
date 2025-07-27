@@ -59,6 +59,16 @@ public class RhythmQTEManager : MonoBehaviour
         defaultFixedDeltaTime = Time.fixedDeltaTime;
     }
 
+    private void OnEnable()
+    {
+        QTESignalReceiver.OnQTERequested += HandleExternalQTE;
+    }
+
+    private void OnDisable()
+    {
+        QTESignalReceiver.OnQTERequested -= HandleExternalQTE;
+    }
+
     // Séquence du Musicalmove - Ajouter autant de méthodes que d'effets durant le move
     /// <summary>
     /// Orchestration complète d'un MusicalMove du déplacement à la résolution.
@@ -96,13 +106,13 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         // Si une Timeline est disponible, on la lit en adaptant la caméra selon le type de personnage
-        bool hasTimeline = move.performingTimeline != null && TimelineLauncher.Instance != null && casterAnimatorGO != null;
+        bool hasTimeline = move.performingTimeline != null && TimelineManager.Instance != null && casterAnimatorGO != null;
 
         if (hasTimeline)
         {
             // Les ennemis utilisent la timeline mais sans animer la caméra (cameraTag nul)
             string cameraTag = caster.characterType == CharacterType.EnemyUnit ? null : "BattleCamera";
-            TimelineLauncher.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, cameraTag);
+            TimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, cameraTag);
         }
 
         currentMove = move;
@@ -170,11 +180,11 @@ public class RhythmQTEManager : MonoBehaviour
         Animator animator = caster.GetComponentInChildren<Animator>();
 
         // Lecture d'une Timeline ou d'une animation d'intro
-        if (item.performingTimeline != null && TimelineLauncher.Instance != null && animator != null)
+        if (item.performingTimeline != null && TimelineManager.Instance != null && animator != null)
         {
-            TimelineLauncher.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, "BattleCamera");
+            TimelineManager.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, "BattleCamera");
             // ⏳ Attendre la fin effective de la Timeline avant de continuer
-            yield return new WaitUntil(() => !TimelineLauncher.Instance.IsTimelineActive);
+            yield return new WaitUntil(() => !TimelineManager.Instance.IsTimelineActive);
         }
         else if (item.introAnimationClip != null && animator != null && !caster.IsDead)
         {
@@ -652,6 +662,18 @@ public class RhythmQTEManager : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         AudioManager.Instance?.PlayVoice(clip);
+    }
+
+    /// <summary>
+    /// Gestion de l'événement provenant du QTESignalReceiver.
+    /// Permet de déclencher un QTE depuis une Timeline externe.
+    /// </summary>
+    private void HandleExternalQTE(QTETriggerSO trigger)
+    {
+        if (trigger == null)
+            return;
+
+        TriggerQTE(trigger.windowDelay, trigger.inputIcon, trigger.uiPosition);
     }
 
     #endregion
