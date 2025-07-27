@@ -2,19 +2,39 @@ using UnityEngine;
 
 public class DamagePopupManager : MonoBehaviour
 {
-    public static DamagePopupManager Instance { get; private set; }
+    private static DamagePopupManager _instance;
+
+    /// <summary>
+    /// Accès global au gestionnaire. Cherche automatiquement une instance
+    /// existante dans la scène si aucune n'a encore été assignée.
+    /// </summary>
+    public static DamagePopupManager Instance
+    {
+        get
+        {
+            if (_instance == null)
+                _instance = FindObjectOfType<DamagePopupManager>();
+            return _instance;
+        }
+    }
 
     [SerializeField] private GameObject damagePopupPrefab;
 
     void Awake()
     {
-        if (Instance != null && Instance != this)
+        if (_instance == null)
         {
+            _instance = this;
+        }
+        else if (_instance != this)
+        {
+            // Évite les doublons au démarrage
             Destroy(gameObject);
             return;
         }
 
-        Instance = this;
+        // S'assure que l'objet ne possède pas d'échelle étrange héritée d'un prefab
+        transform.localScale = Vector3.one;
     }
 
     /// <summary>
@@ -30,8 +50,21 @@ public class DamagePopupManager : MonoBehaviour
             return;
         }
 
-        // Instancie le prefab comme enfant pour garder une hiérarchie propre
-        GameObject popup = Instantiate(damagePopupPrefab, transform);
-        popup.GetComponent<DamagePopup>().Initialize(amount, target);
+        // Instancie le prefab comme enfant du gestionnaire tout en conservant
+        // la même échelle que dans le prefab pour éviter qu'elle ne soit
+        // multipliée par celle du parent.
+        GameObject popup = Instantiate(damagePopupPrefab, transform, true);
+
+        // Vérifie la présence du composant requis avant initialisation
+        DamagePopup popupScript = popup.GetComponent<DamagePopup>();
+        if (popupScript == null)
+        {
+            Debug.LogError("[DamagePopupManager] Le prefab ne contient pas de composant DamagePopup.");
+            Destroy(popup);
+            return;
+        }
+
+        // Initialisation avec la cible à suivre et le montant de dégâts
+        popupScript.Initialize(amount, target);
     }
 }
