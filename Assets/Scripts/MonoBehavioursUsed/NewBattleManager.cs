@@ -1201,28 +1201,16 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        //
-        // Vérifie si au moins une compétence reste utilisable pour le lanceur.
-        // On prend en compte les moves standards ainsi que le move spécial
-        // éventuel. On ignore ceux en cooldown pour éviter de terminer
-        // prématurément le tour.
+        // Affiche à nouveau le menu principal tant que le joueur possède
+        // suffisamment d'harmoniques pour continuer à attaquer.
+        // Auparavant, on vérifiait qu'au moins une compétence ou un objet
+        // restait utilisable ; sinon le tour se terminait automatiquement.
+        // Cette logique empêchait d'enchaîner plusieurs attaques si toutes les
+        // autres compétences étaient en cooldown ou inutilisables. Désormais,
+        // tant que des harmoniques restent, le joueur peut choisir de continuer
+        // ou de passer son tour manuellement.
 
-        IEnumerable<MusicalMoveSO> availableMoves = caster.Data.musicalAttacks;
-        if (caster.Data.specialMusicalMove != null)
-            availableMoves = availableMoves.Append(caster.Data.specialMusicalMove);
-
-        bool hasSkill = availableMoves.Any(m =>
-            (!m.onlyAwake || caster.IsAwake) &&
-            (!m.enterAwake || !caster.IsAwake) &&
-            caster.GetHarmonicCount(caster.Data.harmonicType) >= m.harmonicCost &&
-            (!m.enterAwake || caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.resonancePoint) &&
-            !caster.IsMoveOnCooldown(m));
-        bool hasItem = InventoryManager.Instance.GetUsableItems().Count > 0;
-
-        if (!hasSkill && !hasItem)
-            EndTurn();
-        else
-            ShowMainMenu();
+        ShowMainMenu();
     }
 
     public IEnumerator ShowMoveInfoAndHandleSelection(MusicalMoveSO move)
