@@ -22,14 +22,11 @@ public class RhythmQTEManager : MonoBehaviour
     // QTE
     private Coroutine beatRoutine;
 
-    [SerializeField] private float slowMotionFactor = 0.25f; // ralentissement ×4
     private float defaultFixedDeltaTime;
 
     [Header("QTE Visuel")]
     public GameObject qteCirclePrefab; // Ton prefab avec les deux cercles
     public Transform qteUIParent; // Parent dans le canvas (facultatif, sinon instancié en world space)
-    public float qteStartScale = 1.5f;
-    public float qteEndScale = 1.0f;
 
     private DefenseResult defenseResult;
     public DefenseResult GetDefenseResult() => defenseResult;
@@ -590,13 +587,6 @@ public class RhythmQTEManager : MonoBehaviour
         {
             delayFillImage = qteVisual.DelayFillImage;
             iconImage = qteVisual.InputIconImage;
-        }
-        else
-        {
-            // Compatibilité avec les anciens prefabs : recherche par nom
-            delayFillImage = qteVisualGO.transform.Find("Circle_Dynamic")?.GetComponent<UnityEngine.UI.Image>();
-            if (delayFillImage == null)
-                delayFillImage = qteVisualGO.transform.Find("ShrinkingCircle")?.GetComponent<UnityEngine.UI.Image>();
         }
 
         // Valeur initiale à 0 pour remplir progressivement sur la durée du QTE.
