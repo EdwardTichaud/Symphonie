@@ -832,13 +832,19 @@ public class NewBattleManager : MonoBehaviour
         ActionUIDisplayManager.Instance.DisplayEnemyPreparation(enemy.Data.characterName, alreadyKnown ? move.moveName : null);
 
         // Joue un indice sonore associé à l'attaque pour prévenir le joueur
+        // et calcule un délai suffisant pour laisser le clip se terminer
+        float delay = ENEMY_MOVE_DELAY;
         if (move.warningClip != null)
+        {
             // Les indices sonores sont joués via la nouvelle source dédiée
             AudioManager.Instance?.PlayWarningClip(move.warningClip);
+            // On attend au moins la durée du clip pour conserver la cohérence musicale
+            delay = Mathf.Max(delay, move.warningClip.length);
+        }
 
         // Laisse un délai pour que le joueur prenne connaissance de l'action
         // On utilise ici un temps réel pour éviter tout blocage si le jeu est en pause
-        yield return new WaitForSecondsRealtime(ENEMY_MOVE_DELAY);
+        yield return new WaitForSecondsRealtime(delay);
         // On arrête de forcer la caméra sur la cible avant d'exécuter l'attaque
         lookAtCasterFromTargetPoint = false;
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
@@ -885,8 +891,13 @@ public class NewBattleManager : MonoBehaviour
         }
         // Lecture d'un avertissement sonore si le mouvement en possède un
         if (move.warningClip != null)
+        {
             // Les indices sonores sont joués via la nouvelle source dédiée
             AudioManager.Instance?.PlayWarningClip(move.warningClip);
+            // On attend la fin du clip pour conserver la cohérence musicale
+            yield return new WaitForSecondsRealtime(move.warningClip.length);
+        }
+
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
 
         // Ajout du système de rage manuellement
