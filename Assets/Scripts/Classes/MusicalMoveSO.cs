@@ -21,8 +21,9 @@ public class MusicalMoveSO : ScriptableObject
     [System.Serializable]
     public class NoteData
     {
-        public AudioClip clip;
-        [Tooltip("Durée de la fenêtre QTE pour cette note (en secondes)")]
+        [Tooltip("Input à utiliser pour réussir le QTE")]
+        public Sprite noteInput;
+        [Tooltip("Délai avant que la note se joue (par rapport au début ou à la note d'avant)")]
         public float rhythm = 0.5f;
     }
 
