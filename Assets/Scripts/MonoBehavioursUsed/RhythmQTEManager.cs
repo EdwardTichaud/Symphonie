@@ -66,7 +66,10 @@ public class RhythmQTEManager : MonoBehaviour
     /// </summary>
     public IEnumerator MusicalMoveRoutine(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
     {
-        Debug.Log("Début de la séquence du MusicalMove: " + move + " de " + caster.name);
+        // Le caster peut éventuellement être détruit avant que la routine ne débute
+        // On sécurise donc l'accès à son nom dans le log
+        string casterName = caster != null ? caster.name : "(caster nul)";
+        Debug.Log("Début de la séquence du MusicalMove: " + move + " de " + casterName);
         isActive = true;
         successResults = new List<bool>();
 
@@ -150,7 +153,9 @@ public class RhythmQTEManager : MonoBehaviour
         currentCaster = null;
         currentTarget = null;
 
-        Debug.Log("Fin de la séquence du MusicalMove: " + move + " de " + caster.name);
+        // Si le caster a été détruit durant la séquence, on évite une exception
+        casterName = caster != null ? caster.name : "(caster nul)";
+        Debug.Log("Fin de la séquence du MusicalMove: " + move + " de " + casterName);
     }
 
     /// <summary>
@@ -161,7 +166,9 @@ public class RhythmQTEManager : MonoBehaviour
     /// </summary>
     public IEnumerator ItemRoutine(ItemData item, CharacterUnit caster, CharacterUnit target)
     {
-        Debug.Log($"Début de la séquence d'utilisation de l'objet: {item.itemName} par {caster.name}");
+        // Préserve la sécurité si jamais le caster est détruit avant l'appel
+        string itemCasterName = caster != null ? caster.name : "(caster nul)";
+        Debug.Log($"Début de la séquence d'utilisation de l'objet: {item.itemName} par {itemCasterName}");
         isActive = true;
 
         if (caster == null || caster.IsDead)
@@ -223,7 +230,9 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         isActive = false;
-        Debug.Log($"Fin de la séquence d'utilisation de l'objet: {item.itemName} par {caster.name}");
+        // Protection en cas de destruction du lanceur avant la fin de la séquence
+        itemCasterName = caster != null ? caster.name : "(caster nul)";
+        Debug.Log($"Fin de la séquence d'utilisation de l'objet: {item.itemName} par {itemCasterName}");
     }
 
     private IEnumerator SimpleMoveTo(CharacterUnit caster, CharacterUnit target, ItemData item)
@@ -331,7 +340,10 @@ public class RhythmQTEManager : MonoBehaviour
         if (caster == null || caster.IsDead)
             yield break;
 
-        Debug.Log("Déplacement de " + caster.name + " vers " + target.name);
+        // Journalisation sécurisée en cas de destruction d'une des unités
+        string moveCasterName = caster != null ? caster.name : "(caster nul)";
+        string moveTargetName = target != null ? target.name : "(cible nulle)";
+        Debug.Log("Déplacement de " + moveCasterName + " vers " + moveTargetName);
 
         Vector3 startPosition = caster.transform.position;
 
@@ -401,7 +413,9 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = teleportOffsetDir;
 
             yield return null;
-            Debug.Log("Fin du déplacement de " + caster.name);
+            // Caster peut avoir été détruit pendant le déplacement
+            moveCasterName = caster != null ? caster.name : "(caster nul)";
+            Debug.Log("Fin du déplacement de " + moveCasterName);
 
             if (teleportHasMovement)
                 caster.PlayMoveEndSound();
@@ -412,7 +426,9 @@ public class RhythmQTEManager : MonoBehaviour
 
     private IEnumerator ReturnToInitialPosition(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
     {
-        Debug.Log("Retour de " + caster.name + " vers sa position parent");
+        // Peut être appelé alors que l'unité a été détruite
+        string returnCasterName = caster != null ? caster.name : "(caster nul)";
+        Debug.Log("Retour de " + returnCasterName + " vers sa position parent");
 
         Vector3 startPos = caster.transform.position;
         Vector3 initialPosition = caster.transform.parent.position;
