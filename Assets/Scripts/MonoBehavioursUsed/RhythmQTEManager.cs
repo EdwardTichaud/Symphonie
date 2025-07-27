@@ -430,6 +430,13 @@ public class RhythmQTEManager : MonoBehaviour
         string returnCasterName = caster != null ? caster.name : "(caster nul)";
         Debug.Log("Retour de " + returnCasterName + " vers sa position parent");
 
+        // Lancer peut être détruit avant l'appel : on sécurise l'accès
+        if (caster == null || caster.IsDead)
+        {
+            Debug.LogWarning("ReturnToInitialPosition : caster nul ou détruit à l'appel");
+            yield break;
+        }
+
         Vector3 startPos = caster.transform.position;
         Vector3 initialPosition = caster.transform.parent.position;
         bool hasMovement = Vector3.Distance(startPos, initialPosition) > 0.01f;
@@ -459,6 +466,13 @@ public class RhythmQTEManager : MonoBehaviour
         // Délai avant de revenir à la position initiale
         yield return new WaitForSeconds(teleportDelay);
 
+        // Lancer peut avoir été détruit pendant l'attente
+        if (caster == null)
+        {
+            Debug.LogWarning("ReturnToInitialPosition : caster détruit pendant le délai");
+            yield break;
+        }
+
         caster.transform.position = initialPosition;
 
         if (move.teleportEndVFXPrefab != null)
@@ -470,6 +484,13 @@ public class RhythmQTEManager : MonoBehaviour
             animator.Play(caster.Data.TPAnimation_Destination.name);
 
         yield return null;
+
+        // Vérifie que le lanceur existe encore avant la suite
+        if (caster == null)
+        {
+            Debug.LogWarning("ReturnToInitialPosition : caster détruit avant la fin du retour");
+            yield break;
+        }
 
         if (hasMovement)
             caster.PlayMoveEndSound();
@@ -488,7 +509,7 @@ public class RhythmQTEManager : MonoBehaviour
         }
         Debug.Log("Le caster a terminé son retour.");
 
-        if (hasMovement)
+        if (hasMovement && caster != null)
             caster.PlayMoveEndSound();
 
     }
