@@ -25,8 +25,11 @@ public class RhythmQTEManager : MonoBehaviour
     private float defaultFixedDeltaTime;
 
     [Header("QTE Visuel")]
-    public GameObject qteCirclePrefab; // Ton prefab avec les deux cercles
+    public GameObject qteCirclePrefab; // Prefab du cercle QTE historique
     public Transform qteUIParent; // Parent dans le canvas (facultatif, sinon instancié en world space)
+
+    [Header("QTE Barre")]
+    public GameObject qteBarPrefab; // Prefab de la barre façon Guitar Hero
 
     private DefenseResult defenseResult;
     public DefenseResult GetDefenseResult() => defenseResult;
@@ -639,20 +642,37 @@ public class RhythmQTEManager : MonoBehaviour
             Time.fixedDeltaTime = defaultFixedDeltaTime * slowestTimeScale;
         }
 
-        GameObject qteVisualGO = Instantiate(qteCirclePrefab, qteUIParent);
-        // Positionne le visuel selon la valeur fournie par le Trigger
-        var visualRect = qteVisualGO.GetComponent<RectTransform>();
-        if (visualRect != null)
-            visualRect.anchoredPosition = position;
-
-        // Récupère les références via le composant dédié s'il est présent
-        QTECircleUI qteVisual = qteVisualGO.GetComponent<QTECircleUI>();
+        GameObject qteVisualGO;
+        QTEBar qteBar = null;
+        UnityEngine.UI.Image noteImage = null;
         UnityEngine.UI.Image delayFillImage = null;
         UnityEngine.UI.Image iconImage = null;
-        if (qteVisual != null)
+
+        // Préférence : utiliser la barre Guitar Hero si un prefab est fourni
+        if (qteBarPrefab != null)
         {
-            delayFillImage = qteVisual.DelayFillImage;
-            iconImage = qteVisual.InputIconImage;
+            qteVisualGO = Instantiate(qteBarPrefab, qteUIParent);
+            var rect = qteVisualGO.GetComponent<RectTransform>();
+            if (rect != null)
+                rect.anchoredPosition = position;
+
+            qteBar = qteVisualGO.GetComponent<QTEBar>();
+            if (qteBar != null)
+                noteImage = qteBar.CreateNote(icon);
+        }
+        else
+        {
+            qteVisualGO = Instantiate(qteCirclePrefab, qteUIParent);
+            var visualRect = qteVisualGO.GetComponent<RectTransform>();
+            if (visualRect != null)
+                visualRect.anchoredPosition = position;
+
+            QTECircleUI qteVisual = qteVisualGO.GetComponent<QTECircleUI>();
+            if (qteVisual != null)
+            {
+                delayFillImage = qteVisual.DelayFillImage;
+                iconImage = qteVisual.InputIconImage;
+            }
         }
 
         // Valeur initiale à 0 pour remplir progressivement sur la durée du QTE.
@@ -661,8 +681,8 @@ public class RhythmQTEManager : MonoBehaviour
             delayFillImage.fillAmount = 0f;
         }
 
-        // Applique l'icône si fournie
-        if (icon != null)
+        // Pour le cercle historique, on applique l'icône manuellement
+        if (icon != null && qteBar == null)
         {
             if (iconImage != null)
             {
@@ -694,16 +714,26 @@ public class RhythmQTEManager : MonoBehaviour
             float unscaledDelta = Time.unscaledDeltaTime;
             elapsed += unscaledDelta;
 
-            // Met à jour le remplissage de l'image en fonction du temps écoulé
+            float progress = Mathf.Clamp01(elapsed / holdDuration);
+
+            // Mise à jour du cercle historique
             if (delayFillImage != null)
             {
-                float progress = Mathf.Clamp01(elapsed / holdDuration);
                 delayFillImage.fillAmount = progress;
+            }
+
+            // Mise à jour de la barre Guitar Hero
+            if (qteBar != null && noteImage != null)
+            {
+                qteBar.UpdateNotePosition(noteImage, progress);
             }
 
             if (confirm.triggered)
             {
-                success = true;
+                if (qteBar != null)
+                    success = qteBar.IsNoteInValidationZone(noteImage);
+                else
+                    success = true;
                 break;
             }
 
