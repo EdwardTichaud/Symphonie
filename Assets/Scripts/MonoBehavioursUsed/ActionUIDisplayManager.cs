@@ -154,6 +154,14 @@ public class ActionUIDisplayManager : MonoBehaviour
         ShowMessage(message);
     }
 
+    /// <summary>
+    /// Indique qu'un coup critique vient d'être réalisé.
+    /// </summary>
+    public void DisplayCriticalHit()
+    {
+        ShowMessage("Coup critique !");
+    }
+
     public void DisplayInterceptionResult(bool success)
     {
         string message = success ? "Interception réussie !" : "Interception échouée";
