@@ -917,6 +917,8 @@ public class NewBattleManager : MonoBehaviour
         yield return RhythmQTEManager.Instance.ItemRoutine(item, caster, target);
 
         bool crit = RhythmQTEManager.Instance.LastItemSuccess;
+        if (crit)
+            ActionUIDisplayManager.Instance?.DisplayCriticalHit();
         InventoryManager.Instance.UseItem(item, caster, target, crit);
 
         ItemEffectType finalType = item.effectType;
@@ -1156,6 +1158,10 @@ public class NewBattleManager : MonoBehaviour
 
     public void AfterMusicalMove(MusicalMoveSO move, CharacterUnit caster, bool wasCritical)
     {
+        // Affiche un message si toutes les notes du QTE ont été réussies
+        if (wasCritical)
+            ActionUIDisplayManager.Instance?.DisplayCriticalHit();
+
         if (caster != null)
         {
             int cost = move.harmonicCost;
