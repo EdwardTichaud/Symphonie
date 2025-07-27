@@ -617,6 +617,11 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 440721972}
   m_CullTransparentMesh: 1
+--- !u!224 &469717611 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 3051421421180976014, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
+  m_PrefabInstance: {fileID: 2257147496534344949}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &487842049
 GameObject:
   m_ObjectHideFlags: 0
@@ -90200,6 +90205,55 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7144831548140210336, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
   m_PrefabInstance: {fileID: 464953949519303798}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &687829036
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 687829037}
+  - component: {fileID: 687829038}
+  m_Layer: 12
+  m_Name: BattleScene_UI_DamagePopup
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &687829037
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687829036}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 469717611}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: -0.00012207031, y: 0.00012207031}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &687829038
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 687829036}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4be03d53490abc74482fae04a0cd9fc6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  damagePopupPrefab: {fileID: 2485583884748655888, guid: 6ba432b18e2a1be46b398c0f154abe77, type: 3}
 --- !u!1 &733289824
 GameObject:
   m_ObjectHideFlags: 0
@@ -94005,7 +94059,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4943417182886862116, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4976901870700408332, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_AnchorMax.x
@@ -94069,15 +94123,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.x
-      value: 2.9463058
+      value: 2.5263677
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.y
-      value: 2.9463058
+      value: 2.5263677
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.z
-      value: 2.9463058
+      value: 2.5263677
       objectReference: {fileID: 0}
     - target: {fileID: 7196895587682077381, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_Name
@@ -94187,7 +94241,11 @@ PrefabInstance:
     - {fileID: 1601650889382261554, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
     m_RemovedGameObjects:
     - {fileID: 5514960083798530481, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
-    m_AddedGameObjects: []
+    - {fileID: 7149963161423128057, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 3051421421180976014, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
+      insertIndex: 4
+      addedObject: {fileID: 687829037}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
 --- !u!224 &2257147496534344950 stripped

@@ -486,24 +486,24 @@ public class RhythmQTEManager : MonoBehaviour
         Debug.Log("Toutes les animations sont terminées.");
     }
 
-    //public void TriggerNote(int index)
-    //{
-    //    if (currentMove == null || currentCaster == null || currentTarget == null)
-    //        return;
-    //    if (currentMove.notes == null || index < 0 || index >= currentMove.notes.Count)
-    //        return;
+    public void TriggerNote(int index)
+    {
+        if (currentMove == null || currentCaster == null || currentTarget == null)
+            return;
+        if (currentMove.notes == null || index < 0 || index >= currentMove.notes.Count)
+            return;
 
-    //    var note = currentMove.notes[index];
-    //    if (note.clip != null)
-    //        audioSource.PlayOneShot(note.clip);
+        var note = currentMove.notes[index];
+        if (note.clip != null)
+            audioSource.PlayOneShot(note.clip);
 
-    //    // Pas d'icône spécifique pour les notes, on passe null
-    //    StartCoroutine(WaitForQTE(note.rhythm, null, Vector2.zero, success =>
-    //    {
-    //        currentMove.ApplyEffect(currentCaster, currentTarget, success);
-    //        pendingNotes = Mathf.Max(0, pendingNotes - 1);
-    //    }));
-    //}
+        // Pas d'icône spécifique pour les notes, on passe null
+        StartCoroutine(WaitForQTE(note.rhythm, null, Vector2.zero, success =>
+        {
+            currentMove.ApplyEffect(currentCaster, currentTarget, success);
+            pendingNotes = Mathf.Max(0, pendingNotes - 1);
+        }));
+    }
 
     public void TriggerQTE(float windowDelay)
     {

@@ -28,7 +28,7 @@ MonoBehaviour:
   baseSagacity: 0
   baseInitiative: 1
   baseRange: 2
-  baseHP: 1
+  baseHP: 80
   baseStrength: 1
   baseDefense: 1
   baseSpeed: 0
@@ -41,9 +41,10 @@ MonoBehaviour:
   battleIdleAnimation: {fileID: 7400000, guid: 7ba7791d5ca0c3a4c85fdf6c45ceb486, type: 2}
   musicalAttacks:
   - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
+  specialMusicalMove: {fileID: 0}
   currentInitiative: 1
   currentRange: 2
-  currentHP: 1
+  currentHP: 80
   currentStrength: 1
   currentDefense: 1
   currentPower: 0
@@ -82,4 +83,6 @@ MonoBehaviour:
   weepForKaelDeath: {fileID: 0}
   weepForLinkDeath: {fileID: 0}
   weepForLunaDeath: {fileID: 0}
+  resonancePoint: 1
+  dissonancePoint: 0
   owner: {fileID: 0}
