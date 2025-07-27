@@ -65,6 +65,19 @@ public class TimelineLauncher : MonoBehaviour
             {
                 BindObjectToTrack(output, cameraRoot);
             }
+            else if (type != null && typeof(Component).IsAssignableFrom(type) && type.Name.Contains("SignalReceiver"))
+            {
+                // Récupère le SignalReceiver présent sur le même GameObject que le PlayableDirector
+                Component receiver = director.GetComponent(type);
+                if (receiver != null)
+                {
+                    director.SetGenericBinding(output.sourceObject, receiver);
+                }
+                else
+                {
+                    Debug.LogWarning($"[TimelineLauncher] {type.Name} manquant sur {director.gameObject.name}");
+                }
+            }
             else
             {
                 Debug.LogWarning($"[TimelineLauncher] Aucun binding pour la track : {trackName}");
