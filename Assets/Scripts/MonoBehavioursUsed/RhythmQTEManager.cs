@@ -561,9 +561,18 @@ public class RhythmQTEManager : MonoBehaviour
         var visualRect = qteVisual.GetComponent<RectTransform>();
         if (visualRect != null)
             visualRect.anchoredPosition = position;
-        RectTransform dynamicCircle = qteVisual.transform.Find("Circle_Dynamic")?.GetComponent<RectTransform>();
-        if (dynamicCircle != null)
-            dynamicCircle.localScale = Vector3.one * qteStartScale;
+
+        // Recherche de l'image représentant la progression du QTE.
+        // Le prefab peut s'appeler "Circle_Dynamic" ou "ShrinkingCircle" selon les versions.
+        UnityEngine.UI.Image delayFillImage = qteVisual.transform.Find("Circle_Dynamic")?.GetComponent<UnityEngine.UI.Image>();
+        if (delayFillImage == null)
+            delayFillImage = qteVisual.transform.Find("ShrinkingCircle")?.GetComponent<UnityEngine.UI.Image>();
+
+        // Valeur initiale à 0 pour remplir progressivement sur la durée du QTE.
+        if (delayFillImage != null)
+        {
+            delayFillImage.fillAmount = 0f;
+        }
 
         // Ajoute dynamiquement l'icône si fournie
         if (icon != null)
@@ -588,11 +597,11 @@ public class RhythmQTEManager : MonoBehaviour
             float unscaledDelta = Time.unscaledDeltaTime;
             elapsed += unscaledDelta;
 
-            if (dynamicCircle != null)
+            // Met à jour le remplissage de l'image en fonction du temps écoulé
+            if (delayFillImage != null)
             {
                 float progress = Mathf.Clamp01(elapsed / holdDuration);
-                float scale = Mathf.Lerp(qteStartScale, qteEndScale, progress);
-                dynamicCircle.localScale = Vector3.one * scale;
+                delayFillImage.fillAmount = progress;
             }
 
             if (confirm.triggered)
