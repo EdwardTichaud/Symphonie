@@ -552,8 +552,6 @@ public class RhythmQTEManager : MonoBehaviour
             return;
 
         var note = currentMove.notes[index];
-        if (note.clip != null)
-            audioSource.PlayOneShot(note.clip);
 
         // Si l'attaquant est un ennemi, la cible doit exécuter le QTE défensif
         if (currentCaster.Data.characterType == CharacterType.EnemyUnit)
