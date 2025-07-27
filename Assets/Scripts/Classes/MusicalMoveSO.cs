@@ -36,6 +36,15 @@ public class MusicalMoveSO : ScriptableObject
     public int harmonicCost = 1;
     public int harmonicGeneration = 0;
 
+    [Header("Coup Critique")]
+    [Tooltip("Active une variante lorsque le QTE est réussi")]
+    public bool useCriticalVariant = false;
+    public MusicalEffectType criticalEffectType = MusicalEffectType.Damage;
+    public int criticalEffectValue = 20;
+    public float criticalFatigueCost = 1f;
+    public int criticalHarmonicCost = 1;
+    public int criticalHarmonicGeneration = 0;
+
     [Header("Temps de recharge")]
     [Tooltip("Nombre de tours avant de pouvoir réutiliser le move")]
     public int cooldown = 0;
@@ -90,45 +99,58 @@ public class MusicalMoveSO : ScriptableObject
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target, bool isCritical)
     {
-        float finalValue = effectValue;
+        // Choix de l'effet et de la valeur en fonction du résultat du QTE
+        MusicalEffectType typeToUse = effectType;
+        int baseValue = effectValue;
+        float fatigueToApply = fatigueCost;
+
+        if (isCritical && useCriticalVariant)
+        {
+            typeToUse = criticalEffectType;
+            baseValue = criticalEffectValue;
+            fatigueToApply = criticalFatigueCost;
+        }
+
+        float finalValue = baseValue;
         if (caster != null)
         {
             finalValue += caster.currentPower;
             finalValue *= caster.GetAttackMultiplier();
         }
 
-        if (isCritical)
+        // Ancien comportement : simple multiplicateur si aucune variante
+        if (isCritical && !useCriticalVariant)
             finalValue *= 2f;
 
-        if (effectType == MusicalEffectType.Damage && target.Data.characterType == CharacterType.EnemyUnit)
+        if (typeToUse == MusicalEffectType.Damage && target.Data.characterType == CharacterType.EnemyUnit)
         {
             // Transmission de la source pour déclencher l'animation directionnelle
             target.TakeDamage(finalValue, caster != null ? caster.transform : null);
             NewBattleManager.Instance?.RegisterDamage(caster, finalValue);
         }
-        else if (effectType == MusicalEffectType.Heal && target.Data.characterType == CharacterType.SquadUnit)
+        else if (typeToUse == MusicalEffectType.Heal && target.Data.characterType == CharacterType.SquadUnit)
         {
             target.Heal(finalValue);
         }
-        else if (effectType == MusicalEffectType.Sleep)
+        else if (typeToUse == MusicalEffectType.Sleep)
         {
             InventoryManager.Instance?.ApplySleep(target);
         }
-        else if (effectType == MusicalEffectType.WakeUpAll)
+        else if (typeToUse == MusicalEffectType.WakeUpAll)
         {
             foreach (var unit in NewBattleManager.Instance.activeCharacterUnits)
             {
                 InventoryManager.Instance?.RemoveSleep(unit);
             }
         }
-        else if (effectType == MusicalEffectType.LoyaltyMark)
+        else if (typeToUse == MusicalEffectType.LoyaltyMark)
         {
             var mark = target.GetComponent<LoyaltyMark>();
             if (mark == null)
                 mark = target.gameObject.AddComponent<LoyaltyMark>();
             mark.SetProtector(caster);
         }
-        else if (effectType == MusicalEffectType.LinkMark)
+        else if (typeToUse == MusicalEffectType.LinkMark)
         {
             if (target.GetComponent<LinkMark>() == null)
                 target.gameObject.AddComponent<LinkMark>();
@@ -136,7 +158,7 @@ public class MusicalMoveSO : ScriptableObject
 
         if (caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
-            caster.GetComponent<FatigueSystem>()?.OnActionPerformed(fatigueCost);
+            caster.GetComponent<FatigueSystem>()?.OnActionPerformed(fatigueToApply);
         }
     }
 }

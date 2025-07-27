@@ -16,6 +16,9 @@ public class RhythmQTEManager : MonoBehaviour
     private bool isActive = false;
     private List<bool> successResults;
 
+    // Dernier résultat enregistré pour un QTE d'objet
+    public bool LastItemSuccess { get; private set; }
+
     // QTE
     private Coroutine beatRoutine;
 
@@ -68,6 +71,7 @@ public class RhythmQTEManager : MonoBehaviour
     {
         Debug.Log("Début de la séquence du MusicalMove: " + move + " de " + caster.name);
         isActive = true;
+        successResults = new List<bool>();
 
         bool tauntPlayed = false;
         System.Action<CharacterUnit> deathHandler = null;
@@ -139,7 +143,8 @@ public class RhythmQTEManager : MonoBehaviour
             yield return ReturnToInitialPosition(move, caster, target);
 
         isActive = false;
-        NewBattleManager.Instance.AfterMusicalMove(move, caster);
+        bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
+        NewBattleManager.Instance.AfterMusicalMove(move, caster, critical);
 
         if (target != null)
             target.OnDeath -= deathHandler;
@@ -198,6 +203,20 @@ public class RhythmQTEManager : MonoBehaviour
             yield return null;
             float clipDuration = animator.GetCurrentAnimatorStateInfo(0).length;
             yield return new WaitForSeconds(clipDuration);
+        }
+
+        // Phase de QTE propre à l'objet
+        LastItemSuccess = true;
+        if (item.beatPattern != null && item.beatPattern.Count > 0)
+        {
+            successResults = new List<bool>();
+            foreach (float beat in item.beatPattern)
+            {
+                bool s = false;
+                yield return WaitForQTE(beat, null, Vector2.zero, r => s = r);
+                successResults.Add(s);
+            }
+            LastItemSuccess = successResults.All(v => v);
         }
 
         // Retour à la position d'origine si l'objet ne demande pas de rester en place
@@ -502,6 +521,7 @@ public class RhythmQTEManager : MonoBehaviour
         StartCoroutine(WaitForQTE(note.rhythm, null, Vector2.zero, success =>
         {
             currentMove.ApplyEffect(currentCaster, currentTarget, success);
+            successResults.Add(success);
             pendingNotes = Mathf.Max(0, pendingNotes - 1);
         }));
     }
