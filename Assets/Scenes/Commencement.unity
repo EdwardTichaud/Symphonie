@@ -92033,6 +92033,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2141815839}
   - component: {fileID: 2141815840}
+  - component: {fileID: 2141815841}
   m_Layer: 0
   m_Name: TimelineManager
   m_TagString: Untagged
@@ -92067,6 +92068,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f29849ec0974034498c8d71aec0d1174, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &2141815841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2141815838}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 372a8caa032aa664fbb44227f059a3bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  units:
+  - unit: {fileID: 2868098831747274196, guid: 44469757a1eb6364cbbae62170301c78, type: 3}
+    thresholds:
+    - hpRatio: 0.5
+      timeline: {fileID: 11400000, guid: 62df51faee2de154992bb3422a6e7638, type: 2}
+      triggered: 0
+  - unit: {fileID: 2868098831747274196, guid: 44469757a1eb6364cbbae62170301c78, type: 3}
+    thresholds:
+    - hpRatio: 0
+      timeline: {fileID: 7851100719836960122}
+      triggered: 0
 --- !u!1 &212011482663917818
 GameObject:
   m_ObjectHideFlags: 0
@@ -93314,15 +93338,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.x
-      value: 2.547282
+      value: 2.5550625
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.y
-      value: 2.547282
+      value: 2.5550625
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.z
-      value: 2.547282
+      value: 2.5550625
       objectReference: {fileID: 0}
     - target: {fileID: 7196895587682077381, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_Name
@@ -96207,6 +96231,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 8738188441690940424, guid: e6e60de81b4a8174d862de0f00d7d26a, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7851100719836960122}
+    - targetCorrespondingSourceObject: {fileID: 8738188441690940424, guid: e6e60de81b4a8174d862de0f00d7d26a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7851100719836960123}
   m_SourcePrefab: {fileID: 100100000, guid: e6e60de81b4a8174d862de0f00d7d26a, type: 3}
 --- !u!4 &7851100719836960120 stripped
 Transform:
@@ -96230,6 +96257,18 @@ PlayableDirector:
   m_SceneBindings: []
   m_ExposedReferences:
     m_References: []
+--- !u!114 &7851100719836960123
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 964062190}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8335eeeee21612844b1662f6d0120cdb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &7853840407444392761
 GameObject:
   m_ObjectHideFlags: 0
