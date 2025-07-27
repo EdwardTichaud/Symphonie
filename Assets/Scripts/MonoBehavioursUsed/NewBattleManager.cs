@@ -1720,6 +1720,10 @@ public class NewBattleManager : MonoBehaviour
         ChangeBattleState(BattleState.SquadUnit_MainMenu);
         ToggleMenuContainers(true, false, false);
 
+        // S'assure que l'action "Confirm" est bien active.
+        // Elle peut avoir été désactivée à la fin d'un QTE.
+        InputsManager.Instance?.playerInputs.Battle.Confirm.Enable();
+
         // Arrête la Timeline d'attente si elle était en cours
         StopItemPreparingTimeline();
 
