@@ -882,6 +882,9 @@ public class NewBattleManager : MonoBehaviour
                 yield break;
             }
         }
+        // Lecture d'un avertissement sonore si le mouvement en possède un
+        if (move.warningClip != null)
+            AudioManager.Instance?.PlayVoice(move.warningClip);
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
 
         // Ajout du système de rage manuellement
