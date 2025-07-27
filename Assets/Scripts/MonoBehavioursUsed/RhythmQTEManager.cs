@@ -47,6 +47,7 @@ public class RhythmQTEManager : MonoBehaviour
     private int pendingNotes = 0;
     private bool qteActive = false;
 
+    // Si activé, le temps de jeu est figé durant les QTE pour faciliter l'exécution
     [SerializeField] private bool easyMode = false;
 
     #region Initialisation
@@ -620,20 +621,23 @@ public class RhythmQTEManager : MonoBehaviour
         float holdDuration = windowDelay / 1000f; // convertit en secondes
         float normalTimeScale = 1f;
 
-        // 🔻 Ralentissement progressif
+        // 🔻 Ralentissement progressif uniquement en mode facile
         float t = 0f;
-        while (t < transitionDuration)
+        if (easyMode)
         {
-            t += Time.unscaledDeltaTime;
-            float blend = t / transitionDuration;
-            Time.timeScale = Mathf.Lerp(normalTimeScale, slowestTimeScale, blend);
-            Time.fixedDeltaTime = defaultFixedDeltaTime * Time.timeScale;
-            yield return null;
-        }
+            while (t < transitionDuration)
+            {
+                t += Time.unscaledDeltaTime;
+                float blend = t / transitionDuration;
+                Time.timeScale = Mathf.Lerp(normalTimeScale, slowestTimeScale, blend);
+                Time.fixedDeltaTime = defaultFixedDeltaTime * Time.timeScale;
+                yield return null;
+            }
 
-        // 🎯 Temps ralenti & instanciation du visuel
-        Time.timeScale = slowestTimeScale;
-        Time.fixedDeltaTime = defaultFixedDeltaTime * slowestTimeScale;
+            // 🎯 Temps ralenti & instanciation du visuel
+            Time.timeScale = slowestTimeScale;
+            Time.fixedDeltaTime = defaultFixedDeltaTime * slowestTimeScale;
+        }
 
         GameObject qteVisualGO = Instantiate(qteCirclePrefab, qteUIParent);
         // Positionne le visuel selon la valeur fournie par le Trigger
@@ -711,19 +715,22 @@ public class RhythmQTEManager : MonoBehaviour
 
         callback?.Invoke(success);
 
-        // 🔺 Retour au temps normal
-        t = 0f;
-        while (t < transitionDuration)
+        // 🔺 Retour au temps normal uniquement si le temps a été modifié
+        if (easyMode)
         {
-            t += Time.unscaledDeltaTime;
-            float blend = t / transitionDuration;
-            Time.timeScale = Mathf.Lerp(slowestTimeScale, normalTimeScale, blend);
-            Time.fixedDeltaTime = defaultFixedDeltaTime * Time.timeScale;
-            yield return null;
-        }
+            t = 0f;
+            while (t < transitionDuration)
+            {
+                t += Time.unscaledDeltaTime;
+                float blend = t / transitionDuration;
+                Time.timeScale = Mathf.Lerp(slowestTimeScale, normalTimeScale, blend);
+                Time.fixedDeltaTime = defaultFixedDeltaTime * Time.timeScale;
+                yield return null;
+            }
 
-        Time.timeScale = normalTimeScale;
-        Time.fixedDeltaTime = defaultFixedDeltaTime;
+            Time.timeScale = normalTimeScale;
+            Time.fixedDeltaTime = defaultFixedDeltaTime;
+        }
         qteActive = false;
     }
 
@@ -741,20 +748,23 @@ public class RhythmQTEManager : MonoBehaviour
         float transitionDuration = 0.1f;
         float normalTimeScale = 1f;
 
-        // 🔻 Ralentissement progressif
+        // 🔻 Ralentissement progressif uniquement en mode facile
         float t = 0f;
-        while (t < transitionDuration)
+        if (easyMode)
         {
-            t += Time.unscaledDeltaTime;
-            float blend = t / transitionDuration;
-            Time.timeScale = Mathf.Lerp(normalTimeScale, slowestTimeScale, blend);
-            Time.fixedDeltaTime = defaultFixedDeltaTime * Time.timeScale;
-            yield return null;
-        }
+            while (t < transitionDuration)
+            {
+                t += Time.unscaledDeltaTime;
+                float blend = t / transitionDuration;
+                Time.timeScale = Mathf.Lerp(normalTimeScale, slowestTimeScale, blend);
+                Time.fixedDeltaTime = defaultFixedDeltaTime * Time.timeScale;
+                yield return null;
+            }
 
-        // 🎯 Temps ralenti & instanciation du visuel
-        Time.timeScale = slowestTimeScale;
-        Time.fixedDeltaTime = defaultFixedDeltaTime * slowestTimeScale;
+            // 🎯 Temps ralenti & instanciation du visuel
+            Time.timeScale = slowestTimeScale;
+            Time.fixedDeltaTime = defaultFixedDeltaTime * slowestTimeScale;
+        }
 
         GameObject qteVisualGO = Instantiate(qteCirclePrefab, qteUIParent);
         QTECircleUI qteVisual = qteVisualGO.GetComponent<QTECircleUI>();
@@ -797,19 +807,22 @@ public class RhythmQTEManager : MonoBehaviour
 
         callback?.Invoke(result);
 
-        // 🔺 Retour au temps normal
-        t = 0f;
-        while (t < transitionDuration)
+        // 🔺 Retour au temps normal uniquement si le temps a été modifié
+        if (easyMode)
         {
-            t += Time.unscaledDeltaTime;
-            float blend = t / transitionDuration;
-            Time.timeScale = Mathf.Lerp(slowestTimeScale, normalTimeScale, blend);
-            Time.fixedDeltaTime = defaultFixedDeltaTime * Time.timeScale;
-            yield return null;
-        }
+            t = 0f;
+            while (t < transitionDuration)
+            {
+                t += Time.unscaledDeltaTime;
+                float blend = t / transitionDuration;
+                Time.timeScale = Mathf.Lerp(slowestTimeScale, normalTimeScale, blend);
+                Time.fixedDeltaTime = defaultFixedDeltaTime * Time.timeScale;
+                yield return null;
+            }
 
-        Time.timeScale = normalTimeScale;
-        Time.fixedDeltaTime = defaultFixedDeltaTime;
+            Time.timeScale = normalTimeScale;
+            Time.fixedDeltaTime = defaultFixedDeltaTime;
+        }
         qteActive = false;
     }
 
