@@ -17,7 +17,12 @@ public class DamagePopupManager : MonoBehaviour
         Instance = this;
     }
 
-    public void ShowDamage(Vector3 position, int amount)
+    /// <summary>
+    /// Crée un popup de dégâts au-dessus de la cible donnée.
+    /// </summary>
+    /// <param name="target">Transform à suivre.</param>
+    /// <param name="amount">Montant de dégâts.</param>
+    public void ShowDamage(Transform target, int amount)
     {
         if (damagePopupPrefab == null)
         {
@@ -25,7 +30,8 @@ public class DamagePopupManager : MonoBehaviour
             return;
         }
 
-        GameObject popup = Instantiate(damagePopupPrefab, NewBattleManager.Instance.currentTargetCharacter.transform.position, Quaternion.identity);
-        popup.GetComponent<DamagePopup>().Initialize(amount);
+        // Instancie le prefab comme enfant pour garder une hiérarchie propre
+        GameObject popup = Instantiate(damagePopupPrefab, transform);
+        popup.GetComponent<DamagePopup>().Initialize(amount, target);
     }
 }
