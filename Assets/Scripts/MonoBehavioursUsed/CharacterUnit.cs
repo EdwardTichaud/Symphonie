@@ -83,8 +83,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public bool IsDead => deathTriggered || currentHP <= 0f;
     public event System.Action<CharacterUnit> OnDeath;
     public bool isReadyToParry;
-    [HideInInspector] public bool isInterceptionImmune = false;
-    [HideInInspector] public int interceptionImmunityTurns = 0;
+    // Indique si l'unité est immunisée à l'interception. Visible pour faciliter
+    // le débogage pendant le combat.
+    public bool isInterceptionImmune = false;
+    // Nombre de tours restants pour l'immunité à l'interception. Visible pour
+    // suivre précisément la durée de l'effet.
+    public int interceptionImmunityTurns = 0;
 
     [Header("Récompenses de combat")]
     public List<ItemData> lootItems = new();
