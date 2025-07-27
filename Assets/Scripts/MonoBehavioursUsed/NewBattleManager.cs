@@ -624,7 +624,10 @@ public class NewBattleManager : MonoBehaviour
 
         ChangeCurrentCharacterUnit(characterUnit);
 
+        // Gain automatique d'une harmonique en début de tour
         characterUnit.AddHarmonic(characterUnit.Data.harmonicType);
+        // Affiche un popup visuel pour indiquer le gain
+        AddHarmonicPopupManager.Instance?.ShowAddHarmonic(characterUnit.transform, 1);
 
         // S'assure que la BattleCamera n'est pas contrôlée par le CameraController
         // pour éviter les conflits lorsqu'on passe à la prochaine unité
