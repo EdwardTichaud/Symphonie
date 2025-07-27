@@ -41,6 +41,9 @@ MonoBehaviour:
   battleIdleAnimation: {fileID: 0}
   musicalAttacks:
   - {fileID: 11400000, guid: ffffffff000000000000000000000001, type: 2}
+  - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
+  - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
+  specialMusicalMove: {fileID: 0}
   currentInitiative: 1
   currentRange: 5
   currentHP: 50
@@ -60,8 +63,28 @@ MonoBehaviour:
   currentInterceptionChance: 0
   hitSound: {fileID: 0}
   interceptedSound: {fileID: 0}
+  prematureDeathTaunt: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
-  owner: {fileID: 0}
+  TPEffect_Start: {fileID: 0}
+  TPEffect_Destination: {fileID: 0}
+  moveClip: {fileID: 0}
+  hitAnimation: {fileID: 0}
+  frontHitAnimation: {fileID: 0}
+  backHitAnimation: {fileID: 0}
+  leftHitAnimation: {fileID: 0}
+  rightHitAnimation: {fileID: 0}
+  deathAnimation: {fileID: 0}
+  TPAnimation_Start: {fileID: 0}
+  TPAnimation_Destination: {fileID: 0}
+  prepareToUndergoAnimation: {fileID: 0}
+  moveStartClip: {fileID: 0}
+  moveEndClip: {fileID: 0}
+  weepForLucianDeath: {fileID: 0}
+  weepForThaliaDeath: {fileID: 0}
+  weepForKaelDeath: {fileID: 0}
+  weepForLinkDeath: {fileID: 0}
+  weepForLunaDeath: {fileID: 0}
   resonancePoint: 1
   dissonancePoint: 0
+  owner: {fileID: 0}
