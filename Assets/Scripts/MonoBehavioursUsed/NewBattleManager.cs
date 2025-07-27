@@ -833,7 +833,8 @@ public class NewBattleManager : MonoBehaviour
 
         // Joue un indice sonore associé à l'attaque pour prévenir le joueur
         if (move.warningClip != null)
-            AudioManager.Instance?.PlayVoice(move.warningClip);
+            // Les indices sonores sont joués via la nouvelle source dédiée
+            AudioManager.Instance?.PlayWarningClip(move.warningClip);
 
         // Laisse un délai pour que le joueur prenne connaissance de l'action
         // On utilise ici un temps réel pour éviter tout blocage si le jeu est en pause
@@ -884,7 +885,8 @@ public class NewBattleManager : MonoBehaviour
         }
         // Lecture d'un avertissement sonore si le mouvement en possède un
         if (move.warningClip != null)
-            AudioManager.Instance?.PlayVoice(move.warningClip);
+            // Les indices sonores sont joués via la nouvelle source dédiée
+            AudioManager.Instance?.PlayWarningClip(move.warningClip);
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
 
         // Ajout du système de rage manuellement
