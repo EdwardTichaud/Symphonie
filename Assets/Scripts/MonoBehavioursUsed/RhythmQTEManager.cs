@@ -108,6 +108,7 @@ public class RhythmQTEManager : MonoBehaviour
         activeQTEBar = go.GetComponent<QTEBar>();
 
         preparedNotes.Clear();
+
         float cumulative = 0f;
         // Notes anonymes, pas d'icône
         for (int i = 0; i < beatPattern.Count; i++)
@@ -919,6 +920,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             if (delayFillImage != null)
                 delayFillImage.fillAmount = Mathf.Clamp01(elapsed / dodgeWindow);
+                
             if (confirm.triggered)
             {
                 pressed = true;
