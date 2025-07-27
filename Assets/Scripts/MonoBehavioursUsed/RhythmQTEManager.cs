@@ -31,6 +31,10 @@ public class RhythmQTEManager : MonoBehaviour
     [Header("QTE Barre")]
     public GameObject qteBarPrefab; // Prefab de la barre façon Guitar Hero
 
+    // Instance actuellement affichée de la barre et file d'attente des notes
+    private QTEBar activeQTEBar;
+    private readonly Queue<Image> preparedNotes = new();
+
     private DefenseResult defenseResult;
     public DefenseResult GetDefenseResult() => defenseResult;
 
@@ -62,6 +66,69 @@ public class RhythmQTEManager : MonoBehaviour
         if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
         defaultFixedDeltaTime = Time.fixedDeltaTime;
+    }
+
+    /// <summary>
+    /// Prépare la barre de QTE en l'affichant et en créant toutes les notes à l'avance.
+    /// </summary>
+    /// <param name="notes">Liste des données de notes à afficher</param>
+    public void PrepareQTEBar(IList<MusicalMoveSO.NoteData> notes)
+    {
+        if (qteBarPrefab == null || notes == null || notes.Count == 0)
+            return;
+
+        // Nettoie une éventuelle barre précédente
+        ClearQTEBar();
+
+        var go = Instantiate(qteBarPrefab, qteUIParent);
+        activeQTEBar = go.GetComponent<QTEBar>();
+
+        preparedNotes.Clear();
+        float cumulative = 0f;
+        foreach (var n in notes)
+        {
+            cumulative += n.rhythm;
+            // Les notes apparaissent 2 secondes avant d'arriver dans la zone
+            float delay = Mathf.Max(0f, cumulative - 2f);
+            var img = activeQTEBar.ScheduleNote(n.noteInput, delay, 2f);
+            preparedNotes.Enqueue(img);
+        }
+    }
+
+    /// <summary>
+    /// Variante pour un motif simple d'item sans icônes spécifiques.
+    /// </summary>
+    public void PrepareQTEBar(IList<float> beatPattern)
+    {
+        if (qteBarPrefab == null || beatPattern == null || beatPattern.Count == 0)
+            return;
+
+        ClearQTEBar();
+        var go = Instantiate(qteBarPrefab, qteUIParent);
+        activeQTEBar = go.GetComponent<QTEBar>();
+
+        preparedNotes.Clear();
+        float cumulative = 0f;
+        // Notes anonymes, pas d'icône
+        for (int i = 0; i < beatPattern.Count; i++)
+        {
+            cumulative += beatPattern[i];
+            float delay = Mathf.Max(0f, cumulative - 2f);
+            var img = activeQTEBar.ScheduleNote(null, delay, 2f);
+            preparedNotes.Enqueue(img);
+        }
+    }
+
+    /// <summary>
+    /// Détruit la barre de QTE active et vide la file des notes.
+    /// </summary>
+    public void ClearQTEBar()
+    {
+        if (activeQTEBar != null)
+            Destroy(activeQTEBar.gameObject);
+
+        activeQTEBar = null;
+        preparedNotes.Clear();
     }
 
     // Séquence du Musicalmove - Ajouter autant de méthodes que d'effets durant le move
@@ -157,6 +224,9 @@ public class RhythmQTEManager : MonoBehaviour
         currentCaster = null;
         currentTarget = null;
 
+        // Nettoie la barre de QTE une fois la séquence terminée
+        ClearQTEBar();
+
         // Si le caster a été détruit durant la séquence, on évite une exception
         casterName = caster != null ? caster.name : "(caster nul)";
         Debug.Log("Fin de la séquence du MusicalMove: " + move + " de " + casterName);
@@ -174,6 +244,10 @@ public class RhythmQTEManager : MonoBehaviour
         string itemCasterName = caster != null ? caster.name : "(caster nul)";
         Debug.Log($"Début de la séquence d'utilisation de l'objet: {item.itemName} par {itemCasterName}");
         isActive = true;
+
+        // Prépare la barre de QTE correspondant au motif de l'objet
+        if (item.beatPattern != null && item.beatPattern.Count > 0)
+            PrepareQTEBar(item.beatPattern);
 
         if (caster == null || caster.IsDead)
         {
@@ -237,6 +311,9 @@ public class RhythmQTEManager : MonoBehaviour
         // Protection en cas de destruction du lanceur avant la fin de la séquence
         itemCasterName = caster != null ? caster.name : "(caster nul)";
         Debug.Log($"Fin de la séquence d'utilisation de l'objet: {item.itemName} par {itemCasterName}");
+
+        // Nettoie la barre de QTE utilisée pour l'objet
+        ClearQTEBar();
     }
 
     private IEnumerator SimpleMoveTo(CharacterUnit caster, CharacterUnit target, ItemData item)
@@ -646,17 +723,29 @@ public class RhythmQTEManager : MonoBehaviour
         UnityEngine.UI.Image delayFillImage = null;
         UnityEngine.UI.Image iconImage = null;
 
-        // Préférence : utiliser la barre Guitar Hero si un prefab est fourni
-        if (qteBarPrefab != null)
+        // Préférence : utiliser la barre Guitar Hero si une barre est préparée ou un prefab fourni
+        if (activeQTEBar != null || qteBarPrefab != null)
         {
-            qteVisualGO = Instantiate(qteBarPrefab, qteUIParent);
-            var rect = qteVisualGO.GetComponent<RectTransform>();
-            if (rect != null)
-                rect.anchoredPosition = position;
+            qteBar = activeQTEBar;
+            if (qteBar == null)
+            {
+                qteVisualGO = Instantiate(qteBarPrefab, qteUIParent);
+                var rect = qteVisualGO.GetComponent<RectTransform>();
+                if (rect != null)
+                    rect.anchoredPosition = position;
 
-            qteBar = qteVisualGO.GetComponent<QTEBar>();
-            if (qteBar != null)
-                noteImage = qteBar.CreateNote(icon);
+                qteBar = qteVisualGO.GetComponent<QTEBar>();
+                activeQTEBar = qteBar;
+            }
+            else
+            {
+                qteVisualGO = qteBar.gameObject;
+            }
+
+            if (preparedNotes.Count > 0)
+                noteImage = preparedNotes.Dequeue();
+            else if (qteBar != null)
+                noteImage = qteBar.ScheduleNote(icon, 0f, 2f);
         }
         else
         {
@@ -720,12 +809,6 @@ public class RhythmQTEManager : MonoBehaviour
                 delayFillImage.fillAmount = progress;
             }
 
-            // Mise à jour de la barre Guitar Hero
-            if (qteBar != null && noteImage != null)
-            {
-                qteBar.UpdateNotePosition(noteImage, progress);
-            }
-
             if (confirm.triggered)
             {
                 if (qteBar != null)
@@ -739,7 +822,14 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         confirm.Disable();
-        Destroy(qteVisualGO);
+
+        // Détruit uniquement la barre si elle n'est pas réutilisée
+        if (qteVisualGO != null && (activeQTEBar == null || qteVisualGO != activeQTEBar.gameObject))
+            Destroy(qteVisualGO);
+
+        // Supprime la note utilisée pour libérer l'espace
+        if (noteImage != null)
+            Destroy(noteImage.gameObject);
 
         callback?.Invoke(success);
 
@@ -794,11 +884,28 @@ public class RhythmQTEManager : MonoBehaviour
             Time.fixedDeltaTime = defaultFixedDeltaTime * slowestTimeScale;
         }
 
-        GameObject qteVisualGO = Instantiate(qteCirclePrefab, qteUIParent);
-        QTECircleUI qteVisual = qteVisualGO.GetComponent<QTECircleUI>();
-        UnityEngine.UI.Image delayFillImage = qteVisual != null ? qteVisual.DelayFillImage : null;
-        if (delayFillImage != null)
-            delayFillImage.fillAmount = 0f;
+        GameObject qteVisualGO;
+        QTEBar qteBar = null;
+        UnityEngine.UI.Image noteImage = null;
+        UnityEngine.UI.Image delayFillImage = null;
+
+        if (activeQTEBar != null)
+        {
+            qteBar = activeQTEBar;
+            qteVisualGO = qteBar.gameObject;
+            if (preparedNotes.Count > 0)
+                noteImage = preparedNotes.Dequeue();
+            else
+                noteImage = qteBar.ScheduleNote(null, 0f, 2f);
+        }
+        else
+        {
+            qteVisualGO = Instantiate(qteCirclePrefab, qteUIParent);
+            QTECircleUI qteVisual = qteVisualGO.GetComponent<QTECircleUI>();
+            delayFillImage = qteVisual != null ? qteVisual.DelayFillImage : null;
+            if (delayFillImage != null)
+                delayFillImage.fillAmount = 0f;
+        }
 
         float elapsed = 0f;
         bool pressed = false;
@@ -812,7 +919,6 @@ public class RhythmQTEManager : MonoBehaviour
 
             if (delayFillImage != null)
                 delayFillImage.fillAmount = Mathf.Clamp01(elapsed / dodgeWindow);
-
             if (confirm.triggered)
             {
                 pressed = true;
@@ -823,7 +929,12 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         confirm.Disable();
-        Destroy(qteVisualGO);
+
+        if (qteVisualGO != null && (activeQTEBar == null || qteVisualGO != activeQTEBar.gameObject))
+            Destroy(qteVisualGO);
+
+        if (noteImage != null)
+            Destroy(noteImage.gameObject);
 
         DefenseResult result;
         if (!pressed)

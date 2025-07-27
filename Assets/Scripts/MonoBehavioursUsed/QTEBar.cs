@@ -13,7 +13,17 @@ public class QTEBar : MonoBehaviour
     [SerializeField] private RectTransform validationZone; // Zone de validation à l'extrémité
     [SerializeField] private Image notePrefab;             // Préfab d'icône à instancier pour chaque QTE
 
+    // Notes directement visibles actuellement
     private readonly List<Image> activeNotes = new();
+    // Notes planifiées pour apparaître dans le futur
+    private class ScheduledNote
+    {
+        public Image image;
+        public float startTime;
+        public float endTime;
+        public bool started;
+    }
+    private readonly List<ScheduledNote> scheduledNotes = new();
     private float barWidth;
 
     private void Awake()
@@ -39,6 +49,39 @@ public class QTEBar : MonoBehaviour
 
         RectTransform rect = note.GetComponent<RectTransform>();
         rect.anchoredPosition = new Vector2(barWidth / 2f, 0f);
+        activeNotes.Add(note);
+        return note;
+    }
+
+    /// <summary>
+    /// Planifie l'apparition d'une note qui se déplacera automatiquement
+    /// de la droite vers la gauche sur une durée donnée.
+    /// </summary>
+    /// <param name="icon">Icône à afficher sur la note.</param>
+    /// <param name="delay">Temps avant l'apparition (en secondes).</param>
+    /// <param name="travelDuration">Temps nécessaire pour atteindre la zone de validation.</param>
+    /// <returns>L'image instanciée pour la note.</returns>
+    public Image ScheduleNote(Sprite icon, float delay, float travelDuration)
+    {
+        if (notePrefab == null || barRect == null)
+            return null;
+
+        Image note = Instantiate(notePrefab, barRect);
+        if (icon != null)
+            note.sprite = icon;
+
+        RectTransform rect = note.GetComponent<RectTransform>();
+        rect.anchoredPosition = new Vector2(barWidth / 2f, 0f);
+        note.enabled = false;
+
+        scheduledNotes.Add(new ScheduledNote
+        {
+            image = note,
+            startTime = Time.unscaledTime + delay,
+            endTime = Time.unscaledTime + delay + travelDuration,
+            started = false
+        });
+
         activeNotes.Add(note);
         return note;
     }
@@ -72,5 +115,27 @@ public class QTEBar : MonoBehaviour
         float zoneMax = validationZone.anchoredPosition.x + validationZone.rect.width / 2f;
         float x = noteRect.anchoredPosition.x;
         return x >= zoneMin && x <= zoneMax;
+    }
+
+    private void Update()
+    {
+        if (scheduledNotes.Count == 0)
+            return;
+
+        float now = Time.unscaledTime;
+        foreach (var n in scheduledNotes)
+        {
+            if (now < n.startTime)
+                continue;
+
+            if (!n.started)
+            {
+                n.started = true;
+                n.image.enabled = true;
+            }
+
+            float progress = Mathf.Clamp01((now - n.startTime) / (n.endTime - n.startTime));
+            UpdateNotePosition(n.image, progress);
+        }
     }
 }
