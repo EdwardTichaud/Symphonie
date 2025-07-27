@@ -551,13 +551,38 @@ public class RhythmQTEManager : MonoBehaviour
         if (note.clip != null)
             audioSource.PlayOneShot(note.clip);
 
-        // Pas d'icône spécifique pour les notes, on passe null
-        StartCoroutine(WaitForQTE(note.rhythm, null, Vector2.zero, success =>
+        // Si l'attaquant est un ennemi, la cible doit exécuter le QTE défensif
+        if (currentCaster.Data.characterType == CharacterType.EnemyUnit)
         {
-            currentMove.ApplyEffect(currentCaster, currentTarget, success);
-            successResults.Add(success);
-            pendingNotes = Mathf.Max(0, pendingNotes - 1);
-        }));
+            StartCoroutine(WaitForDefenseQTE(result =>
+            {
+                defenseResult = result;
+                switch (result)
+                {
+                    case DefenseResult.Parry:
+                        currentTarget.TakeParry();
+                        break;
+                    case DefenseResult.Dodge:
+                        currentTarget.TakeDodge();
+                        break;
+                    default:
+                        currentMove.ApplyEffect(currentCaster, currentTarget);
+                        break;
+                }
+
+                pendingNotes = Mathf.Max(0, pendingNotes - 1);
+            }));
+        }
+        else
+        {
+            // Pas d'icône spécifique pour les notes, on passe null
+            StartCoroutine(WaitForQTE(note.rhythm, null, Vector2.zero, success =>
+            {
+                currentMove.ApplyEffect(currentCaster, currentTarget, success);
+                successResults.Add(success);
+                pendingNotes = Mathf.Max(0, pendingNotes - 1);
+            }));
+        }
     }
 
     public void TriggerQTE(float windowDelay)
@@ -685,6 +710,92 @@ public class RhythmQTEManager : MonoBehaviour
         Destroy(qteVisualGO);
 
         callback?.Invoke(success);
+
+        // 🔺 Retour au temps normal
+        t = 0f;
+        while (t < transitionDuration)
+        {
+            t += Time.unscaledDeltaTime;
+            float blend = t / transitionDuration;
+            Time.timeScale = Mathf.Lerp(slowestTimeScale, normalTimeScale, blend);
+            Time.fixedDeltaTime = defaultFixedDeltaTime * Time.timeScale;
+            yield return null;
+        }
+
+        Time.timeScale = normalTimeScale;
+        Time.fixedDeltaTime = defaultFixedDeltaTime;
+        qteActive = false;
+    }
+
+    /// <summary>
+    /// Variante de QTE dédiée à la défense contre une attaque ennemie.
+    /// Retourne Parade, Esquive ou Échec selon le timing de l'input.
+    /// </summary>
+    private IEnumerator WaitForDefenseQTE(System.Action<DefenseResult> callback)
+    {
+        qteActive = true;
+        const float parryWindow = 0.1f; // Temps pour une parade parfaite
+        const float dodgeWindow = 0.2f; // Temps total pour réussir une esquive
+
+        float slowestTimeScale = 0f;
+        float transitionDuration = 0.1f;
+        float normalTimeScale = 1f;
+
+        // 🔻 Ralentissement progressif
+        float t = 0f;
+        while (t < transitionDuration)
+        {
+            t += Time.unscaledDeltaTime;
+            float blend = t / transitionDuration;
+            Time.timeScale = Mathf.Lerp(normalTimeScale, slowestTimeScale, blend);
+            Time.fixedDeltaTime = defaultFixedDeltaTime * Time.timeScale;
+            yield return null;
+        }
+
+        // 🎯 Temps ralenti & instanciation du visuel
+        Time.timeScale = slowestTimeScale;
+        Time.fixedDeltaTime = defaultFixedDeltaTime * slowestTimeScale;
+
+        GameObject qteVisualGO = Instantiate(qteCirclePrefab, qteUIParent);
+        QTECircleUI qteVisual = qteVisualGO.GetComponent<QTECircleUI>();
+        UnityEngine.UI.Image delayFillImage = qteVisual != null ? qteVisual.DelayFillImage : null;
+        if (delayFillImage != null)
+            delayFillImage.fillAmount = 0f;
+
+        float elapsed = 0f;
+        bool pressed = false;
+        var confirm = InputsManager.Instance.playerInputs.Battle.Confirm;
+        confirm.Enable();
+
+        while (elapsed < dodgeWindow)
+        {
+            float unscaledDelta = Time.unscaledDeltaTime;
+            elapsed += unscaledDelta;
+
+            if (delayFillImage != null)
+                delayFillImage.fillAmount = Mathf.Clamp01(elapsed / dodgeWindow);
+
+            if (confirm.triggered)
+            {
+                pressed = true;
+                break;
+            }
+
+            yield return null;
+        }
+
+        confirm.Disable();
+        Destroy(qteVisualGO);
+
+        DefenseResult result;
+        if (!pressed)
+            result = DefenseResult.Miss;
+        else if (elapsed <= parryWindow)
+            result = DefenseResult.Parry;
+        else
+            result = DefenseResult.Dodge;
+
+        callback?.Invoke(result);
 
         // 🔺 Retour au temps normal
         t = 0f;
