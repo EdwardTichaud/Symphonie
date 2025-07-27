@@ -203,7 +203,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         currentHP = Mathf.Max(currentHP - amount, 0);
         if (hpBar != null) hpBar.SetValue(currentHP);
-        DamagePopupManager.Instance?.ShowDamage(transform.position, Mathf.RoundToInt(amount));
+        // Affiche le nombre de dégâts au-dessus de cette unité
+        DamagePopupManager.Instance?.ShowDamage(transform, Mathf.RoundToInt(amount));
         PlayDamageFeedback();
 
         // Message indiquant la gravité des dégâts subis
