@@ -17,7 +17,7 @@ public class AddHarmonicPopup : MonoBehaviour
 
     private float elapsed = 0f;        // Temps écoulé depuis l'apparition
     private float floatOffset = 0f;    // Décalage vertical progressif
-    private Camera mainCam;            // Caméra utilisée pour la conversion Monde/Ecran
+    private Camera battleCamera;            // Caméra utilisée pour la conversion Monde/Ecran
     private CanvasGroup canvasGroup;   // Pour faire disparaître progressivement le popup
     private Transform target;          // Unité suivie
 
@@ -42,7 +42,7 @@ public class AddHarmonicPopup : MonoBehaviour
 
         textMesh.text = "+" + amount.ToString();
 
-        mainCam = Camera.main;
+        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").GetComponent<Camera>();
 
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null)
@@ -72,11 +72,11 @@ public class AddHarmonicPopup : MonoBehaviour
     /// </summary>
     private void UpdatePosition()
     {
-        if (mainCam == null || target == null)
+        if (battleCamera == null || target == null)
             return;
 
         Vector3 worldPos = target.position + offset + Vector3.up * floatOffset;
-        Vector3 screenPos = mainCam.WorldToScreenPoint(worldPos);
+        Vector3 screenPos = battleCamera.WorldToScreenPoint(worldPos);
         screenPos.x = Mathf.Clamp(screenPos.x, 0f, Screen.width);
         screenPos.y = Mathf.Clamp(screenPos.y, 0f, Screen.height);
         transform.position = screenPos;
