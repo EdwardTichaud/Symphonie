@@ -2063,6 +2063,14 @@ public class NewBattleManager : MonoBehaviour
         currentMove = move;
         currentItem = null; // on annule la sélection d'item précédente
         move.targetType = move.defaultTargetType;
+        // Détermine s'il est possible de changer de groupe de cibles
+        bool canTargetEnemies = move.targetTypes.Contains(TargetType.SingleEnemy)
+                               || move.targetTypes.Contains(TargetType.AllEnemies)
+                               || move.targetTypes.Contains(TargetType.All);
+        bool canTargetAllies = move.targetTypes.Contains(TargetType.SingleAlly)
+                              || move.targetTypes.Contains(TargetType.AllAllies)
+                              || move.targetTypes.Contains(TargetType.All);
+        bool allowGroupSwitch = canTargetEnemies && canTargetAllies;
         switch (move.defaultTargetType)
         {
             case TargetType.Self:
@@ -2104,6 +2112,12 @@ public class NewBattleManager : MonoBehaviour
                 return;
         }
         currentTargetIndex = 0;
+
+        // Affiche l'instruction adaptée selon qu'on peut ou non changer de groupe
+        if (allowGroupSwitch)
+            ActionUIDisplayManager.Instance.DisplayInstruction_SelectGroup();
+        else
+            ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
     }
 
     public void HandleTargetSelection(ItemData item)
