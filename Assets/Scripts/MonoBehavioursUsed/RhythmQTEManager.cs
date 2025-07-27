@@ -84,9 +84,13 @@ public class RhythmQTEManager : MonoBehaviour
         activeQTEBar = go.GetComponent<QTEBar>();
 
         preparedNotes.Clear();
+        float cumulative = 0f;
         foreach (var n in notes)
         {
-            var img = activeQTEBar.CreateNote(n.noteInput);
+            cumulative += n.rhythm;
+            // Les notes apparaissent 2 secondes avant d'arriver dans la zone
+            float delay = Mathf.Max(0f, cumulative - 2f);
+            var img = activeQTEBar.ScheduleNote(n.noteInput, delay, 2f);
             preparedNotes.Enqueue(img);
         }
     }
@@ -104,10 +108,14 @@ public class RhythmQTEManager : MonoBehaviour
         activeQTEBar = go.GetComponent<QTEBar>();
 
         preparedNotes.Clear();
+
+        float cumulative = 0f;
         // Notes anonymes, pas d'icône
         for (int i = 0; i < beatPattern.Count; i++)
         {
-            var img = activeQTEBar.CreateNote(null);
+            cumulative += beatPattern[i];
+            float delay = Mathf.Max(0f, cumulative - 2f);
+            var img = activeQTEBar.ScheduleNote(null, delay, 2f);
             preparedNotes.Enqueue(img);
         }
     }
@@ -738,7 +746,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (preparedNotes.Count > 0)
                 noteImage = preparedNotes.Dequeue();
             else if (qteBar != null)
-                noteImage = qteBar.CreateNote(icon);
+                noteImage = qteBar.ScheduleNote(icon, 0f, 2f);
         }
         else
         {
@@ -800,12 +808,6 @@ public class RhythmQTEManager : MonoBehaviour
             if (delayFillImage != null)
             {
                 delayFillImage.fillAmount = progress;
-            }
-
-            // Mise à jour de la barre Guitar Hero
-            if (qteBar != null && noteImage != null)
-            {
-                qteBar.UpdateNotePosition(noteImage, progress);
             }
 
             if (confirm.triggered)
@@ -895,7 +897,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (preparedNotes.Count > 0)
                 noteImage = preparedNotes.Dequeue();
             else
-                noteImage = qteBar.CreateNote(null);
+                noteImage = qteBar.ScheduleNote(null, 0f, 2f);
         }
         else
         {
@@ -918,13 +920,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             if (delayFillImage != null)
                 delayFillImage.fillAmount = Mathf.Clamp01(elapsed / dodgeWindow);
-
-            if (qteBar != null && noteImage != null)
-            {
-                float progress = Mathf.Clamp01(elapsed / dodgeWindow);
-                qteBar.UpdateNotePosition(noteImage, progress);
-            }
-
+                
             if (confirm.triggered)
             {
                 pressed = true;
