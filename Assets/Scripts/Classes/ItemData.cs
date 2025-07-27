@@ -17,6 +17,12 @@ public class ItemData : ScriptableObject
     public float moveSpeed;
     public float castDistance;
 
+    [Header("Coup Critique")]
+    [Tooltip("Active une variante lorsque le QTE est réussi")]
+    public bool useCriticalVariant = false;
+    public ItemEffectType criticalEffectType = ItemEffectType.Damage;
+    public int criticalEffectValue = 20;
+
     [Tooltip("Si vrai, le lanceur reste à la position cible après l'action")] public bool stayInPlace;
 
     public AnimationClip itemTargetingAnimation;
@@ -80,7 +86,21 @@ public class ItemData : ScriptableObject
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {
-        switch (effectType)
+        ApplyEffect(caster, target, false);
+    }
+
+    public void ApplyEffect(CharacterUnit caster, CharacterUnit target, bool isCritical)
+    {
+        ItemEffectType type = effectType;
+        int value = effectValue;
+
+        if (isCritical && useCriticalVariant)
+        {
+            type = criticalEffectType;
+            value = criticalEffectValue;
+        }
+
+        switch (type)
         {
             case ItemEffectType.Heal:
                 ApplyHeal(target);
@@ -98,10 +118,10 @@ public class ItemData : ScriptableObject
                 Debug.Log("[ItemData] Effet BoostTiming non implémenté.");
                 break;
             case ItemEffectType.Damage:
-                ApplyDamage(caster, target);
+                ApplyDamage(caster, target, value);
                 break;
             case ItemEffectType.IncreaseRange:
-                ApplyIncreaseRange(target);
+                ApplyIncreaseRange(target, value);
                 break;
             case ItemEffectType.PreventInterception:
                 ApplyInterceptionImmunity(target);
@@ -155,11 +175,11 @@ public class ItemData : ScriptableObject
         InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, buffDuration, buffIsPercentage);
     }
 
-    private void ApplyDamage(CharacterUnit caster, CharacterUnit target)
+    private void ApplyDamage(CharacterUnit caster, CharacterUnit target, float value)
     {
         if (target != null)
         {
-            float damage = effectValue;
+            float damage = value;
             if (caster != null)
                 damage *= caster.GetAttackMultiplier();
             // Précise la source pour jouer l'animation adéquate
@@ -167,10 +187,10 @@ public class ItemData : ScriptableObject
         }
     }
 
-    private void ApplyIncreaseRange(CharacterUnit target)
+    private void ApplyIncreaseRange(CharacterUnit target, float value)
     {
         if (target != null)
-            target.Data.currentRange += effectValue;
+            target.Data.currentRange += value;
     }
 
     private void ApplyInterceptionImmunity(CharacterUnit target)

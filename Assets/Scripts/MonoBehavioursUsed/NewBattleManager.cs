@@ -916,10 +916,20 @@ public class NewBattleManager : MonoBehaviour
         // Animation ou Timeline d'utilisation
         yield return RhythmQTEManager.Instance.ItemRoutine(item, caster, target);
 
-        InventoryManager.Instance.UseItem(item, caster, target);
-        if (item.effectType == ItemEffectType.Damage)
+        bool crit = RhythmQTEManager.Instance.LastItemSuccess;
+        InventoryManager.Instance.UseItem(item, caster, target, crit);
+
+        ItemEffectType finalType = item.effectType;
+        float dmgVal = item.effectValue;
+        if (crit && item.useCriticalVariant)
         {
-            RegisterDamage(caster, item.effectValue);
+            finalType = item.criticalEffectType;
+            dmgVal = item.criticalEffectValue;
+        }
+
+        if (finalType == ItemEffectType.Damage)
+        {
+            RegisterDamage(caster, dmgVal);
         }
         caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
         // L'utilisation d'un objet ne met plus fin immédiatement au tour
@@ -1144,12 +1154,21 @@ public class NewBattleManager : MonoBehaviour
         PassTurnUI.Instance.Hide(); // Bouclage
     }
 
-    public void AfterMusicalMove(MusicalMoveSO move, CharacterUnit caster)
+    public void AfterMusicalMove(MusicalMoveSO move, CharacterUnit caster, bool wasCritical)
     {
         if (caster != null)
         {
-            caster.ConsumeHarmonic(caster.Data.harmonicType, move.harmonicCost);
-            caster.AddHarmonic(caster.Data.harmonicType, move.harmonicGeneration);
+            int cost = move.harmonicCost;
+            int generation = move.harmonicGeneration;
+
+            if (wasCritical && move.useCriticalVariant)
+            {
+                cost = move.criticalHarmonicCost;
+                generation = move.criticalHarmonicGeneration;
+            }
+
+            caster.ConsumeHarmonic(caster.Data.harmonicType, cost);
+            caster.AddHarmonic(caster.Data.harmonicType, generation);
             caster.SetMoveCooldown(move);
 
             // Activation du mode Awake si le move le permet

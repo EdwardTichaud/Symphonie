@@ -51,7 +51,7 @@ public class InventoryManager : MonoBehaviour
     /// <summary>
     /// Utilise un item (et l'enlève de l'inventaire). La cible doit être définie à l'avance.
     /// </summary>
-    public void UseItem(ItemData item, CharacterUnit caster, CharacterUnit target)
+    public void UseItem(ItemData item, CharacterUnit caster, CharacterUnit target, bool isCritical)
     {
         if (!inventoryItems.Contains(item))
         {
@@ -61,7 +61,7 @@ public class InventoryManager : MonoBehaviour
 
         Debug.Log($"[Inventory] Utilisation de l'objet : {item.itemName} sur {target.Data.characterName}");
 
-        item.ApplyEffect(caster, target);
+        item.ApplyEffect(caster, target, isCritical);
         inventoryItems.Remove(item);
     }
 
@@ -71,7 +71,7 @@ public class InventoryManager : MonoBehaviour
     public void PreviewItemEffect(ItemData item, CharacterUnit target)
     {
         Debug.Log($"[Inventory] Aperçu de l'effet de {item.itemName} sur {target.Data.characterName}");
-        item.ApplyEffect(null, target);
+        item.ApplyEffect(null, target, false);
     }
 
     public void ApplyBuff(CharacterUnit target, BuffStatType stat, int amount, float duration, bool isPercentage)
