@@ -16,6 +16,11 @@ public class AudioManager : MonoBehaviour
     // Nouvelle source dédiée aux sons d'avertissement
     public AudioSource warningClipSource;
 
+    [Header("Warning Clip Settings")]
+    [Tooltip("Pourcentage d'atténuation appliqué aux autres sources lors de la lecture d'un warning clip")]
+    [Range(0f, 1f)]
+    public float warningAttenuation = 0.8f; // 80 % d'atténuation par défaut
+
     [Header("Fade Settings")]
     public float fadeDuration = 2f;
 
@@ -35,6 +40,8 @@ public class AudioManager : MonoBehaviour
     private AudioSource nextMusicSource;
 
     private Coroutine crossfadeRoutine;
+    // Coroutine gérant l'atténuation temporaire lors de la lecture d'un warning
+    private Coroutine warningRoutine;
     private AudioClip lastExplorationClip;
     private float lastExplorationTime;
 
@@ -291,7 +298,49 @@ public class AudioManager : MonoBehaviour
         if (clip == null) return;
 
         float factor = GetNormalizationFactor(clip);
+
+        // Arrête toute atténuation précédente
+        if (warningRoutine != null)
+            StopCoroutine(warningRoutine);
+
+        // Lance la coroutine gérant l'atténuation temporaire
+        warningRoutine = StartCoroutine(WarningCoroutine(clip, factor));
+    }
+
+    /// <summary>
+    /// Coroutine qui réduit temporairement le volume des autres sources pendant
+    /// la lecture d'un warning clip, puis restaure les volumes initiaux.
+    /// </summary>
+    private IEnumerator WarningCoroutine(AudioClip clip, float factor)
+    {
+        // Sauvegarde des volumes actuels
+        float musicAVol = musicSourceA.volume;
+        float musicBVol = musicSourceB.volume;
+        float sfxVol = sfxSource.volume;
+        float voiceVol = voiceSource.volume;
+
+        // Calcul du multiplicateur (1 - pourcentage d'atténuation)
+        float attenuationMultiplier = Mathf.Clamp01(1f - warningAttenuation);
+
+        // Application de l'atténuation
+        musicSourceA.volume *= attenuationMultiplier;
+        musicSourceB.volume *= attenuationMultiplier;
+        sfxSource.volume *= attenuationMultiplier;
+        voiceSource.volume *= attenuationMultiplier;
+
+        // Lecture du warning clip
         warningClipSource.PlayOneShot(clip, factor);
+
+        // Attente de la fin du clip
+        yield return new WaitForSeconds(clip.length);
+
+        // Restauration des volumes
+        musicSourceA.volume = musicAVol;
+        musicSourceB.volume = musicBVol;
+        sfxSource.volume = sfxVol;
+        voiceSource.volume = voiceVol;
+
+        warningRoutine = null;
     }
 
     public void PlaySound(AudioClip clip)
