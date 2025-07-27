@@ -831,6 +831,10 @@ public class NewBattleManager : MonoBehaviour
         // Affiche le move que l'ennemi prépare
         ActionUIDisplayManager.Instance.DisplayEnemyPreparation(enemy.Data.characterName, alreadyKnown ? move.moveName : null);
 
+        // Joue un indice sonore associé à l'attaque pour prévenir le joueur
+        if (move.warningClip != null)
+            AudioManager.Instance?.PlayVoice(move.warningClip);
+
         // Laisse un délai pour que le joueur prenne connaissance de l'action
         // On utilise ici un temps réel pour éviter tout blocage si le jeu est en pause
         yield return new WaitForSecondsRealtime(ENEMY_MOVE_DELAY);
