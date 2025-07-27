@@ -836,6 +836,8 @@ public class NewBattleManager : MonoBehaviour
         float delay = ENEMY_MOVE_DELAY;
         if (move.warningClip != null)
         {
+            // Affiche immédiatement la barre de QTE avec les notes
+            RhythmQTEManager.Instance?.PrepareQTEBar(move.notes);
             // Les indices sonores sont joués via la nouvelle source dédiée
             AudioManager.Instance?.PlayWarningClip(move.warningClip);
             // On attend au moins la durée du clip pour conserver la cohérence musicale
@@ -892,6 +894,7 @@ public class NewBattleManager : MonoBehaviour
         // Lecture d'un avertissement sonore si le mouvement en possède un
         if (move.warningClip != null)
         {
+            RhythmQTEManager.Instance?.PrepareQTEBar(move.notes);
             // Les indices sonores sont joués via la nouvelle source dédiée
             AudioManager.Instance?.PlayWarningClip(move.warningClip);
             // On attend la fin du clip pour conserver la cohérence musicale
