@@ -99,18 +99,23 @@ public class MusicalMoveSO : ScriptableObject
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target, bool isCritical)
     {
-        // Choix de l'effet et de la valeur en fonction du résultat du QTE
-        MusicalEffectType typeToUse = effectType;
-        int baseValue = effectValue;
-        float fatigueToApply = fatigueCost;
+        // Applique d'abord l'effet de base
+        ApplySingleEffect(effectType, caster, target, effectValue, fatigueCost, isCritical && !useCriticalVariant);
 
+        // Ajoute l'effet critique si nécessaire
         if (isCritical && useCriticalVariant)
         {
-            typeToUse = criticalEffectType;
-            baseValue = criticalEffectValue;
-            fatigueToApply = criticalFatigueCost;
+            ApplySingleEffect(criticalEffectType, caster, target, criticalEffectValue, criticalFatigueCost, false);
         }
+    }
 
+    /// <summary>
+    /// Applique un effet unique en tenant compte de la puissance du lanceur et
+    /// du système de fatigue éventuel.
+    /// </summary>
+    private void ApplySingleEffect(MusicalEffectType typeToUse, CharacterUnit caster,
+        CharacterUnit target, int baseValue, float fatigueToApply, bool doubleValue)
+    {
         float finalValue = baseValue;
         if (caster != null)
         {
@@ -119,7 +124,7 @@ public class MusicalMoveSO : ScriptableObject
         }
 
         // Ancien comportement : simple multiplicateur si aucune variante
-        if (isCritical && !useCriticalVariant)
+        if (doubleValue)
             finalValue *= 2f;
 
         if (typeToUse == MusicalEffectType.Damage && target.Data.characterType == CharacterType.EnemyUnit)

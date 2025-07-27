@@ -921,15 +921,14 @@ public class NewBattleManager : MonoBehaviour
             ActionUIDisplayManager.Instance?.DisplayCriticalHit();
         InventoryManager.Instance.UseItem(item, caster, target, crit);
 
-        ItemEffectType finalType = item.effectType;
-        float dmgVal = item.effectValue;
-        if (crit && item.useCriticalVariant)
-        {
-            finalType = item.criticalEffectType;
-            dmgVal = item.criticalEffectValue;
-        }
+        // Calcule les dégâts totaux infligés par l'objet
+        float dmgVal = 0f;
+        if (item.effectType == ItemEffectType.Damage)
+            dmgVal += item.effectValue;
+        if (crit && item.useCriticalVariant && item.criticalEffectType == ItemEffectType.Damage)
+            dmgVal += item.criticalEffectValue;
 
-        if (finalType == ItemEffectType.Damage)
+        if (dmgVal > 0f)
         {
             RegisterDamage(caster, dmgVal);
         }
@@ -1169,8 +1168,9 @@ public class NewBattleManager : MonoBehaviour
 
             if (wasCritical && move.useCriticalVariant)
             {
-                cost = move.criticalHarmonicCost;
-                generation = move.criticalHarmonicGeneration;
+                // Ajoute les valeurs spécifiées pour le coup critique
+                cost += move.criticalHarmonicCost;
+                generation += move.criticalHarmonicGeneration;
             }
 
             caster.ConsumeHarmonic(caster.Data.harmonicType, cost);

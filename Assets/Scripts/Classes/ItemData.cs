@@ -91,15 +91,21 @@ public class ItemData : ScriptableObject
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target, bool isCritical)
     {
-        ItemEffectType type = effectType;
-        int value = effectValue;
+        // Applique d'abord l'effet principal de l'objet
+        ApplySingleEffect(effectType, caster, target, effectValue);
 
+        // Ajoute l'effet critique si nécessaire
         if (isCritical && useCriticalVariant)
         {
-            type = criticalEffectType;
-            value = criticalEffectValue;
+            ApplySingleEffect(criticalEffectType, caster, target, criticalEffectValue);
         }
+    }
 
+    /// <summary>
+    /// Applique un effet unique selon son type.
+    /// </summary>
+    private void ApplySingleEffect(ItemEffectType type, CharacterUnit caster, CharacterUnit target, float value = 0f)
+    {
         switch (type)
         {
             case ItemEffectType.Heal:
