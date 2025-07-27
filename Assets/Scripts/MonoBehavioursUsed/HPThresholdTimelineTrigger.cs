@@ -3,45 +3,56 @@ using UnityEngine.Playables;
 using System.Collections.Generic;
 
 /// <summary>
-/// Surveille les PV d'une unitÈ et dÈclenche une Timeline lorsque certains seuils sont atteints.
-/// Permet par exemple de lancer des cinÈmatiques au cours du combat.
+/// Surveille les PV d'une unit√© et d√©clenche une Timeline lorsque certains seuils sont atteints.
+/// Permet par exemple de lancer des cin√©matiques au cours du combat.
 /// </summary>
 public class HPThresholdTimelineTrigger : MonoBehaviour
 {
     [System.Serializable]
     public class ThresholdData
     {
-        [Tooltip("Seuil de PV en pourcentage (0-1). La timeline se dÈclenche lorsque les PV sont infÈrieurs ou Ègaux ‡ ce ratio.")]
+        [Tooltip("Seuil de PV en pourcentage (0-1). La timeline se d√©clenche lorsque les PV sont inf√©rieurs ou √©gaux √† ce ratio.")]
         public float hpRatio = 0.5f;
-        [Tooltip("Timeline ‡ jouer lorsque le seuil est atteint.")]
+        [Tooltip("Timeline √† jouer lorsque le seuil est atteint.")]
         public PlayableDirector timeline;
         [HideInInspector] public bool triggered = false;
     }
 
-    [Header("UnitÈ ‡ surveiller")] public CharacterUnit targetUnit;
-    [Header("Liste des dÈclencheurs")]
-    public List<ThresholdData> thresholds = new();
-
-    private void Awake()
+    [System.Serializable]
+    public class UnitThresholds
     {
-        if (targetUnit == null)
-            targetUnit = GetComponent<CharacterUnit>();
+        [Tooltip("Unit√© √† surveiller")] public CharacterUnit unit;
+        [Tooltip("Liste des d√©clencheurs associ√©s")] public List<ThresholdData> thresholds = new();
     }
+
+    [Header("Unit√©s et seuils √† surveiller")]
+    public List<UnitThresholds> units = new();
 
     private void Update()
     {
-        if (targetUnit == null || thresholds.Count == 0)
+        if (units.Count == 0)
             return;
 
-        foreach (var t in thresholds)
+        foreach (var unitData in units)
         {
-            if (!t.triggered && targetUnit.currentHP <= targetUnit.Data.baseHP * t.hpRatio)
+            if (unitData.unit == null || unitData.thresholds.Count == 0)
+                continue;
+
+            // V√©rifie que l'unit√© surveill√©e est bien pr√©sente dans le combat courant
+            if (NewBattleManager.Instance == null ||
+                !NewBattleManager.Instance.unitsInBattle.Contains(unitData.unit))
+                continue;
+
+            foreach (var t in unitData.thresholds)
             {
-                t.triggered = true;
-                // On enfile la timeline dans le gestionnaire de combat pour qu'elle se joue au prochain tour
-                if (NewBattleManager.Instance != null)
+                if (!t.triggered &&
+                    unitData.unit.currentHP <= unitData.unit.Data.baseHP * t.hpRatio)
+                {
+                    t.triggered = true;
+                    // On ajoute la timeline √† la file d'attente du gestionnaire de combat
                     NewBattleManager.Instance.QueueConditionalTimeline(t.timeline);
-                break;
+                    break;
+                }
             }
         }
     }
