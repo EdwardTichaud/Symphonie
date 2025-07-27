@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
+using UnityEngine.UI;
 
 public class RhythmQTEManager : MonoBehaviour
 {
@@ -555,17 +556,28 @@ public class RhythmQTEManager : MonoBehaviour
         Time.timeScale = slowestTimeScale;
         Time.fixedDeltaTime = defaultFixedDeltaTime * slowestTimeScale;
 
-        GameObject qteVisual = Instantiate(qteCirclePrefab, qteUIParent);
+        GameObject qteVisualGO = Instantiate(qteCirclePrefab, qteUIParent);
         // Positionne le visuel selon la valeur fournie par le Trigger
-        var visualRect = qteVisual.GetComponent<RectTransform>();
+        var visualRect = qteVisualGO.GetComponent<RectTransform>();
         if (visualRect != null)
             visualRect.anchoredPosition = position;
 
-        // Recherche de l'image représentant la progression du QTE.
-        // Le prefab peut s'appeler "Circle_Dynamic" ou "ShrinkingCircle" selon les versions.
-        UnityEngine.UI.Image delayFillImage = qteVisual.transform.Find("Circle_Dynamic")?.GetComponent<UnityEngine.UI.Image>();
-        if (delayFillImage == null)
-            delayFillImage = qteVisual.transform.Find("ShrinkingCircle")?.GetComponent<UnityEngine.UI.Image>();
+        // Récupère les références via le composant dédié s'il est présent
+        QTECircleUI qteVisual = qteVisualGO.GetComponent<QTECircleUI>();
+        UnityEngine.UI.Image delayFillImage = null;
+        UnityEngine.UI.Image iconImage = null;
+        if (qteVisual != null)
+        {
+            delayFillImage = qteVisual.DelayFillImage;
+            iconImage = qteVisual.InputIconImage;
+        }
+        else
+        {
+            // Compatibilité avec les anciens prefabs : recherche par nom
+            delayFillImage = qteVisualGO.transform.Find("Circle_Dynamic")?.GetComponent<UnityEngine.UI.Image>();
+            if (delayFillImage == null)
+                delayFillImage = qteVisualGO.transform.Find("ShrinkingCircle")?.GetComponent<UnityEngine.UI.Image>();
+        }
 
         // Valeur initiale à 0 pour remplir progressivement sur la durée du QTE.
         if (delayFillImage != null)
@@ -573,17 +585,27 @@ public class RhythmQTEManager : MonoBehaviour
             delayFillImage.fillAmount = 0f;
         }
 
-        // Ajoute dynamiquement l'icône si fournie
+        // Applique l'icône si fournie
         if (icon != null)
         {
-            var iconGO = new GameObject("InputIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(UnityEngine.UI.Image));
-            iconGO.transform.SetParent(qteVisual.transform, false);
-            var rect = iconGO.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = new Vector2(64f, 64f);
-            var img = iconGO.GetComponent<UnityEngine.UI.Image>();
-            img.sprite = icon;
+            if (iconImage != null)
+            {
+                iconImage.gameObject.SetActive(true);
+                iconImage.sprite = icon;
+            }
+            else
+            {
+                // Fallback si aucun Image n'est référencé
+                var iconGO = new GameObject("InputIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(UnityEngine.UI.Image));
+                iconGO.transform.SetParent(qteVisualGO.transform, false);
+                var rect = iconGO.GetComponent<RectTransform>();
+                rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = new Vector2(64f, 64f);
+                var img = iconGO.GetComponent<UnityEngine.UI.Image>();
+                img.sprite = icon;
+                iconImage = img;
+            }
         }
 
         float elapsed = 0f;
@@ -613,7 +635,7 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         confirm.Disable();
-        Destroy(qteVisual);
+        Destroy(qteVisualGO);
 
         callback?.Invoke(success);
 
