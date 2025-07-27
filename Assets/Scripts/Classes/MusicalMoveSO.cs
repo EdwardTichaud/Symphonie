@@ -28,7 +28,6 @@ public class MusicalMoveSO : ScriptableObject
     }
 
     [Header("Partition musicale")]
-    [Range(2, 6)]
     public List<NoteData> notes = new();
 
     [Header("Coût et Dégâts")]
