@@ -3,23 +3,23 @@ using UnityEngine.Playables;
 using System.Collections.Generic;
 
 /// <summary>
-/// Surveille les PV d'une unitÃ© et dÃ©clenche une Timeline lorsque certains seuils sont atteints.
-/// Permet par exemple de lancer des cinÃ©matiques au cours du combat.
+/// Surveille les PV d'une unité et déclenche une Timeline lorsque certains seuils sont atteints.
+/// Permet par exemple de lancer des cinématiques au cours du combat.
 /// </summary>
 public class HPThresholdTimelineTrigger : MonoBehaviour
 {
     [System.Serializable]
     public class ThresholdData
     {
-        [Tooltip("Seuil de PV en pourcentage (0-1). La timeline se dÃ©clenche lorsque les PV sont infÃ©rieurs ou Ã©gaux Ã  ce ratio.")]
+        [Tooltip("Seuil de PV en pourcentage (0-1). La timeline se déclenche lorsque les PV sont inférieurs ou égaux à ce ratio.")]
         public float hpRatio = 0.5f;
-        [Tooltip("Timeline Ã  jouer lorsque le seuil est atteint.")]
+        [Tooltip("Timeline à jouer lorsque le seuil est atteint.")]
         public PlayableDirector timeline;
         [HideInInspector] public bool triggered = false;
     }
 
-    [Header("UnitÃ© Ã  surveiller")] public CharacterUnit targetUnit;
-    [Header("Liste des dÃ©clencheurs")]
+    [Header("Unité à surveiller")] public CharacterUnit targetUnit;
+    [Header("Liste des déclencheurs")]
     public List<ThresholdData> thresholds = new();
 
     private void Awake()
