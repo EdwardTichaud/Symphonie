@@ -149,6 +149,7 @@ GameObject:
   - component: {fileID: 6598327468184510225}
   - component: {fileID: 1861811054284305880}
   - component: {fileID: 8501055813192410881}
+  - component: {fileID: 3333333333333333333}
   m_Layer: 12
   m_Name: AddHarmonicPopup
   m_TagString: Untagged
@@ -193,7 +194,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
+  m_VertexColorAlwaysGammaSpace: 1
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 1777241409
@@ -245,8 +246,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3fcc8e39cbee22946bb25ccabddc8c81, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   cameraToSetup: BattleCamera_Cam
-  sortingLayerName: UI
+  sortingLayerName: Battle_UI
   sortingLayerIndex: 0

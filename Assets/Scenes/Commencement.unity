@@ -107543,10 +107543,6 @@ PrefabInstance:
     m_TransformParent: {fileID: 905039931}
     m_Modifications:
     - target: {fileID: 4662704560674311386, guid: 9d8692625b90ca04d9c305df1b9e78c7, type: 3}
-      propertyPath: easyMode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4662704560674311386, guid: 9d8692625b90ca04d9c305df1b9e78c7, type: 3}
       propertyPath: audioSource
       value: 
       objectReference: {fileID: 5750937271086941080}
@@ -107554,18 +107550,6 @@ PrefabInstance:
       propertyPath: qteUIParent
       value: 
       objectReference: {fileID: 2257147496534344950}
-    - target: {fileID: 4948338297405769633, guid: 9d8692625b90ca04d9c305df1b9e78c7, type: 3}
-      propertyPath: m_Enabled
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4948338297405769633, guid: 9d8692625b90ca04d9c305df1b9e78c7, type: 3}
-      propertyPath: enemyUnitRay
-      value: 
-      objectReference: {fileID: 5627696518775099638, guid: 00dd6efc06d3d904f8c54712b85f5042, type: 3}
-    - target: {fileID: 4948338297405769633, guid: 9d8692625b90ca04d9c305df1b9e78c7, type: 3}
-      propertyPath: squadUnitRay
-      value: 
-      objectReference: {fileID: 5627696518775099638, guid: 390cc74915d4a054bbd897e1885047a4, type: 3}
     - target: {fileID: 4948338297405769633, guid: 9d8692625b90ca04d9c305df1b9e78c7, type: 3}
       propertyPath: victoryScreen
       value: 
@@ -107578,22 +107562,6 @@ PrefabInstance:
       propertyPath: timelineContainer
       value: 
       objectReference: {fileID: 8040616684020593007}
-    - target: {fileID: 4948338297405769633, guid: 9d8692625b90ca04d9c305df1b9e78c7, type: 3}
-      propertyPath: firstStrikeCameraPath
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 4948338297405769633, guid: 9d8692625b90ca04d9c305df1b9e78c7, type: 3}
-      propertyPath: itemPreparingTimeline
-      value: 
-      objectReference: {fileID: 11400000, guid: e369e34d45f3da848b3c59c52443a3bb, type: 2}
-    - target: {fileID: 4948338297405769633, guid: 9d8692625b90ca04d9c305df1b9e78c7, type: 3}
-      propertyPath: currentMainMenuContainer
-      value: 
-      objectReference: {fileID: 0}
-    - target: {fileID: 4948338297405769633, guid: 9d8692625b90ca04d9c305df1b9e78c7, type: 3}
-      propertyPath: interceptionSignalPrefab
-      value: 
-      objectReference: {fileID: 4874408200862977924, guid: 67cfab94118992e4faeb091a7b7ad031, type: 3}
     - target: {fileID: 5204114573219567973, guid: 9d8692625b90ca04d9c305df1b9e78c7, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -108439,15 +108407,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.x
-      value: 2.9864898
+      value: 2.51577
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.y
-      value: 2.9864898
+      value: 2.51577
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.z
-      value: 2.9864898
+      value: 2.51577
       objectReference: {fileID: 0}
     - target: {fileID: 7196895587682077381, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_Name
@@ -108563,6 +108531,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 1601650889382261554, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
+    - {fileID: 4338224020444705487, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
     m_RemovedGameObjects:
     - {fileID: 5514960083798530481, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
     - {fileID: 7149963161423128057, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
