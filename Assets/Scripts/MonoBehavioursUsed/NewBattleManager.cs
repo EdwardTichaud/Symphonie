@@ -903,7 +903,10 @@ public class NewBattleManager : MonoBehaviour
             }
         }
 
-        currentCharacterUnit.currentATB = 0f;
+        // L'ATB n'est plus remis à zéro afin de permettre l'enchaînement de plusieurs
+        // actions (compétence ou objet) dans le même tour tant que le joueur dispose des
+        // ressources nécessaires.
+        //currentCharacterUnit.currentATB = 0f;
     }
 
     public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
@@ -1716,6 +1719,10 @@ public class NewBattleManager : MonoBehaviour
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectItemSkillOrPass();
         ChangeBattleState(BattleState.SquadUnit_MainMenu);
         ToggleMenuContainers(true, false, false);
+
+        // S'assure que l'action "Confirm" est bien active.
+        // Elle peut avoir été désactivée à la fin d'un QTE.
+        InputsManager.Instance?.playerInputs.Battle.Confirm.Enable();
 
         // Arrête la Timeline d'attente si elle était en cours
         StopItemPreparingTimeline();
