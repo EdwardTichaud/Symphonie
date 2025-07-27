@@ -903,7 +903,10 @@ public class NewBattleManager : MonoBehaviour
             }
         }
 
-        currentCharacterUnit.currentATB = 0f;
+        // L'ATB n'est plus remis à zéro afin de permettre l'enchaînement de plusieurs
+        // actions (compétence ou objet) dans le même tour tant que le joueur dispose des
+        // ressources nécessaires.
+        //currentCharacterUnit.currentATB = 0f;
     }
 
     public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
