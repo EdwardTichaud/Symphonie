@@ -7,10 +7,10 @@ public class SetCameraToCanvas : MonoBehaviour
     [Header("Permet de rechercher et d'affecter la caméra qui sera en charge")]
     [Header("d'afficher le gameObject de manière à être")]
     [Header("indépendant des continuités de scènes")]
-    public string cameraToSetup = "uiCamera2D";
+    public string cameraToSetup = "BattleCamera_Cam";
 
     [Header("Options de Sorting Layer")]
-    public string sortingLayerName = "UI";  // Nom du Sorting Layer
+    public string sortingLayerName = "Battle_UI";  // Nom du Sorting Layer
     public int sortingLayerIndex;           // Numéro d'ordre dans le Sorting Layer
 
     private Canvas canvas;
