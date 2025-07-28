@@ -24,6 +24,8 @@ public class QTEBar : MonoBehaviour
         public bool started;
     }
     private readonly List<ScheduledNote> scheduledNotes = new();
+    // Durée par défaut pour qu'une note parcoure toute la barre
+    private const float defaultTravelDuration = 2f;
     private float barWidth;
 
     private void Awake()
@@ -74,6 +76,9 @@ public class QTEBar : MonoBehaviour
         rect.anchoredPosition = new Vector2(barWidth / 2f, 0f);
         note.enabled = false;
 
+        if (travelDuration <= 0f)
+            travelDuration = defaultTravelDuration;
+
         scheduledNotes.Add(new ScheduledNote
         {
             image = note,
@@ -123,19 +128,45 @@ public class QTEBar : MonoBehaviour
             return;
 
         float now = Time.unscaledTime;
+        // Liste temporaire pour retirer proprement les notes terminées
+        List<ScheduledNote> toRemove = null;
+
         foreach (var n in scheduledNotes)
         {
+            // Ignore les notes dont l'affichage n'a pas encore commencé
             if (now < n.startTime)
                 continue;
 
             if (!n.started)
             {
                 n.started = true;
-                n.image.enabled = true;
+                if (n.image != null)
+                    n.image.enabled = true;
+            }
+
+            if (n.image == null)
+            {
+                // L'objet a été détruit ailleurs, on supprime la note de la liste
+                (toRemove ??= new List<ScheduledNote>()).Add(n);
+                continue;
             }
 
             float progress = Mathf.Clamp01((now - n.startTime) / (n.endTime - n.startTime));
             UpdateNotePosition(n.image, progress);
+
+            if (progress >= 1f)
+                (toRemove ??= new List<ScheduledNote>()).Add(n);
+        }
+
+        if (toRemove != null)
+        {
+            foreach (var rem in toRemove)
+            {
+                scheduledNotes.Remove(rem);
+                activeNotes.Remove(rem.image);
+                if (rem.image != null)
+                    Destroy(rem.image.gameObject);
+            }
         }
     }
 }
