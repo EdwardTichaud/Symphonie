@@ -12,3 +12,7 @@ Consultez les scripts dans `Assets/Scripts/Classes` et `Assets/Scripts/MonoBehav
 - **CinematicTrigger** : déclencheur optionnel qui joue automatiquement la cinématique lorsqu'un joueur entre dans son collider.
 
 Chaque étape est de type `PlayTimeline`, `Wait`, `Dialogue` ou `Event`. Cette approche permet d'enchaîner simplement plusieurs actions sans créer une Timeline unique.
+
+## Documentation des nouveautés
+
+Les dernières attaques musicales et objets proposés sont décrits dans [Docs/NouveauxContenus.md](Docs/NouveauxContenus.md).
