@@ -13,6 +13,11 @@ public class QTEBar : MonoBehaviour
     [SerializeField] private RectTransform validationZone; // Zone de validation à l'extrémité
     [SerializeField] private Image notePrefab;             // Préfab d'icône à instancier pour chaque QTE
 
+    /// <summary>
+    /// Accès à la zone de validation pour placer les effets de résultat.
+    /// </summary>
+    public RectTransform ValidationZone => validationZone;
+
     // Notes directement visibles actuellement
     private readonly List<Image> activeNotes = new();
     // Notes planifiées pour apparaître dans le futur

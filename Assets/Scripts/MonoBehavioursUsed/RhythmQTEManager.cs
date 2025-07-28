@@ -51,6 +51,9 @@ public class RhythmQTEManager : MonoBehaviour
     // QTE Effect
     public AudioClip successSFX;
     public AudioClip failSFX;
+    // Effets visuels pour indiquer le résultat du QTE
+    public GameObject successEffectPrefab;
+    public GameObject failEffectPrefab;
 
     private CharacterUnit currentCaster;
     private CharacterUnit currentTarget;
@@ -219,17 +222,16 @@ public class RhythmQTEManager : MonoBehaviour
             }
         }
 
-        // Si une Timeline a été jouée, on attend sa durée avant de poursuivre
+        // Si une Timeline a été jouée, on attend simplement sa fin sans délai supplémentaire
         if (hasTimeline && move.performingTimeline != null)
         {
-            yield return new WaitForSeconds((float)move.performingTimeline.duration);
+            if (TimelineLauncher.Instance != null)
+                yield return new WaitUntil(() => !TimelineLauncher.Instance.IsTimelineActive);
         }
         else
         {
-            // Sinon on attend simplement la fin de l'animation actuelle
-            float animLength = caster.GetComponentInChildren<Animator>()
-                .GetCurrentAnimatorStateInfo(0).length;
-            yield return new WaitForSeconds(animLength);
+            // Suppression de l'attente fixe afin de garder un rythme fluide
+            yield return null;
         }
 
         if (!move.stayInPlace)
@@ -854,6 +856,21 @@ public class RhythmQTEManager : MonoBehaviour
             Destroy(noteImage.gameObject);
 
         callback?.Invoke(success);
+
+        // Affichage visuel du résultat directement sur la zone de validation
+        if (activeQTEBar != null)
+        {
+            var zone = activeQTEBar.ValidationZone;
+            GameObject effect = success ? successEffectPrefab : failEffectPrefab;
+            if (effect != null && zone != null)
+                Instantiate(effect, zone.position, Quaternion.identity, qteUIParent);
+        }
+
+        // Lecture du son de réussite ou d'échec si disponible
+        if (success)
+            AudioManager.Instance?.PlaySound(successSFX);
+        else
+            AudioManager.Instance?.PlaySound(failSFX);
 
         // 🔺 Retour au temps normal uniquement si le temps a été modifié
         if (easyMode)
