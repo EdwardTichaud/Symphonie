@@ -148,6 +148,14 @@ public class RhythmQTEManager : MonoBehaviour
         isActive = true;
         successResults = new List<bool>();
 
+        // Prépare les variables globales avant toute animation ou téléportation.
+        // Des événements d'animation peuvent survenir très tôt et doivent
+        // pouvoir accéder à ces références immédiatement.
+        currentMove = move;
+        currentCaster = caster;
+        currentTarget = target;
+        pendingNotes = move.notes != null ? move.notes.Count : 0;
+
         bool tauntPlayed = false;
         System.Action<CharacterUnit> deathHandler = null;
         deathHandler = (dead) =>
@@ -185,10 +193,6 @@ public class RhythmQTEManager : MonoBehaviour
             TimelineLauncher.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, cameraTag);
         }
 
-        currentMove = move;
-        currentCaster = caster;
-        currentTarget = target;
-        pendingNotes = move.notes != null ? move.notes.Count : 0;
 
         if (pendingNotes == 0)
         {
