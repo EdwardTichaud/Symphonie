@@ -202,7 +202,21 @@ public class RhythmQTEManager : MonoBehaviour
         {
             // Attend que toutes les notes aient été jouées via les événements d'animation
             while (pendingNotes > 0)
-                yield return null;
+            {
+                // ⏳ Sécurité : on limite le temps d'attente pour éviter un blocage si un événement n'est jamais déclenché
+                float safeDelay = move.notes.Sum(n => n.rhythm) + 0f; // pas de marge
+                float timer = 0f;
+                while (pendingNotes > 0 && timer < safeDelay)
+                {
+                    timer += Time.deltaTime;
+                    yield return null;
+                }
+                if (pendingNotes > 0)
+                {
+                    Debug.LogWarning($"[MusicalMoveRoutine] {pendingNotes} note(s) non résolues pour {move.moveName}. Forçage de la suite.");
+                    pendingNotes = 0;
+                }
+            }
         }
 
         // Si une Timeline a été jouée, on attend sa durée avant de poursuivre
