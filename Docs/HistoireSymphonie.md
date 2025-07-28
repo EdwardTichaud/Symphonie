@@ -1,0 +1,96 @@
+# Histoire de Symphonie
+
+🎼 **Symphonie — Document de conception narrative**
+
+## 🧩 Résumé global de l’histoire
+
+Symphonie raconte l’éveil progressif de Lucian, un jeune renard anthropomorphe, dans un monde onirique figé, dicté par une force cosmique appelée le Rêve.
+Lucian est l’écho d’un enfant réel, mort très jeune dans le monde réel, rêvé nuit après nuit par son frère survivant, qui l’a connu trop brièvement. Ce frère prend la forme de Munin, la caméra du jeu, entité silencieuse et protectrice, incarnée directement par le joueur.
+
+Lucian découvre peu à peu qu’il est une âme recréée dans un monde refuge bâti par Azazel, un Séraphin déchu.
+Azazel, autrefois serviteur de l’Univers, tente de sauver les âmes « gâchées » du monde réel — des êtres qui n’ont pas vécu ce qu’ils auraient dû. Mais il ne peut créer, seulement recomposer des échos perçus.
+
+Lucian a été façonné à travers les souvenirs du frère, à partir de la manière dont il le percevait : courageux, têtu, lumineux, imparfait mais sincère.
+Cependant, la nature même de Lucian le rend instable. Il attire l’attention des entités du Rêve, qui cherchent à le « corriger » comme une anomalie.
+
+À mesure que Lucian s’approche de la Source, il se rapproche de la base de la branche de rêve de son frère, là où sont connectés tous les rêves du vivant.
+La Source est le point où Lucian pourra soit s’éveiller — renaître dans la réalité — soit disparaître, pour permettre à son frère de guérir et cesser de rêver de lui.
+
+⸻
+
+## 🌌 Structure cosmique
+
+### 🪶 L’Univers
+- Entité créatrice, bienveillante mais distante.
+- Se nourrit des rêves pour générer les mondes.
+- A laissé volontairement du chaos et du libre arbitre dans le monde réel.
+
+### 🌙 Le Rêve
+- Projection idéale du monde réel, orchestrée, sans chaos.
+- Source du destin, du contrôle, de l’harmonie imposée.
+- Les Entités du Rêve en sont les garants, et traquent les anomalies (comme Lucian).
+
+### 🪽 Les Séraphins
+- Gardiens du Rêve.
+- Certains d’entre eux, lors de l’aventure, confondent Lucian avec un être qui les traque.
+
+### 🔥 Azazel
+- Le plus jeune des Séraphins.
+- A déserté le Rêve, tente de construire ses propres mondes pour sauver les âmes perdues.
+- Incapable de créer, il ne peut que recomposer des fragments perçus.
+
+⸻
+
+## 👁️ Personnages majeurs
+
+### 🦊 Lucian
+- Renard blanc anthropomorphe.
+- Âme d’un enfant réel décédé jeune.
+- Recréé dans le monde d’Azazel à travers le regard aimant et idéalisé de son frère.
+- Incapable de se souvenir de qui il était, il cherche à comprendre sa nature.
+
+### 🎥 Munin (nom personnalisable par le joueur)
+- La caméra du jeu, entité diégétique.
+- Incarnation du frère survivant dans le monde réel.
+- Témoin silencieux et affectueux du périple de Lucian.
+- Ne peut pas se regarder lui-même.
+
+### 🕯️ Le Traqueur (nouvel antagoniste secondaire)
+- Une autre âme oubliée, rejetée deux fois : par l’Univers, puis par Azazel.
+- Traque les Séraphins par haine de l’effacement et de l’indifférence.
+- Certains Séraphins prennent Lucian pour lui.
+- Silhouette masquée, jamais pleinement révélée.
+- Pourra jouer un rôle capital dans la fin.
+
+⸻
+
+## 🎭 Thèmes principaux
+
+| Thème | Détails |
+|-------|---------|
+| Deuil et mémoire | Lucian est une mémoire idéalisée, rêvée par un frère endeuillé. |
+| Libre arbitre vs destin | Le Rêve est la partition parfaite, Lucian veut improviser. |
+| Création vs recomposition | Azazel ne crée rien de neuf : il ne fait que recoller des fragments. |
+| Éveil et disparition | Lucian peut choisir de vivre réellement… ou d’offrir à son frère la paix. |
+| Nature des rêves | Les rêves sont connectés par un grand Arbre cosmique semblable à Yggdrasill. |
+
+⸻
+
+## 🌳 L’Arbre du Rêve (Yggdrasill)
+- Chaque être vivant a une branche de rêve.
+- Ces branches convergent vers un tronc central (mémoire collective).
+- Les racines plongent vers l’Univers, qui s’en nourrit pour créer les mondes.
+- La Source se trouve à la base de la branche du frère de Lucian : c’est là qu’il peut renaître… ou disparaître.
+
+⸻
+
+## 🧩 Idées narratives clés validées
+- Certains Séraphins fuient Lucian en pensant qu’il est le Traqueur.
+- Le Traqueur laisse derrière lui des Séraphins brisés, des symboles de branche coupée.
+- Une fin à la Lost : tous les protagonistes se réunissent silencieusement.
+  Une réunion ouverte à l’interprétation, empreinte de paix et de mélancolie.
+- Une fin interactive musicale possible : le joueur compose une dernière mélodie symbolisant Lucian (ou choisit de ne pas la terminer).
+- Azazel pourrait être affronté dans une scène symbolique, représentant un puzzle impossible à résoudre.
+- Le choix final pourrait être fait à travers le regard de Lucian, dirigé vers la caméra (le frère), demandant silencieusement :
+
+« Dois-je partir… ou rester ? »
