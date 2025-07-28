@@ -850,6 +850,18 @@ public class RhythmQTEManager : MonoBehaviour
 
         confirm.Disable();
 
+        // Évalue la position où afficher l'effet de réussite ou d'échec
+        Vector3 effectPosition = Vector3.zero;
+        if (activeQTEBar != null)
+        {
+            var zone = activeQTEBar.ValidationZone;
+            effectPosition = zone != null ? zone.position : activeQTEBar.transform.position;
+        }
+        else if (qteVisualGO != null)
+        {
+            effectPosition = qteVisualGO.transform.position;
+        }
+
         // Détruit uniquement la barre si elle n'est pas réutilisée
         if (qteVisualGO != null && (activeQTEBar == null || qteVisualGO != activeQTEBar.gameObject))
             Destroy(qteVisualGO);
@@ -860,14 +872,10 @@ public class RhythmQTEManager : MonoBehaviour
 
         callback?.Invoke(success);
 
-        // Affichage visuel du résultat directement sur la zone de validation
-        if (activeQTEBar != null)
-        {
-            var zone = activeQTEBar.ValidationZone;
-            GameObject effect = success ? successEffectPrefab : failEffectPrefab;
-            if (effect != null && zone != null)
-                Instantiate(effect, zone.position, Quaternion.identity, qteUIParent);
-        }
+        // Affichage visuel du résultat
+        GameObject effect = success ? successEffectPrefab : failEffectPrefab;
+        if (effect != null && effectPosition != Vector3.zero)
+            Instantiate(effect, effectPosition, Quaternion.identity, qteUIParent);
 
         // Lecture du son de réussite ou d'échec si disponible
         if (success)
