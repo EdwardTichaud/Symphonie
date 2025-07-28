@@ -187,7 +187,9 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         // Si une Timeline est disponible, on la lit en adaptant la caméra selon le type de personnage
-        bool hasTimeline = move.performingTimeline != null && TimelineLauncher.Instance != null && casterAnimatorGO != null;
+        bool hasTimeline = move.performingTimeline != null &&
+                          TimelineLauncher.Instance != null &&
+                          casterAnimatorGO != null;
 
         if (hasTimeline)
         {
@@ -196,18 +198,18 @@ public class RhythmQTEManager : MonoBehaviour
             TimelineLauncher.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, cameraTag);
         }
 
-
         if (pendingNotes == 0)
         {
+            // Pas de QTE : on applique immédiatement l'effet de base
             move.ApplyEffect(caster, target);
         }
-        else
+        else if (!hasTimeline)
         {
-            // Attend que toutes les notes aient été jouées via les événements d'animation
+            // Si aucune Timeline n'est utilisée, on attend la résolution des notes
+            // Les timelines contenant leurs propres QTE gèrent elles-mêmes le rythme
             while (pendingNotes > 0)
             {
-                // ⏳ Sécurité : on limite le temps d'attente pour éviter un blocage si un événement n'est jamais déclenché
-                float safeDelay = move.notes.Sum(n => n.rhythm) + 0f; // pas de marge
+                float safeDelay = move.notes.Sum(n => n.rhythm);
                 float timer = 0f;
                 while (pendingNotes > 0 && timer < safeDelay)
                 {
@@ -222,15 +224,14 @@ public class RhythmQTEManager : MonoBehaviour
             }
         }
 
-        // Si une Timeline a été jouée, on attend simplement sa fin sans délai supplémentaire
-        if (hasTimeline && move.performingTimeline != null)
+        // Si une Timeline est jouée, on laisse celle-ci dicter le rythme
+        if (hasTimeline)
         {
-            if (TimelineLauncher.Instance != null)
-                yield return new WaitUntil(() => !TimelineLauncher.Instance.IsTimelineActive);
+            yield return new WaitUntil(() => !TimelineLauncher.Instance.IsTimelineActive);
         }
         else
         {
-            // Suppression de l'attente fixe afin de garder un rythme fluide
+            // Pas de timeline : petite attente pour la cohérence des animations
             yield return null;
         }
 
@@ -282,7 +283,9 @@ public class RhythmQTEManager : MonoBehaviour
         Animator animator = caster.GetComponentInChildren<Animator>();
 
         // Lecture d'une Timeline ou d'une animation d'intro
-        if (item.performingTimeline != null && TimelineLauncher.Instance != null && animator != null)
+        bool hasTimeline = item.performingTimeline != null && TimelineLauncher.Instance != null && animator != null;
+
+        if (hasTimeline)
         {
             TimelineLauncher.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, "BattleCamera");
             // ⏳ Attendre la fin effective de la Timeline avant de continuer
@@ -296,14 +299,14 @@ public class RhythmQTEManager : MonoBehaviour
             yield return new WaitForSeconds(clipDuration);
         }
 
-        // Téléportation jusqu'à la cible
-        if (caster != null && target != null)
+        // Téléportation jusqu'à la cible si aucune Timeline ne gère déjà le mouvement
+        if (!hasTimeline && caster != null && target != null)
         {
             yield return SimpleMoveTo(caster, target, item);
         }
 
         // Animation principale si pas de Timeline
-        if (item.performingTimeline == null && item.animationClip != null && animator != null && !caster.IsDead)
+        if (!hasTimeline && item.animationClip != null && animator != null && !caster.IsDead)
         {
             animator.Play(item.animationClip.name);
             yield return null;
@@ -311,9 +314,9 @@ public class RhythmQTEManager : MonoBehaviour
             yield return new WaitForSeconds(clipDuration);
         }
 
-        // Phase de QTE propre à l'objet
+        // Phase de QTE propre à l'objet uniquement sans Timeline
         LastItemSuccess = true;
-        if (item.beatPattern != null && item.beatPattern.Count > 0)
+        if (!hasTimeline && item.beatPattern != null && item.beatPattern.Count > 0)
         {
             successResults = new List<bool>();
             foreach (float beat in item.beatPattern)
