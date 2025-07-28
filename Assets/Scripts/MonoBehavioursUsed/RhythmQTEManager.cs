@@ -35,6 +35,9 @@ public class RhythmQTEManager : MonoBehaviour
     private QTEBar activeQTEBar;
     private readonly Queue<Image> preparedNotes = new();
 
+    // Temps d'avance avec lequel une note est affichée avant la zone de validation
+    private const float noteAdvanceTime = 2f;
+
     private DefenseResult defenseResult;
     public DefenseResult GetDefenseResult() => defenseResult;
 
@@ -88,9 +91,9 @@ public class RhythmQTEManager : MonoBehaviour
         foreach (var n in notes)
         {
             cumulative += n.rhythm;
-            // Les notes apparaissent 2 secondes avant d'arriver dans la zone
-            float delay = Mathf.Max(0f, cumulative - 2f);
-            var img = activeQTEBar.ScheduleNote(n.noteInput, delay, 2f);
+            // Les notes apparaissent noteAdvanceTime secondes avant d'arriver dans la zone
+            float delay = Mathf.Max(0f, cumulative - noteAdvanceTime);
+            var img = activeQTEBar.ScheduleNote(n.noteInput, delay, noteAdvanceTime);
             preparedNotes.Enqueue(img);
         }
     }
@@ -114,8 +117,8 @@ public class RhythmQTEManager : MonoBehaviour
         for (int i = 0; i < beatPattern.Count; i++)
         {
             cumulative += beatPattern[i];
-            float delay = Mathf.Max(0f, cumulative - 2f);
-            var img = activeQTEBar.ScheduleNote(null, delay, 2f);
+            float delay = Mathf.Max(0f, cumulative - noteAdvanceTime);
+            var img = activeQTEBar.ScheduleNote(null, delay, noteAdvanceTime);
             preparedNotes.Enqueue(img);
         }
     }
@@ -746,7 +749,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (preparedNotes.Count > 0)
                 noteImage = preparedNotes.Dequeue();
             else if (qteBar != null)
-                noteImage = qteBar.ScheduleNote(icon, 0f, 2f);
+                noteImage = qteBar.ScheduleNote(icon, 0f, noteAdvanceTime);
         }
         else
         {
@@ -897,7 +900,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (preparedNotes.Count > 0)
                 noteImage = preparedNotes.Dequeue();
             else
-                noteImage = qteBar.ScheduleNote(null, 0f, 2f);
+                noteImage = qteBar.ScheduleNote(null, 0f, noteAdvanceTime);
         }
         else
         {
