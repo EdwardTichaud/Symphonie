@@ -151,6 +151,9 @@ public class RhythmQTEManager : MonoBehaviour
         isActive = true;
         successResults = new List<bool>();
 
+        // Position initiale du lanceur avant tout déplacement
+        Vector3 originPosition = caster != null ? caster.transform.position : Vector3.zero;
+
         // Prépare les variables globales avant toute animation ou téléportation.
         // Des événements d'animation peuvent survenir très tôt et doivent
         // pouvoir accéder à ces références immédiatement.
@@ -236,7 +239,8 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         if (!move.stayInPlace)
-            yield return ReturnToInitialPosition(move, caster, target);
+            // Retourne le lanceur à sa position de départ enregistrée
+            yield return ReturnToInitialPosition(move, caster, target, originPosition);
 
         isActive = false;
         bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
@@ -269,6 +273,9 @@ public class RhythmQTEManager : MonoBehaviour
         string itemCasterName = caster != null ? caster.name : "(caster nul)";
         Debug.Log($"Début de la séquence d'utilisation de l'objet: {item.itemName} par {itemCasterName}");
         isActive = true;
+
+        // Position de départ du lanceur avant tout mouvement
+        Vector3 originPosition = caster != null ? caster.transform.position : Vector3.zero;
 
         // Prépare la barre de QTE correspondant au motif de l'objet
         if (item.beatPattern != null && item.beatPattern.Count > 0)
@@ -331,7 +338,8 @@ public class RhythmQTEManager : MonoBehaviour
         // Retour à la position d'origine si l'objet ne demande pas de rester en place
         if (caster != null && !item.stayInPlace)
         {
-            yield return SimpleReturnToInitialPosition(caster, target, item);
+            // Revenir exactement à la position occupée au lancement de l'objet
+            yield return SimpleReturnToInitialPosition(caster, target, item, originPosition);
         }
 
         isActive = false;
@@ -393,12 +401,14 @@ public class RhythmQTEManager : MonoBehaviour
             caster.PlayMoveEndSound();
     }
 
-    private IEnumerator SimpleReturnToInitialPosition(CharacterUnit caster, CharacterUnit target, ItemData item)
+    // Retourne le lanceur à la position qu'il occupait au début de l'utilisation de l'objet
+    private IEnumerator SimpleReturnToInitialPosition(CharacterUnit caster, CharacterUnit target, ItemData item, Vector3 originPosition)
     {
         if (caster == null || caster.IsDead)
             yield break;
 
-        Vector3 origin = caster.transform.parent.position;
+        // Position d'origine transmise par l'appelant
+        Vector3 origin = originPosition;
         bool hasMovement = Vector3.Distance(caster.transform.position, origin) > 0.01f;
         if (hasMovement)
         {
@@ -484,7 +494,8 @@ public class RhythmQTEManager : MonoBehaviour
                     Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
             }
 
-            if (move.teleportStartVFXPrefab != null)
+            // Effets de téléportation spécifiques au move uniquement si un déplacement a lieu
+            if (teleportHasMovement && move.teleportStartVFXPrefab != null)
                 Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
 
             Animator animator = caster.GetComponentInChildren<Animator>();
@@ -502,7 +513,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             caster.transform.position = teleportTargetPosition;
 
-            if (move.teleportEndVFXPrefab != null)
+            if (teleportHasMovement && move.teleportEndVFXPrefab != null)
                 Instantiate(move.teleportEndVFXPrefab, teleportTargetPosition, Quaternion.identity);
 
             if (teleportHasMovement && caster.Data.TPEffect_Destination != null)
@@ -532,11 +543,12 @@ public class RhythmQTEManager : MonoBehaviour
 
     }
 
-    private IEnumerator ReturnToInitialPosition(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
+    // Replace le lanceur exactement à la position occupée avant le début du move
+    private IEnumerator ReturnToInitialPosition(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target, Vector3 originPosition)
     {
         // Peut être appelé alors que l'unité a été détruite
         string returnCasterName = caster != null ? caster.name : "(caster nul)";
-        Debug.Log("Retour de " + returnCasterName + " vers sa position parent");
+        Debug.Log("Retour de " + returnCasterName + " vers sa position initiale");
 
         // Lancer peut être détruit avant l'appel : on sécurise l'accès
         if (caster == null || caster.IsDead)
@@ -545,8 +557,9 @@ public class RhythmQTEManager : MonoBehaviour
             yield break;
         }
 
+        // Position actuelle et position de départ transmise
         Vector3 startPos = caster.transform.position;
-        Vector3 initialPosition = caster.transform.parent.position;
+        Vector3 initialPosition = originPosition;
         bool hasMovement = Vector3.Distance(startPos, initialPosition) > 0.01f;
         if (hasMovement)
         {
@@ -557,8 +570,8 @@ public class RhythmQTEManager : MonoBehaviour
                 Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
         }
 
-        // Téléportation de retour systématique
-        if (move.teleportStartVFXPrefab != null)
+        // Téléportation de retour uniquement en cas de déplacement réel
+        if (hasMovement && move.teleportStartVFXPrefab != null)
             Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
 
         Animator animator = caster.GetComponentInChildren<Animator>();
@@ -583,7 +596,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         caster.transform.position = initialPosition;
 
-        if (move.teleportEndVFXPrefab != null)
+        if (hasMovement && move.teleportEndVFXPrefab != null)
             Instantiate(move.teleportEndVFXPrefab, initialPosition, Quaternion.identity);
 
         if (hasMovement && caster.Data.TPEffect_Destination != null)
