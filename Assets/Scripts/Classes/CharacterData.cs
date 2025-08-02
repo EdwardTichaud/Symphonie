@@ -1,11 +1,15 @@
 using UnityEngine;
+using System.Collections.Generic; // Permet l'utilisation de listes génériques
 
 [CreateAssetMenu(fileName = "CharacterData", menuName = "Symphonie/CharacterData")]
 public class CharacterData : ScriptableObject, ITargetable
 {
-    [Header("General Info")]    
+    [Header("General Info")]
     public string characterName;
     public Sprite portrait;
+    // Liste de sprites utilisés pour l'écran Versus et les points d'apparition
+    // Un sprite est choisi aléatoirement lors de l'affichage de l'écran Versus
+    public List<Sprite> versusSprites = new();
     public CharacterType characterType;
     public GameplayType gameplayType = GameplayType.Rage;
     public HarmonicType harmonicType = HarmonicType.Lumiere;
