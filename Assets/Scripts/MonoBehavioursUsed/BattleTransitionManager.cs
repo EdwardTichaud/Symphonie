@@ -219,6 +219,7 @@ public class BattleTransitionManager : MonoBehaviour
         versusCamera.SetActive(true);
 
         AudioManager.Instance.PlaySound(versusThunder);
+        StartCoroutine(VersusThunderFlash()); // Déclenche un flash blanc synchronisé avec le son
 
         // Met à jour les portraits du Versus et lance l'animation d'apparition
         UpdateVersusPortraits();
@@ -457,6 +458,53 @@ public class BattleTransitionManager : MonoBehaviour
             sfxSource.Play();
             yield return new WaitForSeconds(clip.length);
         }
+    }
+
+    /// <summary>
+    /// Crée un flash blanc rapide synchronisé avec le son "versusThunder".
+    /// Utilise l'overlay existant en le colorant temporairement en blanc puis en le faisant disparaître.
+    /// </summary>
+    private IEnumerator VersusThunderFlash()
+    {
+        if (worldFadeOverlay == null)
+        {
+            Debug.LogWarning("[BattleTransitionManager] worldFadeOverlay manquant pour le flash blanc.");
+            yield break;
+        }
+
+        // Sauvegarde l'état initial pour éviter des effets indésirables
+        bool wasActive = worldFadeOverlay.gameObject.activeSelf;
+        Color originalColor = worldFadeOverlay.color;
+
+        // Prépare l'overlay en blanc totalement transparent
+        worldFadeOverlay.gameObject.SetActive(true);
+        worldFadeOverlay.color = new Color(1f, 1f, 1f, 0f);
+
+        // Phase d'apparition très rapide simulant l'éclair
+        float flashInDuration = 0.05f;
+        float elapsed = 0f;
+        while (elapsed < flashInDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float alpha = Mathf.Lerp(0f, 1f, elapsed / flashInDuration);
+            worldFadeOverlay.color = new Color(1f, 1f, 1f, alpha);
+            yield return null;
+        }
+
+        // Phase de disparition progressive pour un retour doux
+        float flashOutDuration = 0.25f;
+        elapsed = 0f;
+        while (elapsed < flashOutDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float alpha = Mathf.Lerp(1f, 0f, elapsed / flashOutDuration);
+            worldFadeOverlay.color = new Color(1f, 1f, 1f, alpha);
+            yield return null;
+        }
+
+        // Restaure l'état d'origine de l'overlay
+        worldFadeOverlay.color = originalColor;
+        worldFadeOverlay.gameObject.SetActive(wasActive);
     }
 
     //private IEnumerator FadeToBlack(float duration)
