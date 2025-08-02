@@ -38,6 +38,8 @@ public class BattleTransitionManager : MonoBehaviour
 
     [Header("Versus Screen")]
     [SerializeField] private GameObject versusCamera; // Portrait du premier allié
+    [SerializeField] private GameObject brokenGlass;
+    [SerializeField] private GameObject versusTransition; // Transition du Versus
     [SerializeField] private Image SU1; // Portrait du premier allié
     [SerializeField] private Image SU2; // Portrait du second allié
     [SerializeField] private Image SU3; // Portrait du troisième allié
@@ -225,7 +227,9 @@ public class BattleTransitionManager : MonoBehaviour
         if (battleTransition != null)
         {
             battleTransition.SetActive(true);
-            Animator glass = battleTransition.transform.GetChild(0).GetComponent<Animator>();
+            versusTransition.SetActive(false);
+            brokenGlass.SetActive(true);
+            Animator glass = brokenGlass.GetComponent<Animator>();
             glass.Play("Glass_Explode");
         }
 
