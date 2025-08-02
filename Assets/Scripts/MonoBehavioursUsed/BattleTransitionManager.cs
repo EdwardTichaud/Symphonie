@@ -209,6 +209,10 @@ public class BattleTransitionManager : MonoBehaviour
         int battlefieldIndex = playerDetection.detectedEnemies[0].battlefieldIndex;
         BattlefieldManager.Instance.SetBattlefield(battlefieldIndex);
 
+        // Effet de distorsion pour accentuer le passage en mode combat
+        if (PostProcessManager.Instance != null)
+            yield return StartCoroutine(PostProcessManager.Instance.PulseLensDistortion(1f, 1f));
+
         battleView.SetActive(true);
         versusCamera.SetActive(true);
 
