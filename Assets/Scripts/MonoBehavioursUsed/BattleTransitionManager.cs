@@ -35,6 +35,15 @@ public class BattleTransitionManager : MonoBehaviour
     [SerializeField] private GameObject passTurnButton;
     [SerializeField] private GameObject actionDisplayPanel;
 
+    [Header("Versus Screen")]
+    [SerializeField] private Image SU1; // Portrait du premier allié
+    [SerializeField] private Image SU2; // Portrait du second allié
+    [SerializeField] private Image SU3; // Portrait du troisième allié
+    [SerializeField] private Image EU1; // Portrait du premier ennemi
+    [SerializeField] private Image EU2; // Portrait du second ennemi
+    [SerializeField] private Image EU3; // Portrait du troisième ennemi
+    [SerializeField] private Animator unitSpawnPointsAnimator; // Animator jouant l'animation Versus
+
     private bool battleUIShown = false; // Suivi de l'affichage initial de l'UI
     [SerializeField] private GameObject victoryScreen;
     [SerializeField] private GameObject gameOverScreen;
@@ -77,6 +86,52 @@ public class BattleTransitionManager : MonoBehaviour
             actionDisplayPanel.SetActive(true);
 
         battleUIShown = true;
+    }
+
+    /// <summary>
+    /// Met à jour l'écran de Versus avec les portraits des unités alliées et ennemies.
+    /// Les emplacements vides deviennent totalement transparents.
+    /// </summary>
+    private void UpdateVersusPortraits()
+    {
+        // Récupération des listes d'unités
+        var squad = SquadManager.Instance != null ? SquadManager.Instance.SquadCharacters : new List<CharacterData>();
+        var enemies = NewBattleManager.Instance != null ? NewBattleManager.Instance.enemyTemplates : new List<CharacterData>();
+
+        // Tableau des images alliées et traitement
+        Image[] squadImages = { SU1, SU2, SU3 };
+        for (int i = 0; i < squadImages.Length; i++)
+        {
+            if (i < squad.Count && squad[i] != null && squad[i].portrait != null)
+            {
+                // Affecte le portrait du personnage
+                squadImages[i].sprite = squad[i].portrait;
+                // Assure une opacité totale
+                Color c = squadImages[i].color; c.a = 1f; squadImages[i].color = c;
+            }
+            else
+            {
+                // Aucune unité : image totalement transparente
+                squadImages[i].sprite = null;
+                Color c = squadImages[i].color; c.a = 0f; squadImages[i].color = c;
+            }
+        }
+
+        // Tableau des images ennemies et traitement identique
+        Image[] enemyImages = { EU1, EU2, EU3 };
+        for (int i = 0; i < enemyImages.Length; i++)
+        {
+            if (i < enemies.Count && enemies[i] != null && enemies[i].portrait != null)
+            {
+                enemyImages[i].sprite = enemies[i].portrait;
+                Color c = enemyImages[i].color; c.a = 1f; enemyImages[i].color = c;
+            }
+            else
+            {
+                enemyImages[i].sprite = null;
+                Color c = enemyImages[i].color; c.a = 0f; enemyImages[i].color = c;
+            }
+        }
     }
 
     #region Initialisation
@@ -151,6 +206,10 @@ public class BattleTransitionManager : MonoBehaviour
         BattlefieldManager.Instance.SetBattlefield(battlefieldIndex);
 
         battleView.SetActive(true);
+
+        // Met à jour les portraits du Versus et lance l'animation d'apparition
+        UpdateVersusPortraits();
+        unitSpawnPointsAnimator?.Play("VersusLaunched");
 
         if (battleTransition != null)
         {
