@@ -203,6 +203,21 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     public void StartCombatTransition()
     {
+        // Réinitialise l'ensemble des objets de transition afin d'éviter
+        // que des éléments du combat précédent restent actifs.
+        // Cela garantit que chaque nouveau combat démarre dans un état propre.
+        ResetTransitionObjects();
+
+        // Cache d'éventuels écrans de victoire ou de défaite encore affichés.
+        HideVictoryPanel();
+        HideGameOverPanel();
+
+        // S'assure que l'échelle de temps est revenue à la normale avant
+        // de lancer un nouveau combat (utile si un combat précédent a
+        // ralenti le temps).
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = Time.timeScale * 0.02f;
+
         CombatSkyboxManager.Instance?.ApplyBattleSkybox();
 
         // Masque l'interface jusqu'au premier tour du joueur
@@ -388,8 +403,10 @@ public class BattleTransitionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Réinitialise tous les éléments activés lors du lancement du combat afin
-    /// d'éviter qu'ils restent visibles ou actifs une fois le combat terminé.
+    /// Réinitialise tous les éléments de transition liés au combat.
+    /// Utilisé à la fois avant le lancement d'un nouveau combat et après
+    /// sa fermeture afin d'éviter qu'un état persistant ne perturbe
+    /// les combats suivants.
     /// </summary>
     private void ResetTransitionObjects()
     {
