@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Playables;
+using UnityEngine.InputSystem; // Nécessaire pour utiliser les actions d'input
 
 public class BattleTransitionManager : MonoBehaviour
 {
@@ -36,6 +37,7 @@ public class BattleTransitionManager : MonoBehaviour
     [SerializeField] private GameObject actionDisplayPanel;
 
     [Header("Versus Screen")]
+    [SerializeField] private GameObject versusCamera; // Portrait du premier allié
     [SerializeField] private Image SU1; // Portrait du premier allié
     [SerializeField] private Image SU2; // Portrait du second allié
     [SerializeField] private Image SU3; // Portrait du troisième allié
@@ -206,10 +208,19 @@ public class BattleTransitionManager : MonoBehaviour
         BattlefieldManager.Instance.SetBattlefield(battlefieldIndex);
 
         battleView.SetActive(true);
+        versusCamera.SetActive(true);
 
         // Met à jour les portraits du Versus et lance l'animation d'apparition
         UpdateVersusPortraits();
         unitSpawnPointsAnimator?.Play("VersusLaunched");
+
+        // --- Attente de la confirmation du joueur ---
+        // On active temporairement l'action "Confirm" afin de laisser le joueur
+        // valider l'écran de Versus à son rythme avant de poursuivre la transition.
+        InputAction confirmAction = InputsManager.Instance.playerInputs.Battle.Confirm;
+        confirmAction.Enable();
+        yield return new WaitUntil(() => confirmAction.triggered);
+        confirmAction.Disable();
 
         if (battleTransition != null)
         {
