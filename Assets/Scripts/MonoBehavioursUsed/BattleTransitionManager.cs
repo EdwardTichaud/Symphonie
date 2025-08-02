@@ -239,6 +239,16 @@ public class BattleTransitionManager : MonoBehaviour
         if (PostProcessManager.Instance != null)
             StartCoroutine(PostProcessManager.Instance.PulseLensDistortion(-1f, 0.5f));
 
+        if (battleTransition != null)
+        {
+            battleTransition.SetActive(true);
+        }
+
+        if (battleCamera != null)
+        {
+            battleCamera.gameObject.SetActive(true);
+        }
+
         battleView.SetActive(true);
         versusCamera.SetActive(true);
 
@@ -259,14 +269,11 @@ public class BattleTransitionManager : MonoBehaviour
 
         if (battleTransition != null)
         {
-            battleTransition.SetActive(true);
             versusTransition.SetActive(false);
             brokenGlass.SetActive(true);
             Animator glass = brokenGlass.GetComponent<Animator>();
             glass.Play("Glass_Explode");
         }
-
-        //yield return new WaitForSecondsRealtime(0.5f);
 
         AudioManager.Instance.PlaySound(brokenGlassSound);
 
