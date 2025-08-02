@@ -19,6 +19,8 @@ public class BattleTransitionManager : MonoBehaviour
     [Header("SFX")]
     [SerializeField] private List<AudioClip> transitionSFXClips = new();
     [SerializeField] private AudioSource sfxSource;
+    [SerializeField] private AudioClip brokenGlassSound;
+    [SerializeField] private AudioClip versusThunder;
 
     [Header("Music")]
     [SerializeField] private AudioSource musicSource;
@@ -211,10 +213,12 @@ public class BattleTransitionManager : MonoBehaviour
 
         // Effet de distorsion pour accentuer le passage en mode combat
         if (PostProcessManager.Instance != null)
-            yield return StartCoroutine(PostProcessManager.Instance.PulseLensDistortion(1f, 1f));
+            StartCoroutine(PostProcessManager.Instance.PulseLensDistortion(-1f, 0.5f));
 
         battleView.SetActive(true);
         versusCamera.SetActive(true);
+
+        AudioManager.Instance.PlaySound(versusThunder);
 
         // Met à jour les portraits du Versus et lance l'animation d'apparition
         UpdateVersusPortraits();
@@ -227,6 +231,8 @@ public class BattleTransitionManager : MonoBehaviour
         confirmAction.Enable();
         yield return new WaitUntil(() => confirmAction.triggered);
         confirmAction.Disable();
+
+        AudioManager.Instance.PlaySound(brokenGlassSound);
 
         if (battleTransition != null)
         {
