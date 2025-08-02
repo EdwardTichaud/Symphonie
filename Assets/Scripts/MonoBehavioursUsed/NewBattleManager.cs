@@ -869,6 +869,8 @@ public class NewBattleManager : MonoBehaviour
         }
         if (!HasSpaceForMove(caster, target, move))
         {
+            // Affiche un message utilisateur si la position relative est bloquée.
+            ActionUIDisplayManager.Instance.DisplayInstruction_TargetPositionOccupied();
             Debug.LogWarning("[ExecuteMoveOnTarget] Pas assez d'espace pour executer le mouvement.");
             yield break;
         }
@@ -970,8 +972,13 @@ public class NewBattleManager : MonoBehaviour
         ShowMainMenu();
     }
 
-    private bool HasSpaceForMove(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
+    /// <summary>
+    /// Vérifie si l'emplacement relatif requis par le mouvement est libre.
+    /// Retourne faux si une autre unité (hors lanceur et cible) occupe déjà la zone.
+    /// </summary>
+    public bool HasSpaceForMove(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
     {
+        // Direction à partir de la cible en fonction de la position relative demandée.
         Vector3 direction = target.transform.forward;
         switch (move.relativePosition)
         {
@@ -988,10 +995,12 @@ public class NewBattleManager : MonoBehaviour
 
         float mobilityBonus = caster.currentMobility;
         Vector3 destination = target.transform.position + direction * (move.castDistance + mobilityBonus);
+        // Recherche de toute unité se trouvant déjà à l'emplacement calculé.
         Collider[] hits = Physics.OverlapSphere(destination, 0.5f);
         foreach (var h in hits)
         {
             CharacterUnit cu = h.GetComponentInParent<CharacterUnit>();
+            // On ignore le lanceur et la cible eux-mêmes.
             if (cu != null && cu != caster && cu != target)
                 return false;
         }
@@ -2069,7 +2078,9 @@ public class NewBattleManager : MonoBehaviour
                         currentTargetCharacter.transform.position);
                     float maxReach = currentCharacterUnit.Data.currentRange + currentMove.castDistance;
                     bool inRange = distance <= maxReach;
-                    UpdateTargetCursorColor(inRange);
+                    // Vérifie que la position relative est libre avant d'autoriser l'action.
+                    bool hasSpace = HasSpaceForMove(currentCharacterUnit, currentTargetCharacter, currentMove);
+                    UpdateTargetCursorColor(inRange && hasSpace);
                 }
                 else if (isItemTargeting)
                 {
