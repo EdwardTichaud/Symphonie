@@ -67,13 +67,19 @@ public class PlayerDetection : MonoBehaviour
         if (!detectionOn)
             return;
 
-        // 1) On recherche tous les colliders dans le rayon de base (sans layer mask)
+        if (!firstEnemyDetected && firstDetectionVoice != null)
+        {
+            AudioManager.Instance?.PlayVoice(firstDetectionVoice);
+            firstEnemyDetected = true;
+        }
+
+        // On recherche tous les colliders dans le rayon de base (sans layer mask)
         Collider[] initialColliders = Physics.OverlapSphere(
             transform.position,
             currentDetectionRadius
         );
 
-        // 2) On filtre uniquement ceux qui portent le tag "Enemy"
+        // On filtre uniquement ceux qui portent le tag "Enemy"
         var initialHits = initialColliders
             .Where(c => c.CompareTag(enemyTag))
             .ToArray();
@@ -81,28 +87,21 @@ public class PlayerDetection : MonoBehaviour
         if (initialHits.Length == 0)
             return; // aucun ennemi trouvé dans le rayon de base
 
-        // 3) Premier ennemi détecté → on joue l'effet vocal puis on agrandit le rayon
-        if (!firstEnemyDetected && firstDetectionVoice != null)
-        {
-            AudioManager.Instance?.PlayVoice(firstDetectionVoice);
-            firstEnemyDetected = true;
-        }
-
         detectionOn = false;
         currentDetectionRadius = currentDetectionRadius + detectionExpansion;
 
-        // 4) On récupère tous les colliders dans le rayon élargi
+        // On récupère tous les colliders dans le rayon élargi
         Collider[] allColliders = Physics.OverlapSphere(
             transform.position,
             currentDetectionRadius
         );
 
-        // 5) On filtre encore par tag "Enemy"
+        // On filtre encore par tag "Enemy"
         var allHits = allColliders
             .Where(c => c.CompareTag(enemyTag))
             .ToArray();
 
-        // 6) On récupère le composant Enemy (ou le parent contenant Enemy), en évitant les doublons
+        // On récupère le composant Enemy (ou le parent contenant Enemy), en évitant les doublons
         var enemies = allHits
             .Select(c => c.GetComponentInParent<Enemy>())
             // On ignore les ennemis déjà engagés dans un combat
@@ -110,13 +109,13 @@ public class PlayerDetection : MonoBehaviour
             .Distinct()
             .ToList();
 
-        // 7) On ne garde que les 3 plus proches
+        // On ne garde que les 3 plus proches
         var closestThree = enemies
             .OrderBy(e => Vector3.Distance(transform.position, e.transform.position))
             .Take(3)
             .ToList();
 
-        // 8) On remplit detectedEnemies
+        // On remplit detectedEnemies
         detectedEnemies.Clear();
         foreach (var e in closestThree)
         {
