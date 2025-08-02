@@ -119,9 +119,13 @@ public class BattleTransitionManager : MonoBehaviour
                     // Assure une opacité totale pour le sprite sélectionné
                     Color c = squadImages[i].color; c.a = 1f; squadImages[i].color = c;
                 }
-                // Si la liste est vide ou nulle, on ne modifie pas l'image :
-                // le point d'apparition conserve son sprite actuel
-                // afin d'éviter d'afficher un portrait non désiré.
+                else
+                {
+                    // Liste nulle ou vide : on rend l'image totalement transparente
+                    // pour éviter d'afficher un portrait par défaut ou un sprite incorrect
+                    squadImages[i].sprite = null;
+                    Color c = squadImages[i].color; c.a = 0f; squadImages[i].color = c;
+                }
             }
             else
             {
@@ -140,10 +144,17 @@ public class BattleTransitionManager : MonoBehaviour
                 List<Sprite> sprites = enemies[i].versusSprites;
                 if (sprites != null && sprites.Count > 0)
                 {
+                    // Sélection d'un sprite aléatoire pour l'ennemi courant
                     enemyImages[i].sprite = sprites[Random.Range(0, sprites.Count)];
+                    // Opacité maximale pour garantir la visibilité du portrait
                     Color c = enemyImages[i].color; c.a = 1f; enemyImages[i].color = c;
                 }
-                // Liste vide : ne rien affecter pour laisser le sprite existant
+                else
+                {
+                    // Liste nulle ou vide : le portrait doit être complètement transparent
+                    enemyImages[i].sprite = null;
+                    Color c = enemyImages[i].color; c.a = 0f; enemyImages[i].color = c;
+                }
             }
             else
             {
