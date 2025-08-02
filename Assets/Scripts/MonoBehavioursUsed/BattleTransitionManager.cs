@@ -338,7 +338,8 @@ public class BattleTransitionManager : MonoBehaviour
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
 
         // Suppression des ennemis vaincus présents dans le monde
-        var worldEnemies = FindObjectsOfType<Enemy>().Where(e => e.wasPartOfLastBattle).ToList();
+        // La liste enemiesInFight contient déjà uniquement les ennemis engagés
+        var worldEnemies = playerDetection.enemiesInFight.ToList();
         foreach (var enemy in worldEnemies)
         {
             // On retire l'ennemi de la liste afin qu'il ne puisse plus être redétecté
@@ -374,7 +375,6 @@ public class BattleTransitionManager : MonoBehaviour
 
         HideVictoryPanel();
         HideGameOverPanel();
-        ResetBattleFlagsOnAllEnemies();
         NewBattleManager.Instance.ResetBattleInfos();
 
         AudioManager.Instance.ReturnFromBattle();
@@ -586,15 +586,6 @@ public class BattleTransitionManager : MonoBehaviour
 
     private void HideVictoryPanel() => NewBattleManager.Instance.victoryScreen?.transform.GetChild(0).gameObject.SetActive(false);
     private void HideGameOverPanel() => NewBattleManager.Instance.gameOverScreen?.transform.GetChild(0).gameObject.SetActive(false);
-
-    /// <summary>
-    /// Nettoie le flag de participation au combat pour tous les ennemis.
-    /// </summary>
-    public void ResetBattleFlagsOnAllEnemies()
-    {
-        foreach (var enemy in FindObjectsOfType<Enemy>())
-            enemy.wasPartOfLastBattle = false;
-    }
 
     #endregion
 }

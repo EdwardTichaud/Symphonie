@@ -122,10 +122,8 @@ public class PlayerDetection : MonoBehaviour
         {
             detectedEnemies.Add(e.enemyData);
 
-            // On marque l'ennemi comme ayant participé à la dernière bataille
-            e.wasPartOfLastBattle = true;
-
             // Ajout à la liste temporaire pour empêcher une redétection
+            // et indiquer que cet ennemi est actuellement engagé dans ce combat
             enemiesInFight.Add(e);
         }
 
