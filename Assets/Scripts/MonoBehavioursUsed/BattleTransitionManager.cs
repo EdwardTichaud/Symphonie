@@ -233,8 +233,6 @@ public class BattleTransitionManager : MonoBehaviour
         yield return new WaitUntil(() => confirmAction.triggered);
         confirmAction.Disable();
 
-        AudioManager.Instance.PlaySound(brokenGlassSound);
-
         if (battleTransition != null)
         {
             battleTransition.SetActive(true);
@@ -244,7 +242,9 @@ public class BattleTransitionManager : MonoBehaviour
             glass.Play("Glass_Explode");
         }
 
-        yield return new WaitForSecondsRealtime(0.5f);
+        //yield return new WaitForSecondsRealtime(0.5f);
+
+        AudioManager.Instance.PlaySound(brokenGlassSound);
 
         // Les unités apparaissent après l'explosion
         NewBattleManager.Instance.SpawnAll();

@@ -483,6 +483,17 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""8a5ef83f-526a-438a-a4cc-9dee983c664d"",
+                    ""path"": ""<Keyboard>/b"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""ForceCam"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""e47fbe18-ee4d-424b-84cd-d7f92def29bc"",
                     ""path"": ""<Gamepad>/rightStick"",
                     ""interactions"": """",
