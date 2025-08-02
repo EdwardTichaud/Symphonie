@@ -333,12 +333,22 @@ public class BattleTransitionManager : MonoBehaviour
         if (NewBattleManager.Instance != null && NewBattleManager.Instance.enemyTemplates.Count > 0)
             battlefieldIndex = NewBattleManager.Instance.enemyTemplates[0].battlefieldIndex;
 
+        // Nous récupérons ici le composant PlayerDetection afin de pouvoir
+        // manipuler la liste temporaire des ennemis en combat.
+        playerDetection ??= FindFirstObjectByType<PlayerDetection>();
+
         // Suppression des ennemis vaincus présents dans le monde
         var worldEnemies = FindObjectsOfType<Enemy>().Where(e => e.wasPartOfLastBattle).ToList();
         foreach (var enemy in worldEnemies)
         {
+            // On retire l'ennemi de la liste afin qu'il ne puisse plus être redétecté
+            playerDetection.enemiesInFight.Remove(enemy);
+
             Destroy(enemy);
         }
+
+        // Par sécurité, on vide la liste au cas où il resterait des références
+        playerDetection.enemiesInFight.Clear();
 
         // Réinstanciation des battlefields pour revenir à un état propre et
         // conservation uniquement de celui correspondant au combat effectué
@@ -346,7 +356,7 @@ public class BattleTransitionManager : MonoBehaviour
 
         GameManager.Instance.ChangeGameState(GameState.Exploration);
 
-        playerDetection ??= FindFirstObjectByType<PlayerDetection>();
+        // Réactive la détection après un court délai
         playerDetection.ResetDetection(1f);
 
         //Switch Battle vers World

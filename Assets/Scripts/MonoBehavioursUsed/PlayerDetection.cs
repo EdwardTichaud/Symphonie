@@ -25,6 +25,13 @@ public class PlayerDetection : MonoBehaviour
     [Tooltip("Tag utilisé pour identifier les ennemis (par exemple : \"Enemy\").")]
     public string enemyTag = "Enemy";
 
+    // ------------------------------------------------------------------
+    // Liste temporaire des ennemis actuellement engagés dans un combat
+    // Permet d'éviter de redétecter en boucle les mêmes ennemis tant
+    // qu'ils ne sont pas définitivement retirés du monde.
+    // ------------------------------------------------------------------
+    public List<Enemy> enemiesInFight = new List<Enemy>();
+
     public List<CharacterData> detectedEnemies = new List<CharacterData>();
     public bool detectionOn = true;
 
@@ -50,7 +57,9 @@ public class PlayerDetection : MonoBehaviour
 
     private void CleanupInvalidFields()
     {
+        // Nettoie les références invalides pour éviter les fuites d'objets
         detectedEnemies.RemoveAll(c => c == null);
+        enemiesInFight.RemoveAll(e => e == null);
     }
 
     private void HandleEnemyDetection()
@@ -96,7 +105,8 @@ public class PlayerDetection : MonoBehaviour
         // 6) On récupère le composant Enemy (ou le parent contenant Enemy), en évitant les doublons
         var enemies = allHits
             .Select(c => c.GetComponentInParent<Enemy>())
-            .Where(e => e != null)
+            // On ignore les ennemis déjà engagés dans un combat
+            .Where(e => e != null && !enemiesInFight.Contains(e))
             .Distinct()
             .ToList();
 
@@ -114,6 +124,9 @@ public class PlayerDetection : MonoBehaviour
 
             // On marque l'ennemi comme ayant participé à la dernière bataille
             e.wasPartOfLastBattle = true;
+
+            // Ajout à la liste temporaire pour empêcher une redétection
+            enemiesInFight.Add(e);
         }
 
         // 9) On déclenche ou termine le combat
