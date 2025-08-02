@@ -108,12 +108,20 @@ public class BattleTransitionManager : MonoBehaviour
         Image[] squadImages = { SU1, SU2, SU3 };
         for (int i = 0; i < squadImages.Length; i++)
         {
-            if (i < squad.Count && squad[i] != null && squad[i].portrait != null)
+            if (i < squad.Count && squad[i] != null)
             {
-                // Affecte le portrait du personnage
-                squadImages[i].sprite = squad[i].portrait;
-                // Assure une opacité totale
-                Color c = squadImages[i].color; c.a = 1f; squadImages[i].color = c;
+                // Récupère la liste des sprites de Versus définie dans le CharacterData
+                List<Sprite> sprites = squad[i].versusSprites;
+                if (sprites != null && sprites.Count > 0)
+                {
+                    // Choisit un sprite aléatoire parmi la liste fournie
+                    squadImages[i].sprite = sprites[Random.Range(0, sprites.Count)];
+                    // Assure une opacité totale pour le sprite sélectionné
+                    Color c = squadImages[i].color; c.a = 1f; squadImages[i].color = c;
+                }
+                // Si la liste est vide ou nulle, on ne modifie pas l'image :
+                // le point d'apparition conserve son sprite actuel
+                // afin d'éviter d'afficher un portrait non désiré.
             }
             else
             {
@@ -127,10 +135,15 @@ public class BattleTransitionManager : MonoBehaviour
         Image[] enemyImages = { EU1, EU2, EU3 };
         for (int i = 0; i < enemyImages.Length; i++)
         {
-            if (i < enemies.Count && enemies[i] != null && enemies[i].portrait != null)
+            if (i < enemies.Count && enemies[i] != null)
             {
-                enemyImages[i].sprite = enemies[i].portrait;
-                Color c = enemyImages[i].color; c.a = 1f; enemyImages[i].color = c;
+                List<Sprite> sprites = enemies[i].versusSprites;
+                if (sprites != null && sprites.Count > 0)
+                {
+                    enemyImages[i].sprite = sprites[Random.Range(0, sprites.Count)];
+                    Color c = enemyImages[i].color; c.a = 1f; enemyImages[i].color = c;
+                }
+                // Liste vide : ne rien affecter pour laisser le sprite existant
             }
             else
             {
