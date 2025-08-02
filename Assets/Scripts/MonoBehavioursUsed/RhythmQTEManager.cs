@@ -238,7 +238,7 @@ public class RhythmQTEManager : MonoBehaviour
             // suite de la séquence. On patiente au maximum la durée théorique de
             // la timeline plus une petite marge, puis on force la reprise si
             // nécessaire.
-            float maxTimelineDuration = (float)move.performingTimeline.duration + 1f; // marge d'une seconde
+            float maxTimelineDuration = (float)move.performingTimeline.duration + 0f; // marge de 0 seconde
             float timelineTimer = 0f;
             while (TimelineLauncher.Instance != null &&
                    TimelineLauncher.Instance.IsTimelineActive &&
