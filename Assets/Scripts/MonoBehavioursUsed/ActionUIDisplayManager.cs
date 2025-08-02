@@ -125,6 +125,15 @@ public class ActionUIDisplayManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Signale que la position relative désirée est déjà occupée par une autre unité.
+    /// Utilisé lorsque l'on tente d'exécuter une attaque musicale mais que l'espace est indisponible.
+    /// </summary>
+    public void DisplayInstruction_TargetPositionOccupied()
+    {
+        ShowMessage("Position relative occupée");
+    }
+
+    /// <summary>
     /// Affiche un message d'esquive.
     /// </summary>
     public void DisplayDodge(string unitName)
