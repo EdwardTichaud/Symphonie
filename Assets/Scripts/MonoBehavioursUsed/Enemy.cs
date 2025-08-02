@@ -8,7 +8,6 @@ using System.Collections;
 public class Enemy : MonoBehaviour
 {
     public CharacterData enemyData;
-    public bool wasPartOfLastBattle;
     public bool isDead;
 
     private bool dissolveFadeOn;
@@ -41,22 +40,7 @@ public class Enemy : MonoBehaviour
         }
     }
 
-    void Update()
-    {
-        if (wasPartOfLastBattle)
-        {
-            // Lance la progression du dissolve tant que l'effet est activé
-            if (!dissolveFadeOn)
-            {
-                PlayDissolve();
 
-                if (!isDead)
-                {
-                    StartCoroutine(Die());
-                }
-            }
-        }
-    }
 
     public void DissolveFadeOn()
     {
