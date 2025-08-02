@@ -317,6 +317,9 @@ public class BattleTransitionManager : MonoBehaviour
 
         AudioManager.Instance.ReturnFromBattle();
 
+        // Nettoie les éléments visuels ou caméras activés pendant la transition de combat
+        ResetTransitionObjects();
+
         // Cache l'interface de combat pour le retour à l'exploration
         HideBattleUI();
 
@@ -330,6 +333,34 @@ public class BattleTransitionManager : MonoBehaviour
         //yield return FadeToTransparent(1f);
 
         yield return new WaitForSecondsRealtime(0);
+    }
+
+    /// <summary>
+    /// Réinitialise tous les éléments activés lors du lancement du combat afin
+    /// d'éviter qu'ils restent visibles ou actifs une fois le combat terminé.
+    /// </summary>
+    private void ResetTransitionObjects()
+    {
+        // On désactive la caméra dédiée à l'écran de Versus si elle existe
+        if (versusCamera != null)
+            versusCamera.SetActive(false);
+
+        // On masque les objets de transition utilisés pendant l'entrée en combat
+        if (battleTransition != null)
+            battleTransition.SetActive(false);
+
+        if (versusTransition != null)
+            versusTransition.SetActive(true); // prêt pour un futur combat
+
+        if (brokenGlass != null)
+            brokenGlass.SetActive(false);
+
+        // La caméra de combat est repliée pour garantir un retour propre à l'exploration
+        if (battleCamera != null)
+            battleCamera.gameObject.SetActive(false);
+
+        // Le canvas de transition est désactivé pour éviter tout résidu visuel
+        GameObject.Find("BattleScene_TransitionCanvas")?.transform.GetChild(0).gameObject.SetActive(false);
     }
 
     void SetupBattleCameraAndUI()
