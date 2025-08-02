@@ -344,8 +344,10 @@ public class BattleTransitionManager : MonoBehaviour
         {
             // On retire l'ennemi de la liste afin qu'il ne puisse plus être redétecté
             playerDetection.enemiesInFight.Remove(enemy);
-
-            Destroy(enemy);
+            // Destruction complète de l'objet ennemi dans le World pour
+            // éviter qu'il ne persiste après la victoire du joueur
+            if (enemy != null)
+                Destroy(enemy.gameObject);
         }
 
         // Par sécurité, on vide la liste au cas où il resterait des références
