@@ -36,8 +36,13 @@ public class PlayerDetection : MonoBehaviour
     public bool detectionOn = true;
 
     [Header("Effets sonores")]
-    [Tooltip("Clip vocal joué lors de la première détection d'un ennemi")]
-    public AudioClip firstDetectionVoice;
+    [Tooltip("Clips vocaux joués lors de la première détection d'un ennemi")]
+    public List<AudioClip> firstDetectionVoices = new List<AudioClip>();
+
+    [Tooltip("Volume appliqué au clip de première détection")]
+    [Range(0f, 1f)]
+    public float firstDetectionVoiceVolume = 1f;
+
     private bool firstEnemyDetected;
 
     [Header("State")]
@@ -67,9 +72,14 @@ public class PlayerDetection : MonoBehaviour
         if (!detectionOn)
             return;
 
-        if (!firstEnemyDetected && firstDetectionVoice != null)
+        if (!firstEnemyDetected && firstDetectionVoices.Count > 0)
         {
-            AudioManager.Instance?.PlayVoice(firstDetectionVoice);
+            // Sélection aléatoire d'un clip parmi la liste disponible
+            AudioClip clip = firstDetectionVoices[UnityEngine.Random.Range(0, firstDetectionVoices.Count)];
+
+            // Lecture du clip avec le volume choisi dans l'inspecteur
+            AudioManager.Instance?.PlayVoice(clip, firstDetectionVoiceVolume);
+
             firstEnemyDetected = true;
         }
 

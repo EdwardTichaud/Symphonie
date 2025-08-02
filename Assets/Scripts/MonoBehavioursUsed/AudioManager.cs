@@ -275,9 +275,9 @@ public class AudioManager : MonoBehaviour
         sfxSource.PlayOneShot(clip, factor);
     }
 
-    public void PlayVoice(int index) => PlayVoice(voiceEffects[index]);
+    public void PlayVoice(int index, float volume = 1f) => PlayVoice(voiceEffects[index], volume);
 
-    public void PlayVoice(AudioClip clip)
+    public void PlayVoice(AudioClip clip, float volume = 1f)
     {
         if (clip == null) return;
 
@@ -285,7 +285,10 @@ public class AudioManager : MonoBehaviour
         AudioSource tempSource = Instantiate(voiceSource, transform);
         tempSource.playOnAwake = false;
         tempSource.clip = clip;
-        tempSource.volume = voiceVolume * GetNormalizationFactor(clip);
+
+        // Application du volume global des voix, du volume personnalisé et de la normalisation
+        tempSource.volume = voiceVolume * volume * GetNormalizationFactor(clip);
+
         tempSource.Play();
         Destroy(tempSource.gameObject, clip.length);
     }
