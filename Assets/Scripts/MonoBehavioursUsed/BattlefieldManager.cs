@@ -115,4 +115,55 @@ public class BattlefieldManager : MonoBehaviour
 
         Debug.Log($"[BattlefieldManager] Battlefield #{index} activé pour {currentZone.zoneName}");
     }
+
+    /// <summary>
+    /// Réinstancie tous les battlefields de la zone pour revenir à un état
+    /// propre, puis ne conserve que celui correspondant à l'indice fourni.
+    /// Cette méthode est pensée pour être appelée en fin de combat afin de
+    /// libérer la mémoire des champs non utilisés sans impacter les performances.
+    /// </summary>
+    /// <param name="index">Indice du battlefield à conserver actif.</param>
+    public void RebuildBattlefieldsKeeping(int index)
+    {
+        if (currentZone == null)
+        {
+            Debug.LogWarning("[BattlefieldManager] Aucune zone active, impossible de réinstancier les battlefields.");
+            return;
+        }
+
+        // On détruit les anciennes instances pour repartir sur des versions neuves
+        foreach (var bf in instantiatedBattlefields)
+            if (bf != null)
+                Destroy(bf);
+        instantiatedBattlefields.Clear();
+
+        if (battlefieldParent == null)
+            battlefieldParent = GameObject
+                .Find("BattleScene/Battlefields")?.transform;
+
+        // On recrée chaque battlefield de la zone mais on ne garde en mémoire
+        // que celui utilisé lors du combat pour limiter la consommation.
+        for (int i = 0; i < currentZone.battlefields.Count; i++)
+        {
+            var prefab = currentZone.battlefields[i];
+            if (prefab == null) continue;
+
+            var instance = Instantiate(prefab, battlefieldParent.position,
+                Quaternion.identity, battlefieldParent);
+
+            if (i == index)
+            {
+                // On conserve l'instance et on l'active immédiatement
+                instance.SetActive(true);
+                instantiatedBattlefields.Add(instance);
+            }
+            else
+            {
+                // Les autres ne sont pas nécessaires et sont détruits aussitôt
+                Destroy(instance);
+            }
+        }
+
+        Debug.Log($"[BattlefieldManager] Battlefields réinstanciés, conservation de l'index {index}.");
+    }
 }

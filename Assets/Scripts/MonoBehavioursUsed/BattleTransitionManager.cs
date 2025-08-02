@@ -290,11 +290,21 @@ public class BattleTransitionManager : MonoBehaviour
 
         //yield return FadeToBlack(2f);
 
+        // On récupère l'indice du champ de bataille utilisé pendant ce combat
+        int battlefieldIndex = 0;
+        if (NewBattleManager.Instance != null && NewBattleManager.Instance.enemyTemplates.Count > 0)
+            battlefieldIndex = NewBattleManager.Instance.enemyTemplates[0].battlefieldIndex;
+
+        // Suppression des ennemis vaincus présents dans le monde
         var worldEnemies = FindObjectsOfType<Enemy>().Where(e => e.wasPartOfLastBattle).ToList();
         foreach (var enemy in worldEnemies)
         {
             Destroy(enemy);
         }
+
+        // Réinstanciation des battlefields pour revenir à un état propre et
+        // conservation uniquement de celui correspondant au combat effectué
+        BattlefieldManager.Instance?.RebuildBattlefieldsKeeping(battlefieldIndex);
 
         GameManager.Instance.ChangeGameState(GameState.Exploration);
 
