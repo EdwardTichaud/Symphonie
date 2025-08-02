@@ -135,6 +135,13 @@ public class InputsManager : MonoBehaviour
                 return;
             }
 
+            // Empêche le lancement si la position relative est déjà occupée par une autre unité.
+            if (!bm.HasSpaceForMove(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentMove))
+            {
+                ActionUIDisplayManager.Instance.DisplayInstruction_TargetPositionOccupied();
+                return;
+            }
+
             bm.ChangeBattleState(BattleState.SquadUnit_PerformingMusicalMove);
             bm.StartCoroutine(bm.ExecuteMoveOnTarget(bm.currentMove, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
