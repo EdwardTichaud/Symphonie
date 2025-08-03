@@ -230,10 +230,10 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     private IEnumerator TransitionRoutine()
     {
-        // Prépare le champ de bataille sans instanciation coûteuse
+        // Détermine quel champ de bataille doit être chargé en fonction de
+        // l'ennemi détecté par le joueur.
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         int battlefieldIndex = playerDetection.detectedEnemies[0].battlefieldIndex;
-        BattlefieldManager.Instance.SetBattlefield(battlefieldIndex);
 
         // Effet de distorsion pour accentuer le passage en mode combat
         if (PostProcessManager.Instance != null)
@@ -259,9 +259,16 @@ public class BattleTransitionManager : MonoBehaviour
         UpdateVersusPortraits();
         unitSpawnPointsAnimator?.Play("VersusLaunched");
 
+        // Pendant que l'écran de Versus est affiché, on charge uniquement le
+        // champ de bataille correspondant à l'ennemi rencontré. L'action
+        // "Confirm" ne sera disponible qu'une fois ce chargement terminé afin
+        // d'éviter toute validation prématurée.
+        yield return StartCoroutine(BattlefieldManager.Instance.LoadBattlefield(battlefieldIndex));
+
         // --- Attente de la confirmation du joueur ---
-        // On active temporairement l'action "Confirm" afin de laisser le joueur
-        // valider l'écran de Versus à son rythme avant de poursuivre la transition.
+        // L'écran de Versus reste jusqu'à ce que le joueur appuie sur
+        // "Confirm". Cette action vient d'être rendue disponible car le
+        // battlefield est prêt.
         InputAction confirmAction = InputsManager.Instance.playerInputs.Battle.Confirm;
         confirmAction.Enable();
         yield return new WaitUntil(() => confirmAction.triggered);
@@ -328,11 +335,6 @@ public class BattleTransitionManager : MonoBehaviour
 
         //yield return FadeToBlack(2f);
 
-        // On récupère l'indice du champ de bataille utilisé pendant ce combat
-        int battlefieldIndex = 0;
-        if (NewBattleManager.Instance != null && NewBattleManager.Instance.enemyTemplates.Count > 0)
-            battlefieldIndex = NewBattleManager.Instance.enemyTemplates[0].battlefieldIndex;
-
         // Nous récupérons ici le composant PlayerDetection afin de pouvoir
         // manipuler la liste temporaire des ennemis en combat.
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
@@ -352,10 +354,6 @@ public class BattleTransitionManager : MonoBehaviour
 
         // Par sécurité, on vide la liste au cas où il resterait des références
         playerDetection.enemiesInFight.Clear();
-
-        // Réinstanciation des battlefields pour revenir à un état propre et
-        // conservation uniquement de celui correspondant au combat effectué
-        BattlefieldManager.Instance?.RebuildBattlefieldsKeeping(battlefieldIndex);
 
         GameManager.Instance.ChangeGameState(GameState.Exploration);
 
@@ -377,7 +375,6 @@ public class BattleTransitionManager : MonoBehaviour
 
         HideVictoryPanel();
         HideGameOverPanel();
-        NewBattleManager.Instance.ResetBattleInfos();
 
         AudioManager.Instance.ReturnFromBattle();
 
@@ -393,6 +390,14 @@ public class BattleTransitionManager : MonoBehaviour
         {
             SaveAndLoadManager.Instance.AutoSave();
         }
+
+        // Attente avant de supprimer le champ de bataille pour laisser le temps
+        // au joueur de revenir visuellement dans le monde.
+        yield return new WaitForSecondsRealtime(1f);
+
+        // Destruction complète du battlefield et remise à zéro des infos du combat
+        BattlefieldManager.Instance?.UnloadCurrentBattlefield();
+        NewBattleManager.Instance?.ResetBattleInfos();
 
         //yield return FadeToTransparent(1f);
 

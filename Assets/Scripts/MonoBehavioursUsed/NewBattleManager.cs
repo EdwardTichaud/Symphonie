@@ -1637,8 +1637,10 @@ public class NewBattleManager : MonoBehaviour
 
         GameObject continueButton = FindChildRecursive(victoryScreen.transform.GetChild(0), "BattleScene_UI_VictoryPanel_Continue").gameObject;
 
-        CleanupAllSpawnedUnits();
-
+        // Les unités restent désormais en place durant l'écran de victoire afin
+        // que le joueur puisse admirer le champ de bataille tel qu'il était au
+        // moment de la victoire. Leur suppression se fera plus tard, au retour
+        // dans le monde.
         ChangeBattleState(BattleState.VictoryScreen_CanContinue);
     }
 
