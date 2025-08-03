@@ -318,8 +318,24 @@ public class RhythmQTEManager : MonoBehaviour
         if (hasTimeline)
         {
             TimelineLauncher.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, "BattleCamera");
-            // ⏳ Attendre la fin effective de la Timeline avant de continuer
-            yield return new WaitUntil(() => !TimelineLauncher.Instance.IsTimelineActive);
+
+            // Attendre la fin réelle de la Timeline, en prévoyant un délai maximum
+            // pour éviter les blocages si celle-ci reste en pause sur la dernière frame
+            float maxTimelineDuration = (float)item.performingTimeline.duration + 0f; // marge de sécurité de 0 seconde
+            float timelineTimer = 0f;
+
+            while (TimelineLauncher.Instance != null &&
+                   TimelineLauncher.Instance.IsTimelineActive &&
+                   timelineTimer < maxTimelineDuration)
+            {
+                timelineTimer += Time.deltaTime;
+                yield return null;
+            }
+
+            if (TimelineLauncher.Instance != null && TimelineLauncher.Instance.IsTimelineActive)
+            {
+                Debug.LogWarning($"[ItemRoutine] Timeline '{item.performingTimeline.name}' encore active après {maxTimelineDuration}s. Suite forcée.");
+            }
         }
         else if (item.introAnimationClip != null && animator != null && !caster.IsDead)
         {
