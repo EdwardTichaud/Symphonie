@@ -349,7 +349,7 @@ public class BattleTransitionManager : MonoBehaviour
             // Destruction complète de l'objet ennemi dans le World pour
             // éviter qu'il ne persiste après la victoire du joueur
             if (enemy != null)
-                Destroy(enemy.gameObject);
+                Destroy(enemy.transform.parent.gameObject);
         }
 
         // Par sécurité, on vide la liste au cas où il resterait des références
