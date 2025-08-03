@@ -49,6 +49,9 @@ public class CameraController : MonoBehaviour
     public List<Transform> cameraPositions; // auto from LevelCameraHandler tag
     public Transform forceCamPoint, forceLookPoint;
 
+    // Mémorise le dernier point de caméra appliqué pour éviter les transitions répétées
+    private Transform lastClosestCameraPoint;
+
     private string cameraTargetName;
     private Transform player;
     private EventsManager eventsManager;
@@ -128,7 +131,15 @@ public class CameraController : MonoBehaviour
             UpdateCameraPositionsFromHandler();
 
         if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
+        {
+            // Stoppe toute transition en cours afin d'éviter des conflits avec les Timelines
+            if (currentTransition != null)
+            {
+                StopCoroutine(currentTransition);
+                currentTransition = null;
+            }
             return;
+        }
 
         // ✅ Si la MainCamera est désactivée → skip toute logique
         if (Camera.main != null && !Camera.main.enabled)
@@ -153,9 +164,16 @@ public class CameraController : MonoBehaviour
     /// </summary>
     void LateUpdate()
     {
-        if (Application.isPlaying && currentWorldCameraState == WorldCameraState.Forced)
+        if (Application.isPlaying)
         {
-            FollowForcedCameraPoint();
+            // Les Timelines prennent le contrôle total de la caméra
+            if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
+                return;
+
+            if (currentWorldCameraState == WorldCameraState.Forced)
+            {
+                FollowForcedCameraPoint();
+            }
         }
     }
 
@@ -347,6 +365,9 @@ public class CameraController : MonoBehaviour
         cameraHandlerEnabled = true;
         worldCamForced = false;
 
+        // Oublie le dernier point pour relancer une transition propre
+        lastClosestCameraPoint = null;
+
         Debug.Log("[CameraController] ForcedCam disabled");
     }
 
@@ -445,13 +466,31 @@ public class CameraController : MonoBehaviour
 
             if (closest != null)
             {
-                Vector3 desiredPos = closest.position;
                 Transform look = FindChildRecursive(player, cameraTargetName);
                 if (look == null) return;
+
+                Vector3 desiredPos = closest.position;
                 Quaternion desiredRot = Quaternion.LookRotation(look.position - desiredPos);
 
-                if (currentTransition != null) StopCoroutine(currentTransition);
-                currentTransition = StartCoroutine(SmoothMoveAndLook(Camera.main.transform, desiredPos, desiredRot, 2f));
+                // Lance une transition uniquement si le point de caméra a changé
+                if (closest != lastClosestCameraPoint)
+                {
+                    lastClosestCameraPoint = closest;
+
+                    if (currentTransition != null)
+                        StopCoroutine(currentTransition);
+
+                    currentTransition = StartCoroutine(SmoothMoveAndLook(Camera.main.transform, desiredPos, desiredRot, 2f));
+                }
+                else if (currentTransition == null)
+                {
+                    // Ajuste simplement la rotation pour suivre le joueur sans recréer une transition
+                    Camera.main.transform.rotation = Quaternion.Slerp(
+                        Camera.main.transform.rotation,
+                        desiredRot,
+                        2f * Time.deltaTime
+                    );
+                }
             }
         }
         else
