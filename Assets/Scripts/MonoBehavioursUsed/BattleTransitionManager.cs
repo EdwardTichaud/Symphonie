@@ -30,6 +30,7 @@ public class BattleTransitionManager : MonoBehaviour
     [Header("Views")]
     public GameObject worldView;
     public GameObject battleView;
+    public GameObject versusView; // Vue dédiée à l'écran Versus
     public GameObject battleTransition;
 
     [Header("UI")]
@@ -249,7 +250,17 @@ public class BattleTransitionManager : MonoBehaviour
             battleCamera.gameObject.SetActive(true);
         }
 
+        // Active à la fois la BattleView et la VersusView afin que cette dernière
+        // s'affiche au moment du flash blanc. Elle est placée devant pour masquer
+        // temporairement la vue de combat.
         battleView.SetActive(true);
+        if (versusView != null)
+        {
+            versusView.SetActive(true);
+            versusView.transform.SetAsLastSibling(); // Garantit que le Versus reste devant
+        }
+
+        // La caméra Versus doit également être active pour rendre la scène Versus.
         versusCamera.SetActive(true);
 
         AudioManager.Instance.PlaySound(versusThunder);
@@ -276,6 +287,10 @@ public class BattleTransitionManager : MonoBehaviour
 
         if (battleTransition != null)
         {
+            // Masque la VersusView et lance l'animation de verre brisé pour révéler la BattleView
+            if (versusView != null)
+                versusView.SetActive(false);
+
             versusTransition.SetActive(false);
             brokenGlass.SetActive(true);
             Animator glass = brokenGlass.GetComponent<Animator>();
@@ -413,6 +428,10 @@ public class BattleTransitionManager : MonoBehaviour
         // On désactive la caméra dédiée à l'écran de Versus si elle existe
         if (versusCamera != null)
             versusCamera.SetActive(false);
+
+        // La vue Versus est également désactivée pour éviter qu'elle n'apparaisse au prochain combat
+        if (versusView != null)
+            versusView.SetActive(false);
 
         // On masque les objets de transition utilisés pendant l'entrée en combat
         if (battleTransition != null)
