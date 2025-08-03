@@ -10,6 +10,9 @@ public class CharacterController3D : MonoBehaviour
         TPSOverShoulder
     }
 
+    // ⚠️ Ce contrôleur s'appuie sur Camera.main pour orienter le déplacement.
+    // Si aucune caméra n'est taguée "MainCamera" (par exemple avant d'activer la BattleCamera),
+    // les vecteurs de mouvement ne peuvent pas être calculés et le joueur reste immobile.
     public MovementMode movementMode = MovementMode.FixedCamera;
 
     [HideInInspector] public CharacterController controller;
