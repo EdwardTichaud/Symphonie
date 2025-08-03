@@ -12,33 +12,33 @@ TagManager:
   - EnemySpawn
   - LevelCameraHandler
   - Battlefield
-  - Fx
   - TargetCursor
   - VersusCamera
+  - WorldCamera
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - World
+  - 
   - Water
   - UI
-  - Battle
-  - Interactable
-  - Ground
-  - Wall
-  - Enemy
-  - World_Culling
-  - Battle_UI
-  - WorldAndBattle
-  - Screen
+  - World_Environment
+  - World_Interactable
+  - World_Ground
+  - World_Wall
+  - World_Enemy
+  - 
+  - 
+  - 
+  - 
+  - 
+  - Battle_Environment
+  - Battle_Unit
+  - 
+  - 
+  - 
+  - 
   - Versus
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
-  - 
   - 
   - 
   - 
@@ -52,20 +52,29 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: VFX
-    uniqueID: 1604610213
-    locked: 0
-  - name: UI
-    uniqueID: 1777241409
-    locked: 0
   - name: World
     uniqueID: 802298639
+    locked: 0
+  - name: World_UI
+    uniqueID: 3988216083
     locked: 0
   - name: Battle
     uniqueID: 3985291009
     locked: 0
+  - name: Battle_UI
+    uniqueID: 1093929019
+    locked: 0
   - name: Versus
     uniqueID: 2278845777
+    locked: 0
+  - name: Versus_UI
+    uniqueID: 2485437505
+    locked: 0
+  - name: Main
+    uniqueID: 1438406015
+    locked: 0
+  - name: Main_UI
+    uniqueID: 3990838049
     locked: 0
   m_RenderingLayers:
   - Default
