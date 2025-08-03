@@ -55,6 +55,7 @@ public class CameraController : MonoBehaviour
 
     [Header("Forced Camera Point Control")]
     public bool isForcedCamMoving;
+    public bool worldCamForced;
 
     public Transform forcedCameraPoint; // drag ton Point_ForcedCameraDirection ici
     public float forcedCamZoomSpeed = 5f;
@@ -139,12 +140,6 @@ public class CameraController : MonoBehaviour
             return;
         }
 
-        if (isFollowingPath && currentCameraPath != null && activeCamera != null && currentCameraPath.points.Count >= 2)
-        {
-            UpdatePathFollow();
-            return;
-        }
-
         if (Application.isPlaying)
         {
             player ??= GameObject.FindGameObjectWithTag("Player")?.transform;
@@ -182,116 +177,6 @@ public class CameraController : MonoBehaviour
         activeCamera.transform.LookAt(orbitTarget);
     }
 
-    /// <summary>
-    /// Suit le chemin défini par CameraPath. Conflit direct avec le mode orbite.
-    /// </summary>
-    void UpdatePathFollow()
-    {
-        pathElapsedTime += Time.deltaTime;
-        float clampedTime = Mathf.Clamp(pathElapsedTime, 0f, pathTotalDuration);
-        pathPosition = GetPathPositionFromTime(clampedTime);
-
-        Vector3 pos;
-        Quaternion rot;
-        currentCameraPath.EvaluatePath(pathPosition, out pos, out rot);
-
-        if (forceLookAt && forcedLookTarget != null)
-        {
-            rot = Quaternion.LookRotation(forcedLookTarget.position - pos);
-        }
-
-        activeCamera.transform.position = Vector3.Lerp(activeCamera.transform.position, pos, followLerpSpeed * Time.deltaTime);
-        activeCamera.transform.rotation = Quaternion.Slerp(activeCamera.transform.rotation, rot, rotateLerpSpeed * Time.deltaTime);
-
-        if (clampedTime >= pathTotalDuration)
-        {
-            StopPathFollow();
-        }
-    }
-
-    /// <summary>
-    /// Démarre un CameraPath avec flexibilité maximale.
-    /// </summary>
-    /// <param name="path">Le CameraPath à suivre.</param>
-    /// <param name="referenceTransform">Transform utilisé pour le placement relatif du path (optionnel).</param>
-    /// <param name="startFromTransform">Point de départ sur le path (le plus proche du Transform donné).</param>
-    /// <param name="forceLook">Si true, la caméra regardera targetToLook tout au long du chemin.</param>
-    /// <param name="targetToLook">Cible à regarder si forceLook est activé.</param>
-    /// <param name="alignImmediately">Si true, la caméra s'aligne immédiatement au début du path.</param>
-    public void StartPathFollow(CameraPath path, Transform referenceTransform = null, Transform startFromTransform = null, bool forceLook = false, Transform targetToLook = null, bool alignImmediately = true)
-    {
-        if (isFollowingPath)
-        {
-            Debug.Log("[CameraController] CameraPath déjà en cours - appel ignoré.");
-            return;
-        }
-
-        StopOrbit();
-
-        Camera cam = FindCameraByTag(path.cameraTag);
-        if (cam == null)
-        {
-            Debug.LogError($"[CameraController] Aucun Camera trouvé avec le tag '{path.cameraTag}' !");
-            return;
-        }
-
-        if (path.points == null || path.points.Count < 2 || path.durations == null || path.durations.Count != path.points.Count - 1)
-        {
-            Debug.LogError("[CameraController] Path invalide ou durées incorrectes !");
-            return;
-        }
-
-        currentCameraPath = path;
-        activeCamera = cam;
-
-        // Place dynamiquement le GameObject du CameraPath s’il y a une référence
-        if (referenceTransform != null)
-            path.transform.position = referenceTransform.position;
-
-        // Calcule la position de départ sur la courbe
-        if (startFromTransform != null)
-        {
-            float closestT = path.GetClosestPathPosition(startFromTransform.position);
-            pathElapsedTime = closestT * path.GetTotalDuration();
-        }
-        else
-        {
-            pathElapsedTime = 0f;
-        }
-
-        pathTotalDuration = path.GetTotalDuration();
-        pathPosition = GetPathPositionFromTime(pathElapsedTime);
-        isFollowingPath = true;
-
-        this.forceLookAt = forceLook;
-        this.forcedLookTarget = targetToLook;
-
-        if (alignImmediately)
-        {
-            path.EvaluatePath(pathPosition, out Vector3 pos, out Quaternion rot);
-            if (forceLook && targetToLook != null)
-            {
-                rot = Quaternion.LookRotation(targetToLook.position - pos);
-            }
-            activeCamera.transform.position = pos;
-            activeCamera.transform.rotation = rot;
-        }
-    }
-
-    public void StopPathFollow()
-    {
-        if (currentCameraPath != null)
-        {
-            currentCameraPath.StopSequence();  // ✅ fait IsPlaying = false + autres resets si tu veux
-            currentCameraPath = null;
-        }
-
-        isFollowingPath = false;
-        activeCamera = null;
-        forceLookAt = false;
-        forcedLookTarget = null;
-    }
-
     #endregion
 
     #region Mode Orbite
@@ -307,7 +192,6 @@ public class CameraController : MonoBehaviour
         }
 
         StopOrbit();
-        StopPathFollow();
 
         Camera cam = FindCameraByTag(cameraTag);
         if (cam == null)
@@ -389,7 +273,6 @@ public class CameraController : MonoBehaviour
         }
 
         StopOrbit();
-        StopPathFollow();
 
         Transform pos = GameObject.Find(positionName)?.transform;
         Transform look = GameObject.Find(lookAtName)?.transform;
@@ -439,29 +322,20 @@ public class CameraController : MonoBehaviour
     /// </summary>
     public void ForceCam()
     {
-        if (isFollowingPath)
-        {
-            Debug.Log("[CameraController] CameraPath en cours - ForceCam ignoré.");
-            return;
-        }
-
         StopOrbit();
-        StopPathFollow();
 
-        // Plus de SmoothMoveAndLook pour Forced : on va suivre direct
-        if (currentTransition != null) StopCoroutine(currentTransition);
-
-        // Active la WorldCamera et désactive la MainCamera pour ce mode forcé
-        if (worldCamera != null)
+        if (currentTransition != null)
         {
-            activeCamera = worldCamera;
+            StopCoroutine(currentTransition);
         }
-        if (Camera.main != null && Camera.main != worldCamera)
+        
+        activeCamera = worldCamera;
 
         currentWorldCameraState = WorldCameraState.Forced;
         cameraHandlerEnabled = false;
+        worldCamForced = true;
 
-        Debug.Log("[CameraController] ForcedCam ACTIVATED");
+        Debug.Log("[CameraController] ForcedCam activated");
     }
 
     /// <summary>
@@ -471,8 +345,9 @@ public class CameraController : MonoBehaviour
     {
         currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint;
         cameraHandlerEnabled = true;
+        worldCamForced = false;
 
-        Debug.Log("[CameraController] ForcedCam DISABLED");
+        Debug.Log("[CameraController] ForcedCam disabled");
     }
 
     #endregion
@@ -507,13 +382,13 @@ public class CameraController : MonoBehaviour
         // Utilise la WorldCamera pour le suivi forcé
         if (forcedCameraPoint == null || forceLookPoint == null || worldCamera == null) return;
 
-        Transform cam = worldCamera.transform;
+        Transform camOrigin = worldCamera.transform;
 
         // Suivi direct (aucun blocage, aucun retard)
-        cam.position = Vector3.Lerp(cam.position, forcedCameraPoint.position, 10f * Time.deltaTime);
-        cam.rotation = Quaternion.Slerp(
-            cam.rotation,
-            Quaternion.LookRotation(forceLookPoint.position - cam.position),
+        camOrigin.position = Vector3.Lerp(camOrigin.position, forcedCameraPoint.position, 10f * Time.deltaTime);
+        camOrigin.rotation = Quaternion.Slerp(
+            camOrigin.rotation,
+            Quaternion.LookRotation(forceLookPoint.position - camOrigin.position),
             10f * Time.deltaTime
         );
     }

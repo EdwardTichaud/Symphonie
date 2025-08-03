@@ -1061,34 +1061,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             ]
         },
         {
-            ""name"": ""Munin"",
-            ""id"": ""7ba80efe-0b44-41cf-a963-4c1cfa04eea7"",
-            ""actions"": [
-                {
-                    ""name"": ""New action"",
-                    ""type"": ""Button"",
-                    ""id"": ""d4ad2d9f-0964-44c4-abe7-30c265f45416"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                }
-            ],
-            ""bindings"": [
-                {
-                    ""name"": """",
-                    ""id"": ""deac101f-01e0-42bb-9b92-f632e3697380"",
-                    ""path"": """",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""New action"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                }
-            ]
-        },
-        {
             ""name"": ""Menu"",
             ""id"": ""0e02559d-4b81-4691-a878-0296e031f26e"",
             ""actions"": [
@@ -1199,9 +1171,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_Inventory = asset.FindActionMap("Inventory", throwIfNotFound: true);
         m_Inventory_Display = m_Inventory.FindAction("Display", throwIfNotFound: true);
         m_Inventory_ItemOptions = m_Inventory.FindAction("ItemOptions", throwIfNotFound: true);
-        // Munin
-        m_Munin = asset.FindActionMap("Munin", throwIfNotFound: true);
-        m_Munin_Newaction = m_Munin.FindAction("New action", throwIfNotFound: true);
         // Menu
         m_Menu = asset.FindActionMap("Menu", throwIfNotFound: true);
         m_Menu_Confirm = m_Menu.FindAction("Confirm", throwIfNotFound: true);
@@ -1214,7 +1183,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         UnityEngine.Debug.Assert(!m_Battle.enabled, "This will cause a leak and performance issues, PlayerInputs.Battle.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_InfoBox.enabled, "This will cause a leak and performance issues, PlayerInputs.InfoBox.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_Inventory.enabled, "This will cause a leak and performance issues, PlayerInputs.Inventory.Disable() has not been called.");
-        UnityEngine.Debug.Assert(!m_Munin.enabled, "This will cause a leak and performance issues, PlayerInputs.Munin.Disable() has not been called.");
         UnityEngine.Debug.Assert(!m_Menu.enabled, "This will cause a leak and performance issues, PlayerInputs.Menu.Disable() has not been called.");
     }
 
@@ -1958,102 +1926,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     /// </summary>
     public InventoryActions @Inventory => new InventoryActions(this);
 
-    // Munin
-    private readonly InputActionMap m_Munin;
-    private List<IMuninActions> m_MuninActionsCallbackInterfaces = new List<IMuninActions>();
-    private readonly InputAction m_Munin_Newaction;
-    /// <summary>
-    /// Provides access to input actions defined in input action map "Munin".
-    /// </summary>
-    public struct MuninActions
-    {
-        private @PlayerInputs m_Wrapper;
-
-        /// <summary>
-        /// Construct a new instance of the input action map wrapper class.
-        /// </summary>
-        public MuninActions(@PlayerInputs wrapper) { m_Wrapper = wrapper; }
-        /// <summary>
-        /// Provides access to the underlying input action "Munin/Newaction".
-        /// </summary>
-        public InputAction @Newaction => m_Wrapper.m_Munin_Newaction;
-        /// <summary>
-        /// Provides access to the underlying input action map instance.
-        /// </summary>
-        public InputActionMap Get() { return m_Wrapper.m_Munin; }
-        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Enable()" />
-        public void Enable() { Get().Enable(); }
-        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.Disable()" />
-        public void Disable() { Get().Disable(); }
-        /// <inheritdoc cref="UnityEngine.InputSystem.InputActionMap.enabled" />
-        public bool enabled => Get().enabled;
-        /// <summary>
-        /// Implicitly converts an <see ref="MuninActions" /> to an <see ref="InputActionMap" /> instance.
-        /// </summary>
-        public static implicit operator InputActionMap(MuninActions set) { return set.Get(); }
-        /// <summary>
-        /// Adds <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
-        /// </summary>
-        /// <param name="instance">Callback instance.</param>
-        /// <remarks>
-        /// If <paramref name="instance" /> is <c>null</c> or <paramref name="instance"/> have already been added this method does nothing.
-        /// </remarks>
-        /// <seealso cref="MuninActions" />
-        public void AddCallbacks(IMuninActions instance)
-        {
-            if (instance == null || m_Wrapper.m_MuninActionsCallbackInterfaces.Contains(instance)) return;
-            m_Wrapper.m_MuninActionsCallbackInterfaces.Add(instance);
-            @Newaction.started += instance.OnNewaction;
-            @Newaction.performed += instance.OnNewaction;
-            @Newaction.canceled += instance.OnNewaction;
-        }
-
-        /// <summary>
-        /// Removes <see cref="InputAction.started"/>, <see cref="InputAction.performed"/> and <see cref="InputAction.canceled"/> callbacks provided via <param cref="instance" /> on all input actions contained in this map.
-        /// </summary>
-        /// <remarks>
-        /// Calling this method when <paramref name="instance" /> have not previously been registered has no side-effects.
-        /// </remarks>
-        /// <seealso cref="MuninActions" />
-        private void UnregisterCallbacks(IMuninActions instance)
-        {
-            @Newaction.started -= instance.OnNewaction;
-            @Newaction.performed -= instance.OnNewaction;
-            @Newaction.canceled -= instance.OnNewaction;
-        }
-
-        /// <summary>
-        /// Unregisters <param cref="instance" /> and unregisters all input action callbacks via <see cref="MuninActions.UnregisterCallbacks(IMuninActions)" />.
-        /// </summary>
-        /// <seealso cref="MuninActions.UnregisterCallbacks(IMuninActions)" />
-        public void RemoveCallbacks(IMuninActions instance)
-        {
-            if (m_Wrapper.m_MuninActionsCallbackInterfaces.Remove(instance))
-                UnregisterCallbacks(instance);
-        }
-
-        /// <summary>
-        /// Replaces all existing callback instances and previously registered input action callbacks associated with them with callbacks provided via <param cref="instance" />.
-        /// </summary>
-        /// <remarks>
-        /// If <paramref name="instance" /> is <c>null</c>, calling this method will only unregister all existing callbacks but not register any new callbacks.
-        /// </remarks>
-        /// <seealso cref="MuninActions.AddCallbacks(IMuninActions)" />
-        /// <seealso cref="MuninActions.RemoveCallbacks(IMuninActions)" />
-        /// <seealso cref="MuninActions.UnregisterCallbacks(IMuninActions)" />
-        public void SetCallbacks(IMuninActions instance)
-        {
-            foreach (var item in m_Wrapper.m_MuninActionsCallbackInterfaces)
-                UnregisterCallbacks(item);
-            m_Wrapper.m_MuninActionsCallbackInterfaces.Clear();
-            AddCallbacks(instance);
-        }
-    }
-    /// <summary>
-    /// Provides a new <see cref="MuninActions" /> instance referencing this action map.
-    /// </summary>
-    public MuninActions @Munin => new MuninActions(this);
-
     // Menu
     private readonly InputActionMap m_Menu;
     private List<IMenuActions> m_MenuActionsCallbackInterfaces = new List<IMenuActions>();
@@ -2401,21 +2273,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnItemOptions(InputAction.CallbackContext context);
-    }
-    /// <summary>
-    /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Munin" which allows adding and removing callbacks.
-    /// </summary>
-    /// <seealso cref="MuninActions.AddCallbacks(IMuninActions)" />
-    /// <seealso cref="MuninActions.RemoveCallbacks(IMuninActions)" />
-    public interface IMuninActions
-    {
-        /// <summary>
-        /// Method invoked when associated input action "New action" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
-        /// </summary>
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnNewaction(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Menu" which allows adding and removing callbacks.

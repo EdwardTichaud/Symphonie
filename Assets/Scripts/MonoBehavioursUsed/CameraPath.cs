@@ -320,7 +320,7 @@ public bool triggered;
 
         IsPlaying = true; // ✅ Marque comme en cours de suivi
         triggered = true; // ✅ Marque comme déclenché
-        controller.StartPathFollow(this);
+        //controller.StartPathFollow(this);
     }
 
     /// <summary>

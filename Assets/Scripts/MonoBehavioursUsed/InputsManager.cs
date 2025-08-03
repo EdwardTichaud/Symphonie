@@ -40,7 +40,6 @@ public class InputsManager : MonoBehaviour
             playerInputs.World.Get(),
             playerInputs.Inventory.Get(),
             playerInputs.Battle.Get(),
-            playerInputs.Munin.Get(),
             playerInputs.InfoBox.Get(),
             playerInputs.Menu.Get()
         };
@@ -634,7 +633,6 @@ public class InputsManagerEditor : Editor
                 DrawMapStatus("World", mgr.playerInputs.World.Get());
                 DrawMapStatus("Inventory", mgr.playerInputs.Inventory.Get());
                 DrawMapStatus("Battle", mgr.playerInputs.Battle.Get());
-                DrawMapStatus("Munin", mgr.playerInputs.Munin.Get());
                 DrawMapStatus("InfoBox", mgr.playerInputs.InfoBox.Get());
                 DrawMapStatus("Menu", mgr.playerInputs.Menu.Get());
                 EditorGUILayout.Space();

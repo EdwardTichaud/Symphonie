@@ -10,8 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 228924707543943129}
   - component: {fileID: 6101085554371491157}
-  - component: {fileID: 8448207808541366284}
-  m_Layer: 6
+  m_Layer: 19
   m_Name: Sound
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -130,19 +129,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &8448207808541366284
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2413523602649714764}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ce07daaca36b9394d86782e177ee29b5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  soundClip: {fileID: 8300000, guid: ee6b118c784fb9949a1041a0ad524ab7, type: 3}
 --- !u!1 &4282766799201919179
 GameObject:
   m_ObjectHideFlags: 0
@@ -154,7 +140,7 @@ GameObject:
   - component: {fileID: 4282766799201919190}
   - component: {fileID: 4282766799201919189}
   - component: {fileID: 4282766799201919188}
-  m_Layer: 6
+  m_Layer: 19
   m_Name: Visual
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5055,7 +5041,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2304300485131842377}
-  m_Layer: 6
+  m_Layer: 19
   m_Name: Effect_Rhapsodie_Hit
   m_TagString: Untagged
   m_Icon: {fileID: 0}

@@ -22,23 +22,23 @@ public class Enemy : MonoBehaviour
 
     private void InitializeEnemy()
     {
-        //GameObject enemyBody = Instantiate(enemyData.characterWorldModel, transform.position, Quaternion.identity);
-        //enemyBody.name = "Enemy_Body" + enemyData.name;
-        //enemyBody.transform.SetParent(transform);
+        GameObject enemyBody = Instantiate(enemyData.characterWorldModel, transform.position, Quaternion.identity);
+        enemyBody.name = "Enemy_Body" + enemyData.name;
+        enemyBody.transform.SetParent(transform);
 
-        //// ✅ Appliquer le layer "Enemy" à enemyBody et tous ses enfants
-        //int enemyLayer = LayerMask.NameToLayer("Enemy");
-        //SetLayerRecursively(enemyBody, enemyLayer);
+        // ✅ Appliquer le layer "World_Unit" à enemyBody et tous ses enfants
+        int enemyLayer = LayerMask.NameToLayer("World_Unit");
+        SetLayerRecursively(enemyBody, enemyLayer);
     }
 
-    //private void SetLayerRecursively(GameObject obj, int layer)
-    //{
-    //    obj.layer = layer;
-    //    foreach (Transform child in obj.transform)
-    //    {
-    //        SetLayerRecursively(child.gameObject, layer);
-    //    }
-    //}
+    private void SetLayerRecursively(GameObject obj, int layer)
+    {
+        obj.layer = layer;
+        foreach (Transform child in obj.transform)
+        {
+            SetLayerRecursively(child.gameObject, layer);
+        }
+    }
 
     public void DissolveFadeOn()
     {
