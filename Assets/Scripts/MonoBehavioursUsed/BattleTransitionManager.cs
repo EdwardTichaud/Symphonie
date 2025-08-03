@@ -48,6 +48,7 @@ public class BattleTransitionManager : MonoBehaviour
     [SerializeField] private Image EU2; // Portrait du second ennemi
     [SerializeField] private Image EU3; // Portrait du troisième ennemi
     [SerializeField] private Animator unitSpawnPointsAnimator; // Animator jouant l'animation Versus
+    [SerializeField] private List<GameObject> continuePrompts = new(); // Éléments "Continuer" à afficher après chargement
 
     private bool battleUIShown = false; // Suivi de l'affichage initial de l'UI
     [SerializeField] private GameObject victoryScreen;
@@ -183,6 +184,21 @@ public class BattleTransitionManager : MonoBehaviour
         worldFadeOverlay ??= GameObject.Find("WorldFadeOverlayPanel")?.GetComponent<Image>();
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
+
+        // Recherche automatique des éléments "Continuer" si aucun n'est assigné
+        if (continuePrompts == null || continuePrompts.Count == 0)
+        {
+            continuePrompts = new List<GameObject>();
+            if (versusTransition != null)
+            {
+                // Parcourt tous les enfants du Versus pour trouver ceux contenant "Continuer"
+                foreach (Transform t in versusTransition.GetComponentsInChildren<Transform>(true))
+                {
+                    if (t.name.Contains("Continuer"))
+                        continuePrompts.Add(t.gameObject);
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -245,6 +261,11 @@ public class BattleTransitionManager : MonoBehaviour
         battleView.SetActive(true);
         versusTransition.SetActive(true);
 
+        // Cache le bouton "Continuer" tant que le chargement du champ de bataille n'est pas terminé
+        foreach (var go in continuePrompts)
+            if (go != null)
+                go.SetActive(false);
+
         // Met à jour les portraits du Versus et lance l'animation d'apparition
         UpdateVersusPortraits();
         unitSpawnPointsAnimator?.Play("VersusLaunched");
@@ -254,6 +275,11 @@ public class BattleTransitionManager : MonoBehaviour
         // "Confirm" ne sera disponible qu'une fois ce chargement terminé afin
         // d'éviter toute validation prématurée.
         yield return StartCoroutine(BattlefieldManager.Instance.LoadBattlefield(battlefieldIndex));
+
+        // Affiche à présent le bouton "Continuer" puisque le joueur peut confirmer
+        foreach (var go in continuePrompts)
+            if (go != null)
+                go.SetActive(true);
 
         // --- Attente de la confirmation du joueur ---
         // L'écran de Versus reste jusqu'à ce que le joueur appuie sur
