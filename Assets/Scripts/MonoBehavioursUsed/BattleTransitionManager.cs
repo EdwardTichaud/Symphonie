@@ -38,7 +38,7 @@ public class BattleTransitionManager : MonoBehaviour
     [SerializeField] private GameObject actionDisplayPanel;
 
     [Header("Versus Screen")]
-    [SerializeField] private GameObject versusCamera; // Portrait du premier allié
+    [SerializeField] private GameObject versusCameraCanvas;
     [SerializeField] private GameObject brokenGlass;
     [SerializeField] private GameObject versusTransition; // Transition du Versus
     [SerializeField] private Image SU1; // Portrait du premier allié
@@ -260,6 +260,7 @@ public class BattleTransitionManager : MonoBehaviour
         battleCamera.gameObject.SetActive(true);
         battleView.SetActive(true);
         versusTransition.SetActive(true);
+        versusCameraCanvas.SetActive(true);
 
         // Cache le bouton "Continuer" tant que le chargement du champ de bataille n'est pas terminé
         foreach (var go in continuePrompts)
@@ -425,7 +426,8 @@ public class BattleTransitionManager : MonoBehaviour
     {
        versusTransition.SetActive(false); // Bouclage pour être sûr
        brokenGlass.SetActive(false);
-       battleCamera.gameObject.SetActive(false);
+       battleView.SetActive(false); // Bouclage pour être sûr
+       versusCameraCanvas.SetActive(false);
 
         // Le canvas de transition est désactivé pour éviter tout résidu visuel
         GameObject.Find("BattleScene_TransitionCanvas")?.transform.GetChild(0).gameObject.SetActive(false);
