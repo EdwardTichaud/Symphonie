@@ -40,6 +40,7 @@ public class CameraController : MonoBehaviour
     private bool forceLookAt;
     private Transform forcedLookTarget;
     private Camera activeCamera;
+    private Camera battleCamera; // Référence directe à la BattleCamera
 
     [Header("---------- World Camera ----------")]
 
@@ -91,6 +92,10 @@ public class CameraController : MonoBehaviour
         Instance = this;
         player = GameObject.FindGameObjectWithTag("Player")?.transform;
         if (player == null) Debug.LogError("[CameraController] Player not found!");
+
+        // Récupération de la BattleCamera pour pouvoir la forcer indépendamment de la MainCamera
+        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
+        if (battleCamera == null) Debug.LogWarning("[CameraController] BattleCamera introuvable !");
 
         cameraTargetName = FindChildRecursive(player, "Point_Chest")?.name;
         eventsManager = FindFirstObjectByType<EventsManager>();
@@ -446,6 +451,15 @@ public class CameraController : MonoBehaviour
         // Plus de SmoothMoveAndLook pour Forced : on va suivre direct
         if (currentTransition != null) StopCoroutine(currentTransition);
 
+        // Active la BattleCamera et désactive la MainCamera pour ce mode forcé
+        if (battleCamera != null)
+        {
+            activeCamera = battleCamera;
+            battleCamera.enabled = true;
+        }
+        if (Camera.main != null && Camera.main != battleCamera)
+            Camera.main.enabled = false;
+
         currentWorldCameraState = WorldCameraState.Forced;
         cameraHandlerEnabled = false;
 
@@ -459,6 +473,13 @@ public class CameraController : MonoBehaviour
     {
         currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint;
         cameraHandlerEnabled = true;
+
+        // Restaure l'état des caméras : MainCamera active, BattleCamera désactivée
+        if (Camera.main != null)
+            Camera.main.enabled = true;
+        if (battleCamera != null && battleCamera != Camera.main)
+            battleCamera.enabled = false;
+        activeCamera = Camera.main;
         Debug.Log("[CameraController] ForcedCam DISABLED");
     }
 
@@ -491,9 +512,10 @@ public class CameraController : MonoBehaviour
     /// </summary>
     void FollowForcedCameraPoint()
     {
-        if (forcedCameraPoint == null || forceLookPoint == null || Camera.main == null) return;
+        // Utilise la BattleCamera pour le suivi forcé
+        if (forcedCameraPoint == null || forceLookPoint == null || battleCamera == null) return;
 
-        Transform cam = Camera.main.transform;
+        Transform cam = battleCamera.transform;
 
         // Suivi direct (aucun blocage, aucun retard)
         cam.position = Vector3.Lerp(cam.position, forcedCameraPoint.position, 10f * Time.deltaTime);
