@@ -67,7 +67,7 @@ public class TimelineLauncher : MonoBehaviour
             }
             else if (type != null && typeof(Component).IsAssignableFrom(type) && type.Name.Contains("SignalReceiver"))
             {
-                // R�cup�re le SignalReceiver pr�sent sur le m�me GameObject que le PlayableDirector
+                // Récupère le SignalReceiver présent sur le même GameObject que le PlayableDirector
                 Component receiver = director.GetComponent(type);
                 if (receiver != null)
                 {
@@ -82,6 +82,15 @@ public class TimelineLauncher : MonoBehaviour
             {
                 Debug.LogWarning($"[TimelineLauncher] Aucun binding pour la track : {trackName}");
             }
+        }
+
+        // Établit également le binding pour le MarkerTrack afin que les signaux
+        // placés directement sur la timeline sans track dédiée soient reçus.
+        SignalReceiver markerReceiver = director.GetComponent<SignalReceiver>();
+        if (markerReceiver != null && timelineAsset.markerTrack != null)
+        {
+            // Associe le MarkerTrack au SignalReceiver présent sur le PlayableDirector
+            director.SetGenericBinding(timelineAsset.markerTrack, markerReceiver);
         }
 
         director.Play();
