@@ -1556,7 +1556,7 @@ public class NewBattleManager : MonoBehaviour
             .Where(u => u.Data.characterType == CharacterType.SquadUnit)
             .All(u => u.currentHP <= 0);
 
-        if (allEnemiesDead)
+        if (allEnemiesDead && currentBattleState != BattleState.VictoryScreen_Await)
         {
             Debug.Log("[BattleTurnManager] 🎉 Tous les ennemis sont vaincus !");
             ChangeBattleState(BattleState.VictoryScreen_Await);

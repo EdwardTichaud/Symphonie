@@ -30,8 +30,6 @@ public class BattleTransitionManager : MonoBehaviour
     [Header("Views")]
     public GameObject worldView;
     public GameObject battleView;
-    public GameObject versusView; // Vue dédiée à l'écran Versus
-    public GameObject battleTransition;
 
     [Header("UI")]
     [SerializeField] private GameObject qteCircle;
@@ -240,31 +238,12 @@ public class BattleTransitionManager : MonoBehaviour
         if (PostProcessManager.Instance != null)
             StartCoroutine(PostProcessManager.Instance.PulseLensDistortion(-1f, 0.5f));
 
-        if (battleTransition != null)
-        {
-            battleTransition.SetActive(true);
-        }
-
-        if (battleCamera != null)
-        {
-            battleCamera.gameObject.SetActive(true);
-        }
-
-        // Active à la fois la BattleView et la VersusView afin que cette dernière
-        // s'affiche au moment du flash blanc. Elle est placée devant pour masquer
-        // temporairement la vue de combat.
-        battleView.SetActive(true);
-        if (versusView != null)
-        {
-            versusView.SetActive(true);
-            versusView.transform.SetAsLastSibling(); // Garantit que le Versus reste devant
-        }
-
-        // La caméra Versus doit également être active pour rendre la scène Versus.
-        versusCamera.SetActive(true);
-
         AudioManager.Instance.PlaySound(versusThunder);
         StartCoroutine(VersusThunderFlash()); // Déclenche un flash blanc synchronisé avec le son
+
+        battleCamera.gameObject.SetActive(true);
+        battleView.SetActive(true);
+        versusTransition.SetActive(true);
 
         // Met à jour les portraits du Versus et lance l'animation d'apparition
         UpdateVersusPortraits();
@@ -285,17 +264,10 @@ public class BattleTransitionManager : MonoBehaviour
         yield return new WaitUntil(() => confirmAction.triggered);
         confirmAction.Disable();
 
-        if (battleTransition != null)
-        {
-            // Masque la VersusView et lance l'animation de verre brisé pour révéler la BattleView
-            if (versusView != null)
-                versusView.SetActive(false);
-
-            versusTransition.SetActive(false);
-            brokenGlass.SetActive(true);
-            Animator glass = brokenGlass.GetComponent<Animator>();
-            glass.Play("Glass_Explode");
-        }
+        versusTransition.SetActive(false);
+        brokenGlass.SetActive(true);
+        Animator glass = brokenGlass.GetComponent<Animator>();
+        glass.Play("Glass_Explode");
 
         AudioManager.Instance.PlaySound(brokenGlassSound);
 
@@ -425,27 +397,9 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     private void ResetTransitionObjects()
     {
-        // On désactive la caméra dédiée à l'écran de Versus si elle existe
-        if (versusCamera != null)
-            versusCamera.SetActive(false);
-
-        // La vue Versus est également désactivée pour éviter qu'elle n'apparaisse au prochain combat
-        if (versusView != null)
-            versusView.SetActive(false);
-
-        // On masque les objets de transition utilisés pendant l'entrée en combat
-        if (battleTransition != null)
-            battleTransition.SetActive(false);
-
-        if (versusTransition != null)
-            versusTransition.SetActive(true); // prêt pour un futur combat
-
-        if (brokenGlass != null)
-            brokenGlass.SetActive(false);
-
-        // La caméra de combat est repliée pour garantir un retour propre à l'exploration
-        if (battleCamera != null)
-            battleCamera.gameObject.SetActive(false);
+       versusTransition.SetActive(false); // Bouclage pour être sûr
+       brokenGlass.SetActive(false);
+       battleCamera.gameObject.SetActive(false);
 
         // Le canvas de transition est désactivé pour éviter tout résidu visuel
         GameObject.Find("BattleScene_TransitionCanvas")?.transform.GetChild(0).gameObject.SetActive(false);
@@ -453,11 +407,6 @@ public class BattleTransitionManager : MonoBehaviour
 
     void SetupBattleCameraAndUI()
     {
-        if (battleCamera == null)
-        {
-            Debug.LogError($"[BattleTransitionManager] Caméra taggée BattleCamera' introuvable !");
-        }
-
         // Active le GameObject principal de la caméra ainsi que tous ses enfants
         // pour s'assurer que l'affichage se fasse correctement
         battleCamera.gameObject.SetActive(true);
