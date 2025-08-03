@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 133a8786c2756524a9bd962bbc0f1ff8, type: 3}
   m_Name: Item_ElixirRevitalisant
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   itemID: ElixirRevitalisant
   itemName: "\xC9lixir Revitalisant"
   description: "Ranime une unit\xE9 alli\xE9e avec la moiti\xE9 de ses PV."
@@ -20,6 +20,9 @@ MonoBehaviour:
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
+  useCriticalVariant: 0
+  criticalEffectType: 6
+  criticalEffectValue: 20
   stayInPlace: 0
   itemTargetingAnimation: {fileID: 0}
   effectType: 2
@@ -38,8 +41,8 @@ MonoBehaviour:
   defaultTargetType: 3
   targetTypes: 03000000
   introVFXPrefab: {fileID: 0}
-  performingTimeline: {fileID: 0}
   preparingTimeline: {fileID: 0}
+  performingTimeline: {fileID: 11400000, guid: 9ba735de2dc708841855bf78afa002b1, type: 2}
   beatPattern: []
   notes: []
   introAnimationClip: {fileID: 0}
