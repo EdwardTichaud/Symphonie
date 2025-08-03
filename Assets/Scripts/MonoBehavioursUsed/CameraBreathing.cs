@@ -15,22 +15,32 @@ public class CameraBreathing : MonoBehaviour
         lastWorldPosition = transform.position;
     }
 
-    void Update()
+    void LateUpdate()
     {
-        // Détermine si la caméra s'est déplacée depuis la frame précédente
+        // Désactive l'effet si une Timeline ou un CameraPath est en cours d'exécution pour éviter les conflits
+        if ((TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying) || CameraController.IsAnyPathPlaying)
+        {
+            baseLocalPosition = transform.localPosition; // Nouvel ancrage sans respiration
+            lastWorldPosition = transform.position;
+            return; // Aucune oscillation
+        }
+
+        // Vérifie si la caméra a réellement bougé depuis la dernière frame
         bool moved = (transform.position - lastWorldPosition).sqrMagnitude > 1e-6f;
-        lastWorldPosition = transform.position;
 
         if (moved)
         {
-            // Réinitialise la position de base si la caméra a bougé
+            // Si la caméra a été déplacée par un autre script, on redéfinit la base
             baseLocalPosition = transform.localPosition;
-            transform.localPosition = baseLocalPosition;
         }
         else
         {
+            // Ajout doux d'une oscillation verticale simulant une respiration
             float offset = Mathf.Sin(Time.time * frequency) * amplitude;
             transform.localPosition = baseLocalPosition + Vector3.up * offset;
         }
+
+        // Mise à jour après toutes les éventuelles modifications pour ne pas compter l'oscillation comme un mouvement
+        lastWorldPosition = transform.position;
     }
 }
