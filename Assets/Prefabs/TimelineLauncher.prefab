@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 8529920885578328012}
   - component: {fileID: 4632814548245591468}
   - component: {fileID: 4927517278465844737}
-  - component: {fileID: 4533616364425738804}
   - component: {fileID: 7043276419211489998}
+  - component: {fileID: 7666416480328290772}
   m_Layer: 0
   m_Name: TimelineLauncher
   m_TagString: Untagged
@@ -65,18 +65,6 @@ PlayableDirector:
   m_SceneBindings: []
   m_ExposedReferences:
     m_References: []
---- !u!114 &4533616364425738804
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8738188441690940424}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8335eeeee21612844b1662f6d0120cdb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &7043276419211489998
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -91,64 +79,33 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Events:
     m_Signals:
-    - {fileID: 11400000, guid: 43212c0f0cd922e4b8e91f0af8d55c98, type: 2}
-    - {fileID: 11400000, guid: d0ab63f029670b64dbc1de71161afb50, type: 2}
-    - {fileID: 11400000, guid: d2dd4780301f582408ffabf2e3ce565f, type: 2}
-    - {fileID: 11400000, guid: df2c70d71d251f34c975e677ed0f2adc, type: 2}
+    - {fileID: 11400000, guid: 4fe02b1c980fde04e875a745c5df5743, type: 2}
     m_Events:
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 4533616364425738804}
-          m_TargetAssemblyTypeName: QTESignalReceiver, Assembly-CSharp
-          m_MethodName: TriggerQTE
+        - m_Target: {fileID: 7666416480328290772}
+          m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
+          m_MethodName: InstantiateFromTimeline
           m_Mode: 2
           m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: 0c9575e52e62f1048835a1e9ff88c267, type: 2}
-            m_ObjectArgumentAssemblyTypeName: QTETriggerSO, Assembly-CSharp
+            m_ObjectArgument: {fileID: 6712169537145002962, guid: 00fff868c338861449d838f2924decc4, type: 3}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 1
-    - m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 4533616364425738804}
-          m_TargetAssemblyTypeName: QTESignalReceiver, Assembly-CSharp
-          m_MethodName: TriggerQTE
-          m_Mode: 2
-          m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: 87aef419278eb664b8ba2eb5262ce197, type: 2}
-            m_ObjectArgumentAssemblyTypeName: QTETriggerSO, Assembly-CSharp
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 1
-    - m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 4533616364425738804}
-          m_TargetAssemblyTypeName: QTESignalReceiver, Assembly-CSharp
-          m_MethodName: TriggerQTE
-          m_Mode: 2
-          m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: 208ad8d1c9d193a4dbecb2654eea8578, type: 2}
-            m_ObjectArgumentAssemblyTypeName: QTETriggerSO, Assembly-CSharp
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 1
-    - m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 4533616364425738804}
-          m_TargetAssemblyTypeName: QTESignalReceiver, Assembly-CSharp
-          m_MethodName: TriggerQTE
-          m_Mode: 2
-          m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: cfd959d3255841d43abbe2ec860ad511, type: 2}
-            m_ObjectArgumentAssemblyTypeName: QTETriggerSO, Assembly-CSharp
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 1
+--- !u!114 &7666416480328290772
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8738188441690940424}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45e8f8d752ab38949b355d871d013619, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  instantiateAtStart: 0
+  gameObjectToInstantiate: {fileID: 0}

@@ -19,15 +19,7 @@ MonoBehaviour:
   description: 
   musicalMoveTargetingAnimation: {fileID: 0}
   stayFaceToTarget: 1
-  notes:
-  - noteInput: {fileID: 21300000, guid: f450c5a75855c3e4e89f8acf1545fa52, type: 3}
-    rhythm: 3
-  - noteInput: {fileID: 21300000, guid: f450c5a75855c3e4e89f8acf1545fa52, type: 3}
-    rhythm: 0.1
-  - noteInput: {fileID: 21300000, guid: f450c5a75855c3e4e89f8acf1545fa52, type: 3}
-    rhythm: 0.1
-  - noteInput: {fileID: 21300000, guid: f450c5a75855c3e4e89f8acf1545fa52, type: 3}
-    rhythm: 0.1
+  notes: []
   power: 10
   fatigueCost: 1
   harmonicCost: 1
@@ -54,8 +46,8 @@ MonoBehaviour:
   useTeleportation: 1
   teleportStartVFXPrefab: {fileID: 6184656141151889893, guid: 79d3634b81de0b747bee2ee9f3358e80, type: 3}
   teleportEndVFXPrefab: {fileID: 0}
-  warningClip: {fileID: 8300000, guid: 7f8925e86620d9a4c8cbd7c4e08c9138, type: 3}
-  startDelay: 2
+  warningClip: {fileID: 0}
+  startDelay: 0
   enterAwake: 0
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 11400000, guid: 361e91e8ca92edc459ed5ed247a853bd, type: 2}

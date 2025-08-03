@@ -93360,6 +93360,22 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3852180701119827381, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
+      propertyPath: m_SortingOrder
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3852180701119827381, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
+      propertyPath: m_SortingLayerID
+      value: 1093929019
+      objectReference: {fileID: 0}
+    - target: {fileID: 3852180701119827381, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
+      propertyPath: m_OverrideSorting
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3852180701119827381, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
+      propertyPath: m_VertexColorAlwaysGammaSpace
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3863687698339810445, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -93502,15 +93518,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.x
-      value: 2.5781474
+      value: 2.9645545
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.y
-      value: 2.5781474
+      value: 2.9645545
       objectReference: {fileID: 0}
     - target: {fileID: 7012814164958650466, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_LocalScale.z
-      value: 2.5781474
+      value: 2.9645545
       objectReference: {fileID: 0}
     - target: {fileID: 7196895587682077381, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
       propertyPath: m_Name
@@ -93676,7 +93692,8 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 8070022973660271683, guid: 5b441a4bb0c8fad46abfb2382dbd8138, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -95184,7 +95201,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 839612870178969157, guid: d68affc57ba8f0846908c6ea7aaa2a15, type: 3}
       propertyPath: warningAttenuation
-      value: 0.5
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 839612870178969157, guid: d68affc57ba8f0846908c6ea7aaa2a15, type: 3}
       propertyPath: musicTracks.Array.size
@@ -95464,6 +95481,10 @@ PrefabInstance:
     - target: {fileID: 4242007015781093729, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
       value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 5935448509187317581, guid: e09e734471059724697ca025074011f0, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -301.7059
       objectReference: {fileID: 0}
     - target: {fileID: 6080609517331254324, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
