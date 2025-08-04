@@ -79,7 +79,10 @@ public class CharacterData : ScriptableObject, ITargetable
     public AudioClip hitSound;
     // Voix jouée lors d'un coup dévastateur
     public AudioClip criticalHitSound;
+    // Voix jouée lorsque l'unité est interceptée
     public AudioClip interceptedSound;
+    // Voix jouée lorsque l'unité intercepte une autre unité
+    public AudioClip interceptionSound;
     [Tooltip("Joué si la cible meurt avant la fin d'une attaque")] public AudioClip prematureDeathTaunt;
     public GameObject hitEffect;
     public GameObject deathEffect;

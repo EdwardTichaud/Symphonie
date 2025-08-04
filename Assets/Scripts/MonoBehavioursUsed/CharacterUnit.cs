@@ -390,6 +390,16 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             audioSource.PlayOneShot(Data.interceptedSound);
     }
 
+    /// <summary>
+    /// Joue le son spécifique lorsqu'une interception réussit et que
+    /// cette unité est celle qui intercepte.
+    /// </summary>
+    public void PlayInterceptionSound()
+    {
+        if (Data.interceptionSound != null && audioSource != null)
+            audioSource.PlayOneShot(Data.interceptionSound);
+    }
+
     public void PlayMoveStartSound()
     {
         if (Data.moveStartClip != null)
