@@ -2,7 +2,10 @@
     "m_SGVersion": 3,
     "m_Type": "UnityEditor.ShaderGraph.GraphData",
     "m_ObjectId": "99c9d2502326450798eab900f93d941d",
-    "m_Properties": [],
+    "m_Properties": [
+        { "m_Id": "7f48d6e9a8c44585b96fe76e27d56852" },
+        { "m_Id": "46635d69d8134d5591bd86369a4a6a10" }
+    ],
     "m_Keywords": [],
     "m_Dropdowns": [],
     "m_CategoryData": [
@@ -851,5 +854,53 @@
         "m_SerializableColors": []
     },
     "m_SerializedDescriptor": "SurfaceDescription.BentNormal"
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Texture2DShaderProperty",
+    "m_ObjectId": "7f48d6e9a8c44585b96fe76e27d56852",
+    "m_Guid": { "m_GuidSerialized": "f6e9a379-e013-4208-bc8e-19eeb108a636" },
+    "m_Name": "RevealTexture",
+    "m_DefaultRefNameVersion": 0,
+    "m_RefNameGeneratedByDisplayName": "",
+    "m_DefaultReferenceName": "Texture2D_7f48d6e9a8c44585b96fe76e27d56852",
+    "m_OverrideReferenceName": "_RevealTex",
+    "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
+    "m_DismissedVersion": 0,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "m_Hidden": false,
+    "m_Value": { "m_SerializedTexture": "", "m_Guid": "" },
+    "isMainTexture": false,
+    "useTilingAndOffset": false,
+    "m_Modifiable": true,
+    "m_DefaultType": 0
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Vector1ShaderProperty",
+    "m_ObjectId": "46635d69d8134d5591bd86369a4a6a10",
+    "m_Guid": { "m_GuidSerialized": "2529b0f5-d991-4a3a-bd81-087abb1cc203" },
+    "m_Name": "ReveVision",
+    "m_DefaultRefNameVersion": 0,
+    "m_RefNameGeneratedByDisplayName": "",
+    "m_DefaultReferenceName": "Vector1_46635d69d8134d5591bd86369a4a6a10",
+    "m_OverrideReferenceName": "_ReveVision",
+    "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
+    "m_DismissedVersion": 0,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "m_Hidden": false,
+    "m_Value": 0.0,
+    "m_FloatType": 1,
+    "m_RangeValues": { "x": 0.0, "y": 1.0 }
 }
 
