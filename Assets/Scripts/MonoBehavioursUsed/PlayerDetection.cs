@@ -72,18 +72,8 @@ public class PlayerDetection : MonoBehaviour
         if (!detectionOn)
             return;
 
-        if (!firstEnemyDetected && firstDetectionVoices.Count > 0)
-        {
-            // Sélection aléatoire d'un clip parmi la liste disponible
-            AudioClip clip = firstDetectionVoices[UnityEngine.Random.Range(0, firstDetectionVoices.Count)];
-
-            // Lecture du clip avec le volume choisi dans l'inspecteur
-            AudioManager.Instance?.PlayVoice(clip, firstDetectionVoiceVolume);
-
-            firstEnemyDetected = true;
-        }
-
         // On recherche tous les colliders dans le rayon de base (sans layer mask)
+        // afin de savoir s'il y a réellement un ennemi à proximité avant de jouer une voix.
         Collider[] initialColliders = Physics.OverlapSphere(
             transform.position,
             currentDetectionRadius
@@ -94,9 +84,26 @@ public class PlayerDetection : MonoBehaviour
             .Where(c => c.CompareTag(enemyTag))
             .ToArray();
 
+        // Si aucun ennemi n'est trouvé, on quitte immédiatement la fonction
+        // pour éviter de jouer un clip vocal inutilement.
         if (initialHits.Length == 0)
             return; // aucun ennemi trouvé dans le rayon de base
 
+        // Lecture du clip vocal uniquement lors de la première détection effective d'un ennemi
+        if (!firstEnemyDetected && firstDetectionVoices.Count > 0)
+        {
+            // Sélection aléatoire d'un clip parmi la liste disponible
+            AudioClip clip = firstDetectionVoices[UnityEngine.Random.Range(0, firstDetectionVoices.Count)];
+
+            // Lecture du clip avec le volume choisi dans l'inspecteur
+            AudioManager.Instance?.PlayVoice(clip, firstDetectionVoiceVolume);
+
+            // On mémorise que la première détection a eu lieu afin de ne pas répéter la voix
+            firstEnemyDetected = true;
+        }
+
+        // À partir d'ici, au moins un ennemi a été trouvé : on peut élargir le rayon de détection
+        // et poursuivre la logique de mise en combat.
         detectionOn = false;
         currentDetectionRadius = currentDetectionRadius + detectionExpansion;
 
