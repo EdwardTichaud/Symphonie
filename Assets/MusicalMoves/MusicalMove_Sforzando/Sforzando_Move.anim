@@ -474158,6 +474158,13 @@ AnimationClip:
   m_HasGenericRootTransform: 0
   m_HasMotionFloatCurves: 1
   m_Events:
+  - time: 0.2
+    functionName: PlayVoice
+    data: 
+    objectReferenceParameter: {fileID: 8300000, guid: 98a8c840bfa34a54aa183c7f29635303, type: 3}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0
   - time: 0.25
     functionName: TryToDamage
     data: 
@@ -474204,6 +474211,13 @@ AnimationClip:
     functionName: ResetTime
     data: 
     objectReferenceParameter: {fileID: 0}
+    floatParameter: 0
+    intParameter: 0
+    messageOptions: 0
+  - time: 1.45
+    functionName: PlayVoice
+    data: 
+    objectReferenceParameter: {fileID: 8300000, guid: 00035f3551dfd6b44bdd7307da4b3604, type: 3}
     floatParameter: 0
     intParameter: 0
     messageOptions: 0

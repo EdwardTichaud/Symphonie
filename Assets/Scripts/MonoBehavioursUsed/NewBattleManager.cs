@@ -1611,6 +1611,7 @@ public class NewBattleManager : MonoBehaviour
         TakeVictoryScreenshot();
 
         // Activation du panneau VictoryScreen (animation en temps réel)
+        victoryScreen.SetActive(true);
         Transform victoryPanel = victoryScreen.transform.GetChild(0);
         Animator victoryAnim = victoryPanel.GetComponent<Animator>();
         if (victoryAnim != null)
