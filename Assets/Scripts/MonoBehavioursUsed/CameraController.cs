@@ -60,7 +60,7 @@ public class CameraController : MonoBehaviour
     public bool isForcedCamMoving;
     public bool worldCamForced;
 
-    public Transform forcedCameraPoint; // drag ton Point_ForcedCameraDirection ici
+    public Transform forcedCameraPoint; // Ancien système, conservé pour compatibilité mais non utilisé
     public float forcedCamZoomSpeed = 5f;
     public float forcedCamRotationSpeed = 50f;
     public float forcedCamMinDistance = 2f;
@@ -71,6 +71,7 @@ public class CameraController : MonoBehaviour
     private float forcedCamYaw = 0f;
     private float forcedCamPitch = 20f;
     private float forcedCamDistance = 5f;
+    private Vector3 forcedCamOffset = Vector3.zero; // Décalage monde utilisé en mode forcé
 
     [Header("Orbit Settings")]
     public Transform orbitTarget;
@@ -346,8 +347,31 @@ public class CameraController : MonoBehaviour
         {
             StopCoroutine(currentTransition);
         }
-        
         activeCamera = worldCamera;
+
+        // Récupération du point d'épaule pour positionner la caméra au plus près du joueur
+        Transform shoulder = FindChildRecursive(player, "Camera_Shoulder_Left_Near");
+        forceLookPoint = FindChildRecursive(player, cameraTargetName);
+
+        if (shoulder != null)
+        {
+            // Calcul initial du décalage sans tenir compte de la rotation du joueur
+            forcedCamOffset = shoulder.position - player.position;
+            forcedCamDistance = forcedCamOffset.magnitude;
+            forcedCamYaw = Mathf.Atan2(forcedCamOffset.x, forcedCamOffset.z) * Mathf.Rad2Deg;
+            forcedCamPitch = Mathf.Asin(forcedCamOffset.y / forcedCamDistance) * Mathf.Rad2Deg;
+        }
+        else
+        {
+            // Repli : on conserve la position actuelle de la caméra
+            forcedCamOffset = worldCamera.transform.position - player.position;
+            forcedCamDistance = forcedCamOffset.magnitude;
+            forcedCamYaw = Mathf.Atan2(forcedCamOffset.x, forcedCamOffset.z) * Mathf.Rad2Deg;
+            forcedCamPitch = Mathf.Asin(forcedCamOffset.y / forcedCamDistance) * Mathf.Rad2Deg;
+        }
+
+        // Application immédiate pour éviter un décalage visuel lors de l'activation
+        FollowForcedCameraPoint();
 
         currentWorldCameraState = WorldCameraState.Forced;
         cameraHandlerEnabled = false;
@@ -364,6 +388,9 @@ public class CameraController : MonoBehaviour
         currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint;
         cameraHandlerEnabled = true;
         worldCamForced = false;
+
+        // Réinitialise l'offset pour ne pas garder de résidus
+        forcedCamOffset = Vector3.zero;
 
         // Oublie le dernier point pour relancer une transition propre
         lastClosestCameraPoint = null;
@@ -396,49 +423,44 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Suit le point forcé en douceur. Redondant avec SmoothMoveAndLook pour la logique de lerp.
+    /// Applique la position forcée de la caméra en suivant le joueur sans reprendre sa rotation.
     /// </summary>
     void FollowForcedCameraPoint()
     {
-        // Utilise la WorldCamera pour le suivi forcé
-        if (forcedCameraPoint == null || forceLookPoint == null || worldCamera == null) return;
+        if (worldCamera == null || player == null) return;
 
         Transform camOrigin = worldCamera.transform;
+        Transform look = forceLookPoint != null ? forceLookPoint : player;
 
-        // Suivi direct (aucun blocage, aucun retard)
-        camOrigin.position = Vector3.Lerp(camOrigin.position, forcedCameraPoint.position, 10f * Time.deltaTime);
-        camOrigin.rotation = Quaternion.Slerp(
-            camOrigin.rotation,
-            Quaternion.LookRotation(forceLookPoint.position - camOrigin.position),
-            10f * Time.deltaTime
-        );
+        // Position collée aux déplacements du joueur mais indépendante de sa rotation
+        camOrigin.position = player.position + forcedCamOffset;
+        camOrigin.rotation = Quaternion.LookRotation(look.position - camOrigin.position);
     }
 
     /// <summary>
-    /// Calcule la position du point forcé en fonction des entrées utilisateur.
+    /// Met à jour l'offset de la caméra forcée en fonction des entrées utilisateur (rotation autour du joueur).
     /// </summary>
     void UpdateForcedCameraPoint()
     {
-        if (forcedCameraPoint == null || player == null) return;
+        if (player == null) return;
 
         Vector2 input = InputsManager.Instance.playerInputs.World.ForcedCamMove.ReadValue<Vector2>();
         isForcedCamMoving = input.magnitude > 0.1f;
 
-        forcedCamDistance -= input.y * forcedCamZoomSpeed * Time.deltaTime;
-        forcedCamDistance = Mathf.Clamp(forcedCamDistance, forcedCamMinDistance, forcedCamMaxDistance);
-
+        // Rotation horizontale et verticale autour du joueur
         forcedCamYaw += input.x * forcedCamRotationSpeed * Time.deltaTime;
+        forcedCamPitch -= input.y * forcedCamRotationSpeed * Time.deltaTime;
         forcedCamPitch = Mathf.Clamp(forcedCamPitch, forcedCamMinPitch, forcedCamMaxPitch);
 
         float yawRad = forcedCamYaw * Mathf.Deg2Rad;
         float pitchRad = forcedCamPitch * Mathf.Deg2Rad;
 
-        float x = forcedCamDistance * Mathf.Sin(yawRad) * Mathf.Cos(pitchRad);
-        float y = forcedCamDistance * Mathf.Sin(pitchRad);
-        float z = forcedCamDistance * Mathf.Cos(yawRad) * Mathf.Cos(pitchRad);
-
-        forcedCameraPoint.position = player.position + new Vector3(x, y, z);
-        forcedCameraPoint.LookAt(player.position);
+        // Conversion sphérique → cartésienne pour obtenir le décalage monde
+        forcedCamOffset = new Vector3(
+            forcedCamDistance * Mathf.Sin(yawRad) * Mathf.Cos(pitchRad),
+            forcedCamDistance * Mathf.Sin(pitchRad),
+            forcedCamDistance * Mathf.Cos(yawRad) * Mathf.Cos(pitchRad)
+        );
     }
 
     /// <summary>

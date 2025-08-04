@@ -614,13 +614,13 @@ public class InputsManager : MonoBehaviour
         CameraController cc = CameraController.Instance;
         if (cc.currentWorldCameraState != WorldCameraState.Forced)
         {
+            // Active le mode caméra forcée sans modifier le mode de déplacement du joueur
             cc.ForceCam();
-            controller.movementMode = CharacterController3D.MovementMode.TPSOverShoulder;
         }
         else
         {
+            // Retour au comportement par défaut de la caméra
             cc.ReleaseCam();
-            controller.movementMode = CharacterController3D.MovementMode.FixedCamera;
         }
     }
     #endregion
