@@ -77,6 +77,8 @@ public class CharacterData : ScriptableObject, ITargetable
 
     [Header("Effets visuels et sonores")]
     public AudioClip hitSound;
+    // Voix jouée lors d'un coup dévastateur
+    public AudioClip criticalHitSound;
     public AudioClip interceptedSound;
     [Tooltip("Joué si la cible meurt avant la fin d'une attaque")] public AudioClip prematureDeathTaunt;
     public GameObject hitEffect;

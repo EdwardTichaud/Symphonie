@@ -207,15 +207,18 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         currentHP = Mathf.Max(currentHP - amount, 0);
         if (hpBar != null) hpBar.SetValue(currentHP);
+
+        // Calcul de la gravité du coup pour déterminer le son et le message
+        float maxHP = Data.baseHP + currentVitality;
+        bool devastating = amount > maxHP * 0.2f;
+
         // Affiche le nombre de dégâts au-dessus de cette unité
         DamagePopupManager.Instance?.ShowDamage(transform, Mathf.RoundToInt(amount));
-        PlayDamageFeedback();
+        PlayDamageFeedback(devastating);
 
         // Message indiquant la gravité des dégâts subis
         if (ActionUIDisplayManager.Instance != null)
         {
-            float maxHP = Data.baseHP + currentVitality;
-            bool devastating = amount > maxHP * 0.2f;
             ActionUIDisplayManager.Instance.DisplayDamage(Data.characterName, devastating);
         }
 
@@ -359,12 +362,28 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     }
 
-    public void PlayHitSound()
+    /// <summary>
+    /// Joue le son d'impact. Utilise une voix différente si le coup est
+    /// considéré comme dévastateur.
+    /// </summary>
+    /// <param name="isDevastating">True si le coup est dévastateur.</param>
+    public void PlayHitSound(bool isDevastating = false)
     {
-        if (Data.hitSound != null && audioSource != null)
-            audioSource.PlayOneShot(Data.hitSound);
+        if (audioSource == null)
+            return;
+
+        // Sélection du clip approprié
+        AudioClip clip = (isDevastating && Data.criticalHitSound != null)
+            ? Data.criticalHitSound
+            : Data.hitSound;
+
+        if (clip != null)
+            audioSource.PlayOneShot(clip);
     }
 
+    /// <summary>
+    /// Joue le son spécifique lorsqu'une interception touche cette unité.
+    /// </summary>
     public void PlayInterceptedSound()
     {
         if (Data.interceptedSound != null && audioSource != null)
@@ -486,9 +505,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         }
     }
 
-    void PlayDamageFeedback()
+    void PlayDamageFeedback(bool isDevastating)
     {
-        PlayHitSound();
+        // Joue le son correspondant à la gravité du coup
+        PlayHitSound(isDevastating);
 
         if (Data.hitEffect != null)
             Instantiate(Data.hitEffect, transform.position, Quaternion.identity);
