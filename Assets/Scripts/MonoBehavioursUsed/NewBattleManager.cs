@@ -1150,6 +1150,8 @@ public class NewBattleManager : MonoBehaviour
         caster?.PlayInterceptedSound();
         caster?.ClearAllHarmonics();
         interceptor?.PlayInterceptionAnimation();
+        // Son joué par l'unité qui intercepte
+        interceptor?.PlayInterceptionSound();
 
         var move = interceptor.GetRandomMusicalAttack();
         if (move != null)
