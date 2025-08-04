@@ -35,6 +35,23 @@ public class InputsManager : MonoBehaviour
             return;
         }
 
+        // --- Détection des périphériques au démarrage ---
+        // Force un rafraîchissement de l'Input System pour
+        // recenser les périphériques déjà branchés lorsque
+        // le jeu se lance (évite de devoir les rebrancher).
+        InputSystem.Update();
+
+        // Affiche dans la console les périphériques détectés
+        // afin de faciliter le débogage et la maintenance.
+        foreach (var device in InputSystem.devices)
+        {
+            Debug.Log($"Périphérique détecté au lancement : {device.displayName}");
+        }
+
+        // Écoute les changements de périphériques pour
+        // gérer les branchements/débranchements à chaud.
+        InputSystem.onDeviceChange += OnDeviceChange;
+
         allMaps = new[]
         {
             playerInputs.World.Get(),
@@ -111,6 +128,30 @@ public class InputsManager : MonoBehaviour
         // 2) on ré-active le sous-ensemble voulu
         foreach (var m in mapsToEnable)
             m.Enable();
+    }
+
+    #endregion
+
+    #region Gestion des périphériques
+    /// <summary>
+    /// Désabonne les événements lors de la destruction du singleton.
+    /// </summary>
+    void OnDestroy()
+    {
+        InputSystem.onDeviceChange -= OnDeviceChange;
+    }
+
+    /// <summary>
+    /// Callback appelé lors du branchement ou de la reconnexion d'un périphérique.
+    /// </summary>
+    /// <param name="device">Le périphérique concerné.</param>
+    /// <param name="change">Le type de changement détecté.</param>
+    private void OnDeviceChange(InputDevice device, InputDeviceChange change)
+    {
+        if (change == InputDeviceChange.Added || change == InputDeviceChange.Reconnected)
+        {
+            Debug.Log($"Périphérique (re)connecté : {device.displayName}");
+        }
     }
 
     #endregion
