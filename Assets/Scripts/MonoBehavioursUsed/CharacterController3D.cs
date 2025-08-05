@@ -168,7 +168,9 @@ public class CharacterController3D : MonoBehaviour
         Vector3 camForward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
         Vector3 camRight = Vector3.ProjectOnPlane(Camera.main.transform.right, Vector3.up).normalized;
 
-        Vector3 moveDir = (camForward * moveInput.y + camRight * moveInput.x).normalized;
+        Vector3 moveDir = camForward * moveInput.y + camRight * moveInput.x;
+        if (moveDir.magnitude > 1f)
+            moveDir.Normalize();
 
         bool hasInput = moveInput.magnitude > 0.1f;
 
@@ -176,18 +178,12 @@ public class CharacterController3D : MonoBehaviour
         {
             idleTimer = 0f;
 
-            float targetAngle = Mathf.Atan2(moveDir.x, moveDir.z) * Mathf.Rad2Deg;
-            float currentY = transform.eulerAngles.y;
-            float angleDiff = Mathf.DeltaAngle(currentY, targetAngle);
-
-            if (Mathf.Abs(moveInput.x) > stickDeadZoneX && Mathf.Abs(angleDiff) > angleThreshold)
+            if (moveDir.sqrMagnitude > 0.001f)
             {
-                float angle = Mathf.SmoothDampAngle(currentY, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
+                float targetAngle = Mathf.Atan2(moveDir.x, moveDir.z) * Mathf.Rad2Deg;
+                float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, turnSmoothTime);
                 transform.rotation = Quaternion.Euler(0, angle, 0);
             }
-
-            // Corriger moveDir pour matcher l'orientation
-            moveDir = transform.forward;
         }
         else
         {
@@ -197,11 +193,8 @@ public class CharacterController3D : MonoBehaviour
             {
                 Vector3 camFwd = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
                 float targetAngle = Mathf.Atan2(camFwd.x, camFwd.z) * Mathf.Rad2Deg;
-                float currentY = transform.eulerAngles.y;
-
                 float alignVelocity = 0f;
-                float angle = Mathf.SmoothDampAngle(currentY, targetAngle, ref alignVelocity, 1f / autoAlignSpeed);
-
+                float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref alignVelocity, 1f / autoAlignSpeed);
                 transform.rotation = Quaternion.Euler(0, angle, 0);
             }
         }
