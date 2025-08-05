@@ -24,15 +24,6 @@
                     "initialStateCheck": true
                 },
                 {
-                    "name": "Shot",
-                    "type": "Button",
-                    "id": "f9cfff38-f089-44b8-add9-653ad498bc16",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "Interact",
                     "type": "Button",
                     "id": "aa1be79b-e96c-433d-abd0-3d900b0ecba9",
@@ -54,33 +45,6 @@
                     "name": "MuninDash",
                     "type": "Button",
                     "id": "10b6dfa1-99e0-40a8-b17d-5a255676b6b4",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Dodge",
-                    "type": "Button",
-                    "id": "9a665b3e-75d3-4a98-8c79-207fbad211dd",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Shield",
-                    "type": "Button",
-                    "id": "2639abeb-c7c6-4410-80b6-e9d192ef003b",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
-                    "name": "Death",
-                    "type": "Button",
-                    "id": "69d8092f-32a7-49e1-8189-2c6f7913701e",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -146,6 +110,17 @@
                     "name": "",
                     "id": "5023fca9-fec3-4211-ab2c-d6657de5b5e3",
                     "path": "<Keyboard>/space",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Jump",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f0aefd3f-3ee4-41dd-944b-402a0ce2e61b",
+                    "path": "<Gamepad>/buttonSouth",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
@@ -221,17 +196,6 @@
                 },
                 {
                     "name": "",
-                    "id": "1e497d0e-8538-49b6-ae81-b0cdb489b71e",
-                    "path": "<Mouse>/leftButton",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Shot",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
                     "id": "bf7decb2-66a1-450c-a72f-1df6d5f5b5d9",
                     "path": "<Mouse>/leftButton",
                     "interactions": "",
@@ -260,39 +224,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "MuninDash",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "8f05e622-202c-4c27-9753-cc8bd469499c",
-                    "path": "<Keyboard>/shift",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Dodge",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "3d02e3c4-8831-43f4-a91c-a996676401f4",
-                    "path": "<Keyboard>/r",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Shield",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "22a8ab76-223a-4b64-9931-3856e79c6966",
-                    "path": "<Keyboard>/semicolon",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Death",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },

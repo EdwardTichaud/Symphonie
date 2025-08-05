@@ -110,15 +110,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": true
                 },
                 {
-                    ""name"": ""Shot"",
-                    ""type"": ""Button"",
-                    ""id"": ""f9cfff38-f089-44b8-add9-653ad498bc16"",
-                    ""expectedControlType"": """",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                },
-                {
                     ""name"": ""Interact"",
                     ""type"": ""Button"",
                     ""id"": ""aa1be79b-e96c-433d-abd0-3d900b0ecba9"",
@@ -140,33 +131,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""name"": ""MuninDash"",
                     ""type"": ""Button"",
                     ""id"": ""10b6dfa1-99e0-40a8-b17d-5a255676b6b4"",
-                    ""expectedControlType"": ""Button"",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                },
-                {
-                    ""name"": ""Dodge"",
-                    ""type"": ""Button"",
-                    ""id"": ""9a665b3e-75d3-4a98-8c79-207fbad211dd"",
-                    ""expectedControlType"": ""Button"",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                },
-                {
-                    ""name"": ""Shield"",
-                    ""type"": ""Button"",
-                    ""id"": ""2639abeb-c7c6-4410-80b6-e9d192ef003b"",
-                    ""expectedControlType"": ""Button"",
-                    ""processors"": """",
-                    ""interactions"": """",
-                    ""initialStateCheck"": false
-                },
-                {
-                    ""name"": ""Death"",
-                    ""type"": ""Button"",
-                    ""id"": ""69d8092f-32a7-49e1-8189-2c6f7913701e"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -232,6 +196,17 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""name"": """",
                     ""id"": ""5023fca9-fec3-4211-ab2c-d6657de5b5e3"",
                     ""path"": ""<Keyboard>/space"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Jump"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""f0aefd3f-3ee4-41dd-944b-402a0ce2e61b"",
+                    ""path"": ""<Gamepad>/buttonSouth"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -307,17 +282,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""1e497d0e-8538-49b6-ae81-b0cdb489b71e"",
-                    ""path"": ""<Mouse>/leftButton"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Shot"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
                     ""id"": ""bf7decb2-66a1-450c-a72f-1df6d5f5b5d9"",
                     ""path"": ""<Mouse>/leftButton"",
                     ""interactions"": """",
@@ -346,39 +310,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""MuninDash"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""8f05e622-202c-4c27-9753-cc8bd469499c"",
-                    ""path"": ""<Keyboard>/shift"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Dodge"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""3d02e3c4-8831-43f4-a91c-a996676401f4"",
-                    ""path"": ""<Keyboard>/r"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Shield"",
-                    ""isComposite"": false,
-                    ""isPartOfComposite"": false
-                },
-                {
-                    ""name"": """",
-                    ""id"": ""22a8ab76-223a-4b64-9931-3856e79c6966"",
-                    ""path"": ""<Keyboard>/semicolon"",
-                    ""interactions"": """",
-                    ""processors"": """",
-                    ""groups"": """",
-                    ""action"": ""Death"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -1137,13 +1068,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_World = asset.FindActionMap("World", throwIfNotFound: true);
         m_World_Jump = m_World.FindAction("Jump", throwIfNotFound: true);
         m_World_Move = m_World.FindAction("Move", throwIfNotFound: true);
-        m_World_Shot = m_World.FindAction("Shot", throwIfNotFound: true);
         m_World_Interact = m_World.FindAction("Interact", throwIfNotFound: true);
         m_World_Mouse = m_World.FindAction("Mouse", throwIfNotFound: true);
         m_World_MuninDash = m_World.FindAction("MuninDash", throwIfNotFound: true);
-        m_World_Dodge = m_World.FindAction("Dodge", throwIfNotFound: true);
-        m_World_Shield = m_World.FindAction("Shield", throwIfNotFound: true);
-        m_World_Death = m_World.FindAction("Death", throwIfNotFound: true);
         m_World_Run = m_World.FindAction("Run", throwIfNotFound: true);
         m_World_Action = m_World.FindAction("Action", throwIfNotFound: true);
         m_World_Cancel = m_World.FindAction("Cancel", throwIfNotFound: true);
@@ -1261,13 +1188,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     private List<IWorldActions> m_WorldActionsCallbackInterfaces = new List<IWorldActions>();
     private readonly InputAction m_World_Jump;
     private readonly InputAction m_World_Move;
-    private readonly InputAction m_World_Shot;
     private readonly InputAction m_World_Interact;
     private readonly InputAction m_World_Mouse;
     private readonly InputAction m_World_MuninDash;
-    private readonly InputAction m_World_Dodge;
-    private readonly InputAction m_World_Shield;
-    private readonly InputAction m_World_Death;
     private readonly InputAction m_World_Run;
     private readonly InputAction m_World_Action;
     private readonly InputAction m_World_Cancel;
@@ -1294,10 +1217,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @Move => m_Wrapper.m_World_Move;
         /// <summary>
-        /// Provides access to the underlying input action "World/Shot".
-        /// </summary>
-        public InputAction @Shot => m_Wrapper.m_World_Shot;
-        /// <summary>
         /// Provides access to the underlying input action "World/Interact".
         /// </summary>
         public InputAction @Interact => m_Wrapper.m_World_Interact;
@@ -1309,18 +1228,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "World/MuninDash".
         /// </summary>
         public InputAction @MuninDash => m_Wrapper.m_World_MuninDash;
-        /// <summary>
-        /// Provides access to the underlying input action "World/Dodge".
-        /// </summary>
-        public InputAction @Dodge => m_Wrapper.m_World_Dodge;
-        /// <summary>
-        /// Provides access to the underlying input action "World/Shield".
-        /// </summary>
-        public InputAction @Shield => m_Wrapper.m_World_Shield;
-        /// <summary>
-        /// Provides access to the underlying input action "World/Death".
-        /// </summary>
-        public InputAction @Death => m_Wrapper.m_World_Death;
         /// <summary>
         /// Provides access to the underlying input action "World/Run".
         /// </summary>
@@ -1377,9 +1284,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @Move.started += instance.OnMove;
             @Move.performed += instance.OnMove;
             @Move.canceled += instance.OnMove;
-            @Shot.started += instance.OnShot;
-            @Shot.performed += instance.OnShot;
-            @Shot.canceled += instance.OnShot;
             @Interact.started += instance.OnInteract;
             @Interact.performed += instance.OnInteract;
             @Interact.canceled += instance.OnInteract;
@@ -1389,15 +1293,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @MuninDash.started += instance.OnMuninDash;
             @MuninDash.performed += instance.OnMuninDash;
             @MuninDash.canceled += instance.OnMuninDash;
-            @Dodge.started += instance.OnDodge;
-            @Dodge.performed += instance.OnDodge;
-            @Dodge.canceled += instance.OnDodge;
-            @Shield.started += instance.OnShield;
-            @Shield.performed += instance.OnShield;
-            @Shield.canceled += instance.OnShield;
-            @Death.started += instance.OnDeath;
-            @Death.performed += instance.OnDeath;
-            @Death.canceled += instance.OnDeath;
             @Run.started += instance.OnRun;
             @Run.performed += instance.OnRun;
             @Run.canceled += instance.OnRun;
@@ -1433,9 +1328,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @Move.started -= instance.OnMove;
             @Move.performed -= instance.OnMove;
             @Move.canceled -= instance.OnMove;
-            @Shot.started -= instance.OnShot;
-            @Shot.performed -= instance.OnShot;
-            @Shot.canceled -= instance.OnShot;
             @Interact.started -= instance.OnInteract;
             @Interact.performed -= instance.OnInteract;
             @Interact.canceled -= instance.OnInteract;
@@ -1445,15 +1337,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @MuninDash.started -= instance.OnMuninDash;
             @MuninDash.performed -= instance.OnMuninDash;
             @MuninDash.canceled -= instance.OnMuninDash;
-            @Dodge.started -= instance.OnDodge;
-            @Dodge.performed -= instance.OnDodge;
-            @Dodge.canceled -= instance.OnDodge;
-            @Shield.started -= instance.OnShield;
-            @Shield.performed -= instance.OnShield;
-            @Shield.canceled -= instance.OnShield;
-            @Death.started -= instance.OnDeath;
-            @Death.performed -= instance.OnDeath;
-            @Death.canceled -= instance.OnDeath;
             @Run.started -= instance.OnRun;
             @Run.performed -= instance.OnRun;
             @Run.canceled -= instance.OnRun;
@@ -2054,13 +1937,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnMove(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "Shot" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
-        /// </summary>
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnShot(InputAction.CallbackContext context);
-        /// <summary>
         /// Method invoked when associated input action "Interact" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
@@ -2081,27 +1957,6 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnMuninDash(InputAction.CallbackContext context);
-        /// <summary>
-        /// Method invoked when associated input action "Dodge" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
-        /// </summary>
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnDodge(InputAction.CallbackContext context);
-        /// <summary>
-        /// Method invoked when associated input action "Shield" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
-        /// </summary>
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnShield(InputAction.CallbackContext context);
-        /// <summary>
-        /// Method invoked when associated input action "Death" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
-        /// </summary>
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
-        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnDeath(InputAction.CallbackContext context);
         /// <summary>
         /// Method invoked when associated input action "Run" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
