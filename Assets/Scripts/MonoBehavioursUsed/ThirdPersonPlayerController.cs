@@ -12,8 +12,18 @@ public class ThirdPersonPlayerController : MonoBehaviour
     [Tooltip("Transform de la caméra utilisée pour orienter le déplacement.")]
     public Transform cameraTransform;
 
-    private CharacterController controller;
-    private Vector3 velocity;
+    private CharacterController controller; // Référence au CharacterController Unity.
+    private Vector3 velocity;               // Vecteur de vitesse utilisé pour la gravité et le saut.
+
+    // États exposés pour l'AnimationHandler afin de synchroniser les animations.
+    [HideInInspector] public bool isWalking;   // Indique si Lucian marche.
+    [HideInInspector] public bool isRunning;   // Indique si Lucian court.
+    [HideInInspector] public bool isJumping;   // Indique si Lucian effectue un saut.
+
+    /// <summary>
+    /// Indique si le personnage touche le sol.
+    /// </summary>
+    public bool isGrounded => controller.isGrounded;
 
     [Header("Mouvement")]
     [Tooltip("Vitesse de marche en unités/seconde.")]
@@ -48,7 +58,11 @@ public class ThirdPersonPlayerController : MonoBehaviour
     {
         // Lecture des axes de déplacement (WASD / stick gauche).
         Vector2 input = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
-        bool isRunning = InputsManager.Instance.playerInputs.World.Run.IsPressed();
+        bool runPressed = InputsManager.Instance.playerInputs.World.Run.IsPressed();
+
+        // Mise à jour des états de déplacement pour les animations.
+        isRunning = input.sqrMagnitude > 0.01f && runPressed;
+        isWalking = input.sqrMagnitude > 0.01f && !runPressed;
 
         // Conversion de l'entrée en vecteur 3D relatif à l'orientation de la caméra (Munin).
         Vector3 camForward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
@@ -70,6 +84,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
         if (InputsManager.Instance.playerInputs.World.Jump.triggered && controller.isGrounded)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            isJumping = true; // Le saut débute.
         }
     }
 
@@ -82,6 +97,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
         {
             // Petite valeur négative pour ancrer le personnage au sol.
             velocity.y = -2f;
+            isJumping = false; // Retour au sol : le saut est terminé.
         }
 
         velocity.y += gravity * Time.deltaTime;
