@@ -9,7 +9,7 @@ using UnityEngine;
 public class ThirdPersonPlayerController : MonoBehaviour
 {
     [Header("Références")]
-    [Tooltip("Transform de la caméra utilisée pour orienter le déplacement.")]
+    [Tooltip("Transform de la WorldCamera utilisée pour orienter le déplacement.")]
     public Transform cameraTransform;
 
     private CharacterController controller; // Référence au CharacterController Unity.
@@ -38,10 +38,22 @@ public class ThirdPersonPlayerController : MonoBehaviour
     void Awake()
     {
         controller = GetComponent<CharacterController>();
-        // Si aucune caméra n'est assignée, on prend la caméra principale.
-        if (cameraTransform == null && Camera.main != null)
+        // Si aucune caméra n'est assignée, on cherche d'abord la WorldCamera, puis on retombe sur la MainCamera.
+        if (cameraTransform == null)
         {
-            cameraTransform = Camera.main.transform;
+            Camera worldCam = GameObject.FindGameObjectWithTag("WorldCamera")?.GetComponent<Camera>();
+            if (worldCam != null)
+            {
+                cameraTransform = worldCam.transform;
+            }
+            else if (Camera.main != null)
+            {
+                cameraTransform = Camera.main.transform;
+            }
+            else
+            {
+                Debug.LogWarning("[ThirdPersonPlayerController] Aucune WorldCamera ou MainCamera trouvée pour orienter le déplacement.");
+            }
         }
     }
 
@@ -56,6 +68,8 @@ public class ThirdPersonPlayerController : MonoBehaviour
     /// </summary>
     void HandleMovement()
     {
+        if (cameraTransform == null)
+            return;
         // Lecture des axes de déplacement (WASD / stick gauche).
         Vector2 input = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
         bool runPressed = InputsManager.Instance.playerInputs.World.Run.IsPressed();
