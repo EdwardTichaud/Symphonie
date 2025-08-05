@@ -13,6 +13,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
     public Transform cameraTransform;
 
     private CharacterController controller; // Référence au CharacterController Unity.
+    private Animator animator;              // Référence à l'Animator pour déclencher les animations.
     private Vector3 velocity;               // Vecteur de vitesse utilisé pour la gravité et le saut.
 
     // États exposés pour l'AnimationHandler afin de synchroniser les animations.
@@ -38,6 +39,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
     void Awake()
     {
         controller = GetComponent<CharacterController>();
+        animator = GetComponentInChildren<Animator>(); // Récupération de l'Animator pour jouer les triggers.
         // Si aucune caméra n'est assignée, on cherche d'abord la WorldCamera, puis on retombe sur la MainCamera.
         if (cameraTransform == null)
         {
@@ -99,6 +101,12 @@ public class ThirdPersonPlayerController : MonoBehaviour
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
             isJumping = true; // Le saut débute.
+
+            // Déclenche l'animation d'anticipation du saut.
+            if (animator != null)
+            {
+                animator.SetTrigger("Jump_Start");
+            }
         }
     }
 
@@ -109,6 +117,14 @@ public class ThirdPersonPlayerController : MonoBehaviour
     {
         if (controller.isGrounded && velocity.y < 0f)
         {
+            // Si on revient au sol après un saut, on déclenche l'animation de landing appropriée.
+            if (isJumping && animator != null)
+            {
+                // Déterminer si Lucian bouge lors de l'impact.
+                bool seDeplace = isWalking || isRunning;
+                animator.SetTrigger(seDeplace ? "Landing_OnMove" : "Landing");
+            }
+
             // Petite valeur négative pour ancrer le personnage au sol.
             velocity.y = -2f;
             isJumping = false; // Retour au sol : le saut est terminé.
