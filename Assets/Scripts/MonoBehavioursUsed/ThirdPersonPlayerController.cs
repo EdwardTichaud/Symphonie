@@ -121,8 +121,8 @@ public class ThirdPersonPlayerController : MonoBehaviour
             if (isJumping && animator != null)
             {
                 // Déterminer si Lucian bouge lors de l'impact.
-                bool seDeplace = isWalking || isRunning;
-                animator.SetTrigger(seDeplace ? "Landing_OnMove" : "Landing");
+                bool isMoving = isWalking || isRunning;
+                animator.SetTrigger(isMoving ? "Landing_OnMove" : "Landing");
             }
 
             // Petite valeur négative pour ancrer le personnage au sol.
