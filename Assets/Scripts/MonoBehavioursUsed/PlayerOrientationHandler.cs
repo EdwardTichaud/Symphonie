@@ -19,15 +19,18 @@ public class PlayerOrientationHandler : MonoBehaviour
 
     public void HandleOrientation()
     {
+        // Actualise l'orientation horizontale selon le signe du déplacement X.
         if (movementInputHandler.moveInput.x != 0)
         {
             orientation.x = Mathf.Sign(movementInputHandler.moveInput.x);
             lastOrientation.x = orientation.x;
         }
 
-        if (movementInputHandler.moveInput.y != 0)
+        // ⚠️ Le déplacement avant/arrière est stocké sur l'axe Z.
+        // Utiliser l'axe Y (vertical) empêchait la prise en compte du joystick gauche.
+        if (movementInputHandler.moveInput.z != 0)
         {
-            orientation.y = Mathf.Clamp(movementInputHandler.moveInput.y, -1, 1);
+            orientation.y = Mathf.Clamp(movementInputHandler.moveInput.z, -1, 1);
             lastOrientation.y = orientation.y;
         }
     }
