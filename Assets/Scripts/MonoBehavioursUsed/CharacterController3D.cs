@@ -1,28 +1,30 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 
-[RequireComponent(typeof(CharacterController))]
-public class CharacterController3D : MonoBehaviour
-{
-    public enum MovementMode
-    {
-        FixedCamera,
-        TPSOverShoulder
-    }
+ [RequireComponent(typeof(CharacterController))]
+ public class CharacterController3D : MonoBehaviour
+ {
+     public enum MovementMode
+     {
+         FixedCamera,
+         TPSOverShoulder
+     }
 
-    // ⚠️ Ce contrôleur s'appuie sur Camera.main pour orienter le déplacement.
-    // Si aucune caméra n'est taguée "MainCamera" (par exemple avant d'activer la BattleCamera),
-    // les vecteurs de mouvement ne peuvent pas être calculés et le joueur reste immobile.
-    public MovementMode movementMode = MovementMode.FixedCamera;
+     // Ce contrôleur s'appuie sur une caméra pour orienter le déplacement.
+     // Si aucune caméra n'est assignée, la caméra principale est utilisée.
+     public MovementMode movementMode = MovementMode.FixedCamera;
 
-    [HideInInspector] public CharacterController controller;
+     [Tooltip("Transform de la caméra utilisée pour orienter le déplacement.")]
+     public Transform cameraTransform;
 
-    [Header("Movement Settings")]
-    public float moveSpeed = 5f;
-    public float runSpeed = 8f;
-    public float jumpHeight = 2f;
-    public float gravity = -9.81f;
-    public float rotationSpeed = 10f;
+     [HideInInspector] public CharacterController controller;
+
+     [Header("Movement Settings")]
+     public float moveSpeed = 5f;
+     public float runSpeed = 8f;
+     public float jumpHeight = 2f;
+     public float gravity = -9.81f;
+     public float rotationSpeed = 10f;
 
     [Header("Fall Prevention")]
     public float groundCheckDistance = 1f; // distance to check for ground
@@ -71,6 +73,11 @@ public class CharacterController3D : MonoBehaviour
         {
             groundLayer = LayerMask.GetMask("Default");
             Debug.LogWarning("[CharacterController3D] 'groundLayer' non spécifié, utilisation du layer 'Default'.");
+        }
+
+        if (cameraTransform == null && Camera.main != null)
+        {
+            cameraTransform = Camera.main.transform;
         }
     }
 
@@ -139,8 +146,11 @@ public class CharacterController3D : MonoBehaviour
     /// </summary>
     private void HandleFixedCameraMovement(Vector2 moveInput)
     {
-        Vector3 camForward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
-        Vector3 camRight = Vector3.ProjectOnPlane(Camera.main.transform.right, Vector3.up).normalized;
+        if (cameraTransform == null)
+            return;
+
+        Vector3 camForward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
+        Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right, Vector3.up).normalized;
 
         Vector3 moveDir = (camForward * moveInput.y + camRight * moveInput.x).normalized;
 
@@ -165,8 +175,11 @@ public class CharacterController3D : MonoBehaviour
     /// </summary>
     private void HandleTPSOverShoulderMovement(Vector2 moveInput)
     {
-        Vector3 camForward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
-        Vector3 camRight = Vector3.ProjectOnPlane(Camera.main.transform.right, Vector3.up).normalized;
+        if (cameraTransform == null)
+            return;
+
+        Vector3 camForward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
+        Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right, Vector3.up).normalized;
 
         Vector3 moveDir = camForward * moveInput.y + camRight * moveInput.x;
         if (moveDir.magnitude > 1f)
@@ -191,7 +204,7 @@ public class CharacterController3D : MonoBehaviour
 
             if (enableAutoAlign && idleTimer >= autoAlignDelay)
             {
-                Vector3 camFwd = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
+                Vector3 camFwd = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
                 float targetAngle = Mathf.Atan2(camFwd.x, camFwd.z) * Mathf.Rad2Deg;
                 float alignVelocity = 0f;
                 float angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref alignVelocity, 1f / autoAlignSpeed);
