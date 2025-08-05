@@ -42,7 +42,7 @@ public class InteractionManager : MonoBehaviour
             Debug.LogError("[InteractionManager3D] Main Camera not found.");
 
         // Find the player
-        var player = FindFirstObjectByType<Lucian3D>();
+        var player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
             playerTransform = player.transform;
         else
