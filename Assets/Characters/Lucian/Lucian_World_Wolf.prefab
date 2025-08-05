@@ -134,12 +134,9 @@ GameObject:
   m_Component:
   - component: {fileID: 711162037707955636}
   - component: {fileID: 6861779895214181043}
-  - component: {fileID: 1031145739162755651}
+  - component: {fileID: 4876543210987654321}
   - component: {fileID: 3917784919211425226}
   - component: {fileID: 1958501026567594322}
-  - component: {fileID: 6698838017724509974}
-  - component: {fileID: 1365349478626576160}
-  - component: {fileID: 1095418709276351020}
   m_Layer: 3
   m_Name: Lucian_World_Wolf
   m_TagString: Player
@@ -189,7 +186,7 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.53, z: 0}
---- !u!114 &1031145739162755651
+--- !u!114 &4876543210987654321
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -198,32 +195,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 5021491593266416669}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00a2a29cdd56ea74f8159920e0765f4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lucianData: {fileID: 11400000, guid: e1caa78650838d34ea2f6c2f1361a5f3, type: 2}
-  originalLucianMaterial: {fileID: 0}
-  electricityPowerMaterial: {fileID: 2100000, guid: c2629b3bfc9d87b4cb0ee5027d047d77, type: 2}
-  acceleration: 100
-  deceleration: 80
-  maxSpeed: 30
-  airControl: 0.4
-  groundFriction: 8
-  orientation: {x: 0, y: 0}
-  isMoving: 0
-  wasMoving: 0
-  isFacingRight: 1
-  moveInput: {x: 0, y: 0}
-  isJumping: 0
-  canDoubleJump: 1
-  isWallJumping: 0
-  jumpBufferTime: 0.2
-  wallJumpForce: {x: 30, y: 30, z: 0}
-  whatIsWall:
-    serializedVersion: 2
-    m_Bits: 0
-  wallSlideSpeed: 0
-  isWallSliding: 0
+  m_Script: {fileID: 11500000, guid: 9f10e825adf345b7956d7de3a2402c72, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  cameraTransform: {fileID: 8118803985585011279, guid: 8655ab6c68faefd47a60878c5fb4b708, type: 3}
+  walkSpeed: 5
+  runSpeed: 8
+  jumpHeight: 2
+  gravity: -9.81
 --- !u!114 &3917784919211425226
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -269,78 +248,6 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 98a8c840bfa34a54aa183c7f29635303, type: 3}
   firstDetectionVoiceVolume: 1
   battleEngaged: 0
---- !u!114 &6698838017724509974
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5021491593266416669}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 13d21eadeb7ff714f94adc502f81e91b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  orientation: {x: 0, y: 0}
-  moveInput: {x: 0, y: 0, z: 0}
-  isRunning: 0
-  isWalking: 0
---- !u!114 &1365349478626576160
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5021491593266416669}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2fe5efc43859da549a2865228b366771, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  movementMode: 0
-  controller: {fileID: 0}
-  moveSpeed: 2
-  runSpeed: 6
-  jumpHeight: 2
-  gravity: -9.81
-  rotationSpeed: 10
-  groundCheckDistance: 1
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 256
-  isGrounded: 0
-  isWalking: 0
-  wasWalking: 0
-  isRunning: 0
-  wasRunning: 0
-  isJumping: 0
-  isHurt: 0
-  isDodging: 0
-  isDead: 0
-  dashTriggered: 0
-  isApproaching: 0
-  isRetreating: 0
-  isTaunting: 0
-  isThreatening: 0
-  turnSmoothTime: 0.1
-  stickDeadZoneX: 0.2
-  angleThreshold: 10
-  enableAutoAlign: 1
-  autoAlignDelay: 0.5
-  autoAlignSpeed: 5
---- !u!114 &1095418709276351020
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5021491593266416669}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d990b6b5f4550e34d9a999cc5837f707, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  orientation: {x: 0, y: 0}
 --- !u!1 &7460843721400668723
 GameObject:
   m_ObjectHideFlags: 0
@@ -642,8 +549,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1041084312603011456}
-  - component: {fileID: 64123962709032526}
-  - component: {fileID: 1824034007329000640}
   m_Layer: 3
   m_Name: Point_MuninCameraPosition
   m_TagString: Untagged
@@ -666,39 +571,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1353471378066171162}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &64123962709032526
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9199964693624976246}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c6e17a8e1e0bb6a4c87f0a6f4ba8e5d9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  target: {fileID: 0}
-  smooth: 1
-  smoothSpeed: 5
---- !u!114 &1824034007329000640
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9199964693624976246}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fb89e75d5c8d9854f89dfa1b40810b9a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  target: {fileID: 0}
-  distance: 5
-  speed: 30
-  orbitX: 0
-  orbitY: 1
-  orbitZ: 0
 --- !u!1001 &2739980792688060151
 PrefabInstance:
   m_ObjectHideFlags: 0

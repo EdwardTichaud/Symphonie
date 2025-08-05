@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7305906118665296661}
   - component: {fileID: 7403588547029976257}
   - component: {fileID: 7351964608279982888}
+  - component: {fileID: 5223379938476501984}
   m_Layer: 0
   m_Name: MainCam_Cam
   m_TagString: MainCamera
@@ -223,7 +224,7 @@ MonoBehaviour:
     runSSAOAsync: 0
     runContactShadowsAsync: 0
     runVolumeVoxelizationAsync: 0
-    lightLoopSettings:
+  lightLoopSettings:
       overrides: 0
       enableDeferredTileAndCluster: 0
       enableComputeLightEvaluation: 0
@@ -232,3 +233,19 @@ MonoBehaviour:
       enableFptlForForwardOpaque: 0
       enableBigTilePrepass: 0
       isFptlEnabled: 0
+--- !u!114 &5223379938476501984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5263326846403154470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 880178e0e34d4749805f699b651d0a59, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  target: {fileID: 711162037707955636, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
+  distance: 5
+  sensitivity: {x: 120, y: 120}
+  pitchLimits: {x: -20, y: 60}
