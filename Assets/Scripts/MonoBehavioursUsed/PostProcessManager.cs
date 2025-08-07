@@ -35,7 +35,7 @@ public class PostProcessManager : MonoBehaviour
     private Vignette vignette;                    // vignette pour assombrir les bords de l'écran
     private float baseVignetteIntensity;          // intensité de vignette initiale
 
-    // Effets supplémentaires pour un style "clair-obscur"
+    // Effets supplémentaires
     private ScreenSpaceAmbientOcclusion ambientOcclusion;    // renforce les ombres locales
     private float baseAmbientOcclusionIntensity;  // intensité de base pour l'occlusion ambiante
     private FilmGrain filmGrain;                  // grain cinématographique subtil
@@ -126,8 +126,7 @@ public class PostProcessManager : MonoBehaviour
             if (!volume.profile.TryGet(out splitToning))
                 splitToning = volume.profile.Add<SplitToning>(false);
 
-            // Application du rendu clair-obscur par défaut
-            ApplyClairObscurStyle();
+            ApplySymphonieStyle();
         }
     }
 
@@ -209,11 +208,10 @@ public class PostProcessManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Configure le volume pour un rendu "clair-obscur" inspiré d'Expedition 33.
     /// Des contrastes élevés et une exposition réduite mettent en valeur l'opposition
     /// entre lumière et obscurité, renforçant l'atmosphère dramatique de l'histoire.
     /// </summary>
-    public void ApplyClairObscurStyle()
+    public void ApplySymphonieStyle()
     {
         // Réglages de l'exposition et du contraste
         if (colorAdjustments != null)
