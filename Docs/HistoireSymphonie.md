@@ -14,7 +14,9 @@ Lucian a été façonné à travers les souvenirs du frère, à partir de la man
 Cependant, la nature même de Lucian le rend instable. Il attire l’attention des entités du Rêve, qui cherchent à le « corriger » comme une anomalie.
 
 À mesure que Lucian s’approche de la Source, il se rapproche de la base de la branche de rêve de son frère, là où sont connectés tous les rêves du vivant.
+En chemin, il découvre l’existence d’un rituel ancien, la **Convocation**, censé lui accorder sa « Légitimité » ou « Harmonie » auprès de l’entité créatrice.
 La Source est le point où Lucian pourra soit s’éveiller — renaître dans la réalité — soit disparaître, pour permettre à son frère de guérir et cesser de rêver de lui.
+Lorsqu’il accomplit cette Convocation, l’entité qui répond n’est pas Azazel, mais Munin, le frère rêveur dont le nom est choisi par le joueur, plongeant les deux frères dans une rencontre mélancolique.
 
 ⸻
 
@@ -81,6 +83,13 @@ La Source est le point où Lucian pourra soit s’éveiller — renaître dans l
 - Ces branches convergent vers un tronc central (mémoire collective).
 - Les racines plongent vers l’Univers, qui s’en nourrit pour créer les mondes.
 - La Source se trouve à la base de la branche du frère de Lucian : c’est là qu’il peut renaître… ou disparaître.
+
+## 🔔 La Convocation et la révélation finale
+- Avant d’atteindre la Source, Lucian réalise la **Convocation**, un rite permettant d’obtenir sa Légitimité — ou Harmonie — auprès de l’entité créatrice du monde.
+- L’entité invoquée se révèle être Munin, son frère rêveur, et non Azazel.
+- Une cinématique mélancolique réunit les deux frères, tandis qu’Azazel apparaît pour expliquer la notion d’échange équivalent.
+- Le dilemme de Lucian est alors posé : s’il choisit de vivre dans le monde réel, Munin devra prendre sa place dans le Rêve ; s’il décide de rester auprès d’Azazel, Munin pourra vivre mais Lucian s’effacera.
+- Munin souhaite se sacrifier pour ne plus être séparé de son frère, alors que Lucian, ignorant la douleur de la perte, préfère demeurer dans le monde d’Azazel afin que Munin puisse vivre.
 
 ⸻
 
