@@ -252,8 +252,14 @@ public class PostProcessManager : MonoBehaviour
         if (splitToning != null)
         {
             splitToning.active = true;
-            splitToning.shadowColor.value = new Color(0.2f, 0.2f, 0.25f);
-            splitToning.highlightColor.value = new Color(1f, 0.95f, 0.8f);
+
+            // Depuis les versions récentes de l'HDRP, les propriétés "shadowColor" et
+            // "highlightColor" ont été remplacées par "shadows" et "highlights".
+            // L'ancien code provoquait une erreur de compilation. On utilise désormais
+            // les nouveaux noms de propriétés tout en conservant les teintes voulues.
+            splitToning.shadows.value = new Color(0.2f, 0.2f, 0.25f);    // teinte appliquée aux zones d'ombre
+            splitToning.highlights.value = new Color(1f, 0.95f, 0.8f);   // teinte appliquée aux zones lumineuses
+
             splitToning.balance.value = -20f; // ombres légèrement privilégiées
         }
 
