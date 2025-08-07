@@ -34,6 +34,12 @@ public class PostProcessManager : MonoBehaviour
     private Vignette vignette;                    // vignette pour assombrir les bords de l'écran
     private float baseVignetteIntensity;          // intensité de vignette initiale
 
+    // Effets supplémentaires pour un style "clair-obscur"
+    private AmbientOcclusion ambientOcclusion;    // renforce les ombres locales
+    private float baseAmbientOcclusionIntensity;  // intensité de base pour l'occlusion ambiante
+    private FilmGrain filmGrain;                  // grain cinématographique subtil
+    private SplitToning splitToning;              // teintes séparées ombres/lumières
+
     // ---- Cycle jour/nuit ----
     [Header("Cycle jour/nuit")]
 
@@ -104,6 +110,23 @@ public class PostProcessManager : MonoBehaviour
                 vignette.smoothness.value = 0.8f;      // transition douce
                 vignette.color.value = Color.black;    // couleur sombre
             }
+
+            // --- Ambient Occlusion ---
+            if (!volume.profile.TryGet(out ambientOcclusion))
+                ambientOcclusion = volume.profile.Add<AmbientOcclusion>(false);
+            if (ambientOcclusion != null)
+                baseAmbientOcclusionIntensity = ambientOcclusion.intensity.value;
+
+            // --- Film Grain ---
+            if (!volume.profile.TryGet(out filmGrain))
+                filmGrain = volume.profile.Add<FilmGrain>(false);
+
+            // --- Split Toning ---
+            if (!volume.profile.TryGet(out splitToning))
+                splitToning = volume.profile.Add<SplitToning>(false);
+
+            // Application du rendu clair-obscur par défaut
+            ApplyClairObscurStyle();
         }
     }
 
@@ -182,6 +205,65 @@ public class PostProcessManager : MonoBehaviour
         // Vignette plus marquée la nuit pour renforcer l'ambiance
         if (vignette != null)
             vignette.intensity.value = vignetteCurve.Evaluate(t);
+    }
+
+    /// <summary>
+    /// Configure le volume pour un rendu "clair-obscur" inspiré d'Expedition 33.
+    /// Des contrastes élevés et une exposition réduite mettent en valeur l'opposition
+    /// entre lumière et obscurité, renforçant l'atmosphère dramatique de l'histoire.
+    /// </summary>
+    public void ApplyClairObscurStyle()
+    {
+        // Réglages de l'exposition et du contraste
+        if (colorAdjustments != null)
+        {
+            colorAdjustments.postExposure.value = -0.5f;   // image globale assombrie
+            colorAdjustments.contrast.value = 60f;          // contraste accentué
+            colorAdjustments.saturation.value = -20f;       // légère désaturation
+
+            // Mise à jour des valeurs de base pour le cycle jour/nuit
+            basePostExposure = colorAdjustments.postExposure.value;
+            baseContrast = colorAdjustments.contrast.value;
+        }
+
+        // Mise en avant des sources lumineuses
+        if (bloom != null)
+        {
+            bloom.threshold.value = 1f;        // seuil bas pour capturer les zones lumineuses
+            bloom.intensity.value = 1.2f;      // intensité modérée mais visible
+            baseBloomIntensity = bloom.intensity.value;
+        }
+
+        // Assombrissement des bords de l'écran
+        if (vignette != null)
+        {
+            vignette.intensity.value = 0.6f;   // vignette marquée
+            baseVignetteIntensity = vignette.intensity.value;
+        }
+
+        // Renforcement des ombres locales
+        if (ambientOcclusion != null)
+        {
+            ambientOcclusion.intensity.value = 2f; // ombres prononcées
+            ambientOcclusion.radius.value = 0.3f;  // rayon réduit pour un effet concentré
+            baseAmbientOcclusionIntensity = ambientOcclusion.intensity.value;
+        }
+
+        // Teinte chaude des lumières et froide des ombres
+        if (splitToning != null)
+        {
+            splitToning.active = true;
+            splitToning.shadowColor.value = new Color(0.2f, 0.2f, 0.25f);
+            splitToning.highlightColor.value = new Color(1f, 0.95f, 0.8f);
+            splitToning.balance.value = -20f; // ombres légèrement privilégiées
+        }
+
+        // Grain cinématographique léger pour le style
+        if (filmGrain != null)
+        {
+            filmGrain.active = true;
+            filmGrain.intensity.value = 0.1f;
+        }
     }
 
     /// <summary>

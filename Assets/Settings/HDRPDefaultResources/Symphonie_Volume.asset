@@ -11,14 +11,14 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5a6b00fcf518bb94a90b408492e07b44, type: 3}
   m_Name: FilmGrain
-  m_EditorClassIdentifier: 
-  active: 0
+  m_EditorClassIdentifier:
+  active: 1
   type:
     m_OverrideState: 1
     m_Value: 0
   intensity:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0.1
   response:
     m_OverrideState: 1
     m_Value: 0.8
@@ -40,10 +40,10 @@ MonoBehaviour:
   active: 1
   postExposure:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: -0.5
   contrast:
     m_OverrideState: 1
-    m_Value: -20
+    m_Value: 60
   colorFilter:
     m_OverrideState: 1
     m_Value: {r: 1, g: 1, b: 1, a: 1}
@@ -52,7 +52,7 @@ MonoBehaviour:
     m_Value: 0
   saturation:
     m_OverrideState: 1
-    m_Value: -3
+    m_Value: -20
 --- !u!114 &-4183193969921306110
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -266,7 +266,7 @@ MonoBehaviour:
     m_Value: 0
   radius:
     m_OverrideState: 1
-    m_Value: 5
+    m_Value: 0.3
   spatialBilateralAggressiveness:
     m_OverrideState: 0
     m_Value: 0.15
@@ -382,10 +382,10 @@ MonoBehaviour:
     m_Value: 3
   threshold:
     m_OverrideState: 1
-    m_Value: 207
+    m_Value: 1
   intensity:
     m_OverrideState: 1
-    m_Value: 0.05
+    m_Value: 1.2
   scatter:
     m_OverrideState: 0
     m_Value: 0.7
@@ -434,7 +434,7 @@ MonoBehaviour:
     m_Value: {x: 0.5, y: 0.5}
   intensity:
     m_OverrideState: 1
-    m_Value: 0.615
+    m_Value: 0.6
   smoothness:
     m_OverrideState: 1
     m_Value: 1
