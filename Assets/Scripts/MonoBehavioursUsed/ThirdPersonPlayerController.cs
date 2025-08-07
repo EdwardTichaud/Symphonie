@@ -16,6 +16,20 @@ public class ThirdPersonPlayerController : MonoBehaviour
     private Animator animator;              // Référence à l'Animator pour déclencher les animations.
     private Vector3 velocity;               // Vecteur de vitesse utilisé pour la gravité et le saut.
 
+    /// <summary>
+    /// Énumération interne utilisée pour suivre l'état courant du mouvement afin
+    /// de déclencher l'animation adéquate sans recourir à des paramètres de l'Animator.
+    /// </summary>
+    private enum MovementAnimation
+    {
+        Idle,  // Lucian est immobile.
+        Walk,  // Lucian marche.
+        Run    // Lucian court.
+    }
+
+    // État d'animation actuel. Il permet d'éviter de relancer la même animation en boucle.
+    private MovementAnimation currentAnimState = MovementAnimation.Idle;
+
     // États exposés pour l'AnimationHandler afin de synchroniser les animations.
     [HideInInspector] public bool isWalking;   // Indique si Lucian marche.
     [HideInInspector] public bool isRunning;   // Indique si Lucian court.
@@ -47,7 +61,12 @@ public class ThirdPersonPlayerController : MonoBehaviour
     void Awake()
     {
         controller = GetComponent<CharacterController>();
-        animator = GetComponentInChildren<Animator>(); // Récupération de l'Animator pour jouer les triggers.
+        animator = GetComponentInChildren<Animator>(); // Récupération de l'Animator pour jouer les animations.
+        // On s'assure que l'animation d'idle est jouée dès le début pour éviter un personnage figé.
+        if (animator != null)
+        {
+            animator.Play("Idle_World");
+        }
         // Si aucune caméra n'est assignée, on cherche d'abord la WorldCamera, puis on retombe sur la MainCamera.
         if (cameraTransform == null)
         {
@@ -65,6 +84,75 @@ public class ThirdPersonPlayerController : MonoBehaviour
                 Debug.LogWarning("[ThirdPersonPlayerController] Aucune WorldCamera ou MainCamera trouvée pour orienter le déplacement.");
             }
         }
+    }
+
+    /// <summary>
+    /// Gère le lancement des animations de marche/course/idle en fonction des actions du joueur.
+    /// Cette méthode s'appuie uniquement sur <see cref="Animator.Play(string)"/> afin d'éviter
+    /// l'utilisation de paramètres ou de triggers dans l'Animator, comme demandé.
+    /// </summary>
+    void UpdateMovementAnimation()
+    {
+        // Si aucun Animator n'est présent ou si le personnage est en plein saut,
+        // on ne touche pas aux animations de locomotion pour éviter tout conflit.
+        if (animator == null || isJumping)
+            return;
+
+        MovementAnimation targetState;
+
+        // Détermination de l'état cible en fonction des entrées utilisateur.
+        if (isRunning)
+        {
+            targetState = MovementAnimation.Run;
+        }
+        else if (isWalking)
+        {
+            targetState = MovementAnimation.Walk;
+        }
+        else
+        {
+            targetState = MovementAnimation.Idle;
+        }
+
+        // Si l'état ne change pas, il est inutile de relancer l'animation.
+        if (targetState == currentAnimState)
+            return;
+
+        // Selon l'état détecté, on joue l'animation appropriée.
+        switch (targetState)
+        {
+            case MovementAnimation.Run:
+                // Début d'une course : animation d'accélération.
+                animator.Play("Run Start");
+                break;
+
+            case MovementAnimation.Walk:
+                // Début d'une marche : animation de mise en mouvement.
+                animator.Play("Walk_Start");
+                break;
+
+            case MovementAnimation.Idle:
+                // Retour à l'immobilité. On choisit l'animation de "stop" adéquate
+                // en fonction de l'état précédent pour conserver la cohérence visuelle.
+                if (currentAnimState == MovementAnimation.Run)
+                {
+                    animator.Play("Run Stop");
+                }
+                else if (currentAnimState == MovementAnimation.Walk)
+                {
+                    animator.Play("Walk_Stop");
+                }
+                else
+                {
+                    // Si Lucian était déjà à l'arrêt, on force l'idle afin de garantir
+                    // que l'animation par défaut est bien jouée.
+                    animator.Play("Idle_World");
+                }
+                break;
+        }
+
+        // Mise à jour de l'état courant pour les prochains appels.
+        currentAnimState = targetState;
     }
 
     void Update()
@@ -120,6 +208,10 @@ public class ThirdPersonPlayerController : MonoBehaviour
                 animator.Play("Jump_Start");
             }
         }
+
+        // À la fin de la gestion du déplacement, on met à jour l'animation de locomotion
+        // pour qu'elle corresponde à l'état courant (marche, course ou idle).
+        UpdateMovementAnimation();
     }
 
     /// <summary>
