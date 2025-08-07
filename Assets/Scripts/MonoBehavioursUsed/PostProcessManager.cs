@@ -36,7 +36,7 @@ public class PostProcessManager : MonoBehaviour
     private float baseVignetteIntensity;          // intensité de vignette initiale
 
     // Effets supplémentaires pour un style "clair-obscur"
-    private AmbientOcclusion ambientOcclusion;    // renforce les ombres locales
+    private ScreenSpaceAmbientOcclusion ambientOcclusion;    // renforce les ombres locales
     private float baseAmbientOcclusionIntensity;  // intensité de base pour l'occlusion ambiante
     private FilmGrain filmGrain;                  // grain cinématographique subtil
     private SplitToning splitToning;              // teintes séparées ombres/lumières
@@ -114,7 +114,7 @@ public class PostProcessManager : MonoBehaviour
 
             // --- Ambient Occlusion ---
             if (!volume.profile.TryGet(out ambientOcclusion))
-                ambientOcclusion = volume.profile.Add<AmbientOcclusion>(false);
+                ambientOcclusion = volume.profile.Add<ScreenSpaceAmbientOcclusion>(false);
             if (ambientOcclusion != null)
                 baseAmbientOcclusionIntensity = ambientOcclusion.intensity.value;
 
