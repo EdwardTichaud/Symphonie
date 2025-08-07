@@ -17,12 +17,22 @@ public class PostProcessManager : MonoBehaviour
     [Tooltip("Volume global contenant les effets de post-processing")]
     [SerializeField] private Volume volume;
 
-    private LensDistortion lensDistortion;
-    private float baseLensIntensity;
+    private LensDistortion lensDistortion;         // effet de distorsion utilisé lors des transitions
+    private float baseLensIntensity;               // intensité de base de la distorsion
 
     // Réglages de couleur
-    private ColorAdjustments colorAdjustments; // composant pour gérer contraste/saturation/etc.
-    private float baseContrast;               // contraste de base pour revenir à l'état initial
+    private ColorAdjustments colorAdjustments;     // composant pour gérer contraste/saturation/etc.
+    private float baseContrast;                   // contraste de base pour revenir à l'état initial
+    private float basePostExposure;               // exposition de base pour pouvoir revenir à un niveau neutre
+    private Color baseColorFilter;                // couleur de base appliquée au rendu
+
+    // Jeux de lumière
+    private Bloom bloom;                          // effet de bloom pour accentuer les sources lumineuses
+    private float baseBloomIntensity;             // intensité de bloom initiale
+
+    // Ambiance sombre
+    private Vignette vignette;                    // vignette pour assombrir les bords de l'écran
+    private float baseVignetteIntensity;          // intensité de vignette initiale
 
     private void Awake()
     {
@@ -38,14 +48,44 @@ public class PostProcessManager : MonoBehaviour
         // Récupération des effets pour sauvegarder leurs valeurs de base
         if (volume != null && volume.profile != null)
         {
+            // --- Lens Distortion ---
             volume.profile.TryGet(out lensDistortion);
             if (lensDistortion != null)
                 baseLensIntensity = lensDistortion.intensity.value;
 
-            // On récupère également le ColorAdjustments pour pouvoir faire varier le contraste
+            // --- Color Adjustments ---
             volume.profile.TryGet(out colorAdjustments);
             if (colorAdjustments != null)
+            {
                 baseContrast = colorAdjustments.contrast.value;
+                basePostExposure = colorAdjustments.postExposure.value;
+                baseColorFilter = colorAdjustments.colorFilter.value;
+
+                // Réglages par défaut pour une ambiance sombre et poétique
+                colorAdjustments.postExposure.value = -1f;                       // assombrir légèrement la scène
+                colorAdjustments.colorFilter.value = new Color(0.9f, 0.9f, 1f);  // légère teinte bleutée
+            }
+
+            // --- Bloom ---
+            if (!volume.profile.TryGet(out bloom))
+                bloom = volume.profile.Add<Bloom>(false); // ajoute l'effet s'il est absent
+            if (bloom != null)
+            {
+                baseBloomIntensity = bloom.intensity.value;
+                bloom.intensity.value = 1.5f;   // intensité modérée pour un halo doux
+                bloom.threshold.value = 0.8f;   // seuil pour ne pas brûler l'image
+            }
+
+            // --- Vignette ---
+            if (!volume.profile.TryGet(out vignette))
+                vignette = volume.profile.Add<Vignette>(false);
+            if (vignette != null)
+            {
+                baseVignetteIntensity = vignette.intensity.value;
+                vignette.intensity.value = 0.35f;      // assombrit les bords pour un rendu plus intime
+                vignette.smoothness.value = 0.8f;      // transition douce
+                vignette.color.value = Color.black;    // couleur sombre
+            }
         }
     }
 
