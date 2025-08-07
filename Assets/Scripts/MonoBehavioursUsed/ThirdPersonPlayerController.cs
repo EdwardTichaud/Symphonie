@@ -63,6 +63,19 @@ public class ThirdPersonPlayerController : MonoBehaviour
     {
         HandleMovement();
         ApplyGravity();
+
+        // Mise à jour systématique des paramètres de l'Animator afin
+        // d'assurer la cohérence des animations avec l'état courant du personnage.
+        // Sans cette synchronisation, Lucian restait bloqué sur son idle car
+        // l'Animator ne recevait jamais d'informations sur sa marche, sa course
+        // ou son saut.
+        if (animator != null)
+        {
+            animator.SetBool("isWalking", isWalking);   // Animation de marche
+            animator.SetBool("isRunning", isRunning);   // Animation de course
+            animator.SetBool("isJumping", isJumping);   // Animation de saut
+            animator.SetBool("isGrounded", controller.isGrounded); // État au sol
+        }
     }
 
     /// <summary>
