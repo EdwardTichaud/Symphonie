@@ -15,6 +15,10 @@ public class ThirdPersonPlayerController : MonoBehaviour
     private CharacterController controller; // Référence au CharacterController Unity.
     private Animator animator;              // Référence à l'Animator pour déclencher les animations.
     private Vector3 velocity;               // Vecteur de vitesse utilisé pour la gravité et le saut.
+    private Vector3 horizontalVelocity;     // Vitesse horizontale conservée en l'air pour éviter les changements brusques.
+
+    // Verrouillage utilisé lorsque l'animation d'atterrissage est en cours pour éviter toute interruption.
+    private bool landingAnimationLocked;
 
     /// <summary>
     /// Énumération interne utilisée pour suivre l'état courant du mouvement afin
@@ -93,9 +97,10 @@ public class ThirdPersonPlayerController : MonoBehaviour
     /// </summary>
     void UpdateMovementAnimation()
     {
-        // Si aucun Animator n'est présent ou si le personnage est en plein saut,
-        // on ne touche pas aux animations de locomotion pour éviter tout conflit.
-        if (animator == null || isJumping)
+        // Si aucun Animator n'est présent, si le personnage est en plein saut ou si
+        // l'animation d'atterrissage est encore en cours, on ne touche pas aux
+        // animations de locomotion pour éviter tout conflit.
+        if (animator == null || isJumping || landingAnimationLocked)
             return;
 
         MovementAnimation targetState;
@@ -157,8 +162,9 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
     void Update()
     {
-        HandleMovement();
-        ApplyGravity();
+        HandleMovement();           // Gestion du déplacement horizontal et des rotations.
+        ApplyGravity();             // Application de la gravité (déplacement vertical).
+        UpdateLandingLock();        // Vérifie si l'animation d'atterrissage est terminée.
     }
 
     /// <summary>
@@ -172,28 +178,38 @@ public class ThirdPersonPlayerController : MonoBehaviour
         Vector2 input = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
         bool runPressed = InputsManager.Instance.playerInputs.World.Run.IsPressed();
 
-        // Mise à jour des états de déplacement pour les animations.
-        isRunning = input.sqrMagnitude > 0.01f && runPressed;
-        isWalking = input.sqrMagnitude > 0.01f && !runPressed;
-
         // Conversion de l'entrée en vecteur 3D relatif à l'orientation de la caméra (Munin).
         Vector3 camForward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
         Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right, Vector3.up).normalized;
-        Vector3 move = camForward * input.y + camRight * input.x;
+        Vector3 desiredMove = camForward * input.y + camRight * input.x; // Direction désirée par le joueur.
 
-        // Vitesse selon marche/course.
-        float speed = isRunning ? runSpeed : walkSpeed;
-        controller.Move(move * speed * Time.deltaTime);
-
-        // Oriente le personnage dans la direction du mouvement pour rester cohérent avec l'histoire (Lucian fait face à son chemin).
-        if (move.sqrMagnitude > 0.0001f)
+        // Si le personnage touche le sol, on peut mettre à jour la vitesse horizontale.
+        if (controller.isGrounded)
         {
-            Quaternion targetRot = Quaternion.LookRotation(move);
+            // Mise à jour des états de déplacement pour les animations.
+            isRunning = input.sqrMagnitude > 0.01f && runPressed;
+            isWalking = input.sqrMagnitude > 0.01f && !runPressed;
+
+            // Vitesse selon marche/course.
+            float speed = isRunning ? runSpeed : walkSpeed;
+            horizontalVelocity = desiredMove * speed; // Stockage de la vitesse pour conserver la direction en l'air.
+        }
+
+        // Déplacement horizontal : si Lucian est en l'air, la direction reste
+        // celle enregistrée au moment du saut, évitant toute correction mid-air.
+        controller.Move(horizontalVelocity * Time.deltaTime);
+
+        // Le joueur peut toujours pivoter en l'air : on oriente donc Lucian selon
+        // la direction actuellement demandée par le joueur, même si le mouvement
+        // effectif reste figé.
+        if (desiredMove.sqrMagnitude > 0.0001f)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(desiredMove);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 10f);
         }
 
         // Gestion du saut avec une petite impulsion supplémentaire pour éviter un départ trop linéaire.
-        if (InputsManager.Instance.playerInputs.World.Jump.triggered && controller.isGrounded)
+        if (InputsManager.Instance.playerInputs.World.Jump.triggered && controller.isGrounded && !landingAnimationLocked)
         {
             // Calcul de la vitesse initiale nécessaire pour atteindre la hauteur voulue.
             float baseJumpVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
@@ -225,8 +241,9 @@ public class ThirdPersonPlayerController : MonoBehaviour
             // et on applique une légère impulsion négative pour ressentir l'impact.
             if (isJumping && animator != null)
             {
-                // Déterminer si Lucian bouge lors de l'impact.
-                bool isMoving = isWalking || isRunning;
+                // Déterminer si Lucian bouge réellement lors de l'impact en se basant
+                // sur la vitesse horizontale conservée durant le saut.
+                bool isMoving = horizontalVelocity.sqrMagnitude > 0.01f;
 
                 if (isMoving)
                 {
@@ -239,7 +256,8 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
                 // Impulsion supplémentaire vers le bas pour simuler l'écrasement.
                 velocity.y = -landingForce;
-                isJumping = false; // Retour au sol : le saut est terminé.
+                isJumping = false;           // Retour au sol : le saut est terminé.
+                landingAnimationLocked = true; // Empêche les autres animations de remplacer le landing.
             }
             else
             {
@@ -256,6 +274,25 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         // Application de la vitesse calculée.
         controller.Move(velocity * Time.deltaTime);
+    }
+
+    /// <summary>
+    /// Vérifie l'état de l'animation de landing afin de lever le verrou une fois terminée.
+    /// </summary>
+    void UpdateLandingLock()
+    {
+        if (!landingAnimationLocked || animator == null)
+            return;
+
+        // Récupère les informations de l'état courant de l'Animator.
+        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+
+        // Dès que l'animation d'atterrissage (avec ou sans déplacement) est terminée
+        // on relâche le verrou pour permettre les animations suivantes.
+        if ((state.IsName("Landing") || state.IsName("Landing_OnMove")) && state.normalizedTime >= 1f)
+        {
+            landingAnimationLocked = false;
+        }
     }
 }
 
