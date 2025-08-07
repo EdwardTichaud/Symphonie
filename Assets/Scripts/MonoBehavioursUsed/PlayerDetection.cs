@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-[RequireComponent(typeof(AnimationHandler))]
 public class PlayerDetection : MonoBehaviour
 {
     [Header("Détection de l'environnement")]

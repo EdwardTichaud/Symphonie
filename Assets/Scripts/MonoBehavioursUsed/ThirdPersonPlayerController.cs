@@ -105,7 +105,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
             // Déclenche l'animation d'anticipation du saut.
             if (animator != null)
             {
-                animator.SetTrigger("Jump_Start");
+                animator.Play("Jump_Start");
             }
         }
     }
@@ -122,7 +122,15 @@ public class ThirdPersonPlayerController : MonoBehaviour
             {
                 // Déterminer si Lucian bouge lors de l'impact.
                 bool isMoving = isWalking || isRunning;
-                animator.SetTrigger(isMoving ? "Landing_OnMove" : "Landing");
+
+                if (isMoving)
+                {
+                    animator.Play("Landing_OnMove");
+                }
+                else
+                {
+                    animator.Play("Landing");
+                }                    
             }
 
             // Petite valeur négative pour ancrer le personnage au sol.
