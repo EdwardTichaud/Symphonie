@@ -35,6 +35,14 @@ public class ThirdPersonPlayerController : MonoBehaviour
     public float jumpHeight = 2f;
     [Tooltip("Gravité appliquée au personnage.")]
     public float gravity = -9.81f;
+    [Tooltip("Multiplicateur appliqué à la vitesse initiale du saut pour simuler une impulsion.")]
+    public float jumpBoost = 1.1f;
+    [Tooltip("Multiplicateur de gravité durant la montée pour une courbe de saut moins linéaire.")]
+    public float ascentGravityMultiplier = 1f;
+    [Tooltip("Multiplicateur de gravité durant la descente pour accentuer l'inertie.")]
+    public float fallGravityMultiplier = 2f;
+    [Tooltip("Force dirigée vers le bas appliquée à l'atterrissage pour renforcer l'impact.")]
+    public float landingForce = 5f;
 
     void Awake()
     {
@@ -96,13 +104,17 @@ public class ThirdPersonPlayerController : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, Time.deltaTime * 10f);
         }
 
-        // Gestion du saut simple.
+        // Gestion du saut avec une petite impulsion supplémentaire pour éviter un départ trop linéaire.
         if (InputsManager.Instance.playerInputs.World.Jump.triggered && controller.isGrounded)
         {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            // Calcul de la vitesse initiale nécessaire pour atteindre la hauteur voulue.
+            float baseJumpVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+
+            // On applique un léger boost pour simuler l'élan du héros au moment où il quitte le sol.
+            velocity.y = baseJumpVelocity * jumpBoost;
             isJumping = true; // Le saut débute.
 
-            // Déclenche l'animation d'anticipation du saut.
+            // Déclenche l'animation d'anticipation du saut pour rester cohérent avec l'histoire.
             if (animator != null)
             {
                 animator.Play("Jump_Start");
@@ -111,13 +123,14 @@ public class ThirdPersonPlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Applique une gravité simple sur le CharacterController.
+    /// Applique une gravité non linéaire sur le CharacterController afin de simuler l'inertie.
     /// </summary>
     void ApplyGravity()
     {
         if (controller.isGrounded && velocity.y < 0f)
         {
-            // Si on revient au sol après un saut, on déclenche l'animation de landing appropriée.
+            // Si on revient au sol après un saut, on déclenche l'animation de landing appropriée
+            // et on applique une légère impulsion négative pour ressentir l'impact.
             if (isJumping && animator != null)
             {
                 // Déterminer si Lucian bouge lors de l'impact.
@@ -130,15 +143,26 @@ public class ThirdPersonPlayerController : MonoBehaviour
                 else
                 {
                     animator.Play("Landing");
-                }                    
-            }
+                }
 
-            // Petite valeur négative pour ancrer le personnage au sol.
-            velocity.y = -2f;
-            isJumping = false; // Retour au sol : le saut est terminé.
+                // Impulsion supplémentaire vers le bas pour simuler l'écrasement.
+                velocity.y = -landingForce;
+                isJumping = false; // Retour au sol : le saut est terminé.
+            }
+            else
+            {
+                // Petite valeur négative pour ancrer le personnage au sol.
+                velocity.y = -2f;
+            }
+        }
+        else
+        {
+            // Choix du multiplicateur de gravité selon que l'on monte ou que l'on descend.
+            float gravityMultiplier = velocity.y > 0f ? ascentGravityMultiplier : fallGravityMultiplier;
+            velocity.y += gravity * gravityMultiplier * Time.deltaTime;
         }
 
-        velocity.y += gravity * Time.deltaTime;
+        // Application de la vitesse calculée.
         controller.Move(velocity * Time.deltaTime);
     }
 }
