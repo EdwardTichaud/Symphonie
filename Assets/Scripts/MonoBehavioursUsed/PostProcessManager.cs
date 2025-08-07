@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.HighDefinition;
 
+[ExecuteAlways]
 /// <summary>
 /// Gère les effets de post-traitement globaux.
 /// Actuellement utilisé pour appliquer une distorsion lors des transitions.
