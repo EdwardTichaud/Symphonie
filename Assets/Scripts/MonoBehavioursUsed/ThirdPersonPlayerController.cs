@@ -318,6 +318,8 @@ public class ThirdPersonPlayerController : MonoBehaviour
                 velocity.y = -landingForce;
                 isJumping = false;           // Retour au sol : le saut est terminé.
                 landingAnimationLocked = true; // Empêche les autres animations de remplacer le landing.
+
+                currentAnimState = targetState;
             }
             else
             {
