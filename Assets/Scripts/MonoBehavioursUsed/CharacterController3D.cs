@@ -24,6 +24,14 @@ public class CharacterController3D : MonoBehaviour
     public float gravity = -9.81f;
     public float rotationSpeed = 10f;
 
+    [Header("Inertia Settings")]
+    [Tooltip("Accélération appliquée lors du démarrage d'un déplacement")]
+    public float acceleration = 15f;
+    [Tooltip("Décélération appliquée lorsque l'entrée de déplacement s'arrête")]
+    public float deceleration = 20f;
+    // Vitesse actuelle utilisée pour interpoler progressivement la vitesse cible
+    private float currentSpeed = 0f;
+
     [Header("Fall Prevention")]
     public float groundCheckDistance = 1f; // distance to check for ground
     public LayerMask groundLayer;
@@ -114,16 +122,15 @@ public class CharacterController3D : MonoBehaviour
     private void HandleMovement()
     {
         Vector2 moveInput = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
-        if (moveInput.magnitude > 0.1f)
+
+        // Toujours appeler la logique de déplacement afin de gérer l'inertie
+        if (movementMode == MovementMode.FixedCamera)
         {
-            if (movementMode == MovementMode.FixedCamera)
-            {
-                HandleFixedCameraMovement(moveInput);
-            }
-            else if (movementMode == MovementMode.TPSOverShoulder)
-            {
-                HandleTPSOverShoulderMovement(moveInput);
-            }
+            HandleFixedCameraMovement(moveInput);
+        }
+        else if (movementMode == MovementMode.TPSOverShoulder)
+        {
+            HandleTPSOverShoulderMovement(moveInput);
         }
 
         if (jumpRequested)
@@ -144,11 +151,13 @@ public class CharacterController3D : MonoBehaviour
 
         Vector3 moveDir = (camForward * moveInput.y + camRight * moveInput.x).normalized;
 
-        if (!IsGroundAhead(moveDir))
+        // Vérifie le sol uniquement si un déplacement est demandé
+        if (moveDir.sqrMagnitude > 0.001f && !IsGroundAhead(moveDir))
         {
             moveDir = Vector3.zero;
         }
 
+        // Ajuste l'orientation uniquement lorsqu'un mouvement est réellement demandé
         if (moveDir.sqrMagnitude > 0.001f)
         {
             float targetAngle = Mathf.Atan2(moveDir.x, moveDir.z) * Mathf.Rad2Deg;
@@ -156,8 +165,7 @@ public class CharacterController3D : MonoBehaviour
             transform.rotation = Quaternion.Euler(0, angle, 0);
         }
 
-        float speed = isRunning ? runSpeed : moveSpeed;
-        controller.Move(moveDir * speed * Time.deltaTime);
+        MoveWithInertia(moveDir);
     }
 
     /// <summary>
@@ -199,8 +207,31 @@ public class CharacterController3D : MonoBehaviour
             }
         }
 
-        float speed = isRunning ? runSpeed : moveSpeed;
-        controller.Move(moveDir * speed * Time.deltaTime);
+        // Applique le déplacement avec inertie, même lorsqu'il n'y a plus d'entrée
+        MoveWithInertia(moveDir);
+    }
+
+    /// <summary>
+    /// Calcule et applique la vitesse avec inertie selon la direction souhaitée.
+    /// </summary>
+    /// <param name="moveDir">Direction de déplacement normalisée.</param>
+    private void MoveWithInertia(Vector3 moveDir)
+    {
+        // Détermine la vitesse cible en fonction de l'état courant
+        float targetSpeed = isRunning ? runSpeed : moveSpeed;
+
+        if (moveDir.sqrMagnitude > 0.001f)
+        {
+            // Accélère progressivement jusqu'à la vitesse cible
+            currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, acceleration * Time.deltaTime);
+        }
+        else
+        {
+            // Décélère lorsque l'entrée de mouvement s'arrête
+            currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, deceleration * Time.deltaTime);
+        }
+
+        controller.Move(moveDir * currentSpeed * Time.deltaTime);
     }
 
     private float turnSmoothVelocity;
