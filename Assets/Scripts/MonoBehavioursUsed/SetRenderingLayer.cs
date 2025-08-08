@@ -14,6 +14,7 @@ public class SetRenderingLayer : MonoBehaviour
     /// Association entre un ou plusieurs <see cref="LayerMask"/> Unity et
     /// le <c>Rendering Layer</c> à appliquer, désigné par son nom afin de
     /// faciliter la lecture et la maintenance.
+
     /// </summary>
     [Serializable]
     public struct LayerRenderingPair
