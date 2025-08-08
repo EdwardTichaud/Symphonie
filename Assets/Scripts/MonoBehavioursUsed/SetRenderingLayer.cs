@@ -129,9 +129,19 @@ public class SetRenderingLayer : MonoBehaviour
                                 // Force la mise à jour visuelle si des prototypes ont été modifiés
                                 if (updated)
                                 {
+                                    // Réaffecte le tableau de prototypes au TerrainData.
+                                    // Sans cette étape, Unity ne détecte pas toujours
+                                    // les modifications et conserve l'ancien Rendering Layer
+                                    // pour les instances d'arbres déjà générées.
+                                    t.terrainData.treePrototypes = prototypes;
+
                                     // Actualise les prototypes pour que les nouvelles
                                     // valeurs soient prises en compte par le Terrain.
                                     t.terrainData.RefreshPrototypes();
+
+                                    // Recharge les représentations internes du Terrain
+                                    // afin que l'éclairage soit correctement appliqué
+                                    // aux arbres modifiés.
                                     t.Flush();
                                 }
                             }
