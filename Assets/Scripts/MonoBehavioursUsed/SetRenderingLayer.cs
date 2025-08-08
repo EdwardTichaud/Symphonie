@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.Rendering; // Nécessaire pour manipuler les Rendering Layer par nom
 
+
 /// <summary>
 /// Permet d'appliquer automatiquement un <c>Rendering Layer</c>
 /// différent à chaque objet de la hiérarchie en fonction de son
@@ -14,6 +15,7 @@ public class SetRenderingLayer : MonoBehaviour
     /// Association entre un ou plusieurs <see cref="LayerMask"/> Unity et
     /// le <c>Rendering Layer</c> à appliquer, désigné par son nom afin de
     /// faciliter la lecture et la maintenance.
+
     /// </summary>
     [Serializable]
     public struct LayerRenderingPair
@@ -27,6 +29,7 @@ public class SetRenderingLayer : MonoBehaviour
         /// </summary>
         [Tooltip("Nom du Rendering Layer à appliquer")]
         public string renderingLayerName;
+
     }
 
     [Tooltip("Liste des associations LayerMask / Rendering Layer.")]
@@ -65,6 +68,7 @@ public class SetRenderingLayer : MonoBehaviour
                     }
 
                     // Application du masque de rendu trouvé
+
                     r.renderingLayerMask = mask;
                     count++;
                     break; // On s'arrête dès qu'une correspondance est trouvée
