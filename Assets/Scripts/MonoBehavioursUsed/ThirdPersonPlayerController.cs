@@ -49,6 +49,10 @@ public class ThirdPersonPlayerController : MonoBehaviour
     public float walkSpeed = 5f;
     [Tooltip("Vitesse de course en unités/seconde.")]
     public float runSpeed = 8f;
+    [Tooltip("Accélération horizontale (unités/seconde²) permettant un départ progressif mais nerveux.")]
+    public float acceleration = 20f;
+    [Tooltip("Décélération horizontale (unités/seconde²) lorsque le joueur relâche les commandes.")]
+    public float deceleration = 25f;
     [Tooltip("Hauteur du saut en unités.")]
     public float jumpHeight = 2f;
     [Tooltip("Gravité appliquée au personnage.")]
@@ -186,13 +190,27 @@ public class ThirdPersonPlayerController : MonoBehaviour
         // Si le personnage touche le sol, on peut mettre à jour la vitesse horizontale.
         if (controller.isGrounded)
         {
-            // Mise à jour des états de déplacement pour les animations.
-            isRunning = input.sqrMagnitude > 0.01f && runPressed;
-            isWalking = input.sqrMagnitude > 0.01f && !runPressed;
+            // On détermine s'il y a une entrée de déplacement.
+            bool hasInput = input.sqrMagnitude > 0.01f;
 
-            // Vitesse selon marche/course.
-            float speed = isRunning ? runSpeed : walkSpeed;
-            horizontalVelocity = desiredMove * speed; // Stockage de la vitesse pour conserver la direction en l'air.
+            // Mise à jour des états de déplacement pour les animations.
+            isRunning = hasInput && runPressed;
+            isWalking = hasInput && !runPressed;
+
+            // Vitesse cible (0 si aucune entrée).
+            float targetSpeed = isRunning ? runSpeed : (isWalking ? walkSpeed : 0f);
+
+            // Direction normalisée pour un comportement homogène, même en diagonale.
+            Vector3 targetDirection = desiredMove.normalized;
+            Vector3 targetVelocity = targetDirection * targetSpeed;
+
+            // Choix de l'accélération ou de la décélération selon l'état.
+            float accelRate = targetSpeed > horizontalVelocity.magnitude ? acceleration : deceleration;
+
+            // Interpolation progressive de la vitesse pour simuler l'inertie du personnage.
+            // Cette inertie reflète la manière dont Lucian prend de l'élan avant de se lancer,
+            // en accord avec son énergie présentée dans l'histoire de Symphonie.
+            horizontalVelocity = Vector3.MoveTowards(horizontalVelocity, targetVelocity, accelRate * Time.deltaTime);
         }
 
         // Déplacement horizontal : si Lucian est en l'air, la direction reste
