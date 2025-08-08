@@ -1,11 +1,12 @@
 ﻿using UnityEditor;
 using UnityEngine;
+using UnityEditorInternal; // Pour accéder aux noms de couches Unity
 
 [CustomEditor(typeof(SetRenderingLayer))]
 public class SetRenderingLayerEditor : Editor
 {
-    private string[] layerNames;
-    private int selectedIndex;
+    private string[] layerNames; // Liste des Rendering Layers disponibles
+    private int selectedIndex; // Index du Rendering Layer sélectionné
 
     private void OnEnable()
     {
@@ -20,12 +21,23 @@ public class SetRenderingLayerEditor : Editor
     {
         var script = (SetRenderingLayer)target;
 
+        // Sélection du Rendering Layer
         EditorGUI.BeginChangeCheck();
         selectedIndex = EditorGUILayout.Popup("Rendering Layer", selectedIndex, layerNames);
         if (EditorGUI.EndChangeCheck())
         {
             Undo.RecordObject(script, "Change Rendering Layer Index");
             script.renderingLayerIndex = selectedIndex;
+            EditorUtility.SetDirty(script);
+        }
+
+        // Sélection des LayerMask à affecter
+        EditorGUI.BeginChangeCheck();
+        int mask = EditorGUILayout.MaskField("Layer(s) concerné(s)", script.targetLayers, InternalEditorUtility.layers);
+        if (EditorGUI.EndChangeCheck())
+        {
+            Undo.RecordObject(script, "Change Target Layers");
+            script.targetLayers = mask;
             EditorUtility.SetDirty(script);
         }
 
