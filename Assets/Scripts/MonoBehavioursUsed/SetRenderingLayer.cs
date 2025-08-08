@@ -34,6 +34,13 @@ public class SetRenderingLayer : MonoBehaviour
     [Tooltip("Liste des associations LayerMask / Rendering Layer.")]
     public LayerRenderingPair[] mappings;
 
+    void Awake()
+    {
+        // Applique les Rendering Layers aux enfants au démarrage
+        // pour s'assurer que tout est bien configuré dès le début.
+        ApplyToChildren();
+    }
+
     /// <summary>
     /// Applique les <c>Rendering Layer</c> à tous les composants fournis.
     /// Les terrains ne dérivant pas de <see cref="Renderer"/>, on utilise
