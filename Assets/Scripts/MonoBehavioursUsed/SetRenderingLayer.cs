@@ -1,5 +1,7 @@
 using System;
 using UnityEngine;
+using UnityEngine.Rendering; // Nécessaire pour manipuler les Rendering Layer par nom
+
 
 /// <summary>
 /// Permet d'appliquer automatiquement un <c>Rendering Layer</c>
@@ -11,7 +13,9 @@ public class SetRenderingLayer : MonoBehaviour
 {
     /// <summary>
     /// Association entre un ou plusieurs <see cref="LayerMask"/> Unity et
-    /// l'index du <c>Rendering Layer</c> à appliquer.
+    /// le <c>Rendering Layer</c> à appliquer, désigné par son nom afin de
+    /// faciliter la lecture et la maintenance.
+
     /// </summary>
     [Serializable]
     public struct LayerRenderingPair
@@ -19,8 +23,13 @@ public class SetRenderingLayer : MonoBehaviour
         [Tooltip("Couches Unity à cibler")]
         public LayerMask layers;
 
-        [Tooltip("Index du Rendering Layer à appliquer"), Range(0, 31)]
-        public int renderingLayerIndex;
+        /// <summary>
+        /// Nom du Rendering Layer à appliquer à la cible.
+        /// L'utilisation d'une chaîne évite de mémoriser les indices numériques.
+        /// </summary>
+        [Tooltip("Nom du Rendering Layer à appliquer")]
+        public string renderingLayerName;
+
     }
 
     [Tooltip("Liste des associations LayerMask / Rendering Layer.")]
@@ -48,8 +57,18 @@ public class SetRenderingLayer : MonoBehaviour
             {
                 if (((1 << r.gameObject.layer) & mapping.layers.value) != 0)
                 {
-                    // Conversion de l'index en masque de rendu et application
-                    uint mask = 1u << mapping.renderingLayerIndex;
+                    // Récupère le masque correspondant au nom du Rendering Layer demandé
+                    uint mask = RenderingLayerMask.GetMask(mapping.renderingLayerName);
+
+                    if (mask == 0)
+                    {
+                        // Si aucun masque n'a été trouvé, on avertit et on ne modifie pas cet objet
+                        Debug.LogWarning($"Rendering Layer \"{mapping.renderingLayerName}\" introuvable pour {r.gameObject.name}.");
+                        break;
+                    }
+
+                    // Application du masque de rendu trouvé
+
                     r.renderingLayerMask = mask;
                     count++;
                     break; // On s'arrête dès qu'une correspondance est trouvée
