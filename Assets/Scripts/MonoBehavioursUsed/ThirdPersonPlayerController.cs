@@ -63,6 +63,15 @@ public class ThirdPersonPlayerController : MonoBehaviour
     [Tooltip("Force dirigée vers le bas appliquée à l'atterrissage pour renforcer l'impact.")]
     public float landingForce = 5f;
 
+    [Header("Inertie du déplacement")]
+    [Tooltip("Taux d'accélération en unités/seconde².")]
+    public float acceleration = 20f;
+    [Tooltip("Taux de décélération en unités/seconde².")]
+    public float deceleration = 25f;
+
+    // Vitesse courante utilisée pour appliquer une accélération/décélération progressive.
+    private float currentSpeed;
+
     void Awake()
     {
         controller = GetComponent<CharacterController>();
@@ -184,16 +193,29 @@ public class ThirdPersonPlayerController : MonoBehaviour
         Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right, Vector3.up).normalized;
         Vector3 desiredMove = camForward * input.y + camRight * input.x; // Direction désirée par le joueur.
 
-        // Si le personnage touche le sol, on peut mettre à jour la vitesse horizontale.
+        // Mise à jour des états de déplacement pour les animations, même en l'air.
+        bool hasInput = input.sqrMagnitude > 0.01f;
+        isRunning = hasInput && runPressed;
+        isWalking = hasInput && !runPressed;
+
+        // Détermination de la vitesse cible en fonction de l'état courant.
+        float targetSpeed = 0f;
+        if (isRunning)
+        {
+            targetSpeed = runSpeed;
+        }
+        else if (isWalking)
+        {
+            targetSpeed = walkSpeed;
+        }
+
+        // Application d'une accélération ou d'une décélération progressive uniquement au sol.
+        float accelRate = targetSpeed > currentSpeed ? acceleration : deceleration;
+
         if (controller.isGrounded)
         {
-            // Mise à jour des états de déplacement pour les animations.
-            isRunning = input.sqrMagnitude > 0.01f && runPressed;
-            isWalking = input.sqrMagnitude > 0.01f && !runPressed;
-
-            // Vitesse selon marche/course.
-            float speed = isRunning ? runSpeed : walkSpeed;
-            horizontalVelocity = desiredMove * speed; // Stockage de la vitesse pour conserver la direction en l'air.
+            currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, accelRate * Time.deltaTime);
+            horizontalVelocity = desiredMove.normalized * currentSpeed; // Stockage pour conserver la direction en l'air.
         }
 
         // Déplacement horizontal : si Lucian est en l'air, la direction reste
