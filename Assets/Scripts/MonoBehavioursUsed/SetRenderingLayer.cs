@@ -89,9 +89,53 @@ public class SetRenderingLayer : MonoBehaviour
                             r.renderingLayerMask = mask;
                             count++;
                             break;
+
                         case Terrain t: // Pour les terrains Unity
+                            // Assigne le Rendering Layer au terrain lui‑même
                             t.renderingLayerMask = mask;
                             count++;
+
+                            // --- Gestion spécifique des arbres du terrain ---
+                            // Les arbres peints sur un Terrain ne sont pas des
+                            // GameObjects présents dans la scène : ils sont
+                            // générés à partir des "TreePrototypes" stockés dans
+                            // le TerrainData. Leur Rendering Layer est donc
+                            // déterminé par le prefab associé au prototype.
+                            var prototypes = t.terrainData?.treePrototypes;
+                            if (prototypes != null && prototypes.Length > 0)
+                            {
+                                bool updated = false; // Indique si au moins un arbre a été modifié
+
+                                foreach (var proto in prototypes)
+                                {
+                                    var prefab = proto.prefab;
+                                    if (prefab == null)
+                                        continue; // Sécurité en cas de prototype manquant
+
+                                    // Vérifie si le Layer du prefab correspond à la règle courante
+                                    if (((1 << prefab.layer) & mapping.layers.value) == 0)
+                                        continue;
+
+                                    // Applique le Rendering Layer à tous les Renderers du prefab
+                                    foreach (var rProto in prefab.GetComponentsInChildren<Renderer>(true))
+                                    {
+                                        rProto.renderingLayerMask = mask;
+                                    }
+
+                                    updated = true;
+                                    count++; // Comptabilise le prototype traité
+                                }
+
+                                // Force la mise à jour visuelle si des prototypes ont été modifiés
+                                if (updated)
+                                {
+                                    // Actualise les prototypes pour que les nouvelles
+                                    // valeurs soient prises en compte par le Terrain.
+                                    t.terrainData.RefreshPrototypes();
+                                    t.Flush();
+                                }
+                            }
+
                             break;
                     }
 
