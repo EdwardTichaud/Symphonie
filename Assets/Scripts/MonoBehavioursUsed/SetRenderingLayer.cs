@@ -38,7 +38,7 @@ public class SetRenderingLayer : MonoBehaviour
     {
         // Applique les Rendering Layers aux enfants au démarrage
         // pour s'assurer que tout est bien configuré dès le début.
-        ApplyToChildren();
+        ApplyToAll();
     }
 
     /// <summary>

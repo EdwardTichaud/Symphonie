@@ -28,16 +28,17 @@ public class ThirdPersonPlayerController : MonoBehaviour
     {
         Idle,  // Lucian est immobile.
         Walk,  // Lucian marche.
-        Run    // Lucian court.
+        Run,    // Lucian court.
+        IsLanding // Lucian est en train d'atterrir.
     }
 
     // État d'animation actuel. Il permet d'éviter de relancer la même animation en boucle.
-    private MovementAnimation currentAnimState = MovementAnimation.Idle;
+    [SerializeField] private MovementAnimation currentAnimState = MovementAnimation.Idle;
 
     // États exposés pour l'AnimationHandler afin de synchroniser les animations.
-    [HideInInspector] public bool isWalking;   // Indique si Lucian marche.
-    [HideInInspector] public bool isRunning;   // Indique si Lucian court.
-    [HideInInspector] public bool isJumping;   // Indique si Lucian effectue un saut.
+    public bool isWalking;   // Indique si Lucian marche.
+    public bool isRunning;   // Indique si Lucian court.
+    public bool isJumping;   // Indique si Lucian effectue un saut.
 
     /// <summary>
     /// Indique si le personnage touche le sol.
@@ -241,6 +242,8 @@ public class ThirdPersonPlayerController : MonoBehaviour
             // et on applique une légère impulsion négative pour ressentir l'impact.
             if (isJumping && animator != null)
             {
+                MovementAnimation targetState;
+
                 // Déterminer si Lucian bouge réellement lors de l'impact en se basant
                 // sur la vitesse horizontale conservée durant le saut.
                 bool isMoving = horizontalVelocity.sqrMagnitude > 0.01f;
@@ -248,10 +251,12 @@ public class ThirdPersonPlayerController : MonoBehaviour
                 if (isMoving)
                 {
                     animator.Play("Landing_OnMove");
+                    targetState = MovementAnimation.IsLanding;
                 }
                 else
                 {
                     animator.Play("Landing");
+                    targetState = MovementAnimation.IsLanding;
                 }
 
                 // Impulsion supplémentaire vers le bas pour simuler l'écrasement.
@@ -284,14 +289,33 @@ public class ThirdPersonPlayerController : MonoBehaviour
         if (!landingAnimationLocked || animator == null)
             return;
 
-        // Récupère les informations de l'état courant de l'Animator.
         AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
 
-        // Dès que l'animation d'atterrissage (avec ou sans déplacement) est terminée
-        // on relâche le verrou pour permettre les animations suivantes.
+        // Si l'animation de landing est terminée
         if ((state.IsName("Landing") || state.IsName("Landing_OnMove")) && state.normalizedTime >= 1f)
         {
             landingAnimationLocked = false;
+
+            // On décide de l'animation suivante selon l'état courant du déplacement
+            MovementAnimation targetState;
+
+            if (isRunning)
+            {
+                targetState = MovementAnimation.Run;
+                animator.Play("Run Start"); // Optionnel : tu peux jouer "Run" direct si Run Start est trop long
+            }
+            else if (isWalking)
+            {
+                targetState = MovementAnimation.Walk;
+                animator.Play("Walk_Start");
+            }
+            else
+            {
+                targetState = MovementAnimation.Idle;
+                animator.Play("Idle_World");
+            }
+
+            currentAnimState = targetState;
         }
     }
 }
