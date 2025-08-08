@@ -72,6 +72,18 @@ public class ThirdPersonPlayerController : MonoBehaviour
     // Vitesse courante utilisée pour appliquer une accélération/décélération progressive.
     private float currentSpeed;
 
+    [Header("Course")]
+    [Tooltip("Durée durant laquelle la course reste active après avoir relâché l'input (secondes).")]
+    public float runReleaseDelay = 1f; // Permet de ne pas quitter la course immédiatement.
+
+    // Timer interne permettant de garder l'état de course quelques instants
+    // après que le joueur ait relâché le bouton de sprint.
+    private float runReleaseTimer;
+
+    // Durée de fondu utilisée pour adoucir les transitions entre les animations
+    // de marche et de course.
+    private const float locomotionCrossFadeDuration = 0.1f;
+
     void Awake()
     {
         controller = GetComponent<CharacterController>();
@@ -102,7 +114,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
     /// <summary>
     /// Gère le lancement des animations de marche/course/idle en fonction des actions du joueur.
-    /// Cette méthode s'appuie uniquement sur <see cref="Animator.Play(string)"/> afin d'éviter
+    /// Cette méthode s'appuie uniquement sur <see cref="Animator.CrossFade(string, float)"/> afin d'éviter
     /// l'utilisation de paramètres ou de triggers dans l'Animator, comme demandé.
     /// </summary>
     void UpdateMovementAnimation()
@@ -133,17 +145,18 @@ public class ThirdPersonPlayerController : MonoBehaviour
         if (targetState == currentAnimState)
             return;
 
-        // Selon l'état détecté, on joue l'animation appropriée.
+        // Selon l'état détecté, on joue l'animation appropriée. L'utilisation
+        // de CrossFade permet une transition douce entre les animations.
         switch (targetState)
         {
             case MovementAnimation.Run:
-                // Début d'une course : animation d'accélération.
-                animator.Play("Run Start");
+                // Début d'une course : animation d'accélération avec fondu.
+                animator.CrossFade("Run Start", locomotionCrossFadeDuration);
                 break;
 
             case MovementAnimation.Walk:
-                // Début d'une marche : animation de mise en mouvement.
-                animator.Play("Walk_Start");
+                // Début d'une marche : animation de mise en mouvement avec fondu.
+                animator.CrossFade("Walk_Start", locomotionCrossFadeDuration);
                 break;
 
             case MovementAnimation.Idle:
@@ -151,17 +164,17 @@ public class ThirdPersonPlayerController : MonoBehaviour
                 // en fonction de l'état précédent pour conserver la cohérence visuelle.
                 if (currentAnimState == MovementAnimation.Run)
                 {
-                    animator.Play("Run Stop");
+                    animator.CrossFade("Run Stop", locomotionCrossFadeDuration);
                 }
                 else if (currentAnimState == MovementAnimation.Walk)
                 {
-                    animator.Play("Walk_Stop");
+                    animator.CrossFade("Walk_Stop", locomotionCrossFadeDuration);
                 }
                 else
                 {
-                    // Si Lucian était déjà à l'arrêt, on force l'idle afin de garantir
-                    // que l'animation par défaut est bien jouée.
-                    animator.Play("Idle_World");
+                    // Si Lucian était déjà à l'arrêt, on force l'idle avec un fondu
+                    // afin de garantir que l'animation par défaut est bien jouée.
+                    animator.CrossFade("Idle_World", locomotionCrossFadeDuration);
                 }
                 break;
         }
@@ -188,6 +201,20 @@ public class ThirdPersonPlayerController : MonoBehaviour
         Vector2 input = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
         bool runPressed = InputsManager.Instance.playerInputs.World.Run.IsPressed();
 
+        // Gestion du délai de relâchement de la course : tant que le joueur
+        // vient tout juste de relâcher le bouton, nous conservons l'état de
+        // course afin d'éviter un passage instantané à la marche.
+        if (runPressed)
+        {
+            // Le bouton est maintenu : on réinitialise le timer.
+            runReleaseTimer = runReleaseDelay;
+        }
+        else
+        {
+            // Décrémentation progressive du timer une fois le bouton relâché.
+            runReleaseTimer = Mathf.Max(runReleaseTimer - Time.deltaTime, 0f);
+        }
+
         // Conversion de l'entrée en vecteur 3D relatif à l'orientation de la caméra (Munin).
         Vector3 camForward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
         Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right, Vector3.up).normalized;
@@ -195,8 +222,14 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         // Mise à jour des états de déplacement pour les animations, même en l'air.
         bool hasInput = input.sqrMagnitude > 0.01f;
-        isRunning = hasInput && runPressed;
-        isWalking = hasInput && !runPressed;
+
+        // On considère la course active si le bouton est maintenu ou si le timer
+        // de relâchement n'est pas encore écoulé.
+        bool runBuffered = runPressed || runReleaseTimer > 0f;
+
+        // Détermination des états exposés à l'Animator.
+        isRunning = hasInput && runBuffered;
+        isWalking = hasInput && !runBuffered;
 
         // Détermination de la vitesse cible en fonction de l'état courant.
         float targetSpeed = 0f;
