@@ -135,7 +135,6 @@ GameObject:
   - component: {fileID: 711162037707955636}
   - component: {fileID: 6861779895214181043}
   - component: {fileID: 4876543210987654321}
-  - component: {fileID: 3917784919211425226}
   - component: {fileID: 1958501026567594322}
   m_Layer: 3
   m_Name: Lucian_World_Wolf
@@ -196,26 +195,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f10e825adf345b7956d7de3a2402c72, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   cameraTransform: {fileID: 8118803985585011279, guid: 8655ab6c68faefd47a60878c5fb4b708, type: 3}
+  isWalking: 0
+  isRunning: 0
+  isJumping: 0
   walkSpeed: 5
   runSpeed: 8
   jumpHeight: 2
   gravity: -9.81
---- !u!114 &3917784919211425226
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5021491593266416669}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e081977e9c64a8347af1a8c90c33c9c6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  dashTrailprefab: {fileID: 0}
+  jumpBoost: 1.1
+  ascentGravityMultiplier: 1
+  fallGravityMultiplier: 2
+  landingForce: 5
 --- !u!114 &1958501026567594322
 MonoBehaviour:
   m_ObjectHideFlags: 0
