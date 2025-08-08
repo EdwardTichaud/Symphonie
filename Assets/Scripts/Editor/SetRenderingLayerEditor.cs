@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEngine; // Nécessaire pour l'utilisation de GUILayout dans l'inspecteur
 
 /// <summary>
 /// Inspecteur personnalisé pour <see cref="SetRenderingLayer"/>.
