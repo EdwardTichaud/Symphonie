@@ -5,7 +5,8 @@ using UnityEngine; // Nécessaire pour l'utilisation de GUILayout dans l'inspect
 /// <summary>
 /// Inspecteur personnalisé pour <see cref="SetRenderingLayer"/>.
 /// Son rôle est d'offrir un raccourci visuel afin d'appliquer
-/// les <c>Rendering Layers</c> à l'ensemble des objets de la scène.
+/// les <c>Rendering Layers</c> à l'ensemble des objets de la scène
+/// (meshs et terrains inclus).
 /// </summary>
 [CustomEditor(typeof(SetRenderingLayer))]
 public class SetRenderingLayerEditor : Editor
@@ -29,7 +30,7 @@ public class SetRenderingLayerEditor : Editor
 
         // Bouton d'application globale. Il remplace l'ancien
         // comportement "ApplyToChildren" afin de cibler tous les
-        // objets de la scène.
+        // objets de la scène (qu'ils soient des meshs ou des terrains).
         if (GUILayout.Button("Appliquer à toute la scène"))
         {
             // Lance le traitement sur tous les objets de la scène
