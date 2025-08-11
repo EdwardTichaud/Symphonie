@@ -84,8 +84,12 @@ public bool triggered;
                 Vector3 pos;
                 Quaternion rot;
                 EvaluatePath(previewPosition, out pos, out rot);
-                previewCam.transform.position = pos;
-                previewCam.transform.rotation = rot;
+
+                // On déplace le parent Cam_Origin pour laisser la caméra libre de ses offsets
+                Transform camOrigin = GetCamOrigin(previewCam);
+                camOrigin.position = pos;
+                camOrigin.rotation = rot;
+
                 SceneView.RepaintAll();
             }
             else
@@ -136,6 +140,15 @@ public bool triggered;
         if (cachedPreviewCam == null || !cachedPreviewCam.CompareTag(cameraTag))
             cachedPreviewCam = GameObject.FindGameObjectWithTag(cameraTag)?.GetComponent<Camera>();
         return cachedPreviewCam;
+    }
+
+    /// <summary>
+    /// Renvoie l'objet parent Cam_Origin d'une caméra ou la Transform de la caméra si aucun parent n'est présent.
+    /// Utilisé pour déplacer l'origine sans toucher aux offsets locaux gérés par MuninController.
+    /// </summary>
+    private Transform GetCamOrigin(Camera cam)
+    {
+        return cam != null && cam.transform.parent != null ? cam.transform.parent : cam.transform;
     }
 
     #region Calcul du chemin
