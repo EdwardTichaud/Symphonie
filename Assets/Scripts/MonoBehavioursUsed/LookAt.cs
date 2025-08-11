@@ -4,6 +4,7 @@ using UnityEngine;
 /// Fait pivoter ce GameObject pour qu'il regarde toujours vers un Transform cible.
 /// Optionnellement avec un lissage.
 /// </summary>
+[ExecuteAlways]
 public class LookAtTarget : MonoBehaviour
 {
     [Tooltip("Cible à regarder")]
