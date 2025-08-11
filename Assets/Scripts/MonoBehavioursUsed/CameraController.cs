@@ -188,12 +188,16 @@ public class CameraController : MonoBehaviour
 
         axis.Normalize();
         float angle = orbitSpeed * Time.deltaTime;
-        activeCamera.transform.RotateAround(orbitTarget.position, axis, angle);
 
-        Vector3 offset = activeCamera.transform.position - orbitTarget.position;
-        activeCamera.transform.position = orbitTarget.position + offset.normalized * orbitDistance;
+        // On récupère l'origine de la caméra pour déplacer le parent plutôt que la caméra elle-même
+        Transform camOrigin = GetCamOrigin(activeCamera);
+        camOrigin.RotateAround(orbitTarget.position, axis, angle);
 
-        activeCamera.transform.LookAt(orbitTarget);
+        // L'offset est également calculé à partir de l'origine de la caméra
+        Vector3 offset = camOrigin.position - orbitTarget.position;
+        camOrigin.position = orbitTarget.position + offset.normalized * orbitDistance;
+
+        camOrigin.LookAt(orbitTarget);
     }
 
     #endregion
@@ -230,10 +234,12 @@ public class CameraController : MonoBehaviour
 
         if (orbitTarget != null)
         {
-            Vector3 dir = (activeCamera.transform.position - orbitTarget.position).normalized;
+            // Utilisation de l'origine de caméra pour préserver les offsets locaux (effet Munin)
+            Transform camOrigin = GetCamOrigin(activeCamera);
+            Vector3 dir = (camOrigin.position - orbitTarget.position).normalized;
             if (dir == Vector3.zero) dir = Vector3.forward;
-            activeCamera.transform.position = orbitTarget.position + dir * orbitDistance;
-            activeCamera.transform.LookAt(orbitTarget);
+            camOrigin.position = orbitTarget.position + dir * orbitDistance;
+            camOrigin.LookAt(orbitTarget);
         }
 
         currentWorldCameraState = WorldCameraState.OrbitAround; // ✅ Maintenant géré par l'état
@@ -306,7 +312,8 @@ public class CameraController : MonoBehaviour
         Quaternion desiredRot = Quaternion.LookRotation(look.position - desiredPos);
 
         if (currentTransition != null) StopCoroutine(currentTransition);
-        currentTransition = StartCoroutine(SmoothMoveAndLook(Camera.main.transform, desiredPos, desiredRot, transitionSpeed));
+        // Déplacement sur l'origine de la caméra pour libérer la Transform de la caméra
+        currentTransition = StartCoroutine(SmoothMoveAndLook(GetCamOrigin(Camera.main), desiredPos, desiredRot, transitionSpeed));
         return currentTransition;
     }
 
@@ -363,8 +370,9 @@ public class CameraController : MonoBehaviour
         }
         else
         {
-            // Repli : on conserve la position actuelle de la caméra
-            forcedCamOffset = worldCamera.transform.position - player.position;
+            // Repli : on conserve la position actuelle de l'origine de la caméra
+            Transform camOrigin = GetCamOrigin(worldCamera);
+            forcedCamOffset = camOrigin.position - player.position;
             forcedCamDistance = forcedCamOffset.magnitude;
             forcedCamYaw = Mathf.Atan2(forcedCamOffset.x, forcedCamOffset.z) * Mathf.Rad2Deg;
             forcedCamPitch = Mathf.Asin(forcedCamOffset.y / forcedCamDistance) * Mathf.Rad2Deg;
@@ -429,7 +437,8 @@ public class CameraController : MonoBehaviour
     {
         if (worldCamera == null || player == null) return;
 
-        Transform camOrigin = worldCamera.transform;
+        // Déplacement du parent Cam_Origin afin de laisser la caméra libre (effet Munin)
+        Transform camOrigin = GetCamOrigin(worldCamera);
         Transform look = forceLookPoint != null ? forceLookPoint : player;
 
         // Position collée aux déplacements du joueur mais indépendante de sa rotation
@@ -502,13 +511,15 @@ public class CameraController : MonoBehaviour
                     if (currentTransition != null)
                         StopCoroutine(currentTransition);
 
-                    currentTransition = StartCoroutine(SmoothMoveAndLook(Camera.main.transform, desiredPos, desiredRot, 2f));
+                    // Transition appliquée sur l'origine de la MainCamera
+                    currentTransition = StartCoroutine(SmoothMoveAndLook(GetCamOrigin(Camera.main), desiredPos, desiredRot, 2f));
                 }
                 else if (currentTransition == null)
                 {
                     // Ajuste simplement la rotation pour suivre le joueur sans recréer une transition
-                    Camera.main.transform.rotation = Quaternion.Slerp(
-                        Camera.main.transform.rotation,
+                    Transform mainOrigin = GetCamOrigin(Camera.main);
+                    mainOrigin.rotation = Quaternion.Slerp(
+                        mainOrigin.rotation,
                         desiredRot,
                         2f * Time.deltaTime
                     );
@@ -554,6 +565,15 @@ public class CameraController : MonoBehaviour
             if (result != null) return result;
         }
         return null;
+    }
+
+    /// <summary>
+    /// Retourne le parent direct d'une caméra (Cam_Origin) ou la Transform de la caméra si aucun parent n'existe.
+    /// Permet de déplacer l'origine sans écraser les offsets locaux utilisés par MuninController.
+    /// </summary>
+    private Transform GetCamOrigin(Camera cam)
+    {
+        return cam != null && cam.transform.parent != null ? cam.transform.parent : cam.transform;
     }
 
     /// <summary>

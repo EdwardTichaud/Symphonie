@@ -22,6 +22,9 @@ public class ThirdPersonCameraController : MonoBehaviour
     private float yaw;
     private float pitch;
 
+    // Référence vers l'origine de la caméra (Cam_Origin). Si absente, on utilise la Transform courante.
+    private Transform camOrigin;
+
     void Start()
     {
         if (target == null)
@@ -31,8 +34,11 @@ public class ThirdPersonCameraController : MonoBehaviour
             if (playerObj != null) target = playerObj.transform;
         }
 
-        // Initialisation des angles à partir de la rotation actuelle de la caméra.
-        Vector3 angles = transform.eulerAngles;
+        // Détermination de l'origine de la caméra pour déplacer le parent plutôt que la caméra elle-même
+        camOrigin = transform.parent != null ? transform.parent : transform;
+
+        // Initialisation des angles à partir de la rotation actuelle de l'origine.
+        Vector3 angles = camOrigin.eulerAngles;
         yaw = angles.y;
         pitch = angles.x;
     }
@@ -60,8 +66,10 @@ public class ThirdPersonCameraController : MonoBehaviour
         // Calcul de la nouvelle position de la caméra autour de la cible.
         Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
         Vector3 offset = rotation * new Vector3(0f, 0f, -distance);
-        transform.position = target.position + offset;
-        transform.LookAt(target.position);
+
+        // On applique le déplacement sur l'origine pour laisser la caméra libre de ses décalages locaux (Munin)
+        camOrigin.position = target.position + offset;
+        camOrigin.LookAt(target.position);
     }
 }
 
