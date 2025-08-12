@@ -1,7 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+// Références éditeur non utilisées, conservées pour compatibilité éventuelle en mode édition.
 using UnityEditor;
+#endif
 
 public enum WorldCameraState
 {

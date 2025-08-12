@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+// Références à l'éditeur nécessaires uniquement pour l'utilisation en mode édition.
 using UnityEditor;
+#endif
 
 [ExecuteAlways]
 public class CameraPath : MonoBehaviour

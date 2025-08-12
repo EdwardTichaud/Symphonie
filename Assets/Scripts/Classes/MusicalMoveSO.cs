@@ -1,8 +1,11 @@
 ﻿using UnityEngine;
 using UnityEngine.Timeline;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+// Références à l'éditeur uniquement lorsque l'on est dans l'environnement Unity Editor.
+// Cela évite des erreurs de compilation lors des builds.
 using UnityEditor;
-using UnityEditor.Callbacks;
+#endif
 
 [CreateAssetMenu(fileName = "NewMusicalMove", menuName = "Symphonie/Musical Move")]
 public class MusicalMoveSO : ScriptableObject

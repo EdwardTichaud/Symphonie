@@ -1,7 +1,10 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEditor;
 using System.Collections;
+#if UNITY_EDITOR
+// Inclus uniquement dans l'éditeur afin d'éviter des erreurs lors du build.
+using UnityEditor;
+#endif
 
 public class InputsManager : MonoBehaviour
 {
@@ -626,6 +629,8 @@ public class InputsManager : MonoBehaviour
     #endregion
 }
 
+#if UNITY_EDITOR
+// Éditeur personnalisé pour InputsManager : inclus uniquement dans l'éditeur.
 [CustomEditor(typeof(InputsManager))]
 [CanEditMultipleObjects]
 public class InputsManagerEditor : Editor
@@ -703,3 +708,4 @@ public class InputsManagerEditor : Editor
         EditorGUILayout.LabelField(label, statusText, style);
     }
 }
+#endif

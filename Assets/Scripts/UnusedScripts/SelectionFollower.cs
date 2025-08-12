@@ -1,10 +1,13 @@
 using UnityEngine;
+#if UNITY_EDITOR
+// R√©f√©rences √† l'√©diteur pour suivre la s√©lection uniquement en mode √©dition.
 using UnityEditor;
+#endif
 
 [ExecuteAlways]
 public class SelectionFollower : MonoBehaviour
 {
-    [Tooltip("L'objet qui va suivre la sÈlection dans la hiÈrarchie.")]
+    [Tooltip("L'objet qui va suivre la s√©lection dans la hi√©rarchie.")]
     public Transform objectToMove;
 
     private Transform currentSelected;
@@ -16,26 +19,26 @@ public class SelectionFollower : MonoBehaviour
         #if UNITY_EDITOR
                 if (!Application.isPlaying)
                 {
-                    // RÈcupËre la sÈlection actuelle
+                    // R√©cup√®re la s√©lection actuelle
                     Transform selected = Selection.activeTransform;
 
-                    // S'il y a une sÈlection valide
+                    // S'il y a une s√©lection valide
                     if (selected != null)
                     {
-                        // DÈtecte un changement de sÈlection OU modification de position/rotation
+                        // D√©tecte un changement de s√©lection OU modification de position/rotation
                         bool selectionChanged = selected != currentSelected;
                         bool transformChanged = selected.position != lastPosition || selected.rotation != lastRotation;
 
                         if (selectionChanged || transformChanged)
                         {
-                            // Met ‡ jour le suivi
+                            // Met √† jour le suivi
                             if (objectToMove != null)
                             {
                                 objectToMove.position = selected.position;
                                 objectToMove.rotation = selected.rotation;
                             }
 
-                            // Sauvegarde l'Ètat actuel pour le prochain tour
+                            // Sauvegarde l'√©tat actuel pour le prochain tour
                             currentSelected = selected;
                             lastPosition = selected.position;
                             lastRotation = selected.rotation;
