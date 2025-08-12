@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.Timeline;
 using System.Collections.Generic;
-using UnityEditor;
-using UnityEditor.Callbacks;
+// Les directives UnityEditor sont réservées à l'éditeur et ne doivent pas
+// être incluses dans le build du joueur. Elles ont été retirées pour éviter
+// les erreurs de compilation lors de l'export.
 
 [CreateAssetMenu(fileName = "NewMusicalMove", menuName = "Symphonie/Musical Move")]
 public class MusicalMoveSO : ScriptableObject
