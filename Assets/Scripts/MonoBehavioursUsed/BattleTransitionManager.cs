@@ -31,6 +31,9 @@ public class BattleTransitionManager : MonoBehaviour
     public GameObject worldView;
     public GameObject battleView;
 
+    [Header("Scenes")]
+    [SerializeField] private GameObject worldScene; // GameObject racine de la scène du monde à désactiver pendant les combats
+
     [Header("UI")]
     [SerializeField] private GameObject qteCircle;
     [SerializeField] private GameObject battleTimeline;
@@ -185,6 +188,9 @@ public class BattleTransitionManager : MonoBehaviour
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
 
+        // Tente de récupérer automatiquement le GameObject "WorldScene" si l'on n'a rien assigné dans l'inspecteur
+        worldScene ??= GameObject.Find("WorldScene");
+
         // Recherche automatique des éléments "Continuer" si aucun n'est assigné
         if (continuePrompts == null || continuePrompts.Count == 0)
         {
@@ -222,6 +228,15 @@ public class BattleTransitionManager : MonoBehaviour
 
         // Masque l'interface jusqu'au premier tour du joueur
         HideBattleUI();
+
+        // Désactive la scène du monde pour éviter tout conflit visuel pendant le combat
+        // Cette scène sera réactivée lorsqu'on quittera le mode combat
+        if (worldView != null)
+            worldView.SetActive(false);
+
+        // Désactive également le GameObject principal du monde pour empêcher toute interaction
+        if (worldScene != null)
+            worldScene.SetActive(false);
 
         AudioClip randomClip = null;
         ZoneSO currentZone = ZoneManager.Instance != null ? ZoneManager.Instance.currentZone : null;
@@ -377,9 +392,13 @@ public class BattleTransitionManager : MonoBehaviour
         //Switch Battle vers World
         if (worldView != null && battleView != null)
         {
-            worldView.SetActive(true);
+            worldView.SetActive(true); // Réactive la scène du monde après le combat
             battleView.SetActive(false);
         }
+
+        // Réactive également le GameObject principal du monde pour reprendre l'exploration
+        if (worldScene != null)
+            worldScene.SetActive(true);
 
         if (maskRingParticles != null)
         {
