@@ -306,7 +306,7 @@ public class CameraController : MonoBehaviour
         Quaternion desiredRot = Quaternion.LookRotation(look.position - desiredPos);
 
         if (currentTransition != null) StopCoroutine(currentTransition);
-        currentTransition = StartCoroutine(SmoothMoveAndLook(Camera.main.transform, desiredPos, desiredRot, transitionSpeed));
+        currentTransition = StartCoroutine(SmoothMoveAndLook(Camera.main.transform.parent, desiredPos, desiredRot, transitionSpeed));
         return currentTransition;
     }
 
@@ -429,7 +429,7 @@ public class CameraController : MonoBehaviour
     {
         if (worldCamera == null || player == null) return;
 
-        Transform camOrigin = worldCamera.transform;
+        Transform camOrigin = worldCamera.transform.parent;
         Transform look = forceLookPoint != null ? forceLookPoint : player;
 
         // Position collée aux déplacements du joueur mais indépendante de sa rotation
@@ -507,8 +507,8 @@ public class CameraController : MonoBehaviour
                 else if (currentTransition == null)
                 {
                     // Ajuste simplement la rotation pour suivre le joueur sans recréer une transition
-                    Camera.main.transform.rotation = Quaternion.Slerp(
-                        Camera.main.transform.rotation,
+                    Camera.main.transform.parent.rotation = Quaternion.Slerp(
+                        Camera.main.transform.parent.rotation,
                         desiredRot,
                         2f * Time.deltaTime
                     );
