@@ -42,6 +42,18 @@ public class CameraController : MonoBehaviour
     private Camera activeCamera;
     private Camera worldCamera; // Référence directe à la WorldCamera
 
+    [Header("---------- Effet de respiration ----------")]
+    [Tooltip("Amplitude du mouvement vertical simulant la respiration.")]
+    [SerializeField] private float breathingAmplitude = 0.05f;
+    [Tooltip("Fréquence de l'oscillation de respiration.")]
+    [SerializeField] private float breathingFrequency = 1f;
+
+    private Camera battleCamera;               // Référence directe à la BattleCamera
+    private Transform worldCameraHolder;       // GameObject contenant la WorldCamera
+    private Transform battleCameraHolder;      // GameObject contenant la BattleCamera
+    private float worldBreathOffset;           // Dernier décalage appliqué à la WorldCamera
+    private float battleBreathOffset;          // Dernier décalage appliqué à la BattleCamera
+
     [Header("---------- World Camera ----------")]
 
     [Header("Fixed Camera Points")]
@@ -101,6 +113,17 @@ public class CameraController : MonoBehaviour
         // Récupération de la WorldCamera pour pouvoir la forcer indépendamment de la MainCamera
         worldCamera = GameObject.FindGameObjectWithTag("WorldCamera")?.GetComponent<Camera>();
         if (worldCamera == null) Debug.LogWarning("[CameraController] WorldCamera introuvable !");
+        // Le gameObject parent est utilisé pour les mouvements de respiration
+        worldCameraHolder = worldCamera != null && worldCamera.transform.parent != null
+            ? worldCamera.transform.parent
+            : worldCamera?.transform;
+
+        // Recherche de la BattleCamera pour lui appliquer également l'effet de respiration
+        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
+        if (battleCamera == null) Debug.LogWarning("[CameraController] BattleCamera introuvable !");
+        battleCameraHolder = battleCamera != null && battleCamera.transform.parent != null
+            ? battleCamera.transform.parent
+            : battleCamera?.transform;
 
         cameraTargetName = FindChildRecursive(player, "Point_Chest")?.name;
         eventsManager = FindFirstObjectByType<EventsManager>();
@@ -175,6 +198,10 @@ public class CameraController : MonoBehaviour
             {
                 FollowForcedCameraPoint();
             }
+
+            // Applique le léger mouvement de respiration aux caméras gérées
+            ApplyBreathing(worldCameraHolder, ref worldBreathOffset);
+            ApplyBreathing(battleCameraHolder, ref battleBreathOffset);
         }
     }
 
@@ -524,6 +551,23 @@ public class CameraController : MonoBehaviour
     #endregion
 
     #region Utilitaires
+    /// <summary>
+    /// Applique un léger mouvement sinusoïdal pour simuler la respiration.
+    /// </summary>
+    void ApplyBreathing(Transform camHolder, ref float lastOffset)
+    {
+        if (camHolder == null) return; // Sécurité si la caméra n'a pas été trouvée
+
+        // Calcul du nouvel offset basé sur une sinusoïde pour simuler la respiration
+        float newOffset = Mathf.Sin(Time.time * breathingFrequency) * breathingAmplitude;
+
+        // Application différentielle pour ne pas perturber d'autres déplacements
+        camHolder.localPosition += Vector3.up * (newOffset - lastOffset);
+
+        // Mémorise l'offset pour le prochain frame
+        lastOffset = newOffset;
+    }
+
     /// <summary>
     /// Récupère dynamiquement les positions caméra à partir du handler dédié.
     /// </summary>
