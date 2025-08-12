@@ -1,7 +1,12 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEditor;
 using System.Collections;
+
+#if UNITY_EDITOR
+// Directives réservées à l'éditeur pour l'inspecteur personnalisé.
+// En production, UnityEditor n'est pas disponible, d'où l'encapsulation.
+using UnityEditor;
+#endif
 
 public class InputsManager : MonoBehaviour
 {
@@ -626,12 +631,15 @@ public class InputsManager : MonoBehaviour
     #endregion
 }
 
+#if UNITY_EDITOR
+// ----- Inspecteur personnalisé pour InputsManager (éditeur uniquement) -----
 [CustomEditor(typeof(InputsManager))]
 [CanEditMultipleObjects]
 public class InputsManagerEditor : Editor
 {
     private void OnEnable()
     {
+        // Mise à jour régulière de l'inspector pour afficher l'état des maps.
         EditorApplication.update += OnEditorUpdate;
     }
 
@@ -703,3 +711,4 @@ public class InputsManagerEditor : Editor
         EditorGUILayout.LabelField(label, statusText, style);
     }
 }
+#endif

@@ -1,24 +1,27 @@
 using UnityEngine;
+
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 /// <summary>
 /// Permet de bloquer la position et/ou la rotation globale de cet objet,
-/// indépendamment des transformations du parent.
+/// indÃ©pendamment des transformations du parent.
 /// </summary>
 public class DetachTransform : MonoBehaviour
 {
     [Header("Detach Options")]
-    [Tooltip("Si activé, la position globale reste fixe.")]
+    [Tooltip("Si activÃ©, la position globale reste fixe.")]
     public bool detachPosition = true;
 
-    [Tooltip("Si activé, la rotation globale reste fixe.")]
+    [Tooltip("Si activÃ©, la rotation globale reste fixe.")]
     public bool detachRotation = true;
 
     [Header("Fixed Values")]
-    [Tooltip("Position globale à maintenir. Ignoré si 'Detach Position' est désactivé.")]
+    [Tooltip("Position globale Ã  maintenir. IgnorÃ© si 'Detach Position' est dÃ©sactivÃ©.")]
     public Vector3 fixedWorldPosition;
 
-    [Tooltip("Rotation globale à maintenir. Ignoré si 'Detach Rotation' est désactivé.")]
+    [Tooltip("Rotation globale Ã  maintenir. IgnorÃ© si 'Detach Rotation' est dÃ©sactivÃ©.")]
     public Quaternion fixedWorldRotation;
 
     private void Start()
@@ -46,7 +49,7 @@ public class DetachTransformEditor : Editor
 
         EditorGUILayout.Space();
         EditorGUILayout.HelpBox(
-            "Ce composant force la position et/ou la rotation globale de l'objet à rester fixe, " +
+            "Ce composant force la position et/ou la rotation globale de l'objet Ã  rester fixe, " +
             "peu importe les transformations de son parent.",
             MessageType.Info
         );

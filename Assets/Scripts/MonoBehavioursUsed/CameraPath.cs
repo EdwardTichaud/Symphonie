@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 
 [ExecuteAlways]
 public class CameraPath : MonoBehaviour
@@ -99,6 +102,7 @@ public bool triggered;
     /// <summary>
     /// Dessine la trajectoire et les tangentes du chemin dans la scène.
     /// </summary>
+#if UNITY_EDITOR
     private void OnDrawGizmos()
     {
         if (points.Count < 2) return;
@@ -120,12 +124,11 @@ public bool triggered;
             Handles.SphereHandleCap(0, b, Quaternion.identity, 0.1f, EventType.Repaint);
             Handles.SphereHandleCap(0, c, Quaternion.identity, 0.1f, EventType.Repaint);
 
-#if UNITY_EDITOR
             Vector3 mid = (a + d) * 0.5f;
             Handles.Label(mid, $"⏱ {durations[i]:0.00}s");
-#endif
         }
     }
+#endif
     #endregion
 
     /// <summary>
