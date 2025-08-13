@@ -2206,7 +2206,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1771395199
 Transform:
   m_ObjectHideFlags: 0
@@ -9078,6 +9078,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: BattleTransitionManager
       objectReference: {fileID: 0}
+    - target: {fileID: 222677563687989328, guid: e61b626d231cdc04dbb36279a8f93054, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2061668755850612844, guid: e61b626d231cdc04dbb36279a8f93054, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -9162,6 +9166,10 @@ PrefabInstance:
       propertyPath: versusView
       value: 
       objectReference: {fileID: 0}
+    - target: {fileID: 6319454622289972265, guid: e61b626d231cdc04dbb36279a8f93054, type: 3}
+      propertyPath: worldScene
+      value: 
+      objectReference: {fileID: 1833901812}
     - target: {fileID: 6319454622289972265, guid: e61b626d231cdc04dbb36279a8f93054, type: 3}
       propertyPath: brokenGlass
       value: 
