@@ -24,7 +24,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
-    private Animator animator;
+    [HideInInspector] public Animator animator;
     private AwakeState awakeState;
 
     /// <summary>
@@ -282,7 +282,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         Debug.Log(this + " handleDeath called, playing death animation.");
         if (animator != null)
         {
-            animator.Play(Data.deathAnimation.name);
+            animator.Play("Death");
         }
         NewBattleManager.Instance.RemoveFromTimeline(this);
         NewBattleManager.Instance.activeCharacterUnits.Remove(this); // facultatif
@@ -667,12 +667,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         if (animator != null)
         {
-            // Si un clip est spécifié dans les données, on utilise son nom d'état
-            // Sinon on retombe sur l'animation "Idle" par défaut
-            string idleName = Data.battleIdleAnimation != null
-                ? Data.battleIdleAnimation.name
-                : "Idle";
-            animator.Play(idleName);
+            animator.Play("Idle_Battle");
         }
     }
 

@@ -688,7 +688,7 @@ public class NewBattleManager : MonoBehaviour
 
             Debug.Log($"[BattleTurnManager] Tour de {unit.name} (ATB: {unit.currentATB})");
             OrientAllUnitsTowardClosestOpponent();
-            unit.PlayIdleAnimation();
+            unit.animator.Play("Idle_Battle");
 
             // Petite pause avant l'exécution du tour, indépendante du timeScale
             yield return new WaitForSecondsRealtime(0.5f);
@@ -1182,7 +1182,7 @@ public class NewBattleManager : MonoBehaviour
                 maxTurnDamage = currentTurnDamage;
                 mvpUnit = currentCharacterUnit;
             }
-            currentCharacterUnit.PlayIdleAnimation();
+            currentCharacterUnit.animator.Play("Idle_Battle");
         }
 
         ChangeBattleState(BattleState.EndTurn);
@@ -1511,7 +1511,7 @@ public class NewBattleManager : MonoBehaviour
         if (anim != null)
         {
             // Joue l'animation de rotation en boucle pendant la rotation
-            anim.Play("Turn 90");
+            anim.Play("Turn_90");
         }
 
         // Tant que l’angle entre la rotation actuelle et la target est > 0.5f
