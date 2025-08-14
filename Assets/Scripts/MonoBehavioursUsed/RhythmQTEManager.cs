@@ -46,7 +46,7 @@ public class RhythmQTEManager : MonoBehaviour
     float elapsed = 0f;
 
     // Délai entre les effets de téléportation départ et arrivée
-    private const float teleportDelay = 0.2f;
+    private const float returnDelay = 0.2f;
 
     // QTE Effect
     public AudioClip successSFX;
@@ -166,9 +166,9 @@ public class RhythmQTEManager : MonoBehaviour
         System.Action<CharacterUnit> deathHandler = null;
         deathHandler = (dead) =>
         {
-            if (!tauntPlayed && isActive && caster != null && caster.Data.prematureDeathTaunt != null)
+            if (!tauntPlayed && isActive && caster != null)
             {
-                StartCoroutine(PlayTauntWithDelay(caster.Data.prematureDeathTaunt, 1f));
+                StartCoroutine(PlayTauntWithDelay(caster.animator.Play("Death"), 1f));
                 tauntPlayed = true;
             }
         };
@@ -412,22 +412,22 @@ public class RhythmQTEManager : MonoBehaviour
         // Animation de début de téléportation
         if (!caster.IsDead)
         {
-            if (caster.Data.TPAnimation_Start != null)
-                animator?.Play(caster.Data.TPAnimation_Start.name);
-            else if (caster.Data.moveClip != null)
-                animator?.Play(caster.Data.moveClip.name);
+            if (item.moveSpeed <= 0)
+                animator?.Play(caster.animator.Play("TP_Start"));
+            else
+                animator?.Play(caster.animator.Play("Dash_Battle"));
         }
 
         // Laisse un court délai pour jouer l'effet avant de déplacer
-        yield return new WaitForSeconds(teleportDelay);
+        yield return new WaitForSeconds(returnDelay);
 
         // Téléportation après le délai
         caster.transform.position = destination;
 
-        if (hasMovement && caster.Data.TPEffect_Destination != null)
-            Instantiate(caster.Data.TPEffect_Destination, destination, Quaternion.identity);
-        if (animator != null && caster.Data.TPAnimation_Destination != null && !caster.IsDead)
-            animator.Play(caster.Data.TPAnimation_Destination.name);
+        if (hasMovement && item.moveSpeed > 0)
+            Instantiate(item.tpEffect_End, destination, Quaternion.identity);
+        if (animator != null && !caster.IsDead)
+            animator.Play(caster.animator.Play("TP_End"));
 
         // Orientation vers la cible
         Vector3 dir = (target.transform.position - caster.transform.position).normalized;
@@ -454,7 +454,7 @@ public class RhythmQTEManager : MonoBehaviour
             // Jouer le son et l'effet seulement s'il y a déplacement
             caster.PlayMoveStartSound();
 
-            if (caster.Data.TPEffect_Start != null)
+            if (item.tpEffect_Start != null)
                 Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
         }
 
@@ -463,13 +463,13 @@ public class RhythmQTEManager : MonoBehaviour
         if (!caster.IsDead)
         {
             if (caster.Data.TPAnimation_Start != null)
-                animator?.Play(caster.Data.TPAnimation_Start.name);
+                animator?.Play(caster.animator.Play("TP_Start"));
             else if (caster.Data.moveClip != null)
-                animator?.Play(caster.Data.moveClip.name);
+                animator?.Play(caster.animator.Play("Dash_Battle"));
         }
 
         // Laisse un court délai pour jouer l'effet avant de déplacer
-        yield return new WaitForSeconds(teleportDelay);
+        yield return new WaitForSeconds(returnDelay);
         // Téléportation vers la position d'origine
         caster.transform.position = origin;
 
@@ -529,8 +529,12 @@ public class RhythmQTEManager : MonoBehaviour
                 // Déclenche les effets uniquement en cas de déplacement
                 caster.PlayMoveStartSound();
 
-                if (caster.Data.TPEffect_Start != null)
-                    Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
+                if (move.moveSpeed <= 0)
+                    Instantiate(move.tpEffect_Start, caster.transform.position, Quaternion.identity);
+                else
+                {
+                    Instantiate(move.dashEffect_Start, caster.transform.position, Quaternion.identity);
+                }
             }
 
             // Effets de téléportation spécifiques au move uniquement si un déplacement a lieu
@@ -541,24 +545,24 @@ public class RhythmQTEManager : MonoBehaviour
             // Animation de début de téléportation
             if (!caster.IsDead)
             {
-                if (caster.Data.TPAnimation_Start != null)
-                    animator?.Play(caster.Data.TPAnimation_Start.name);
-                else if (caster.Data.moveClip != null)
-                    animator?.Play(caster.Data.moveClip.name);
+                if (move.moveSpeed <= 0)
+                    animator?.Play(caster.animator.Play("TP_Start"));
+                else
+                    animator?.Play(caster.animator.Play("Dash_Battle"));
             }
 
             // Délai pour séparer départ et arrivée
-            yield return new WaitForSeconds(teleportDelay);
+            yield return new WaitForSeconds(returnDelay);
 
             caster.transform.position = teleportTargetPosition;
 
             if (teleportHasMovement && move.teleportEndVFXPrefab != null)
                 Instantiate(move.teleportEndVFXPrefab, teleportTargetPosition, Quaternion.identity);
 
-            if (teleportHasMovement && caster.Data.TPEffect_Destination != null)
-                Instantiate(caster.Data.TPEffect_Destination, teleportTargetPosition, Quaternion.identity);
-            if (animator != null && caster.Data.TPAnimation_Destination != null && !caster.IsDead)
-                animator.Play(caster.Data.TPAnimation_Destination.name);
+            if (teleportHasMovement && move.tpEffect_End != null)
+                Instantiate(move.tpEffect_End, teleportTargetPosition, Quaternion.identity);
+            if (animator != null && !caster.IsDead)
+                animator.Play(caster.animator.Play("TP_End"));
 
             Vector3 lookDir = Vector3.zero;
             if (target != null)
@@ -605,26 +609,26 @@ public class RhythmQTEManager : MonoBehaviour
             // Éviter son et effet si aucun mouvement n'est nécessaire
             caster.PlayMoveStartSound();
 
-            if (caster.Data.TPEffect_Start != null)
-                Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
+            if (move.tpEffect_Start != null)
+                Instantiate(move.tpEffect_Start, caster.transform.position, Quaternion.identity);
         }
 
         // Téléportation de retour uniquement en cas de déplacement réel
-        if (hasMovement && move.teleportStartVFXPrefab != null)
+        if (hasMovement && move.teleportStartVFXPrefab != null && move.moveSpeed <= 0)
             Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
 
         Animator animator = caster.GetComponentInChildren<Animator>();
         // Animation de début de retour
         if (!caster.IsDead)
         {
-            if (caster.Data.TPAnimation_Start != null)
-                animator?.Play(caster.Data.TPAnimation_Start.name);
-            else if (caster.Data.moveClip != null)
-                animator?.Play(caster.Data.moveClip.name);
+            if (move.moveSpeed <= 0)
+                animator?.Play(caster.animator.Play("TP_Start"));
+            else
+                animator?.Play(caster.animator.Play("Dash_Battle"));
         }
 
         // Délai avant de revenir à la position initiale
-        yield return new WaitForSeconds(teleportDelay);
+        yield return new WaitForSeconds(returnDelay);
 
         // Lancer peut avoir été détruit pendant l'attente
         if (caster == null)
@@ -635,13 +639,13 @@ public class RhythmQTEManager : MonoBehaviour
 
         caster.transform.position = initialPosition;
 
-        if (hasMovement && move.teleportEndVFXPrefab != null)
+        if (hasMovement && move.teleportEndVFXPrefab != null && move.moveSpeed <= 0)
             Instantiate(move.teleportEndVFXPrefab, initialPosition, Quaternion.identity);
 
-        if (hasMovement && caster.Data.TPEffect_Destination != null)
-            Instantiate(caster.Data.TPEffect_Destination, initialPosition, Quaternion.identity);
-        if (animator != null && caster.Data.TPAnimation_Destination != null && !caster.IsDead)
-            animator.Play(caster.Data.TPAnimation_Destination.name);
+        if (hasMovement && move.tpEffect_End != null &&move.moveSpeed <= 0)
+            Instantiate(move.tpEffect_End, initialPosition, Quaternion.identity);
+        if (animator != null && move.tpEffect_End != null && !caster.IsDead)
+            animator.Play(caster.animator.Play("TP_End"));
 
         yield return null;
 
