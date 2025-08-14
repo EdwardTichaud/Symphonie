@@ -116,7 +116,7 @@ public class Enemy : MonoBehaviour
 
     private void PlayDissolve()
     {
-        bool allCompleted = true;
+        // La variable allCompleted était inutilisée; on simplifie la méthode
         float delta = Time.unscaledDeltaTime * 2f;
 
         foreach (var mat in dissolveMaterials)
@@ -128,10 +128,8 @@ public class Enemy : MonoBehaviour
             float next = Mathf.MoveTowards(current, target, delta);
             mat.SetFloat("_Fade", next);
 
-            if (dissolveFadeOn && next < 1f)
-                allCompleted = false;
-            if (!dissolveFadeOn && next > 0f)
-                allCompleted = false;
+            // Les tests de complétion sont conservés pour évolutions futures mais sans variable de suivi
+            // (les valeurs restent modifiées directement sur les matériaux)
         }
     }
 

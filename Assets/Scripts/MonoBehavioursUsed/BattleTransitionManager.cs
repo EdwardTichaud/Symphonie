@@ -462,7 +462,9 @@ public class BattleTransitionManager : MonoBehaviour
             child.gameObject.SetActive(true);
         }
 
-        var battleUICanvas = FindObjectsOfType<Canvas>().FirstOrDefault(c => c.renderMode == RenderMode.ScreenSpaceCamera);
+        // Utilise la nouvelle méthode FindObjectsByType afin d'éviter l'appel obsolète
+        var battleUICanvas = FindObjectsByType<Canvas>(FindObjectsSortMode.None)
+            .FirstOrDefault(c => c.renderMode == RenderMode.ScreenSpaceCamera);
         if (battleUICanvas != null)
             battleUICanvas.worldCamera = battleCamera;
 

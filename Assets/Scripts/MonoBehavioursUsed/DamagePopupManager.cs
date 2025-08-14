@@ -13,7 +13,7 @@ public class DamagePopupManager : MonoBehaviour
         get
         {
             if (_instance == null)
-                _instance = FindObjectOfType<DamagePopupManager>();
+                _instance = FindFirstObjectByType<DamagePopupManager>(); // Migration vers la nouvelle API de recherche d'objets
             return _instance;
         }
     }
