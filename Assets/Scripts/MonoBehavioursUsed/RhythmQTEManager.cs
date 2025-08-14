@@ -168,7 +168,7 @@ public class RhythmQTEManager : MonoBehaviour
         {
             if (!tauntPlayed && isActive && caster != null)
             {
-                StartCoroutine(PlayTauntWithDelay(caster.animator.Play("Death"), 1f));
+                StartCoroutine(PlayTauntWithDelay(caster.Data.prematureDeathTaunt, 1f));
                 tauntPlayed = true;
             }
         };

@@ -1528,10 +1528,10 @@ public class NewBattleManager : MonoBehaviour
         // Orientation finale propre (uniquement sur l’axe Y)
         unit.transform.rotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
 
-        // Lecture instantanée de l'animation "Exit" une fois la rotation terminée
+        // Lecture instantanée de l'animation "Idle_Battle" une fois la rotation terminée
         if (anim != null)
         {
-            anim.Play("Exit");
+            anim.Play("Idle_Battle");
         }
     }
     #endregion

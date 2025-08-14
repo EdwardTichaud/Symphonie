@@ -47,11 +47,6 @@ public class CharacterData : ScriptableObject, ITargetable
     public float baseFatigue;
     public float maxFatigue;
 
-    [Header("Animation Idle en attaque")]
-    // Clip d'animation à jouer pour l'idle en phase d'attaque
-    // Laisser nul pour utiliser l'animation par défaut "Idle"
-    public AnimationClip battleIdleAnimation;
-
     [Header("Musical Attacks")]
     public MusicalMoveSO[] musicalAttacks;
     [Tooltip("Attaque musicale toujours disponible")] public MusicalMoveSO specialMusicalMove;
@@ -86,12 +81,6 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Joué si la cible meurt avant la fin d'une attaque")] public AudioClip prematureDeathTaunt;
     public GameObject hitEffect;
     public GameObject deathEffect;
-
-    [Header("Effets de téléportation")]
-    public GameObject TPEffect_Start;
-    public GameObject TPEffect_Destination;
-    [Header("Animations de déplacement")]
-    public AnimationClip moveClip;
 
     [Header("Animations spéciales")]
     // Animation générique de dégâts
