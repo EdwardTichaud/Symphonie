@@ -16,7 +16,7 @@ public class AddHarmonicPopupManager : MonoBehaviour
         get
         {
             if (_instance == null)
-                _instance = FindObjectOfType<AddHarmonicPopupManager>();
+                _instance = FindFirstObjectByType<AddHarmonicPopupManager>(); // Utilise la nouvelle API; l'ancienne méthode FindObjectOfType est obsolète
             return _instance;
         }
     }

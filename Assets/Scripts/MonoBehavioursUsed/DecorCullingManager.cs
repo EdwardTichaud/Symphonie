@@ -67,7 +67,8 @@ public class DecorCullingManager : MonoBehaviour
 
     private void RegisterAllLayeredObjects()
     {
-        GameObject[] allObjects = FindObjectsOfType<GameObject>(true);
+        // Utilise FindObjectsByType pour inclure les objets inactifs sans tri inutile
+        GameObject[] allObjects = FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (GameObject obj in allObjects)
         {
             if (obj.layer == layerMask)
