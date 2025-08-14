@@ -56,6 +56,16 @@ public class ItemData : ScriptableObject
     [Header("VFX")]
     public GameObject introVFXPrefab;
 
+    [Header("Téléportation")]
+    // Effet visuel déclenché au départ du téléport
+    public GameObject tpVfx_Start;
+    // Effet visuel déclenché à l'arrivée du téléport
+    public GameObject tpVfx_End;
+    // Son joué au départ du téléport
+    public AudioClip tpSFx_Start;
+    // Son joué à l'arrivée du téléport
+    public AudioClip tpSFx_End;
+
     [Header("Timeline")]
     [Tooltip("Timeline jouée lors de la préparation de l'item")]
     public TimelineAsset preparingTimeline;
