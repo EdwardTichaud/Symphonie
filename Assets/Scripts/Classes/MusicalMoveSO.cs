@@ -73,11 +73,16 @@ public class MusicalMoveSO : ScriptableObject
     [Header("VFX")]
     public GameObject introVFXPrefab;
     public GameObject hitVFXPrefab;
-    [Tooltip("Obsolète : la téléportation est toujours active")] public bool useTeleportation = true;
-    [Tooltip("VFX joué au point de départ de la téléportation")]
-    public GameObject teleportStartVFXPrefab;
-    [Tooltip("VFX joué au point d'arrivée de la téléportation")]
-    public GameObject teleportEndVFXPrefab;
+
+    [Header("Téléportation")]
+    // Effet visuel déclenché au départ du téléport
+    public GameObject tpVfx_Start;
+    // Effet visuel déclenché à l'arrivée du téléport
+    public GameObject tpVfx_End;
+    // Son joué au départ du téléport
+    public AudioClip tpSFx_Start;
+    // Son joué à l'arrivée du téléport
+    public AudioClip tpSFx_End;
 
     [Header("Effets sonores")]
     [Tooltip("Son d'avertissement joué avant l'attaque pour prévenir le joueur")]

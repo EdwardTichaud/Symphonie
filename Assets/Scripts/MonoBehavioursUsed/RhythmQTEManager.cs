@@ -397,37 +397,52 @@ public class RhythmQTEManager : MonoBehaviour
 
         // Destination calculée selon la portée de l'objet
         Vector3 destination = target.transform.position + target.transform.forward * item.castDistance;
-
-        bool hasMovement = Vector3.Distance(caster.transform.position, destination) > 0.01f;
-        if (hasMovement)
-        {
-            // Déclenche uniquement le son et l'effet visuel si le déplacement est réel
-            caster.PlayMoveStartSound();
-
-            if (caster.Data.TPEffect_Start != null)
-                Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
-        }
-
         Animator animator = caster.GetComponentInChildren<Animator>();
-        // Animation de début de téléportation
-        if (!caster.IsDead)
+
+        bool isTeleport = item.moveSpeed <= 0f;
+
+        if (isTeleport)
         {
-            if (item.moveSpeed <= 0)
-                animator?.Play(caster.animator.Play("TP_Start"));
-            else
-                animator?.Play(caster.animator.Play("Dash_Battle"));
+            // Lecture des effets de départ
+            if (item.tpSFx_Start != null)
+                audioSource?.PlayOneShot(item.tpSFx_Start);
+            if (item.tpVfx_Start != null)
+                Instantiate(item.tpVfx_Start, caster.transform.position, Quaternion.identity);
+
+            // Animation de déplacement
+            if (!caster.IsDead)
+                animator?.Play("Dash_Battle");
+
+            // Petit délai pour laisser apparaître l'effet
+            yield return new WaitForSeconds(returnDelay);
+
+            // Téléportation instantanée
+            caster.transform.position = destination;
+
+            if (item.tpVfx_End != null)
+                Instantiate(item.tpVfx_End, destination, Quaternion.identity);
+            if (item.tpSFx_End != null)
+                audioSource?.PlayOneShot(item.tpSFx_End);
         }
+        else
+        {
+            // Animation du dash
+            if (!caster.IsDead)
+                animator?.Play("Dash_Battle");
 
-        // Laisse un court délai pour jouer l'effet avant de déplacer
-        yield return new WaitForSeconds(returnDelay);
-
-        // Téléportation après le délai
-        caster.transform.position = destination;
-
-        if (hasMovement && item.moveSpeed > 0)
-            Instantiate(item.tpEffect_End, destination, Quaternion.identity);
-        if (animator != null && !caster.IsDead)
-            animator.Play(caster.animator.Play("TP_End"));
+            Vector3 startPos = caster.transform.position;
+            float distance = Vector3.Distance(startPos, destination);
+            float duration = distance / item.moveSpeed;
+            float t = 0f;
+            // Mouvement progressif vers la destination
+            while (t < 1f)
+            {
+                caster.transform.position = Vector3.Lerp(startPos, destination, t);
+                t += Time.deltaTime / Mathf.Max(duration, 0.0001f);
+                yield return null;
+            }
+            caster.transform.position = destination;
+        }
 
         // Orientation vers la cible
         Vector3 dir = (target.transform.position - caster.transform.position).normalized;
@@ -435,9 +450,6 @@ public class RhythmQTEManager : MonoBehaviour
             caster.transform.forward = dir;
 
         yield return null;
-
-        if (hasMovement)
-            caster.PlayMoveEndSound();
     }
 
     // Retourne le lanceur à la position qu'il occupait au début de l'utilisation de l'objet
@@ -446,37 +458,46 @@ public class RhythmQTEManager : MonoBehaviour
         if (caster == null || caster.IsDead)
             yield break;
 
-        // Position d'origine transmise par l'appelant
         Vector3 origin = originPosition;
-        bool hasMovement = Vector3.Distance(caster.transform.position, origin) > 0.01f;
-        if (hasMovement)
-        {
-            // Jouer le son et l'effet seulement s'il y a déplacement
-            caster.PlayMoveStartSound();
-
-            if (item.tpEffect_Start != null)
-                Instantiate(caster.Data.TPEffect_Start, caster.transform.position, Quaternion.identity);
-        }
-
         Animator animator = caster.GetComponentInChildren<Animator>();
-        // Animation de début de téléportation retour
-        if (!caster.IsDead)
+        bool isTeleport = item.moveSpeed <= 0f;
+
+        if (isTeleport)
         {
-            if (caster.Data.TPAnimation_Start != null)
-                animator?.Play(caster.animator.Play("TP_Start"));
-            else if (caster.Data.moveClip != null)
-                animator?.Play(caster.animator.Play("Dash_Battle"));
+            if (item.tpSFx_Start != null)
+                audioSource?.PlayOneShot(item.tpSFx_Start);
+            if (item.tpVfx_Start != null)
+                Instantiate(item.tpVfx_Start, caster.transform.position, Quaternion.identity);
+
+            if (!caster.IsDead)
+                animator?.Play("Dash_Battle");
+
+            yield return new WaitForSeconds(returnDelay);
+
+            caster.transform.position = origin;
+
+            if (item.tpVfx_End != null)
+                Instantiate(item.tpVfx_End, origin, Quaternion.identity);
+            if (item.tpSFx_End != null)
+                audioSource?.PlayOneShot(item.tpSFx_End);
         }
+        else
+        {
+            if (!caster.IsDead)
+                animator?.Play("Dash_Battle");
 
-        // Laisse un court délai pour jouer l'effet avant de déplacer
-        yield return new WaitForSeconds(returnDelay);
-        // Téléportation vers la position d'origine
-        caster.transform.position = origin;
-
-        if (hasMovement && caster.Data.TPEffect_Destination != null)
-            Instantiate(caster.Data.TPEffect_Destination, origin, Quaternion.identity);
-        if (animator != null && caster.Data.TPAnimation_Destination != null && !caster.IsDead)
-            animator.Play(caster.Data.TPAnimation_Destination.name);
+            Vector3 startPos = caster.transform.position;
+            float distance = Vector3.Distance(startPos, origin);
+            float duration = distance / item.moveSpeed;
+            float t = 0f;
+            while (t < 1f)
+            {
+                caster.transform.position = Vector3.Lerp(startPos, origin, t);
+                t += Time.deltaTime / Mathf.Max(duration, 0.0001f);
+                yield return null;
+            }
+            caster.transform.position = origin;
+        }
 
         // Orientation optionnelle vers la cible
         if (target != null)
@@ -487,9 +508,6 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         yield return null;
-
-        if (hasMovement)
-            caster.PlayMoveEndSound();
     }
 
     private IEnumerator MoveTo(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
@@ -504,86 +522,76 @@ public class RhythmQTEManager : MonoBehaviour
 
         Vector3 startPosition = caster.transform.position;
 
-        // Téléportation obligatoire vers la cible
+        // Calcul de la position cible en fonction de la position relative
+        Vector3 offsetDir = target.transform.forward;
+        switch (move.relativePosition)
         {
-            bool teleportHasMovement;
-            Vector3 teleportOffsetDir = target.transform.forward;
-            switch (move.relativePosition)
-            {
-                case RelativePosition.Back:
-                    teleportOffsetDir = -target.transform.forward;
-                    break;
-                case RelativePosition.Left:
-                    teleportOffsetDir = -target.transform.right;
-                    break;
-                case RelativePosition.Right:
-                    teleportOffsetDir = target.transform.right;
-                    break;
-            }
-
-            float teleportMobilityBonus = caster.currentMobility;
-            Vector3 teleportTargetPosition = target.transform.position + teleportOffsetDir * (move.castDistance + teleportMobilityBonus);
-            teleportHasMovement = Vector3.Distance(startPosition, teleportTargetPosition) > 0.01f;
-            if (teleportHasMovement)
-            {
-                // Déclenche les effets uniquement en cas de déplacement
-                caster.PlayMoveStartSound();
-
-                if (move.moveSpeed <= 0)
-                    Instantiate(move.tpEffect_Start, caster.transform.position, Quaternion.identity);
-                else
-                {
-                    Instantiate(move.dashEffect_Start, caster.transform.position, Quaternion.identity);
-                }
-            }
-
-            // Effets de téléportation spécifiques au move uniquement si un déplacement a lieu
-            if (teleportHasMovement && move.teleportStartVFXPrefab != null)
-                Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
-
-            Animator animator = caster.GetComponentInChildren<Animator>();
-            // Animation de début de téléportation
-            if (!caster.IsDead)
-            {
-                if (move.moveSpeed <= 0)
-                    animator?.Play(caster.animator.Play("TP_Start"));
-                else
-                    animator?.Play(caster.animator.Play("Dash_Battle"));
-            }
-
-            // Délai pour séparer départ et arrivée
-            yield return new WaitForSeconds(returnDelay);
-
-            caster.transform.position = teleportTargetPosition;
-
-            if (teleportHasMovement && move.teleportEndVFXPrefab != null)
-                Instantiate(move.teleportEndVFXPrefab, teleportTargetPosition, Quaternion.identity);
-
-            if (teleportHasMovement && move.tpEffect_End != null)
-                Instantiate(move.tpEffect_End, teleportTargetPosition, Quaternion.identity);
-            if (animator != null && !caster.IsDead)
-                animator.Play(caster.animator.Play("TP_End"));
-
-            Vector3 lookDir = Vector3.zero;
-            if (target != null)
-                lookDir = (target.transform.position - caster.transform.position).normalized;
-
-
-            if (lookDir != Vector3.zero)
-                caster.transform.forward = lookDir;
-            else if (teleportOffsetDir != Vector3.zero)
-                caster.transform.forward = teleportOffsetDir;
-
-            yield return null;
-            // Caster peut avoir été détruit pendant le déplacement
-            moveCasterName = caster != null ? caster.name : "(caster nul)";
-            Debug.Log("Fin du déplacement de " + moveCasterName);
-
-            if (teleportHasMovement)
-                caster.PlayMoveEndSound();
-            yield break;
+            case RelativePosition.Back:
+                offsetDir = -target.transform.forward;
+                break;
+            case RelativePosition.Left:
+                offsetDir = -target.transform.right;
+                break;
+            case RelativePosition.Right:
+                offsetDir = target.transform.right;
+                break;
         }
 
+        float mobilityBonus = caster.currentMobility;
+        Vector3 targetPos = target.transform.position + offsetDir * (move.castDistance + mobilityBonus);
+
+        Animator animator = caster.GetComponentInChildren<Animator>();
+        bool isTeleport = move.moveSpeed <= 0f;
+
+        if (isTeleport)
+        {
+            if (move.tpSFx_Start != null)
+                audioSource?.PlayOneShot(move.tpSFx_Start);
+            if (move.tpVfx_Start != null)
+                Instantiate(move.tpVfx_Start, caster.transform.position, Quaternion.identity);
+
+            if (!caster.IsDead)
+                animator?.Play("Dash_Battle");
+
+            yield return new WaitForSeconds(returnDelay);
+
+            caster.transform.position = targetPos;
+
+            if (move.tpVfx_End != null)
+                Instantiate(move.tpVfx_End, targetPos, Quaternion.identity);
+            if (move.tpSFx_End != null)
+                audioSource?.PlayOneShot(move.tpSFx_End);
+        }
+        else
+        {
+            if (!caster.IsDead)
+                animator?.Play("Dash_Battle");
+
+            Vector3 startPos = caster.transform.position;
+            float distance = Vector3.Distance(startPos, targetPos);
+            float duration = distance / move.moveSpeed;
+            float t = 0f;
+            while (t < 1f)
+            {
+                caster.transform.position = Vector3.Lerp(startPos, targetPos, t);
+                t += Time.deltaTime / Mathf.Max(duration, 0.0001f);
+                yield return null;
+            }
+            caster.transform.position = targetPos;
+        }
+
+        Vector3 lookDir = Vector3.zero;
+        if (target != null)
+            lookDir = (target.transform.position - caster.transform.position).normalized;
+
+        if (lookDir != Vector3.zero)
+            caster.transform.forward = lookDir;
+        else if (offsetDir != Vector3.zero)
+            caster.transform.forward = offsetDir;
+
+        yield return null;
+        moveCasterName = caster != null ? caster.name : "(caster nul)";
+        Debug.Log("Fin du déplacement de " + moveCasterName);
     }
 
     // Replace le lanceur exactement à la position occupée avant le début du move
@@ -593,71 +601,60 @@ public class RhythmQTEManager : MonoBehaviour
         string returnCasterName = caster != null ? caster.name : "(caster nul)";
         Debug.Log("Retour de " + returnCasterName + " vers sa position initiale");
 
-        // Lancer peut être détruit avant l'appel : on sécurise l'accès
         if (caster == null || caster.IsDead)
         {
             Debug.LogWarning("ReturnToInitialPosition : caster nul ou détruit à l'appel");
             yield break;
         }
 
-        // Position actuelle et position de départ transmise
         Vector3 startPos = caster.transform.position;
         Vector3 initialPosition = originPosition;
-        bool hasMovement = Vector3.Distance(startPos, initialPosition) > 0.01f;
-        if (hasMovement)
-        {
-            // Éviter son et effet si aucun mouvement n'est nécessaire
-            caster.PlayMoveStartSound();
-
-            if (move.tpEffect_Start != null)
-                Instantiate(move.tpEffect_Start, caster.transform.position, Quaternion.identity);
-        }
-
-        // Téléportation de retour uniquement en cas de déplacement réel
-        if (hasMovement && move.teleportStartVFXPrefab != null && move.moveSpeed <= 0)
-            Instantiate(move.teleportStartVFXPrefab, caster.transform.position, Quaternion.identity);
-
         Animator animator = caster.GetComponentInChildren<Animator>();
-        // Animation de début de retour
-        if (!caster.IsDead)
+        bool isTeleport = move.moveSpeed <= 0f;
+
+        if (isTeleport)
         {
-            if (move.moveSpeed <= 0)
-                animator?.Play(caster.animator.Play("TP_Start"));
-            else
-                animator?.Play(caster.animator.Play("Dash_Battle"));
+            if (move.tpSFx_Start != null)
+                audioSource?.PlayOneShot(move.tpSFx_Start);
+            if (move.tpVfx_Start != null)
+                Instantiate(move.tpVfx_Start, caster.transform.position, Quaternion.identity);
+
+            if (!caster.IsDead)
+                animator?.Play("Dash_Battle");
+
+            yield return new WaitForSeconds(returnDelay);
+
+            if (caster == null)
+            {
+                Debug.LogWarning("ReturnToInitialPosition : caster détruit pendant le délai");
+                yield break;
+            }
+
+            caster.transform.position = initialPosition;
+
+            if (move.tpVfx_End != null)
+                Instantiate(move.tpVfx_End, initialPosition, Quaternion.identity);
+            if (move.tpSFx_End != null)
+                audioSource?.PlayOneShot(move.tpSFx_End);
         }
-
-        // Délai avant de revenir à la position initiale
-        yield return new WaitForSeconds(returnDelay);
-
-        // Lancer peut avoir été détruit pendant l'attente
-        if (caster == null)
+        else
         {
-            Debug.LogWarning("ReturnToInitialPosition : caster détruit pendant le délai");
-            yield break;
+            if (!caster.IsDead)
+                animator?.Play("Dash_Battle");
+
+            float distance = Vector3.Distance(startPos, initialPosition);
+            float duration = distance / move.moveSpeed;
+            float t = 0f;
+            while (t < 1f)
+            {
+                caster.transform.position = Vector3.Lerp(startPos, initialPosition, t);
+                t += Time.deltaTime / Mathf.Max(duration, 0.0001f);
+                yield return null;
+            }
+            caster.transform.position = initialPosition;
         }
-
-        caster.transform.position = initialPosition;
-
-        if (hasMovement && move.teleportEndVFXPrefab != null && move.moveSpeed <= 0)
-            Instantiate(move.teleportEndVFXPrefab, initialPosition, Quaternion.identity);
-
-        if (hasMovement && move.tpEffect_End != null &&move.moveSpeed <= 0)
-            Instantiate(move.tpEffect_End, initialPosition, Quaternion.identity);
-        if (animator != null && move.tpEffect_End != null && !caster.IsDead)
-            animator.Play(caster.animator.Play("TP_End"));
 
         yield return null;
-
-        // Vérifie que le lanceur existe encore avant la suite
-        if (caster == null)
-        {
-            Debug.LogWarning("ReturnToInitialPosition : caster détruit avant la fin du retour");
-            yield break;
-        }
-
-        if (hasMovement)
-            caster.PlayMoveEndSound();
 
         if (move.stayFaceToTarget && target != null)
         {
@@ -672,10 +669,6 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = finalDirToParent;
         }
         Debug.Log("Le caster a terminé son retour.");
-
-        if (hasMovement && caster != null)
-            caster.PlayMoveEndSound();
-
     }
 
     IEnumerator PlayMoveAnimations(string[] animationClips, CharacterUnit caster)
