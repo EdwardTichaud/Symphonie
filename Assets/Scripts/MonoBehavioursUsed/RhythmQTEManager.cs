@@ -261,7 +261,8 @@ public class RhythmQTEManager : MonoBehaviour
             yield return null;
         }
 
-        if (!move.stayInPlace)
+        // 📝 Si aucune Timeline ne gère déjà le retour, on replace manuellement
+        if (!move.stayInPlace && !hasTimeline)
             // Retourne le lanceur à sa position de départ enregistrée
             yield return ReturnToInitialPosition(move, caster, target, originPosition);
 
@@ -374,8 +375,8 @@ public class RhythmQTEManager : MonoBehaviour
             LastItemSuccess = successResults.All(v => v);
         }
 
-        // Retour à la position d'origine si l'objet ne demande pas de rester en place
-        if (caster != null && !item.stayInPlace)
+        // 📝 Retour à la position d'origine uniquement si aucune Timeline ne gère le retour
+        if (!hasTimeline && caster != null && !item.stayInPlace)
         {
             // Revenir exactement à la position occupée au lancement de l'objet
             yield return SimpleReturnToInitialPosition(caster, target, item, originPosition);
