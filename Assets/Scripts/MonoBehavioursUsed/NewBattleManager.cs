@@ -1273,9 +1273,7 @@ public class NewBattleManager : MonoBehaviour
         {
             ToggleMenuContainers(false, false, false);
             HandleTargetSelection(move);
-
-            if (move.musicalMoveTargetingAnimation != null)
-                currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(move.musicalMoveTargetingAnimation.name);
+            // La Timeline de préparation prend en charge l'animation de ciblage
         }
         else
         {
@@ -1294,12 +1292,7 @@ public class NewBattleManager : MonoBehaviour
         {
             ToggleMenuContainers(false, false, false);
             HandleTargetSelection(item);
-
-            // L'animation spécifique à l'objet prend le relais une fois la Timeline arrêtée
-            if (item.itemTargetingAnimation != null)
-            {
-                currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(item.itemTargetingAnimation.name);
-            }
+            // L'animation de ciblage est désormais gérée par la Timeline de préparation
         }
         else
         {

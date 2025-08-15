@@ -25,8 +25,7 @@ public class ItemData : ScriptableObject
 
     [Tooltip("Si vrai, le lanceur reste à la position cible après l'action")] public bool stayInPlace;
 
-    public AnimationClip itemTargetingAnimation;
-
+    // Le ciblage visuel est désormais géré par la Timeline de préparation
     public ItemEffectType effectType;
 
     [Header("Heal Settings")]
@@ -52,9 +51,6 @@ public class ItemData : ScriptableObject
     [Header("Ciblage")]
     public TargetType defaultTargetType = TargetType.SingleAlly;
     public List<TargetType> targetTypes = new List<TargetType>() { TargetType.SingleAlly };
-
-    [Header("VFX")]
-    public GameObject introVFXPrefab;
 
     [Header("Téléportation")]
     // Effet visuel déclenché au départ du téléport
@@ -87,12 +83,6 @@ public class ItemData : ScriptableObject
 
     [Header("Notes avec Variantes Sonores")]
     public List<NoteVariant> notes;
-
-    [Header("Visuel et FX")]
-    public AnimationClip introAnimationClip;
-    public AnimationClip animationClip;
-    public GameObject visualEffect;
-    public AudioClip introClip;
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {

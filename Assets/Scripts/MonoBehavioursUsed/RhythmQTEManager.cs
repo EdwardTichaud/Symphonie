@@ -338,27 +338,11 @@ public class RhythmQTEManager : MonoBehaviour
                 Debug.LogWarning($"[ItemRoutine] Timeline '{item.performingTimeline.name}' encore active après {maxTimelineDuration}s. Suite forcée.");
             }
         }
-        else if (item.introAnimationClip != null && animator != null && !caster.IsDead)
-        {
-            animator.Play(item.introAnimationClip.name);
-            yield return null;
-            float clipDuration = animator.GetCurrentAnimatorStateInfo(0).length;
-            yield return new WaitForSeconds(clipDuration);
-        }
-
+        // Sans Timeline, aucun visuel n'est joué et l'objet passe directement à l'application de l'effet
         // Téléportation jusqu'à la cible si aucune Timeline ne gère déjà le mouvement
         if (!hasTimeline && caster != null && target != null)
         {
             yield return SimpleMoveTo(caster, target, item);
-        }
-
-        // Animation principale si pas de Timeline
-        if (!hasTimeline && item.animationClip != null && animator != null && !caster.IsDead)
-        {
-            animator.Play(item.animationClip.name);
-            yield return null;
-            float clipDuration = animator.GetCurrentAnimatorStateInfo(0).length;
-            yield return new WaitForSeconds(clipDuration);
         }
 
         // Phase de QTE propre à l'objet uniquement sans Timeline

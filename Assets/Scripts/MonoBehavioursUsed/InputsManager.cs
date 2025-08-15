@@ -244,9 +244,7 @@ public class InputsManager : MonoBehaviour
                 }
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentMove);
-
-                if (bm.currentMove.musicalMoveTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation.name);
+                // Les animations de visée sont désormais intégrées dans la Timeline de préparation
             }
             else
             {
@@ -260,11 +258,7 @@ public class InputsManager : MonoBehaviour
                 bm.currentItem = bm.itemChoices[0];
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentItem);
-
-                if (bm.currentItem.itemTargetingAnimation != null)
-                {
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(bm.currentItem.itemTargetingAnimation.name);
-                }
+                // La Timeline de préparation gère maintenant les animations liées à l'objet
             }
             else
             {
@@ -302,9 +296,6 @@ public class InputsManager : MonoBehaviour
                 }
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentMove);
-
-                if (bm.currentMove.musicalMoveTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation.name);
             }
             else
             {
@@ -318,11 +309,6 @@ public class InputsManager : MonoBehaviour
                 bm.currentItem = bm.itemChoices[1];
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentItem);
-
-                if (bm.currentItem.itemTargetingAnimation)
-                {
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(bm.currentItem.itemTargetingAnimation.name);
-                }
             }
             else
             {
@@ -356,9 +342,6 @@ public class InputsManager : MonoBehaviour
                 }
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentMove);
-
-                if (bm.currentMove.musicalMoveTargetingAnimation != null)
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>().Play(bm.currentMove.musicalMoveTargetingAnimation.name);
             }
             else
             {
@@ -372,11 +355,6 @@ public class InputsManager : MonoBehaviour
                 bm.currentItem = bm.itemChoices[2];
                 bm.ToggleMenuContainers(false, false, false);
                 bm.HandleTargetSelection(bm.currentItem);
-
-                if (bm.currentItem.itemTargetingAnimation != null)
-                {
-                    bm.currentCharacterUnit.GetComponentInChildren<Animator>()?.Play(bm.currentItem.itemTargetingAnimation.name);
-                }
             }
             else
             {
