@@ -698,7 +698,7 @@ Shader "Vefects/SH_Vefects_URP_VFX_Character_Showoff"
 				if (_EnableDecals)
 				{
 					DecalSurfaceData decalSurfaceData = GetDecalSurfaceData(posInput, fragInputs, surfaceDescription.Alpha);
-					ApplyDecalToSurfaceData(decalSurfaceData, fragInputs.tangentToWorld[2], surfaceData);
+					ApplyDecalToSurfaceData(decalSurfaceData, surfaceData); // Mise à jour HDRP 17 : l'argument de normale est retiré
 				}
 				#endif
 				#endif
@@ -1436,7 +1436,7 @@ Shader "Vefects/SH_Vefects_URP_VFX_Character_Showoff"
 				if (_EnableDecals)
 				{
 					DecalSurfaceData decalSurfaceData = GetDecalSurfaceData(posInput, fragInputs, surfaceDescription.Alpha);
-					ApplyDecalToSurfaceData(decalSurfaceData, fragInputs.tangentToWorld[2], surfaceData);
+					ApplyDecalToSurfaceData(decalSurfaceData, surfaceData); // Mise à jour HDRP 17 : l'argument de normale est retiré
 				}
 				#endif
                 #endif
@@ -2104,7 +2104,7 @@ Shader "Vefects/SH_Vefects_URP_VFX_Character_Showoff"
 				if (_EnableDecals)
 				{
 					DecalSurfaceData decalSurfaceData = GetDecalSurfaceData(posInput, fragInputs, surfaceDescription.Alpha);
-					ApplyDecalToSurfaceData(decalSurfaceData, fragInputs.tangentToWorld[2], surfaceData);
+					ApplyDecalToSurfaceData(decalSurfaceData, surfaceData); // Mise à jour HDRP 17 : l'argument de normale est retiré
 				}
 				#endif
                 #endif
@@ -2725,7 +2725,7 @@ Shader "Vefects/SH_Vefects_URP_VFX_Character_Showoff"
 				if (_EnableDecals)
 				{
 					DecalSurfaceData decalSurfaceData = GetDecalSurfaceData(posInput, fragInputs, surfaceDescription.Alpha);
-					ApplyDecalToSurfaceData(decalSurfaceData, fragInputs.tangentToWorld[2], surfaceData);
+					ApplyDecalToSurfaceData(decalSurfaceData, surfaceData); // Mise à jour HDRP 17 : l'argument de normale est retiré
 				}
 				#endif
                 #endif
@@ -3319,7 +3319,7 @@ Shader "Vefects/SH_Vefects_URP_VFX_Character_Showoff"
 				if (_EnableDecals)
 				{
 					DecalSurfaceData decalSurfaceData = GetDecalSurfaceData(posInput, fragInputs, surfaceDescription.Alpha);
-					ApplyDecalToSurfaceData(decalSurfaceData, fragInputs.tangentToWorld[2], surfaceData);
+					ApplyDecalToSurfaceData(decalSurfaceData, surfaceData); // Mise à jour HDRP 17 : l'argument de normale est retiré
 				}
 				#endif
                 #endif
@@ -3985,7 +3985,7 @@ Shader "Vefects/SH_Vefects_URP_VFX_Character_Showoff"
 				if (_EnableDecals)
 				{
 					DecalSurfaceData decalSurfaceData = GetDecalSurfaceData(posInput, fragInputs, surfaceDescription.Alpha);
-					ApplyDecalToSurfaceData(decalSurfaceData, fragInputs.tangentToWorld[2], surfaceData);
+					ApplyDecalToSurfaceData(decalSurfaceData, surfaceData); // Mise à jour HDRP 17 : l'argument de normale est retiré
 				}
 				#endif
                 #endif
@@ -4776,7 +4776,7 @@ Shader "Vefects/SH_Vefects_URP_VFX_Character_Showoff"
 				if (_EnableDecals)
 				{
 					DecalSurfaceData decalSurfaceData = GetDecalSurfaceData(posInput, fragInputs, surfaceDescription.Alpha);
-					ApplyDecalToSurfaceData(decalSurfaceData, fragInputs.tangentToWorld[2], surfaceData);
+					ApplyDecalToSurfaceData(decalSurfaceData, surfaceData); // Mise à jour HDRP 17 : l'argument de normale est retiré
 				}
 				#endif
                 #endif
