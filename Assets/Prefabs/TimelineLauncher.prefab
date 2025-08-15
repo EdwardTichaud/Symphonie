@@ -10,9 +10,9 @@ GameObject:
   m_Component:
   - component: {fileID: 8529920885578328012}
   - component: {fileID: 4632814548245591468}
+  - component: {fileID: 7666416480328290772}
   - component: {fileID: 4927517278465844737}
   - component: {fileID: 7043276419211489998}
-  - component: {fileID: 7666416480328290772}
   m_Layer: 0
   m_Name: TimelineLauncher
   m_TagString: Untagged
@@ -48,6 +48,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   director: {fileID: 4927517278465844737}
+--- !u!114 &7666416480328290772
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8738188441690940424}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45e8f8d752ab38949b355d871d013619, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  instantiateAtStart: 0
+  gameObjectToInstantiate: {fileID: 0}
 --- !u!320 &4927517278465844737
 PlayableDirector:
   m_ObjectHideFlags: 0
@@ -125,17 +139,3 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 1
---- !u!114 &7666416480328290772
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8738188441690940424}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 45e8f8d752ab38949b355d871d013619, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  instantiateAtStart: 0
-  gameObjectToInstantiate: {fileID: 0}
