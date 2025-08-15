@@ -238,6 +238,9 @@ public class BattleTransitionManager : MonoBehaviour
         if (worldScene != null)
             worldScene.SetActive(false);
 
+        // Active uniquement les caméras nécessaires au lancement du combat
+        CameraActivationManager.Instance?.ActivateBattleAndVersusCameras();
+
         AudioClip randomClip = null;
         ZoneSO currentZone = ZoneManager.Instance != null ? ZoneManager.Instance.currentZone : null;
         if (currentZone != null && currentZone.battleMusic != null && currentZone.battleMusic.Length > 0)
@@ -277,6 +280,9 @@ public class BattleTransitionManager : MonoBehaviour
         versusTransition.SetActive(true);
         versusCameraCanvas.SetActive(true);
 
+        // S'assure que la VersusCam est bien active conjointement à la BattleCam
+        CameraActivationManager.Instance?.ActivateBattleAndVersusCameras();
+
         // Cache le bouton "Continuer" tant que le chargement du champ de bataille n'est pas terminé
         foreach (var go in continuePrompts)
             if (go != null)
@@ -310,6 +316,10 @@ public class BattleTransitionManager : MonoBehaviour
         brokenGlass.SetActive(true);
         Animator glass = brokenGlass.GetComponent<Animator>();
         glass.Play("Glass_Explode");
+
+        // À la fin de l'animation, la VersusCam doit se désactiver
+        if (CameraActivationManager.Instance != null)
+            StartCoroutine(CameraActivationManager.Instance.DisableVersusAfterAnimation(glass));
 
         AudioManager.Instance.PlaySound(brokenGlassSound);
 
@@ -404,6 +414,9 @@ public class BattleTransitionManager : MonoBehaviour
         // Réactive également le GameObject principal du monde pour reprendre l'exploration
         if (worldScene != null)
             worldScene.SetActive(true);
+
+        // Retour à l'exploration : seule la WorldCam doit être active
+        CameraActivationManager.Instance?.ActivateWorldCamera();
 
         if (maskRingParticles != null)
         {
