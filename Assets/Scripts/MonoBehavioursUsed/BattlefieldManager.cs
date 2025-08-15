@@ -86,8 +86,24 @@ public class BattlefieldManager : MonoBehaviour
         currentBattlefield = Instantiate(prefab, battlefieldParent.position, Quaternion.identity, battlefieldParent);
         currentBattlefield.SetActive(true);
 
+        // ✅ S'assure que le conteneur des positions de combat utilise le layer "Battle_Unit"
+        var positions = currentBattlefield.transform.Find("Battlefield_Positions");
+        if (positions != null)
+        {
+            int battleUnitLayer = LayerMask.NameToLayer("Battle_Unit");
+            SetLayerRecursively(positions.gameObject, battleUnitLayer); // Applique aussi aux enfants
+        }
+        else
+        {
+            Debug.LogWarning("[BattlefieldManager] GameObject 'Battlefield_Positions' introuvable dans le battlefield instancié.");
+        }
+
         // On laisse une frame pour s'assurer que tous les éléments sont correctement initialisés
         yield return null;
+
+        // ✅ Réapplique les Rendering Layers à toute la scène après le changement de layer
+        var renderingLayerSetter = FindFirstObjectByType<SetRenderingLayer>(FindObjectsInactive.Include);
+        renderingLayerSetter?.ApplyToAll();
 
         Debug.Log($"[BattlefieldManager] Battlefield #{index} chargé pour {currentZone.zoneName}.");
     }
@@ -102,6 +118,21 @@ public class BattlefieldManager : MonoBehaviour
             Destroy(currentBattlefield);
             currentBattlefield = null;
             Debug.Log("[BattlefieldManager] Battlefield courant détruit.");
+        }
+    }
+
+    /// <summary>
+    /// Applique récursivement un <c>Layer</c> Unity à un <see cref="GameObject"/> et à tous ses enfants.
+    /// Utilisé ici pour que toutes les positions de combat héritent du layer "Battle_Unit".
+    /// </summary>
+    /// <param name="obj">Racine sur laquelle appliquer le layer.</param>
+    /// <param name="layer">Identifiant du layer Unity à appliquer.</param>
+    private void SetLayerRecursively(GameObject obj, int layer)
+    {
+        obj.layer = layer;
+        foreach (Transform child in obj.transform)
+        {
+            SetLayerRecursively(child.gameObject, layer);
         }
     }
 }
