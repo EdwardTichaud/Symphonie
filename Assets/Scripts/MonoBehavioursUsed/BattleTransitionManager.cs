@@ -327,7 +327,7 @@ public class BattleTransitionManager : MonoBehaviour
                 battleCamera.transform.position = firstUnit.transform.position;
 
             // Recherche du PlayableDirector même si le composant est sur un enfant inactif
-            PlayableDirector introDirector = battleCamera.GetComponentInChildren<PlayableDirector>(true);
+            PlayableDirector introDirector = battleCamera.transform.parent.GetComponentInChildren<PlayableDirector>(true);
             if (introDirector != null)
             {
                 // On joue la Timeline d'introduction
