@@ -316,6 +316,8 @@ public class BattleTransitionManager : MonoBehaviour
         // Les unités apparaissent après l'explosion
         NewBattleManager.Instance.SpawnAll();
 
+        SetRenderingLayer.Instance.ApplyToAll();
+
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
         if (battleCamera != null)
         {

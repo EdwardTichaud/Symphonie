@@ -11,6 +11,8 @@ using UnityEngine.Rendering; // Nécessaire pour manipuler les Rendering Layer p
 [ExecuteAlways]
 public class SetRenderingLayer : MonoBehaviour
 {
+    public static SetRenderingLayer Instance { get; private set; }
+
     /// <summary>
     /// Association entre un ou plusieurs <see cref="LayerMask"/> Unity et
     /// le <c>Rendering Layer</c> à appliquer, désigné par son nom afin de
@@ -34,8 +36,19 @@ public class SetRenderingLayer : MonoBehaviour
     [Tooltip("Liste des associations LayerMask / Rendering Layer.")]
     public LayerRenderingPair[] mappings;
 
-    void Awake()
+    private void Awake()
     {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         // Applique les Rendering Layers aux enfants au démarrage
         // pour s'assurer que tout est bien configuré dès le début.
         ApplyToAll();
