@@ -78,6 +78,8 @@ public class NewBattleManager : MonoBehaviour
     [Header("Listes des unités en combat en fonction de leur état")]
     public List<CharacterUnit> unitsInBattle = new(); // Toutes les unités du combat quelque soit leur état
     public List<CharacterUnit> activeCharacterUnits = new List<CharacterUnit>(); // Unités actives en combat (HP > 0)
+    // Nombre d'unités encore en déplacement vers le champ de bataille
+    private int unitsPendingArrival = 0;
 
     [Header("Début de combat")]
     [SerializeField] private GameObject firstStrikeEffect;
@@ -138,6 +140,8 @@ public class NewBattleManager : MonoBehaviour
     private const float ATB_THRESHOLD = 100f;
     // Délai appliqué avant qu'un ennemi n'exécute réellement son attaque
     private const float ENEMY_MOVE_DELAY = 1f;
+    // Durée (en secondes) utilisée pour déplacer les unités vers leur position d'arrivée
+    private const float SPAWN_MOVE_DURATION = 2f;
 
     [Header("Sprites des touches")]
     [SerializeField] private Sprite inputSprite1;
@@ -300,8 +304,9 @@ public class NewBattleManager : MonoBehaviour
             unit.Initialize(pc);
             unitsInBattle.Add(unit);
 
-            float animationDuration = PlayRandomStartAnimation(unitGO); // ⏱️
-            StartCoroutine(AnimateSpawn(unitGO, spawnPoint.position, animationDuration));
+            // Comptabilise l'unité et la fait se déplacer vers sa position de combat
+            unitsPendingArrival++;
+            StartCoroutine(AnimateSpawn(unitGO, spawnPoint.position, SPAWN_MOVE_DURATION));
         }
     }
 
@@ -342,8 +347,9 @@ public class NewBattleManager : MonoBehaviour
             eu.Initialize(enemyData);
             unitsInBattle.Add(eu);
 
-            float animationDuration = PlayRandomStartAnimation(unitGO); // ⏱️
-            StartCoroutine(AnimateSpawn(unitGO, spawnPoint.position, animationDuration));
+            // Comptabilise l'unité ennemie en déplacement vers sa position finale
+            unitsPendingArrival++;
+            StartCoroutine(AnimateSpawn(unitGO, spawnPoint.position, SPAWN_MOVE_DURATION));
         }
     }
     #endregion
@@ -357,6 +363,7 @@ public class NewBattleManager : MonoBehaviour
         CharacterUnit activeUnit = unitGO.GetComponentInChildren<CharacterUnit>();
         OrientAllUnitsTowardCenter(activeUnit);
 
+        // Interpole la position de l'unité jusqu'à sa destination
         while (elapsed < duration)
         {
             float t = elapsed / duration;
@@ -366,22 +373,41 @@ public class NewBattleManager : MonoBehaviour
         }
 
         unitGO.transform.position = targetPosition;
+
+        // Signale que l'unité a terminé son déplacement
+        unitsPendingArrival--;
+        if (unitsPendingArrival <= 0)
+        {
+            // Toutes les unités sont en place : déclencher l'animation EquipOnMove pour chacune
+            TriggerEquipAnimations();
+        }
     }
 
-    private float PlayRandomStartAnimation(GameObject unitGO)
+    /// <summary>
+    /// Joue une animation EquipOnMove aléatoire sur l'unité donnée.
+    /// </summary>
+    private void PlayRandomEquipAnimation(GameObject unitGO)
     {
         var animator = unitGO.GetComponentInChildren<Animator>();
 
         if (animator != null)
         {
-            int choice = Random.Range(1, 2);
+            // Random.Range avec borne supérieure exclusive : 3 permet d'obtenir 1 ou 2
+            int choice = Random.Range(1, 3);
             string animationName = $"EquipOnMove_{choice}";
             animator.Play(animationName);
-
-            return 2f;
         }
+    }
 
-        return 2f;
+    /// <summary>
+    /// Déclenche une animation EquipOnMove aléatoire pour toutes les unités présentes.
+    /// </summary>
+    private void TriggerEquipAnimations()
+    {
+        foreach (var unit in unitsInBattle)
+        {
+            PlayRandomEquipAnimation(unit.gameObject);
+        }
     }
     #endregion
 
