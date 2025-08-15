@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Playables;
+using UnityEngine.Timeline; // Requis pour manipuler les TimelineAsset
 using UnityEngine.InputSystem; // Nécessaire pour utiliser les actions d'input
 
 public class BattleTransitionManager : MonoBehaviour
@@ -340,10 +341,34 @@ public class BattleTransitionManager : MonoBehaviour
             PlayableDirector introDirector = battleCamera.transform.parent.GetComponentInChildren<PlayableDirector>(true);
             if (introDirector != null)
             {
-                // On joue la Timeline d'introduction
-                TimelineManager.Instance.PlayTimeline(introDirector);
-                // On attend la fin de la timeline pour éviter l'affichage de l'UI pendant la cinématique
-                yield return new WaitUntil(() => !TimelineManager.Instance.IsTimelinePlaying);
+                // Récupère le TimelineAsset associé pour le transmettre au TimelineLauncher
+                TimelineAsset introAsset = introDirector.playableAsset as TimelineAsset;
+
+                if (introAsset != null && TimelineLauncher.Instance != null)
+                {
+                    // Utilise l'Animator de la première unité comme "caster" pour les éventuels bindings
+                    GameObject casterGO = firstUnit != null ? firstUnit.animator?.gameObject : null;
+
+                    // Lance la timeline d'introduction via le TimelineLauncher afin de bénéficier
+                    // des mêmes mécaniques que pour les MusicalMoves ou les Items
+                    TimelineLauncher.Instance.PlayTimeline(introAsset, casterGO, "BattleCamera");
+
+                    // Attente de la fin réelle de la timeline pour ne pas afficher l'UI trop tôt
+                    float maxTimelineDuration = (float)introAsset.duration + 0f; // marge de sécurité
+                    float timelineTimer = 0f;
+
+                    while (TimelineLauncher.Instance != null &&
+                           TimelineLauncher.Instance.IsTimelineActive &&
+                           timelineTimer < maxTimelineDuration)
+                    {
+                        timelineTimer += Time.deltaTime;
+                        yield return null;
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("[BattleTransitionManager] TimelineLauncher indisponible ou TimelineAsset manquant.");
+                }
             }
             else
             {
