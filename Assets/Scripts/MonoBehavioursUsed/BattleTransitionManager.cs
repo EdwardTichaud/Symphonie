@@ -317,16 +317,15 @@ public class BattleTransitionManager : MonoBehaviour
         NewBattleManager.Instance.SpawnAll();
 
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
-        GameObject introCam = GameObject.Find("BattleScene_Camera_BattleIntro");
-        if (introCam != null)
+        if (battleCamera != null)
         {
-            introCam.SetActive(true); // Active explicitement la caméra d'intro si elle était désactivée
+            battleCamera.gameObject.SetActive(true); // Active explicitement la caméra d'intro si elle était désactivée
 
             if (firstUnit != null)
-                introCam.transform.position = firstUnit.transform.position;
+                battleCamera.transform.position = firstUnit.transform.position;
 
             // Recherche du PlayableDirector même si le composant est sur un enfant inactif
-            PlayableDirector introDirector = introCam.GetComponentInChildren<PlayableDirector>(true);
+            PlayableDirector introDirector = battleCamera.GetComponentInChildren<PlayableDirector>(true);
             if (introDirector != null)
             {
                 // On joue la Timeline d'introduction
