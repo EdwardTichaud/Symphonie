@@ -187,7 +187,8 @@ public class NewBattleManager : MonoBehaviour
 
     // Caméra
     [Header("Caméra de combat")]
-    [HideInInspector] public Transform battleCameraTransform;
+    // On mémorise l'objet caméra pour éviter de le rechercher à chaque frame
+    private GameObject battleCamera;
     public float cameraSmoothSpeed = 5f;
     [HideInInspector] public Transform desiredTransform;
     private Vector3 desiredPosition;
@@ -245,6 +246,8 @@ public class NewBattleManager : MonoBehaviour
     private void Start()
     {
         EnsureTargetCursor();
+        // Recherche initiale de la caméra de combat pour éviter de la chercher à chaque frame
+        EnsureBattleCamera();
     }
 
     /// <summary>
@@ -1632,18 +1635,20 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        Camera battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
-        if (battleCamera == null)
+        // Utilise la caméra mémorisée ; la recherche est effectuée ponctuellement si nécessaire
+        EnsureBattleCamera();
+        Camera screenshotCamera = battleCamera?.GetComponent<Camera>();
+        if (screenshotCamera == null)
         {
             Debug.LogError("Aucune caméra trouvée pour la capture !");
             return;
         }
 
         // Assure-toi que la caméra utilise la render texture pour la capture
-        RenderTexture prevRT = battleCamera.targetTexture;
-        battleCamera.targetTexture = VictoryScreenImage;
-        battleCamera.Render();
-        battleCamera.targetTexture = prevRT;
+        RenderTexture prevRT = screenshotCamera.targetTexture;
+        screenshotCamera.targetTexture = VictoryScreenImage;
+        screenshotCamera.Render();
+        screenshotCamera.targetTexture = prevRT;
 
         Debug.Log("Screenshot de victoire capturé !");
     }
@@ -1737,9 +1742,16 @@ public class NewBattleManager : MonoBehaviour
     private void SetupCurrentUnitMenus()
     {
         // 1) Essaye de récupérer la BattleCamera par tag
-        Transform battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").transform;
+        // Utilise la caméra de combat mémorisée
+        EnsureBattleCamera();
+        Transform battleCam = battleCamera != null ? battleCamera.transform : null;
+        if (battleCam == null)
+        {
+            Debug.LogWarning("[SetupCurrentUnitMenus] BattleCamera introuvable.");
+            return;
+        }
 
-        Transform mainPanel = FindChildRecursive(battleCamera, "MainMenu_Panel");
+        Transform mainPanel = FindChildRecursive(battleCam, "MainMenu_Panel");
         if (mainPanel == null)
         {
             Debug.LogWarning("[SetupCurrentUnitMenus] 'MainMenu_Panel' introuvable sous la BattleCamera.");
@@ -1757,7 +1769,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         // 3) Panneau SkillsMenu_Panel
-        Transform skillsPanel = FindChildRecursive(battleCamera, "SkillsMenu_Panel");
+        Transform skillsPanel = FindChildRecursive(battleCam, "SkillsMenu_Panel");
         if (skillsPanel == null)
         {
             Debug.LogWarning("[SetupCurrentUnitMenus] 'SkillsMenu_Panel' introuvable sous la BattleCamera.");
@@ -1785,7 +1797,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         // 4) Panneau ItemsMenu_Panel
-        Transform itemsPanel = FindChildRecursive(battleCamera, "ItemsMenu_Panel");
+        Transform itemsPanel = FindChildRecursive(battleCam, "ItemsMenu_Panel");
         if (itemsPanel == null)
         {
             Debug.LogWarning("[SetupCurrentUnitMenus] 'ItemsMenu_Panel' introuvable sous la BattleCamera.");
@@ -2295,14 +2307,12 @@ public class NewBattleManager : MonoBehaviour
     #region Gestion des mouvements de la caméra de combat
     public void UpdateCameraBehaviour(BattleState newState)
     {
-        if (battleCameraTransform == null)
+        // On vérifie ponctuellement que la caméra de combat est bien référencée
+        EnsureBattleCamera();
+        if (battleCamera == null)
         {
-            battleCameraTransform = GameObject.FindGameObjectWithTag("BattleCamera")?.transform;
-            if (battleCameraTransform == null)
-            {
-                Debug.LogError("[BattleCameraManager] Aucune caméra de combat trouvée !");
-                return;
-            }
+            // Impossible de poursuivre sans caméra
+            return;
         }
 
         // Vérifie que l'unité courante est bien définie. Sans elle,
@@ -2432,15 +2442,14 @@ public class NewBattleManager : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (battleCameraTransform == null)
+        // Si la caméra de combat n'est pas disponible, on ne poursuit pas
+        if (battleCamera == null)
         {
-            battleCameraTransform = GameObject.FindGameObjectWithTag("BattleCamera")?.transform;
-            if (battleCameraTransform == null)
-            {
-                Debug.LogError("[BattleCameraManager] Aucune caméra de combat trouvée !");
-                return;
-            }
+            return;
         }
+
+        // Accès direct au transform de la caméra pour limiter les appels
+        Transform camTransform = battleCamera.transform;
 
         CameraController cc = CameraController.Instance;
         // Si une Timeline globale contrôle la caméra (cutscene ou attaque),
@@ -2468,24 +2477,24 @@ public class NewBattleManager : MonoBehaviour
             ComputeTargetSelectionCamera(out Vector3 camPos, out Quaternion camRot,
                 currentCharacterUnit.transform, currentTargetCharacter.transform);
 
-            battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, camPos, Time.deltaTime * cameraSmoothSpeed);
-            battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, camRot, Time.deltaTime * cameraSmoothSpeed);
+            camTransform.position = Vector3.Lerp(camTransform.position, camPos, Time.deltaTime * cameraSmoothSpeed);
+            camTransform.rotation = Quaternion.Slerp(camTransform.rotation, camRot, Time.deltaTime * cameraSmoothSpeed);
         }
         else if (lookAtCasterFromTargetPoint && desiredTransform != null && currentCharacterUnit != null)
         {
             // Positionne la caméra sur le point de la cible en regardant le lanceur
-            battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
-            Quaternion targetRotation = Quaternion.LookRotation(currentCharacterUnit.transform.position - battleCameraTransform.position);
-            battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
+            camTransform.position = Vector3.Lerp(camTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
+            Quaternion targetRotation = Quaternion.LookRotation(currentCharacterUnit.transform.position - camTransform.position);
+            camTransform.rotation = Quaternion.Slerp(camTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
         }
         else if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)
         {
             if (desiredTransform != null)
             {
                 // Reste sur l'ancre mais suit la cible du regard
-                battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
-                Quaternion targetRotation = Quaternion.LookRotation(currentTargetCharacter.transform.position - battleCameraTransform.position);
-                battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
+                camTransform.position = Vector3.Lerp(camTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
+                Quaternion targetRotation = Quaternion.LookRotation(currentTargetCharacter.transform.position - camTransform.position);
+                camTransform.rotation = Quaternion.Slerp(camTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
             }
             else
             {
@@ -2493,16 +2502,16 @@ public class NewBattleManager : MonoBehaviour
                 Vector3 offset = Vector3.up * 3f - currentCharacterUnit.transform.forward * 5f;
 
                 Vector3 targetPosition = midPoint + offset;
-                Quaternion targetRotation = Quaternion.LookRotation(midPoint - battleCameraTransform.position);
+                Quaternion targetRotation = Quaternion.LookRotation(midPoint - camTransform.position);
 
-                battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, targetPosition, Time.deltaTime * cameraSmoothSpeed);
-                battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
+                camTransform.position = Vector3.Lerp(camTransform.position, targetPosition, Time.deltaTime * cameraSmoothSpeed);
+                camTransform.rotation = Quaternion.Slerp(camTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
             }
         }
         else if (desiredTransform != null)
         {
-            battleCameraTransform.position = Vector3.Lerp(battleCameraTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
-            battleCameraTransform.rotation = Quaternion.Slerp(battleCameraTransform.rotation, desiredTransform.rotation, Time.deltaTime * cameraSmoothSpeed);
+            camTransform.position = Vector3.Lerp(camTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
+            camTransform.rotation = Quaternion.Slerp(camTransform.rotation, desiredTransform.rotation, Time.deltaTime * cameraSmoothSpeed);
         }
     }
     #endregion
@@ -2547,8 +2556,8 @@ public class NewBattleManager : MonoBehaviour
         if (caster == null || target == null)
         {
             // Sécurité : on garde la position actuelle si une référence manque
-            position = battleCameraTransform.position;
-            rotation = battleCameraTransform.rotation;
+            position = battleCamera.transform.position;
+            rotation = battleCamera.transform.rotation;
             return;
         }
 
@@ -2597,6 +2606,22 @@ public class NewBattleManager : MonoBehaviour
     private void ChangeCurrentCharacterUnit(CharacterUnit newCurrentCharacterUnit)
     {
         currentCharacterUnit = newCurrentCharacterUnit;
+    }
+
+    /// <summary>
+    /// Recherche et mémorise la caméra de combat si elle n'a pas encore été trouvée.
+    /// Cette opération est effectuée ponctuellement pour éviter de la répéter chaque frame.
+    /// </summary>
+    private void EnsureBattleCamera()
+    {
+        if (battleCamera == null)
+        {
+            battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+            if (battleCamera == null)
+            {
+                Debug.LogError("[BattleCameraManager] Aucune caméra de combat trouvée !");
+            }
+        }
     }
 
     void EnsureTargetCursor()
