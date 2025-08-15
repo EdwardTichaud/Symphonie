@@ -173,6 +173,7 @@ public class PlayerDetection : MonoBehaviour
         currentDetectionRadius = baseDetectionRadius;
         battleEngaged = false;
         detectedEnemies.Clear();
+        enemiesInFight.Clear(); // On s'assure qu'aucun ennemi du combat prcédent ne reste enregistré
         detectionOn = false;
         firstEnemyDetected = false;
 
