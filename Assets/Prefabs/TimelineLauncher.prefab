@@ -76,6 +76,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   soundClip: {fileID: 0}
+  playAtStart: 0
 --- !u!320 &4927517278465844737
 PlayableDirector:
   m_ObjectHideFlags: 0
@@ -186,13 +187,13 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 8738188441690940424}
-          m_TargetAssemblyTypeName: 
-          m_MethodName: 
-          m_Mode: 1
+        - m_Target: {fileID: 1312589981089248191}
+          m_TargetAssemblyTypeName: PlaySound, Assembly-CSharp
+          m_MethodName: PlaySoundFromTimeline
+          m_Mode: 2
           m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: 
+            m_ObjectArgument: {fileID: 8300000, guid: 1935f3ca86e17c040aec516866f0572f, type: 3}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.AudioClip, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
             m_StringArgument: 
