@@ -84,6 +84,13 @@ public class NewBattleManager : MonoBehaviour
     [Header("Début de combat")]
     [SerializeField] private GameObject firstStrikeEffect;
 
+    // Paramètres du ralentissement appliqué lors des animations EquipOnMove.
+    [Tooltip("Facteur de ralentissement au tout début du combat.")]
+    public float equipSlowMotionScale = 0.5f;
+
+    [Tooltip("Durée en secondes du ralenti initial.")]
+    public float equipSlowMotionDuration = 1f;
+
     [Header("Fin de combat")]
     public GameObject victoryScreen;
     public GameObject gameOverScreen;
@@ -400,14 +407,40 @@ public class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Déclenche une animation EquipOnMove aléatoire pour toutes les unités présentes.
+    /// Déclenche les animations EquipOnMove pour toutes les unités présentes
+    /// tout en appliquant un ralenti temporaire pour mettre en valeur la scène.
     /// </summary>
     private void TriggerEquipAnimations()
     {
+        // Lance la coroutine gérant le ralenti et l'animation des unités
+        StartCoroutine(TriggerEquipAnimationsWithSlowTime());
+    }
+
+    /// <summary>
+    /// Coroutine appliquant un ralentissement global pendant l'animation EquipOnMove.
+    /// </summary>
+    private IEnumerator TriggerEquipAnimationsWithSlowTime()
+    {
+        // Sauvegarde des paramètres temporels actuels pour les restaurer ensuite
+        float initialTimeScale = Time.timeScale;
+        float initialFixedDelta = Time.fixedDeltaTime;
+
+        // Application du facteur de ralenti défini dans l'inspecteur
+        Time.timeScale = equipSlowMotionScale;
+        Time.fixedDeltaTime = initialFixedDelta * Time.timeScale;
+
+        // Déclenche l'animation EquipOnMove sur chaque unité du combat
         foreach (var unit in unitsInBattle)
         {
             PlayRandomEquipAnimation(unit.gameObject);
         }
+
+        // Attente en temps réel pour garantir une durée constante malgré le ralenti
+        yield return new WaitForSecondsRealtime(equipSlowMotionDuration);
+
+        // Restaure les valeurs temporelles initiales une fois le ralenti terminé
+        Time.timeScale = initialTimeScale;
+        Time.fixedDeltaTime = initialFixedDelta;
     }
     #endregion
 
