@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Gestionnaire simple de performance.
@@ -14,6 +15,10 @@ public class PerformanceManager : MonoBehaviour
     // Moyenne glissante du temps entre deux frames (utilisé pour calculer un FPS stable)
     private float deltaTime = 0f;
 
+    // Référence facultative vers un composant UI Text pour afficher les FPS
+    [Tooltip("Texte UI où afficher les FPS. Laisser vide pour ne rien afficher.")]
+    public Text fpsText;
+
     private void Awake()
     {
         // Force Unity à viser le framerate défini
@@ -24,12 +29,12 @@ public class PerformanceManager : MonoBehaviour
     {
         // Actualise le deltaTime non affecté par le timeScale pour obtenir un calcul d'FPS fiable
         deltaTime += (Time.unscaledDeltaTime - deltaTime) * 0.1f;
-    }
 
-    private void OnGUI()
-    {
-        // Convertit le deltaTime en FPS et l'affiche en haut à gauche de l'écran
-        int fps = Mathf.CeilToInt(1f / deltaTime);
-        GUI.Label(new Rect(10, 10, 100, 20), fps + " FPS");
+        // Affiche les FPS via un élément UI plus léger que OnGUI
+        if (fpsText != null)
+        {
+            int fps = Mathf.CeilToInt(1f / deltaTime);
+            fpsText.text = fps + " FPS";
+        }
     }
 }

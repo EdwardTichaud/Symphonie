@@ -41,6 +41,12 @@ public class CameraController : MonoBehaviour
     private Camera activeCamera;
     private Camera worldCamera; // Référence directe à la WorldCamera
 
+    // Rafraîchissement moins fréquent de la recherche du point de caméra
+    [Header("Optimisation")]
+    [Tooltip("Délai entre deux recherches du point de caméra le plus proche")]
+    [SerializeField] private float camPointRefreshInterval = 0.2f;
+    private float camPointRefreshTimer;
+
     [Header("---------- Effet de respiration ----------")]
     [Tooltip("Amplitude du mouvement vertical simulant la respiration.")]
     [SerializeField] private float breathingAmplitude = 0.05f;
@@ -439,7 +445,13 @@ public class CameraController : MonoBehaviour
                 break;
 
             case WorldCameraState.ResearchClosestCamPoint:
-                ApplyClosestCamera();
+                // ✅ Limite la recherche du point de caméra le plus proche
+                camPointRefreshTimer -= Time.deltaTime;
+                if (camPointRefreshTimer <= 0f)
+                {
+                    ApplyClosestCamera();
+                    camPointRefreshTimer = camPointRefreshInterval;
+                }
                 break;
 
             default:

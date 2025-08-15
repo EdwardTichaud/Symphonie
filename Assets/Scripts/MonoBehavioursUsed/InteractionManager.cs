@@ -18,6 +18,9 @@ public class InteractionManager : MonoBehaviour
     private GameObject localInfoBox;
     public GameObject currentInteractable;
 
+    // Buffer réutilisé pour stocker les collisions détectées
+    private readonly Collider[] _hitsBuffer = new Collider[10];
+
     [Header("References")]
     [Tooltip("Director controlling cutscenes")]
     public PlayableDirector director; // 👈 nouveau champ
@@ -114,9 +117,15 @@ public class InteractionManager : MonoBehaviour
             return;
         }
 
-        Collider[] hits = Physics.OverlapSphere(playerTransform.position, interactionRange, interactableLayer);
+        // Utilisation de Physics.OverlapSphereNonAlloc pour éviter une allocation à chaque frame
+        int hitCount = Physics.OverlapSphereNonAlloc(
+            playerTransform.position,
+            interactionRange,
+            _hitsBuffer,
+            interactableLayer
+        );
 
-        if (hits.Length > 0)
+        if (hitCount > 0)
         {
             // ... ton code inchangé ...
         }

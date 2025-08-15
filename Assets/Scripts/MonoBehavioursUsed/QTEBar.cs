@@ -29,6 +29,9 @@ public class QTEBar : MonoBehaviour
         public bool started;
     }
     private readonly List<ScheduledNote> scheduledNotes = new();
+
+    // Liste tampon réutilisée pour retirer les notes terminées sans nouvelle allocation
+    private readonly List<ScheduledNote> removalBuffer = new();
     // Durée par défaut pour qu'une note parcoure toute la barre
     private const float defaultTravelDuration = 2f;
     private float barWidth;
@@ -133,8 +136,8 @@ public class QTEBar : MonoBehaviour
             return;
 
         float now = Time.unscaledTime;
-        // Liste temporaire pour retirer proprement les notes terminées
-        List<ScheduledNote> toRemove = null;
+        // Réutilise une liste tampon pour éviter des allocations à chaque frame
+        removalBuffer.Clear();
 
         foreach (var n in scheduledNotes)
         {
@@ -152,7 +155,7 @@ public class QTEBar : MonoBehaviour
             if (n.image == null)
             {
                 // L'objet a été détruit ailleurs, on supprime la note de la liste
-                (toRemove ??= new List<ScheduledNote>()).Add(n);
+                removalBuffer.Add(n);
                 continue;
             }
 
@@ -160,18 +163,15 @@ public class QTEBar : MonoBehaviour
             UpdateNotePosition(n.image, progress);
 
             if (progress >= 1f)
-                (toRemove ??= new List<ScheduledNote>()).Add(n);
+                removalBuffer.Add(n);
         }
 
-        if (toRemove != null)
+        foreach (var rem in removalBuffer)
         {
-            foreach (var rem in toRemove)
-            {
-                scheduledNotes.Remove(rem);
-                activeNotes.Remove(rem.image);
-                if (rem.image != null)
-                    Destroy(rem.image.gameObject);
-            }
+            scheduledNotes.Remove(rem);
+            activeNotes.Remove(rem.image);
+            if (rem.image != null)
+                Destroy(rem.image.gameObject);
         }
     }
 }
