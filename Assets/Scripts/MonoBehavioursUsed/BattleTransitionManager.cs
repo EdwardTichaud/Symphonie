@@ -317,13 +317,16 @@ public class BattleTransitionManager : MonoBehaviour
         NewBattleManager.Instance.SpawnAll();
 
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
-        GameObject introCam = GameObject.Find("BattleScene/Camera_BattleIntro");
+        GameObject introCam = GameObject.Find("BattleScene_Camera_BattleIntro");
         if (introCam != null)
         {
+            introCam.SetActive(true); // Active explicitement la caméra d'intro si elle était désactivée
+
             if (firstUnit != null)
                 introCam.transform.position = firstUnit.transform.position;
 
-            PlayableDirector introDirector = introCam.GetComponentInChildren<PlayableDirector>();
+            // Recherche du PlayableDirector même si le composant est sur un enfant inactif
+            PlayableDirector introDirector = introCam.GetComponentInChildren<PlayableDirector>(true);
             if (introDirector != null)
             {
                 // On joue la Timeline d'introduction
@@ -333,7 +336,7 @@ public class BattleTransitionManager : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning("[BattleTransitionManager] Timeline d'intro introuvable.");
+                Debug.LogWarning("[BattleTransitionManager] Timeline d'intro introuvable sur la battleCamera.");
             }
         }
         else
@@ -383,6 +386,7 @@ public class BattleTransitionManager : MonoBehaviour
 
         // Par sécurité, on vide la liste au cas où il resterait des références
         playerDetection.enemiesInFight.Clear();
+        playerDetection.detectedEnemies.Clear(); // Nettoyage complet des ennemis détectés
 
         GameManager.Instance.ChangeGameState(GameState.Exploration);
 
