@@ -8,7 +8,6 @@ using UnityEngine.Rendering; // Nécessaire pour manipuler les Rendering Layer p
 /// différent à chaque objet de la hiérarchie (meshs comme terrains)
 /// en fonction de son <see cref="LayerMask"/> Unity.
 /// </summary>
-[ExecuteAlways]
 public class SetRenderingLayer : MonoBehaviour
 {
     public static SetRenderingLayer Instance { get; private set; }
