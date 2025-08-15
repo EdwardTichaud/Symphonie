@@ -16,7 +16,7 @@ public class MusicalMoveSO : ScriptableObject
     public bool onlyAwake = false;
     public Sprite moveIcon;
     [TextArea] public string description;
-    public AnimationClip musicalMoveTargetingAnimation;
+    // L'animation de ciblage est désormais pilotée par la Timeline de préparation
     public bool stayFaceToTarget = true;
 
     [System.Serializable]
@@ -69,10 +69,6 @@ public class MusicalMoveSO : ScriptableObject
 
     [Header("Placement autour de la cible")]
     public RelativePosition relativePosition = RelativePosition.Front;
-
-    [Header("VFX")]
-    public GameObject introVFXPrefab;
-    public GameObject hitVFXPrefab;
 
     [Header("Téléportation")]
     // Effet visuel déclenché au départ du téléport
