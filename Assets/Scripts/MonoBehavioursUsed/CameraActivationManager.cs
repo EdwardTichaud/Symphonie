@@ -94,11 +94,28 @@ public class CameraActivationManager : MonoBehaviour
 
     /// <summary>
     /// Active ou désactive proprement une caméra si elle existe.
+    /// Cette méthode s'assure également que la WorldCamera et la BattleCamera
+    /// ne puissent jamais être actives en même temps afin d'éviter des rendus
+    /// multiples coûteux.
     /// </summary>
     private void SetCameraState(Camera cam, bool state)
     {
-        if (cam != null)
-            cam.gameObject.SetActive(state);
+        if (cam == null)
+            return;
+
+        // Active ou désactive directement le GameObject de la caméra ciblée
+        cam.gameObject.SetActive(state);
+
+        if (!state)
+            return;
+
+        // Si on active la WorldCamera, on force la BattleCamera à s'éteindre
+        if (cam == worldCamera && battleCamera != null)
+            battleCamera.gameObject.SetActive(false);
+
+        // Si on active la BattleCamera, on force la WorldCamera à s'éteindre
+        if (cam == battleCamera && worldCamera != null)
+            worldCamera.gameObject.SetActive(false);
     }
 }
 
