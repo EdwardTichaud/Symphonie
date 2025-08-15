@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class StartManager : MonoBehaviour
 {
-    void Start()
+    void Awake()
     {
         ResetTimeScale();
         ResetCamerasDepth();
