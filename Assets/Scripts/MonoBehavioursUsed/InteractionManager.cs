@@ -37,10 +37,6 @@ public class InteractionManager : MonoBehaviour
     {
         SetInputs();
 
-        mainCamera = Camera.main;
-        if (mainCamera == null)
-            Debug.LogError("[InteractionManager3D] Main Camera not found.");
-
         // Find the player
         var player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)

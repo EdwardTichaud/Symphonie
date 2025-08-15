@@ -27,10 +27,6 @@ public class BattleTransitionManager : MonoBehaviour
 
     private Camera battleCamera;
 
-    [Header("Views")]
-    public GameObject worldView;
-    public GameObject battleView;
-
     [Header("Scenes")]
     [SerializeField] private GameObject worldScene; // GameObject racine de la scène du monde à désactiver pendant les combats
 
@@ -229,11 +225,6 @@ public class BattleTransitionManager : MonoBehaviour
         // Masque l'interface jusqu'au premier tour du joueur
         HideBattleUI();
 
-        // Désactive la scène du monde pour éviter tout conflit visuel pendant le combat
-        // Cette scène sera réactivée lorsqu'on quittera le mode combat
-        if (worldView != null)
-            worldView.SetActive(false);
-
         // Désactive également le GameObject principal du monde pour empêcher toute interaction
         if (worldScene != null)
             worldScene.SetActive(false);
@@ -276,7 +267,6 @@ public class BattleTransitionManager : MonoBehaviour
         StartCoroutine(VersusThunderFlash()); // Déclenche un flash blanc synchronisé avec le son
 
         battleCamera.gameObject.SetActive(true);
-        battleView.SetActive(true);
         versusTransition.SetActive(true);
         versusCameraCanvas.SetActive(true);
 
@@ -404,13 +394,6 @@ public class BattleTransitionManager : MonoBehaviour
         // Réactive la détection après un court délai
         playerDetection.ResetDetection(1f);
 
-        //Switch Battle vers World
-        if (worldView != null && battleView != null)
-        {
-            worldView.SetActive(true); // Réactive la scène du monde après le combat
-            battleView.SetActive(false);
-        }
-
         // Réactive également le GameObject principal du monde pour reprendre l'exploration
         if (worldScene != null)
             worldScene.SetActive(true);
@@ -463,7 +446,6 @@ public class BattleTransitionManager : MonoBehaviour
     {
        versusTransition.SetActive(false); // Bouclage pour être sûr
        brokenGlass.SetActive(false);
-       battleView.SetActive(false); // Bouclage pour être sûr
        versusCameraCanvas.SetActive(false);
 
         // Le canvas de transition est désactivé pour éviter tout résidu visuel

@@ -23,7 +23,6 @@ public class StartManager : MonoBehaviour
     void ResetCamerasDepth()
     {
         Debug.Log("Resetting Camera Depths");
-        Camera.main.depth = 1;
         Camera battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").GetComponentInChildren<Camera>();
         battleCamera.depth = 0;
     }
