@@ -16,12 +16,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public AnimationClip interceptedAnimation;
     public AnimationClip interceptionAnimation;
 
-    [Header("Animations de direction de dégâts")]
-    public AnimationClip frontHitAnimation;   // Touché de face
-    public AnimationClip backHitAnimation;    // Touché dans le dos
-    public AnimationClip leftHitAnimation;    // Touché par la gauche
-    public AnimationClip rightHitAnimation;   // Touché par la droite
-
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
     [HideInInspector] public Animator animator;
@@ -473,32 +467,52 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public void PlayHurtAnimation(Transform attacker = null)
     {
-        AnimationClip clip = null;
+        // Si l'unité est morte ou qu'aucun Animator n'est disponible, on ne fait rien
+        if (IsDead || animator == null)
+            return;
 
-        // Si un attaquant est fourni, on détermine la direction du coup
+        // Lorsque l'attaquant est connu, on calcule le côté touché
         if (attacker != null)
         {
-            // Direction de la cible vers l'attaquant
-            Vector3 dir = (attacker.position - transform.position).normalized;
-            // Angle signé autour de l'axe Y pour savoir de quel côté vient l'attaque
-            float angle = Vector3.SignedAngle(transform.forward, dir, Vector3.up);
+            // Direction normalisée allant de cette unité vers l'attaquant
+            Vector3 direction = (attacker.position - transform.position).normalized;
 
-            // Choix du clip en fonction de l'angle mesuré
+            // Angle signé autour de l'axe Y pour savoir si l'attaque vient de la
+            // gauche (< 0) ou de la droite (> 0). La valeur absolue permet ensuite de
+            // distinguer l'avant ou l'arrière.
+            float angle = Vector3.SignedAngle(transform.forward, direction, Vector3.up);
+
+            // Nom de l'état à jouer. Par défaut on considère une attaque de face.
+            string state = "Hit_F";
+
+            // Avant : angle proche de 0°
             if (Mathf.Abs(angle) <= 45f)
-                clip = Data?.frontHitAnimation ?? frontHitAnimation;
+            {
+                state = "Hit_F";
+            }
+            // Arrière : angle > 135° ou < -135°
             else if (Mathf.Abs(angle) > 135f)
-                clip = Data?.backHitAnimation ?? backHitAnimation;
+            {
+                state = "Hit_B";
+            }
+            // Droite : angle positif (attaque venant de la droite)
             else if (angle > 0f)
-                clip = Data?.rightHitAnimation ?? rightHitAnimation;
+            {
+                state = "Hit_R";
+            }
+            // Gauche : angle négatif
             else
-                clip = Data?.leftHitAnimation ?? leftHitAnimation;
+            {
+                state = "Hit_L";
+            }
+
+            // Lance l'animation correspondante dans l'Animator
+            animator.CrossFade(state, 0.05f);
+            return;
         }
 
-        // Fallback sur les animations génériques si aucun clip spécifique n'est trouvé
-        if (clip == null)
-            clip = Data?.hitAnimation ?? hurtAnimation;
-
-        PlayAnimationClip(clip);
+        // Si aucun attaquant n'est fourni, on se rabat sur l'animation générique
+        PlayAnimationClip(Data?.hitAnimation ?? hurtAnimation);
     }
     public void PlayInterceptedAnimation() => PlayAnimationClip(interceptedAnimation);
     public void PlayInterceptionAnimation() => PlayAnimationClip(interceptionAnimation);

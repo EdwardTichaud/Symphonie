@@ -86,12 +86,6 @@ public class CharacterData : ScriptableObject, ITargetable
     // Animation générique de dégâts
     public AnimationClip hitAnimation;                // Jouée quand l'unité subit des dégâts
 
-    // Animations spécifiques selon l'orientation de l'attaque
-    public AnimationClip frontHitAnimation;           // Dégâts reçus de face
-    public AnimationClip backHitAnimation;            // Dégâts reçus de dos
-    public AnimationClip leftHitAnimation;            // Dégâts reçus par la gauche
-    public AnimationClip rightHitAnimation;           // Dégâts reçus par la droite
-
     public AnimationClip deathAnimation;
 
     // Animations liées à la téléportation
