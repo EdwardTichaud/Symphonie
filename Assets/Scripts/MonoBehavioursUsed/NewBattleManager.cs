@@ -2617,10 +2617,6 @@ public class NewBattleManager : MonoBehaviour
         if (battleCamera == null)
         {
             battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
-            if (battleCamera == null)
-            {
-                Debug.LogError("[BattleCameraManager] Aucune caméra de combat trouvée !");
-            }
         }
     }
 
