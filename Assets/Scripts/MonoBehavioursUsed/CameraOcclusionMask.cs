@@ -15,12 +15,18 @@ public class CameraOcclusionMask : MonoBehaviour
     [Tooltip("Marge supplémentaire autour de la silhouette de la cible")]
     [SerializeField] private float sizePadding = 20f;
 
+    [Header("Shader de masque circulaire")]
+    [Tooltip("Shader appliqué aux obstacles afin d'y découper un cercle transparent")] 
+    [SerializeField] private Shader occlusionShader;
+
     // Renderer principal de la cible utilisé pour calculer sa taille à l'écran
     private Renderer targetRenderer;
 
     private RectTransform maskRect;
-    // Liste des Renderers rendus invisibles afin de pouvoir les réafficher ensuite
-    private readonly List<Renderer> hiddenRenderers = new List<Renderer>();
+    // Sauvegarde des matériaux originaux pour pouvoir rétablir l'affichage des obstacles
+    private readonly Dictionary<Renderer, Material[]> originalMaterials = new Dictionary<Renderer, Material[]>();
+    // Liste des renderers utilisant actuellement le shader de découpe
+    private readonly List<Renderer> maskedRenderers = new List<Renderer>();
 
     private void Awake()
     {
@@ -33,6 +39,10 @@ public class CameraOcclusionMask : MonoBehaviour
         // Récupération du renderer de la cible pour estimer son empreinte à l'écran
         if (target != null)
             targetRenderer = target.GetComponentInChildren<Renderer>();
+
+        // Si aucun shader n'est renseigné dans l'inspecteur, on tente de le charger par défaut
+        if (occlusionShader == null)
+            occlusionShader = Shader.Find("Custom/OcclusionCircleCutout");
     }
 
     private void LateUpdate()
@@ -91,14 +101,40 @@ public class CameraOcclusionMask : MonoBehaviour
 
             maskRect.sizeDelta = Vector2.one * (computedSize + sizePadding);
 
-            // Désactivation des renderers des obstacles détectés
+            // Calcul des paramètres normalisés du masque pour le shader
+            Vector2 maskCenter01 = new Vector2(screenCenter.x / Screen.width, screenCenter.y / Screen.height);
+            float maskRadius01 = (maskRect.sizeDelta.x * 0.5f) / Screen.width;
+
+            // Application du shader de découpe à chaque obstacle touché
             foreach (RaycastHit hit in hits)
             {
                 Renderer rend = hit.collider.GetComponent<Renderer>();
-                if (rend != null && !hiddenRenderers.Contains(rend))
+                if (rend == null) continue;
+
+                // Si l'obstacle n'a pas encore été traité, on sauvegarde son matériau et on applique le shader
+                if (!originalMaterials.ContainsKey(rend))
                 {
-                    rend.enabled = false; // On masque l'obstacle
-                    hiddenRenderers.Add(rend); // On garde une trace pour le réactiver plus tard
+                    originalMaterials[rend] = rend.materials;
+
+                    Material[] newMats = new Material[rend.materials.Length];
+                    for (int m = 0; m < newMats.Length; m++)
+                    {
+                        Material baseMat = rend.materials[m];
+                        Material mat = new Material(occlusionShader);
+                        // Conservation de la texture principale si elle existe
+                        if (baseMat.HasProperty("_MainTex"))
+                            mat.SetTexture("_MainTex", baseMat.GetTexture("_MainTex"));
+                        newMats[m] = mat;
+                    }
+                    rend.materials = newMats;
+                    maskedRenderers.Add(rend);
+                }
+
+                // Mise à jour des propriétés du masque pour ce renderer
+                foreach (Material mat in rend.materials)
+                {
+                    mat.SetVector("_MaskCenter", maskCenter01);
+                    mat.SetFloat("_MaskRadius", maskRadius01);
                 }
             }
         }
@@ -106,29 +142,15 @@ public class CameraOcclusionMask : MonoBehaviour
         {
             if (maskObject.activeSelf)
                 maskObject.SetActive(false);
-        }
 
-        // Réactivation des obstacles qui ne sont plus occultants
-        for (int i = hiddenRenderers.Count - 1; i >= 0; i--)
-        {
-            Renderer rend = hiddenRenderers[i];
-            bool stillHidden = false;
-
-            foreach (RaycastHit hit in hits)
+            // Restauration des matériaux d'origine lorsque l'occlusion n'est plus présente
+            foreach (Renderer rend in maskedRenderers)
             {
-                if (hit.collider.GetComponent<Renderer>() == rend)
-                {
-                    stillHidden = true;
-                    break;
-                }
+                if (rend != null && originalMaterials.ContainsKey(rend))
+                    rend.materials = originalMaterials[rend];
             }
-
-            if (!stillHidden)
-            {
-                if (rend != null)
-                    rend.enabled = true; // On réaffiche l'obstacle
-                hiddenRenderers.RemoveAt(i);
-            }
+            maskedRenderers.Clear();
+            originalMaterials.Clear();
         }
     }
 }
