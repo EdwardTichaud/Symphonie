@@ -2455,7 +2455,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1074330510}
   - component: {fileID: 1074330511}
-  m_Layer: 24
+  - component: {fileID: 1074330512}
+  m_Layer: 7
   m_Name: Le Vieux
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2494,6 +2495,29 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a6cd05ba12bd40e3a3617235606c1f09, type: 2}
   - {fileID: 11400000, guid: 8cb00f1fc7124c73b282a5f3ac21a591, type: 2}
   - {fileID: 11400000, guid: defc213ea56d4a33a281a065a54967b4, type: 2}
+--- !u!136 &1074330512
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1074330509}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 2.2982788
+  m_Direction: 1
+  m_Center: {x: 0, y: 0.6491394, z: 0}
 --- !u!1 &1084083658
 GameObject:
   m_ObjectHideFlags: 0
