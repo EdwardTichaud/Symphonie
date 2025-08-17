@@ -35,9 +35,10 @@ public class NPC_Leandre : MonoBehaviour, IInteractable
             return;
         }
 
-        if (dialogueStage >= dialoguePhases.Length)
+        // Vérifie qu'au moins un dialogue est configuré
+        if (dialoguePhases == null || dialoguePhases.Length == 0)
         {
-            // Toutes les phases ont été jouées : aucune interaction supplémentaire
+            // Aucun dialogue disponible pour ce PNJ
             return;
         }
 
@@ -80,8 +81,19 @@ public class NPC_Leandre : MonoBehaviour, IInteractable
     /// </summary>
     public void IncrementDialogueStage()
     {
-        // Évite de dépasser la taille du tableau
-        dialogueStage = Mathf.Min(dialogueStage + 1, dialoguePhases.Length);
+        // Sécurise en cas de tableau vide
+        if (dialoguePhases == null || dialoguePhases.Length == 0)
+        {
+            return; // aucune phase de dialogue à parcourir
+        }
+
+        // Incrémente l'indice tant qu'on n'est pas au dernier dialogue
+        // Une fois le dernier atteint, on reste dessus pour le répéter
+        if (dialogueStage < dialoguePhases.Length - 1)
+        {
+            dialogueStage++;
+        }
+        // Sinon, ne rien faire : dialogueStage reste sur le dernier index
     }
 }
 

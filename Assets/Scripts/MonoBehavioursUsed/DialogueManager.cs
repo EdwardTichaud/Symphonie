@@ -48,11 +48,16 @@ public class DialogueManager : MonoBehaviour
 
     public IEnumerator StartDialogue(DialogueContainer container)
     {
-        // Place la bulle selon la configuration du dialogue
-        PositionDialogueBox(container);
-
+        // Joue l'animation d'ouverture de la bulle
         GetComponent<Animator>()?.Play("DialogueBoxOpen");
         isOpen = true;
+
+        // Attendre une frame pour que l'animation initialise correctement l'UI
+        // puis placer la bulle selon la configuration du dialogue.
+        yield return null;
+
+        // Position aléatoire ou personnalisée selon les paramètres du container
+        PositionDialogueBox(container);
 
         foreach (DialogueLine line in container.lines)
         {
