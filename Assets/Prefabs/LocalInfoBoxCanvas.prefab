@@ -206,11 +206,12 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2919303267554522639}
-  - component: {fileID: 7475893172721065688}
-  - component: {fileID: 8784307329092069573}
-  - component: {fileID: 7379390016632305236}
-  - component: {fileID: 6969806717701985306}
+    - component: {fileID: 2919303267554522639}
+    - component: {fileID: 7475893172721065688}
+    - component: {fileID: 8784307329092069573}
+    - component: {fileID: 7379390016632305236}
+    - component: {fileID: 6969806717701985306}
+    - component: {fileID: 3349284664150899633}
   m_Layer: 5
   m_Name: LocalInfoBoxCanvas
   m_TagString: Untagged
@@ -323,6 +324,19 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &3349284664150899633
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3711886962752427007}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11e6504df52a77b40af686473fe47bc1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  verticalOffset: 5
 --- !u!1 &7290864388659978699
 GameObject:
   m_ObjectHideFlags: 0
