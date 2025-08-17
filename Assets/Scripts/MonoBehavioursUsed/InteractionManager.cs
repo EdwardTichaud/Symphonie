@@ -114,7 +114,37 @@ public class InteractionManager : MonoBehaviour
 
         if (hits.Length > 0)
         {
-            // ... ton code inchangé ...
+            // Recherche de l'objet interactif le plus proche du joueur.
+            GameObject nearest = hits[0].gameObject;
+            float minDistance = Vector3.Distance(playerTransform.position, nearest.transform.position);
+
+            foreach (Collider hit in hits)
+            {
+                float dist = Vector3.Distance(playerTransform.position, hit.transform.position);
+                if (dist < minDistance)
+                {
+                    // Mémorise l'objet le plus proche trouvé jusqu'à présent.
+                    nearest = hit.gameObject;
+                    minDistance = dist;
+                }
+            }
+
+            // Met à jour l'interactable courant uniquement s'il change.
+            if (currentInteractable != nearest)
+            {
+                currentInteractable = nearest;
+
+                if (localInfoBox != null)
+                {
+                    // Affiche l'invite locale d'interaction.
+                    localInfoBox.SetActive(true);
+
+                    // Active également la map d'inputs InfoBox pour capter la touche de validation.
+                    InputsManager.Instance.ActivateOnly(
+                        InputsManager.Instance.playerInputs.World.Get(),
+                        InputsManager.Instance.playerInputs.InfoBox.Get());
+                }
+            }
         }
         else if (currentInteractable != null)
         {
