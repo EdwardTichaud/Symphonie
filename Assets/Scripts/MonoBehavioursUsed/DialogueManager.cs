@@ -104,7 +104,9 @@ public class DialogueManager : MonoBehaviour
     {
         var temp = ScriptableObject.CreateInstance<DialogueContainer>();
         temp.lines = lines;
-        temp.randomPosition = true; // Par défaut, position aléatoire
+        // Par défaut on place le DialoguePanel à la position personnalisée (0,0)
+        // Pour un placement aléatoire il faudra décocher randomPosition dans le container
+        temp.randomPosition = true; // true => position personnalisée, false => position aléatoire
         PlayDialogue(temp, onEnd);
     }
 
@@ -112,6 +114,8 @@ public class DialogueManager : MonoBehaviour
     {
         var temp = ScriptableObject.CreateInstance<DialogueContainer>();
         temp.lines = lines;
+        // Même logique que ci-dessus : true signifie que l'on utilise la position fournie
+        // (par défaut le centre de la caméra).
         temp.randomPosition = true;
         yield return StartDialogue(temp);
     }
@@ -156,11 +160,12 @@ public class DialogueManager : MonoBehaviour
         }
 
         Vector2 newPos = Vector2.zero;
-        float margin = 50f; // Marge pour éviter les bords
+        float margin = 50f; // Marge pour éviter que la bulle ne soit coupée par les bords
 
-        if (container.randomPosition)
+        if (!container.randomPosition)
         {
-            // Calcule des limites sûres à l'intérieur du canvas
+            // Si randomPosition n'est pas coché, on calcule une position aléatoire
+            // tout en respectant la marge de sécurité autour du cadre de la caméra
             float xMin = -canvasRect.rect.width / 2 + rectTransform.rect.width / 2 + margin;
             float xMax = canvasRect.rect.width / 2 - rectTransform.rect.width / 2 - margin;
             float yMin = -canvasRect.rect.height / 2 + rectTransform.rect.height / 2 + margin;
@@ -170,7 +175,8 @@ public class DialogueManager : MonoBehaviour
         }
         else
         {
-            // Utilise la position fournie (x, y) sans toucher au z
+            // Sinon on utilise la position personnalisée définie dans le DialogueContainer
+            // (0,0,0 correspond au centre de la caméra)
             newPos = new Vector2(container.customPosition.x, container.customPosition.y);
         }
 
