@@ -1704,6 +1704,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dialoguePhases:
   - {fileID: 11400000, guid: 1d1c01c0a2334784a63b930608846756, type: 2}
+  - {fileID: 11400000, guid: f3a85214293da57499dd5adbbd10ea30, type: 2}
 --- !u!1001 &542519337
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10589,27 +10590,27 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 99893728442827529, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 596838774765720263, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 1395299126949669315, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 1485528790081031270, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 1631328717241036566, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 2434687206035882840, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 2564928293713197861, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Name
@@ -10617,7 +10618,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2564928293713197861, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 3174144037762007832, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Camera
@@ -10625,15 +10626,23 @@ PrefabInstance:
       objectReference: {fileID: 1805215115405902164}
     - target: {fileID: 3174144037762007832, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_RenderMode
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3174144037762007832, guid: e09e734471059724697ca025074011f0, type: 3}
+      propertyPath: m_PlaneDistance
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3174144037762007832, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_SortingLayerID
-      value: -304129247
+      value: -306751213
+      objectReference: {fileID: 0}
+    - target: {fileID: 3174144037762007832, guid: e09e734471059724697ca025074011f0, type: 3}
+      propertyPath: m_VertexColorAlwaysGammaSpace
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4242007015781093729, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 5935448509187317581, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_AnchoredPosition.x
@@ -10641,27 +10650,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6080609517331254324, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 6403521993074385151, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 6671863911568236195, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 7425234923098079446, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 7501041814461028739, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 8350939218113532198, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 8728919071414881272, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Pivot.x
@@ -10745,11 +10754,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8917852017631120947, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     - target: {fileID: 9068108404854475601, guid: e09e734471059724697ca025074011f0, type: 3}
       propertyPath: m_Layer
-      value: 0
+      value: 11
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
