@@ -50,8 +50,8 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
         DialogueContainer container = dialoguePhases[dialogueStage];
         if (container != null)
         {
-            // Démarre le dialogue et attend sa fin
-            yield return DialogueManager.Instance.StartDialogue(container.lines);
+            // Démarre le dialogue et attend sa fin en prenant en compte la position de la bulle
+            yield return DialogueManager.Instance.StartDialogue(container);
         }
 
         // Prépare la phase suivante

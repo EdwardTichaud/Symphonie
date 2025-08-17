@@ -23,6 +23,8 @@ public class DialogueManager : MonoBehaviour
     public static DialogueManager Instance { get; private set; }
 
     private System.Action onDialogueEndCallback;
+    // Référence rapide au RectTransform pour repositionner la bulle
+    private RectTransform rectTransform;
 
     void Awake()
     {
@@ -33,21 +35,26 @@ public class DialogueManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        rectTransform = GetComponent<RectTransform>();
     }
 
-    public void PlayDialogue(DialogueLine[] lines, System.Action onEnd = null)
+    // --- Nouvelle API utilisant DialogueContainer ---
+    public void PlayDialogue(DialogueContainer container, System.Action onEnd = null)
     {
         StopAllCoroutines();
         onDialogueEndCallback = onEnd;
-        StartCoroutine(StartDialogue(lines));
+        StartCoroutine(StartDialogue(container));
     }
 
-    public IEnumerator StartDialogue(DialogueLine[] lines)
+    public IEnumerator StartDialogue(DialogueContainer container)
     {
+        // Place la bulle selon la configuration du dialogue
+        PositionDialogueBox(container);
+
         GetComponent<Animator>()?.Play("DialogueBoxOpen");
         isOpen = true;
 
-        foreach (DialogueLine line in lines)
+        foreach (DialogueLine line in container.lines)
         {
             nameText.text = line.speakerName;
             yield return StartCoroutine(TypeLine(line.text));
@@ -87,9 +94,63 @@ public class DialogueManager : MonoBehaviour
         isTyping = false;
     }
 
+    // --- Compatibilité rétroactive pour les anciens appels ---
+    public void PlayDialogue(DialogueLine[] lines, System.Action onEnd = null)
+    {
+        var temp = ScriptableObject.CreateInstance<DialogueContainer>();
+        temp.lines = lines;
+        temp.randomPosition = true; // Par défaut, position aléatoire
+        PlayDialogue(temp, onEnd);
+    }
+
+    public IEnumerator StartDialogue(DialogueLine[] lines)
+    {
+        var temp = ScriptableObject.CreateInstance<DialogueContainer>();
+        temp.lines = lines;
+        temp.randomPosition = true;
+        yield return StartDialogue(temp);
+    }
+
     // Optionnel : dialogue sans pause timeline
     public void PlayDialogue(DialogueLine[] lines)
     {
         PlayDialogue(lines, null);
+    }
+
+    public void PlayDialogue(DialogueContainer container)
+    {
+        PlayDialogue(container, null);
+    }
+
+    /// <summary>
+    /// Positionne la bulle de dialogue soit aléatoirement, soit à une position
+    /// spécifique définie dans le DialogueContainer.
+    /// </summary>
+    private void PositionDialogueBox(DialogueContainer container)
+    {
+        if (rectTransform == null)
+            rectTransform = GetComponent<RectTransform>();
+
+        RectTransform canvasRect = rectTransform.parent as RectTransform;
+        Vector2 newPos = Vector2.zero;
+        float margin = 50f; // Marge pour éviter les bords
+
+        if (container.randomPosition)
+        {
+            // Calcule des limites sûres à l'intérieur du canvas
+            float xMin = -canvasRect.rect.width / 2 + rectTransform.rect.width / 2 + margin;
+            float xMax = canvasRect.rect.width / 2 - rectTransform.rect.width / 2 - margin;
+            float yMin = -canvasRect.rect.height / 2 + rectTransform.rect.height / 2 + margin;
+            float yMax = canvasRect.rect.height / 2 - rectTransform.rect.height / 2 - margin;
+
+            newPos = new Vector2(Random.Range(xMin, xMax), Random.Range(yMin, yMax));
+        }
+        else
+        {
+            // Utilise la position fournie (x, y) sans toucher au z
+            newPos = new Vector2(container.customPosition.x, container.customPosition.y);
+        }
+
+        rectTransform.anchoredPosition = newPos;
     }
 }
