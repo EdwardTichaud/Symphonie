@@ -26,6 +26,35 @@ public class DialogueManager : MonoBehaviour
     // Référence rapide au RectTransform pour repositionner la bulle
     private RectTransform rectTransform;
 
+    /// <summary>
+    /// Active ou désactive les actions de déplacement du joueur.
+    /// Cela empêche Lucian de se déplacer pendant les dialogues.
+    /// </summary>
+    /// <param name="enable">True pour réactiver les actions de déplacement, false pour les bloquer.</param>
+    private void TogglePlayerMovement(bool enable)
+    {
+        if (InputsManager.Instance == null) return;
+
+        var world = InputsManager.Instance.playerInputs.World;
+
+        if (enable)
+        {
+            // Réactivation des actions liées au déplacement.
+            world.Move.Enable();
+            world.Run.Enable();
+            world.Jump.Enable();
+            world.Dash.Enable();
+        }
+        else
+        {
+            // Désactivation des actions liées au déplacement pour figer le joueur.
+            world.Move.Disable();
+            world.Run.Disable();
+            world.Jump.Disable();
+            world.Dash.Disable();
+        }
+    }
+
     void Awake()
     {
         if (Instance != null && Instance != this)
@@ -52,6 +81,10 @@ public class DialogueManager : MonoBehaviour
         GetComponentInChildren<Animator>()?.Play("DialogueBoxOpen");
         isOpen = true;
 
+        // Pendant une interaction, on bloque les entrées de déplacement du joueur
+        // afin qu'il ne puisse pas se déplacer pendant qu'un dialogue est affiché.
+        TogglePlayerMovement(false);
+
         // Attendre une frame pour que l'animation initialise correctement l'UI
         // puis placer la bulle selon la configuration du dialogue.
         yield return null;
@@ -68,6 +101,9 @@ public class DialogueManager : MonoBehaviour
 
         GetComponentInChildren<Animator>()?.Play("DialogueBoxClose");
         isOpen = false;
+
+        // Le dialogue est terminé : on réactive les entrées de déplacement.
+        TogglePlayerMovement(true);
 
         onDialogueEndCallback?.Invoke();
         onDialogueEndCallback = null;
@@ -104,9 +140,9 @@ public class DialogueManager : MonoBehaviour
     {
         var temp = ScriptableObject.CreateInstance<DialogueContainer>();
         temp.lines = lines;
-        // Par défaut on place le DialoguePanel à la position personnalisée (0,0)
-        // Pour un placement aléatoire il faudra décocher randomPosition dans le container
-        temp.randomPosition = true; // true => position personnalisée, false => position aléatoire
+        // Par défaut on place le DialoguePanel à la position personnalisée (0,0).
+        // Pour un placement aléatoire il faudra activer randomPosition dans le container.
+        temp.randomPosition = false; // false => position personnalisée, true => position aléatoire
         PlayDialogue(temp, onEnd);
     }
 
@@ -114,9 +150,9 @@ public class DialogueManager : MonoBehaviour
     {
         var temp = ScriptableObject.CreateInstance<DialogueContainer>();
         temp.lines = lines;
-        // Même logique que ci-dessus : true signifie que l'on utilise la position fournie
-        // (par défaut le centre de la caméra).
-        temp.randomPosition = true;
+        // Même logique que ci-dessus : par défaut la position est personnalisée
+        // (0,0 correspond au centre de la caméra).
+        temp.randomPosition = false;
         yield return StartDialogue(temp);
     }
 

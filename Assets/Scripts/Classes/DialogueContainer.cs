@@ -6,12 +6,12 @@ public class DialogueContainer : ScriptableObject
     // Lignes de dialogue à afficher
     public DialogueLine[] lines;
 
-    // Si true, on utilise la position personnalisée définie ci-dessous.
-    // Si false (case non cochée), la bulle est placée à une position aléatoire
-    // en respectant une marge pour éviter les bords de l'écran.
-    public bool randomPosition = true;
+    // Si true, la bulle est placée aléatoirement à l'écran
+    // en respectant une marge pour éviter les bords de la caméra.
+    // Si false (valeur par défaut), la position personnalisée ci-dessous est utilisée.
+    public bool randomPosition = false;
 
     // Position personnalisée (en coordonnées d'ancrage UI) utilisée
-    // lorsque randomPosition est activé
+    // lorsque randomPosition est désactivé
     public Vector3 customPosition;
 }
