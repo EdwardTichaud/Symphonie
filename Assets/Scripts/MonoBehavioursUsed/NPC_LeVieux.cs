@@ -36,6 +36,14 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
             return;
         }
 
+        // Oriente le PNJ vers le joueur avant de lancer le dialogue
+        NPCTurnHandler turnHandler = GetComponent<NPCTurnHandler>();
+        if (turnHandler != null)
+        {
+            // Choix et lecture de l'animation de rotation
+            turnHandler.TurnTowardPlayer();
+        }
+
         // Lance le dialogue approprié (le dernier tournera en boucle)
         StartCoroutine(PlayDialogue());
     }
