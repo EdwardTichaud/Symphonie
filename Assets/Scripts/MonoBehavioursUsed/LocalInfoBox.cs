@@ -10,7 +10,7 @@ using UnityEngine;
 public class LocalInfoBox : MonoBehaviour
 {
     [Tooltip("Décalage vertical appliqué par rapport à l'objet interactif.")]
-    public float verticalOffset = 5f; // Offset en Y demandé
+    public Vector3 offset;
 
     private Canvas canvas;
     private Camera worldCamera;
@@ -32,9 +32,6 @@ public class LocalInfoBox : MonoBehaviour
         {
             Debug.LogWarning("[LocalInfoBox] WorldCamera introuvable.");
         }
-
-        // S'assure que l'échelle n'est pas nulle (certaines prefabs sont créées à 0).
-        transform.localScale = Vector3.one;
     }
 
     private void LateUpdate()
@@ -45,7 +42,7 @@ public class LocalInfoBox : MonoBehaviour
             return;
 
         // Positionne la boîte juste au-dessus de l'objet.
-        transform.position = interactable.transform.position + Vector3.up * verticalOffset;
+        transform.position = interactable.transform.position + (Vector3)offset;
 
         // Oriente la boîte vers la WorldCamera pour rester lisible.
         if (worldCamera != null)
