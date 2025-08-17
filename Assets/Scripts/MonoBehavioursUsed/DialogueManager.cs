@@ -49,7 +49,7 @@ public class DialogueManager : MonoBehaviour
     public IEnumerator StartDialogue(DialogueContainer container)
     {
         // Joue l'animation d'ouverture de la bulle
-        GetComponent<Animator>()?.Play("DialogueBoxOpen");
+        GetComponentInChildren<Animator>()?.Play("DialogueBoxOpen");
         isOpen = true;
 
         // Attendre une frame pour que l'animation initialise correctement l'UI
