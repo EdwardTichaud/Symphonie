@@ -66,7 +66,7 @@ public class DialogueManager : MonoBehaviour
             yield return new WaitUntil(() => InputsManager.Instance.playerInputs.World.Action.WasPressedThisFrame());
         }
 
-        GetComponent<Animator>()?.Play("DialogueBoxClose");
+        GetComponentInChildren<Animator>()?.Play("DialogueBoxClose");
         isOpen = false;
 
         onDialogueEndCallback?.Invoke();
@@ -146,10 +146,10 @@ public class DialogueManager : MonoBehaviour
         // On tente de récupérer le Canvas parent pour calculer une position valide.
         if (canvasRect == null)
         {
-            Canvas parentCanvas = GetComponentInParent<Canvas>();
-            if (parentCanvas != null)
+            Canvas canvas = GetComponent<Canvas>();
+            if (canvas != null)
             {
-                canvasRect = parentCanvas.GetComponent<RectTransform>();
+                canvasRect = canvas.GetComponent<RectTransform>();
             }
             else
             {
