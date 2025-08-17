@@ -2,10 +2,11 @@ using UnityEngine;
 using System.Collections;
 
 /// <summary>
-/// PNJ "Le Vieux" : gère plusieurs phases de dialogue en fonction
-/// du nombre d'interactions du joueur.
+/// PNJ "Léandre" : personnage désabusé et apathique,
+/// bloqué sur la plateforme et espérant que Lucian trouvera un moyen de tous les libérer.
+/// À chaque interaction, il partage son découragement mais rappelle qu'il compte sur Lucian.
 /// </summary>
-public class NPC_LeVieux : MonoBehaviour, IInteractable
+public class NPC_Leandre : MonoBehaviour, IInteractable
 {
     [Header("Dialogues du PNJ")]
     [Tooltip("Liste des phases de dialogue (0 = première interaction, etc.).")]
@@ -15,11 +16,16 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
     private int dialogueStage = 0;
 
     // --- Implémentation de IInteractable ---
+
+    /// <summary>
+    /// Retourne le GameObject porteur de ce script.
+    /// Permet à l'InteractionManager de récupérer la référence du PNJ.
+    /// </summary>
     public GameObject GameObject => gameObject;
 
     /// <summary>
     /// Déclenche le dialogue correspondant à la phase en cours
-    /// si aucune autre interaction n'est active.
+    /// si aucune autre interaction ou cinématique n'est active.
     /// </summary>
     public void Interact()
     {
@@ -29,14 +35,13 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
             return;
         }
 
-        // Si aucun dialogue n'est configuré, on ne fait rien
-        if (dialoguePhases == null || dialoguePhases.Length == 0)
+        if (dialogueStage >= dialoguePhases.Length)
         {
-            // Aucun dialogue défini pour ce PNJ
+            // Toutes les phases ont été jouées : aucune interaction supplémentaire
             return;
         }
 
-        // Lance le dialogue approprié (le dernier tournera en boucle)
+        // Lance le dialogue approprié
         StartCoroutine(PlayDialogue());
     }
 
@@ -48,9 +53,6 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
         // Signale qu'un événement est en cours pour bloquer d'autres interactions
         EventsManager.Instance.eventInProgress = true;
 
-        // Récupère le dialogue correspondant à la phase actuelle.
-        // Si toutes les phases ont été jouées, dialogueStage reste bloqué sur
-        // la dernière entrée, permettant de répéter le dernier dialogue à l'infini.
         DialogueContainer container = dialoguePhases[dialogueStage];
         if (container != null)
         {
@@ -70,18 +72,8 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
     /// </summary>
     public void IncrementDialogueStage()
     {
-        // Sécurise en cas de tableau vide
-        if (dialoguePhases == null || dialoguePhases.Length == 0)
-        {
-            return; // aucune phase de dialogue à parcourir
-        }
-
-        // Incrémente l'indice tant qu'on n'est pas au dernier dialogue
-        // Une fois le dernier atteint, on reste dessus pour le répéter
-        if (dialogueStage < dialoguePhases.Length - 1)
-        {
-            dialogueStage++;
-        }
-        // Sinon, ne rien faire : dialogueStage reste sur le dernier index
+        // Évite de dépasser la taille du tableau
+        dialogueStage = Mathf.Min(dialogueStage + 1, dialoguePhases.Length);
     }
 }
+
