@@ -29,13 +29,14 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
             return;
         }
 
-        if (dialogueStage >= dialoguePhases.Length)
+        // Si aucun dialogue n'est configuré, on ne fait rien
+        if (dialoguePhases == null || dialoguePhases.Length == 0)
         {
-            // Toutes les phases ont été jouées : aucune interaction supplémentaire
+            // Aucun dialogue défini pour ce PNJ
             return;
         }
 
-        // Lance le dialogue approprié
+        // Lance le dialogue approprié (le dernier tournera en boucle)
         StartCoroutine(PlayDialogue());
     }
 
@@ -47,6 +48,9 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
         // Signale qu'un événement est en cours pour bloquer d'autres interactions
         EventsManager.Instance.eventInProgress = true;
 
+        // Récupère le dialogue correspondant à la phase actuelle.
+        // Si toutes les phases ont été jouées, dialogueStage reste bloqué sur
+        // la dernière entrée, permettant de répéter le dernier dialogue à l'infini.
         DialogueContainer container = dialoguePhases[dialogueStage];
         if (container != null)
         {
@@ -66,7 +70,18 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
     /// </summary>
     public void IncrementDialogueStage()
     {
-        // Évite de dépasser la taille du tableau
-        dialogueStage = Mathf.Min(dialogueStage + 1, dialoguePhases.Length);
+        // Sécurise en cas de tableau vide
+        if (dialoguePhases == null || dialoguePhases.Length == 0)
+        {
+            return; // aucune phase de dialogue à parcourir
+        }
+
+        // Incrémente l'indice tant qu'on n'est pas au dernier dialogue
+        // Une fois le dernier atteint, on reste dessus pour le répéter
+        if (dialogueStage < dialoguePhases.Length - 1)
+        {
+            dialogueStage++;
+        }
+        // Sinon, ne rien faire : dialogueStage reste sur le dernier index
     }
 }
