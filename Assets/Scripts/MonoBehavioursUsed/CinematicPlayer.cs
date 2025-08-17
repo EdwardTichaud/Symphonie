@@ -38,7 +38,9 @@ public class CinematicPlayer : MonoBehaviour
                     if (step.dialogue != null)
                     {
                         bool done = false;
-                        DialogueManager.Instance.PlayDialogue(step.dialogue.lines, () => done = true);
+                        // Passe le DialogueContainer complet pour bénéficier de la
+                        // configuration de position (aléatoire ou fixe)
+                        DialogueManager.Instance.PlayDialogue(step.dialogue, () => done = true);
                         while (!done)
                             yield return null;
                     }

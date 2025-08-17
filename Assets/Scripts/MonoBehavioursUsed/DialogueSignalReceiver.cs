@@ -5,10 +5,11 @@ public class DialogueSignalReceiver : MonoBehaviour
 {
     public PlayableDirector timeline;
 
-    // AppelÈ depuis la Timeline avec des dialogueLines spÈcifiques
+    // Appel√© depuis la Timeline avec des dialogueLines sp√©cifiques
     public void TriggerDialogueAndPause(DialogueContainer dialogueContainer)
     {
-        DialogueManager.Instance.PlayDialogue(dialogueContainer.lines, OnDialogueEnded);
+        // Utilise le DialogueContainer pour g√©rer la position de la bulle
+        DialogueManager.Instance.PlayDialogue(dialogueContainer, OnDialogueEnded);
         timeline.Pause();
     }
 
@@ -19,6 +20,6 @@ public class DialogueSignalReceiver : MonoBehaviour
 
     public void TriggerDialogueNoPause(DialogueContainer dialogueContainer)
     {
-        DialogueManager.Instance.PlayDialogue(dialogueContainer.lines);
+        DialogueManager.Instance.PlayDialogue(dialogueContainer);
     }
 }
