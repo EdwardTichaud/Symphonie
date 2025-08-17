@@ -80,6 +80,14 @@ public class ThirdPersonPlayerController : MonoBehaviour
     // après que le joueur ait relâché le bouton de sprint.
     private float runReleaseTimer;
 
+    [Header("Détection des vides")]
+    [Tooltip("Distance avant le personnage utilisée pour vérifier la présence du sol.")]
+    public float voidCheckDistance = 1f;
+    [Tooltip("Profondeur minimale du raycast pour considérer qu'il y a du sol.")]
+    public float voidCheckDepth = 2f;
+    [Tooltip("Couches reconnues comme du sol lors de la détection des vides.")]
+    public LayerMask groundLayer = ~0; // Par défaut : toutes les couches sont considérées comme du sol.
+
     // Durée de fondu utilisée pour adoucir les transitions entre les animations
     // de marche et de course.
     private const float locomotionCrossFadeDuration = 0.1f;
@@ -247,8 +255,21 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         if (controller.isGrounded)
         {
-            currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, accelRate * Time.deltaTime);
-            horizontalVelocity = desiredMove.normalized * currentSpeed; // Stockage pour conserver la direction en l'air.
+            // Avant de déplacer Lucian, on vérifie qu'il y a bien du sol dans la direction souhaitée.
+            // Cela évite de s'aventurer dans le vide par inadvertance.
+            if (!IsGroundAhead(desiredMove))
+            {
+                // Aucun sol détecté : on annule la vitesse horizontale pour empêcher la chute.
+                targetSpeed = 0f;
+                currentSpeed = 0f;
+                horizontalVelocity = Vector3.zero;
+            }
+            else
+            {
+                // Sol détecté : on applique l'accélération habituelle.
+                currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, accelRate * Time.deltaTime);
+                horizontalVelocity = desiredMove.normalized * currentSpeed; // Stockage pour conserver la direction en l'air.
+            }
         }
 
         // Déplacement horizontal : si Lucian est en l'air, la direction reste
@@ -284,6 +305,26 @@ public class ThirdPersonPlayerController : MonoBehaviour
         // À la fin de la gestion du déplacement, on met à jour l'animation de locomotion
         // pour qu'elle corresponde à l'état courant (marche, course ou idle).
         UpdateMovementAnimation();
+    }
+
+    /// <summary>
+    /// Vérifie s'il existe un sol devant le joueur pour éviter les chutes involontaires.
+    /// </summary>
+    /// <param name="direction">Direction souhaitée du déplacement.</param>
+    /// <returns>Vrai si un sol est détecté, faux sinon.</returns>
+    bool IsGroundAhead(Vector3 direction)
+    {
+        // Si aucune direction significative n'est fournie, on considère qu'il n'y a pas de déplacement
+        // et donc pas de risque immédiat de chute.
+        if (direction.sqrMagnitude < 0.01f)
+            return true;
+
+        // Point de départ du raycast : légèrement devant le personnage pour anticiper le vide.
+        Vector3 origin = controller.bounds.center + direction.normalized * voidCheckDistance;
+
+        // On lance un raycast vers le bas pour vérifier la présence d'un sol dans la profondeur définie.
+        // Si aucun collider n'est touché, cela signifie qu'il y a un vide.
+        return Physics.Raycast(origin, Vector3.down, voidCheckDepth, groundLayer);
     }
 
     /// <summary>
