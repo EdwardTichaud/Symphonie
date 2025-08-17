@@ -162,9 +162,9 @@ public class DialogueManager : MonoBehaviour
         Vector2 newPos = Vector2.zero;
         float margin = 50f; // Marge pour éviter que la bulle ne soit coupée par les bords
 
-        if (!container.randomPosition)
+        if (container.randomPosition)
         {
-            // Si randomPosition n'est pas coché, on calcule une position aléatoire
+            // Si randomPosition estcoché, on calcule une position aléatoire
             // tout en respectant la marge de sécurité autour du cadre de la caméra
             float xMin = -canvasRect.rect.width / 2 + rectTransform.rect.width / 2 + margin;
             float xMax = canvasRect.rect.width / 2 - rectTransform.rect.width / 2 - margin;
