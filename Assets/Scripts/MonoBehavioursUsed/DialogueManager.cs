@@ -132,6 +132,24 @@ public class DialogueManager : MonoBehaviour
             rectTransform = GetComponent<RectTransform>();
 
         RectTransform canvasRect = rectTransform.parent as RectTransform;
+
+        // Évite les NullReference si le RectTransform parent n'est pas trouvé.
+        // On tente de récupérer le Canvas parent pour calculer une position valide.
+        if (canvasRect == null)
+        {
+            Canvas parentCanvas = GetComponentInParent<Canvas>();
+            if (parentCanvas != null)
+            {
+                canvasRect = parentCanvas.GetComponent<RectTransform>();
+            }
+            else
+            {
+                // Si aucun Canvas n'est présent, on abandonne proprement en avertissant.
+                Debug.LogWarning("DialogueManager : aucun Canvas parent trouvé pour positionner la bulle de dialogue.");
+                return;
+            }
+        }
+
         Vector2 newPos = Vector2.zero;
         float margin = 50f; // Marge pour éviter les bords
 
