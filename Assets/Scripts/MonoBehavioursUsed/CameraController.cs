@@ -31,7 +31,6 @@ public class CameraController : MonoBehaviour
     [Range(0f, 1f)] public float pathPosition;
     public bool isFollowingPath;
     public bool IsFollowingPath => isFollowingPath;
-    public CameraPath currentCameraPath;
     [SerializeField] private float followLerpSpeed = 5f;
     [SerializeField] private float rotateLerpSpeed = 5f;
     private float pathElapsedTime = 0f;
@@ -598,33 +597,5 @@ public class CameraController : MonoBehaviour
         }
         return null;
     }
-
-    /// <summary>
-    /// Convertit un temps écoulé en position normalisée sur le chemin actuel.
-    /// </summary>
-    private float GetPathPositionFromTime(float elapsedTime)
-    {
-        if (currentCameraPath == null || currentCameraPath.durations == null || currentCameraPath.durations.Count == 0)
-            return 0f;
-
-        float total = pathTotalDuration;
-        if (total <= 0f) return 0f;
-
-        float accumulated = 0f;
-        for (int i = 0; i < currentCameraPath.durations.Count; i++)
-        {
-            float segDuration = currentCameraPath.durations[i];
-            if (elapsedTime <= accumulated + segDuration)
-            {
-                float segmentT = (elapsedTime - accumulated) / segDuration;
-                float t = (i + segmentT) / (currentCameraPath.points.Count - 1);
-                return Mathf.Clamp01(t);
-            }
-            accumulated += segDuration;
-        }
-
-        return 1f;
-    }
-
     #endregion
 }

@@ -28,7 +28,7 @@ public class BattlefieldManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        //DontDestroyOnLoad(gameObject);
 
         // Recherche automatique du parent si besoin pour éviter les erreurs
         if (battlefieldParent == null)

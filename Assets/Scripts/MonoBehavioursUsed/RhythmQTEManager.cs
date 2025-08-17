@@ -42,7 +42,6 @@ public class RhythmQTEManager : MonoBehaviour
     public DefenseResult GetDefenseResult() => defenseResult;
 
     // MoveTo
-    float maxDuration = 5f; // en secondes
     float elapsed = 0f;
 
     // Délai entre les effets de téléportation départ et arrivée
