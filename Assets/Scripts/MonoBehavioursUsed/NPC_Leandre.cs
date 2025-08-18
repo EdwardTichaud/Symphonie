@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.Playables;
+using UnityEngine.Timeline; // 📽️ Requis pour utiliser TimelineAsset dans les phases de dialogue
 using System.Collections;
 
 /// <summary>
@@ -73,12 +73,15 @@ public class NPC_Leandre : MonoBehaviour, IInteractable
             if (anim != null)
                 anim.Play("Dialogue_Start");
 
-            // Lecture de la Timeline associée
-            if (phase.timeline != null)
+            // Lecture de la Timeline associée via le TimelineLauncher centralisé
+            if (phase.timeline != null && TimelineLauncher.Instance != null)
             {
-                phase.timeline.Play();
-                while (phase.timeline.state == PlayState.Playing)
-                    yield return null; // Attente de la fin
+                // Joue la timeline en ciblant automatiquement le PNJ courant
+                TimelineLauncher.Instance.PlayTimelineOnCurrentNPC(phase.timeline);
+
+                // Attend la fin de la timeline pour enchaîner proprement
+                while (TimelineLauncher.Instance.IsTimelineActive)
+                    yield return null;
             }
 
             // Démarrage du dialogue
