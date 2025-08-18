@@ -117,7 +117,18 @@ public class TimelineLauncher : MonoBehaviour
             director.SetGenericBinding(timelineAsset.markerTrack, markerReceiver);
         }
 
-        director.Play();
+        // Informe le TimelineManager afin que la caméra sache qu'une Timeline prend la priorité
+        // et qu'aucun autre contrôleur (comme le CameraController) ne vienne interférer.
+        if (TimelineManager.Instance != null)
+        {
+            // Le TimelineManager gère l'état global et stoppe les autres timelines si besoin
+            TimelineManager.Instance.PlayTimeline(director);
+        }
+        else
+        {
+            // En dernier recours on lance directement la Timeline
+            director.Play();
+        }
 
         if (caster != null && cameraParent != null)
         {
