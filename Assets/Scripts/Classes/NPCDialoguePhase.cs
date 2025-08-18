@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.Playables;
+using UnityEngine.Timeline;
 
 /// <summary>
 /// Représente une phase complète de dialogue pour un PNJ.
@@ -12,7 +12,7 @@ public class NPCDialoguePhase
     public DialogueContainer dialogue;
 
     [Tooltip("Timeline à lancer avant le dialogue (optionnel).")]
-    public PlayableDirector timeline;
+    public TimelineAsset timeline; // ⚙️ Remplacé PlayableDirector par TimelineAsset pour lecture via TimelineLauncher
 
     [Tooltip("Si activé, enchaîne automatiquement avec la phase suivante.")]
     public bool autoProceed;
