@@ -61,9 +61,22 @@ public class TimelineLauncher : MonoBehaviour
             {
                 BindObjectToTrack(output, caster);
             }
-            else if (trackName.ToLower().Contains("camera") && cameraTag != null)
+            else if (trackName.ToLower().Contains("camera"))
             {
-                BindObjectToTrack(output, cameraRoot);
+                // Si aucune caméra n'est spécifiée, on relie la track Camera au PNJ (caster).
+                // Cela permet aux timelines déclenchées pendant un dialogue de viser directement le PNJ.
+                if (cameraRoot != null)
+                {
+                    BindObjectToTrack(output, cameraRoot);
+                }
+                else if (caster != null)
+                {
+                    BindObjectToTrack(output, caster);
+                }
+                else
+                {
+                    Debug.LogWarning($"[TimelineLauncher] Aucun GameObject trouvé pour la track camera : {trackName}");
+                }
             }
             else if (type != null && typeof(Component).IsAssignableFrom(type) && type.Name.Contains("SignalReceiver"))
             {
@@ -101,6 +114,28 @@ public class TimelineLauncher : MonoBehaviour
                 StopCoroutine(followCoroutine);
             followCoroutine = StartCoroutine(FollowCaster(cameraParent, caster.transform));
         }
+    }
+
+    /// <summary>
+    /// Joue une timeline en ciblant automatiquement le PNJ actuellement en interaction.
+    /// Utilisé depuis les timelines de dialogue pour lancer des timelines d'item ou de MusicalMove
+    /// tout en conservant le PNJ comme cible pour les tracks "Caster" et "Camera".
+    /// </summary>
+    /// <param name="timelineAsset">Timeline à jouer.</param>
+    public void PlayTimelineOnCurrentNPC(TimelineAsset timelineAsset)
+    {
+        // Récupère le PNJ en cours d'interaction via l'InteractionManager.
+        GameObject npc = InteractionManager.Instance != null ? InteractionManager.Instance.currentInteractable : null;
+
+        if (npc == null)
+        {
+            // Avertit si aucun PNJ n'est en interaction lorsque la méthode est appelée.
+            Debug.LogWarning("[TimelineLauncher] Aucun PNJ courant pour jouer la timeline.");
+            return;
+        }
+
+        // Appelle PlayTimeline sans tag de caméra : la track "Camera" sera donc reliée au PNJ.
+        PlayTimeline(timelineAsset, npc, null);
     }
 
     private void BindObjectToTrack(PlayableBinding output, GameObject go)
