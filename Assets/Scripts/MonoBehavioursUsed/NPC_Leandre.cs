@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Playables;
 using System.Collections;
 
 /// <summary>
@@ -10,7 +11,7 @@ public class NPC_Leandre : MonoBehaviour, IInteractable
 {
     [Header("Dialogues du PNJ")]
     [Tooltip("Liste des phases de dialogue (0 = première interaction, etc.).")]
-    public DialogueContainer[] dialoguePhases; // Références vers les dialogues successifs
+    public NPCDialoguePhase[] dialoguePhases; // Phases complètes : timeline + dialogue + options
 
     // Indice de la prochaine phase à jouer
     private int dialogueStage = 0;
@@ -55,22 +56,49 @@ public class NPC_Leandre : MonoBehaviour, IInteractable
     }
 
     /// <summary>
-    /// Lance le dialogue de la phase courante, puis incrémente la phase.
+    /// Lance la phase de dialogue courante (timeline + dialogue) et gère les enchaînements.
     /// </summary>
     private IEnumerator PlayDialogue()
     {
         // Signale qu'un événement est en cours pour bloquer d'autres interactions
         EventsManager.Instance.eventInProgress = true;
 
-        DialogueContainer container = dialoguePhases[dialogueStage];
-        if (container != null)
+        bool continueSequence = true; // Gestion de l'enchaînement automatique
+        while (continueSequence)
         {
-            // Démarre le dialogue et attend sa fin en prenant en compte la position de la bulle
-            yield return DialogueManager.Instance.StartDialogue(container);
-        }
+            NPCDialoguePhase phase = dialoguePhases[dialogueStage];
 
-        // Prépare la phase suivante
-        IncrementDialogueStage();
+            // Animation de début de dialogue
+            Animator anim = GetComponent<Animator>();
+            if (anim != null)
+                anim.Play("Dialogue_Start");
+
+            // Lecture de la Timeline associée
+            if (phase.timeline != null)
+            {
+                phase.timeline.Play();
+                while (phase.timeline.state == PlayState.Playing)
+                    yield return null; // Attente de la fin
+            }
+
+            // Démarrage du dialogue
+            if (phase.dialogue != null)
+            {
+                yield return DialogueManager.Instance.StartDialogue(phase.dialogue);
+            }
+
+            // Animation de fin de dialogue
+            if (anim != null)
+                anim.Play("Dialogue_End");
+
+            // Gestion de la progression
+            bool wasLast = dialogueStage >= dialoguePhases.Length - 1;
+            bool auto = phase.autoProceed;
+
+            IncrementDialogueStage();
+
+            continueSequence = auto && !wasLast;
+        }
 
         // Libère le verrou d'événement
         EventsManager.Instance.eventInProgress = false;
