@@ -62,10 +62,14 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
         {
             NPCDialoguePhase phase = dialoguePhases[dialogueStage];
 
-            // Joue l'animation d'entrée en dialogue.
+            // Joue l'animation d'entrée uniquement si aucune Timeline n'est définie.
+            // Lorsque l'on dispose d'une Timeline, celle-ci est censée gérer ses propres animations.
             Animator anim = GetComponent<Animator>();
-            if (anim != null)
+            if (anim != null && phase.timeline == null)
+            {
+                // Animation par défaut pour signaler le début de la discussion.
                 anim.Play("Dialogue_Start");
+            }
 
             // Lance la Timeline éventuelle via le TimelineLauncher et attend sa fin.
             if (phase.timeline != null && TimelineLauncher.Instance != null)

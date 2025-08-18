@@ -68,10 +68,14 @@ public class NPC_Leandre : MonoBehaviour, IInteractable
         {
             NPCDialoguePhase phase = dialoguePhases[dialogueStage];
 
-            // Animation de début de dialogue
+            // Animation de début : uniquement si aucune Timeline n'est associée à la phase.
+            // Si une Timeline est fournie, elle gère elle-même les animations nécessaires.
             Animator anim = GetComponent<Animator>();
-            if (anim != null)
+            if (anim != null && phase.timeline == null)
+            {
+                // Animation par défaut de début de dialogue.
                 anim.Play("Dialogue_Start");
+            }
 
             // Lecture de la Timeline associée via le TimelineLauncher centralisé
             if (phase.timeline != null && TimelineLauncher.Instance != null)
