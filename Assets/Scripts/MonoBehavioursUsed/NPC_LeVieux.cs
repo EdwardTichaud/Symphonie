@@ -1,5 +1,5 @@
 using UnityEngine;
-using UnityEngine.Playables;
+using UnityEngine.Timeline; // 📽️ Permet d'utiliser des TimelineAsset dans les phases de dialogue
 using System.Collections;
 
 /// <summary>
@@ -67,12 +67,14 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
             if (anim != null)
                 anim.Play("Dialogue_Start");
 
-            // Lance la Timeline éventuelle et attend sa fin.
-            if (phase.timeline != null)
+            // Lance la Timeline éventuelle via le TimelineLauncher et attend sa fin.
+            if (phase.timeline != null && TimelineLauncher.Instance != null)
             {
-                phase.timeline.Play();
-                // Attend la fin de la lecture de la timeline.
-                while (phase.timeline.state == PlayState.Playing)
+                // Joue la timeline en ciblant automatiquement ce PNJ
+                TimelineLauncher.Instance.PlayTimelineOnCurrentNPC(phase.timeline);
+
+                // Attente de la fin de la Timeline pour assurer la cohérence de la séquence
+                while (TimelineLauncher.Instance.IsTimelineActive)
                     yield return null;
             }
 
