@@ -1,12 +1,13 @@
 using UnityEngine;
 using UnityEngine.Playables;
+using UnityEngine.InputSystem; // Nécessaire pour manipuler les InputAction du joueur
 
 public class TimelineManager : MonoBehaviour
 {
     public static TimelineManager Instance { get; private set; }
 
     /// <summary>
-    /// R�f�rence de la Timeline en cours.
+    /// Référence de la Timeline en cours.
     /// </summary>
     private PlayableDirector currentDirector;
 
@@ -14,6 +15,36 @@ public class TimelineManager : MonoBehaviour
     /// Indique si une Timeline est en train de jouer.
     /// </summary>
     public bool IsTimelinePlaying { get; private set; }
+
+    /// <summary>
+    /// Active ou désactive les actions de déplacement du joueur pendant les timelines.
+    /// Empêche ainsi Lucian de se déplacer durant une cinématique pour préserver la mise en scène.
+    /// </summary>
+    /// <param name="enable">True pour autoriser les déplacements, false pour les bloquer.</param>
+    private void TogglePlayerMovement(bool enable)
+    {
+        // Vérifie que l'InputsManager et la map World existent avant de manipuler les actions.
+        if (InputsManager.Instance == null) return;
+
+        var world = InputsManager.Instance.playerInputs.World;
+
+        if (enable)
+        {
+            // Réactive les actions de déplacement lorsque la timeline est terminée.
+            world.Move.Enable();
+            world.Run.Enable();
+            world.Jump.Enable();
+            world.Dash.Enable();
+        }
+        else
+        {
+            // Désactive les actions pour figer le joueur durant la timeline.
+            world.Move.Disable();
+            world.Run.Disable();
+            world.Jump.Disable();
+            world.Dash.Disable();
+        }
+    }
 
     void Awake()
     {
@@ -28,20 +59,20 @@ public class TimelineManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Joue une nouvelle Timeline. Arr�te proprement la pr�c�dente.
+    /// Joue une nouvelle Timeline. Arrête proprement la précédente.
     /// </summary>
     public void PlayTimeline(PlayableDirector newDirector)
     {
         if (newDirector == null)
         {
-            Debug.LogWarning("[TimelineManager] PlayTimeline appel� avec null !");
+            Debug.LogWarning("[TimelineManager] PlayTimeline appelé avec null !");
             return;
         }
 
-        // Arr�te la timeline en cours si elle est diff�rente
+        // Arrête la timeline en cours si elle est différente
         if (currentDirector != null && currentDirector != newDirector && currentDirector.state == PlayState.Playing)
         {
-            Debug.Log("[TimelineManager] Arr�t de la Timeline en cours avant de jouer la nouvelle.");
+            Debug.Log("[TimelineManager] Arrêt de la Timeline en cours avant de jouer la nouvelle.");
             currentDirector.Stop();
         }
 
@@ -56,7 +87,7 @@ public class TimelineManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Arr�te explicitement la Timeline en cours.
+    /// Arrête explicitement la Timeline en cours.
     /// </summary>
     public void StopCurrentTimeline()
     {
@@ -67,24 +98,28 @@ public class TimelineManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Callback quand une Timeline d�marre.
+    /// Callback quand une Timeline démarre.
     /// </summary>
     private void OnPlayed(PlayableDirector pd)
     {
         IsTimelinePlaying = true;
-        Debug.Log($"[TimelineManager] Timeline jou�e : {pd.name}");
+        // Bloque immédiatement les déplacements du joueur pendant l'exécution de la timeline.
+        TogglePlayerMovement(false);
+        Debug.Log($"[TimelineManager] Timeline jouée : {pd.name}");
     }
 
     /// <summary>
-    /// Callback quand une Timeline s'arr�te.
+    /// Callback quand une Timeline s'arrête.
     /// </summary>
     private void OnStopped(PlayableDirector pd)
     {
         if (currentDirector == pd)
         {
-            Debug.Log($"[TimelineManager] Timeline stopp�e : {pd.name}");
+            Debug.Log($"[TimelineManager] Timeline stoppée : {pd.name}");
             IsTimelinePlaying = false;
             currentDirector = null;
+            // La timeline est terminée : on redonne le contrôle de Lucian au joueur.
+            TogglePlayerMovement(true);
         }
     }
 }
