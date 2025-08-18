@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Playables;
 using System.Collections;
 
 /// <summary>
@@ -9,7 +10,7 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
 {
     [Header("Dialogues du PNJ")]
     [Tooltip("Liste des phases de dialogue (0 = première interaction, etc.).")]
-    public DialogueContainer[] dialoguePhases; // Références vers les dialogues successifs
+    public NPCDialoguePhase[] dialoguePhases; // Phases complètes : timeline + dialogue + options
 
     // Indice de la prochaine phase à jouer
     private int dialogueStage = 0;
@@ -49,27 +50,54 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
     }
 
     /// <summary>
-    /// Lance le dialogue de la phase courante, puis incrémente la phase.
+    /// Lance la phase de dialogue courante (timeline + dialogue) et gère les enchaînements.
     /// </summary>
     private IEnumerator PlayDialogue()
     {
-        // Signale qu'un événement est en cours pour bloquer d'autres interactions
+        // Bloque les autres interactions pendant l'échange.
         EventsManager.Instance.eventInProgress = true;
 
-        // Récupère le dialogue correspondant à la phase actuelle.
-        // Si toutes les phases ont été jouées, dialogueStage reste bloqué sur
-        // la dernière entrée, permettant de répéter le dernier dialogue à l'infini.
-        DialogueContainer container = dialoguePhases[dialogueStage];
-        if (container != null)
+        bool continueSequence = true; // Permet d'enchaîner plusieurs phases automatiquement.
+        while (continueSequence)
         {
-            // Démarre le dialogue et attend sa fin en prenant en compte la position de la bulle
-            yield return DialogueManager.Instance.StartDialogue(container);
+            NPCDialoguePhase phase = dialoguePhases[dialogueStage];
+
+            // Joue l'animation d'entrée en dialogue.
+            Animator anim = GetComponent<Animator>();
+            if (anim != null)
+                anim.Play("Dialogue_Start");
+
+            // Lance la Timeline éventuelle et attend sa fin.
+            if (phase.timeline != null)
+            {
+                phase.timeline.Play();
+                // Attend la fin de la lecture de la timeline.
+                while (phase.timeline.state == PlayState.Playing)
+                    yield return null;
+            }
+
+            // Démarre le dialogue et attend sa conclusion.
+            if (phase.dialogue != null)
+            {
+                yield return DialogueManager.Instance.StartDialogue(phase.dialogue);
+            }
+
+            // Joue l'animation de sortie de dialogue.
+            if (anim != null)
+                anim.Play("Dialogue_End");
+
+            // Détermine si l'on doit passer automatiquement à la phase suivante.
+            bool wasLast = dialogueStage >= dialoguePhases.Length - 1;
+            bool auto = phase.autoProceed;
+
+            // Prépare la phase suivante.
+            IncrementDialogueStage();
+
+            // Si auto et qu'il reste des phases, boucle; sinon on sort.
+            continueSequence = auto && !wasLast;
         }
 
-        // Prépare la phase suivante
-        IncrementDialogueStage();
-
-        // Libère le verrou d'événement
+        // Libère le verrou d'événement une fois toutes les phases jouées.
         EventsManager.Instance.eventInProgress = false;
     }
 
