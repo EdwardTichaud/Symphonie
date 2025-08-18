@@ -37,16 +37,14 @@ public class TimelineLauncher : MonoBehaviour
         director.playableAsset = timelineAsset;
 
         GameObject cameraGO = null;
-        Transform cameraParent = null;
-        GameObject cameraRoot = null;
+        Transform cameraParent = null;   // Parent direct de la caméra pour récupérer son Animator
         if (!string.IsNullOrEmpty(cameraTag))
         {
             cameraGO = GameObject.FindGameObjectWithTag(cameraTag);
             cameraParent = cameraGO != null ? cameraGO.transform.parent : null;
-            cameraRoot = cameraParent != null ? cameraParent.gameObject : cameraGO;
-
             if (caster != null && cameraParent != null)
             {
+                // Replace le parent de la caméra sur le PNJ afin que l'animation suive correctement le mouvement
                 cameraParent.position = caster.transform.position;
                 cameraParent.rotation = caster.transform.rotation;
             }
@@ -57,20 +55,33 @@ public class TimelineLauncher : MonoBehaviour
             string trackName = output.streamName;
             System.Type type = output.outputTargetType;
 
-            if (trackName.ToLower().Contains("caster") && caster != null)
+            // Pour les timelines de PNJ, le track d'animation s'appelle "PNJ" au lieu de "Caster"
+            if ((trackName.ToLower().Contains("caster") || trackName.ToLower().Contains("pnj")) && caster != null)
             {
                 BindObjectToTrack(output, caster);
             }
             else if (trackName.ToLower().Contains("camera"))
             {
-                // Si aucune caméra n'est spécifiée, on relie la track Camera au PNJ (caster).
-                // Cela permet aux timelines déclenchées pendant un dialogue de viser directement le PNJ.
-                if (cameraRoot != null)
+                // L'animation de la caméra doit utiliser l'Animator situé sur le parent de la WorldCamera.
+                // On tente donc de récupérer cet Animator explicitement.
+                if (cameraGO != null)
                 {
-                    BindObjectToTrack(output, cameraRoot);
+                    Animator camAnimator = cameraParent != null
+                        ? cameraParent.GetComponent<Animator>()
+                        : cameraGO.GetComponent<Animator>();
+
+                    if (camAnimator != null)
+                    {
+                        director.SetGenericBinding(output.sourceObject, camAnimator);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[TimelineLauncher] Animator manquant pour la caméra {cameraTag}");
+                    }
                 }
                 else if (caster != null)
                 {
+                    // Aucun tag de caméra fourni : on se rabat sur le PNJ.
                     BindObjectToTrack(output, caster);
                 }
                 else
@@ -119,7 +130,7 @@ public class TimelineLauncher : MonoBehaviour
     /// <summary>
     /// Joue une timeline en ciblant automatiquement le PNJ actuellement en interaction.
     /// Utilisé depuis les timelines de dialogue pour lancer des timelines d'item ou de MusicalMove
-    /// tout en conservant le PNJ comme cible pour les tracks "Caster" et "Camera".
+    /// tout en conservant le PNJ comme cible pour les tracks "PNJ" et "Camera".
     /// </summary>
     /// <param name="timelineAsset">Timeline à jouer.</param>
     public void PlayTimelineOnCurrentNPC(TimelineAsset timelineAsset)
@@ -134,8 +145,8 @@ public class TimelineLauncher : MonoBehaviour
             return;
         }
 
-        // Appelle PlayTimeline sans tag de caméra : la track "Camera" sera donc reliée au PNJ.
-        PlayTimeline(timelineAsset, npc, null);
+        // Utilise la WorldCamera : la track "Camera" ira chercher l'Animator du parent de la WorldCamera.
+        PlayTimeline(timelineAsset, npc, "WorldCamera");
     }
 
     private void BindObjectToTrack(PlayableBinding output, GameObject go)
