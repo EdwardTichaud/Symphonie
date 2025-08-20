@@ -31,6 +31,13 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
     [Tooltip("Signal envoyé pour indiquer à la timeline de reprendre.")]
     public SignalAsset resumeSignal;
 
+    [Tooltip("Timeline à lancer via le TimelineLauncher à la fin du dialogue.")]
+    public TimelineAsset timelineToLaunch;
+    [Tooltip("Objet utilisé comme 'caster' pour la timeline lancée (par défaut ce point d'intérêt).")]
+    public GameObject timelineCaster;
+    [Tooltip("Tag de la caméra utilisé pour la timeline lancée.")]
+    public string timelineCameraTag = "WorldCamera";
+
     [Header("Local InfoBox")]
     [Tooltip("Décalage appliqué à la LocalInfoBox pour ce point d'intérêt.")]
     public Vector3 localInfoBoxOffset;
@@ -86,6 +93,20 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
                 // Aucun signal défini : reprise immédiate de la Timeline
                 timelineToResume.Resume();
             }
+        }
+
+        // Lance une nouvelle Timeline via le TimelineLauncher si demandée
+        if (timelineToLaunch != null && TimelineLauncher.Instance != null)
+        {
+            // Détermine le GameObject utilisé pour les tracks "Caster" (par défaut : ce point d'intérêt)
+            GameObject caster = timelineCaster != null ? timelineCaster : gameObject;
+
+            // Lance la timeline en utilisant le PlayableDirector centralisé
+            TimelineLauncher.Instance.PlayTimeline(timelineToLaunch, caster, timelineCameraTag);
+
+            // Attend la fin de la timeline pour que la suite ne démarre pas trop tôt
+            while (TimelineLauncher.Instance.IsTimelineActive)
+                yield return null;
         }
 
         if (askConfirmation)
