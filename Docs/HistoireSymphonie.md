@@ -13,6 +13,10 @@ Azazel, autrefois serviteur de l’Univers, tente de sauver les âmes « gâché
 Lucian a été façonné à travers les souvenirs du frère, à partir de la manière dont il le percevait : courageux, têtu, lumineux, imparfait mais sincère.
 Cependant, la nature même de Lucian le rend instable. Il attire l’attention des entités du Rêve, qui cherchent à le « corriger » comme une anomalie.
 
+En traversant les fragments d'Azazel, Lucian rencontre des âmes privées de talents ou de soutien, destinées à se dissoudre sans jamais être remarquées. Cette injustice face à l'inégalité des talents et des vies le bouleverse : pourquoi lui a-t-il droit à une seconde chance alors que tant d'autres sont condamnés à l'oubli ?
+
+Ignorant l'origine de ce privilège, il poursuit sa quête jusqu'aux portes de la Source. Ce n'est qu'à cet instant qu'il apprend l'existence d'un frère survivant qui rêve obstinément de lui, lui offrant cette chance de survie que les autres n'ont pas.
+
 À mesure que Lucian s’approche de la Source, il se rapproche de la base de la branche de rêve de son frère, là où sont connectés tous les rêves du vivant.
 En chemin, il découvre l’existence d’un rituel ancien, la **Convocation**, censé lui accorder sa « Légitimité » ou « Harmonie » auprès de l’entité créatrice.
 La Source est le point où Lucian pourra soit s’éveiller — renaître dans la réalité — soit disparaître, pour permettre à son frère de guérir et cesser de rêver de lui.
@@ -75,6 +79,12 @@ Lorsqu’il accomplit cette Convocation, l’entité qui répond n’est pas Aza
 | Création vs recomposition | Azazel ne crée rien de neuf : il ne fait que recoller des fragments. |
 | Éveil et disparition | Lucian peut choisir de vivre réellement… ou d’offrir à son frère la paix. |
 | Nature des rêves | Les rêves sont connectés par un grand Arbre cosmique semblable à Yggdrasill. |
+| Injustice des talents et des vies | Seul le rêve obstiné de son frère offre à Lucian une chance de survie, tandis que d’autres âmes se dissipent. |
+
+⸻
+
+## ⚖️ Arc narratif : Injustice des talents et des vies
+Au fil de son voyage, Lucian croise des âmes inachevées qui n'ont ni le talent ni le soutien nécessaires pour subsister dans le Rêve. Chaque rencontre souligne la faveur exceptionnelle dont il bénéficie grâce au rêve de son frère. Ce constat nourrit un conflit intérieur : comment mériter cette seconde chance quand tant d'autres n'en auront jamais ?
 
 ⸻
 
@@ -96,6 +106,7 @@ Lorsqu’il accomplit cette Convocation, l’entité qui répond n’est pas Aza
 ## 🧩 Idées narratives clés validées
 - Certains Séraphins fuient Lucian en pensant qu’il est le Traqueur.
 - Le Traqueur laisse derrière lui des Séraphins brisés, des symboles de branche coupée.
+- Lucian est confronté à l'injustice des talents et des vies lorsqu'il rencontre des âmes vouées à l'oubli faute d'un rêveur pour les soutenir.
 - Une fin à la Lost : tous les protagonistes se réunissent silencieusement.
   Une réunion ouverte à l’interprétation, empreinte de paix et de mélancolie.
 - Une fin interactive musicale possible : le joueur compose une dernière mélodie symbolisant Lucian (ou choisit de ne pas la terminer).
