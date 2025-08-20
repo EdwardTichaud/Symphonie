@@ -195,6 +195,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
     {
         HandleMovement();           // Gestion du déplacement horizontal et des rotations.
         ApplyGravity();             // Application de la gravité (déplacement vertical).
+        UpdateJumpAnimation();      // Assure la continuité des animations de saut en l'air.
         UpdateLandingLock();        // Vérifie si l'animation d'atterrissage est terminée.
     }
 
@@ -377,6 +378,27 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         // Application de la vitesse calculée.
         controller.Move(velocity * Time.deltaTime);
+    }
+
+    /// <summary>
+    /// Assure la continuité des animations de saut une fois l'anticipation terminée.
+    /// Sans ce suivi, l'Animator retombe sur l'Idle après "Jump_Start" et le personnage semble figé.
+    /// </summary>
+    void UpdateJumpAnimation()
+    {
+        // Ne rien faire si Lucian n'est pas en plein saut ou si aucun Animator n'est présent.
+        if (!isJumping || animator == null)
+            return;
+
+        // Récupération de l'état actuel de la couche principale de l'Animator.
+        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+
+        // Lorsque l'animation d'anticipation est terminée, on passe sur la boucle de saut.
+        if (state.IsName("Jump_Start") && state.normalizedTime >= 1f)
+        {
+            // CrossFade pour conserver une transition douce avec un léger fondu.
+            animator.CrossFade("Jump_Loop", 0.1f);
+        }
     }
 
     /// <summary>
