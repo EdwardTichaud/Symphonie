@@ -2,15 +2,15 @@ using UnityEngine;
 
 /// <summary>
 /// Gère l'affichage de la LocalInfoBox en World Space et la fait suivre
-/// l'objet <see cref="InteractionManager.currentInteractable"/> avec un
-/// décalage vertical. L'UI reste en permanence orientée vers la
-/// <c>WorldCamera</c>.
+/// l'objet <see cref="InteractionManager.currentInteractable"/>.
+/// L'UI reste en permanence orientée vers la <c>WorldCamera</c> et prend
+/// en compte un décalage configurable pour chaque objet interactif.
 /// </summary>
 [RequireComponent(typeof(Canvas))]
 public class LocalInfoBox : MonoBehaviour
 {
-    [Tooltip("Décalage vertical appliqué par rapport à l'objet interactif.")]
-    public Vector3 offset;
+    [Tooltip("Décalage utilisé si l'objet interactif n'en fournit pas." )]
+    public Vector3 defaultOffset; // Valeur de repli
 
     private Canvas canvas;
     private Camera worldCamera;
@@ -41,8 +41,16 @@ public class LocalInfoBox : MonoBehaviour
         if (interactable == null)
             return;
 
-        // Positionne la boîte juste au-dessus de l'objet.
-        transform.position = interactable.transform.position + (Vector3)offset;
+        // Récupère un éventuel offset spécifique sur l'objet ciblé.
+        Vector3 offset = defaultOffset;
+        var target = interactable.GetComponent<ILocalInfoBoxTarget>();
+        if (target != null)
+        {
+            offset = target.LocalInfoBoxOffset;
+        }
+
+        // Positionne la boîte en tenant compte de l'offset.
+        transform.position = interactable.transform.position + offset;
 
         // Oriente la boîte vers la WorldCamera pour rester lisible.
         if (worldCamera != null)
