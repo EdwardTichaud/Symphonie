@@ -8,7 +8,7 @@ using UnityEngine.Timeline;    // Permet de manipuler les Signaux (SignalAsset)
 /// Point d'intérêt interactif : lance un dialogue puis éventuellement
 /// une confirmation Oui/Non pour que le joueur prenne une décision.
 /// </summary>
-public class PointOfInterest : MonoBehaviour, IInteractable
+public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
 {
     [Header("Dialogue")]
     [Tooltip("Dialogue joué lorsque le joueur interagit avec ce point d'intérêt.")]
@@ -31,6 +31,10 @@ public class PointOfInterest : MonoBehaviour, IInteractable
     [Tooltip("Signal envoyé pour indiquer à la timeline de reprendre.")]
     public SignalAsset resumeSignal;
 
+    [Header("Local InfoBox")]
+    [Tooltip("Décalage appliqué à la LocalInfoBox pour ce point d'intérêt.")]
+    public Vector3 localInfoBoxOffset;
+
     // --- Implémentation de l'interface IInteractable ---
     public GameObject GameObject => gameObject;
 
@@ -43,6 +47,11 @@ public class PointOfInterest : MonoBehaviour, IInteractable
     }
 
     public void IncrementDialogueStage() { /* Aucun dialogue progressif pour l'instant */ }
+
+    /// <summary>
+    /// Fournit l'offset personnalisé pour positionner la LocalInfoBox.
+    /// </summary>
+    public Vector3 LocalInfoBoxOffset => localInfoBoxOffset;
 
     /// <summary>
     /// Coroutine gérant l'enchaînement dialogue puis confirmation.
