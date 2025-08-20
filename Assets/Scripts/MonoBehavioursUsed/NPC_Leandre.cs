@@ -98,6 +98,19 @@ public class NPC_Leandre : MonoBehaviour, IInteractable
             if (anim != null)
                 anim.Play("Dialogue_End");
 
+            // Boîte de confirmation éventuelle à la fin du dialogue
+            if (phase.askConfirmation)
+            {
+                bool done = false;
+                ConfirmationBox.Instance.Show(
+                    phase.confirmationText,
+                    () => { phase.onYes?.Invoke(); done = true; },
+                    () => { phase.onNo?.Invoke(); done = true; }
+                );
+                while (!done)
+                    yield return null; // Attend la réponse du joueur
+            }
+
             // Gestion de la progression
             bool wasLast = dialogueStage >= dialoguePhases.Length - 1;
             bool auto = phase.autoProceed;

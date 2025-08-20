@@ -92,6 +92,19 @@ public class NPC_LeVieux : MonoBehaviour, IInteractable
             if (anim != null)
                 anim.Play("Dialogue_End");
 
+            // Affiche une éventuelle boîte de confirmation à la fin du dialogue
+            if (phase.askConfirmation)
+            {
+                bool done = false; // Attendra que le joueur fasse un choix
+                ConfirmationBox.Instance.Show(
+                    phase.confirmationText,
+                    () => { phase.onYes?.Invoke(); done = true; },
+                    () => { phase.onNo?.Invoke(); done = true; }
+                );
+                while (!done)
+                    yield return null;
+            }
+
             // Détermine si l'on doit passer automatiquement à la phase suivante.
             bool wasLast = dialogueStage >= dialoguePhases.Length - 1;
             bool auto = phase.autoProceed;
