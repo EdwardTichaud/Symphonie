@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
+using UnityEngine.Playables;   // Nécessaire pour contrôler la Timeline
+using UnityEngine.Timeline;    // Permet de manipuler les Signaux (SignalAsset)
 
 /// <summary>
 /// Point d'intérêt interactif : lance un dialogue puis éventuellement
@@ -22,6 +24,12 @@ public class PointOfInterest : MonoBehaviour, IInteractable
     public UnityEvent onYes;
     [Tooltip("Événement déclenché si le joueur répond Non.")]
     public UnityEvent onNo;
+
+    [Header("Timeline")]
+    [Tooltip("Timeline à relancer une fois le dialogue terminé.")]
+    public PlayableDirector timelineToResume;
+    [Tooltip("Signal envoyé pour indiquer à la timeline de reprendre.")]
+    public SignalAsset resumeSignal;
 
     // --- Implémentation de l'interface IInteractable ---
     public GameObject GameObject => gameObject;
@@ -45,6 +53,31 @@ public class PointOfInterest : MonoBehaviour, IInteractable
 
         if (dialogue != null)
             yield return DialogueManager.Instance.StartDialogue(dialogue);
+
+        // À la fin du dialogue, on envoie un signal de reprise à la Timeline si nécessaire
+        if (timelineToResume != null)
+        {
+            // Vérifie si un SignalReceiver est attaché pour traiter le SIG_Resume
+            if (resumeSignal != null)
+            {
+                var receiver = timelineToResume.GetComponent<SignalReceiver>();
+                if (receiver != null)
+                {
+                    // Invoque la réaction associée au signal pour laisser la Timeline gérer la reprise
+                    receiver.GetReaction(resumeSignal)?.Invoke();
+                }
+                else
+                {
+                    // Pas de SignalReceiver configuré : on reprend la Timeline directement
+                    timelineToResume.Resume();
+                }
+            }
+            else
+            {
+                // Aucun signal défini : reprise immédiate de la Timeline
+                timelineToResume.Resume();
+            }
+        }
 
         if (askConfirmation)
         {
