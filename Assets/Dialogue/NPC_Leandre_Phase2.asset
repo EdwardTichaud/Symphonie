@@ -9,9 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c70c61014a7ee16459d8c6e56c1ebb2e, type: 3}
-  m_Name: Lucian_StandUp
+  m_Script: {fileID: 11500000, guid: c8aacd0e4b30b5d46a727666d017bf22, type: 3}
+  m_Name: NPC_Leandre_Phase2
   m_EditorClassIdentifier: 
-  animatorID: Lucian
-  animationName: Idle_Standing_Up
-  crossFadeDuration: 0
+  lines:
+  - speakerName: "L\xE9andre"
+    text: "Quelle plaie...je d\xE9pirme."
+  randomPosition: 1
+  customPosition: {x: 0, y: 0, z: 0}
