@@ -78,6 +78,12 @@ public class InteractionManager : MonoBehaviour
     {
         if (currentInteractable != null)
         {
+            // Masquer immédiatement l'invite locale pour éviter qu'elle reste affichée
+            if (localInfoBox != null)
+            {
+                localInfoBox.SetActive(false);
+                InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
+            }
             currentInteractable.GetComponent<IInteractable>().Interact();
         }
     }
@@ -91,6 +97,18 @@ public class InteractionManager : MonoBehaviour
     {
         if (DialogueManager.Instance.isOpen || EventsManager.Instance.eventInProgress)
         {
+            // Si une interaction est en cours, on s'assure que la LocalInfoBox reste cachée
+            if (currentInteractable != null)
+            {
+                currentInteractable = null;
+            }
+
+            if (localInfoBox != null && localInfoBox.activeSelf)
+            {
+                localInfoBox.SetActive(false);
+                InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
+            }
+
             return;
         }
 
