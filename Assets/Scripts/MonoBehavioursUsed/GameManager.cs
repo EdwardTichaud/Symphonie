@@ -13,6 +13,7 @@ public class GameData : ScriptableObject
     public int squadLevel;
     public int squadXP;
     public int enemiesDefeatedCount;
+    public string muninName = "Munin"; // Nom de la caméra contrôlée par le joueur
 
     public void SaveToFile(string fileName = "save.json")
     {
@@ -21,7 +22,8 @@ public class GameData : ScriptableObject
             defeatedEnemyIDs = new List<int>(defeatedEnemies),
             squadLevel = squadLevel,
             squadXP = squadXP,
-            enemiesDefeatedCount = enemiesDefeatedCount
+            enemiesDefeatedCount = enemiesDefeatedCount,
+            muninName = muninName
         };
 
         string json = JsonUtility.ToJson(save, true);
@@ -49,6 +51,7 @@ public class GameData : ScriptableObject
         squadLevel = loaded.squadLevel;
         squadXP = loaded.squadXP;
         enemiesDefeatedCount = loaded.enemiesDefeatedCount;
+        muninName = loaded.muninName; // Recharge le nom personnalisé de Munin
 
         Debug.Log($"[GameData] Données chargées depuis : {path}");
     }
@@ -59,8 +62,9 @@ public class GameData : ScriptableObject
         squadLevel = 0;
         squadXP = 0;
         enemiesDefeatedCount = 0;
+        muninName = "Munin"; // Réinitialise le nom de Munin par défaut
         Debug.Log("GameData has been reset.");
-    }
+}
 }
 
 [System.Serializable]
@@ -70,6 +74,7 @@ public class GameDataSave
     public int squadLevel;
     public int squadXP;
     public int enemiesDefeatedCount;
+    public string muninName; // Nom sauvegardé de Munin
 }
 
 public enum GameState
