@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.IO;
 using System.Linq;
+using TMPro; // Nécessaire pour utiliser TMP_InputField
 
 [CreateAssetMenu(fileName = "GameData", menuName = "Symphonie/GameData")]
 public class GameData : ScriptableObject
@@ -13,6 +14,7 @@ public class GameData : ScriptableObject
     public int squadLevel;
     public int squadXP;
     public int enemiesDefeatedCount;
+    public string muninName = "Munin"; // Nom de la caméra contrôlée par le joueur
 
     public void SaveToFile(string fileName = "save.json")
     {
@@ -21,7 +23,8 @@ public class GameData : ScriptableObject
             defeatedEnemyIDs = new List<int>(defeatedEnemies),
             squadLevel = squadLevel,
             squadXP = squadXP,
-            enemiesDefeatedCount = enemiesDefeatedCount
+            enemiesDefeatedCount = enemiesDefeatedCount,
+            muninName = muninName
         };
 
         string json = JsonUtility.ToJson(save, true);
@@ -49,6 +52,7 @@ public class GameData : ScriptableObject
         squadLevel = loaded.squadLevel;
         squadXP = loaded.squadXP;
         enemiesDefeatedCount = loaded.enemiesDefeatedCount;
+        muninName = loaded.muninName; // Recharge le nom personnalisé de Munin
 
         Debug.Log($"[GameData] Données chargées depuis : {path}");
     }
@@ -59,8 +63,9 @@ public class GameData : ScriptableObject
         squadLevel = 0;
         squadXP = 0;
         enemiesDefeatedCount = 0;
+        muninName = "Munin"; // Réinitialise le nom de Munin par défaut
         Debug.Log("GameData has been reset.");
-    }
+}
 }
 
 [System.Serializable]
@@ -70,6 +75,7 @@ public class GameDataSave
     public int squadLevel;
     public int squadXP;
     public int enemiesDefeatedCount;
+    public string muninName; // Nom sauvegardé de Munin
 }
 
 public enum GameState
@@ -94,6 +100,11 @@ public class GameManager : MonoBehaviour
     [Header("État du jeu")]
     [SerializeField] private GameState currentState = GameState.Menu;
 
+    [Header("Nom de Munin")]
+    [SerializeField] private GameObject namePanel; // Panneau UI demandant le nom
+    [SerializeField] private TMP_InputField nameInputField; // Champ de saisie du nom
+    [SerializeField] private string defaultMuninName = "Munin"; // Nom par défaut si aucun n'est choisi
+
     public GameState CurrentState
     {
         get => currentState;
@@ -115,6 +126,21 @@ public class GameManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+    }
+
+    private void Start()
+    {
+        // Au démarrage, on récupère le nom sauvegardé de Munin s'il existe
+        if (PlayerPrefs.HasKey("MuninName"))
+        {
+            string savedName = PlayerPrefs.GetString("MuninName");
+            gameData.muninName = savedName;
+        }
+        else
+        {
+            // Aucun nom enregistré : on demande au joueur de choisir
+            ShowNamePanel();
+        }
     }
 
     public void ChangeGameState(GameState newState)
@@ -173,5 +199,44 @@ public class GameManager : MonoBehaviour
     {
         gameData.enemiesDefeatedCount = 0;
         Debug.Log("[GameManager] Compteur d'ennemis vaincus réinitialisé.");
+    }
+
+    /// <summary>
+    /// Affiche le panneau permettant au joueur de saisir le nom de Munin.
+    /// </summary>
+    public void ShowNamePanel()
+    {
+        if (namePanel == null)
+        {
+            Debug.LogWarning("[GameManager] Aucun panneau de saisie de nom n'est assigné.");
+            return;
+        }
+
+        namePanel.SetActive(true);
+
+        // Pré-remplit le champ avec le nom par défaut pour guider le joueur
+        if (nameInputField != null)
+            nameInputField.text = defaultMuninName;
+    }
+
+    /// <summary>
+    /// Valide le nom entré par le joueur, le sauvegarde et cache le panneau.
+    /// </summary>
+    public void ConfirmName()
+    {
+        string chosenName = nameInputField != null ? nameInputField.text : string.Empty;
+
+        if (string.IsNullOrWhiteSpace(chosenName))
+            chosenName = defaultMuninName; // Utilise le nom par défaut si la saisie est vide
+
+        // Met à jour les données de jeu
+        gameData.muninName = chosenName;
+
+        // Sauvegarde le choix pour les prochaines sessions
+        PlayerPrefs.SetString("MuninName", chosenName);
+        PlayerPrefs.Save();
+
+        if (namePanel != null)
+            namePanel.SetActive(false); // Cache le panneau après validation
     }
 }
