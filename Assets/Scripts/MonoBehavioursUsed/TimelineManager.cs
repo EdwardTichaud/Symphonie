@@ -98,6 +98,36 @@ public class TimelineManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Met en pause la Timeline en cours (appelé par un Signal).
+    /// </summary>
+    public void PauseCurrentTimeline()
+    {
+        if (currentDirector == null) return;
+        if (currentDirector.state != PlayState.Playing) return;
+
+        currentDirector.Pause();
+        // Stabilise l'état visuel/audio au frame exact de pause.
+        currentDirector.Evaluate();
+
+        // On reste en mode "cinématique" pendant la pause :
+        // => on NE réactive PAS les déplacements ici.
+        // (si tu veux autoriser un prompt/QTE, gère-le dans ton UI/Input dédié)
+        Debug.Log("[TimelineManager] PauseCurrentTimeline()");
+    }
+
+    /// <summary>
+    /// Reprend la Timeline en cours (appelé par une action joueur / QTE / autre).
+    /// </summary>
+    public void ResumeCurrentTimeline()
+    {
+        if (currentDirector == null) return;
+        if (currentDirector.state != PlayState.Paused) return;
+
+        currentDirector.Resume();
+        Debug.Log("[TimelineManager] ResumeCurrentTimeline()");
+    }
+
+    /// <summary>
     /// Callback quand une Timeline démarre.
     /// </summary>
     private void OnPlayed(PlayableDirector pd)
