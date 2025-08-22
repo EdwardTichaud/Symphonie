@@ -77,11 +77,11 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
         // Bascule : si Paused -> Resume, si Playing -> Pause (sinon, ne rien faire)
         if (director.state == PlayState.Paused)
         {
-            TimelineManager.Instance.ResumeCurrentTimeline();
+            TimelineManager.Instance.SetCurentTimelineSpeed(0);
         }
         else if (director.state == PlayState.Playing)
         {
-            TimelineManager.Instance.PauseCurrentTimeline();
+            TimelineManager.Instance.SetCurentTimelineSpeed(1);
         }
     }
 }
