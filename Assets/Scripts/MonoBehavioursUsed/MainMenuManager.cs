@@ -30,6 +30,11 @@ public class MainMenuManager : MonoBehaviour
     private PlayerInputs playerInputs;
     private Canvas parentCanvas;
 
+    [Header("Nom de Munin")]
+    public GameObject namePanel; // Panneau UI demandant le nom du joueur
+    public TMP_InputField nameInputField; // Champ de saisie du nom
+    public string defaultMuninName = "Munin"; // Nom par défaut si aucun n'est fourni
+
     void Awake()
     {
         playerInputs = new PlayerInputs();
@@ -38,7 +43,7 @@ public class MainMenuManager : MonoBehaviour
     private void Start()
     {
         if (pressA != null)
-            pressA.alpha = 0.5f;
+            pressA.alpha = 0.5f; // Pré-affiche le message "Press A"
         if (menuContainer != null)
             menuContainer.SetActive(false);
         if (loadMenu != null)
@@ -59,6 +64,20 @@ public class MainMenuManager : MonoBehaviour
             menuItems = new Transform[menuContainer.transform.childCount];
             for (int i = 0; i < menuItems.Length; i++)
                 menuItems[i] = menuContainer.transform.GetChild(i);
+        }
+
+        // Chargement ou demande du nom de Munin
+        if (PlayerPrefs.HasKey("MuninName"))
+        {
+            // Si un nom existe déjà, on le charge dans les données de jeu
+            string savedName = PlayerPrefs.GetString("MuninName");
+            if (GameManager.Instance != null && GameManager.Instance.gameData != null)
+                GameManager.Instance.gameData.muninName = savedName;
+        }
+        else
+        {
+            // Aucun nom enregistré : on affiche le panneau de saisie
+            ShowNamePanel();
         }
     }
 
@@ -100,6 +119,13 @@ public class MainMenuManager : MonoBehaviour
 
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
+        // Si le panneau de saisie du nom est actif, le bouton de confirmation validera le nom
+        if (namePanel != null && namePanel.activeSelf)
+        {
+            ConfirmName();
+            return;
+        }
+
         if (waitingForInput)
         {
             Debug.Log("Bouton A pressé");
@@ -136,6 +162,46 @@ public class MainMenuManager : MonoBehaviour
 
         currentIndex = 0;
         UpdateCursor();
+    }
+
+    /// <summary>
+    /// Affiche le panneau permettant au joueur de choisir le nom de Munin.
+    /// </summary>
+    private void ShowNamePanel()
+    {
+        waitingForInput = false; // Empêche l'ouverture du menu tant que le nom n'est pas choisi
+        if (pressA != null)
+            pressA.gameObject.SetActive(false); // Masque "Press A" durant la saisie
+        if (namePanel != null)
+            namePanel.SetActive(true);
+        if (nameInputField != null)
+            nameInputField.text = defaultMuninName; // Pré-remplit avec le nom par défaut
+    }
+
+    /// <summary>
+    /// Valide le nom saisi, le sauvegarde et affiche de nouveau l'écran de démarrage.
+    /// </summary>
+    public void ConfirmName()
+    {
+        string chosenName = nameInputField != null ? nameInputField.text : string.Empty;
+        if (string.IsNullOrWhiteSpace(chosenName))
+            chosenName = defaultMuninName; // Utilise le nom par défaut si aucune saisie
+
+        // Met à jour les données de jeu
+        if (GameManager.Instance != null && GameManager.Instance.gameData != null)
+            GameManager.Instance.gameData.muninName = chosenName;
+
+        // Sauvegarde dans les préférences locales
+        PlayerPrefs.SetString("MuninName", chosenName);
+        PlayerPrefs.Save();
+
+        // Cache le panneau et réaffiche "Press A"
+        if (namePanel != null)
+            namePanel.SetActive(false);
+        if (pressA != null)
+            pressA.gameObject.SetActive(true);
+
+        waitingForInput = true; // Le joueur peut maintenant accéder au menu principal
     }
 
     public void ContinueGame()
