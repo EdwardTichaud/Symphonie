@@ -135,12 +135,12 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
         if (currentConditionIndex >= resumeConditions.Count)
         {
             Debug.LogWarning("[TimelinePauseResumeOnInteract] Aucune condition restante, reprise immédiate.");
-            TimelineManager.Instance.SetCurentTimelineSpeed(1);
+            ResumeTimeline();
             return;
         }
 
         waitingForCondition = true; // indique qu'on attend quelque chose
-        TimelineManager.Instance.SetCurentTimelineSpeed(0); // met la timeline en pause (speed 0)
+        TimelineManager.Instance.PauseCurrentTimeline();
     }
 
     /// <summary>
@@ -168,6 +168,6 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
     private void ResumeTimeline()
     {
         waitingForCondition = false;
-        TimelineManager.Instance.SetCurentTimelineSpeed(1);
+        TimelineManager.Instance.ResumeCurrentTimeline();
     }
 }

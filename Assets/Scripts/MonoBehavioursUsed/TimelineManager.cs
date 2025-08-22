@@ -115,11 +115,6 @@ public class TimelineManager : MonoBehaviour
         Debug.Log("[TimelineManager] PauseCurrentTimeline()");
     }
 
-    public void SetCurentTimelineSpeed(float speed)
-    {
-        currentDirector.playableGraph.GetRootPlayable(0).SetSpeed(speed);
-    }
-
     /// <summary>
     /// Reprend la Timeline en cours (appelé par une action joueur / QTE / autre).
     /// </summary>
