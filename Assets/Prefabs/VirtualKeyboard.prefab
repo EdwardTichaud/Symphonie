@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 7775909339105003023}
   - component: {fileID: 8100440624257030485}
   - component: {fileID: 5447046329245791173}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -108,15 +108,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -145,7 +147,7 @@ GameObject:
   - component: {fileID: 6226240486517942921}
   - component: {fileID: 969127084362392362}
   - component: {fileID: 4844352360577771714}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -242,15 +244,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -279,7 +283,7 @@ GameObject:
   - component: {fileID: 6218117408349494391}
   - component: {fileID: 575923546928310339}
   - component: {fileID: 3437268079817046846}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -376,15 +380,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -412,7 +418,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9045819102240577774}
   - component: {fileID: 6264280349774709080}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: VirtualKeyboardCursor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -441,7 +447,7 @@ RectTransform:
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!95 &6264280349774709080
 Animator:
-  serializedVersion: 5
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -455,6 +461,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
@@ -472,8 +479,7 @@ GameObject:
   - component: {fileID: 7561205828513383386}
   - component: {fileID: 6419195552831606470}
   - component: {fileID: 5791304181566892090}
-  - component: {fileID: 6131540833053946443}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: I
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -528,7 +534,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -594,22 +600,6 @@ MonoBehaviour:
           m_StringArgument: I
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &6131540833053946443
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 514898648160731405}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &740588757367057772
 GameObject:
   m_ObjectHideFlags: 0
@@ -621,7 +611,7 @@ GameObject:
   - component: {fileID: 7723158919196699045}
   - component: {fileID: 45622081476583935}
   - component: {fileID: 146332041606915859}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -718,15 +708,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -756,8 +748,7 @@ GameObject:
   - component: {fileID: 5551388504638501966}
   - component: {fileID: 2557683041860289375}
   - component: {fileID: 8716832510796151785}
-  - component: {fileID: 1279667143383885849}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: 0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -812,7 +803,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -878,22 +869,6 @@ MonoBehaviour:
           m_StringArgument: 0
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &1279667143383885849
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 762399717635148570}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &787359636452621885
 GameObject:
   m_ObjectHideFlags: 0
@@ -906,8 +881,7 @@ GameObject:
   - component: {fileID: 2644389490892135494}
   - component: {fileID: 5272772717569112613}
   - component: {fileID: 2162385904961601004}
-  - component: {fileID: 2071838099893647990}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: 2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -962,7 +936,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1028,22 +1002,6 @@ MonoBehaviour:
           m_StringArgument: 2
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &2071838099893647990
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 787359636452621885}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &845891063925070107
 GameObject:
   m_ObjectHideFlags: 0
@@ -1055,7 +1013,7 @@ GameObject:
   - component: {fileID: 8433122574164400537}
   - component: {fileID: 1590092620210278792}
   - component: {fileID: 1001563486982483419}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1152,15 +1110,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -1187,12 +1147,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4368848346414378292}
-  - component: {fileID: 106779296747473781}
   - component: {fileID: 2716826274125177333}
   - component: {fileID: 8224918806936497522}
-  - component: {fileID: 6791681137017932051}
   - component: {fileID: 1275209299497968137}
-  m_Layer: 5
+  - component: {fileID: 3487832756095870809}
+  m_Layer: 11
   m_Name: VirtualKeyboard
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1221,68 +1180,6 @@ RectTransform:
   m_AnchoredPosition: {x: 40, y: -450}
   m_SizeDelta: {x: -400.01, y: -1360}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &106779296747473781
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1177172479610300591}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0b9d2742dfab1974f9875668333dd186, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  vkIsOpen: 0
-  gridLayout: {fileID: 8098885231949708920}
-  virtualKeyboardButtons:
-  - {fileID: 5895865384130925819}
-  - {fileID: 9049138743987495240}
-  - {fileID: 1687197053197967872}
-  - {fileID: 7064120177487201078}
-  - {fileID: 8980796326199222740}
-  - {fileID: 1799949987852215382}
-  - {fileID: 1363388200422931657}
-  - {fileID: 9198221515772493609}
-  - {fileID: 514898648160731405}
-  - {fileID: 6515592784394802944}
-  - {fileID: 6611844052791966044}
-  - {fileID: 5788326369509364534}
-  - {fileID: 3572742836674239993}
-  - {fileID: 5368105814129329740}
-  - {fileID: 2637909495231148088}
-  - {fileID: 4631546503911123493}
-  - {fileID: 3672096178797520175}
-  - {fileID: 7379874892301620468}
-  - {fileID: 2806388635594384216}
-  - {fileID: 1258368934738112959}
-  - {fileID: 9068691655763765404}
-  - {fileID: 3138494975575124730}
-  - {fileID: 5341052904713094240}
-  - {fileID: 1611665763373734033}
-  - {fileID: 6281996078767433289}
-  - {fileID: 2083365564898538662}
-  - {fileID: 7148400525360586390}
-  - {fileID: 762399717635148570}
-  - {fileID: 9210474849242487044}
-  - {fileID: 787359636452621885}
-  - {fileID: 6565954947046466850}
-  - {fileID: 8358210262748588914}
-  - {fileID: 5386080981289990675}
-  - {fileID: 3939820324798163663}
-  - {fileID: 4177920819356383921}
-  - {fileID: 8764454417029659685}
-  - {fileID: 7821022403338801739}
-  - {fileID: 2759006477362362901}
-  - {fileID: 7436828895789065268}
-  cursor: {fileID: 451950860527983634}
-  targetButton: 0
-  direction: {x: 0, y: 0}
-  currentInput: 
-  currentKeyboardWord: {fileID: 2666381627580633979}
-  validKeyboardWord: {fileID: 8471766620434496325}
-  vkWordValidated: 0
-  selectedItemName: 
 --- !u!223 &2716826274125177333
 Canvas:
   m_ObjectHideFlags: 0
@@ -1292,9 +1189,9 @@ Canvas:
   m_GameObject: {fileID: 1177172479610300591}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 1
+  m_RenderMode: 0
   m_Camera: {fileID: 0}
-  m_PlaneDistance: 100
+  m_PlaneDistance: 0.5
   m_PixelPerfect: 0
   m_ReceivesEvents: 1
   m_OverrideSorting: 0
@@ -1303,8 +1200,8 @@ Canvas:
   m_VertexColorAlwaysGammaSpace: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: -561495129
-  m_SortingOrder: 50
+  m_SortingLayerID: -306751213
+  m_SortingOrder: 32767
   m_TargetDisplay: 0
 --- !u!114 &8224918806936497522
 MonoBehaviour:
@@ -1318,10 +1215,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 3840, y: 2160}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
@@ -1329,7 +1226,29 @@ MonoBehaviour:
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
   m_PresetInfoIsWorld: 0
---- !u!114 &6791681137017932051
+--- !u!95 &1275209299497968137
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1177172479610300591}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 927e1e5acd4ee2c4f8a6d606b18456c2, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &3487832756095870809
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1338,30 +1257,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 1177172479610300591}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1e10f05a7f7848b44b5c52ffb3331ce3, type: 3}
+  m_Script: {fileID: 11500000, guid: 4d74b4bae9c403f468a0c52507e5153f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!95 &1275209299497968137
-Animator:
-  serializedVersion: 5
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1177172479610300591}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: ec25ef1a1753a554e9391fc09b97ec2d, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
+  keyboardRoot: {fileID: 1177172479610300591}
+  buttonsContainer: {fileID: 6594947862159591136}
+  cursor: {fileID: 9045819102240577774}
+  outputText: {fileID: 2666381627580633979}
+  columns: 13
 --- !u!1 &1200298959478812816
 GameObject:
   m_ObjectHideFlags: 0
@@ -1373,7 +1276,7 @@ GameObject:
   - component: {fileID: 2628715423059517395}
   - component: {fileID: 4466356627630841199}
   - component: {fileID: 1925242655202550396}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1470,15 +1373,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -1508,8 +1413,7 @@ GameObject:
   - component: {fileID: 907205790332595384}
   - component: {fileID: 5197265324426568230}
   - component: {fileID: 942270658967926106}
-  - component: {fileID: 5993907322323472153}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: T
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1564,7 +1468,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1630,22 +1534,6 @@ MonoBehaviour:
           m_StringArgument: T
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &5993907322323472153
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1258368934738112959}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &1319074130755464074
 GameObject:
   m_ObjectHideFlags: 0
@@ -1657,7 +1545,7 @@ GameObject:
   - component: {fileID: 8525612659836397664}
   - component: {fileID: 4784529208052889162}
   - component: {fileID: 7613984402463074052}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1754,15 +1642,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -1792,8 +1682,7 @@ GameObject:
   - component: {fileID: 9171401214210685786}
   - component: {fileID: 8876302205459154188}
   - component: {fileID: 435820613782467834}
-  - component: {fileID: 8296100050887390692}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: G
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1848,7 +1737,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1914,22 +1803,6 @@ MonoBehaviour:
           m_StringArgument: G
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &8296100050887390692
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1363388200422931657}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &1382877320163701379
 GameObject:
   m_ObjectHideFlags: 0
@@ -1941,7 +1814,7 @@ GameObject:
   - component: {fileID: 3177099709152228069}
   - component: {fileID: 2889990216673110112}
   - component: {fileID: 6574322099312917061}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2038,15 +1911,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -2076,8 +1951,7 @@ GameObject:
   - component: {fileID: 3054012416989201809}
   - component: {fileID: 7228915828790775975}
   - component: {fileID: 7844444384295774748}
-  - component: {fileID: 8018157820120389301}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: X
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2132,7 +2006,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2198,22 +2072,6 @@ MonoBehaviour:
           m_StringArgument: X
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &8018157820120389301
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1611665763373734033}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &1687197053197967872
 GameObject:
   m_ObjectHideFlags: 0
@@ -2226,8 +2084,7 @@ GameObject:
   - component: {fileID: 397460430078968309}
   - component: {fileID: 3068013041131523792}
   - component: {fileID: 4560211842297245879}
-  - component: {fileID: 1085358514737071427}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: C
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2282,7 +2139,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2348,22 +2205,6 @@ MonoBehaviour:
           m_StringArgument: C
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &1085358514737071427
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1687197053197967872}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &1746357570698196128
 GameObject:
   m_ObjectHideFlags: 0
@@ -2375,7 +2216,7 @@ GameObject:
   - component: {fileID: 3396098496501122550}
   - component: {fileID: 2306321999567450551}
   - component: {fileID: 327291559111257890}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2472,15 +2313,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -2510,8 +2353,7 @@ GameObject:
   - component: {fileID: 7116890710330362558}
   - component: {fileID: 2167884906177049214}
   - component: {fileID: 5956750680700702974}
-  - component: {fileID: 1843152684936635980}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: F
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2566,7 +2408,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2632,22 +2474,6 @@ MonoBehaviour:
           m_StringArgument: F
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &1843152684936635980
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1799949987852215382}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &1836878116393441021
 GameObject:
   m_ObjectHideFlags: 0
@@ -2659,7 +2485,7 @@ GameObject:
   - component: {fileID: 6799732224885149426}
   - component: {fileID: 7976615666373194938}
   - component: {fileID: 8471766620434496325}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: ValidVKText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2756,15 +2582,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -2793,7 +2621,7 @@ GameObject:
   - component: {fileID: 715080297040889884}
   - component: {fileID: 1974775547319998638}
   - component: {fileID: 3164184075740913135}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2890,15 +2718,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -2928,8 +2758,7 @@ GameObject:
   - component: {fileID: 1136493604897348723}
   - component: {fileID: 5468034387807659835}
   - component: {fileID: 3068462231542924353}
-  - component: {fileID: 8689254833655401781}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Z
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2984,7 +2813,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3050,22 +2879,6 @@ MonoBehaviour:
           m_StringArgument: Z
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &8689254833655401781
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2083365564898538662}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &2387987450565476916
 GameObject:
   m_ObjectHideFlags: 0
@@ -3077,7 +2890,7 @@ GameObject:
   - component: {fileID: 7887897037553200826}
   - component: {fileID: 7711787084354592840}
   - component: {fileID: 4918970263890281576}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3174,15 +2987,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -3211,7 +3026,7 @@ GameObject:
   - component: {fileID: 6787345906401671356}
   - component: {fileID: 3616949199848998426}
   - component: {fileID: 1603168308629504886}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3308,15 +3123,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -3345,7 +3162,7 @@ GameObject:
   - component: {fileID: 719734603251932125}
   - component: {fileID: 2718403941729681245}
   - component: {fileID: 1719011918293972142}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3442,15 +3259,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -3479,7 +3298,7 @@ GameObject:
   - component: {fileID: 714265820563339453}
   - component: {fileID: 3668287245062497609}
   - component: {fileID: 2666381627580633979}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: CurrentVKWordText
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3576,15 +3395,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -3614,8 +3435,7 @@ GameObject:
   - component: {fileID: 4113174836335327634}
   - component: {fileID: 2625297466773327328}
   - component: {fileID: 7367499137287365394}
-  - component: {fileID: 1271236111999030156}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: O
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3670,7 +3490,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3736,22 +3556,6 @@ MonoBehaviour:
           m_StringArgument: O
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &1271236111999030156
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2637909495231148088}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &2759006477362362901
 GameObject:
   m_ObjectHideFlags: 0
@@ -3764,8 +3568,7 @@ GameObject:
   - component: {fileID: 3759999399037634762}
   - component: {fileID: 8922478411981459131}
   - component: {fileID: 7154209384249924476}
-  - component: {fileID: 8415798630662726255}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Erase
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3820,7 +3623,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -3886,22 +3689,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &8415798630662726255
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2759006477362362901}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 0
-  isValidationButton: 0
 --- !u!1 &2806388635594384216
 GameObject:
   m_ObjectHideFlags: 0
@@ -3914,8 +3701,7 @@ GameObject:
   - component: {fileID: 7363892965277803295}
   - component: {fileID: 3095615866289798482}
   - component: {fileID: 5724260691085595503}
-  - component: {fileID: 4253167166527862186}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: S
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -3970,7 +3756,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4036,22 +3822,6 @@ MonoBehaviour:
           m_StringArgument: S
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &4253167166527862186
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2806388635594384216}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &2872729826191041560
 GameObject:
   m_ObjectHideFlags: 0
@@ -4063,7 +3833,7 @@ GameObject:
   - component: {fileID: 6663106732518034637}
   - component: {fileID: 914777489772555629}
   - component: {fileID: 2480380384333533813}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4160,15 +3930,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -4198,8 +3970,7 @@ GameObject:
   - component: {fileID: 8649067322626234919}
   - component: {fileID: 7792088305010308265}
   - component: {fileID: 3681879670644251691}
-  - component: {fileID: 5609283705696995562}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: V
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4254,7 +4025,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4320,22 +4091,6 @@ MonoBehaviour:
           m_StringArgument: V
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &5609283705696995562
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3138494975575124730}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &3304269227145518786
 GameObject:
   m_ObjectHideFlags: 0
@@ -4347,7 +4102,7 @@ GameObject:
   - component: {fileID: 68272451884240827}
   - component: {fileID: 2293946836505613320}
   - component: {fileID: 7458311632773269814}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4444,15 +4199,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -4481,7 +4238,7 @@ GameObject:
   - component: {fileID: 1405723423998409925}
   - component: {fileID: 1304493400046589514}
   - component: {fileID: 8867290053367956002}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: VKWordFrame
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4535,7 +4292,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: cb985d5bc41b467488f77f677280ba11, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 73de1590ced7b244aa4e5f3369a8275e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4556,7 +4313,7 @@ GameObject:
   - component: {fileID: 7996563791794935987}
   - component: {fileID: 3387375203745673585}
   - component: {fileID: 6837137277060025039}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4653,15 +4410,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -4691,8 +4450,7 @@ GameObject:
   - component: {fileID: 6499021939561058671}
   - component: {fileID: 2789305658626283896}
   - component: {fileID: 854102222836941775}
-  - component: {fileID: 2186968802918664434}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: M
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4747,7 +4505,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4813,22 +4571,6 @@ MonoBehaviour:
           m_StringArgument: M
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &2186968802918664434
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3572742836674239993}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &3672096178797520175
 GameObject:
   m_ObjectHideFlags: 0
@@ -4841,8 +4583,7 @@ GameObject:
   - component: {fileID: 8581034126792213506}
   - component: {fileID: 3533705159276094715}
   - component: {fileID: 8068245458347796438}
-  - component: {fileID: 4702106797291126463}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Q
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4897,7 +4638,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -4963,22 +4704,6 @@ MonoBehaviour:
           m_StringArgument: Q
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &4702106797291126463
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3672096178797520175}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &3939820324798163663
 GameObject:
   m_ObjectHideFlags: 0
@@ -4991,8 +4716,7 @@ GameObject:
   - component: {fileID: 4683859606388232323}
   - component: {fileID: 6432184995972823205}
   - component: {fileID: 8396817003590139080}
-  - component: {fileID: 8146316451701182665}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: 6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5047,7 +4771,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -5113,22 +4837,6 @@ MonoBehaviour:
           m_StringArgument: 6
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &8146316451701182665
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3939820324798163663}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &3941456705936474225
 GameObject:
   m_ObjectHideFlags: 0
@@ -5140,7 +4848,7 @@ GameObject:
   - component: {fileID: 4763209734327696643}
   - component: {fileID: 7869367872067876605}
   - component: {fileID: 6764643193541265790}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5237,15 +4945,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -5274,7 +4984,7 @@ GameObject:
   - component: {fileID: 536365565919863804}
   - component: {fileID: 1759150852558481354}
   - component: {fileID: 4757322786944472097}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5371,15 +5081,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -5409,8 +5121,7 @@ GameObject:
   - component: {fileID: 6034746881732031780}
   - component: {fileID: 5480154777310198356}
   - component: {fileID: 3600820083479256135}
-  - component: {fileID: 5769742753526233892}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: 7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5465,7 +5176,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -5531,22 +5242,6 @@ MonoBehaviour:
           m_StringArgument: 7
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &5769742753526233892
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4177920819356383921}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &4301541873753733927
 GameObject:
   m_ObjectHideFlags: 0
@@ -5558,7 +5253,7 @@ GameObject:
   - component: {fileID: 3049183319386351817}
   - component: {fileID: 8477200417781013325}
   - component: {fileID: 782623425315965417}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5655,15 +5350,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -5692,7 +5389,7 @@ GameObject:
   - component: {fileID: 2275401073282364679}
   - component: {fileID: 1107035739088922980}
   - component: {fileID: 3410913237692008164}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5789,15 +5486,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -5827,8 +5526,7 @@ GameObject:
   - component: {fileID: 735712900000303005}
   - component: {fileID: 2566807477628704723}
   - component: {fileID: 163879824576807983}
-  - component: {fileID: 286353769594303356}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: P
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5883,7 +5581,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -5949,22 +5647,6 @@ MonoBehaviour:
           m_StringArgument: P
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &286353769594303356
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4631546503911123493}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &4682345138243005094
 GameObject:
   m_ObjectHideFlags: 0
@@ -5976,7 +5658,7 @@ GameObject:
   - component: {fileID: 56648201641813456}
   - component: {fileID: 6387544631901149928}
   - component: {fileID: 5287704326229878536}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6073,15 +5755,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -6110,7 +5794,7 @@ GameObject:
   - component: {fileID: 331881734908075811}
   - component: {fileID: 1906495350444623038}
   - component: {fileID: 5606370528382435607}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6207,15 +5891,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -6244,7 +5930,7 @@ GameObject:
   - component: {fileID: 1321793856338314927}
   - component: {fileID: 3306286001350447034}
   - component: {fileID: 6992121367739355238}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6341,15 +6027,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -6378,7 +6066,7 @@ GameObject:
   - component: {fileID: 6977758699729802164}
   - component: {fileID: 672064479847027252}
   - component: {fileID: 2647813913473802089}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6475,15 +6163,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -6512,7 +6202,7 @@ GameObject:
   - component: {fileID: 8210534358696385987}
   - component: {fileID: 1330891888695413300}
   - component: {fileID: 7513490282034974100}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6609,15 +6299,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -6646,7 +6338,7 @@ GameObject:
   - component: {fileID: 396062725662455170}
   - component: {fileID: 115200217432546617}
   - component: {fileID: 4312334674829508949}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6743,15 +6435,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -6780,7 +6474,7 @@ GameObject:
   - component: {fileID: 7754884732896958458}
   - component: {fileID: 3840062635951892525}
   - component: {fileID: 3404543889424260923}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6877,15 +6571,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -6915,8 +6611,7 @@ GameObject:
   - component: {fileID: 675129093689463322}
   - component: {fileID: 2580357043823435135}
   - component: {fileID: 2536926066363865646}
-  - component: {fileID: 2655992960909067375}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: W
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6971,7 +6666,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -7037,22 +6732,6 @@ MonoBehaviour:
           m_StringArgument: W
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &2655992960909067375
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5341052904713094240}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &5368105814129329740
 GameObject:
   m_ObjectHideFlags: 0
@@ -7065,8 +6744,7 @@ GameObject:
   - component: {fileID: 1871009735048420644}
   - component: {fileID: 2421984520158894835}
   - component: {fileID: 2273430334769206512}
-  - component: {fileID: 8806030736094026336}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: N
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7121,7 +6799,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -7187,22 +6865,6 @@ MonoBehaviour:
           m_StringArgument: N
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &8806030736094026336
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5368105814129329740}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &5386080981289990675
 GameObject:
   m_ObjectHideFlags: 0
@@ -7215,8 +6877,7 @@ GameObject:
   - component: {fileID: 4721816701501685508}
   - component: {fileID: 1871886719365222245}
   - component: {fileID: 5507884451488207532}
-  - component: {fileID: 3540756151678232353}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: 5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7271,7 +6932,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -7337,22 +6998,6 @@ MonoBehaviour:
           m_StringArgument: 5
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &3540756151678232353
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5386080981289990675}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &5570718030925940373
 GameObject:
   m_ObjectHideFlags: 0
@@ -7364,7 +7009,7 @@ GameObject:
   - component: {fileID: 5820694030548621702}
   - component: {fileID: 1241089997484507290}
   - component: {fileID: 1757601197330133017}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7461,15 +7106,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -7499,8 +7146,7 @@ GameObject:
   - component: {fileID: 2716872611589524189}
   - component: {fileID: 8643958392420812378}
   - component: {fileID: 4532285879831138845}
-  - component: {fileID: 3481604141870699551}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: L
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7555,7 +7201,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -7621,22 +7267,6 @@ MonoBehaviour:
           m_StringArgument: L
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &3481604141870699551
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5788326369509364534}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &5895865384130925819
 GameObject:
   m_ObjectHideFlags: 0
@@ -7649,8 +7279,7 @@ GameObject:
   - component: {fileID: 6117172814375290024}
   - component: {fileID: 8606781469579865898}
   - component: {fileID: 2967321119781681695}
-  - component: {fileID: 6527480397485445033}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: A
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7705,7 +7334,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -7771,22 +7400,6 @@ MonoBehaviour:
           m_StringArgument: A
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &6527480397485445033
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5895865384130925819}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &5928156493530385297
 GameObject:
   m_ObjectHideFlags: 0
@@ -7798,7 +7411,7 @@ GameObject:
   - component: {fileID: 6800803635505347751}
   - component: {fileID: 3139956780847434158}
   - component: {fileID: 53517940492380412}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7895,15 +7508,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -7932,7 +7547,7 @@ GameObject:
   - component: {fileID: 5060198023298608094}
   - component: {fileID: 4772497235400817004}
   - component: {fileID: 3086938174829730165}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8029,15 +7644,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -8066,7 +7683,7 @@ GameObject:
   - component: {fileID: 4336989530191639877}
   - component: {fileID: 2552379535193761286}
   - component: {fileID: 4294215177014281432}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8163,15 +7780,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -8201,8 +7820,7 @@ GameObject:
   - component: {fileID: 3422084058590208729}
   - component: {fileID: 6501502118496196479}
   - component: {fileID: 3868427035421612194}
-  - component: {fileID: 1965489558108455413}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Y
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8257,7 +7875,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -8323,22 +7941,6 @@ MonoBehaviour:
           m_StringArgument: Y
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &1965489558108455413
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6281996078767433289}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &6352215702013451996
 GameObject:
   m_ObjectHideFlags: 0
@@ -8350,7 +7952,7 @@ GameObject:
   - component: {fileID: 3725268394984347694}
   - component: {fileID: 5890989590391336154}
   - component: {fileID: 4108046690640830986}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: VKCursor
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8425,7 +8027,7 @@ GameObject:
   - component: {fileID: 3424812006051362414}
   - component: {fileID: 2176140213371200995}
   - component: {fileID: 2017588208150847646}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8522,15 +8124,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -8560,8 +8164,7 @@ GameObject:
   - component: {fileID: 1792308131008119283}
   - component: {fileID: 331848275894945840}
   - component: {fileID: 5243739694755366538}
-  - component: {fileID: 6923149580793575550}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: J
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8616,7 +8219,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -8682,22 +8285,6 @@ MonoBehaviour:
           m_StringArgument: J
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &6923149580793575550
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6515592784394802944}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &6565954947046466850
 GameObject:
   m_ObjectHideFlags: 0
@@ -8710,8 +8297,7 @@ GameObject:
   - component: {fileID: 6893101606121409729}
   - component: {fileID: 2585209465220109924}
   - component: {fileID: 5938052893514482093}
-  - component: {fileID: 5374919213974838242}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: 3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8766,7 +8352,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -8832,22 +8418,6 @@ MonoBehaviour:
           m_StringArgument: 3
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &5374919213974838242
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6565954947046466850}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &6611844052791966044
 GameObject:
   m_ObjectHideFlags: 0
@@ -8860,8 +8430,7 @@ GameObject:
   - component: {fileID: 2741764943974417012}
   - component: {fileID: 2876302707962041401}
   - component: {fileID: 1583247742796076742}
-  - component: {fileID: 1625572243852845168}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: K
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8916,7 +8485,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -8982,22 +8551,6 @@ MonoBehaviour:
           m_StringArgument: K
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &1625572243852845168
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6611844052791966044}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &6800021742932619512
 GameObject:
   m_ObjectHideFlags: 0
@@ -9007,7 +8560,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8852600520918514155}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: VKWord
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9048,7 +8601,7 @@ GameObject:
   - component: {fileID: 6674545710397791967}
   - component: {fileID: 7099111259141907144}
   - component: {fileID: 1091965604961070899}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9145,15 +8698,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -9182,7 +8737,7 @@ GameObject:
   - component: {fileID: 2368895766862672222}
   - component: {fileID: 3454851407440292501}
   - component: {fileID: 5543214289184186500}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9279,15 +8834,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -9316,7 +8873,7 @@ GameObject:
   - component: {fileID: 6413821643605126352}
   - component: {fileID: 7117648537808619343}
   - component: {fileID: 1596411818624420655}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9413,15 +8970,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -9450,7 +9009,7 @@ GameObject:
   - component: {fileID: 8800678320571560579}
   - component: {fileID: 1775811786412842750}
   - component: {fileID: 6165017991562201387}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: VKWordFont
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9504,7 +9063,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6c98fa496c1e6b241aacaca1bbcdef16, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 495d0937c0b21eb4fb8fe6189f3668b8, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -9526,8 +9085,7 @@ GameObject:
   - component: {fileID: 94914609480996282}
   - component: {fileID: 5915933110489166130}
   - component: {fileID: 7338267383076338571}
-  - component: {fileID: 3506648186926642681}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: D
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9582,7 +9140,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -9648,22 +9206,6 @@ MonoBehaviour:
           m_StringArgument: D
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &3506648186926642681
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7064120177487201078}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &7148400525360586390
 GameObject:
   m_ObjectHideFlags: 0
@@ -9676,8 +9218,7 @@ GameObject:
   - component: {fileID: 6370432664348464820}
   - component: {fileID: 3410848354769888600}
   - component: {fileID: 4768285998134085789}
-  - component: {fileID: 5032752302978931172}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: _
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9732,7 +9273,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -9798,22 +9339,6 @@ MonoBehaviour:
           m_StringArgument: ' '
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &5032752302978931172
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7148400525360586390}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &7379874892301620468
 GameObject:
   m_ObjectHideFlags: 0
@@ -9826,8 +9351,7 @@ GameObject:
   - component: {fileID: 8202042937898609058}
   - component: {fileID: 1479571365271807497}
   - component: {fileID: 2591586327499389037}
-  - component: {fileID: 2876957473848547984}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: R
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9882,7 +9406,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -9948,22 +9472,6 @@ MonoBehaviour:
           m_StringArgument: R
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &2876957473848547984
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7379874892301620468}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &7409796141554985499
 GameObject:
   m_ObjectHideFlags: 0
@@ -9975,7 +9483,7 @@ GameObject:
   - component: {fileID: 959125685775577340}
   - component: {fileID: 188215059565625315}
   - component: {fileID: 39877292172472338}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10072,15 +9580,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -10110,8 +9620,7 @@ GameObject:
   - component: {fileID: 745959233469044483}
   - component: {fileID: 787113340366108596}
   - component: {fileID: 8183316426334264208}
-  - component: {fileID: 1888685829707444594}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: OK
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10166,7 +9675,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -10232,22 +9741,6 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &1888685829707444594
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7436828895789065268}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 0
-  isValidationButton: 1
 --- !u!1 &7775595072244181895
 GameObject:
   m_ObjectHideFlags: 0
@@ -10258,7 +9751,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6594947862159591136}
   - component: {fileID: 8098885231949708920}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: VirtualKeyboardButtons
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10359,8 +9852,7 @@ GameObject:
   - component: {fileID: 3658416646466920791}
   - component: {fileID: 2590941165999540170}
   - component: {fileID: 4719564945513677297}
-  - component: {fileID: 8254623957964534235}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: 9
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10415,7 +9907,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -10481,22 +9973,6 @@ MonoBehaviour:
           m_StringArgument: 9
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &8254623957964534235
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7821022403338801739}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &7836530110239393610
 GameObject:
   m_ObjectHideFlags: 0
@@ -10508,7 +9984,7 @@ GameObject:
   - component: {fileID: 1163411492014476676}
   - component: {fileID: 7970829999488813993}
   - component: {fileID: 447326796870257013}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10605,15 +10081,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -10643,8 +10121,7 @@ GameObject:
   - component: {fileID: 3685040383158478169}
   - component: {fileID: 6807538308052437606}
   - component: {fileID: 6520673897492491239}
-  - component: {fileID: 7891611250343300999}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: 4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10699,7 +10176,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -10765,22 +10242,6 @@ MonoBehaviour:
           m_StringArgument: 4
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &7891611250343300999
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8358210262748588914}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &8414214220499901215
 GameObject:
   m_ObjectHideFlags: 0
@@ -10792,7 +10253,7 @@ GameObject:
   - component: {fileID: 8808897437937088190}
   - component: {fileID: 384892666238889281}
   - component: {fileID: 3891291681484260882}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10889,15 +10350,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -10926,7 +10389,7 @@ GameObject:
   - component: {fileID: 7017555568994389456}
   - component: {fileID: 6240036518262231652}
   - component: {fileID: 254593336064767462}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -11023,15 +10486,17 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_enableWordWrapping: 1
+  m_TextWrappingMode: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
+  m_ActiveFontFeatures: 6e72656b
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
+  m_EmojiFallbackSupport: 1
   m_parseCtrlCharacters: 1
   m_isOrthographic: 1
   m_isCullingEnabled: 0
@@ -11061,8 +10526,7 @@ GameObject:
   - component: {fileID: 4683148713562339359}
   - component: {fileID: 422004744582711555}
   - component: {fileID: 6999790450365213039}
-  - component: {fileID: 8084331688042716271}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: 8
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -11117,7 +10581,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -11183,22 +10647,6 @@ MonoBehaviour:
           m_StringArgument: 8
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &8084331688042716271
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8764454417029659685}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &8980796326199222740
 GameObject:
   m_ObjectHideFlags: 0
@@ -11211,8 +10659,7 @@ GameObject:
   - component: {fileID: 2655432524639734465}
   - component: {fileID: 8047453145870124123}
   - component: {fileID: 5903340979266065449}
-  - component: {fileID: 5185310084754710902}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: E
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -11267,7 +10714,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -11333,22 +10780,6 @@ MonoBehaviour:
           m_StringArgument: E
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &5185310084754710902
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8980796326199222740}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &9049138743987495240
 GameObject:
   m_ObjectHideFlags: 0
@@ -11361,8 +10792,7 @@ GameObject:
   - component: {fileID: 3522312000568778863}
   - component: {fileID: 6090315722260981047}
   - component: {fileID: 1524579884562809729}
-  - component: {fileID: 360514830227834397}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: B
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -11417,7 +10847,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -11483,22 +10913,6 @@ MonoBehaviour:
           m_StringArgument: B
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &360514830227834397
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9049138743987495240}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &9068691655763765404
 GameObject:
   m_ObjectHideFlags: 0
@@ -11511,8 +10925,7 @@ GameObject:
   - component: {fileID: 2231253117900215913}
   - component: {fileID: 720990928206976126}
   - component: {fileID: 4924862959332223416}
-  - component: {fileID: 5029716311676692273}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: U
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -11567,7 +10980,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -11633,22 +11046,6 @@ MonoBehaviour:
           m_StringArgument: U
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &5029716311676692273
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9068691655763765404}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &9198221515772493609
 GameObject:
   m_ObjectHideFlags: 0
@@ -11661,8 +11058,7 @@ GameObject:
   - component: {fileID: 256602246458414349}
   - component: {fileID: 7231885680715356678}
   - component: {fileID: 2425169975292925690}
-  - component: {fileID: 7665667556403537338}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: H
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -11717,7 +11113,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -11783,22 +11179,6 @@ MonoBehaviour:
           m_StringArgument: H
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &7665667556403537338
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9198221515772493609}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0
 --- !u!1 &9210474849242487044
 GameObject:
   m_ObjectHideFlags: 0
@@ -11811,8 +11191,7 @@ GameObject:
   - component: {fileID: 5029813221740298621}
   - component: {fileID: 7826523842407405909}
   - component: {fileID: 7120501082353582092}
-  - component: {fileID: 585789879590201271}
-  m_Layer: 5
+  m_Layer: 11
   m_Name: 1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -11867,7 +11246,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 6367e3d9f0beddf41a0f9c2e524a83b4, type: 3}
+  m_Sprite: {fileID: 21300000, guid: df186b5dab73ac240938d6fa6adb7d91, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -11933,19 +11312,3 @@ MonoBehaviour:
           m_StringArgument: 1
           m_BoolArgument: 0
         m_CallState: 1
---- !u!114 &585789879590201271
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9210474849242487044}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8fb6f5cfed49d864d85b5058fb42327d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  virtualKeyboardCursor: {fileID: 9045819102240577774}
-  isActive: 0
-  isAddButton: 1
-  isValidationButton: 0

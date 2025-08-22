@@ -8,6 +8,8 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class VirtualKeyboard : MonoBehaviour
 {
+    public static VirtualKeyboard Instance { get; private set; }
+
     [Header("Références UI")]
     [Tooltip("Racine du clavier virtuel.")]
     [SerializeField] private GameObject keyboardRoot;
@@ -33,10 +35,23 @@ public class VirtualKeyboard : MonoBehaviour
     private string _currentText = string.Empty;
 
     // Référence vers le système d'inputs généré par l'Input System.
-    private PlayerInputs _inputs;
+    private PlayerInputs playerInputs;
 
     private void Awake()
     {
+        playerInputs = new PlayerInputs();
+
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         // Si aucune racine n'est précisée, on suppose que le script est placé sur celle-ci.
         if (keyboardRoot == null)
             keyboardRoot = gameObject;
@@ -57,8 +72,7 @@ public class VirtualKeyboard : MonoBehaviour
             cursor.gameObject.SetActive(false);
 
         // Recherche d'une instance de PlayerInputs dans la scène.
-        _inputs = FindObjectOfType<PlayerInputs>();
-        if (_inputs == null)
+        if (playerInputs == null)
             Debug.LogWarning("[VirtualKeyboard] Aucun PlayerInputs trouvé dans la scène.");
     }
 
@@ -67,7 +81,7 @@ public class VirtualKeyboard : MonoBehaviour
     /// </summary>
     public void OpenVK()
     {
-        if (keyboardRoot == null || cursor == null || _inputs == null)
+        if (keyboardRoot == null || cursor == null || playerInputs == null)
             return;
 
         keyboardRoot.SetActive(true);
@@ -77,9 +91,9 @@ public class VirtualKeyboard : MonoBehaviour
         UpdateCursor();
 
         // Abonnements aux différentes entrées du joueur.
-        _inputs.World.Move.performed += OnMove;
-        _inputs.World.Interact.performed += OnInteract;
-        _inputs.World.Cancel.performed += OnCancel;
+        playerInputs.World.Move.performed += OnMove;
+        playerInputs.World.Interact.performed += OnInteract;
+        playerInputs.World.Cancel.performed += OnCancel;
     }
 
     /// <summary>
@@ -87,11 +101,11 @@ public class VirtualKeyboard : MonoBehaviour
     /// </summary>
     private void CloseVK()
     {
-        if (_inputs != null)
+        if (playerInputs != null)
         {
-            _inputs.World.Move.performed -= OnMove;
-            _inputs.World.Interact.performed -= OnInteract;
-            _inputs.World.Cancel.performed -= OnCancel;
+            playerInputs.World.Move.performed -= OnMove;
+            playerInputs.World.Interact.performed -= OnInteract;
+            playerInputs.World.Cancel.performed -= OnCancel;
         }
 
         if (cursor != null)
