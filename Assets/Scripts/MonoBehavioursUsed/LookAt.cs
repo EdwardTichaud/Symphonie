@@ -1,37 +1,40 @@
 using UnityEngine;
 
-/// <summary>
-/// Fait pivoter ce GameObject pour qu'il regarde toujours vers un Transform cible.
-/// Optionnellement avec un lissage.
-/// </summary>
 [ExecuteAlways]
-public class LookAtTarget : MonoBehaviour
+public class LookAt : MonoBehaviour
 {
-    [Tooltip("Cible à regarder")]
-    public Transform target;
+    [Header("Cible")]
+    public Transform target; // La cible à regarder
 
-    [Tooltip("Activer un lissage de rotation")]
-    public bool smooth = false;
-
-    [Tooltip("Vitesse du lissage (si activé)")]
+    [Header("Options")]
+    public Vector3 positionOffset = Vector3.zero; // Décalage de position (avant de calculer la direction)
+    public Vector3 rotationOffset = Vector3.zero; // Décalage d'orientation en Euler
+    public bool smooth = false; // Si vrai, interpolation de la rotation
     public float smoothSpeed = 5f;
 
     void Update()
     {
         if (target == null) return;
 
-        // Calcule la rotation voulue pour regarder vers la cible
-        Quaternion desiredRotation = Quaternion.LookRotation(target.position - transform.position);
+        // Calcul direction vers la cible avec offset de position
+        Vector3 targetPosition = target.position + positionOffset;
+        Vector3 direction = targetPosition - transform.position;
 
-        if (smooth)
+        if (direction.sqrMagnitude > 0.001f) // éviter LookRotation sur un vecteur nul
         {
-            // Rotation interpolée
-            transform.rotation = Quaternion.Slerp(transform.rotation, desiredRotation, Time.deltaTime * smoothSpeed);
-        }
-        else
-        {
-            // Rotation instantanée
-            transform.rotation = desiredRotation;
+            Quaternion lookRotation = Quaternion.LookRotation(direction);
+
+            // Appliquer l'offset de rotation
+            lookRotation *= Quaternion.Euler(rotationOffset);
+
+            if (smooth)
+            {
+                transform.rotation = Quaternion.Slerp(transform.rotation, lookRotation, Time.deltaTime * smoothSpeed);
+            }
+            else
+            {
+                transform.rotation = lookRotation;
+            }
         }
     }
 }
