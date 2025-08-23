@@ -90,6 +90,10 @@ public class VirtualKeyboard : MonoBehaviour
         _currentIndex = 0;
         UpdateCursor();
 
+        // Activation du mapping World afin de recevoir les entrées
+        // du joystick ou du clavier pendant l'utilisation du clavier virtuel.
+        playerInputs.World.Enable();
+
         // Abonnements aux différentes entrées du joueur.
         playerInputs.World.Move.performed += OnMove;
         playerInputs.World.Interact.performed += OnInteract;
@@ -108,6 +112,10 @@ public class VirtualKeyboard : MonoBehaviour
             playerInputs.World.Move.performed -= OnMove;
             playerInputs.World.Interact.performed -= OnInteract;
             playerInputs.World.Cancel.performed -= OnCancel;
+
+            // Désactivation du mapping World pour éviter
+            // toute réception d'entrées lorsque le clavier est fermé.
+            playerInputs.World.Disable();
         }
 
         if (cursor != null)
@@ -115,6 +123,19 @@ public class VirtualKeyboard : MonoBehaviour
 
         if (keyboardRoot != null)
             keyboardRoot.SetActive(false);
+    }
+
+    /// <summary>
+    /// S'assure que les entrées sont correctement libérées si l'objet est détruit.
+    /// </summary>
+    private void OnDestroy()
+    {
+        // On ferme proprement le clavier pour retirer les abonnements et désactiver la map.
+        CloseVK();
+
+        // Libère les ressources de l'Input System.
+        if (playerInputs != null)
+            playerInputs.Dispose();
     }
 
     /// <summary>
