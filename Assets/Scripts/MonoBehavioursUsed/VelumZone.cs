@@ -30,6 +30,12 @@ public class VelumZone : MonoBehaviour
     private void EnterVelumZone()
     {
         timeline.Play();
+        // Lance la timeline via le TimelineManager pour suspendre caméra et contrôles
+        // tant que la zone de Vélum est active.
+        if (TimelineManager.Instance != null)
+            TimelineManager.Instance.PlayTimeline(timeline);
+        else
+            timeline.Play();
     }
 
     private void ExitVelumZone()

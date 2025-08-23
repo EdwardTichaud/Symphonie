@@ -51,10 +51,18 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
 
             directorToPlay.time = 0;     // remet au début
             directorToPlay.Evaluate();   // pose initiale propre
-            directorToPlay.Play();
 
-            // (Optionnel) Attendre la fin de la lecture si tu veux séquencer strictement
-            while (directorToPlay != null && directorToPlay.state == PlayState.Playing)
+            // Passe par le TimelineManager pour garantir la suspension du CameraController
+            // et la gestion centralisée des entrées joueur.
+            if (TimelineManager.Instance != null)
+                TimelineManager.Instance.PlayTimeline(directorToPlay);
+            else
+                directorToPlay.Play();
+
+
+            // (Optionnel) Attendre la fin de la lecture pour séquencer strictement la suite
+            while ((TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying) ||
+                   (TimelineManager.Instance == null && directorToPlay != null && directorToPlay.state == PlayState.Playing))
                 yield return null;
         }
 
