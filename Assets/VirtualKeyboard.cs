@@ -20,19 +20,24 @@ public class VirtualKeyboard : MonoBehaviour
     [Tooltip("Objet représentant le curseur de sélection.")]
     [SerializeField] private RectTransform cursor;
 
-    [Tooltip("Zone de texte où sera affichée la saisie.")]
-    [SerializeField] private TextMeshProUGUI outputText;
+    [Tooltip("Zone de texte où sera affichée la saisie (champ 'Output Text' dans la scène).")]
+    [SerializeField] private TextMeshProUGUI currentVKWord;
 
     [Header("Paramètres")]
     [Tooltip("Nombre de colonnes dans la grille du clavier.")]
     [SerializeField] private int columns = 13;
 
+    [Tooltip("Temps minimal entre deux déplacements du curseur (en secondes).")]
+    [SerializeField] private float moveDelay = 0.1f;
+
     // Liste interne des touches disponibles sur le clavier.
     private readonly List<RectTransform> _keys = new();
     // Index courant dans la liste des touches.
     private int _currentIndex;
-    // Chaîne saisie par le joueur.
-    private string _currentText = string.Empty;
+    // Mémorise le dernier moment où un déplacement a été effectué pour limiter la vitesse.
+    private float _lastMoveTime;
+    // Texte actuellement saisi via le clavier virtuel, accessible aux autres systèmes.
+    public string currentVKWordText { get; private set; } = string.Empty;
 
     // Référence vers le système d'inputs généré par l'Input System.
     private PlayerInputs playerInputs;
@@ -143,6 +148,10 @@ public class VirtualKeyboard : MonoBehaviour
     /// </summary>
     private void OnMove(InputAction.CallbackContext ctx)
     {
+        // Empêche les déplacements trop rapides en vérifiant le délai minimal.
+        if (Time.unscaledTime - _lastMoveTime < moveDelay)
+            return;
+
         Vector2 input = ctx.ReadValue<Vector2>();
         int row = _currentIndex / columns;
         int col = _currentIndex % columns;
@@ -163,6 +172,9 @@ public class VirtualKeyboard : MonoBehaviour
         {
             _currentIndex = newIndex;
             UpdateCursor();
+
+            // Enregistre l'heure du déplacement pour appliquer la temporisation.
+            _lastMoveTime = Time.unscaledTime;
         }
     }
 
@@ -188,9 +200,10 @@ public class VirtualKeyboard : MonoBehaviour
         }
         else
         {
-            _currentText += keyName;
-            if (outputText != null)
-                outputText.text = _currentText;
+            // Ajoute la lettre sélectionnée au mot en cours et met à jour l'affichage.
+            currentVKWordText += keyName;
+            if (currentVKWord != null)
+                currentVKWord.text = currentVKWordText;
         }
     }
 
@@ -207,12 +220,13 @@ public class VirtualKeyboard : MonoBehaviour
     /// </summary>
     private void RemoveLastChar()
     {
-        if (_currentText.Length == 0)
+        if (currentVKWordText.Length == 0)
             return;
 
-        _currentText = _currentText.Substring(0, _currentText.Length - 1);
-        if (outputText != null)
-            outputText.text = _currentText;
+        // Retire le dernier caractère et met à jour le texte affiché.
+        currentVKWordText = currentVKWordText.Substring(0, currentVKWordText.Length - 1);
+        if (currentVKWord != null)
+            currentVKWord.text = currentVKWordText;
     }
 
     /// <summary>
