@@ -5,6 +5,12 @@ using UnityEngine.Playables;
 
 public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
 {
+    [Header("Fades")]
+    [Tooltip("Cochez pour faire un fondu au noir des enfants de ce point d'intérêt avant le dialogue.")]
+    public bool blackFade;
+    [Tooltip("Cochez pour faire un fondu au blanc des enfants de ce point d'intérêt avant le dialogue.")]
+    public bool whiteFade;
+
     [Header("Dialogue")]
     [Tooltip("Dialogue joué lorsque le joueur interagit avec ce point d'intérêt.")]
     public DialogueContainer dialogue;
@@ -37,6 +43,13 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
     private IEnumerator RunInteraction()
     {
         EventsManager.Instance.eventInProgress = true;
+
+        // 0) Optionnel : 
+        if (whiteFade)
+            FadeChildrenOpacity.Instance.ChangeOpacity(0, 1f, 2f);
+
+        if (blackFade)
+            FadeChildrenOpacity.Instance.ChangeOpacity(1, 1f, 2f);
 
         // 1) Dialogue
         if (dialogue != null)
