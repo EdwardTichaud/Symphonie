@@ -135,6 +135,9 @@ public class TimelineManager : MonoBehaviour
         IsTimelinePlaying = true;
         // Bloque immédiatement les déplacements du joueur pendant l'exécution de la timeline.
         TogglePlayerMovement(false);
+        // Désactive le CameraController pour laisser la Timeline contrôler totalement la caméra
+        if (CameraController.Instance != null)
+            CameraController.Instance.enabled = false;
         Debug.Log($"[TimelineManager] Timeline jouée : {pd.name}");
     }
 
@@ -150,6 +153,9 @@ public class TimelineManager : MonoBehaviour
             currentDirector = null;
             // La timeline est terminée : on redonne le contrôle de Lucian au joueur.
             TogglePlayerMovement(true);
+            // Réactive le CameraController pour rendre la main après la cinématique
+            if (CameraController.Instance != null)
+                CameraController.Instance.enabled = true;
         }
     }
 }
