@@ -5,7 +5,21 @@ using System.Collections;
 [DisallowMultipleComponent]
 public class FadeChildrenOpacity : MonoBehaviour
 {
+    public static FadeChildrenOpacity Instance { get; private set; }
+
     private Coroutine fadeRoutine;
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
 
     /// <summary>
     /// Change l’opacité d’un enfant (Image ou SpriteRenderer) vers la valeur désirée.

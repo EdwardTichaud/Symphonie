@@ -11,6 +11,10 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
     [Tooltip("Cochez pour faire un fondu au blanc des enfants de ce point d'intérêt avant le dialogue.")]
     public bool whiteFade;
 
+    [Header("Orbit")]
+    [Tooltip("Cochez pour activer l'orbite autour de la cible avant le dialogue.")]
+    public bool orbitAround = false;
+
     [Header("Dialogue")]
     [Tooltip("Dialogue joué lorsque le joueur interagit avec ce point d'intérêt.")]
     public DialogueContainer dialogue;
@@ -27,6 +31,8 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
 
     // --- Implémentation de l'interface IInteractable ---
     public GameObject GameObject => gameObject;
+    public Vector3 LocalInfoBoxOffset => localInfoBoxOffset;
+    public void IncrementDialogueStage() { /* Aucun dialogue progressif pour l'instant */ }
 
     public void Interact()
     {
@@ -36,20 +42,37 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
         StartCoroutine(RunInteraction());
     }
 
-    public void IncrementDialogueStage() { /* Aucun dialogue progressif pour l'instant */ }
-
-    public Vector3 LocalInfoBoxOffset => localInfoBoxOffset;
-
     private IEnumerator RunInteraction()
     {
         EventsManager.Instance.eventInProgress = true;
 
-        // 0) Optionnel : 
-        if (whiteFade)
-            FadeChildrenOpacity.Instance.ChangeOpacity(0, 1f, 2f);
+        // 0) Fades optionnels
+        var fader = FadeChildrenOpacity.Instance;
+        if (fader != null)
+        {
+            if (blackFade) fader.ChangeOpacity(0, 1f, 1f); // enfant index 0 -> opaque en 1s
+            if (whiteFade) fader.ChangeOpacity(1, 1f, 1f); // enfant index 1 -> opaque en 1s
+        }
 
-        if (blackFade)
-            FadeChildrenOpacity.Instance.ChangeOpacity(1, 1f, 2f);
+        yield return new WaitForSeconds(3f); // Attendre la fin du fade (ajuste selon tes durées)
+
+        if (fader != null)
+        {
+            if (blackFade) fader.ChangeOpacity(0, 0f, 2f); // re-fade vers 0
+            if (whiteFade) fader.ChangeOpacity(1, 0f, 2f);
+        }
+
+        // 0.b) Orbit optionnel : on récupère d'abord la référence PUIS on l'utilise
+        OrbitAround orbitAroundClass = null;
+        if (orbitAround)
+        {
+            orbitAroundClass = GetComponent<OrbitAround>();
+            if (orbitAroundClass != null)
+            {
+                // Si ton OrbitAround expose un bool 'isActive', on l'active ici
+                orbitAroundClass.enabled = true; // ou orbitAroundClass.isActive = true;
+            }
+        }
 
         // 1) Dialogue
         if (dialogue != null)
@@ -58,25 +81,27 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
         // 2) Lancer directement le PlayableDirector, si demandé
         if (launchTimeline && directorToPlay != null)
         {
-            // Optionnel : stopper une éventuelle lecture en cours pour repartir proprement
             if (directorToPlay.state == PlayState.Playing)
                 directorToPlay.Stop();
 
-            directorToPlay.time = 0;     // remet au début
-            directorToPlay.Evaluate();   // pose initiale propre
+            directorToPlay.time = 0;
+            directorToPlay.Evaluate();
 
-            // Passe par le TimelineManager pour garantir la suspension du CameraController
-            // et la gestion centralisée des entrées joueur.
             if (TimelineManager.Instance != null)
                 TimelineManager.Instance.PlayTimeline(directorToPlay);
             else
                 directorToPlay.Play();
 
-
-            // (Optionnel) Attendre la fin de la lecture pour séquencer strictement la suite
+            // Option : attendre la fin du director
             while ((TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying) ||
                    (TimelineManager.Instance == null && directorToPlay != null && directorToPlay.state == PlayState.Playing))
                 yield return null;
+        }
+
+        // 3) Désactiver l’orbite si on l’avait activée
+        if (orbitAroundClass != null)
+        {
+            orbitAroundClass.isActive = false;
         }
 
         EventsManager.Instance.eventInProgress = false;

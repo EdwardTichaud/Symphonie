@@ -11,26 +11,26 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
     [Tooltip("Instance de PlayerInputs. Si vide, on prendra celle de InputsManager, sinon on en créera une locale.")]
     [SerializeField] private PlayerInputs playerInputs;
 
-    [Header("Conditions à valider pour reprendre la Timeline")] 
-    [Tooltip("Liste ordonnée des conditions qui devront être remplies pour que la timeline reprenne après chaque pause déclenchée par un Signal.")]
+    [Header("Conditions à valider pour reprendre la Timeline")]
+    [Tooltip("Liste ordonnée des conditions à remplir après chaque pause déclenchée par un Signal.")]
     [SerializeField] private List<ResumeCondition> resumeConditions = new();
 
-    private PlayableDirector director; // Référence à la Timeline contrôlée
-    private bool ownsLocalInputs = false; // vrai si on a créé notre propre instance locale
-    private int currentConditionIndex = -1; // index de la condition en cours dans la liste
-    private bool waitingForCondition = false; // indique si l'on attend une condition avant de reprendre
+    private PlayableDirector director;
+    private bool ownsLocalInputs = false;
+    private int currentConditionIndex = -1;
+    private bool waitingForCondition = false;
 
-    /// <summary>
-    /// Représente une condition pouvant être utilisée pour reprendre la timeline.
-    /// On peut facilement étendre ce système en ajoutant de nouveaux types.
-    /// </summary>
+    // Utilisé uniquement pour la condition DialogueClosed afin d'éviter une reprise immédiate si aucun dialogue n'était ouvert au moment de la pause.
+    private bool waitingForDialogueToClose = false;
+
     [Serializable]
     private class ResumeCondition
     {
         public enum ConditionType
         {
-            InteractInput,      // Attend un input "Interact" du joueur
-            GameObjectInactive  // Attend qu'un GameObject donné soit désactivé
+            InteractInput,     // Attend un input "Interact"
+            GameObjectInactive, // Attend que le GameObject soit désactivé
+            DialogueClosed     // Attend la fermeture du DialogueManager (isOpen == false)
         }
 
         [Tooltip("Type de la condition à vérifier avant de reprendre la timeline.")]
@@ -44,24 +44,21 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
     {
         director = GetComponent<PlayableDirector>();
 
-        // Si rien n'est référencé dans l'inspecteur, on tente d'utiliser l'instance globale
         if (playerInputs == null)
         {
             if (InputsManager.Instance != null && InputsManager.Instance.playerInputs != null)
             {
-                playerInputs = InputsManager.Instance.playerInputs; // on réutilise celle du jeu
+                playerInputs = InputsManager.Instance.playerInputs;
                 ownsLocalInputs = false;
             }
             else
             {
-                playerInputs = new PlayerInputs(); // on crée une instance locale
+                playerInputs = new PlayerInputs();
                 ownsLocalInputs = true;
             }
         }
         else
         {
-            // Une instance a été assignée manuellement dans l'inspecteur
-            // On considère qu'elle est "locale" à ce composant.
             ownsLocalInputs = true;
         }
     }
@@ -74,10 +71,7 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
             return;
         }
 
-        // On s'assure que la map World est active pour recevoir l'input Interact
         playerInputs.World.Enable();
-
-        // Abonnement à l'input Interact
         playerInputs.World.Interact.performed += OnInteract;
     }
 
@@ -85,15 +79,10 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
     {
         if (playerInputs != null)
         {
-            // Désabonnement propre
             playerInputs.World.Interact.performed -= OnInteract;
 
-            // Si on possède une instance locale, on peut la désactiver proprement
             if (ownsLocalInputs)
-            {
                 playerInputs.World.Disable();
-            }
-            // Si l'instance vient d'InputsManager, on ne touche pas à son lifecycle
         }
     }
 
@@ -102,34 +91,38 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
         if (!waitingForCondition || TimelineManager.Instance == null)
             return;
 
-        // Récupère la condition en cours
         if (currentConditionIndex < 0 || currentConditionIndex >= resumeConditions.Count)
             return;
 
         var cond = resumeConditions[currentConditionIndex];
 
-        // On vérifie les conditions qui doivent être testées en continu
         switch (cond.type)
         {
             case ResumeCondition.ConditionType.GameObjectInactive:
                 if (cond.targetObject != null && !cond.targetObject.activeInHierarchy)
-                {
                     ResumeTimeline();
-                }
                 break;
-            // Les autres types sont gérés par évènement, donc rien à faire ici
+
+            case ResumeCondition.ConditionType.DialogueClosed:
+                // On ne reprend que si on attend réellement que le dialogue se ferme
+                if (!waitingForDialogueToClose) break;
+
+                if (DialogueManager.Instance != null && !DialogueManager.Instance.isOpen)
+                    ResumeTimeline();
+                break;
+
+                // InteractInput est géré par l'event OnInteract
         }
     }
 
     /// <summary>
-    /// Méthode appelée par un Signal de la Timeline pour marquer une pause et définir la prochaine condition à attendre.
+    /// Appelée par un Signal (ou du code) pour mettre en pause et armer la prochaine condition.
     /// </summary>
     public void PauseForNextCondition()
     {
         if (TimelineManager.Instance == null)
             return;
 
-        // On prépare la prochaine condition
         currentConditionIndex++;
 
         if (currentConditionIndex >= resumeConditions.Count)
@@ -139,13 +132,39 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
             return;
         }
 
-        waitingForCondition = true; // indique qu'on attend quelque chose
+        var cond = resumeConditions[currentConditionIndex];
+
+        // On arme la condition "DialogueClosed" intelligemment :
+        // - si un dialogue est ouvert au moment de la pause -> on attend sa fermeture
+        // - sinon -> on ne bloque pas (on reprendra via d'autres conditions de la liste, ou immédiatement s'il n'y en a pas)
+        waitingForDialogueToClose = false;
+        if (cond.type == ResumeCondition.ConditionType.DialogueClosed)
+        {
+            if (DialogueManager.Instance != null && DialogueManager.Instance.isOpen)
+            {
+                waitingForDialogueToClose = true;
+            }
+            else
+            {
+                // Aucun dialogue ouvert maintenant : pas la peine d'attendre
+                // Si la seule condition est DialogueClosed, on peut reprendre de suite
+                // Mais on suit la même logique que les autres : on met en pause puis Update reprendra si besoin.
+            }
+        }
+
+        waitingForCondition = true;
         TimelineManager.Instance.PauseCurrentTimeline();
+
+        // Si la condition en cours est DialogueClosed et qu'aucun dialogue n'est actuellement ouvert,
+        // alors la condition est déjà satisfaite -> reprise immédiate pour ne pas bloquer inutilement.
+        if (cond.type == ResumeCondition.ConditionType.DialogueClosed && !waitingForDialogueToClose)
+        {
+            ResumeTimeline();
+        }
     }
 
     /// <summary>
-    /// Callback exécuté lors de l'appui sur l'action "Interact".
-    /// Ne reprend la timeline que si la condition attendue est de type InteractInput.
+    /// Input "Interact" -> ne reprend que si la condition attendue est InteractInput.
     /// </summary>
     private void OnInteract(InputAction.CallbackContext ctx)
     {
@@ -157,17 +176,13 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
 
         var cond = resumeConditions[currentConditionIndex];
         if (cond.type == ResumeCondition.ConditionType.InteractInput)
-        {
             ResumeTimeline();
-        }
     }
 
-    /// <summary>
-    /// Relance la Timeline en remettant sa vitesse à 1.
-    /// </summary>
     private void ResumeTimeline()
     {
         waitingForCondition = false;
+        waitingForDialogueToClose = false;
         TimelineManager.Instance.ResumeCurrentTimeline();
     }
 }
