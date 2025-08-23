@@ -94,6 +94,8 @@ public class VirtualKeyboard : MonoBehaviour
         playerInputs.World.Move.performed += OnMove;
         playerInputs.World.Interact.performed += OnInteract;
         playerInputs.World.Cancel.performed += OnCancel;
+
+        GetComponent<Animator>().Play("VK_Open");
     }
 
     /// <summary>
