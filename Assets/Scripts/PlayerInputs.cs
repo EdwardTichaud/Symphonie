@@ -293,6 +293,17 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
+                    ""id"": ""085015cf-f28c-47bb-8770-006a7dc12ce9"",
+                    ""path"": ""<Gamepad>/buttonSouth"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Interact"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
                     ""id"": ""2a47d46c-8bf5-4b11-961e-2c394df97415"",
                     ""path"": ""<Mouse>/position"",
                     ""interactions"": """",
