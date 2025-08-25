@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ef08498b58323e640a7b4aa573a10caf, type: 3}
-  m_Name: MoveWorldCamOriginToMonolith
+  m_Name: MoveLucianToMonolithStartPointTimeline
   m_EditorClassIdentifier: 
-  subjectToMoveName: WorldCam_Origin
+  subjectToMoveName: Lucian_Wolf_Model
   destinationMode: 1
   worldPosition: {x: 0, y: 0, z: 0}
-  targetName: PoI_Monolith
+  targetName: Monolith_LucianStartPoint
   worldOffset: {x: 0, y: 0, z: 0}
-  duration: 0.3
+  duration: 0
   ease:
     serializedVersion: 2
     m_Curve:
