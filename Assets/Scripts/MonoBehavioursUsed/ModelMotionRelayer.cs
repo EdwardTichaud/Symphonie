@@ -28,7 +28,5 @@ public class ModelMotionRelayer : MonoBehaviour
 
         // Réinitialisation du modèle pour conserver un offset nul par rapport au parent
         // et éviter toute dérive au fil des frames.
-        animatedModel.localPosition = Vector3.zero;
-        animatedModel.localRotation = Quaternion.identity;
     }
 }
