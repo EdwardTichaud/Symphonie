@@ -136,6 +136,8 @@ GameObject:
   - component: {fileID: 6861779895214181043}
   - component: {fileID: 4876543210987654321}
   - component: {fileID: 1958501026567594322}
+  - component: {fileID: 3567370340265611984}
+  - component: {fileID: 4155203292632305515}
   m_Layer: 10
   m_Name: Lucian_World_Wolf
   m_TagString: Player
@@ -250,6 +252,41 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 98a8c840bfa34a54aa183c7f29635303, type: 3}
   firstDetectionVoiceVolume: 1
   battleEngaged: 0
+--- !u!95 &3567370340265611984
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5021491593266416669}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &4155203292632305515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5021491593266416669}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d9f41e6ddb94c8138889e661ecdebaa2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  lookAtWeight: 1
 --- !u!1 &5289886659859999516
 GameObject:
   m_ObjectHideFlags: 0
