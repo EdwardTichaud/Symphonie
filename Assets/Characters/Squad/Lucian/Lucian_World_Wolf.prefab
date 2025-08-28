@@ -136,8 +136,6 @@ GameObject:
   - component: {fileID: 6861779895214181043}
   - component: {fileID: 4876543210987654321}
   - component: {fileID: 1958501026567594322}
-  - component: {fileID: 2542664214675026310}
-  - component: {fileID: 5807739344826040252}
   m_Layer: 10
   m_Name: Lucian_World_Wolf
   m_TagString: Player
@@ -252,35 +250,6 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 98a8c840bfa34a54aa183c7f29635303, type: 3}
   firstDetectionVoiceVolume: 1
   battleEngaged: 0
---- !u!114 &2542664214675026310
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5021491593266416669}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 37bed6c89dab97c4b86c990114863749, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  speed: 4
-  rotationSharpness: 15
-  gravity: -9.81
-  rootMotionTag: RootMotion
---- !u!114 &5807739344826040252
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5021491593266416669}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: febb0d8ad1db4089a80ed1cb6cec6367, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  animatedModel: {fileID: 3374060607552203387}
 --- !u!1 &5289886659859999516
 GameObject:
   m_ObjectHideFlags: 0
@@ -2510,47 +2479,8 @@ PrefabInstance:
     - {fileID: 9183249077022547887, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 260817979026527798, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1613678928503128212}
-    - targetCorrespondingSourceObject: {fileID: 260817979026527798, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8866344359739755166}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
---- !u!1 &2709129109819748545 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 260817979026527798, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
-  m_PrefabInstance: {fileID: 2739980792688060151}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1613678928503128212
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2709129109819748545}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9f41e6ddb94c8138889e661ecdebaa2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lookAtWeight: 1
---- !u!114 &8866344359739755166
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2709129109819748545}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ef49ac4509d791f4bbadf7c2ab6252c5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  parentController: {fileID: 6861779895214181043}
-  parentTransform: {fileID: 711162037707955636}
-  gravity: -9.81
 --- !u!4 &3374060607552203387 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 636498749171502220, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
