@@ -2987,11 +2987,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &1285264183 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5021491593266416669, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
-  m_PrefabInstance: {fileID: 464953949519303798}
-  m_PrefabAsset: {fileID: 0}
 --- !u!21 &1295139579
 Material:
   serializedVersion: 8
@@ -3424,24 +3419,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!1 &1442313504 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2709129109819748545, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
-  m_PrefabInstance: {fileID: 464953949519303798}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1442313506
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1442313504}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d9f41e6ddb94c8138889e661ecdebaa2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  lookAtWeight: 1
 --- !u!1 &1485852517
 GameObject:
   m_ObjectHideFlags: 0
@@ -6554,44 +6531,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: Lucian_World_Wolf
       objectReference: {fileID: 0}
-    - target: {fileID: 8661335685232619521, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
-      propertyPath: m_ApplyRootMotion
-      value: 1
-      objectReference: {fileID: 0}
     m_RemovedComponents:
-    - {fileID: 4155203292632305515, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
-    - {fileID: 3567370340265611984, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
+    - {fileID: 2542664214675026310, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
+    - {fileID: 8866344359739755166, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 5021491593266416669, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 464953949519303803}
-    - targetCorrespondingSourceObject: {fileID: 2709129109819748545, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1442313506}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
 --- !u!4 &464953949519303799 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 711162037707955636, guid: 4fbe3b75ed7d6b74ca36ef0e1283a5d3, type: 3}
   m_PrefabInstance: {fileID: 464953949519303798}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &464953949519303803
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1285264183}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 37bed6c89dab97c4b86c990114863749, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  speed: 4
-  rotationSharpness: 15
-  gravity: -9.81
-  rootMotionTag: RootMotion
 --- !u!1 &465059520436403094
 GameObject:
   m_ObjectHideFlags: 0
