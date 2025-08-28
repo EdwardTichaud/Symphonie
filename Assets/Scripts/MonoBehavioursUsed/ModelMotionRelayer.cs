@@ -14,16 +14,19 @@ public class ModelMotionRelayer : MonoBehaviour
     {
         if (animatedModel == null) return; // Sécurité si la référence n'est pas renseignée.
 
-        // Calcul de la différence de position et de rotation générée par l'animation.
-        Vector3 deltaPosition = animatedModel.position - transform.position;
-        Quaternion deltaRotation = animatedModel.rotation * Quaternion.Inverse(transform.rotation);
+        // Les animations modifient la position et la rotation locales du modèle.
+        // On stocke ces valeurs afin de les appliquer au parent dans l'espace monde.
+        Vector3 localDeltaPosition = animatedModel.localPosition;
+        Quaternion localDeltaRotation = animatedModel.localRotation;
 
-        // Application du déplacement et de la rotation au parent.
-        transform.position += deltaPosition;
-        transform.rotation = deltaRotation * transform.rotation;
+        // Application du déplacement : on convertit le déplacement local en espace monde
+        // à l'aide de la rotation actuelle du parent, puis on l'ajoute à sa position.
+        transform.position += transform.rotation * localDeltaPosition;
 
-        // Réinitialisation du modèle pour conserver un offset nul par rapport au parent.
-        animatedModel.localPosition = Vector3.zero;
-        animatedModel.localRotation = Quaternion.identity;
+        // Application de la rotation : multiplication directe par la rotation locale obtenue.
+        transform.rotation *= localDeltaRotation;
+
+        // Réinitialisation du modèle pour conserver un offset nul par rapport au parent
+        // et éviter toute dérive au fil des frames.
     }
 }
