@@ -137,6 +137,7 @@ GameObject:
   - component: {fileID: 4876543210987654321}
   - component: {fileID: 1958501026567594322}
   - component: {fileID: 2542664214675026310}
+  - component: {fileID: 5807739344826040252}
   m_Layer: 10
   m_Name: Lucian_World_Wolf
   m_TagString: Player
@@ -267,6 +268,19 @@ MonoBehaviour:
   rotationSharpness: 15
   gravity: -9.81
   rootMotionTag: RootMotion
+--- !u!114 &5807739344826040252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5021491593266416669}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: febb0d8ad1db4089a80ed1cb6cec6367, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  animatedModel: {fileID: 3374060607552203387}
 --- !u!1 &5289886659859999516
 GameObject:
   m_ObjectHideFlags: 0
