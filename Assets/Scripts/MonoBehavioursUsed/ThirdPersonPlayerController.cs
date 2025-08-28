@@ -92,13 +92,19 @@ public class ThirdPersonPlayerController : MonoBehaviour
     // de marche et de course.
     private const float locomotionCrossFadeDuration = 0.1f;
 
+    [Header("Root Motion")]
+    [Tooltip("Active le déplacement de Lucian directement par les animations (Root Motion).")]
+    public bool useRootMotion = true; // Permet de tester cette approche au lieu des animations Inplace.
+
     void Awake()
     {
         controller = GetComponent<CharacterController>();
         animator = GetComponentInChildren<Animator>(); // Récupération de l'Animator pour jouer les animations.
-        // On s'assure que l'animation d'idle est jouée dès le début pour éviter un personnage figé.
+        // On s'assure que l'animation d'idle est jouée dès le début pour éviter un personnage figé
+        // et on configure l'utilisation éventuelle du Root Motion.
         if (animator != null)
         {
+            animator.applyRootMotion = useRootMotion; // Laisser les animations déplacer la racine si souhaité.
             animator.Play("Idle_World");
         }
         // Si aucune caméra n'est assignée, on cherche d'abord la WorldCamera, puis on retombe sur la MainCamera.
@@ -200,6 +206,24 @@ public class ThirdPersonPlayerController : MonoBehaviour
     }
 
     /// <summary>
+    /// Applique le déplacement fourni par les animations lorsque le Root Motion est activé.
+    /// Cette approche permet d'assurer une continuité naturelle dans les mouvements de Lucian,
+    /// essentielle pour respecter la mise en scène de l'histoire.
+    /// </summary>
+    void OnAnimatorMove()
+    {
+        if (!useRootMotion || animator == null || controller == null)
+            return; // Pas de Root Motion : on ne fait rien.
+
+        // Récupère le déplacement calculé par l'animation et y ajoute la gravité manuelle.
+        Vector3 delta = animator.deltaPosition;
+        delta.y += velocity.y * Time.deltaTime;
+
+        controller.Move(delta); // Déplacement global appliqué via le CharacterController.
+        transform.rotation *= animator.deltaRotation; // Applique également la rotation issue de l'animation.
+    }
+
+    /// <summary>
     /// Lit les entrées et déplace Lucian dans le monde.
     /// </summary>
     void HandleMovement()
@@ -275,7 +299,9 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         // Déplacement horizontal : si Lucian est en l'air, la direction reste
         // celle enregistrée au moment du saut, évitant toute correction mid-air.
-        controller.Move(horizontalVelocity * Time.deltaTime);
+        // Lorsque le Root Motion est activé, on laisse l'animation gérer cette translation.
+        if (!useRootMotion)
+            controller.Move(horizontalVelocity * Time.deltaTime);
 
         // Le joueur peut toujours pivoter en l'air : on oriente donc Lucian selon
         // la direction actuellement demandée par le joueur, même si le mouvement
@@ -377,7 +403,8 @@ public class ThirdPersonPlayerController : MonoBehaviour
         }
 
         // Application de la vitesse calculée.
-        controller.Move(velocity * Time.deltaTime);
+        if (!useRootMotion) // En Root Motion, le déplacement vertical est appliqué dans OnAnimatorMove.
+            controller.Move(velocity * Time.deltaTime);
     }
 
     /// <summary>
