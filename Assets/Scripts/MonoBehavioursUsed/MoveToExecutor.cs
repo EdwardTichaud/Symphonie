@@ -4,7 +4,8 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class MoveToExecutor : MonoBehaviour
 {
-    private Coroutine running;
+    private Coroutine runningMove;
+    private Coroutine runningRotate;
 
     public void ExecuteMove(MoveToConfigSO config)
     {
@@ -21,13 +22,46 @@ public class MoveToExecutor : MonoBehaviour
             return;
         }
 
-        if (!TryResolveDestination(config, out Vector3 dstWorld))
+        // ----- Déplacement -----
+        if (TryResolveDestination(config, out Vector3 dstWorld))
+        {
+            StartMove(
+                subject,
+                dstWorld,
+                Mathf.Max(0f, config.duration),
+                config.ease,
+                config.unscaledTime,
+                config.useLocalSpace,
+                config.interruptCurrentMove
+            );
+        }
+        else
         {
             Debug.LogWarning("[MoveToExecutor] Impossible de résoudre la destination.");
-            return;
         }
 
-        StartMove(subject, dstWorld, config.duration, config.ease, config.unscaledTime, config.useLocalSpace, config.interruptCurrentMove);
+        // ----- Rotation (optionnelle) -----
+        if (config.rotationTargetMode != RotationTargetMode.None && config.rotationDuration >= 0f)
+        {
+            if (TryResolveLookTarget(config, out Vector3 lookWorld))
+            {
+                StartRotate(
+                    subject,
+                    lookWorld,
+                    Mathf.Max(0f, config.rotationDuration),
+                    config.rotationEase,
+                    config.rotationUnscaledTime,
+                    config.interruptCurrentRotation,
+                    config.rotateAxes,
+                    config.rotationEulerOffset,
+                    (config.customUp == Vector3.zero ? Vector3.up : config.customUp.normalized)
+                );
+            }
+            else
+            {
+                Debug.LogWarning("[MoveToExecutor] Look target introuvable.");
+            }
+        }
     }
 
     // ---------- Helpers ----------
@@ -37,7 +71,7 @@ public class MoveToExecutor : MonoBehaviour
         if (string.IsNullOrWhiteSpace(cfg.subjectToMoveName))
             return transform;
 
-        // recherche relative (depuis la racine)
+        // recherche relative (depuis la racine du sujet courant)
         var root = transform.root;
         var byPath = root != null ? root.Find(cfg.subjectToMoveName) : null;
         if (byPath != null) return byPath;
@@ -69,16 +103,41 @@ public class MoveToExecutor : MonoBehaviour
         return false;
     }
 
+    private bool TryResolveLookTarget(MoveToConfigSO cfg, out Vector3 lookWorld)
+    {
+        switch (cfg.rotationTargetMode)
+        {
+            case RotationTargetMode.LookAtWorldPosition:
+                lookWorld = cfg.worldPosition; // volontairement sans worldOffset
+                return true;
+
+            case RotationTargetMode.LookAtTargetByName:
+                if (!string.IsNullOrWhiteSpace(cfg.targetName))
+                {
+                    var t = GameObject.Find(cfg.targetName);
+                    if (t != null)
+                    {
+                        lookWorld = t.transform.position;
+                        return true;
+                    }
+                }
+                break;
+        }
+
+        lookWorld = default;
+        return false;
+    }
+
     // ---------- Mouvement ----------
 
     private void StartMove(Transform subject, Vector3 dstWorld, float duration, AnimationCurve ease, bool unscaled, bool useLocal, bool interrupt)
     {
-        if (running != null)
+        if (runningMove != null)
         {
-            if (interrupt) StopCoroutine(running);
+            if (interrupt) StopCoroutine(runningMove);
             else return;
         }
-        running = StartCoroutine(MoveRoutine(subject, dstWorld, Mathf.Max(0f, duration), ease, unscaled, useLocal));
+        runningMove = StartCoroutine(MoveRoutine(subject, dstWorld, duration, ease, unscaled, useLocal));
     }
 
     private IEnumerator MoveRoutine(Transform subject, Vector3 dstWorld, float duration, AnimationCurve ease, bool unscaled, bool useLocal)
@@ -99,7 +158,7 @@ public class MoveToExecutor : MonoBehaviour
         {
             if (doLocal) subject.localPosition = dstLocal;
             else subject.position = dstWorld;
-            running = null;
+            runningMove = null;
             yield break;
         }
 
@@ -119,6 +178,82 @@ public class MoveToExecutor : MonoBehaviour
         if (doLocal) subject.localPosition = dstLocal;
         else subject.position = dstWorld;
 
-        running = null;
+        runningMove = null;
+    }
+
+    // ---------- Rotation ----------
+
+    private void StartRotate(
+        Transform subject,
+        Vector3 lookWorld,
+        float duration,
+        AnimationCurve ease,
+        bool unscaled,
+        bool interrupt,
+        AxisMask axes,
+        Vector3 eulerOffset,
+        Vector3 up
+    )
+    {
+        if (runningRotate != null)
+        {
+            if (interrupt) StopCoroutine(runningRotate);
+            else return;
+        }
+
+        runningRotate = StartCoroutine(RotateRoutine(subject, lookWorld, duration, ease, unscaled, axes, eulerOffset, up));
+    }
+
+    private IEnumerator RotateRoutine(
+        Transform subject,
+        Vector3 lookWorld,
+        float duration,
+        AnimationCurve ease,
+        bool unscaled,
+        AxisMask axes,
+        Vector3 eulerOffset,
+        Vector3 up
+    )
+    {
+        // Si la cible est très proche, garde la direction actuelle
+        Vector3 dir = (lookWorld - subject.position);
+        if (dir.sqrMagnitude < 1e-8f) dir = subject.forward;
+
+        Quaternion targetRot = Quaternion.LookRotation(dir, up) * Quaternion.Euler(eulerOffset);
+
+        // Eulers de départ/arrivée + masquage par axe
+        Vector3 startEuler = subject.rotation.eulerAngles;
+        Vector3 targetEuler = targetRot.eulerAngles;
+
+        if (!axes.X) targetEuler.x = startEuler.x;
+        if (!axes.Y) targetEuler.y = startEuler.y;
+        if (!axes.Z) targetEuler.z = startEuler.z;
+
+        if (duration <= 0f)
+        {
+            subject.rotation = Quaternion.Euler(targetEuler);
+            runningRotate = null;
+            yield break;
+        }
+
+        float t = 0f;
+        var curve = ease != null ? ease : AnimationCurve.Linear(0, 0, 1, 1);
+
+        while (t < duration)
+        {
+            t += unscaled ? Time.unscaledDeltaTime : Time.deltaTime;
+            float u = Mathf.Clamp01(t / duration);
+            u = curve.Evaluate(u);
+
+            float x = Mathf.LerpAngle(startEuler.x, targetEuler.x, u);
+            float y = Mathf.LerpAngle(startEuler.y, targetEuler.y, u);
+            float z = Mathf.LerpAngle(startEuler.z, targetEuler.z, u);
+
+            subject.rotation = Quaternion.Euler(x, y, z);
+            yield return null;
+        }
+
+        subject.rotation = Quaternion.Euler(targetEuler);
+        runningRotate = null;
     }
 }
