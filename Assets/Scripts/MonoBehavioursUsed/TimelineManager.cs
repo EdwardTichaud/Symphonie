@@ -18,6 +18,25 @@ public class TimelineManager : MonoBehaviour
     public bool IsTimelinePlaying { get; private set; }
 
     /// <summary>
+    /// Durée nécessaire de maintien de l'input <c>Cancel</c> pour passer la Timeline.
+    /// Configurable dans l'inspecteur pour s'adapter facilement aux besoins de gameplay.
+    /// </summary>
+    [SerializeField]
+    private float skipHoldDuration = 3f;
+
+    /// <summary>
+    /// Référence locale vers l'action <c>Cancel</c> afin de pouvoir l'activer
+    /// même lorsque toute la map <c>World</c> est désactivée.
+    /// </summary>
+    private InputAction cancelAction;
+
+    /// <summary>
+    /// Coroutine utilisée pour attendre le maintien continu de l'input Cancel.
+    /// Si elle arrive à son terme, la Timeline est interrompue immédiatement.
+    /// </summary>
+    private Coroutine skipCoroutine;
+
+    /// <summary>
     /// Active ou désactive l'ensemble des entrées de la map <c>World</c> pendant
     /// l'exécution d'une Timeline. Cela garantit qu'aucune action du joueur ne
     /// vient perturber une cinématique en cours.
@@ -41,6 +60,85 @@ public class TimelineManager : MonoBehaviour
             // Désactive immédiatement toutes les actions World pour empêcher toute interaction.
             worldMap.Disable();
         }
+    }
+
+    /// <summary>
+    /// Active l'écoute de l'input <c>Cancel</c> pour permettre au joueur de passer
+    /// la cinématique en maintenant le bouton pendant une durée définie.
+    /// </summary>
+    private void EnableTimelineSkip()
+    {
+        // Sécurise l'accès au singleton et à l'action Cancel
+        if (InputsManager.Instance == null) return;
+
+        cancelAction = InputsManager.Instance.playerInputs.World.Cancel;
+
+        // On s'assure que seule l'action Cancel soit active : même si la map
+        // World est désactivée, l'action individuelle peut être réactivée.
+        cancelAction.started += OnCancelStarted;
+        cancelAction.canceled += OnCancelCanceled;
+        cancelAction.Enable();
+    }
+
+    /// <summary>
+    /// Désactive l'écoute de l'input Cancel et arrête la coroutine éventuelle.
+    /// Appelé à la fin de la Timeline ou si elle est stoppée prématurément.
+    /// </summary>
+    private void DisableTimelineSkip()
+    {
+        if (cancelAction == null) return;
+
+        cancelAction.started -= OnCancelStarted;
+        cancelAction.canceled -= OnCancelCanceled;
+        cancelAction.Disable();
+        cancelAction = null;
+
+        if (skipCoroutine != null)
+        {
+            StopCoroutine(skipCoroutine);
+            skipCoroutine = null;
+        }
+    }
+
+    /// <summary>
+    /// Déclenché lors de l'appui initial sur Cancel. Lance une coroutine
+    /// qui attend la durée complète de maintien pour passer la Timeline.
+    /// </summary>
+    private void OnCancelStarted(InputAction.CallbackContext ctx)
+    {
+        // Si une attente était déjà en cours, on la relance proprement.
+        if (skipCoroutine != null)
+            StopCoroutine(skipCoroutine);
+
+        skipCoroutine = StartCoroutine(SkipTimelineAfterHold());
+    }
+
+    /// <summary>
+    /// Appelé lorsque l'utilisateur relâche l'input Cancel avant la fin de
+    /// la durée requise. On annule donc le passage de la timeline.
+    /// </summary>
+    private void OnCancelCanceled(InputAction.CallbackContext ctx)
+    {
+        if (skipCoroutine != null)
+        {
+            StopCoroutine(skipCoroutine);
+            skipCoroutine = null;
+        }
+    }
+
+    /// <summary>
+    /// Coroutine qui attend <see cref="skipHoldDuration"/> secondes.
+    /// Si l'attente se termine, la Timeline est arrêtée, simulant un "skip".
+    /// </summary>
+    private IEnumerator SkipTimelineAfterHold()
+    {
+        yield return new WaitForSeconds(skipHoldDuration);
+
+        // Arrêt immédiat de la Timeline en cours
+        StopCurrentTimeline();
+
+        // Plus besoin d'écouter l'input Cancel désormais
+        DisableTimelineSkip();
     }
 
     void Awake()
@@ -132,6 +230,8 @@ public class TimelineManager : MonoBehaviour
         IsTimelinePlaying = true;
         // Bloque immédiatement toutes les actions "World" pendant l'exécution de la timeline.
         ToggleWorldInputs(false);
+        // Réactive uniquement l'action Cancel pour permettre un éventuel passage de la Timeline.
+        EnableTimelineSkip();
         // Désactive le CameraController pour laisser la Timeline contrôler totalement la caméra
         if (CameraController.Instance != null)
             CameraController.Instance.enabled = false;
@@ -160,6 +260,8 @@ public class TimelineManager : MonoBehaviour
     private IEnumerator HandleTimelineEnd(PlayableDirector pd)
     {
         Debug.Log($"[TimelineManager] Timeline stoppée : {pd.name}");
+        // On n'a plus besoin d'écouter l'input Cancel une fois la cinématique terminée.
+        DisableTimelineSkip();
 
 
         // 1) Fondu vers le noir pour cacher le "snap" de fin de Timeline et rester en noir.
