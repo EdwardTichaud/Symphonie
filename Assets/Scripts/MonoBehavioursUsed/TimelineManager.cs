@@ -169,7 +169,6 @@ public class TimelineManager : MonoBehaviour
 
         // Restaure la vitesse par sécurité pour les prochaines timelines.
         rootPlayable.SetSpeed(originalSpeed);
-
     }
 
     void Awake()
