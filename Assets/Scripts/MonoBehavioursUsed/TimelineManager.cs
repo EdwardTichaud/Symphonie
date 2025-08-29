@@ -128,17 +128,48 @@ public class TimelineManager : MonoBehaviour
 
     /// <summary>
     /// Coroutine qui attend <see cref="skipHoldDuration"/> secondes.
-    /// Si l'attente se termine, la Timeline est arrêtée, simulant un "skip".
+    /// Si l'attente se termine, la Timeline est accélérée afin de se terminer en
+    /// une seule frame tout en laissant s'exécuter les événements restants.
+
     /// </summary>
     private IEnumerator SkipTimelineAfterHold()
     {
         yield return new WaitForSeconds(skipHoldDuration);
 
-        // Arrêt immédiat de la Timeline en cours
-        StopCurrentTimeline();
+        // Lance la lecture ultra-rapide de la Timeline plutôt qu'un arrêt brutal.
+        // Cela garantit que tous les signaux et animations prévus soient exécutés.
+        StartCoroutine(FastForwardTimeline());
 
-        // Plus besoin d'écouter l'input Cancel désormais
+        // On n'écoute plus l'input Cancel une fois le passage déclenché.
         DisableTimelineSkip();
+
+        // La coroutine de maintien est terminée : on libère la référence.
+        skipCoroutine = null;
+    }
+
+    /// <summary>
+    /// Accélère fortement la Timeline courante pour qu'elle atteigne sa fin en un
+    /// clin d'œil tout en jouant ses derniers événements.
+    /// </summary>
+    private IEnumerator FastForwardTimeline()
+    {
+        if (currentDirector == null)
+            yield break; // Aucun directeur, rien à accélérer
+
+        // Récupère le Playable racine pour manipuler sa vitesse.
+        var rootPlayable = currentDirector.playableGraph.GetRootPlayable(0);
+        double originalSpeed = rootPlayable.GetSpeed();
+
+        // Vitesse très élevée : la Timeline se termine généralement en une frame.
+        rootPlayable.SetSpeed(1000f);
+
+        // Attend que la Timeline signale sa fin.
+        while (currentDirector.state == PlayState.Playing)
+            yield return null;
+
+        // Restaure la vitesse par sécurité pour les prochaines timelines.
+        rootPlayable.SetSpeed(originalSpeed);
+
     }
 
     void Awake()
