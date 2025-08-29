@@ -13,8 +13,11 @@ public class AchievementManager : MonoBehaviour
     /// </summary>
     public static AchievementManager Instance { get; private set; }
 
-    [Tooltip("Liste de tous les succès disponibles dans le jeu.")]
+    [Tooltip("Liste de tous les succès disponibles et non encore débloqués.")]
     public List<AchievementSO> achievements = new List<AchievementSO>();
+
+    [Tooltip("Succès déjà débloqués par le joueur.")]
+    public List<AchievementSO> unlockedAchievements = new List<AchievementSO>();
 
     private void Awake()
     {
@@ -42,11 +45,6 @@ public class AchievementManager : MonoBehaviour
             return;
         }
 
-        if (!achievements.Contains(achievement))
-        {
-            Debug.LogWarning($"[AchievementManager] Le succès {achievement.name} n'est pas enregistré dans la liste globale.");
-        }
-
         if (achievement.unlocked)
         {
             // Déjà obtenu : on ignore sans erreur.
@@ -54,6 +52,22 @@ public class AchievementManager : MonoBehaviour
         }
 
         achievement.unlocked = true;
+
+        // Lorsque le succès est débloqué, on le retire de la liste
+        // des succès disponibles et on l'ajoute à la liste des succès
+        // débloqués afin de garder l'inspecteur organisé.
+        if (achievements.Contains(achievement))
+        {
+            achievements.Remove(achievement);
+            unlockedAchievements.Add(achievement);
+        }
+        else if (!unlockedAchievements.Contains(achievement))
+        {
+            // Si le succès n'est dans aucune liste, on l'ajoute tout de même
+            // aux débloqués pour ne pas perdre la référence.
+            unlockedAchievements.Add(achievement);
+            Debug.LogWarning($"[AchievementManager] Le succès {achievement.name} n'était référencé dans aucune liste.");
+        }
 
         // Ici on pourrait déclencher des effets : affichage d'une UI, sauvegarde, son, etc.
         Debug.Log($"Succès débloqué : {achievement.nom}");
