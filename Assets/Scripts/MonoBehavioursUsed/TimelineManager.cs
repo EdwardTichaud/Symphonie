@@ -240,22 +240,27 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     private IEnumerator FastForwardTimeline()
     {
-        if (currentDirector == null)
+        // On garde une référence locale car currentDirector peut être modifié ailleurs
+        var director = currentDirector;
+        if (director == null)
             yield break; // Aucun directeur, rien à accélérer
 
         // Récupère le Playable racine pour manipuler sa vitesse.
-        var rootPlayable = currentDirector.playableGraph.GetRootPlayable(0);
+        var rootPlayable = director.playableGraph.GetRootPlayable(0);
         double originalSpeed = rootPlayable.GetSpeed();
 
         // Vitesse très élevée : la Timeline se termine généralement en une frame.
         rootPlayable.SetSpeed(1000f);
 
-        // Attend que la Timeline signale sa fin.
-        while (currentDirector.state == PlayState.Playing)
+        // Attend que la Timeline signale sa fin sans provoquer d'exception
+        // si le directeur est détruit entre-temps.
+        while (director != null && director.state == PlayState.Playing)
             yield return null;
 
-        // Restaure la vitesse par sécurité pour les prochaines timelines.
-        rootPlayable.SetSpeed(originalSpeed);
+        // Restaure la vitesse par sécurité pour les prochaines timelines
+        // uniquement si le Playable existe toujours.
+        if (rootPlayable.IsValid())
+            rootPlayable.SetSpeed(originalSpeed);
     }
 
     void Awake()
