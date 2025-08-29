@@ -1,6 +1,13 @@
 using System.Collections;
 using UnityEngine;
 
+/// <summary>
+/// Exécute les déplacements <c>MoveTo</c> déclenchés depuis les Signaux
+/// de la Timeline. Grâce à l'attribut <see cref="ExecuteAlways"/> la classe
+/// fonctionne également en mode Éditeur, ce qui permet de prévisualiser les
+/// trajectoires sans avoir à lancer le jeu.
+/// </summary>
+[ExecuteAlways]
 [DisallowMultipleComponent]
 public class MoveToExecutor : MonoBehaviour
 {
@@ -22,7 +29,49 @@ public class MoveToExecutor : MonoBehaviour
             return;
         }
 
-        // ----- D�placement -----
+        // Lorsque l'on prévisualise la Timeline hors Play Mode, on applique
+        // immédiatement la transformation sans lancer de coroutine afin de
+        // voir instantanément le résultat.
+        if (!Application.isPlaying)
+        {
+            // ----- Déplacement direct -----
+            if (TryResolveDestination(config, out Vector3 previewDst))
+            {
+                if (config.useLocalSpace && subject.parent != null)
+                    subject.localPosition = subject.parent.InverseTransformPoint(previewDst);
+                else
+                    subject.position = previewDst;
+            }
+            else
+            {
+                Debug.LogWarning("[MoveToExecutor] Impossible de résoudre la destination.");
+            }
+
+            // ----- Rotation directe (optionnelle) -----
+            if (config.rotationTargetMode != RotationTargetMode.None &&
+                TryResolveLookTarget(config, out Vector3 previewLook))
+            {
+                Vector3 up = (config.customUp == Vector3.zero ? Vector3.up : config.customUp.normalized);
+
+                Vector3 dir = (previewLook - subject.position);
+                if (dir.sqrMagnitude < 1e-8f) dir = subject.forward;
+
+                Quaternion targetRot = Quaternion.LookRotation(dir, up) * Quaternion.Euler(config.rotationEulerOffset);
+
+                Vector3 targetEuler = targetRot.eulerAngles;
+                Vector3 currentEuler = subject.rotation.eulerAngles;
+
+                if (!config.rotateAxes.X) targetEuler.x = currentEuler.x;
+                if (!config.rotateAxes.Y) targetEuler.y = currentEuler.y;
+                if (!config.rotateAxes.Z) targetEuler.z = currentEuler.z;
+
+                subject.rotation = Quaternion.Euler(targetEuler);
+            }
+
+            return; // rien de plus à faire en mode Éditeur
+        }
+
+        // ----- Déplacement -----
         if (TryResolveDestination(config, out Vector3 dstWorld))
         {
             StartMove(
@@ -37,7 +86,7 @@ public class MoveToExecutor : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("[MoveToExecutor] Impossible de r�soudre la destination.");
+            Debug.LogWarning("[MoveToExecutor] Impossible de résoudre la destination.");
         }
 
         // ----- Rotation (optionnelle) -----
@@ -215,13 +264,13 @@ public class MoveToExecutor : MonoBehaviour
         Vector3 up
     )
     {
-        // Si la cible est tr�s proche, garde la direction actuelle
+        // Si la cible est très proche, garde la direction actuelle
         Vector3 dir = (lookWorld - subject.position);
         if (dir.sqrMagnitude < 1e-8f) dir = subject.forward;
 
         Quaternion targetRot = Quaternion.LookRotation(dir, up) * Quaternion.Euler(eulerOffset);
 
-        // Eulers de d�part/arriv�e + masquage par axe
+        // Eulers de départ/arrivée + masquage par axe
         Vector3 startEuler = subject.rotation.eulerAngles;
         Vector3 targetEuler = targetRot.eulerAngles;
 

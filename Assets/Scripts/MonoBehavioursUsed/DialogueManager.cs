@@ -19,6 +19,12 @@ public struct DialogueLine
 /// - Verrouillage des contrôles joueur
 /// - Positionnement de la bulle
 /// </summary>
+/// <remarks>
+/// L'attribut <see cref="ExecuteAlways"/> permet de prévisualiser les dialogues
+/// directement depuis l'éditeur Unity (notamment lors de l'utilisation des Timelines
+/// et de leurs signaux) sans devoir lancer le Play Mode.
+/// </remarks>
+[ExecuteAlways]
 public class DialogueManager : MonoBehaviour
 {
     [Header("UI")]
@@ -53,6 +59,12 @@ public class DialogueManager : MonoBehaviour
     private float seq_timePerChar = 0.03f, seq_minHold = 0.5f, seq_maxHold = 2.5f;
     private bool seq_unscaled = true;
 
+    // --- Prévisualisation de l'éditeur ---
+    // Stocke temporairement le container et l'index courant afin
+    // d'avancer manuellement ligne par ligne via un signal.
+    private DialogueContainer previewContainer;
+    private int previewLineIndex = -1;
+
     // Séquence active + verrouillage des contrôles pendant toute la séquence
     private bool inSequence = false;
     private bool lockControlsDuringSequence = true;
@@ -61,11 +73,19 @@ public class DialogueManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
+            // En mode éditeur, on détruit immédiatement pour éviter des restes de preview
+            DestroyImmediate(gameObject);
             return;
         }
+
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+
+        // Évite l'avertissement "DontDestroyOnLoad" hors Play Mode
+        if (Application.isPlaying)
+        {
+            DontDestroyOnLoad(gameObject);
+        }
+
         rectTransform = GetComponent<RectTransform>();
     }
 
@@ -108,6 +128,37 @@ public class DialogueManager : MonoBehaviour
     /// </summary>
     public void PlayDialogue(DialogueContainer container, System.Action onEnd = null)
     {
+        // En mode Éditeur (Timeline preview), on affiche simplement les lignes de façon statique
+        // et on conserve le container pour permettre l'avancement via un signal NextLine.
+        if (!Application.isPlaying)
+        {
+            previewContainer = container;
+            previewLineIndex = 0;
+
+            if (container != null && container.lines != null && container.lines.Length > 0)
+            {
+                nameText.text = container.lines[0].speakerName;
+                dialogueText.text = container.lines[0].text;
+
+                // Force l'ouverture visuelle de la boîte de dialogue
+                var animator = GetComponentInChildren<Animator>();
+                if (animator != null)
+                {
+                    animator.Play("DialogueBoxOpen", 0, 1f); // sauter directement à la fin de l'anim
+                    animator.Update(0f); // applique immédiatement l'état
+                }
+
+                isOpen = true;
+            }
+            else
+            {
+                isOpen = false;
+            }
+
+            onEnd?.Invoke();
+            return;
+        }
+
         StopAllCoroutines();
         onDialogueEndCallback = onEnd;
         StartCoroutine(StartDialogue(container));
@@ -463,6 +514,31 @@ public class DialogueManager : MonoBehaviour
     {
         if (!isOpen) return;
 
+        // Mode Éditeur : avance simplement dans le container prévisualisé
+        if (!Application.isPlaying)
+        {
+            if (previewContainer == null || previewContainer.lines == null)
+                return;
+
+            previewLineIndex++;
+
+            if (previewLineIndex < previewContainer.lines.Length)
+            {
+                var line = previewContainer.lines[previewLineIndex];
+                nameText.text = line.speakerName;
+                dialogueText.text = line.text;
+            }
+            else
+            {
+                // Fin de prévisualisation : on ferme visuellement le dialogue
+                previewContainer = null;
+                isOpen = false;
+            }
+
+            return;
+        }
+
+        // Mode Play : logique habituelle
         if (isTyping)
         {
             skipRequested = true; // affiche la ligne instantanément
