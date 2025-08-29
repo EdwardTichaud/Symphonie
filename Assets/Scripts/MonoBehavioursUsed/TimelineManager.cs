@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.InputSystem; // Nécessaire pour manipuler les InputAction du joueur
+using UnityEngine.UI; // 🖼️ Gestion des éléments d'interface (fillAmount)
 using System.Collections; // Requis pour l'utilisation des coroutines
 
 public class TimelineManager : MonoBehaviour
@@ -35,6 +36,18 @@ public class TimelineManager : MonoBehaviour
     /// Si elle arrive à son terme, la Timeline est interrompue immédiatement.
     /// </summary>
     private Coroutine skipCoroutine;
+
+    /// <summary>
+    /// Image de l'interface affichant la progression du maintien de la touche.
+    /// Doit pointer vers l'enfant "Frame" de "TimelineManagerCanvas".
+    /// </summary>
+    [SerializeField] private Image skipFillImage;
+
+    /// <summary>
+    /// Vrai si la timeline a été accélérée via maintien de Cancel.
+    /// Permet d'éviter un double fondu au noir.
+    /// </summary>
+    private bool timelineSkipped = false;
 
     /// <summary>
     /// Active ou désactive l'ensemble des entrées de la map <c>World</c> pendant
@@ -124,6 +137,13 @@ public class TimelineManager : MonoBehaviour
             StopCoroutine(skipCoroutine);
             skipCoroutine = null;
         }
+
+        // Réinitialise la barre de progression si l'utilisateur relâche trop tôt
+        if (skipFillImage != null)
+        {
+            skipFillImage.fillAmount = 0f;
+            skipFillImage.gameObject.SetActive(false);
+        }
     }
 
     /// <summary>
@@ -134,17 +154,40 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     private IEnumerator SkipTimelineAfterHold()
     {
-        yield return new WaitForSeconds(skipHoldDuration);
+        float elapsed = 0f;
+
+        // Affiche et réinitialise la barre de progression
+        if (skipFillImage != null)
+        {
+            skipFillImage.fillAmount = 0f;
+            skipFillImage.gameObject.SetActive(true);
+        }
+
+        // Incrémente le fillAmount pendant tout le maintien du bouton
+        while (elapsed < skipHoldDuration)
+        {
+            elapsed += Time.deltaTime;
+            if (skipFillImage != null)
+                skipFillImage.fillAmount = Mathf.Clamp01(elapsed / skipHoldDuration);
+            yield return null;
+        }
+
+        // Marque la timeline comme accélérée pour la gestion du fondu de fin
+        timelineSkipped = true;
+
+        if (skipFillImage != null)
+            skipFillImage.gameObject.SetActive(false);
+
+        // Arrête d'écouter l'entrée Cancel pendant l'accélération
+        skipCoroutine = null;
+        DisableTimelineSkip();
+
+        // Fondu au noir pour masquer la fin accélérée
+        yield return FadeBlackRoutine(true);
 
         // Lance la lecture ultra-rapide de la Timeline plutôt qu'un arrêt brutal.
         // Cela garantit que tous les signaux et animations prévus soient exécutés.
         StartCoroutine(FastForwardTimeline());
-
-        // On n'écoute plus l'input Cancel une fois le passage déclenché.
-        DisableTimelineSkip();
-
-        // La coroutine de maintien est terminée : on libère la référence.
-        skipCoroutine = null;
     }
 
     /// <summary>
@@ -180,6 +223,25 @@ public class TimelineManager : MonoBehaviour
         else
         {
             Instance = this;
+
+            // Recherche automatique de l'image de remplissage si elle n'est pas assignée dans l'inspecteur
+            if (skipFillImage == null)
+            {
+                var canvas = GameObject.Find("TimelineManagerCanvas");
+                if (canvas != null)
+                {
+                    var frame = canvas.transform.Find("Passer/Frame");
+                    if (frame != null)
+                        skipFillImage = frame.GetComponent<Image>();
+                }
+            }
+
+            // Initialise l'image pour éviter une barre visible au démarrage
+            if (skipFillImage != null)
+            {
+                skipFillImage.fillAmount = 0f;
+                skipFillImage.gameObject.SetActive(false);
+            }
         }
     }
 
@@ -293,11 +355,16 @@ public class TimelineManager : MonoBehaviour
         // On n'a plus besoin d'écouter l'input Cancel une fois la cinématique terminée.
         DisableTimelineSkip();
 
-
-        // 1) Fondu vers le noir pour cacher le "snap" de fin de Timeline et rester en noir.
-        //    Pendant cette étape, l'écran devient totalement noir puis y reste tant que
-        //    l'on n'a pas relancé la séquence de retour.
-        yield return FadeBlackRoutine(true);
+        // 1) Fondu vers le noir pour cacher le "snap" de fin de Timeline.
+        //    Si la timeline a déjà été accélérée, l'écran est noir : on évite un second fondu.
+        if (!timelineSkipped)
+        {
+            yield return FadeBlackRoutine(true);
+        }
+        else
+        {
+            timelineSkipped = false; // Réinitialisation pour la prochaine timeline
+        }
 
         // 2) La cinématique est terminée : on redonne le contrôle de Lucian en réactivant les inputs "World".
         IsTimelinePlaying = false;
