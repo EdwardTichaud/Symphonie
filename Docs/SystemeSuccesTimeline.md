@@ -7,7 +7,9 @@ Ce document explique comment déclencher des succès dans **Symphonie** à l'aid
    - Renseignez l'identifiant, le nom et la description du succès en tenant compte de l'histoire (voir `Docs/HistoireSymphonie.md`).
 
 2. **Placer le gestionnaire**
-   - Ajoutez l'objet `AchievementManager` dans votre scène principale et renseignez la liste des succès.
+   - Ajoutez l'objet `AchievementManager` dans votre scène principale et renseignez la liste `achievements` avec tous les succès disponibles.
+   - Lorsqu'un succès est débloqué, il quitte automatiquement cette liste pour être ajouté à `unlockedAchievements`, permettant de suivre facilement les progrès depuis l'inspecteur.
+
    - L'objet est persistant entre les scènes pour conserver l'état des succès.
 
 3. **Déclencher depuis une Timeline**
