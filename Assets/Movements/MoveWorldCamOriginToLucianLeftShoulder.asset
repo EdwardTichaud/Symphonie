@@ -15,7 +15,7 @@ MonoBehaviour:
   subjectToMoveName: WorldCam_Origin
   destinationMode: 1
   worldPosition: {x: 0, y: 0, z: 0}
-  targetName: PoI_Monolith
+  targetName: Point_Camera_Shoulder_Left_Near
   worldOffset: {x: 0, y: 0, z: 0}
   duration: 0.3
   ease:
@@ -45,3 +45,37 @@ MonoBehaviour:
   unscaledTime: 1
   useLocalSpace: 0
   interruptCurrentMove: 1
+  rotationTargetMode: 0
+  rotateAxes:
+    X: 1
+    Y: 1
+    Z: 1
+  rotationEulerOffset: {x: 0, y: 0, z: 0}
+  rotationDuration: 0.5
+  rotationEase:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  rotationUnscaledTime: 0
+  interruptCurrentRotation: 1
+  customUp: {x: 0, y: 0, z: 0}
