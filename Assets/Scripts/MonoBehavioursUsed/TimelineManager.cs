@@ -17,32 +17,28 @@ public class TimelineManager : MonoBehaviour
     public bool IsTimelinePlaying { get; private set; }
 
     /// <summary>
-    /// Active ou désactive les actions de déplacement du joueur pendant les timelines.
-    /// Empêche ainsi Lucian de se déplacer durant une cinématique pour préserver la mise en scène.
+    /// Active ou désactive l'ensemble des entrées de la map <c>World</c> pendant
+    /// l'exécution d'une Timeline. Cela garantit qu'aucune action du joueur ne
+    /// vient perturber une cinématique en cours.
     /// </summary>
-    /// <param name="enable">True pour autoriser les déplacements, false pour les bloquer.</param>
-    private void TogglePlayerMovement(bool enable)
+    /// <param name="enable">True pour réactiver les inputs, false pour les bloquer.</param>
+    private void ToggleWorldInputs(bool enable)
     {
         // Vérifie que l'InputsManager et la map World existent avant de manipuler les actions.
         if (InputsManager.Instance == null) return;
 
-        var world = InputsManager.Instance.playerInputs.World;
+        // Récupère la map complète afin de pouvoir l'activer ou la désactiver en un seul appel.
+        var worldMap = InputsManager.Instance.playerInputs.World;
 
         if (enable)
         {
-            // Réactive les actions de déplacement lorsque la timeline est terminée.
-            world.Move.Enable();
-            world.Run.Enable();
-            world.Jump.Enable();
-            world.Dash.Enable();
+            // Réactivation globale de toutes les actions World une fois la Timeline terminée.
+            worldMap.Enable();
         }
         else
         {
-            // Désactive les actions pour figer le joueur durant la timeline.
-            world.Move.Disable();
-            world.Run.Disable();
-            world.Jump.Disable();
-            world.Dash.Disable();
+            // Désactive immédiatement toutes les actions World pour empêcher toute interaction.
+            worldMap.Disable();
         }
     }
 
@@ -133,8 +129,8 @@ public class TimelineManager : MonoBehaviour
     private void OnPlayed(PlayableDirector pd)
     {
         IsTimelinePlaying = true;
-        // Bloque immédiatement les déplacements du joueur pendant l'exécution de la timeline.
-        TogglePlayerMovement(false);
+        // Bloque immédiatement toutes les actions "World" pendant l'exécution de la timeline.
+        ToggleWorldInputs(false);
         // Désactive le CameraController pour laisser la Timeline contrôler totalement la caméra
         if (CameraController.Instance != null)
             CameraController.Instance.enabled = false;
@@ -151,8 +147,8 @@ public class TimelineManager : MonoBehaviour
             Debug.Log($"[TimelineManager] Timeline stoppée : {pd.name}");
             IsTimelinePlaying = false;
             currentDirector = null;
-            // La timeline est terminée : on redonne le contrôle de Lucian au joueur.
-            TogglePlayerMovement(true);
+            // La timeline est terminée : on redonne le contrôle de Lucian en réactivant les inputs "World".
+            ToggleWorldInputs(true);
             // Réactive le CameraController pour rendre la main après la cinématique
             if (CameraController.Instance != null)
                 CameraController.Instance.enabled = true;
