@@ -34,8 +34,11 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
     public bool orbitAround = false;
 
     [Header("Dialogue")]
-    [Tooltip("Dialogue joué lorsque le joueur interagit avec ce point d'intérêt.")]
+    [Tooltip("Dialogue par défaut lorsque le joueur interagit avec ce point d'intérêt.")]
     public DialogueContainer dialogue;
+
+    [Tooltip("Dialogues alternatifs déclenchés selon l'état des GameData (succès, quêtes...).")]
+    public ConditionalDialogue[] alternateDialogues;
 
     [Header("Timeline (direct)")]
     [Tooltip("Cochez pour lancer un PlayableDirector à la fin du dialogue.")]
@@ -118,8 +121,9 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
         }
 
         // 1) Dialogue
-        if (dialogue != null)
-            yield return DialogueManager.Instance.StartDialogue(dialogue);
+        DialogueContainer container = GetDialogue();
+        if (container != null)
+            yield return DialogueManager.Instance.StartDialogue(container);
 
         // 2) Timeline
         if (launchTimeline && directorToPlay != null)
@@ -167,6 +171,28 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
         // Clé stable : jeu + scène + GUID sérialisé
         string scene = gameObject.scene.IsValid() ? gameObject.scene.path : "unsaved_scene";
         return $"POI_{scene}_{uniqueId}";
+    }
+
+    /// <summary>
+    /// Sélectionne le dialogue approprié en fonction des conditions définies.
+    /// </summary>
+    private DialogueContainer GetDialogue()
+    {
+        // Récupère les données de jeu pour l'évaluation des succès
+        GameData data = GameManager.Instance != null ? GameManager.Instance.gameData : null;
+
+        if (data != null && alternateDialogues != null)
+        {
+            // Parcourt les dialogues alternatifs et retourne le premier dont la condition est satisfaite
+            foreach (var alt in alternateDialogues)
+            {
+                if (alt != null && alt.IsConditionMet(data))
+                    return alt.dialogue;
+            }
+        }
+
+        // Aucun dialogue alternatif valide : on retourne le dialogue par défaut
+        return dialogue;
     }
 
     // Réinitialisation manuelle depuis l’éditeur (utile pour tests)

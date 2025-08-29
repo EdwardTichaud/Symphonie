@@ -93,10 +93,11 @@ public class NPCBase : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
                     yield return null;
             }
 
-            // Démarrage du dialogue
-            if (phase.dialogue != null)
+            // Démarrage du dialogue adapté au contexte
+            DialogueContainer container = phase.GetDialogue(GameManager.Instance != null ? GameManager.Instance.gameData : null);
+            if (container != null)
             {
-                yield return DialogueManager.Instance.StartDialogue(phase.dialogue);
+                yield return DialogueManager.Instance.StartDialogue(container);
             }
 
             // Animation de fin de dialogue
