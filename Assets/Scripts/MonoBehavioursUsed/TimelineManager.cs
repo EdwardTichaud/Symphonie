@@ -44,6 +44,12 @@ public class TimelineManager : MonoBehaviour
     [SerializeField] private Image skipFillImage;
 
     /// <summary>
+    /// Référence vers le Canvas dédié à l'affichage des informations de Timeline.
+    /// Ce Canvas doit rester inactif lorsque aucune Timeline ne tourne ou qu'elle a été passée.
+    /// </summary>
+    private GameObject timelineCanvas;
+
+    /// <summary>
     /// Vrai si la timeline a été accélérée via maintien de Cancel.
     /// Permet d'éviter un double fondu au noir.
     /// </summary>
@@ -178,6 +184,10 @@ public class TimelineManager : MonoBehaviour
         if (skipFillImage != null)
             skipFillImage.gameObject.SetActive(false);
 
+        // Le Canvas n'a plus lieu d'être lorsque la timeline est passée
+        if (timelineCanvas != null)
+            timelineCanvas.SetActive(false);
+
         // Arrête d'écouter l'entrée Cancel pendant l'accélération
         skipCoroutine = null;
         DisableTimelineSkip();
@@ -224,13 +234,17 @@ public class TimelineManager : MonoBehaviour
         {
             Instance = this;
 
-            // Recherche automatique de l'image de remplissage si elle n'est pas assignée dans l'inspecteur
-            if (skipFillImage == null)
+// Recherche et désactivation du Canvas de gestion des timelines
+            timelineCanvas = GameObject.Find("TimelineManagerCanvas");
+            if (timelineCanvas != null)
             {
-                var canvas = GameObject.Find("TimelineManagerCanvas");
-                if (canvas != null)
+                // Le Canvas ne doit pas être visible tant qu'aucune Timeline n'est jouée
+                timelineCanvas.SetActive(false);
+
+                // Recherche automatique de l'image de remplissage si elle n'est pas assignée dans l'inspecteur
+                if (skipFillImage == null)
                 {
-                    var frame = canvas.transform.Find("Passer/Frame");
+                    var frame = timelineCanvas.transform.Find("Passer/Frame");
                     if (frame != null)
                         skipFillImage = frame.GetComponent<Image>();
                 }
@@ -324,6 +338,9 @@ public class TimelineManager : MonoBehaviour
         ToggleWorldInputs(false);
         // Réactive uniquement l'action Cancel pour permettre un éventuel passage de la Timeline.
         EnableTimelineSkip();
+        // Affiche le Canvas de gestion des timelines pendant la lecture
+        if (timelineCanvas != null)
+            timelineCanvas.SetActive(true);
         // Désactive le CameraController pour laisser la Timeline contrôler totalement la caméra
         if (CameraController.Instance != null)
             CameraController.Instance.enabled = false;
@@ -354,6 +371,10 @@ public class TimelineManager : MonoBehaviour
         Debug.Log($"[TimelineManager] Timeline stoppée : {pd.name}");
         // On n'a plus besoin d'écouter l'input Cancel une fois la cinématique terminée.
         DisableTimelineSkip();
+
+        // Masque le Canvas car la timeline est terminée
+        if (timelineCanvas != null)
+            timelineCanvas.SetActive(false);
 
         // 1) Fondu vers le noir pour cacher le "snap" de fin de Timeline.
         //    Si la timeline a déjà été accélérée, l'écran est noir : on évite un second fondu.
