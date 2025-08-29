@@ -135,6 +135,7 @@ public class DialogueManager : MonoBehaviour
             previewContainer = container;
             previewLineIndex = 0;
 
+
             if (container != null && container.lines != null && container.lines.Length > 0)
             {
                 nameText.text = container.lines[0].speakerName;
