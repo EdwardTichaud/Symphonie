@@ -15,6 +15,8 @@ public class GameData : ScriptableObject
     public int squadXP;
     public int enemiesDefeatedCount;
     public string muninName = "Munin"; // Nom de la caméra contrôlée par le joueur
+    // Succès : indique si le joueur a déjà rencontré Munin
+    public bool muninMet;
 
     public void SaveToFile(string fileName = "save.json")
     {
@@ -24,7 +26,8 @@ public class GameData : ScriptableObject
             squadLevel = squadLevel,
             squadXP = squadXP,
             enemiesDefeatedCount = enemiesDefeatedCount,
-            muninName = muninName
+            muninName = muninName,
+            muninMet = muninMet // Persistance du succès "Munin rencontré"
         };
 
         string json = JsonUtility.ToJson(save, true);
@@ -53,6 +56,7 @@ public class GameData : ScriptableObject
         squadXP = loaded.squadXP;
         enemiesDefeatedCount = loaded.enemiesDefeatedCount;
         muninName = loaded.muninName; // Recharge le nom personnalisé de Munin
+        muninMet = loaded.muninMet;   // Recharge le succès "Munin rencontré"
 
         Debug.Log($"[GameData] Données chargées depuis : {path}");
     }
@@ -64,6 +68,7 @@ public class GameData : ScriptableObject
         squadXP = 0;
         enemiesDefeatedCount = 0;
         muninName = "Munin"; // Réinitialise le nom de Munin par défaut
+        muninMet = false;     // Réinitialise le succès
         Debug.Log("GameData has been reset.");
 }
 }
@@ -76,6 +81,7 @@ public class GameDataSave
     public int squadXP;
     public int enemiesDefeatedCount;
     public string muninName; // Nom sauvegardé de Munin
+    public bool muninMet;    // Sauvegarde du succès "Munin rencontré"
 }
 
 public enum GameState
