@@ -178,9 +178,22 @@ public class TimelineManager : MonoBehaviour
             yield return null;
         }
 
-        // Marque la timeline comme accélérée pour la gestion du fondu de fin
+        // Une fois la durée atteinte, on délègue le passage de la timeline
+        // à une routine dédiée pour pouvoir la réutiliser ailleurs.
+        yield return ExecuteTimelineSkip();
+    }
+
+    /// <summary>
+    /// Routine commune pour passer la timeline avec fondu au noir et
+    /// accélération de la fin. Elle est appelée après le maintien de Cancel
+    /// mais peut également être invoquée directement via <see cref="SkipCurrentTimeline"/>.
+    /// </summary>
+    private IEnumerator ExecuteTimelineSkip()
+    {
+        // Marque la timeline comme passée afin d'éviter un second fondu
         timelineSkipped = true;
 
+        // Cache la jauge de progression si elle est affichée
         if (skipFillImage != null)
             skipFillImage.gameObject.SetActive(false);
 
@@ -198,6 +211,27 @@ public class TimelineManager : MonoBehaviour
         // Lance la lecture ultra-rapide de la Timeline plutôt qu'un arrêt brutal.
         // Cela garantit que tous les signaux et animations prévus soient exécutés.
         StartCoroutine(FastForwardTimeline());
+    }
+
+    /// <summary>
+    /// Permet à d'autres scripts de forcer le passage de la timeline en cours
+    /// tout en conservant le fondu au noir. Utile pour proposer un bouton de
+    /// skip immédiat dans une UI, par exemple.
+    /// </summary>
+    public void SkipCurrentTimeline()
+    {
+        if (!IsTimelinePlaying)
+            return; // Rien à passer
+
+        // Si une attente de maintien était en cours, on la stoppe proprement
+        if (skipCoroutine != null)
+        {
+            StopCoroutine(skipCoroutine);
+            skipCoroutine = null;
+        }
+
+        // Lance la routine de passage
+        StartCoroutine(ExecuteTimelineSkip());
     }
 
     /// <summary>
