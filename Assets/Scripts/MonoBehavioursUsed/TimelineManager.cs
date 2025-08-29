@@ -130,6 +130,7 @@ public class TimelineManager : MonoBehaviour
     /// Coroutine qui attend <see cref="skipHoldDuration"/> secondes.
     /// Si l'attente se termine, la Timeline est accélérée afin de se terminer en
     /// une seule frame tout en laissant s'exécuter les événements restants.
+
     /// </summary>
     private IEnumerator SkipTimelineAfterHold()
     {
@@ -168,6 +169,7 @@ public class TimelineManager : MonoBehaviour
 
         // Restaure la vitesse par sécurité pour les prochaines timelines.
         rootPlayable.SetSpeed(originalSpeed);
+
     }
 
     void Awake()
