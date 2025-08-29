@@ -154,31 +154,41 @@ public class TimelineManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Gère la séquence de fin de timeline avec fondu noir puis restitution des commandes.
+    /// Gère la séquence de fin de timeline avec fondu noir, masquage des repositionnements
+    /// puis restitution progressive des commandes au joueur.
     /// </summary>
     private IEnumerator HandleTimelineEnd(PlayableDirector pd)
     {
         Debug.Log($"[TimelineManager] Timeline stoppée : {pd.name}");
 
-        // Applique le même fondu qu'au démarrage pour clore en douceur la cinématique
-        yield return FadeBlackRoutine();
 
+        // 1) Fondu vers le noir pour cacher le "snap" de fin de Timeline et rester en noir.
+        //    Pendant cette étape, l'écran devient totalement noir puis y reste tant que
+        //    l'on n'a pas relancé la séquence de retour.
+        yield return FadeBlackRoutine(true);
+
+        // 2) La cinématique est terminée : on redonne le contrôle de Lucian en réactivant les inputs "World".
         IsTimelinePlaying = false;
         currentDirector = null;
-
-        // La timeline est terminée : on redonne le contrôle de Lucian en réactivant les inputs "World".
         ToggleWorldInputs(true);
 
-        // Réactive le CameraController pour rendre la main après la cinématique
+        // 3) Réactivation du CameraController pour rendre la main après la cinématique
         if (CameraController.Instance != null)
             CameraController.Instance.enabled = true;
+
+        // 4) Une fois tout rétabli en arrière-plan, on peut revenir progressivement à l'image.
+        yield return FadeFromBlackRoutine();
     }
 
     /// <summary>
-    /// Sequence de fondu : transparent -> noir (1s), maintien (1s) puis noir -> transparent (1s).
+    /// Sequence de fondu : transparent -> noir (1s), maintien (1s) puis optionnellement noir -> transparent (1s).
     /// Utilise le <see cref="FadeChildrenOpacity"/> dont l'enfant 0 doit être un panneau noir couvrant l'écran.
     /// </summary>
-    private IEnumerator FadeBlackRoutine()
+    /// <param name="stayBlack">
+    ///     True pour rester sur un écran noir à la fin du fondu (utile en fin de timeline),
+    ///     False pour revenir à l'image en fin de séquence.
+    /// </param>
+    private IEnumerator FadeBlackRoutine(bool stayBlack = false)
     {
         var fader = FadeChildrenOpacity.Instance;
         if (fader == null)
@@ -191,7 +201,24 @@ public class TimelineManager : MonoBehaviour
         // 2) pause d'une seconde à opacité maximale
         yield return new WaitForSeconds(1f);
 
-        // 3) noir vers transparent
+        // 3) noir vers transparent (sauf si on veut rester en noir)
+        if (!stayBlack)
+        {
+            fader.ChangeOpacity(0, 0f, 1f);
+            yield return new WaitForSeconds(1f);
+        }
+    }
+
+    /// <summary>
+    /// Fait revenir l'écran du noir vers la transparence en 1 seconde.
+    /// Utilisé après <see cref="FadeBlackRoutine(bool)"/> lorsque <c>stayBlack</c> est vrai.
+    /// </summary>
+    private IEnumerator FadeFromBlackRoutine()
+    {
+        var fader = FadeChildrenOpacity.Instance;
+        if (fader == null)
+            yield break;
+
         fader.ChangeOpacity(0, 0f, 1f);
         yield return new WaitForSeconds(1f);
     }
