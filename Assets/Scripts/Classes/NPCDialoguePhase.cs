@@ -12,10 +12,13 @@ public class NPCDialoguePhase
     [Tooltip("Dialogue principal associé à cette phase.")]
     public DialogueContainer dialogue;
 
-    // Permet de définir plusieurs variantes de dialogue en fonction
-    // de l'état des GameData ou des succès débloqués.
-    [Tooltip("Dialogues alternatifs déclenchés selon l'état des GameData ou des succès.")]
+    // Variantes déclenchées après le premier passage et en fonction des succès.
+    [Tooltip("Dialogues alternatifs joués après le dialogue principal si un succès est débloqué.")]
     public ConditionalDialogue[] alternateDialogues;
+
+    // Indique si le dialogue principal a déjà été joué au moins une fois.
+    // Non sérialisé pour éviter d'encombrer l'inspecteur.
+    [System.NonSerialized] public bool mainDialoguePlayed;
 
     [Tooltip("Timeline à lancer avant le dialogue (optionnel).")]
     public TimelineAsset timeline; // ⚙️ Remplacé PlayableDirector par TimelineAsset pour lecture via TimelineLauncher
@@ -38,25 +41,30 @@ public class NPCDialoguePhase
     public UnityEvent onNo;
 
     /// <summary>
-    /// Retourne le dialogue adapté en fonction des conditions renseignées.
-    /// Les variantes sont évaluées l'une après l'autre : dès qu'une condition
-    /// est remplie (succès débloqué, booléen dans GameData, etc.), son dialogue
-    /// est utilisé à la place du principal.
+    /// Retourne le dialogue approprié.
+    /// Le dialogue principal est joué une première fois, puis les variantes
+    /// sont évaluées en fonction des succès débloqués.
     /// </summary>
-    public DialogueContainer GetDialogue(GameData data)
+    public DialogueContainer GetDialogue()
     {
-        if (data != null && alternateDialogues != null)
+        // Si le dialogue principal n'a jamais été joué, on le renvoie
+        if (!mainDialoguePlayed)
+        {
+            mainDialoguePlayed = true; // Marque le passage
+            return dialogue;
+        }
+
+        // Ensuite, on vérifie les dialogues alternatifs
+        if (alternateDialogues != null)
         {
             foreach (var alt in alternateDialogues)
             {
-                // Chaque ConditionalDialogue teste lui-même si sa condition est remplie
-                // en vérifiant les succès ou les champs de GameData.
-                if (alt != null && alt.IsConditionMet(data))
+                if (alt != null && alt.IsConditionMet(mainDialoguePlayed))
                     return alt.dialogue;
             }
         }
 
-        // Aucun dialogue alternatif valide, on retourne le dialogue par défaut
+        // Par défaut, on rejoue le dialogue principal
         return dialogue;
     }
 }

@@ -37,8 +37,11 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
     [Tooltip("Dialogue par défaut lorsque le joueur interagit avec ce point d'intérêt.")]
     public DialogueContainer dialogue;
 
-    [Tooltip("Dialogues alternatifs déclenchés selon l'état des GameData (succès, quêtes...).")]
+    [Tooltip("Dialogues alternatifs joués après le premier passage si un succès est débloqué.")]
     public ConditionalDialogue[] alternateDialogues;
+
+    // Indique si le dialogue principal a déjà été joué au moins une fois
+    private bool mainDialoguePlayed = false;
 
     [Header("Timeline (direct)")]
     [Tooltip("Cochez pour lancer un PlayableDirector à la fin du dialogue.")]
@@ -123,7 +126,13 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
         // 1) Dialogue
         DialogueContainer container = GetDialogue();
         if (container != null)
+        {
             yield return DialogueManager.Instance.StartDialogue(container);
+
+            // Marque le dialogue principal comme joué après sa première exécution
+            if (container == dialogue)
+                mainDialoguePlayed = true;
+        }
 
         // 2) Timeline
         if (launchTimeline && directorToPlay != null)
@@ -178,20 +187,21 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
     /// </summary>
     private DialogueContainer GetDialogue()
     {
-        // Récupère les données de jeu pour l'évaluation des succès
-        GameData data = GameManager.Instance != null ? GameManager.Instance.gameData : null;
+        // Si le dialogue principal n'a jamais été joué, on le retourne directement
+        if (!mainDialoguePlayed)
+            return dialogue;
 
-        if (data != null && alternateDialogues != null)
+        // Ensuite, on vérifie les dialogues alternatifs liés à des succès
+        if (alternateDialogues != null)
         {
-            // Parcourt les dialogues alternatifs et retourne le premier dont la condition est satisfaite
             foreach (var alt in alternateDialogues)
             {
-                if (alt != null && alt.IsConditionMet(data))
+                if (alt != null && alt.IsConditionMet(mainDialoguePlayed))
                     return alt.dialogue;
             }
         }
 
-        // Aucun dialogue alternatif valide : on retourne le dialogue par défaut
+        // Aucun dialogue alternatif valide : on rejoue le dialogue principal
         return dialogue;
     }
 

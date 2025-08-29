@@ -20,4 +20,11 @@ Grâce à cette approche, il est facile de lier l'obtention d'un succès à un m
 
 ## Conditionner les dialogues avec les succès
 
-Les PNJ peuvent désormais adapter leurs répliques en fonction des succès débloqués. Dans l'inspecteur, utilisez la classe `ConditionalDialogue` pour associer un `AchievementSO` à un `DialogueContainer` alternatif. Lorsque le succès indiqué est (ou n'est pas) obtenu, le dialogue correspondant remplace automatiquement celui par défaut.
+Les PNJ peuvent adapter leurs répliques en fonction des succès débloqués.  
+Dans l'inspecteur, utilisez la classe `ConditionalDialogue` pour lier un `AchievementSO` à un `DialogueContainer` alternatif.  
+Le dialogue alternatif est joué **uniquement** lorsque :
+
+1. le dialogue principal a déjà été présenté au joueur ;
+2. le succès requis est débloqué.
+
+Si l'une de ces conditions n'est pas remplie, le dialogue par défaut est rejoué.
