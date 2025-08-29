@@ -119,6 +119,35 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Réinitialise tous les paramètres liés aux dialogues.
+    /// Cette méthode ferme la boîte de dialogue, stoppe les coroutines en cours
+    /// et remet à zéro les séquences et flags afin d'éviter tout mélange de
+    /// dialogues lorsque plusieurs timelines ou PNJ se succèdent.
+    /// </summary>
+    private void ResetDialogueState()
+    {
+        // Coupe immédiatement toutes les coroutines de dialogue actives.
+        StopAllCoroutines();
+
+        // Ferme visuellement la boîte de dialogue pour effacer l'ancien texte.
+        GetComponentInChildren<Animator>()?.Play("DialogueBoxClose");
+        isOpen = false;
+
+        // Réinitialise les flags internes.
+        isTyping = false;
+        skipRequested = false;
+        nextRequested = false;
+
+        // Réinitialise complètement les informations de séquence en cours.
+        sequence.Clear();
+        sequenceIndex = -1;
+        inSequence = false;
+
+        // Restaure les contrôles joueur au cas où ils seraient restés verrouillés.
+        TogglePlayerMovement(true);
+    }
+
     //==============================================================
     // API publique : LECTURE D'UN CONTAINER (MANUELLE)
     //==============================================================
@@ -159,7 +188,9 @@ public class DialogueManager : MonoBehaviour
             return;
         }
 
-        StopAllCoroutines();
+        // Réinitialise les éventuels dialogues précédents pour éviter les overlaps.
+        ResetDialogueState();
+
         onDialogueEndCallback = onEnd;
         StartCoroutine(StartDialogue(container));
     }
@@ -275,7 +306,9 @@ public class DialogueManager : MonoBehaviour
         bool useUnscaledTime = true,
         System.Action onEnd = null)
     {
-        StopAllCoroutines();
+        // Assure que tout dialogue antérieur est correctement fermé avant d'en lancer un nouveau.
+        ResetDialogueState();
+
         onDialogueEndCallback = onEnd;
         StartCoroutine(StartDialogueAuto(container, timePerChar, minHold, maxHold, useUnscaledTime));
     }
@@ -434,6 +467,9 @@ public class DialogueManager : MonoBehaviour
         bool useUnscaledTime = true,
         bool keepControlsLocked = true)
     {
+        // Ferme proprement tout dialogue en cours avant de préparer une nouvelle séquence.
+        ResetDialogueState();
+
         sequence.Clear();
         if (containers != null) sequence.AddRange(containers);
         sequenceIndex = -1;
