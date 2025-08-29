@@ -252,6 +252,13 @@ public class DialogueManager : MonoBehaviour
         isTyping = false;
     }
 
+    public void CloseDialogue()
+    {
+        // Fermeture UI
+        GetComponentInChildren<Animator>()?.Play("DialogueBoxClose");
+        isOpen = false;
+    }
+
     //==============================================================
     // API publique : LECTURE D'UN CONTAINER (AUTO-AVANCE)
     //==============================================================
