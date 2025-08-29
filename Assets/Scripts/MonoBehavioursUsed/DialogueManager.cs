@@ -19,6 +19,12 @@ public struct DialogueLine
 /// - Verrouillage des contrôles joueur
 /// - Positionnement de la bulle
 /// </summary>
+/// <remarks>
+/// L'attribut <see cref="ExecuteAlways"/> permet de prévisualiser les dialogues
+/// directement depuis l'éditeur Unity (notamment lors de l'utilisation des Timelines
+/// et de leurs signaux) sans devoir lancer le Play Mode.
+/// </remarks>
+[ExecuteAlways]
 public class DialogueManager : MonoBehaviour
 {
     [Header("UI")]
@@ -61,11 +67,19 @@ public class DialogueManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
+            // En mode éditeur, on détruit immédiatement pour éviter des restes de preview
+            DestroyImmediate(gameObject);
             return;
         }
+
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+
+        // Évite l'avertissement "DontDestroyOnLoad" hors Play Mode
+        if (Application.isPlaying)
+        {
+            DontDestroyOnLoad(gameObject);
+        }
+
         rectTransform = GetComponent<RectTransform>();
     }
 
@@ -108,6 +122,28 @@ public class DialogueManager : MonoBehaviour
     /// </summary>
     public void PlayDialogue(DialogueContainer container, System.Action onEnd = null)
     {
+        // En mode Éditeur (Timeline preview), on affiche simplement la première ligne sans animations
+        if (!Application.isPlaying)
+        {
+            if (container != null && container.lines != null && container.lines.Length > 0)
+            {
+                nameText.text = container.lines[0].speakerName;
+                dialogueText.text = container.lines[0].text;
+
+                // Force l'ouverture visuelle de la boîte de dialogue
+                var animator = GetComponentInChildren<Animator>();
+                if (animator != null)
+                {
+                    animator.Play("DialogueBoxOpen", 0, 1f); // sauter directement à la fin de l'anim
+                    animator.Update(0f); // applique immédiatement l'état
+                }
+
+                isOpen = true;
+            }
+            onEnd?.Invoke();
+            return;
+        }
+
         StopAllCoroutines();
         onDialogueEndCallback = onEnd;
         StartCoroutine(StartDialogue(container));
