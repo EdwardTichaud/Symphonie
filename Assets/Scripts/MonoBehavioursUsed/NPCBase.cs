@@ -94,7 +94,8 @@ public class NPCBase : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
             }
 
             // Démarrage du dialogue adapté au contexte
-            DialogueContainer container = phase.GetDialogue(GameManager.Instance != null ? GameManager.Instance.gameData : null);
+            // Récupération du dialogue adapté à la progression et aux succès
+            DialogueContainer container = phase.GetDialogue();
             if (container != null)
             {
                 yield return DialogueManager.Instance.StartDialogue(container);
