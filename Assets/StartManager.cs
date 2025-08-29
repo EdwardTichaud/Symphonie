@@ -7,6 +7,7 @@ public class StartManager : MonoBehaviour
         ResetTimeScale();
         ResetCamerasDepth();
         SetIdleInWorld();
+        DialogueManager.Instance.CloseDialogue();
     }
 
     void Update()
