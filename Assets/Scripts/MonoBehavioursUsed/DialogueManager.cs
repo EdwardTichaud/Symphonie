@@ -19,6 +19,12 @@ public struct DialogueLine
 /// - Verrouillage des contrôles joueur
 /// - Positionnement de la bulle
 /// </summary>
+/// <remarks>
+/// L'attribut <see cref="ExecuteAlways"/> permet de prévisualiser les dialogues
+/// directement depuis l'éditeur Unity (notamment lors de l'utilisation des Timelines
+/// et de leurs signaux) sans devoir lancer le Play Mode.
+/// </remarks>
+[ExecuteAlways]
 public class DialogueManager : MonoBehaviour
 {
     [Header("UI")]

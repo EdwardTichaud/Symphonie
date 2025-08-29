@@ -1,6 +1,13 @@
 using UnityEngine;
 using UnityEngine.Playables;
 
+/// <summary>
+/// Reçoit les signaux de la Timeline pour déclencher les dialogues.
+/// L'attribut <see cref="ExecuteAlways"/> garantit que ces signaux sont
+/// traités même en mode Éditeur afin de faciliter la mise au point des
+/// cinématiques sans lancer le jeu.
+/// </summary>
+[ExecuteAlways]
 public class DialogueSignalReceiver : MonoBehaviour
 {
     public PlayableDirector timeline;
