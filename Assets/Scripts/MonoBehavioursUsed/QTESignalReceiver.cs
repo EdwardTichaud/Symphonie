@@ -2,7 +2,11 @@ using UnityEngine;
 
 /// <summary>
 /// Récepteur appelé depuis une Timeline pour lancer un QTE.
+/// L'attribut <see cref="ExecuteAlways"/> autorise la prévisualisation
+/// des QTE dans l'Éditeur afin de régler précisément leur placement
+/// sans lancer le jeu.
 /// </summary>
+[ExecuteAlways]
 public class QTESignalReceiver : MonoBehaviour
 {
     /// <summary>
@@ -11,6 +15,9 @@ public class QTESignalReceiver : MonoBehaviour
     /// <param name="trigger">Données du QTE à jouer</param>
     public void TriggerQTE(QTETriggerSO trigger)
     {
+        // Méthode utilisée aussi bien en mode Éditeur qu'en jeu. Les
+        // vérifications permettent d'éviter les erreurs de référence
+        // durant la prévisualisation.
         if (trigger == null)
         {
             Debug.LogWarning("[QTESignalReceiver] TriggerQTE appelé avec null.");

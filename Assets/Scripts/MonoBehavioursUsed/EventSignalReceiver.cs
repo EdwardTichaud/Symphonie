@@ -1,5 +1,13 @@
 using UnityEngine;
 
+/// <summary>
+/// Récepteur générique pour déclencher des évènements depuis une Timeline.
+/// L'attribut <see cref="ExecuteAlways"/> permet de prévisualiser ces
+/// évènements directement dans l'Éditeur sans lancer le Play Mode,
+/// garantissant que tous les signaux sont pris en compte lors de la
+/// construction des cinématiques.
+/// </summary>
+[ExecuteAlways]
 public class EventSignalReceiver : MonoBehaviour
 {
     [Header("Player Move Settings")]
@@ -11,7 +19,9 @@ public class EventSignalReceiver : MonoBehaviour
 
     private void Start()
     {
-        // Cache le joueur pour éviter le Find() en boucle
+        // Méthode exécutée également dans l'Éditeur grâce à ExecuteAlways.
+        // On met en cache la référence au joueur pour que les signaux
+        // puissent le manipuler pendant la prévisualisation.
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
         {
@@ -21,6 +31,8 @@ public class EventSignalReceiver : MonoBehaviour
 
     private void Update()
     {
+        // En prévisualisation, les signaux Timeline peuvent définir un
+        // vecteur de déplacement pour tester les trajectoires sans lancer le jeu.
         if (playerTransform != null && moveDirection != Vector3.zero)
         {
             // Déplace dans l'espace local du joueur (avant, arrière, côté)

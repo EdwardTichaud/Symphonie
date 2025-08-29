@@ -1,6 +1,10 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+/// <summary>
+/// Entrée référencée par l'<see cref="AnimationSignalReceiver"/> pour
+/// associer un identifiant à un <see cref="Animator"/> spécifique.
+/// </summary>
 [System.Serializable]
 public class AnimatorEntry
 {
@@ -11,6 +15,13 @@ public class AnimatorEntry
     public Animator animator;
 }
 
+/// <summary>
+/// Récepteur d'animation déclenché par les Signaux de la Timeline.
+/// L'attribut <see cref="ExecuteAlways"/> garantit son exécution même
+/// hors Play Mode, permettant de tester visuellement les animations
+/// depuis l'Éditeur.
+/// </summary>
+[ExecuteAlways]
 public class AnimationSignalReceiver : MonoBehaviour
 {
     [Header("List of Animators available in this scene")]
@@ -18,6 +29,9 @@ public class AnimationSignalReceiver : MonoBehaviour
 
     public void TriggerAnimation(AnimationTriggerSO trigger)
     {
+        // Méthode invoquée par la Timeline, y compris lors de la prévisualisation
+        // en mode Éditeur. On vérifie systématiquement les entrées pour éviter
+        // toute erreur pendant l'édition.
         if (trigger == null)
         {
             Debug.LogWarning("[AnimationSignalReceiver] Received null AnimationTriggerSO.");
