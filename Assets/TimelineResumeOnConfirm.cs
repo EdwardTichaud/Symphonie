@@ -4,9 +4,10 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Playables;
 
-[DisallowMultipleComponent]
-[RequireComponent(typeof(PlayableDirector))]
-public class TimelinePauseResumeOnInteract : MonoBehaviour
+ [DisallowMultipleComponent]
+ [RequireComponent(typeof(PlayableDirector))]
+ [ExecuteAlways]
+ public class TimelinePauseResumeOnInteract : MonoBehaviour
 {
     [Tooltip("Instance de PlayerInputs. Si vide, on prendra celle de InputsManager, sinon on en créera une locale.")]
     [SerializeField] private PlayerInputs playerInputs;
@@ -65,6 +66,10 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
 
     private void OnEnable()
     {
+        // En mode Éditeur, on n'active pas les entrées pour éviter les erreurs
+        if (!Application.isPlaying)
+            return;
+
         if (playerInputs == null)
         {
             Debug.LogWarning("[TimelinePauseResumeOnInteract] PlayerInputs introuvable.");
@@ -77,6 +82,9 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
 
     private void OnDisable()
     {
+        if (!Application.isPlaying)
+            return;
+
         if (playerInputs != null)
         {
             playerInputs.World.Interact.performed -= OnInteract;
@@ -88,6 +96,9 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
 
     private void Update()
     {
+        if (!Application.isPlaying)
+            return;
+
         if (!waitingForCondition || TimelineManager.Instance == null)
             return;
 
@@ -120,6 +131,13 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
     /// </summary>
     public void PauseForNextCondition()
     {
+        if (!Application.isPlaying)
+        {
+            // Prévisualisation : pause simple du PlayableDirector sans gestion de conditions
+            director?.Pause();
+            return;
+        }
+
         if (TimelineManager.Instance == null)
             return;
 
@@ -168,6 +186,9 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
     /// </summary>
     private void OnInteract(InputAction.CallbackContext ctx)
     {
+        if (!Application.isPlaying)
+            return;
+
         if (!waitingForCondition || TimelineManager.Instance == null)
             return;
 
@@ -181,6 +202,13 @@ public class TimelinePauseResumeOnInteract : MonoBehaviour
 
     private void ResumeTimeline()
     {
+        if (!Application.isPlaying)
+        {
+            // En prévisualisation, on relance simplement la Timeline locale
+            director?.Play();
+            return;
+        }
+
         waitingForCondition = false;
         waitingForDialogueToClose = false;
         TimelineManager.Instance.ResumeCurrentTimeline();
