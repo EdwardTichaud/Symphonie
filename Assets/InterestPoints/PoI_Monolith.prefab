@@ -179,12 +179,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Events:
     m_Signals:
-    - {fileID: 11400000, guid: 18714809ba89d804eaa095be69a652ca, type: 2}
-    - {fileID: 11400000, guid: 5ef28a2148801414e95856a490f8f1f4, type: 2}
-    - {fileID: 11400000, guid: 3eb8cd7414a6eab4caaef0c7b706c02e, type: 2}
-    - {fileID: 11400000, guid: 419a4e927e3e525498208df2eef20848, type: 2}
-    - {fileID: 11400000, guid: 4ae3046ba1b5e3044918273b2e1b1a35, type: 2}
-    - {fileID: 11400000, guid: 5472606134074cd459889894ccd40a47, type: 2}
+    - {fileID: 11400000, guid: 18714809ba89d804eaa095be69a652ca, type: 2} # Démarre la phase 1 du dialogue
+    - {fileID: 11400000, guid: 5ef28a2148801414e95856a490f8f1f4, type: 2} # Met la timeline en pause en attendant une interaction
+    - {fileID: 11400000, guid: 3eb8cd7414a6eab4caaef0c7b706c02e, type: 2} # Ouvre le clavier virtuel
+    - {fileID: 11400000, guid: 4ae3046ba1b5e3044918273b2e1b1a35, type: 2} # Démarre la phase 2 du dialogue
+    - {fileID: 11400000, guid: 5472606134074cd459889894ccd40a47, type: 2} # Démarre la phase 3 du dialogue
+    - {fileID: 11400000, guid: 8dc6bd177de8ec14e8de988466d17071, type: 2} # Démarre la phase 4 du dialogue
     m_Events:
     - m_PersistentCalls:
         m_Calls:
@@ -197,7 +197,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: DialogueContainer, Assembly-CSharp
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: 
+            m_StringArgument:
             m_BoolArgument: 0
           m_CallState: 1
     - m_PersistentCalls:
@@ -211,7 +211,7 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: 
+            m_StringArgument:
             m_BoolArgument: 0
           m_CallState: 1
     - m_PersistentCalls:
@@ -225,23 +225,9 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: 
+            m_StringArgument:
             m_BoolArgument: 0
           m_CallState: 1
-    - m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 6037945044232720458}
-          m_TargetAssemblyTypeName: MoveToExecutor, Assembly-CSharp
-          m_MethodName: ExecuteMove
-          m_Mode: 2
-          m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: 097b9c6067e98bb4fa07bc68f8fa3c46, type: 2}
-            m_ObjectArgumentAssemblyTypeName: MoveToConfigSO, Assembly-CSharp
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 2
     - m_PersistentCalls:
         m_Calls:
         - m_Target: {fileID: 0}
@@ -249,11 +235,11 @@ MonoBehaviour:
           m_MethodName: PlayDialogue
           m_Mode: 2
           m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: 4d40db94edf37a44e8d0c7b168388e32, type: 2}
+            m_ObjectArgument: {fileID: 11400000, guid: 3b21b43f3bb9d4241a0998bb0aa174ac, type: 2}
             m_ObjectArgumentAssemblyTypeName: DialogueContainer, Assembly-CSharp
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: 
+            m_StringArgument:
             m_BoolArgument: 0
           m_CallState: 1
     - m_PersistentCalls:
@@ -267,7 +253,21 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: DialogueContainer, Assembly-CSharp
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: 
+            m_StringArgument:
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 0}
+          m_TargetAssemblyTypeName: DialogueManager, Assembly-CSharp
+          m_MethodName: PlayDialogue
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 11400000, guid: a1b7c9cb1bdb45f479d0ee48ff09420f, type: 2}
+            m_ObjectArgumentAssemblyTypeName: DialogueContainer, Assembly-CSharp
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument:
             m_BoolArgument: 0
           m_CallState: 1
 --- !u!114 &8909351400374821405
