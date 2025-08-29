@@ -161,6 +161,7 @@ public class TimelineManager : MonoBehaviour
     {
         Debug.Log($"[TimelineManager] Timeline stoppée : {pd.name}");
 
+
         // 1) Fondu vers le noir pour cacher le "snap" de fin de Timeline et rester en noir.
         //    Pendant cette étape, l'écran devient totalement noir puis y reste tant que
         //    l'on n'a pas relancé la séquence de retour.
