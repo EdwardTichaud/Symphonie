@@ -17,3 +17,7 @@ Ce document explique comment déclencher des succès dans **Symphonie** à l'aid
    - Dans la Timeline, insérez un `Signal Emitter` et associez le succès à débloquer à l'événement `TriggerAchievement`.
 
 Grâce à cette approche, il est facile de lier l'obtention d'un succès à un moment narratif précis, qu'il s'agisse d'une cinématique ou d'une action de gameplay scénarisée.
+
+## Conditionner les dialogues avec les succès
+
+Les PNJ peuvent désormais adapter leurs répliques en fonction des succès débloqués. Dans l'inspecteur, utilisez la classe `ConditionalDialogue` pour associer un `AchievementSO` à un `DialogueContainer` alternatif. Lorsque le succès indiqué est (ou n'est pas) obtenu, le dialogue correspondant remplace automatiquement celui par défaut.
