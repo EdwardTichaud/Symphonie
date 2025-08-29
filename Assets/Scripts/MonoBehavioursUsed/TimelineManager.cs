@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.InputSystem; // Nécessaire pour manipuler les InputAction du joueur
+using System.Collections; // Requis pour l'utilisation des coroutines
 
 public class TimelineManager : MonoBehaviour
 {
@@ -135,6 +136,9 @@ public class TimelineManager : MonoBehaviour
         if (CameraController.Instance != null)
             CameraController.Instance.enabled = false;
         Debug.Log($"[TimelineManager] Timeline jouée : {pd.name}");
+
+        // Lance un fondu noir pour encadrer le début de la timeline
+        StartCoroutine(FadeBlackRoutine());
     }
 
     /// <summary>
@@ -144,14 +148,51 @@ public class TimelineManager : MonoBehaviour
     {
         if (currentDirector == pd)
         {
-            Debug.Log($"[TimelineManager] Timeline stoppée : {pd.name}");
-            IsTimelinePlaying = false;
-            currentDirector = null;
-            // La timeline est terminée : on redonne le contrôle de Lucian en réactivant les inputs "World".
-            ToggleWorldInputs(true);
-            // Réactive le CameraController pour rendre la main après la cinématique
-            if (CameraController.Instance != null)
-                CameraController.Instance.enabled = true;
+            // On délègue la fin de timeline à une coroutine afin de chaîner le fondu
+            StartCoroutine(HandleTimelineEnd(pd));
         }
+    }
+
+    /// <summary>
+    /// Gère la séquence de fin de timeline avec fondu noir puis restitution des commandes.
+    /// </summary>
+    private IEnumerator HandleTimelineEnd(PlayableDirector pd)
+    {
+        Debug.Log($"[TimelineManager] Timeline stoppée : {pd.name}");
+
+        // Applique le même fondu qu'au démarrage pour clore en douceur la cinématique
+        yield return FadeBlackRoutine();
+
+        IsTimelinePlaying = false;
+        currentDirector = null;
+
+        // La timeline est terminée : on redonne le contrôle de Lucian en réactivant les inputs "World".
+        ToggleWorldInputs(true);
+
+        // Réactive le CameraController pour rendre la main après la cinématique
+        if (CameraController.Instance != null)
+            CameraController.Instance.enabled = true;
+    }
+
+    /// <summary>
+    /// Sequence de fondu : transparent -> noir (1s), maintien (1s) puis noir -> transparent (1s).
+    /// Utilise le <see cref="FadeChildrenOpacity"/> dont l'enfant 0 doit être un panneau noir couvrant l'écran.
+    /// </summary>
+    private IEnumerator FadeBlackRoutine()
+    {
+        var fader = FadeChildrenOpacity.Instance;
+        if (fader == null)
+            yield break; // Aucun fader disponible, on quitte silencieusement
+
+        // 1) transparent vers noir
+        fader.ChangeOpacity(0, 1f, 1f);
+        yield return new WaitForSeconds(1f);
+
+        // 2) pause d'une seconde à opacité maximale
+        yield return new WaitForSeconds(1f);
+
+        // 3) noir vers transparent
+        fader.ChangeOpacity(0, 0f, 1f);
+        yield return new WaitForSeconds(1f);
     }
 }
