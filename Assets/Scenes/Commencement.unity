@@ -12697,6 +12697,10 @@ PrefabInstance:
       propertyPath: localInfoBoxOffset.y
       value: 2.2
       objectReference: {fileID: 0}
+    - target: {fileID: 5820178956993855916, guid: c211161079db0fc46a0b6d3ede95a8c7, type: 3}
+      propertyPath: dialoguePhases.Array.data[0].alternateDialogues.Array.size
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5846953115929097541, guid: c211161079db0fc46a0b6d3ede95a8c7, type: 3}
       propertyPath: m_Name
       value: Le Vieux
@@ -14340,6 +14344,10 @@ PrefabInstance:
     - target: {fileID: 142980859687673180, guid: 4a13862c25d78604ab3b33510e25f8f4, type: 3}
       propertyPath: orbitAround
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 142980859687673180, guid: 4a13862c25d78604ab3b33510e25f8f4, type: 3}
+      propertyPath: persistState
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 485100371327592398, guid: 4a13862c25d78604ab3b33510e25f8f4, type: 3}
       propertyPath: m_LocalPosition.x
