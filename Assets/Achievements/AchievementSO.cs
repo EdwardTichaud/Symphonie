@@ -6,7 +6,7 @@ using UnityEngine;
 /// description. L'état de déblocage est également stocké
 /// pour pouvoir persister cette information.
 /// </summary>
-[CreateAssetMenu(fileName = "NewAchievement", menuName = "Achievements/Achievement")]
+[CreateAssetMenu(fileName = "NewAchievement", menuName = "Symphonie/Achievement")]
 public class AchievementSO : ScriptableObject
 {
     [Header("Identification")]
