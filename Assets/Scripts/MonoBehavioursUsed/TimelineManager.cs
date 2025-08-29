@@ -234,7 +234,7 @@ public class TimelineManager : MonoBehaviour
         {
             Instance = this;
 
-            // Recherche et désactivation du Canvas de gestion des timelines
+// Recherche et désactivation du Canvas de gestion des timelines
             timelineCanvas = GameObject.Find("TimelineManagerCanvas");
             if (timelineCanvas != null)
             {
