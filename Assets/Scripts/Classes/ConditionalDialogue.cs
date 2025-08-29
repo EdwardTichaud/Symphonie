@@ -10,19 +10,33 @@ public class ConditionalDialogue
     [Tooltip("Nom du champ booléen dans GameData à vérifier. Laisser vide pour toujours vrai.")]
     public string gameDataBool;
 
-    [Tooltip("Valeur attendue pour que le dialogue soit sélectionné.")]
+    [Tooltip("Succès requis pour activer ce dialogue (optionnel).")]
+    public AchievementSO requiredAchievement;
+
+    [Tooltip("Valeur attendue pour que le dialogue soit sélectionné. S'applique au booléen ou à l'état du succès.")]
     public bool requiredValue = true;
 
     [Tooltip("Dialogue joué si la condition est remplie.")]
     public DialogueContainer dialogue;
 
     /// <summary>
-    /// Vérifie si la condition associée est satisfaite en se basant sur les GameData fournies.
+    /// Vérifie si la condition associée est satisfaite.
+    /// Priorité :
+    /// 1) Succès requis via <see cref="AchievementSO"/> ;
+    /// 2) Champ booléen dans les <see cref="GameData"/>.
     /// </summary>
     public bool IsConditionMet(GameData data)
     {
+        // --- Vérification du succès ---
+        // Si un AchievementSO est assigné, on compare son état "unlocked" à la valeur attendue.
+        if (requiredAchievement != null)
+        {
+            return requiredAchievement.unlocked == requiredValue;
+        }
+
+        // --- Vérification des GameData ---
         if (data == null)
-            return false;
+            return false; // Pas de données de jeu : condition non remplie
 
         // Aucune condition spécifiée : toujours vrai
         if (string.IsNullOrEmpty(gameDataBool))
@@ -36,6 +50,7 @@ public class ConditionalDialogue
             return value == requiredValue;
         }
 
-        return false; // Champ introuvable ou type incorrect
+        // Champ introuvable ou type incorrect
+        return false;
     }
 }

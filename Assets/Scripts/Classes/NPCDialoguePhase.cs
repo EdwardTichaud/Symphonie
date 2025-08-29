@@ -12,7 +12,9 @@ public class NPCDialoguePhase
     [Tooltip("Dialogue principal associé à cette phase.")]
     public DialogueContainer dialogue;
 
-    [Tooltip("Dialogues alternatifs déclenchés selon l'état des GameData.")]
+    // Permet de définir plusieurs variantes de dialogue en fonction
+    // de l'état des GameData ou des succès débloqués.
+    [Tooltip("Dialogues alternatifs déclenchés selon l'état des GameData ou des succès.")]
     public ConditionalDialogue[] alternateDialogues;
 
     [Tooltip("Timeline à lancer avant le dialogue (optionnel).")]
@@ -36,7 +38,10 @@ public class NPCDialoguePhase
     public UnityEvent onNo;
 
     /// <summary>
-    /// Retourne le dialogue adapté en fonction des succès enregistrés.
+    /// Retourne le dialogue adapté en fonction des conditions renseignées.
+    /// Les variantes sont évaluées l'une après l'autre : dès qu'une condition
+    /// est remplie (succès débloqué, booléen dans GameData, etc.), son dialogue
+    /// est utilisé à la place du principal.
     /// </summary>
     public DialogueContainer GetDialogue(GameData data)
     {
@@ -44,11 +49,14 @@ public class NPCDialoguePhase
         {
             foreach (var alt in alternateDialogues)
             {
+                // Chaque ConditionalDialogue teste lui-même si sa condition est remplie
+                // en vérifiant les succès ou les champs de GameData.
                 if (alt != null && alt.IsConditionMet(data))
                     return alt.dialogue;
             }
         }
 
-        return dialogue; // Dialogue par défaut si aucune condition n'est remplie
+        // Aucun dialogue alternatif valide, on retourne le dialogue par défaut
+        return dialogue;
     }
 }
