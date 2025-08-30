@@ -1232,10 +1232,18 @@ MonoBehaviour:
   musicTracks: []
   soundEffects: []
   voiceEffects: []
-  musicSourceA: {fileID: 6061057709761173539}
-  musicSourceB: {fileID: 3496672895916057710}
-  sfxSource: {fileID: 7703095432394423678}
-  voiceSource: {fileID: 4343329202395332393}
+  musicSources:
+  - {fileID: 6061057709761173539}
+  - {fileID: 3496672895916057710}
+  - {fileID: 0}
+  sfxSources:
+  - {fileID: 7703095432394423678}
+  - {fileID: 0}
+  - {fileID: 0}
+  voiceSources:
+  - {fileID: 4343329202395332393}
+  - {fileID: 0}
+  - {fileID: 0}
   warningClipSource: {fileID: 6152067128056661931}
   fadeDuration: 2
 --- !u!1 &8555247583833438367
