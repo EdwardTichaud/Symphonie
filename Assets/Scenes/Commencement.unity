@@ -11139,14 +11139,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 839612870178969157, guid: d68affc57ba8f0846908c6ea7aaa2a15, type: 3}
-      propertyPath: warningAttenuation
-      value: 0.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 839612870178969157, guid: d68affc57ba8f0846908c6ea7aaa2a15, type: 3}
-      propertyPath: musicTracks.Array.size
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 1647225499042316683, guid: d68affc57ba8f0846908c6ea7aaa2a15, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -11230,10 +11222,6 @@ PrefabInstance:
     - target: {fileID: 6987478928299559742, guid: d68affc57ba8f0846908c6ea7aaa2a15, type: 3}
       propertyPath: m_Name
       value: AudioManager
-      objectReference: {fileID: 0}
-    - target: {fileID: 7703095432394423678, guid: d68affc57ba8f0846908c6ea7aaa2a15, type: 3}
-      propertyPath: m_Volume
-      value: 0.3
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -14701,7 +14689,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 834623486238256031, guid: 4a13862c25d78604ab3b33510e25f8f4, type: 3}
       propertyPath: m_SceneBindings.Array.size
-      value: 11
+      value: 12
       objectReference: {fileID: 0}
     - target: {fileID: 834623486238256031, guid: 4a13862c25d78604ab3b33510e25f8f4, type: 3}
       propertyPath: m_SceneBindings.Array.data[1].key
@@ -14743,6 +14731,10 @@ PrefabInstance:
       propertyPath: m_SceneBindings.Array.data[10].key
       value: 
       objectReference: {fileID: -1795128124921058303, guid: bffa5e67fe6ffec4a97170433570e9c3, type: 2}
+    - target: {fileID: 834623486238256031, guid: 4a13862c25d78604ab3b33510e25f8f4, type: 3}
+      propertyPath: m_SceneBindings.Array.data[11].key
+      value: 
+      objectReference: {fileID: 3699230023927467293, guid: bffa5e67fe6ffec4a97170433570e9c3, type: 2}
     - target: {fileID: 834623486238256031, guid: 4a13862c25d78604ab3b33510e25f8f4, type: 3}
       propertyPath: m_SceneBindings.Array.data[0].value
       value: 
