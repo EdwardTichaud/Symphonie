@@ -55,6 +55,10 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     private bool timelineSkipped = false;
 
+    [Header("Audio")]
+    [Tooltip("Musique de fond à jouer pendant les timelines.")]
+    [SerializeField] private AudioClip timelineMusicClip;
+
     /// <summary>
     /// Active ou désactive l'ensemble des entrées de la map <c>World</c> pendant
     /// l'exécution d'une Timeline. Cela garantit qu'aucune action du joueur ne
@@ -385,6 +389,10 @@ public class TimelineManager : MonoBehaviour
             CameraController.Instance.enabled = false;
         Debug.Log($"[TimelineManager] Timeline jouée : {pd.name}");
 
+        // Bascule la musique vers le thème de timeline si disponible
+        if (AudioManager.Instance != null && timelineMusicClip != null)
+            AudioManager.Instance.TransitionToTimeline(timelineMusicClip);
+
         // Lance un fondu noir pour encadrer le début de la timeline
         StartCoroutine(FadeBlackRoutine());
     }
@@ -425,6 +433,10 @@ public class TimelineManager : MonoBehaviour
         {
             timelineSkipped = false; // Réinitialisation pour la prochaine timeline
         }
+
+        // Restaure l'ancienne musique maintenant que la timeline est terminée
+        if (AudioManager.Instance != null)
+            AudioManager.Instance.ReturnFromTimeline();
 
         // 2) La cinématique est terminée : on redonne le contrôle de Lucian en réactivant les inputs "World".
         IsTimelinePlaying = false;

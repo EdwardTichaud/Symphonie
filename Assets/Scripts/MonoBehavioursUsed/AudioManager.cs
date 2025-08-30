@@ -50,6 +50,15 @@ public class AudioManager : MonoBehaviour
 
     private bool isInCombat = false;
 
+    // 📈 Indique si une timeline est en cours.
+    // Permet de suspendre la musique actuelle et de la reprendre à la fin de la cinématique.
+    private bool isInTimeline = false;
+
+    // 📊 Sauvegarde l'état avant l'entrée en timeline.
+    private bool wasInCombatBeforeTimeline = false; // → vrai si l'on était en combat avant la cinématique
+    private AudioClip clipBeforeTimeline;           // → musique en cours avant la timeline
+    private float timeBeforeTimeline;               // → position de lecture de cette musique
+
     private Dictionary<AudioClip, float> explorationPlaybackPositions = new Dictionary<AudioClip, float>();
     private Dictionary<AudioClip, float> normalizationCache = new Dictionary<AudioClip, float>();
 
@@ -196,7 +205,8 @@ public class AudioManager : MonoBehaviour
 
     public void PlayExplorationMusic(AudioClip newExplorationClip)
     {
-        if (isInCombat || newExplorationClip == CurrentMusicSource.clip)
+        // Empêche tout changement si une timeline ou un combat est en cours
+        if (isInCombat || isInTimeline || newExplorationClip == currentMusicSource.clip)
             return;
 
         lastExplorationClip = newExplorationClip;
@@ -211,7 +221,8 @@ public class AudioManager : MonoBehaviour
 
     public void TransitionToNewExplorationZone(AudioClip newExplorationClip)
     {
-        if (isInCombat || newExplorationClip == CurrentMusicSource.clip)
+        // Aucun fondu si une timeline ou un combat est actif, ou si le clip est identique
+        if (isInCombat || isInTimeline || newExplorationClip == currentMusicSource.clip)
             return;
 
         // Sauvegarde la position de la musique actuelle (si c'était une musique d'exploration)
@@ -232,7 +243,8 @@ public class AudioManager : MonoBehaviour
 
     public void TransitionToCombat(AudioClip combatClip)
     {
-        if (isInCombat)
+        // ⚠️ Ignore si l'on est déjà en combat ou dans une timeline
+        if (isInCombat || isInTimeline)
             return;
 
         lastExplorationClip = CurrentMusicSource.clip;
@@ -250,6 +262,45 @@ public class AudioManager : MonoBehaviour
 
         StartCrossfade(lastExplorationClip, lastExplorationTime);
         isInCombat = false;
+    }
+
+    /// <summary>
+    /// Lance la musique d'une timeline en sauvegardant l'état précédent
+    /// (exploration ou combat).
+    /// </summary>
+    /// <param name="timelineClip">Musique à jouer durant la cinématique.</param>
+    public void TransitionToTimeline(AudioClip timelineClip)
+    {
+        if (isInTimeline || timelineClip == null)
+            return;
+
+        // Mémorise le contexte avant d'entrer en timeline
+        wasInCombatBeforeTimeline = isInCombat;
+        clipBeforeTimeline = currentMusicSource.clip;
+        timeBeforeTimeline = currentMusicSource.time;
+
+        // Les timelines ne sont ni exploration ni combat
+        isInTimeline = true;
+        isInCombat = false;
+
+        // Démarre la musique de timeline en fondu
+        StartCrossfade(timelineClip, 0f);
+    }
+
+    /// <summary>
+    /// Restaure la musique précédente après une timeline.
+    /// </summary>
+    public void ReturnFromTimeline()
+    {
+        if (!isInTimeline || clipBeforeTimeline == null)
+            return;
+
+        // Reprend la musique précédente à sa position
+        StartCrossfade(clipBeforeTimeline, timeBeforeTimeline);
+
+        // Rétablit l'état initial (combat ou exploration)
+        isInCombat = wasInCombatBeforeTimeline;
+        isInTimeline = false;
     }
 
     private void StartCrossfade(AudioClip newClip, float startTime)
