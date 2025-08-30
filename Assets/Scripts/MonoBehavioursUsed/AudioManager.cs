@@ -9,11 +9,11 @@ public class AudioManager : MonoBehaviour
     public AudioClip[] voiceEffects;
 
     [Header("Audio Sources")]
-    public AudioSource musicSourceA;
-    public AudioSource musicSourceB;
-    public AudioSource sfxSource;
-    public AudioSource voiceSource;
-    // Nouvelle source dédiée aux sons d'avertissement
+    // Tableaux de sources permettant de jouer plusieurs pistes simultanément
+    public AudioSource[] musicSources = new AudioSource[3];
+    public AudioSource[] sfxSources = new AudioSource[3];
+    public AudioSource[] voiceSources = new AudioSource[3];
+    // Source dédiée aux sons d'avertissement
     public AudioSource warningClipSource;
 
     [Header("Warning Clip Settings")]
@@ -36,8 +36,11 @@ public class AudioManager : MonoBehaviour
 
     public static AudioManager Instance { get; private set; }
 
-    private AudioSource currentMusicSource;
-    private AudioSource nextMusicSource;
+    // Indices des pistes musicales utilisées pour la lecture/crossfade
+    private int currentMusicIndex;
+    private int nextMusicIndex;
+    private AudioSource CurrentMusicSource => musicSources[currentMusicIndex];
+    private AudioSource NextMusicSource => musicSources[nextMusicIndex];
 
     private Coroutine crossfadeRoutine;
     // Coroutine gérant l'atténuation temporaire lors de la lecture d'un warning
@@ -82,14 +85,48 @@ public class AudioManager : MonoBehaviour
 
     private void Start()
     {
-        musicSourceA.loop = true;
-        musicSourceB.loop = true;
+        // Configuration des trois pistes musicales
+        for (int i = 0; i < musicSources.Length; i++)
+        {
+            if (musicSources[i] == null)
+            {
+                // Création automatique si la source n'est pas assignée dans le prefab
+                GameObject go = new GameObject($"AudioSource_Music_{i + 1}");
+                go.transform.SetParent(transform);
+                musicSources[i] = go.AddComponent<AudioSource>();
+            }
+            musicSources[i].loop = true;
+        }
 
-        currentMusicSource = musicSourceA;
-        nextMusicSource = musicSourceB;
+        // Les deux premiers indices servent au crossfade, le troisième reste disponible
+        currentMusicIndex = 0;
+        nextMusicIndex = 1;
 
-        sfxSource.playOnAwake = false;
-        voiceSource.playOnAwake = false;
+        // Configuration des sources d'effets sonores
+        for (int i = 0; i < sfxSources.Length; i++)
+        {
+            if (sfxSources[i] == null)
+            {
+                GameObject go = new GameObject($"AudioSource_Sfx_{i + 1}");
+                go.transform.SetParent(transform);
+                sfxSources[i] = go.AddComponent<AudioSource>();
+            }
+            sfxSources[i].playOnAwake = false;
+        }
+
+        // Configuration des sources de voix
+        for (int i = 0; i < voiceSources.Length; i++)
+        {
+            if (voiceSources[i] == null)
+            {
+                GameObject go = new GameObject($"AudioSource_Voice_{i + 1}");
+                go.transform.SetParent(transform);
+                voiceSources[i] = go.AddComponent<AudioSource>();
+            }
+            voiceSources[i].playOnAwake = false;
+        }
+
+        // Source dédiée aux avertissements
         warningClipSource.playOnAwake = false;
 
         SetMusicVolume(musicVolume);
@@ -132,23 +169,34 @@ public class AudioManager : MonoBehaviour
     public void SetMusicVolume(float value)
     {
         musicVolume = Mathf.Clamp01(value);
-        float factorA = GetNormalizationFactor(musicSourceA.clip);
-        float factorB = GetNormalizationFactor(musicSourceB.clip);
-        musicSourceA.volume = musicVolume * factorA;
-        musicSourceB.volume = musicVolume * factorB;
+        // Applique le volume sur toutes les pistes musicales
+        foreach (var source in musicSources)
+        {
+            if (source == null) continue;
+            float factor = GetNormalizationFactor(source.clip);
+            source.volume = musicVolume * factor;
+        }
         UpdateWarningVolume();
     }
 
     public void SetSfxVolume(float value)
     {
         sfxVolume = Mathf.Clamp01(value);
-        sfxSource.volume = sfxVolume;
+        foreach (var source in sfxSources)
+        {
+            if (source != null)
+                source.volume = sfxVolume;
+        }
     }
 
     public void SetVoiceVolume(float value)
     {
         voiceVolume = Mathf.Clamp01(value);
-        voiceSource.volume = voiceVolume;
+        foreach (var source in voiceSources)
+        {
+            if (source != null)
+                source.volume = voiceVolume;
+        }
     }
 
     #endregion
@@ -178,9 +226,9 @@ public class AudioManager : MonoBehaviour
             return;
 
         // Sauvegarde la position de la musique actuelle (si c'était une musique d'exploration)
-        if (!isInCombat && currentMusicSource.clip != null)
+        if (!isInCombat && CurrentMusicSource.clip != null)
         {
-            explorationPlaybackPositions[currentMusicSource.clip] = currentMusicSource.time;
+            explorationPlaybackPositions[CurrentMusicSource.clip] = CurrentMusicSource.time;
         }
 
         lastExplorationClip = newExplorationClip;
@@ -199,8 +247,8 @@ public class AudioManager : MonoBehaviour
         if (isInCombat || isInTimeline)
             return;
 
-        lastExplorationClip = currentMusicSource.clip;
-        lastExplorationTime = currentMusicSource.time;
+        lastExplorationClip = CurrentMusicSource.clip;
+        lastExplorationTime = CurrentMusicSource.time;
         isInCombat = true;
 
         // Brutal switch
@@ -268,24 +316,28 @@ public class AudioManager : MonoBehaviour
         if (crossfadeRoutine != null)
             StopCoroutine(crossfadeRoutine);
 
-        currentMusicSource.Stop();
+        CurrentMusicSource.Stop();
 
-        // Swap sources
-        var temp = currentMusicSource;
-        currentMusicSource = nextMusicSource;
-        nextMusicSource = temp;
+        // Échange des indices des sources musicales
+        int temp = currentMusicIndex;
+        currentMusicIndex = nextMusicIndex;
+        nextMusicIndex = temp;
 
-        currentMusicSource.clip = newClip;
-        currentMusicSource.time = 0f;
-        currentMusicSource.volume = musicVolume * GetNormalizationFactor(newClip);
-        currentMusicSource.Play();
+        AudioSource source = CurrentMusicSource;
+        source.clip = newClip;
+        source.time = 0f;
+        source.volume = musicVolume * GetNormalizationFactor(newClip);
+        source.Play();
     }
 
     private IEnumerator CrossfadeMusic(AudioClip newClip, float startTime)
     {
-        AudioSource fromSource = currentMusicSource;
+        AudioSource fromSource = CurrentMusicSource;
         float fromFactor = GetNormalizationFactor(fromSource.clip);
-        AudioSource toSource = (currentMusicSource == musicSourceA) ? musicSourceB : musicSourceA;
+
+        // Choix de la prochaine source pour le crossfade
+        int toIndex = (currentMusicIndex + 1) % musicSources.Length;
+        AudioSource toSource = musicSources[toIndex];
 
         toSource.clip = newClip;
         toSource.time = startTime;
@@ -293,8 +345,8 @@ public class AudioManager : MonoBehaviour
         toSource.volume = 0f;
         toSource.Play();
 
-        currentMusicSource = toSource;
-        nextMusicSource = fromSource;
+        currentMusicIndex = toIndex;
+        nextMusicIndex = (toIndex + 1) % musicSources.Length;
 
         float t = 0f;
 
@@ -319,11 +371,26 @@ public class AudioManager : MonoBehaviour
 
     #region 🔊 Effets
 
+    /// <summary>
+    /// Renvoie une source disponible dans le tableau fourni.
+    /// </summary>
+    private AudioSource GetAvailableSource(AudioSource[] sources)
+    {
+        foreach (var src in sources)
+        {
+            if (src != null && !src.isPlaying)
+                return src;
+        }
+        // Si toutes les sources sont occupées, on réutilise la première
+        return sources[0];
+    }
+
     public void PlaySfx(int index)
     {
         AudioClip clip = soundEffects[index];
         float factor = GetNormalizationFactor(clip);
-        sfxSource.PlayOneShot(clip, factor);
+        AudioSource src = GetAvailableSource(sfxSources);
+        src.PlayOneShot(clip, factor);
     }
 
     public void PlayVoice(int index, float volume = 1f) => PlayVoice(voiceEffects[index], volume);
@@ -332,16 +399,11 @@ public class AudioManager : MonoBehaviour
     {
         if (clip == null) return;
 
-        // Crée une nouvelle source audio à partir du modèle existant
-        AudioSource tempSource = Instantiate(voiceSource, transform);
-        tempSource.playOnAwake = false;
-        tempSource.clip = clip;
-
+        AudioSource src = GetAvailableSource(voiceSources);
+        src.clip = clip;
         // Application du volume global des voix, du volume personnalisé et de la normalisation
-        tempSource.volume = voiceVolume * volume * GetNormalizationFactor(clip);
-
-        tempSource.Play();
-        Destroy(tempSource.gameObject, clip.length);
+        src.volume = voiceVolume * volume * GetNormalizationFactor(clip);
+        src.Play();
     }
 
     /// <summary>
@@ -368,19 +430,20 @@ public class AudioManager : MonoBehaviour
     private IEnumerator WarningCoroutine(AudioClip clip, float factor)
     {
         // Sauvegarde des volumes actuels
-        float musicAVol = musicSourceA.volume;
-        float musicBVol = musicSourceB.volume;
-        float sfxVol = sfxSource.volume;
-        float voiceVol = voiceSource.volume;
+        float[] musicVols = new float[musicSources.Length];
+        for (int i = 0; i < musicSources.Length; i++) musicVols[i] = musicSources[i].volume;
+        float[] sfxVols = new float[sfxSources.Length];
+        for (int i = 0; i < sfxSources.Length; i++) sfxVols[i] = sfxSources[i].volume;
+        float[] voiceVols = new float[voiceSources.Length];
+        for (int i = 0; i < voiceSources.Length; i++) voiceVols[i] = voiceSources[i].volume;
 
         // Calcul du multiplicateur (1 - pourcentage d'atténuation)
         float attenuationMultiplier = Mathf.Clamp01(1f - warningAttenuation);
 
         // Application de l'atténuation
-        musicSourceA.volume *= attenuationMultiplier;
-        musicSourceB.volume *= attenuationMultiplier;
-        sfxSource.volume *= attenuationMultiplier;
-        voiceSource.volume *= attenuationMultiplier;
+        foreach (var src in musicSources) src.volume *= attenuationMultiplier;
+        foreach (var src in sfxSources) src.volume *= attenuationMultiplier;
+        foreach (var src in voiceSources) src.volume *= attenuationMultiplier;
 
         // Lecture du warning clip
         warningClipSource.PlayOneShot(clip, factor);
@@ -389,10 +452,9 @@ public class AudioManager : MonoBehaviour
         yield return new WaitForSeconds(clip.length);
 
         // Restauration des volumes
-        musicSourceA.volume = musicAVol;
-        musicSourceB.volume = musicBVol;
-        sfxSource.volume = sfxVol;
-        voiceSource.volume = voiceVol;
+        for (int i = 0; i < musicSources.Length; i++) musicSources[i].volume = musicVols[i];
+        for (int i = 0; i < sfxSources.Length; i++) sfxSources[i].volume = sfxVols[i];
+        for (int i = 0; i < voiceSources.Length; i++) voiceSources[i].volume = voiceVols[i];
 
         warningRoutine = null;
     }
@@ -400,19 +462,18 @@ public class AudioManager : MonoBehaviour
     public void PlaySound(AudioClip clip)
     {
         float factor = GetNormalizationFactor(clip);
-        sfxSource.PlayOneShot(clip, factor);
+        AudioSource src = GetAvailableSource(sfxSources);
+        src.PlayOneShot(clip, factor);
     }
 
     public void PlayTempSfx(AudioClip clip)
     {
         if (clip == null) return;
 
-        AudioSource tempSource = Instantiate(sfxSource, transform);
-        tempSource.playOnAwake = false;
-        tempSource.clip = clip;
-        tempSource.volume = sfxVolume * GetNormalizationFactor(clip);
-        tempSource.Play();
-        Destroy(tempSource.gameObject, clip.length);
+        AudioSource src = GetAvailableSource(sfxSources);
+        src.clip = clip;
+        src.volume = sfxVolume * GetNormalizationFactor(clip);
+        src.Play();
     }
 
     #endregion
