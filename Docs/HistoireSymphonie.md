@@ -54,6 +54,11 @@ Lorsqu’il accomplit cette Convocation, l’entité qui répond n’est pas Aza
 - Âme d’un enfant réel décédé jeune.
 - Recréé dans le monde d’Azazel à travers le regard aimant et idéalisé de son frère.
 - Incapable de se souvenir de qui il était, il cherche à comprendre sa nature.
+- Pour lui, la musique n'est d'abord qu'un souffle comparable au vent dont il ignore l'origine, inconscient même de son existence jusqu'à ce que Munin la lui révèle.
+- Au début du jeu, il ne connaît que la plate-forme sur laquelle il vit avec quelques autres êtres et n'a jamais questionné la manière dont il communique avec eux ; le langage lui semble inné.
+- Il découvrira plus tard que ses goûts et connaissances proviennent de sa vie passée, notamment son affection pour les rythmes soutenus proches du métal, domaine dans lequel il excelle.
+- Chaque zone visitée résonne d'une harmonique prédominante dictée par le rythme de sa musique : un tempo rapide met en avant l'harmonique de Luciane, une mesure en trois temps favorise celle de Luna, etc.
+- Lorsqu'un personnage est en parfaite résonance avec la musique d'une zone, une électricité parcourt son corps, similaire aux éclairs de Thor, révélant visuellement sa connexion harmonique.
 
 ### 🎥 Munin (nom personnalisable par le joueur)
 - La caméra du jeu, entité diégétique.

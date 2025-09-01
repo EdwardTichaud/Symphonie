@@ -14,4 +14,8 @@ public class ZoneSO : ScriptableObject
     [Header("Musics")]
     public AudioClip zoneMusic;
     public AudioClip[] battleMusic;
+
+    [Header("Harmonique prédominante")]
+    [Tooltip("Harmonique mise en avant lorsque les musiques de cette zone sont jouées.")]
+    public HarmonicType predominantHarmonic = HarmonicType.Lumiere;
 }
