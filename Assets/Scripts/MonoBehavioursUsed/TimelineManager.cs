@@ -45,15 +45,6 @@ public class TimelineManager : MonoBehaviour
     private float skipHoldDuration = 3f;
 
     /// <summary>
-    /// Vitesse appliquée à la Timeline lors d'un passage forcé.
-    /// Une valeur très élevée garantit que les événements restants
-    /// s'exécutent en une seule frame tout en permettant un arrêt
-    /// si la Timeline est mise en pause par une condition externe.
-    /// </summary>
-    [SerializeField]
-    private float skipFastForwardSpeed = 1000000f;
-
-    /// <summary>
     /// Référence locale vers l'action <c>Cancel</c> afin de pouvoir l'activer
     /// même lorsque toute la map <c>World</c> est désactivée.
     /// </summary>
@@ -281,38 +272,18 @@ public class TimelineManager : MonoBehaviour
         var rootPlayable = director.playableGraph.GetRootPlayable(0);
         double originalSpeed = rootPlayable.GetSpeed();
 
-        // Vitesse extrêmement élevée afin de condenser la fin de la timeline
-        // sur une seule frame dans la majorité des cas.
-        rootPlayable.SetSpeed(skipFastForwardSpeed);
+        // Vitesse très élevée : la Timeline se termine généralement en une frame.
+        rootPlayable.SetSpeed(1000f);
 
-        // Attend que la Timeline se termine OU qu'elle soit mise en pause
-        // par une condition externe (ex : fermeture de clavier virtuel).
+        // Attend que la Timeline signale sa fin sans provoquer d'exception
+        // si le directeur est détruit entre-temps.
         while (director != null && director.state == PlayState.Playing)
             yield return null;
 
-        // Restaure la vitesse d'origine pour éviter les effets de bord sur
-        // les timelines suivantes.
+        // Restaure la vitesse par sécurité pour les prochaines timelines
+        // uniquement si le Playable existe toujours.
         if (rootPlayable.IsValid())
             rootPlayable.SetSpeed(originalSpeed);
-
-        // Si l'on sort de la boucle parce que la timeline est en pause, cela
-        // signifie qu'une condition bloque sa progression. On annule donc le
-        // skip afin que le joueur puisse répondre à la condition attendue.
-        if (director != null && director.state == PlayState.Paused)
-        {
-            // Autorise à nouveau le passage manuel une fois la condition remplie.
-            EnableTimelineSkip();
-
-            // Réaffiche le Canvas pour que l'utilisateur voie les informations
-            // de la timeline en pause.
-            if (timelineCanvas != null)
-                timelineCanvas.SetActive(true);
-
-            // La timeline n'a finalement pas été passée : on réinitialise le flag
-            // et on retire le fondu noir pour revenir au jeu.
-            timelineSkipped = false;
-            StartCoroutine(FadeFromBlackRoutine());
-        }
     }
 
     void Awake()
