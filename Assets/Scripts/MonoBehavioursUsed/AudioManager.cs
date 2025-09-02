@@ -206,7 +206,8 @@ public class AudioManager : MonoBehaviour
     public void PlayExplorationMusic(AudioClip newExplorationClip)
     {
         // Empêche tout changement si une timeline ou un combat est en cours
-        if (isInCombat || isInTimeline || newExplorationClip == currentMusicSource.clip)
+        // Utilise la propriété "CurrentMusicSource" pour récupérer la source active
+        if (isInCombat || isInTimeline || newExplorationClip == CurrentMusicSource.clip)
             return;
 
         lastExplorationClip = newExplorationClip;
@@ -222,7 +223,8 @@ public class AudioManager : MonoBehaviour
     public void TransitionToNewExplorationZone(AudioClip newExplorationClip)
     {
         // Aucun fondu si une timeline ou un combat est actif, ou si le clip est identique
-        if (isInCombat || isInTimeline || newExplorationClip == currentMusicSource.clip)
+        // On compare avec "CurrentMusicSource" afin d'éviter les erreurs de variable inexistante
+        if (isInCombat || isInTimeline || newExplorationClip == CurrentMusicSource.clip)
             return;
 
         // Sauvegarde la position de la musique actuelle (si c'était une musique d'exploration)
@@ -275,9 +277,10 @@ public class AudioManager : MonoBehaviour
             return;
 
         // Mémorise le contexte avant d'entrer en timeline
+        // "CurrentMusicSource" renvoie la source musicale actuellement utilisée
         wasInCombatBeforeTimeline = isInCombat;
-        clipBeforeTimeline = currentMusicSource.clip;
-        timeBeforeTimeline = currentMusicSource.time;
+        clipBeforeTimeline = CurrentMusicSource.clip;
+        timeBeforeTimeline = CurrentMusicSource.time;
 
         // Les timelines ne sont ni exploration ni combat
         isInTimeline = true;
