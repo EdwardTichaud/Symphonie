@@ -35,6 +35,22 @@ public class GlowUpSceneSetup : MonoBehaviour
         hdCam.physicalParameters.aperture = 5.6f;
         hdCam.physicalParameters.compensation = 0f;
 
+        // L'éclairage ambiant doit suivre le ciel dynamique pour conserver un rendu naturel
+        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Skybox;
+
+        // Petit spot très doux attaché à la caméra pour "caresser" Lucian
+        GameObject muninLightObj = new GameObject("Munin Light");
+        muninLightObj.transform.SetParent(cam.transform);
+        muninLightObj.transform.localPosition = Vector3.zero;
+        muninLightObj.transform.localRotation = Quaternion.identity;
+        Light muninLight = muninLightObj.AddComponent<Light>();
+        muninLight.type = LightType.Spot;
+        muninLight.shadows = LightShadows.None;
+        HDAdditionalLightData hdMunin = muninLightObj.AddComponent<HDAdditionalLightData>();
+        hdMunin.lightUnit = LightUnit.Lux;
+        hdMunin.intensity = 80f; // 50–100 lux
+        hdMunin.spotAngle = 30f;
+
         // 2) Volume de post-traitement ---------------------------------------------
         // On crée un Volume global qui contiendra tous les effets graphiques.
         Volume volume = cam.gameObject.GetComponent<Volume>();
@@ -129,7 +145,42 @@ public class GlowUpSceneSetup : MonoBehaviour
         hdLight.shadowDistance = 100f;
         hdLight.SetColor(Color.white, 5800f); // temp 6500K -> 5800K
 
-        // 6) Reflection Probe ------------------------------------------------------
+        // 6) Lumières secondaires : Fill & Rim -------------------------------------
+        // Deux Area Lights pour déboucher les ombres sans créer d'ombres supplémentaires
+        for (int i = 0; i < 2; i++)
+        {
+            GameObject fillObj = new GameObject($"Fill Light {i + 1}");
+            Light fillLight = fillObj.AddComponent<Light>();
+            fillLight.type = LightType.Rectangle; // Area Light HDRP
+            fillLight.color = new Color(0.8f, 0.9f, 1f); // teinte froide
+            fillLight.shadows = LightShadows.None; // pas d'ombres pour la fill
+
+            // Données HDRP pour gérer l'intensité en lux
+            HDAdditionalLightData hdFill = fillObj.AddComponent<HDAdditionalLightData>();
+            hdFill.lightUnit = LightUnit.Lux;
+            hdFill.intensity = 400f; // entre 200 et 600 lux
+
+            // Position symétrique autour de la zone centrale
+            fillObj.transform.position = new Vector3(i == 0 ? -5f : 5f, 3f, -3f);
+            fillObj.transform.LookAt(Vector3.zero);
+        }
+
+        // Spot latéral pour détacher le personnage avec une teinte complémentaire
+        GameObject rimObj = new GameObject("Rim Light");
+        Light rimLight = rimObj.AddComponent<Light>();
+        rimLight.type = LightType.Spot;
+        rimLight.color = new Color(1f, 0.85f, 0.7f); // légèrement chaude
+        rimLight.spotAngle = 20f; // angle serré
+        rimLight.shadows = LightShadows.None;
+
+        HDAdditionalLightData hdRim = rimObj.AddComponent<HDAdditionalLightData>();
+        hdRim.lightUnit = LightUnit.Lux;
+        hdRim.intensity = 4000f; // 2–5k lux
+
+        rimObj.transform.position = new Vector3(0f, 3f, 4f);
+        rimObj.transform.LookAt(Vector3.zero);
+
+        // 7) Reflection Probe ------------------------------------------------------
         GameObject probeObj = new GameObject("Global Reflection Probe");
         ReflectionProbe probe = probeObj.AddComponent<ReflectionProbe>();
         probe.mode = UnityEngine.Rendering.ReflectionProbeMode.Baked;
@@ -137,7 +188,7 @@ public class GlowUpSceneSetup : MonoBehaviour
         probe.refreshMode = UnityEngine.Rendering.ReflectionProbeRefreshMode.OnAwake;
         probe.intensity = 0.8f;
 
-        // 7) Motion Blur minimal (ajouté pour les dash/teleport) --------------------
+        // 8) Motion Blur minimal (ajouté pour les dash/teleport) --------------------
         MotionBlur motionBlur = profile.Add<MotionBlur>(false);
         motionBlur.intensity.value = 0f; // pas d'effet par défaut
         motionBlur.shutterAngle.value = 0.2f;
