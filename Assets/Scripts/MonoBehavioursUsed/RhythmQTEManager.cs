@@ -191,16 +191,16 @@ public class RhythmQTEManager : MonoBehaviour
         // afin d'éviter tout souci si l'Animator change de référence pendant la téléportation.
         GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
 
-        // Si une Timeline est disponible, on la lit en adaptant la caméra selon le type de personnage
+        // Si une Timeline est disponible, on la lit via le TimelineManager centralisé
         bool hasTimeline = move.performingTimeline != null &&
-                          TimelineLauncher.Instance != null &&
+                          TimelineManager.Instance != null &&
                           casterAnimatorGO != null;
 
         if (hasTimeline)
         {
             // Les ennemis utilisent la timeline mais sans animer la caméra (cameraTag nul)
             string cameraTag = caster.characterType == CharacterType.EnemyUnit ? null : "BattleCamera";
-            TimelineLauncher.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, cameraTag);
+            TimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, cameraTag);
         }
 
         if (pendingNotes == 0)
@@ -239,8 +239,8 @@ public class RhythmQTEManager : MonoBehaviour
             // nécessaire.
             float maxTimelineDuration = (float)move.performingTimeline.duration + 0f; // marge de 0 seconde
             float timelineTimer = 0f;
-            while (TimelineLauncher.Instance != null &&
-                   TimelineLauncher.Instance.IsTimelineActive &&
+            while (TimelineManager.Instance != null &&
+                   TimelineManager.Instance.IsTimelineActive &&
                    timelineTimer < maxTimelineDuration)
             {
                 timelineTimer += Time.deltaTime;
@@ -249,7 +249,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             // Si la timeline est toujours signalée comme active, on avertit dans
             // la console et on poursuit malgré tout pour éviter un blocage.
-            if (TimelineLauncher.Instance != null && TimelineLauncher.Instance.IsTimelineActive)
+            if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
             {
                 Debug.LogWarning($"[MusicalMoveRoutine] Timeline '{move.performingTimeline.name}' encore active après {maxTimelineDuration}s. Suite forcée.");
             }
@@ -313,26 +313,26 @@ public class RhythmQTEManager : MonoBehaviour
         Animator animator = caster.GetComponentInChildren<Animator>();
 
         // Lecture d'une Timeline ou d'une animation d'intro
-        bool hasTimeline = item.performingTimeline != null && TimelineLauncher.Instance != null && animator != null;
+        bool hasTimeline = item.performingTimeline != null && TimelineManager.Instance != null && animator != null;
 
         if (hasTimeline)
         {
-            TimelineLauncher.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, "BattleCamera");
+            TimelineManager.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, "BattleCamera");
 
             // Attendre la fin réelle de la Timeline, en prévoyant un délai maximum
             // pour éviter les blocages si celle-ci reste en pause sur la dernière frame
             float maxTimelineDuration = (float)item.performingTimeline.duration + 0f; // marge de sécurité de 0 seconde
             float timelineTimer = 0f;
 
-            while (TimelineLauncher.Instance != null &&
-                   TimelineLauncher.Instance.IsTimelineActive &&
+            while (TimelineManager.Instance != null &&
+                   TimelineManager.Instance.IsTimelineActive &&
                    timelineTimer < maxTimelineDuration)
             {
                 timelineTimer += Time.deltaTime;
                 yield return null;
             }
 
-            if (TimelineLauncher.Instance != null && TimelineLauncher.Instance.IsTimelineActive)
+            if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
             {
                 Debug.LogWarning($"[ItemRoutine] Timeline '{item.performingTimeline.name}' encore active après {maxTimelineDuration}s. Suite forcée.");
             }

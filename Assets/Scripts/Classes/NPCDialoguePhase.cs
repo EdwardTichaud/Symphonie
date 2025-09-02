@@ -21,7 +21,7 @@ public class NPCDialoguePhase
     [System.NonSerialized] public bool mainDialoguePlayed;
 
     [Tooltip("Timeline à lancer avant le dialogue (optionnel).")]
-    public TimelineAsset timeline; // ⚙️ Remplacé PlayableDirector par TimelineAsset pour lecture via TimelineLauncher
+    public TimelineAsset timeline; // ⚙️ Remplacé PlayableDirector par TimelineAsset pour lecture via TimelineManager
 
     [Tooltip("Si activé, enchaîne automatiquement avec la phase suivante.")]
     public bool autoProceed;

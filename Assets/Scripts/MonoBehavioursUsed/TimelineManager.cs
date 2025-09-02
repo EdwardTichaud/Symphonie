@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.Playables;
+using UnityEngine.Timeline; // Gestion des TimelineAsset et bindings
 using UnityEngine.InputSystem; // Nécessaire pour manipuler les InputAction du joueur
 using UnityEngine.UI; // 🖼️ Gestion des éléments d'interface (fillAmount)
 using System.Collections; // Requis pour l'utilisation des coroutines
@@ -14,9 +15,27 @@ public class TimelineManager : MonoBehaviour
     private PlayableDirector currentDirector;
 
     /// <summary>
+    /// PlayableDirector générique utilisé pour jouer les <see cref="TimelineAsset"/>.
+    /// Autrefois géré par <c>TimelineLauncher</c>, il est maintenant centralisé ici pour
+    /// simplifier la maintenance.
+    /// </summary>
+    [Header("Lecture de Timeline")]
+    [SerializeField] private PlayableDirector reusableDirector;
+
+    /// <summary>
+    /// Coroutine maintenant la caméra centrée sur le lanceur pendant la lecture.
+    /// </summary>
+    private Coroutine followCoroutine;
+
+    /// <summary>
     /// Indique si une Timeline est en train de jouer.
     /// </summary>
     public bool IsTimelinePlaying { get; private set; }
+
+    /// <summary>
+    /// Alias conservé pour l'ancien <c>TimelineLauncher</c>.
+    /// </summary>
+    public bool IsTimelineActive => IsTimelinePlaying;
 
     /// <summary>
     /// Durée nécessaire de maintien de l'input <c>Cancel</c> pour passer la Timeline.
@@ -277,7 +296,26 @@ public class TimelineManager : MonoBehaviour
         {
             Instance = this;
 
-// Recherche et désactivation du Canvas de gestion des timelines
+            // Recherche ou création du PlayableDirector dédié à la lecture des TimelineAsset.
+            if (reusableDirector == null)
+            {
+                // Tente de récupérer l'ancien objet "TimelineLauncher" s'il existe encore dans la scène.
+                var launcherGO = GameObject.Find("TimelineLauncher");
+                if (launcherGO != null)
+                {
+                    reusableDirector = launcherGO.GetComponent<PlayableDirector>();
+
+                    // Rattache l'objet trouvé au TimelineManager pour centraliser la hiérarchie.
+                    if (reusableDirector != null)
+                        launcherGO.transform.SetParent(transform);
+                }
+
+                // Si aucune référence n'est trouvée, on en crée une nouvelle sur ce GameObject.
+                if (reusableDirector == null)
+                    reusableDirector = gameObject.AddComponent<PlayableDirector>();
+            }
+
+            // Recherche et désactivation du Canvas de gestion des timelines
             timelineCanvas = GameObject.Find("TimelineManagerCanvas");
             if (timelineCanvas != null)
             {
@@ -328,6 +366,180 @@ public class TimelineManager : MonoBehaviour
 
         currentDirector = newDirector;
         currentDirector.Play();
+    }
+
+    /// <summary>
+    /// Joue un <see cref="TimelineAsset"/> en effectuant dynamiquement les bindings
+    /// nécessaires. Cette logique provenait initialement de <c>TimelineLauncher</c>.
+    /// </summary>
+    /// <param name="timelineAsset">Timeline à jouer.</param>
+    /// <param name="caster">GameObject jouant la timeline (binding des tracks "Caster" ou "PNJ").</param>
+    /// <param name="cameraTag">Tag de la caméra à animer. Peut être null pour n'animer que le caster.</param>
+    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag)
+    {
+        if (timelineAsset == null || reusableDirector == null)
+        {
+            Debug.LogError("[TimelineManager] TimelineAsset ou PlayableDirector manquant !");
+            return;
+        }
+
+        // Associe l'asset au PlayableDirector générique
+        reusableDirector.playableAsset = timelineAsset;
+
+        GameObject cameraGO = null;
+        Transform cameraParent = null;   // Parent direct de la caméra pour récupérer son Animator
+        if (!string.IsNullOrEmpty(cameraTag))
+        {
+            cameraGO = GameObject.FindGameObjectWithTag(cameraTag);
+            cameraParent = cameraGO != null ? cameraGO.transform.parent : null;
+            if (caster != null && cameraParent != null)
+            {
+                // Replace le parent de la caméra sur le PNJ afin que l'animation suive correctement le mouvement
+                cameraParent.position = caster.transform.position;
+                cameraParent.rotation = caster.transform.rotation;
+            }
+        }
+
+        foreach (var output in timelineAsset.outputs)
+        {
+            string trackName = output.streamName;
+            System.Type type = output.outputTargetType;
+
+            // Pour les timelines de PNJ, le track d'animation s'appelle "PNJ" au lieu de "Caster"
+            if ((trackName.ToLower().Contains("caster") || trackName.ToLower().Contains("pnj")) && caster != null)
+            {
+                BindObjectToTrack(output, caster);
+            }
+            else if (trackName.ToLower().Contains("camera"))
+            {
+                // L'animation de la caméra doit utiliser l'Animator situé sur le parent de la WorldCamera.
+                if (cameraGO != null)
+                {
+                    Animator camAnimator = cameraParent != null
+                        ? cameraParent.GetComponent<Animator>()
+                        : cameraGO.GetComponent<Animator>();
+
+                    if (camAnimator != null)
+                    {
+                        reusableDirector.SetGenericBinding(output.sourceObject, camAnimator);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[TimelineManager] Animator manquant pour la caméra {cameraTag}");
+                    }
+                }
+                else if (caster != null)
+                {
+                    // Aucun tag de caméra fourni : on se rabat sur le PNJ.
+                    BindObjectToTrack(output, caster);
+                }
+                else
+                {
+                    Debug.LogWarning($"[TimelineManager] Aucun GameObject trouvé pour la track camera : {trackName}");
+                }
+            }
+            else if (type != null && typeof(Component).IsAssignableFrom(type) && type.Name.Contains("SignalReceiver"))
+            {
+                // Récupère le SignalReceiver présent sur le même GameObject que le PlayableDirector
+                Component receiver = reusableDirector.GetComponent(type);
+                if (receiver != null)
+                {
+                    reusableDirector.SetGenericBinding(output.sourceObject, receiver);
+                }
+                else
+                {
+                    Debug.LogWarning($"[TimelineManager] {type.Name} manquant sur {reusableDirector.gameObject.name}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[TimelineManager] Aucun binding pour la track : {trackName}");
+            }
+        }
+
+        // Binding des signaux placés directement sur la timeline sans track dédiée
+        SignalReceiver markerReceiver = reusableDirector.GetComponent<SignalReceiver>();
+        if (markerReceiver != null && timelineAsset.markerTrack != null)
+        {
+            reusableDirector.SetGenericBinding(timelineAsset.markerTrack, markerReceiver);
+        }
+
+        // Joue la timeline en profitant de toute la gestion centralisée (skip, fondu, etc.)
+        PlayTimeline(reusableDirector);
+
+        // Suit le lanceur si une caméra est attachée
+        if (caster != null && cameraParent != null)
+        {
+            if (followCoroutine != null)
+                StopCoroutine(followCoroutine);
+            followCoroutine = StartCoroutine(FollowCaster(cameraParent, caster.transform));
+        }
+    }
+
+    /// <summary>
+    /// Joue une timeline en ciblant automatiquement le PNJ actuellement en interaction.
+    /// </summary>
+    public void PlayTimelineOnCurrentNPC(TimelineAsset timelineAsset)
+    {
+        // Récupère le PNJ en cours d'interaction via l'InteractionManager.
+        GameObject npc = InteractionManager.Instance != null ? InteractionManager.Instance.currentInteractable : null;
+
+        if (npc == null)
+        {
+            // Avertit si aucun PNJ n'est en interaction lorsque la méthode est appelée.
+            Debug.LogWarning("[TimelineManager] Aucun PNJ courant pour jouer la timeline.");
+            return;
+        }
+
+        // Utilise la WorldCamera : la track "Camera" ira chercher l'Animator du parent de la WorldCamera.
+        PlayTimeline(timelineAsset, npc, "WorldCamera");
+    }
+
+    /// <summary>
+    /// Lie dynamiquement un GameObject à une piste de Timeline.
+    /// </summary>
+    private void BindObjectToTrack(PlayableBinding output, GameObject go)
+    {
+        if (output.outputTargetType == typeof(Animator))
+        {
+            Animator animator = go.GetComponentInChildren<Animator>();
+            if (animator != null)
+                reusableDirector.SetGenericBinding(output.sourceObject, animator);
+            else
+                Debug.LogWarning($"[TimelineManager] Animator manquant sur {go.name}");
+        }
+        else
+        {
+            reusableDirector.SetGenericBinding(output.sourceObject, go);
+        }
+    }
+
+    /// <summary>
+    /// Suit la position du lanceur pour animer correctement la caméra parentée.
+    /// </summary>
+    private IEnumerator FollowCaster(Transform cameraParent, Transform caster)
+    {
+        while (reusableDirector != null && reusableDirector.state == PlayState.Playing)
+        {
+            if (cameraParent != null && caster != null)
+            {
+                cameraParent.position = caster.position;
+                cameraParent.rotation = caster.rotation;
+            }
+            yield return null;
+        }
+    }
+
+    /// <summary>
+    /// Arrête immédiatement la timeline en cours si elle joue encore.
+    /// </summary>
+    public void StopTimeline()
+    {
+        if (currentDirector != null &&
+            (currentDirector.state == PlayState.Playing || currentDirector.state == PlayState.Paused))
+        {
+            currentDirector.Stop();
+        }
     }
 
     /// <summary>

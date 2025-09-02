@@ -128,7 +128,7 @@ public class NewBattleManager : MonoBehaviour
     private readonly Queue<PendingTimeline> pendingTimelines = new();
 
     /// <summary>
-    /// Structure stockant les informations nécessaires pour jouer une timeline via le TimelineLauncher.
+    /// Structure stockant les informations nécessaires pour jouer une timeline via le TimelineManager.
     /// </summary>
     private struct PendingTimeline
     {
@@ -630,11 +630,11 @@ public class NewBattleManager : MonoBehaviour
             var data = pendingTimelines.Dequeue();
             BattleTransitionManager.Instance?.HideBattleUI();
 
-            if (TimelineLauncher.Instance != null)
+            if (TimelineManager.Instance != null)
             {
-                TimelineLauncher.Instance.PlayTimeline(data.asset, data.caster, data.cameraTag);
+                TimelineManager.Instance.PlayTimeline(data.asset, data.caster, data.cameraTag);
                 // Attente de la fin de la timeline avant de poursuivre
-                while (TimelineLauncher.Instance.IsTimelineActive)
+                while (TimelineManager.Instance.IsTimelineActive)
                     yield return null;
             }
 
@@ -1977,12 +1977,12 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private void StartItemPreparingTimeline()
     {
-        if (itemPreparingTimeline == null || TimelineLauncher.Instance == null || itemMenuTimelineActive)
+        if (itemPreparingTimeline == null || TimelineManager.Instance == null || itemMenuTimelineActive)
             return;
 
         GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
         // Démarre la Timeline qui boucle tant que le menu est ouvert
-        TimelineLauncher.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
+        TimelineManager.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
         itemMenuTimelineActive = true;
     }
 
@@ -1991,10 +1991,10 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private void StopItemPreparingTimeline()
     {
-        if (!itemMenuTimelineActive || TimelineLauncher.Instance == null)
+        if (!itemMenuTimelineActive || TimelineManager.Instance == null)
             return;
 
-        TimelineLauncher.Instance.StopTimeline();
+        TimelineManager.Instance.StopTimeline();
         itemMenuTimelineActive = false;
     }
     #endregion
