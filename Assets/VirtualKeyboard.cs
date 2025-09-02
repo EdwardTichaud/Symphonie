@@ -104,12 +104,12 @@ public class VirtualKeyboard : MonoBehaviour
         playerInputs.World.Interact.performed += OnInteract;
         playerInputs.World.Cancel.performed += OnCancel;
 
-        GetComponent<Animator>().Play("VK_Open");
+        GetComponentInChildren<Animator>().Play("VK_Open");
 
-        if(subject != null)
-            transform.GetChild(3).GetComponent<TextMeshProUGUI>().text = subject;
+        if(subject != null && keyboardRoot != null)
+            keyboardRoot.transform.GetChild(3).GetComponent<TextMeshProUGUI>().text = subject;
         else
-            transform.GetChild(3).GetComponent<TextMeshProUGUI>().text = "";
+            keyboardRoot.transform.GetChild(3).GetComponent<TextMeshProUGUI>().text = "";
     }
 
     /// <summary>
