@@ -84,7 +84,7 @@ public class VirtualKeyboard : MonoBehaviour
     /// <summary>
     /// Méthode publique permettant d'ouvrir le clavier virtuel.
     /// </summary>
-    public void OpenVK()
+    public void OpenVK(string subject)
     {
         if (keyboardRoot == null || cursor == null || playerInputs == null)
             return;
@@ -105,6 +105,11 @@ public class VirtualKeyboard : MonoBehaviour
         playerInputs.World.Cancel.performed += OnCancel;
 
         GetComponent<Animator>().Play("VK_Open");
+
+        if(subject != null)
+            transform.GetChild(3).GetComponent<TextMeshProUGUI>().text = subject;
+        else
+            transform.GetChild(3).GetComponent<TextMeshProUGUI>().text = "";
     }
 
     /// <summary>
