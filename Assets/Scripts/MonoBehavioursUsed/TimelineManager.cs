@@ -272,12 +272,16 @@ public class TimelineManager : MonoBehaviour
         var rootPlayable = director.playableGraph.GetRootPlayable(0);
         double originalSpeed = rootPlayable.GetSpeed();
 
-        // Vitesse très élevée : la Timeline se termine généralement en une frame.
-        rootPlayable.SetSpeed(1000f);
+        // Vitesse extrêmement élevée : la Timeline est parcourue quasi instantanément.
+        // Même une longue cinématique est ainsi exécutée en une seule frame afin que
+        // tous les signaux et animations prévus soient déclenchés malgré le passage.
+        const double ultraFastSpeed = 1e6; // Valeur gigantesque mais finie pour éviter l'infini.
+        rootPlayable.SetSpeed(ultraFastSpeed);
 
         // Attend que la Timeline signale sa fin sans provoquer d'exception
         // si le directeur est détruit entre-temps.
         while (director != null && director.state == PlayState.Playing)
+            // Une seule itération suffit généralement : Unity stoppe la timeline à la frame suivante.
             yield return null;
 
         // Restaure la vitesse par sécurité pour les prochaines timelines
