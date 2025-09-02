@@ -15,12 +15,6 @@ public class TimelineManager : MonoBehaviour
     private PlayableDirector currentDirector;
 
     /// <summary>
-    /// Accès en lecture seule à la Timeline actuellement suivie par le manager.
-    /// Utile pour s'assurer qu'une condition de reprise concerne bien la timeline active.
-    /// </summary>
-    public PlayableDirector CurrentDirector => currentDirector;
-
-    /// <summary>
     /// PlayableDirector générique utilisé pour jouer les <see cref="TimelineAsset"/>.
     /// Autrefois géré par <c>TimelineLauncher</c>, il est maintenant centralisé ici pour
     /// simplifier la maintenance.
