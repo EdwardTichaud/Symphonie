@@ -21,6 +21,10 @@ using UnityEngine.Playables;
     private int currentConditionIndex = -1;
     private bool waitingForCondition = false;
 
+    // Référence vers la Timeline pour laquelle on attend la condition.
+    // Permet de s'assurer qu'elle n'a pas été passée ou remplacée.
+    private PlayableDirector waitingDirector;
+
     // Utilisé uniquement pour la condition DialogueClosed afin d'éviter une reprise immédiate si aucun dialogue n'était ouvert au moment de la pause.
     private bool waitingForDialogueToClose = false;
 
@@ -102,6 +106,14 @@ using UnityEngine.Playables;
         if (!waitingForCondition || TimelineManager.Instance == null)
             return;
 
+        // Si la timeline qui avait déclenché l'attente n'est plus celle en cours,
+        // on annule l'attente pour éviter un déclenchement tardif.
+        if (TimelineManager.Instance.CurrentDirector != waitingDirector)
+        {
+            waitingForCondition = false;
+            return;
+        }
+
         if (currentConditionIndex < 0 || currentConditionIndex >= resumeConditions.Count)
             return;
 
@@ -171,6 +183,9 @@ using UnityEngine.Playables;
         }
 
         waitingForCondition = true;
+        // On mémorise la timeline actuellement gérée afin de vérifier plus tard
+        // qu'elle est toujours pertinente.
+        waitingDirector = TimelineManager.Instance.CurrentDirector;
         TimelineManager.Instance.PauseCurrentTimeline();
 
         // Si la condition en cours est DialogueClosed et qu'aucun dialogue n'est actuellement ouvert,
@@ -192,6 +207,13 @@ using UnityEngine.Playables;
         if (!waitingForCondition || TimelineManager.Instance == null)
             return;
 
+        // Annule la reprise si une autre timeline est devenue active entre-temps.
+        if (TimelineManager.Instance.CurrentDirector != waitingDirector)
+        {
+            waitingForCondition = false;
+            return;
+        }
+
         if (currentConditionIndex < 0 || currentConditionIndex >= resumeConditions.Count)
             return;
 
@@ -211,6 +233,7 @@ using UnityEngine.Playables;
 
         waitingForCondition = false;
         waitingForDialogueToClose = false;
+        waitingDirector = null;
         TimelineManager.Instance.ResumeCurrentTimeline();
     }
 }
