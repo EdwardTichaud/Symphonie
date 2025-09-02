@@ -43,6 +43,10 @@ public class AudioManager : MonoBehaviour
     private AudioSource NextMusicSource => musicSources[nextMusicIndex];
 
     private Coroutine crossfadeRoutine;
+    // Coroutine dédiée aux fondus de volume lorsque l'on entre ou sort d'une timeline
+    // ne possédant pas de musique propre. Permet d'interrompre proprement un fondu
+    // si une autre timeline démarre immédiatement après la précédente.
+    private Coroutine timelineFadeRoutine;
     // Coroutine gérant l'atténuation temporaire lors de la lecture d'un warning
     private Coroutine warningRoutine;
     private AudioClip lastExplorationClip;
@@ -273,11 +277,12 @@ public class AudioManager : MonoBehaviour
     /// <param name="timelineClip">Musique à jouer durant la cinématique.</param>
     public void TransitionToTimeline(AudioClip timelineClip)
     {
-        if (isInTimeline || timelineClip == null)
+        // Évite toute action si une timeline est déjà en cours
+        if (isInTimeline)
             return;
 
-        // Mémorise le contexte avant d'entrer en timeline
-        // "CurrentMusicSource" renvoie la source musicale actuellement utilisée
+        // Sauvegarde le contexte musical actuel avant d'entrer en timeline
+        // "CurrentMusicSource" renvoie la source de musique active
         wasInCombatBeforeTimeline = isInCombat;
         clipBeforeTimeline = CurrentMusicSource.clip;
         timeBeforeTimeline = CurrentMusicSource.time;
@@ -286,8 +291,19 @@ public class AudioManager : MonoBehaviour
         isInTimeline = true;
         isInCombat = false;
 
-        // Démarre la musique de timeline en fondu
-        StartCrossfade(timelineClip, 0f);
+        // Si un clip de timeline est fourni, on réalise un crossfade classique
+        if (timelineClip != null)
+        {
+            StartCrossfade(timelineClip, 0f);
+        }
+        else
+        {
+            // Sinon, on coupe progressivement la musique actuelle pour laisser place
+            // aux sons propres de la timeline (voix, bruitages...).
+            if (timelineFadeRoutine != null)
+                StopCoroutine(timelineFadeRoutine);
+            timelineFadeRoutine = StartCoroutine(FadeOutCurrentMusic());
+        }
     }
 
     /// <summary>
@@ -295,15 +311,74 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void ReturnFromTimeline()
     {
-        if (!isInTimeline || clipBeforeTimeline == null)
+        if (!isInTimeline)
             return;
-
-        // Reprend la musique précédente à sa position
-        StartCrossfade(clipBeforeTimeline, timeBeforeTimeline);
 
         // Rétablit l'état initial (combat ou exploration)
         isInCombat = wasInCombatBeforeTimeline;
         isInTimeline = false;
+
+        if (clipBeforeTimeline == null)
+            return;
+
+        // Si un clip spécifique était joué pendant la timeline, on le remplace
+        // par la musique précédente via un crossfade.
+        if (CurrentMusicSource.clip != clipBeforeTimeline)
+        {
+            StartCrossfade(clipBeforeTimeline, timeBeforeTimeline);
+        }
+        else
+        {
+            // Aucun clip de timeline : la musique avait été simplement mise en pause.
+            // On la relance et on remonte le volume progressivement.
+            if (timelineFadeRoutine != null)
+                StopCoroutine(timelineFadeRoutine);
+            CurrentMusicSource.UnPause();
+            timelineFadeRoutine = StartCoroutine(FadeInCurrentMusic());
+        }
+    }
+
+    /// <summary>
+    /// Réduit progressivement le volume de la musique actuelle puis la met en pause.
+    /// Utilisé lors d'une timeline sans musique dédiée.
+    /// </summary>
+    private IEnumerator FadeOutCurrentMusic()
+    {
+        AudioSource source = CurrentMusicSource;
+        float startVolume = source.volume;
+        float t = 0f;
+
+        while (t < fadeDuration)
+        {
+            t += Time.deltaTime;
+            source.volume = Mathf.Lerp(startVolume, 0f, t / fadeDuration);
+            yield return null;
+        }
+
+        source.volume = 0f;
+        source.Pause();
+        timelineFadeRoutine = null;
+    }
+
+    /// <summary>
+    /// Restaure progressivement le volume de la musique après une timeline.
+    /// </summary>
+    private IEnumerator FadeInCurrentMusic()
+    {
+        AudioSource source = CurrentMusicSource;
+        float targetVolume = musicVolume * GetNormalizationFactor(source.clip);
+        source.volume = 0f;
+        float t = 0f;
+
+        while (t < fadeDuration)
+        {
+            t += Time.deltaTime;
+            source.volume = Mathf.Lerp(0f, targetVolume, t / fadeDuration);
+            yield return null;
+        }
+
+        source.volume = targetVolume;
+        timelineFadeRoutine = null;
     }
 
     private void StartCrossfade(AudioClip newClip, float startTime)
