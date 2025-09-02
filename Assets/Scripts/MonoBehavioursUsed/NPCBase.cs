@@ -82,14 +82,14 @@ public class NPCBase : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
                 anim.Play("Dialogue_Start"); // Animation par défaut de début de dialogue
             }
 
-            // Lecture de la Timeline associée via le TimelineLauncher centralisé
-            if (phase.timeline != null && TimelineLauncher.Instance != null)
+            // Lecture de la Timeline associée via le TimelineManager centralisé
+            if (phase.timeline != null && TimelineManager.Instance != null)
             {
                 // Joue la timeline en ciblant automatiquement le PNJ courant
-                TimelineLauncher.Instance.PlayTimelineOnCurrentNPC(phase.timeline);
+                TimelineManager.Instance.PlayTimelineOnCurrentNPC(phase.timeline);
 
                 // Attend la fin de la timeline pour enchaîner proprement
-                while (TimelineLauncher.Instance.IsTimelineActive)
+                while (TimelineManager.Instance.IsTimelineActive)
                     yield return null;
             }
 

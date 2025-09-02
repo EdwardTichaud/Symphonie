@@ -27,7 +27,7 @@ public class InstantiateGameObject : MonoBehaviour
         {
             // En cas d'absence du gestionnaire ou de l'unité, on le place sur le lanceur de timeline
             spawnPosition = transform.position;
-            Debug.LogWarning("[InstantiateGameObject] NewBattleManager ou currentCharacterUnit introuvable, instanciation au niveau du TimelineLauncher.");
+            Debug.LogWarning("[InstantiateGameObject] NewBattleManager ou currentCharacterUnit introuvable, instanciation au niveau du TimelineManager.");
         }
 
         if (gameObjectToInstantiate != null)

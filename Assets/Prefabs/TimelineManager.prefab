@@ -10,12 +10,11 @@ GameObject:
   m_Component:
   - component: {fileID: 8529920885578328012}
   - component: {fileID: 4927517278465844737}
-  - component: {fileID: 4632814548245591468}
   - component: {fileID: 7666416480328290772}
   - component: {fileID: 1312589981089248191}
   - component: {fileID: 7043276419211489998}
   m_Layer: 0
-  m_Name: TimelineLauncher
+  m_Name: TimelineManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -53,19 +52,6 @@ PlayableDirector:
   m_SceneBindings: []
   m_ExposedReferences:
     m_References: []
---- !u!114 &4632814548245591468
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8738188441690940424}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bb2188a41b36d544abadc7eb2a966f9a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  director: {fileID: 4927517278465844737}
 --- !u!114 &7666416480328290772
 MonoBehaviour:
   m_ObjectHideFlags: 0
