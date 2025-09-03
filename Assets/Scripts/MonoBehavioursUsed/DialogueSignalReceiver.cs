@@ -28,7 +28,9 @@ public class DialogueSignalReceiver : MonoBehaviour
     private void OnDialogueEnded()
     {
         // Reprise après fermeture du dialogue (Play Mode uniquement)
-        if (timeline != null)
+        // Application.isPlaying évite d'appeler Resume en mode prévisualisation,
+        // où le PlayableDirector ne suit pas le cycle complet de la scène.
+        if (Application.isPlaying && timeline != null)
         {
             timeline.Resume();
         }

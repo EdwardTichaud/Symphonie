@@ -605,8 +605,10 @@ public class TimelineManager : MonoBehaviour
             CameraController.Instance.enabled = false;
         Debug.Log($"[TimelineManager] Timeline jouée : {pd.name}");
 
-        // Bascule la musique vers le thème de timeline si disponible
-        if (AudioManager.Instance != null && timelineMusicClip != null)
+        // Bascule la musique vers le thème de timeline si disponible.
+        // Si aucun clip n'est fourni, l'AudioManager se charge simplement de couper
+        // la musique de zone en fondu pour laisser la timeline s'exprimer.
+        if (AudioManager.Instance != null)
             AudioManager.Instance.TransitionToTimeline(timelineMusicClip);
 
         // Lance un fondu noir pour encadrer le début de la timeline
@@ -650,7 +652,8 @@ public class TimelineManager : MonoBehaviour
             timelineSkipped = false; // Réinitialisation pour la prochaine timeline
         }
 
-        // Restaure l'ancienne musique maintenant que la timeline est terminée
+        // Restaure l'ancienne musique maintenant que la timeline est terminée.
+        // L'AudioManager relancera la musique de zone en fondu si aucune autre timeline n'est active.
         if (AudioManager.Instance != null)
             AudioManager.Instance.ReturnFromTimeline();
 
