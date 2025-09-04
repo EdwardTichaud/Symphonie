@@ -27,6 +27,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
     private Camera worldCamera;                       // Référence directe à la WorldCamera pour modifier son culling mask.
     private int worldBaseMask;                        // Sauvegarde du culling mask d'origine de la WorldCamera.
     private int revealInteractableLayer;              // ID de la couche "World_ReveLink_Interactable".
+    private int revealObjectLayer;                        // ID de la couche "World_ReveLink_Object".
     private int revealUILayer;                        // ID de la couche "World_ReveLink_UI".
     private int revealMask;                           // Masque combinant les couches révélées par le lien.
 
@@ -123,8 +124,10 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         // Initialisation des couches utilisées lors du lien avec Munin.
         revealInteractableLayer = LayerMask.NameToLayer("World_ReveLink_Interactable");
+        revealObjectLayer = LayerMask.NameToLayer("World_ReveLink_Object");
         revealUILayer = LayerMask.NameToLayer("World_ReveLink_UI");
         if (revealInteractableLayer != -1) revealMask |= 1 << revealInteractableLayer; // Ajout de la couche interactable
+        if (revealObjectLayer != -1) revealMask |= 1 << revealObjectLayer;                     // Ajout de la couche d'UI
         if (revealUILayer != -1) revealMask |= 1 << revealUILayer;                     // Ajout de la couche d'UI
 
         previousLinkToMunin = !linkToMunin; // Force un rafraîchissement au démarrage
@@ -141,6 +144,19 @@ public class ThirdPersonPlayerController : MonoBehaviour
         ApplyGravity();        // Déplacement vertical (gravité / saut).
         UpdateJumpAnimation(); // Gestion de la boucle de saut en l'air.
         UpdateLandingLock();   // Déverrouillage après l'animation d'atterrissage.
+    }
+
+    public void ToggleMuninLink()
+    {
+        if(linkToMunin)
+            linkToMunin = false;
+        else
+            linkToMunin = true;
+    }
+
+    public void LinkMuninToLucian()
+    {
+        linkToMunin = true;
     }
 
     /// <summary>
@@ -361,7 +377,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
         foreach (Transform t in FindObjectsOfType<Transform>(true)) // true → inclut les objets inactifs
         {
             GameObject obj = t.gameObject;
-            if (obj.layer == revealInteractableLayer || obj.layer == revealUILayer)
+            if (obj.layer == revealInteractableLayer || obj.layer == revealUILayer || obj.layer == revealObjectLayer)
                 obj.SetActive(linkToMunin);
         }
 
