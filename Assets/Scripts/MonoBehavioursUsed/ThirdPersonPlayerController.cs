@@ -20,6 +20,16 @@ public class ThirdPersonPlayerController : MonoBehaviour
     // Verrouillage utilisé lorsque l'animation d'atterrissage est en cours pour éviter toute interruption.
     private bool landingAnimationLocked;
 
+    [Header("Lien avec Munin")]
+    [Tooltip("Détermine si Lucian est actuellement lié à Munin.")]
+    public bool linkToMunin;                          // État du lien avec Munin, modifié depuis l'extérieur.
+    private bool previousLinkToMunin;                 // Permet de détecter un changement d'état d'une frame à l'autre.
+    private Camera worldCamera;                       // Référence directe à la WorldCamera pour modifier son culling mask.
+    private int worldBaseMask;                        // Sauvegarde du culling mask d'origine de la WorldCamera.
+    private int revealInteractableLayer;              // ID de la couche "World_ReveLink_Interactable".
+    private int revealUILayer;                        // ID de la couche "World_ReveLink_UI".
+    private int revealMask;                           // Masque combinant les couches révélées par le lien.
+
     /// <summary>
     /// Énumération interne pour piloter l'animation adéquate sans paramètres Animator.
     /// </summary>
@@ -103,10 +113,30 @@ public class ThirdPersonPlayerController : MonoBehaviour
             else if (Camera.main != null) cameraTransform = Camera.main.transform;
             else Debug.LogWarning("[ThirdPersonPlayerController] Aucune WorldCamera ou MainCamera trouvée.");
         }
+
+        // Une fois la caméra récupérée, on stocke sa référence et son culling mask d'origine.
+        if (cameraTransform != null)
+        {
+            worldCamera = cameraTransform.GetComponent<Camera>();
+            if (worldCamera != null) worldBaseMask = worldCamera.cullingMask;
+        }
+
+        // Initialisation des couches utilisées lors du lien avec Munin.
+        revealInteractableLayer = LayerMask.NameToLayer("World_ReveLink_Interactable");
+        revealUILayer = LayerMask.NameToLayer("World_ReveLink_UI");
+        if (revealInteractableLayer != -1) revealMask |= 1 << revealInteractableLayer; // Ajout de la couche interactable
+        if (revealUILayer != -1) revealMask |= 1 << revealUILayer;                     // Ajout de la couche d'UI
+
+        previousLinkToMunin = !linkToMunin; // Force un rafraîchissement au démarrage
+        ApplyMuninLinkState();              // Applique immédiatement l'état visuel adéquat
     }
 
     void Update()
     {
+        // Vérifie si l'état de lien avec Munin a changé afin de mettre à jour l'affichage.
+        if (linkToMunin != previousLinkToMunin)
+            ApplyMuninLinkState();
+
         HandleMovement();      // Déplacement horizontal + orientation.
         ApplyGravity();        // Déplacement vertical (gravité / saut).
         UpdateJumpAnimation(); // Gestion de la boucle de saut en l'air.
@@ -310,5 +340,31 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
             currentAnimState = targetState;
         }
+    }
+
+    /// <summary>
+    /// Applique les effets visuels associés au lien entre Lucian et Munin.
+    /// Gère à la fois l'affichage via le culling mask de la WorldCamera et
+    /// l'activation des objets placés sur les couches dédiées.
+    /// </summary>
+    void ApplyMuninLinkState()
+    {
+        // Sécurités : certaines scènes ou tests peuvent ne pas disposer d'une WorldCamera.
+        if (worldCamera != null)
+        {
+            // On repart du culling mask d'origine pour éviter les accumulations d'états.
+            if (linkToMunin) worldCamera.cullingMask = worldBaseMask | revealMask;
+            else worldCamera.cullingMask = worldBaseMask & ~revealMask;
+        }
+
+        // Active ou désactive tous les GameObjects appartenant aux couches révélées.
+        foreach (Transform t in FindObjectsOfType<Transform>(true)) // true → inclut les objets inactifs
+        {
+            GameObject obj = t.gameObject;
+            if (obj.layer == revealInteractableLayer || obj.layer == revealUILayer)
+                obj.SetActive(linkToMunin);
+        }
+
+        previousLinkToMunin = linkToMunin; // On enregistre l'état courant pour la prochaine vérification.
     }
 }
