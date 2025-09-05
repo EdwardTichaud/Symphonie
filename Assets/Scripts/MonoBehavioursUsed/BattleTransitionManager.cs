@@ -256,8 +256,40 @@ public class BattleTransitionManager : MonoBehaviour
     {
         // Détermine quel champ de bataille doit être chargé en fonction de
         // l'ennemi détecté par le joueur.
+        // 
+        // Dans certains cas (ex. zone non initialisée correctement), l'objet
+        // PlayerDetection peut être désactivé ou sa liste d'ennemis vide.
+        // Afin d'éviter une NullReference et de garantir l'affichage de l'écran
+        // de Versus, on tente d'abord de récupérer l'indice depuis
+        // PlayerDetection. Si cela échoue, on se replie sur la liste copiée
+        // dans le NewBattleManager.
+
+        // Récupération (ou création) de la référence vers PlayerDetection
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
-        int battlefieldIndex = playerDetection.detectedEnemies[0].battlefieldIndex;
+
+        // Valeur par défaut au cas où aucun ennemi valide n'est trouvé
+        int battlefieldIndex = 0;
+
+        if (playerDetection != null && playerDetection.detectedEnemies.Count > 0 &&
+            playerDetection.detectedEnemies[0] != null)
+        {
+            // ✅ Cas nominal : utilisation de l'ennemi détecté pour choisir le champ de bataille
+            battlefieldIndex = playerDetection.detectedEnemies[0].battlefieldIndex;
+        }
+        else if (NewBattleManager.Instance.enemyTemplates.Count > 0 &&
+                 NewBattleManager.Instance.enemyTemplates[0] != null)
+        {
+            // 🔁 Repli : on s'appuie sur la liste d'ennemis déjà copiée dans le
+            // NewBattleManager lors de la détection. Cela évite un blocage de la
+            // transition si PlayerDetection n'est plus accessible.
+            battlefieldIndex = NewBattleManager.Instance.enemyTemplates[0].battlefieldIndex;
+        }
+        else
+        {
+            // ⚠️ Aucun ennemi valide trouvé : on loggue un avertissement afin de
+            // faciliter le débogage et on conserve l'indice par défaut (0).
+            Debug.LogWarning("[BattleTransitionManager] Impossible de déterminer l'indice du battlefield ; utilisation de 0 par défaut.");
+        }
 
         // Effet de distorsion pour accentuer le passage en mode combat
         if (PostProcessManager.Instance != null)
