@@ -107,9 +107,9 @@ public class VirtualKeyboard : MonoBehaviour
         GetComponentInChildren<Animator>().Play("VK_Open");
 
         if(subject != null && keyboardRoot != null)
-            keyboardRoot.transform.GetChild(3).GetComponent<TextMeshProUGUI>().text = subject;
+            keyboardRoot.transform.GetChild(3).GetComponentInChildren<TextMeshProUGUI>().text = subject;
         else
-            keyboardRoot.transform.GetChild(3).GetComponent<TextMeshProUGUI>().text = "";
+            keyboardRoot.transform.GetChild(3).GetComponentInChildren<TextMeshProUGUI>().text = "";
     }
 
     /// <summary>
