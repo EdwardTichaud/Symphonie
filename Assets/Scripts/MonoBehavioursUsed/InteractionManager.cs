@@ -12,6 +12,12 @@ public class InteractionManager : MonoBehaviour
     [Tooltip("Layer mask for interactable objects")]
     public LayerMask interactableLayer;
 
+    // --- Gestion dynamique des couches interactables ---
+    private LayerMask baseInteractableLayer;              // Masque de base : uniquement "World_Interactable".
+    private int revealInteractableLayer;                  // Index de la couche "World_ReveLink_Interactable".
+    private LayerMask revealCombinedLayer;                // Masque combiné lorsque Munin est lié.
+    private ThirdPersonPlayerController playerController; // Référence pour connaître l'état du lien.
+
     [Header("References")]
     private Camera mainCamera;
     private Transform playerTransform;
@@ -40,9 +46,26 @@ public class InteractionManager : MonoBehaviour
         // Find the player
         var player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
+        {
             playerTransform = player.transform;
+            // Récupère le contrôleur pour connaître l'état du lien avec Munin
+            playerController = playerTransform.GetComponent<ThirdPersonPlayerController>();
+        }
         else
+        {
             Debug.LogError("[InteractionManager3D] Lucian3D not found.");
+        }
+
+        // Initialise les masques de couches utilisables pour la détection
+        baseInteractableLayer = interactableLayer; // Masque configuré dans l'inspecteur
+        revealInteractableLayer = LayerMask.NameToLayer("World_ReveLink_Interactable");
+        if (revealInteractableLayer != -1)
+            revealCombinedLayer = baseInteractableLayer | (1 << revealInteractableLayer);
+        else
+            revealCombinedLayer = baseInteractableLayer;
+
+        // Applique immédiatement le masque correspondant à l'état actuel du lien
+        UpdateInteractableLayer();
 
         if (DialogueManager.Instance == null)
             Debug.LogError("[InteractionManager3D] DialogueManager not found.");
@@ -93,8 +116,24 @@ public class InteractionManager : MonoBehaviour
         HandleInteractableDetection();
     }
 
+    /// <summary>
+    /// Met à jour le masque <see cref="interactableLayer"/> selon l'état du lien avec Munin.
+    /// Lorsque Lucian et Munin sont liés, on ajoute les objets de la couche
+    /// "World_ReveLink_Interactable" afin qu'ils deviennent interactables.
+    /// </summary>
+    private void UpdateInteractableLayer()
+    {
+        if (playerController != null && playerController.linkToMunin)
+            interactableLayer = revealCombinedLayer;  // Inclut toutes les couches
+        else
+            interactableLayer = baseInteractableLayer; // Reste sur les couches visibles par défaut
+    }
+
     private void HandleInteractableDetection()
     {
+        // Assure que le masque est toujours cohérent avec l'état du lien
+        UpdateInteractableLayer();
+
         if (DialogueManager.Instance.isOpen || EventsManager.Instance.eventInProgress)
         {
             // Si une interaction est en cours, on s'assure que la LocalInfoBox reste cachée
