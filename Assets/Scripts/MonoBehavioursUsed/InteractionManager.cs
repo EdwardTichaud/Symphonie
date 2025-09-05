@@ -169,23 +169,28 @@ public class InteractionManager : MonoBehaviour
 
         Collider[] hits = Physics.OverlapSphere(playerTransform.position, interactionRange, interactableLayer);
 
-        if (hits.Length > 0)
+        // Recherche du point interactif valide le plus proche.
+        GameObject nearest = null;
+        float minDistance = float.MaxValue;
+        foreach (Collider hit in hits)
         {
-            // Recherche de l'objet interactif le plus proche du joueur.
-            GameObject nearest = hits[0].gameObject;
-            float minDistance = Vector3.Distance(playerTransform.position, nearest.transform.position);
+            GameObject obj = hit.gameObject;
 
-            foreach (Collider hit in hits)
+            // Ignore les Points of Interest déjà consommés afin de ne plus afficher leur LocalInfoBox
+            PointOfInterest poi = obj.GetComponent<PointOfInterest>();
+            if (poi != null && !poi.CanInteract)
+                continue;
+
+            float dist = Vector3.Distance(playerTransform.position, obj.transform.position);
+            if (dist < minDistance)
             {
-                float dist = Vector3.Distance(playerTransform.position, hit.transform.position);
-                if (dist < minDistance)
-                {
-                    // Mémorise l'objet le plus proche trouvé jusqu'à présent.
-                    nearest = hit.gameObject;
-                    minDistance = dist;
-                }
+                nearest = obj;
+                minDistance = dist;
             }
+        }
 
+        if (nearest != null)
+        {
             // Met à jour l'interactable courant uniquement s'il change.
             if (currentInteractable != nearest)
             {
@@ -205,6 +210,7 @@ public class InteractionManager : MonoBehaviour
         }
         else if (currentInteractable != null)
         {
+            // Aucun objet valide détecté : on cache l'invite.
             currentInteractable = null;
 
             if (localInfoBox != null)

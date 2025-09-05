@@ -69,6 +69,13 @@ public class TimelineManager : MonoBehaviour
     private GameObject timelineCanvas;
 
     /// <summary>
+    /// Bouton permettant de passer la cinématique. Il est rendu visible uniquement
+    /// lorsque qu'une Timeline est en cours de lecture afin d'éviter toute
+    /// interaction inutile en dehors des cinématiques.
+    /// </summary>
+    private GameObject passButton;
+
+    /// <summary>
     /// Vrai si la timeline a été accélérée via maintien de Cancel.
     /// Permet d'éviter un double fondu au noir.
     /// </summary>
@@ -223,6 +230,9 @@ public class TimelineManager : MonoBehaviour
         // Le Canvas n'a plus lieu d'être lorsque la timeline est passée
         if (timelineCanvas != null)
             timelineCanvas.SetActive(false);
+        // Le bouton Passer est également désactivé immédiatement
+        if (passButton != null)
+            passButton.SetActive(false);
 
         // Arrête d'écouter l'entrée Cancel pendant l'accélération
         skipCoroutine = null;
@@ -325,6 +335,14 @@ public class TimelineManager : MonoBehaviour
             {
                 // Le Canvas ne doit pas être visible tant qu'aucune Timeline n'est jouée
                 timelineCanvas.SetActive(false);
+
+                // Récupère le bouton "Passer" pour le contrôler dynamiquement
+                var passTransform = timelineCanvas.transform.Find("Passer");
+                if (passTransform != null)
+                {
+                    passButton = passTransform.gameObject;
+                    passButton.SetActive(false); // caché par défaut hors cinématique
+                }
 
                 // Recherche automatique de l'image de remplissage si elle n'est pas assignée dans l'inspecteur
                 if (skipFillImage == null)
@@ -600,6 +618,9 @@ public class TimelineManager : MonoBehaviour
         // Affiche le Canvas de gestion des timelines pendant la lecture
         if (timelineCanvas != null)
             timelineCanvas.SetActive(true);
+        // Active le bouton Passer seulement pendant une Timeline
+        if (passButton != null)
+            passButton.SetActive(true);
         // Désactive le CameraController pour laisser la Timeline contrôler totalement la caméra
         if (CameraController.Instance != null)
             CameraController.Instance.enabled = false;
@@ -640,6 +661,9 @@ public class TimelineManager : MonoBehaviour
         // Masque le Canvas car la timeline est terminée
         if (timelineCanvas != null)
             timelineCanvas.SetActive(false);
+        // Cache aussi le bouton Passer pour les prochaines cinématiques
+        if (passButton != null)
+            passButton.SetActive(false);
 
         // 1) Fondu vers le noir pour cacher le "snap" de fin de Timeline.
         //    Si la timeline a déjà été accélérée, l'écran est noir : on évite un second fondu.
