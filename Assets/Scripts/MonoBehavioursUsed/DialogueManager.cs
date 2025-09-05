@@ -148,6 +148,19 @@ public class DialogueManager : MonoBehaviour
         TogglePlayerMovement(true);
     }
 
+    /// <summary>
+    /// Force la fermeture immédiate et complète de tout dialogue en cours.
+    /// Utile lorsque l'on souhaite interrompre brutalement une séquence
+    /// (par exemple lors du passage d'une Timeline) sans laisser de
+    /// bulles persistantes ou de coroutines actives.
+    /// </summary>
+    public void ForceCloseDialogue()
+    {
+        // Réutilise la logique centralisée afin de garantir que tous les
+        // états internes et contrôles joueur sont correctement réinitialisés.
+        ResetDialogueState();
+    }
+
     //==============================================================
     // API publique : LECTURE D'UN CONTAINER (MANUELLE)
     //==============================================================
