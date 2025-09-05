@@ -234,6 +234,11 @@ public class TimelineManager : MonoBehaviour
         if (passButton != null)
             passButton.SetActive(false);
 
+        // Ferme immédiatement tout dialogue encore affiché afin
+        // d'éviter qu'il ne persiste après le passage de la Timeline.
+        if (DialogueManager.Instance != null)
+            DialogueManager.Instance.ForceCloseDialogue();
+
         // Arrête d'écouter l'entrée Cancel pendant l'accélération
         skipCoroutine = null;
         DisableTimelineSkip();
@@ -664,6 +669,11 @@ public class TimelineManager : MonoBehaviour
         // Cache aussi le bouton Passer pour les prochaines cinématiques
         if (passButton != null)
             passButton.SetActive(false);
+
+        // S'assure qu'aucun dialogue résiduel ne reste affiché à la fin
+        // d'une Timeline, qu'elle ait été jouée jusqu'au bout ou passée.
+        if (DialogueManager.Instance != null)
+            DialogueManager.Instance.ForceCloseDialogue();
 
         // 1) Fondu vers le noir pour cacher le "snap" de fin de Timeline.
         //    Si la timeline a déjà été accélérée, l'écran est noir : on évite un second fondu.
