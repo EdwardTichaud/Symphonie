@@ -191,8 +191,9 @@ public class RhythmQTEManager : MonoBehaviour
         // afin d'éviter tout souci si l'Animator change de référence pendant la téléportation.
         GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
 
-        // Si une Timeline est disponible, on la lit via le TimelineManager centralisé
+        // Si une Timeline est disponible, on la lit via le BattleTimelineManager
         bool hasTimeline = move.performingTimeline != null &&
+                          BattleTimelineManager.Instance != null &&
                           TimelineManager.Instance != null &&
                           casterAnimatorGO != null;
 
@@ -200,7 +201,7 @@ public class RhythmQTEManager : MonoBehaviour
         {
             // Les ennemis utilisent la timeline mais sans animer la caméra (cameraTag nul)
             string cameraTag = caster.characterType == CharacterType.EnemyUnit ? null : "BattleCamera";
-            TimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, cameraTag);
+            BattleTimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, cameraTag);
         }
 
         if (pendingNotes == 0)
@@ -312,12 +313,15 @@ public class RhythmQTEManager : MonoBehaviour
 
         Animator animator = caster.GetComponentInChildren<Animator>();
 
-        // Lecture d'une Timeline ou d'une animation d'intro
-        bool hasTimeline = item.performingTimeline != null && TimelineManager.Instance != null && animator != null;
+        // Lecture d'une Timeline ou d'une animation d'intro via le BattleTimelineManager
+        bool hasTimeline = item.performingTimeline != null &&
+                           BattleTimelineManager.Instance != null &&
+                           TimelineManager.Instance != null &&
+                           animator != null;
 
         if (hasTimeline)
         {
-            TimelineManager.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, "BattleCamera");
+            BattleTimelineManager.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, "BattleCamera");
 
             // Attendre la fin réelle de la Timeline, en prévoyant un délai maximum
             // pour éviter les blocages si celle-ci reste en pause sur la dernière frame

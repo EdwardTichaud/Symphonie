@@ -374,6 +374,20 @@ public class TimelineManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Assigne explicitement un <see cref="PlayableDirector"/> externe
+    /// à utiliser pour la lecture des timelines.
+    /// Utilisé notamment par le <c>BattleTimelineManager</c> pour
+    /// centraliser la lecture des timelines de combat.
+    /// </summary>
+    /// <param name="externalDirector">Le PlayableDirector à utiliser.</param>
+    public void SetExternalDirector(PlayableDirector externalDirector)
+    {
+        // Aucune vérification complexe : si null est fourni, la lecture
+        // échouera proprement lors de l'appel à PlayTimeline.
+        reusableDirector = externalDirector;
+    }
+
+    /// <summary>
     /// Joue une nouvelle Timeline. Arrête proprement la précédente.
     /// </summary>
     /// <param name="withFade">
