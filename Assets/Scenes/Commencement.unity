@@ -203949,7 +203949,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2240399401007068383
 Transform:
   m_ObjectHideFlags: 0
@@ -204904,10 +204904,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: CryingAngel
       objectReference: {fileID: 0}
-    - target: {fileID: 2918149692972458727, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: launchTimeline
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 3313730601450013793, guid: 5421da732b988df45baf775b82f725eb, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.17999879
@@ -204948,58 +204944,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4321571700224673123, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Size.x
-      value: 3.3397827
-      objectReference: {fileID: 0}
-    - target: {fileID: 4321571700224673123, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Size.y
-      value: 3.5583496
-      objectReference: {fileID: 0}
-    - target: {fileID: 4321571700224673123, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Size.z
-      value: 3.0723267
-      objectReference: {fileID: 0}
-    - target: {fileID: 4321571700224673123, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Center.x
-      value: 0.24856567
-      objectReference: {fileID: 0}
-    - target: {fileID: 4321571700224673123, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Center.y
-      value: 0.5147705
-      objectReference: {fileID: 0}
-    - target: {fileID: 4321571700224673123, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Center.z
-      value: -0.05331421
-      objectReference: {fileID: 0}
-    - target: {fileID: 4321571700224673123, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_IsTrigger
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.size
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Signals.Array.size
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: 'm_Events.m_Signals.Array.data[2]'
-      value: 
-      objectReference: {fileID: 11400000, guid: 01dbed8428f276148b9de668d436d5ca, type: 2}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.data[2].m_PersistentCalls.m_Calls.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 2
-      objectReference: {fileID: 0}
     - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
       propertyPath: m_Events.m_Events.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
@@ -205008,38 +204952,6 @@ PrefabInstance:
       propertyPath: m_Events.m_Events.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 59456321}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_CallState
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: TransitionToCombat
-      objectReference: {fileID: 0}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: StartTimelineBattle
-      objectReference: {fileID: 0}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: AudioManager, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: BattleTransitionManager, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgument
-      value: 
-      objectReference: {fileID: 8300000, guid: 0a5a8536e44e89149a70fda880b58b57, type: 3}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.AudioClip, UnityEngine
-      objectReference: {fileID: 0}
-    - target: {fileID: 7747679698531544613, guid: 5421da732b988df45baf775b82f725eb, type: 3}
-      propertyPath: m_Events.m_Events.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: TimelineEnemiesSO, Assembly-CSharp
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
