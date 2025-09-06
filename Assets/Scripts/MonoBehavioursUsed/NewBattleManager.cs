@@ -1986,12 +1986,13 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private void StartItemPreparingTimeline()
     {
-        if (itemPreparingTimeline == null || TimelineManager.Instance == null || itemMenuTimelineActive)
+        // S'assure qu'une Timeline et un gestionnaire existent avant de lancer quoi que ce soit
+        if (itemPreparingTimeline == null || BattleTimelineManager.Instance == null || TimelineManager.Instance == null || itemMenuTimelineActive)
             return;
 
         GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
         // Démarre la Timeline qui boucle tant que le menu est ouvert
-        TimelineManager.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
+        BattleTimelineManager.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
         itemMenuTimelineActive = true;
     }
 
