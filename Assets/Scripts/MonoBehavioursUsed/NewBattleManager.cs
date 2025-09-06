@@ -263,13 +263,20 @@ public class NewBattleManager : MonoBehaviour
     #region Initialisation du champs de bataille
     public void SpawnAll()
     {
-        if (activeCharacterUnits.Count > 0)
+        // Nettoie les références nulles pouvant persister après un précédent combat
+        activeCharacterUnits.RemoveAll(u => u == null);
+        unitsInBattle.RemoveAll(u => u == null);
+
+        // Si des unités valides existent encore, on évite de doubler le spawn
+        if (activeCharacterUnits.Count > 0 || unitsInBattle.Count > 0)
         {
             Debug.LogWarning("[NewBattleManager] SpawnAll déjà exécuté ou unités déjà présentes.");
             return;
         }
 
+        // S'assure que les listes sont complètement vides avant d'instancier de nouvelles unités
         activeCharacterUnits.Clear();
+        unitsInBattle.Clear();
         SpawnSquadUnits();
         SpawnEnemies();
     }
@@ -1734,6 +1741,8 @@ public class NewBattleManager : MonoBehaviour
                 Destroy(unit.gameObject);
 
         unitsInBattle.Clear();
+        // Évite de conserver des références obsolètes qui empêcheraient un nouveau spawn
+        activeCharacterUnits.Clear();
     }
     #endregion
 
