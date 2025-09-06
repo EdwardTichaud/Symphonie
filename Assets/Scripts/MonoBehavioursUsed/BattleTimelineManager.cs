@@ -11,6 +11,7 @@ using UnityEngine.Timeline;
 /// À ne pas confondre avec la timeline d'interface qui affiche l'ordre
 /// des tours : cette dernière est gérée par <see cref="BattleTimelineUIManager"/>.
 /// </para>
+
 /// </summary>
 public class BattleTimelineManager : MonoBehaviour
 {
