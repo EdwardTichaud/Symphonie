@@ -1,15 +1,18 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Fait dériver un objet depuis sa position d'origine vers une direction aléatoire
-/// en ralentissant progressivement jusqu'à l'arrêt, puis le ramène à sa position
-/// et rotation d'origine lorsque le joueur s'en approche.
-/// Utilisé pour simuler un pont explosé qui se reconstitue sous les pas du joueur.
+/// Gère la dérive aléatoire puis la reconstruction de plusieurs morceaux.
+/// <br/>
+/// Ce script doit être placé sur l'objet parent. Seuls les enfants directs des
+/// enfants directs (les « morceaux ») sont affectés.
+/// Il permet de simuler un pont explosé qui se reconstitue sous les pas du joueur.
 /// </summary>
 public class RandomDriftReturn : MonoBehaviour
 {
-    [Header("Déplacement initial")] // paramètres de dérive
-    [Tooltip("Vitesse de départ du morceau lors de la dérive.")]
+    [Header("Déplacement initial")] // Paramètres de la dérive
+    [Tooltip("Vitesse de départ des morceaux lors de la dérive.")]
     public float vitesseInitiale = 5f;
 
     [Tooltip("Taux auquel la vitesse diminue chaque seconde.")]
@@ -25,108 +28,119 @@ public class RandomDriftReturn : MonoBehaviour
     [Tooltip("Référence optionnelle vers le joueur. Si nul, recherche par tag 'Player'.")]
     public Transform joueur;
 
-    // Données internes mémorisant l'état de départ
-    private Vector3 positionOrigine;
-    private Quaternion rotationOrigine;
+    /// <summary>
+    /// Informations stockées pour chaque morceau du pont.
+    /// </summary>
+    private class Morceau
+    {
+        public Transform tr;          // Référence vers le Transform du morceau
+        public Vector3 posOrigine;    // Position de départ
+        public Quaternion rotOrigine; // Rotation de départ
+        public Vector3 direction;     // Direction aléatoire de dérive
+        public float vitesse;         // Vitesse actuelle
+        public bool enRetour;         // Indique si le morceau revient à l'origine
+    }
 
-    // Direction choisie aléatoirement pour la dérive
-    private Vector3 direction;
-
-    // Vitesse actuelle de l'objet
-    private float vitesseCourante;
-
-    // Indique si l'objet est revenu à son état d'origine
-    private bool reconstruit = false;
+    // Liste de tous les morceaux concernés (les petits-enfants)
+    private readonly List<Morceau> morceaux = new List<Morceau>();
 
     void Start()
     {
-        // Sauvegarde de la position et rotation initiales
-        positionOrigine = transform.position;
-        rotationOrigine = transform.rotation;
-
-        // Choix d'une direction aléatoire dans l'espace
-        direction = Random.onUnitSphere;
-        direction.Normalize();
-
-        // Initialisation de la vitesse à la valeur souhaitée
-        vitesseCourante = vitesseInitiale;
+        // Récupération de tous les enfants directs des enfants directs
+        foreach (Transform enfant in transform)
+        {
+            foreach (Transform petitEnfant in enfant)
+            {
+                var m = new Morceau
+                {
+                    tr = petitEnfant,
+                    posOrigine = petitEnfant.position,
+                    rotOrigine = petitEnfant.rotation,
+                    direction = Random.onUnitSphere.normalized,
+                    vitesse = vitesseInitiale,
+                    enRetour = false
+                };
+                morceaux.Add(m);
+            }
+        }
     }
 
     void Update()
     {
-        if (!reconstruit)
+        // Recherche du joueur au besoin (effectuée une seule fois)
+        if (joueur == null)
         {
-            // Tant que l'objet n'est pas revenu, il dérive puis attend le joueur
-            Deriver();
-            VerifierProximiteJoueur();
+            GameObject obj = GameObject.FindGameObjectWithTag("Player");
+            if (obj != null)
+                joueur = obj.transform;
+        }
+
+        // Mise à jour de chaque morceau indépendamment
+        foreach (Morceau m in morceaux)
+        {
+            if (!m.enRetour)
+            {
+                Deriver(m);
+                VerifierProximiteJoueur(m);
+            }
         }
     }
 
     /// <summary>
-    /// Déplace l'objet dans la direction définie en réduisant la vitesse au fil du temps.
+    /// Déplace un morceau dans sa direction en réduisant progressivement sa vitesse.
     /// </summary>
-    private void Deriver()
+    private void Deriver(Morceau m)
     {
-        if (vitesseCourante <= 0f)
-            return; // mouvement déjà stoppé
+        if (m.vitesse <= 0f)
+            return; // Le morceau est déjà immobile
 
-        float step = vitesseCourante * Time.deltaTime;
-        transform.position += direction * step;
+        float step = m.vitesse * Time.deltaTime;
+        m.tr.position += m.direction * step; // Application du déplacement
 
         // Ralentissement progressif jusqu'à l'arrêt complet
-        vitesseCourante = Mathf.Max(0f, vitesseCourante - deceleration * Time.deltaTime);
+        m.vitesse = Mathf.Max(0f, m.vitesse - deceleration * Time.deltaTime);
 
-        // Empêche l'objet d'aller au-delà de la distance maximale
-        if (Vector3.Distance(positionOrigine, transform.position) >= distanceMax)
-        {
-            vitesseCourante = 0f;
-        }
+        // On évite de dépasser la distance maximale définie
+        if (Vector3.Distance(m.posOrigine, m.tr.position) >= distanceMax)
+            m.vitesse = 0f;
     }
 
     /// <summary>
-    /// Vérifie si le joueur est suffisamment proche pour déclencher le retour.
+    /// Vérifie si le joueur est assez proche pour déclencher le retour du morceau.
     /// </summary>
-    private void VerifierProximiteJoueur()
+    private void VerifierProximiteJoueur(Morceau m)
     {
-        Transform cible = joueur;
-        if (cible == null)
-        {
-            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-            if (playerObj != null)
-                cible = playerObj.transform;
-        }
+        if (joueur == null)
+            return; // Aucun joueur détecté
 
-        if (cible == null)
-            return; // aucun joueur trouvé
-
-        float distanceJoueur = Vector3.Distance(cible.position, positionOrigine);
+        float distanceJoueur = Vector3.Distance(joueur.position, m.posOrigine);
         if (distanceJoueur <= rayonActivation)
-            StartCoroutine(Retourner());
+            StartCoroutine(Retourner(m));
     }
 
     /// <summary>
-    /// Coroutine ramenant progressivement l'objet à son état d'origine.
+    /// Coroutine qui ramène progressivement un morceau à sa position et rotation initiales.
     /// </summary>
-    private System.Collections.IEnumerator Retourner()
+    private IEnumerator Retourner(Morceau m)
     {
-        reconstruit = true; // évite plusieurs appels
+        m.enRetour = true; // Empêche plusieurs lancements
 
-        Vector3 departPos = transform.position;
-        Quaternion departRot = transform.rotation;
-        float duree = 1f; // durée du retour en secondes
+        Vector3 departPos = m.tr.position;
+        Quaternion departRot = m.tr.rotation;
+        float duree = 1f; // Durée du retour en secondes
         float temps = 0f;
 
         while (temps < duree)
         {
             temps += Time.deltaTime;
             float t = temps / duree;
-            transform.position = Vector3.Lerp(departPos, positionOrigine, t);
-            transform.rotation = Quaternion.Slerp(departRot, rotationOrigine, t);
-            yield return null; // attend la frame suivante
+            m.tr.position = Vector3.Lerp(departPos, m.posOrigine, t); // Interpolation de la position
+            m.tr.rotation = Quaternion.Slerp(departRot, m.rotOrigine, t); // Interpolation de la rotation
+            yield return null; // Attend la frame suivante
         }
 
-        // S'assure que la position et la rotation finales sont exactes
-        transform.position = positionOrigine;
-        transform.rotation = rotationOrigine;
+        // On s'assure que la position et la rotation finales sont exactes
+        m.tr.position = m.posOrigine;
+        m.tr.rotation = m.rotOrigine;
     }
 }
