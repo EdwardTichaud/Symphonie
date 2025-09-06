@@ -81,6 +81,12 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     private bool timelineSkipped = false;
 
+    /// <summary>
+    /// Indique si la timeline en cours doit être entourée d'un fondu noir.
+    /// Peut être désactivé pour certaines cinématiques courtes ou contextuelles.
+    /// </summary>
+    private bool useFade = true;
+
     [Header("Audio")]
     [Tooltip("Musique de fond à jouer pendant les timelines.")]
     [SerializeField] private AudioClip timelineMusicClip;
@@ -370,7 +376,11 @@ public class TimelineManager : MonoBehaviour
     /// <summary>
     /// Joue une nouvelle Timeline. Arrête proprement la précédente.
     /// </summary>
-    public void PlayTimeline(PlayableDirector newDirector)
+    /// <param name="withFade">
+    ///     True pour entourer la timeline d'un fondu noir,
+    ///     False pour la jouer directement sans transition.
+    /// </param>
+    public void PlayTimeline(PlayableDirector newDirector, bool withFade = true)
     {
         if (newDirector == null)
         {
@@ -392,6 +402,9 @@ public class TimelineManager : MonoBehaviour
         newDirector.stopped += OnStopped;
 
         currentDirector = newDirector;
+
+        // Enregistre la préférence de fondu pour cette timeline avant de la jouer.
+        useFade = withFade;
         currentDirector.Play();
     }
 
@@ -402,7 +415,8 @@ public class TimelineManager : MonoBehaviour
     /// <param name="timelineAsset">Timeline à jouer.</param>
     /// <param name="caster">GameObject jouant la timeline (binding des tracks "Caster" ou "PNJ").</param>
     /// <param name="cameraTag">Tag de la caméra à animer. Peut être null pour n'animer que le caster.</param>
-    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag)
+    /// <param name="withFade">True pour jouer la timeline avec fondu, false pour la jouer instantanément.</param>
+    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag, bool withFade = true)
     {
         if (timelineAsset == null || reusableDirector == null)
         {
@@ -492,7 +506,7 @@ public class TimelineManager : MonoBehaviour
         }
 
         // Joue la timeline en profitant de toute la gestion centralisée (skip, fondu, etc.)
-        PlayTimeline(reusableDirector);
+        PlayTimeline(reusableDirector, withFade);
 
         // Suit le lanceur si une caméra est attachée
         if (caster != null && cameraParent != null)
@@ -506,7 +520,9 @@ public class TimelineManager : MonoBehaviour
     /// <summary>
     /// Joue une timeline en ciblant automatiquement le PNJ actuellement en interaction.
     /// </summary>
-    public void PlayTimelineOnCurrentNPC(TimelineAsset timelineAsset)
+    /// <param name="timelineAsset">Timeline à jouer sur le PNJ courant.</param>
+    /// <param name="withFade">True pour inclure un fondu, false pour une transition immédiate.</param>
+    public void PlayTimelineOnCurrentNPC(TimelineAsset timelineAsset, bool withFade = true)
     {
         // Récupère le PNJ en cours d'interaction via l'InteractionManager.
         GameObject npc = InteractionManager.Instance != null ? InteractionManager.Instance.currentInteractable : null;
@@ -519,7 +535,7 @@ public class TimelineManager : MonoBehaviour
         }
 
         // Utilise la WorldCamera : la track "Camera" ira chercher l'Animator du parent de la WorldCamera.
-        PlayTimeline(timelineAsset, npc, "WorldCamera");
+        PlayTimeline(timelineAsset, npc, "WorldCamera", withFade);
     }
 
     /// <summary>
@@ -637,8 +653,9 @@ public class TimelineManager : MonoBehaviour
         if (AudioManager.Instance != null)
             AudioManager.Instance.TransitionToTimeline(timelineMusicClip);
 
-        // Lance un fondu noir pour encadrer le début de la timeline
-        StartCoroutine(FadeBlackRoutine());
+        // Lance un fondu noir pour encadrer le début de la timeline si demandé.
+        if (useFade)
+            StartCoroutine(FadeBlackRoutine());
     }
 
     /// <summary>
@@ -679,7 +696,9 @@ public class TimelineManager : MonoBehaviour
         //    Si la timeline a déjà été accélérée, l'écran est noir : on évite un second fondu.
         if (!timelineSkipped)
         {
-            yield return FadeBlackRoutine(true);
+            // N'exécute le fondu que si l'option est active.
+            if (useFade)
+                yield return FadeBlackRoutine(true);
         }
         else
         {
@@ -701,7 +720,8 @@ public class TimelineManager : MonoBehaviour
             CameraController.Instance.enabled = true;
 
         // 4) Une fois tout rétabli en arrière-plan, on peut revenir progressivement à l'image.
-        yield return FadeFromBlackRoutine();
+        if (useFade)
+            yield return FadeFromBlackRoutine();
     }
 
     /// <summary>
