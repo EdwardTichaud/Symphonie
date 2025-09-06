@@ -21,6 +21,10 @@ public class RandomDriftReturn : MonoBehaviour
     [Tooltip("Distance maximale par rapport à l'origine avant l'arrêt complet.")]
     public float distanceMax = 3f;
 
+    [Header("Rotation des morceaux")]
+    [Tooltip("Vitesse angulaire maximale (en degrés/s) pour la dérive aléatoire.")]
+    public float vitesseRotationMax = 90f;
+
     [Header("Retour du joueur")]
     [Tooltip("Distance à laquelle le joueur déclenche la reconstruction.")]
     public float rayonActivation = 2f;
@@ -38,6 +42,7 @@ public class RandomDriftReturn : MonoBehaviour
         public Quaternion rotOrigine; // Rotation de départ
         public Vector3 direction;     // Direction aléatoire de dérive
         public float vitesse;         // Vitesse actuelle
+        public Vector3 vitesseRotation; // Vitesse de rotation aléatoire
         public bool enRetour;         // Indique si le morceau revient à l'origine
     }
 
@@ -58,6 +63,11 @@ public class RandomDriftReturn : MonoBehaviour
                     rotOrigine = petitEnfant.rotation,
                     direction = Random.onUnitSphere.normalized,
                     vitesse = vitesseInitiale,
+                    vitesseRotation = new Vector3(
+                        Random.Range(-vitesseRotationMax, vitesseRotationMax),
+                        Random.Range(-vitesseRotationMax, vitesseRotationMax),
+                        Random.Range(-vitesseRotationMax, vitesseRotationMax)
+                    ), // Rotation aléatoire sur les 3 axes
                     enRetour = false
                 };
                 morceaux.Add(m);
@@ -80,7 +90,18 @@ public class RandomDriftReturn : MonoBehaviour
         {
             if (!m.enRetour)
             {
-                Deriver(m);
+                if (m.vitesse > 0f)
+                {
+                    // Tant qu'il dérive, on applique le déplacement et la rotation
+                    Deriver(m);
+                }
+                else
+                {
+                    // Si le joueur s'est éloigné, on relance une nouvelle dérive
+                    VerifierEloignementJoueur(m);
+                }
+
+                // Vérifie en permanence la proximité pour déclencher le retour
                 VerifierProximiteJoueur(m);
             }
         }
@@ -96,6 +117,9 @@ public class RandomDriftReturn : MonoBehaviour
 
         float step = m.vitesse * Time.deltaTime;
         m.tr.position += m.direction * step; // Application du déplacement
+
+        // Fait tourner le morceau selon sa vitesse angulaire propre
+        m.tr.Rotate(m.vitesseRotation * Time.deltaTime, Space.Self);
 
         // Ralentissement progressif jusqu'à l'arrêt complet
         m.vitesse = Mathf.Max(0f, m.vitesse - deceleration * Time.deltaTime);
@@ -116,6 +140,30 @@ public class RandomDriftReturn : MonoBehaviour
         float distanceJoueur = Vector3.Distance(joueur.position, m.posOrigine);
         if (distanceJoueur <= rayonActivation)
             StartCoroutine(Retourner(m));
+    }
+
+    /// <summary>
+    /// Relance la dérive lorsque le joueur s'est suffisamment éloigné.
+    /// </summary>
+    private void VerifierEloignementJoueur(Morceau m)
+    {
+        if (joueur == null)
+            return; // Aucun joueur détecté
+
+        float distanceJoueur = Vector3.Distance(joueur.position, m.posOrigine);
+        if (distanceJoueur > rayonActivation)
+        {
+            // Nouvelle direction et vitesse de rotation aléatoires
+            m.direction = Random.onUnitSphere.normalized;
+            m.vitesseRotation = new Vector3(
+                Random.Range(-vitesseRotationMax, vitesseRotationMax),
+                Random.Range(-vitesseRotationMax, vitesseRotationMax),
+                Random.Range(-vitesseRotationMax, vitesseRotationMax)
+            );
+
+            // On réinitialise la vitesse de dérive
+            m.vitesse = vitesseInitiale;
+        }
     }
 
     /// <summary>
@@ -142,5 +190,9 @@ public class RandomDriftReturn : MonoBehaviour
         // On s'assure que la position et la rotation finales sont exactes
         m.tr.position = m.posOrigine;
         m.tr.rotation = m.rotOrigine;
+
+        // Le morceau est de retour à l'origine et devient immobile
+        m.vitesse = 0f;
+        m.enRetour = false; // Attente que le joueur s'éloigne pour relancer la dérive
     }
 }
