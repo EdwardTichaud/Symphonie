@@ -28,6 +28,14 @@ public class BattleTimelineUIManager : MonoBehaviour
     /// </summary>
     public RectTransform TimelineContainer => timelineContainer;
 
+    /// <summary>
+    /// Objet racine de la timeline (parent du conteneur) utilisé pour
+    /// afficher ou masquer facilement l'interface complète.
+    /// </summary>
+    private GameObject TimelineRoot => timelineContainer != null
+        ? timelineContainer.parent?.parent?.gameObject
+        : null;
+
     private void Awake()
     {
         // Mise en place du singleton
@@ -58,6 +66,19 @@ public class BattleTimelineUIManager : MonoBehaviour
         // de passage prévu afin d'éviter un affichage incohérent si des
         // valeurs d'ATB étaient déjà présentes (cas de reprises ou tests).
         SortTimelineByATB();
+    }
+
+    /// <summary>
+    /// Active ou désactive l'affichage de la timeline complète.
+    /// </summary>
+    /// <param name="visible">true pour afficher, false pour masquer.</param>
+    public void SetVisible(bool visible)
+    {
+        // On récupère l'objet racine (parent du parent) afin d'éviter
+        // que d'autres scripts doivent connaître la hiérarchie précise.
+        GameObject root = TimelineRoot;
+        if (root != null)
+            root.SetActive(visible);
     }
 
     /// <summary>
@@ -109,7 +130,7 @@ public class BattleTimelineUIManager : MonoBehaviour
     /// <summary>
     /// Met en évidence l'unité actuellement active.
     /// </summary>
-    public void UpdateHighlight(CharacterUnit activeUnit)
+    private void UpdateHighlight(CharacterUnit activeUnit)
     {
         foreach (var ui in timelineUIObjects)
         {
@@ -122,7 +143,7 @@ public class BattleTimelineUIManager : MonoBehaviour
     /// Réorganise la timeline pour placer l'unité active en première position et
     /// afficher ensuite les suivantes selon l'ordre réel de passage.
     /// </summary>
-    public void UpdateWheel(CharacterUnit activeUnit)
+    private void UpdateWheel(CharacterUnit activeUnit)
     {
         if (timelineUIObjects.Count == 0)
             return;
@@ -155,6 +176,18 @@ public class BattleTimelineUIManager : MonoBehaviour
             // Met à jour la jauge d'ATB pour refléter l'avancée réelle.
             timelineUIObjects[i].UpdateATBGauge();
         }
+    }
+
+    /// <summary>
+    /// Point d'entrée unique pour mettre à jour l'ordre et la mise en
+    /// évidence de la timeline. Les scripts externes n'ont plus à se
+    /// soucier de l'ordre des appels.
+    /// </summary>
+    /// <param name="activeUnit">Unité actuellement active (peut être nulle).</param>
+    public void Refresh(CharacterUnit activeUnit)
+    {
+        UpdateHighlight(activeUnit);
+        UpdateWheel(activeUnit);
     }
 
     /// <summary>
