@@ -8,11 +8,11 @@ public class PerformanceHud : MonoBehaviour
 {
     [Header("Affichage")]
     public bool showBackground = true;
-    public Vector2 origin = new Vector2(10, 10);
-    public int fontSize = 14;
+    public Vector2 origin = new Vector2(10, 60); // dÃ©calÃ© pour ne pas chevaucher l'affichage des FPS
+    public int fontSize = 20; // texte plus grand
     public float refreshRate = 0.5f; // secondes entre recalculs
 
-    // Recorders par catégorie (CPU)
+    // Recorders par catÃ©gorie (CPU)
     ProfilerRecorder scriptsTime;
     ProfilerRecorder physicsTime;
     ProfilerRecorder renderTime;
@@ -41,7 +41,7 @@ public class PerformanceHud : MonoBehaviour
 
     void OnEnable()
     {
-        // Temps CPU par catégorie (nanosecondes -> on convertit en ms)
+        // Temps CPU par catÃ©gorie (nanosecondes -> on convertit en ms)
         scriptsTime = ProfilerRecorder.StartNew(ProfilerCategory.Scripts, "Time", 15);
         physicsTime = ProfilerRecorder.StartNew(ProfilerCategory.Physics, "Time", 15);
         renderTime = ProfilerRecorder.StartNew(ProfilerCategory.Render, "Time", 15);
@@ -49,7 +49,7 @@ public class PerformanceHud : MonoBehaviour
         audioTime = ProfilerRecorder.StartNew(ProfilerCategory.Audio, "Time", 15);
         uiTime = ProfilerRecorder.StartNew(ProfilerCategory.Gui, "Time", 15);
 
-        // GC alloué par frame
+        // GC allouÃ© par frame
         gcAllocFrame = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "GC Allocated In Frame", 15);
 
         // Compteurs de rendu (si disponibles)
@@ -58,6 +58,7 @@ public class PerformanceHud : MonoBehaviour
         TryStart(out triangles, ProfilerCategory.Render, "Triangles Count", 15);
         TryStart(out vertices, ProfilerCategory.Render, "Vertices Count", 15);
 
+        // Styles d'Ã©criture, avec une taille de police plus grande pour la lisibilitÃ©
         labelStyle = new GUIStyle { fontSize = fontSize, normal = { textColor = Color.white } };
         titleStyle = new GUIStyle(labelStyle) { fontStyle = FontStyle.Bold };
     }
@@ -82,7 +83,7 @@ public class PerformanceHud : MonoBehaviour
     {
         timeSinceUpdate += Time.unscaledDeltaTime;
 
-        // FPS lissé (EMA simple)
+        // FPS lissÃ© (EMA simple)
         float instant = 1f / Mathf.Max(Time.unscaledDeltaTime, 1e-6f);
         fpsSmoothed = Mathf.Lerp(fpsSmoothed, instant, 0.1f);
 
@@ -111,6 +112,7 @@ public class PerformanceHud : MonoBehaviour
 
     void OnGUI()
     {
+        // On part de l'origine dÃ©finie, placÃ©e plus bas pour Ã©viter le texte du FPS
         float x = origin.x;
         float y = origin.y;
         float line = labelStyle.lineHeight + 2f;
@@ -141,10 +143,10 @@ public class PerformanceHud : MonoBehaviour
         // Trouver le plus gros consommateur
         (string topName, float topMs) = TopConsumer(catMs);
 
-        GUI.Label(new Rect(x, y, boxW, line), $"Top CPU: {topName} — {topMs:F2} ms"); y += line;
+        GUI.Label(new Rect(x, y, boxW, line), $"Top CPU: {topName} Â— {topMs:F2} ms"); y += line;
 
-        // Barres simples (ms) pour chaque catégorie
-        float barMax = Mathf.Max(16f, MaxMs(catMs)); // échelle min 16ms (~60fps)
+        // Barres simples (ms) pour chaque catÃ©gorie
+        float barMax = Mathf.Max(16f, MaxMs(catMs)); // Ã©chelle min 16ms (~60fps)
         foreach (var (name, ms) in catMs)
         {
             DrawBar(ref y, name, ms, barMax, x, boxW, line);
@@ -154,10 +156,10 @@ public class PerformanceHud : MonoBehaviour
 
         // GPU / Rendu
         GUI.Label(new Rect(x, y, boxW, line), $"GPU frame: {(gpuMs > 0f ? gpuMs.ToString("F2") : "n/a")} ms"); y += line;
-        if (drawCallsCount > 0) { GUI.Label(new Rect(x, y, boxW, line), $"Draw Calls: {drawCallsCount}  —  Batches: {batchesCount}"); y += line; }
-        if (trisCount > 0) { GUI.Label(new Rect(x, y, boxW, line), $"Triangles: {FormatBig(trisCount)}  —  Vertices: {FormatBig(vertsCount)}"); y += line; }
+        if (drawCallsCount > 0) { GUI.Label(new Rect(x, y, boxW, line), $"Draw Calls: {drawCallsCount}  Â—  Batches: {batchesCount}"); y += line; }
+        if (trisCount > 0) { GUI.Label(new Rect(x, y, boxW, line), $"Triangles: {FormatBig(trisCount)}  Â—  Vertices: {FormatBig(vertsCount)}"); y += line; }
 
-        // Mémoire/GC
+        // MÃ©moire/GC
         GUI.Label(new Rect(x, y, boxW, line), $"GC/frame: {gcKbPerFrame:F1} KB"); y += line;
 
         // Conseils succincts si FPS bas
@@ -165,9 +167,9 @@ public class PerformanceHud : MonoBehaviour
         {
             y += 4f;
             GUI.Label(new Rect(x, y, boxW, line), "Tips:", titleStyle); y += line;
-            GUI.Label(new Rect(x, y, boxW, line), "• Si CPU bound: réduire Scripts/Physics/UI (moins d’Update, pooling, moins d’events)."); y += line;
-            GUI.Label(new Rect(x, y, boxW, line), "• Si Render/GPU haut: baisser post-process, ombres, LOD, rés., lumières dynamiques."); y += line;
-            GUI.Label(new Rect(x, y, boxW, line), "• GC élevé: éviter new() en Update, String.Format, LINQ allocs, etc."); y += line;
+            GUI.Label(new Rect(x, y, boxW, line), "Â• Si CPU bound: rÃ©duire Scripts/Physics/UI (moins dÂ’Update, pooling, moins dÂ’events)."); y += line;
+            GUI.Label(new Rect(x, y, boxW, line), "Â• Si Render/GPU haut: baisser post-process, ombres, LOD, rÃ©s., lumiÃ¨res dynamiques."); y += line;
+            GUI.Label(new Rect(x, y, boxW, line), "Â• GC Ã©levÃ©: Ã©viter new() en Update, String.Format, LINQ allocs, etc."); y += line;
         }
     }
 
@@ -189,7 +191,7 @@ public class PerformanceHud : MonoBehaviour
 
     static (string, float) TopConsumer(List<(string name, float ms)> list)
     {
-        string best = "—";
+        string best = "Â—";
         float bestMs = 0f;
         foreach (var (n, v) in list)
             if (v > bestMs) { bestMs = v; best = n; }
@@ -213,13 +215,13 @@ public class PerformanceHud : MonoBehaviour
 
     static float SampleGpuMs()
     {
-        // Note: nécessite "Enable Frame Timing Stats" (Project Settings > Player) pour de meilleurs résultats
+        // Note: nÃ©cessite "Enable Frame Timing Stats" (Project Settings > Player) pour de meilleurs rÃ©sultats
         FrameTimingManager.CaptureFrameTimings();
         FrameTiming[] ft = new FrameTiming[1];
         uint count = FrameTimingManager.GetLatestTimings(1, ft);
         if (count > 0)
         {
-            // gpuFrameTime est exprimé en ms directement
+            // gpuFrameTime est exprimÃ© en ms directement
             return (float)ft[0].gpuFrameTime;
         }
         return -1f;
