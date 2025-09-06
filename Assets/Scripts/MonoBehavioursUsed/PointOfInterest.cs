@@ -48,6 +48,8 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
     public bool launchTimeline = false;
     [Tooltip("PlayableDirector à lancer directement (director.Play()).")]
     public PlayableDirector directorToPlay;
+    [Tooltip("Activer pour entourer la timeline d'un fondu noir via le TimelineManager.")]
+    public bool useTimelineFade = true;
 
     [Header("Local InfoBox")]
     [Tooltip("Décalage appliqué à la LocalInfoBox pour ce point d'intérêt.")]
@@ -144,8 +146,10 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
             directorToPlay.Evaluate();
 
             if (TimelineManager.Instance != null)
-                TimelineManager.Instance.PlayTimeline(directorToPlay);
+                // Lance la timeline via le gestionnaire global en précisant si un fondu est souhaité.
+                TimelineManager.Instance.PlayTimeline(directorToPlay, useTimelineFade);
             else
+                // Sans TimelineManager, lecture directe (aucun fondu global disponible).
                 directorToPlay.Play();
 
             while ((TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying) ||
