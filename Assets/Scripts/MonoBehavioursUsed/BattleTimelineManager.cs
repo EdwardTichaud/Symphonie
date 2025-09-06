@@ -3,10 +3,15 @@ using UnityEngine.Playables;
 using UnityEngine.Timeline;
 
 /// <summary>
-/// Gestionnaire dédié au lancement des timelines en combat.
+/// Gestionnaire dédié au lancement des <see cref="TimelineAsset"/> durant les combats.
 /// Toutes les timelines de <c>MusicalMove</c> et d'<c>Item</c>
 /// sont lues via ce <see cref="PlayableDirector"/> unique pour
 /// garantir un comportement cohérent.
+/// <para>
+/// À ne pas confondre avec la timeline d'interface qui affiche l'ordre
+/// des tours : cette dernière est gérée par <see cref="BattleTimelineUIManager"/>.
+/// </para>
+
 /// </summary>
 public class BattleTimelineManager : MonoBehaviour
 {
