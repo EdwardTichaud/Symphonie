@@ -3895,6 +3895,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1411973545}
+  - component: {fileID: 1411973549}
   - component: {fileID: 1411973548}
   - component: {fileID: 1411973547}
   - component: {fileID: 1411973546}
@@ -4003,7 +4004,7 @@ MonoBehaviour:
           m_MethodName: InstantiateFromTimeline
           m_Mode: 2
           m_Arguments:
-            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgument: {fileID: 1921079115439858272, guid: efb18e8230cdb97448775769d790a67e, type: 3}
             m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
@@ -4012,13 +4013,13 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 1411973544}
-          m_TargetAssemblyTypeName: 
-          m_MethodName: 
-          m_Mode: 1
+        - m_Target: {fileID: 1411973546}
+          m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
+          m_MethodName: InstantiateFromTimeline
+          m_Mode: 2
           m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: 
+            m_ObjectArgument: {fileID: 1921079115439858272, guid: b36a66533b7d7bb459557d4f7875f5b1, type: 3}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
             m_StringArgument: 
@@ -4041,6 +4042,18 @@ PlayableDirector:
   m_SceneBindings: []
   m_ExposedReferences:
     m_References: []
+--- !u!114 &1411973549
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1411973544}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8fac0490b5884431b086c319081786fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1485852517
 GameObject:
   m_ObjectHideFlags: 0

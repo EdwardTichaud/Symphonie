@@ -72,6 +72,6 @@ public class BattleTimelineManager : MonoBehaviour
         // S'assure que le TimelineManager utilise bien ce PlayableDirector
         // avant de lancer la lecture de la timeline.
         TimelineManager.Instance.SetExternalDirector(director);
-        TimelineManager.Instance.PlayTimeline(timeline, caster, cameraTag);
+        TimelineManager.Instance.PlayTimeline(timeline, caster, cameraTag, false);
     }
 }
