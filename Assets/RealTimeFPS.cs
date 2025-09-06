@@ -32,7 +32,7 @@ public class RealTimeFPS : MonoBehaviour
     {
         // Style du texte : plus gros pour une meilleure lisibilité
         GUIStyle style = new GUIStyle();
-        style.fontSize = 30; // texte agrandi
+        style.fontSize = 150; // texte agrandi
         style.normal.textColor = Color.white;
 
         // Affichage simple en haut à gauche de l'écran
