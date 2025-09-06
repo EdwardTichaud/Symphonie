@@ -38,8 +38,17 @@ public class BattleTimelineManager : MonoBehaviour
         // Récupère le PlayableDirector présent sur ce GameObject.
         director = GetComponent<PlayableDirector>();
 
-        // Enregistre ce director auprès du TimelineManager global
-        // afin qu'il soit utilisé pour toutes les timelines.
+        // 🔧 Si aucun PlayableDirector n'est trouv\u00e9 (objet oubli\u00e9 ou supprim\u00e9),
+        // on en ajoute un dynamiquement afin d'\u00e9viter que les timelines
+        // ne restent silencieuses en combat.
+        if (director == null)
+        {
+            director = gameObject.AddComponent<PlayableDirector>();
+            Debug.LogWarning("[BattleTimelineManager] Aucun PlayableDirector trouv\u00e9, ajout d'un composant par d\u00e9faut.");
+        }
+
+        // Enregistre ce director aupr\u00e8s du TimelineManager global afin qu'il soit
+        // utilis\u00e9 pour toutes les timelines lanc\u00e9es pendant les combats.
         if (TimelineManager.Instance != null)
             TimelineManager.Instance.SetExternalDirector(director);
     }
@@ -52,8 +61,13 @@ public class BattleTimelineManager : MonoBehaviour
     /// <param name="cameraTag">Tag de la caméra à animer. Peut être nul.</param>
     public void PlayTimeline(TimelineAsset timeline, GameObject caster, string cameraTag)
     {
-        if (timeline == null || TimelineManager.Instance == null || director == null)
+        if (timeline == null || TimelineManager.Instance == null)
+        {
+            // Pas de timeline ou de gestionnaire disponible : on abandonne
+            // proprement pour \u00e9viter toute NullReferenceException.
+            Debug.LogWarning("[BattleTimelineManager] Lecture annul\u00e9e : gestionnaire ou timeline manquante.");
             return;
+        }
 
         // S'assure que le TimelineManager utilise bien ce PlayableDirector
         // avant de lancer la lecture de la timeline.
