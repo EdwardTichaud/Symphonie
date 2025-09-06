@@ -3,9 +3,11 @@ using UnityEngine;
 
 /// <summary>
 /// Gère les bruits de pas du joueur.
-/// Chaque fois qu'un pied touche le sol (événement d'animation),
-/// un son est joué selon la surface et l'état (marche/course).
-/// Les clips sont lus séquentiellement (1,2,3,1,2,3...).
+/// Version révisée : au lieu de jouer un clip à chaque contact de pied,
+/// on lance une boucle lorsque le joueur court. Lorsque le joueur
+/// s'arrête ou change de type de sol, la boucle est stoppée puis relancée
+/// avec un clip adapté. Cette approche évite la multiplication d'événements
+/// d'animation tout en offrant un rendu continu.
 /// </summary>
 [RequireComponent(typeof(ThirdPersonPlayerController))]
 public class FootstepAudio : MonoBehaviour
@@ -39,13 +41,14 @@ public class FootstepAudio : MonoBehaviour
     // Référence au contrôleur pour connaître l'état de course.
     private ThirdPersonPlayerController movement;
 
-    // Index d’avancement par surface et par mode (walk/run).
-    // Clé = tag de surface en lower-case (ou "default"), valeur = index courant (prochaine lecture).
-    private readonly Dictionary<string, int> _walkIndices = new Dictionary<string, int>();
-    private readonly Dictionary<string, int> _runIndices = new Dictionary<string, int>();
-
     // Accès rapide: tag -> SurfaceClips
     private readonly Dictionary<string, SurfaceClips> _surfaceMap = new Dictionary<string, SurfaceClips>();
+
+    // Tag de sol actuellement associé au son de course joué.
+    private string _currentGroundTag = "default";
+
+    // Indique si un clip est actuellement en cours de lecture en boucle.
+    private bool _isLoopPlaying = false;
 
     void Awake()
     {
@@ -69,31 +72,31 @@ public class FootstepAudio : MonoBehaviour
     }
 
     /// <summary>
-    /// Méthode appelée par un événement d'animation à chaque contact de pied.
+    /// Boucle principale qui surveille l'état de course et le type de sol.
+    /// Un son de pas est joué en boucle lorsque le joueur court. Le son
+    /// change ou s'arrête automatiquement selon les transitions.
     /// </summary>
-    public void PlayStep()
+    private void Update()
     {
-        string groundTag = GetGroundTag();
+        bool running = IsRunning();
+        string groundTag = NormalizeTag(GetGroundTag());
 
-        // Sélectionne un clip approprié selon la surface et l'état (marche/course).
-        AudioClip clip = GetNextClipSequential(groundTag, IsRunning());
-
-        // Joue le clip via l'AudioManager s'il est présent, sinon via la source locale.
-        if (clip != null)
+        // Si le joueur court : lancer ou mettre à jour la boucle
+        if (running)
         {
-            if (AudioManager.Instance != null)
+            // Si aucun son ne joue ou que le sol a changé, relancer la boucle
+            if (!_isLoopPlaying || groundTag != _currentGroundTag)
             {
-                AudioManager.Instance.PlaySound(clip);
-            }
-            else if (fallbackSource != null)
-            {
-                fallbackSource.PlayOneShot(clip);
-            }
-            else
-            {
-                Debug.LogWarning("[FootstepAudio] Aucun moyen de jouer le son de pas.");
+                StartLoop(groundTag, true);
             }
         }
+        else if (_isLoopPlaying)
+        {
+            // Le joueur ne court plus : arrêter la boucle en cours
+            StopLoop();
+        }
+
+        _currentGroundTag = groundTag;
     }
 
     /// <summary>
@@ -116,38 +119,52 @@ public class FootstepAudio : MonoBehaviour
     }
 
     /// <summary>
-    /// Renvoie le prochain clip à lire en mode séquentiel pour la surface et l'état donnés.
-    /// Boucle automatiquement quand la fin de la liste est atteinte.
+    /// Lance la lecture en boucle d'un clip adapté à la surface courante.
     /// </summary>
-    private AudioClip GetNextClipSequential(string groundTag, bool running)
+    private void StartLoop(string groundTag, bool running)
     {
-        // Normaliser la clé de surface
-        string key = NormalizeTag(groundTag);
+        // Choisir un clip (aléatoire) correspondant à la surface.
+        AudioClip clip = GetRandomClip(groundTag, running);
+        if (clip == null || fallbackSource == null)
+            return;
 
-        // Récupérer les tableaux de clips (surface spécifique ou défaut)
+        // Préparation de la source pour la lecture en boucle.
+        fallbackSource.loop = true;
+        fallbackSource.clip = clip;
+        fallbackSource.Play();
+
+        _isLoopPlaying = true;
+        _currentGroundTag = NormalizeTag(groundTag);
+    }
+
+    /// <summary>
+    /// Stoppe la lecture en boucle en cours.
+    /// </summary>
+    private void StopLoop()
+    {
+        if (fallbackSource != null)
+        {
+            fallbackSource.Stop();
+            fallbackSource.clip = null;
+        }
+
+        _isLoopPlaying = false;
+    }
+
+    /// <summary>
+    /// Sélectionne un clip aléatoire en fonction du type de sol et de l'état (marche/course).
+    /// </summary>
+    private AudioClip GetRandomClip(string groundTag, bool running)
+    {
+        string key = NormalizeTag(groundTag);
         AudioClip[] clips = GetClipsFor(key, running);
 
         if (clips == null || clips.Length == 0)
             return null;
 
-        // Choisir le bon dictionnaire d'indices (walk/run)
-        var dict = running ? _runIndices : _walkIndices;
-
-        // Obtenir l'index courant pour cette surface
-        if (!dict.TryGetValue(key, out int index))
-            index = 0;
-
-        // Clamp & boucle de sécurité
-        if (index < 0 || index >= clips.Length)
-            index = 0;
-
-        AudioClip next = clips[index];
-
-        // Avancer l'index pour le prochain pas
-        index = (index + 1) % clips.Length;
-        dict[key] = index;
-
-        return next;
+        // Choix aléatoire pour varier légèrement les sons à chaque reprise.
+        int index = Random.Range(0, clips.Length);
+        return clips[index];
     }
 
     /// <summary>
