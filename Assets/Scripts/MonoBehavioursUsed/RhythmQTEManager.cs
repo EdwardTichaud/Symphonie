@@ -10,7 +10,6 @@ public class RhythmQTEManager : MonoBehaviour
     public static RhythmQTEManager Instance { get; private set; }
 
     public MusicalMoveSO currentMove;
-    public AudioSource audioSource;
     private float startTime;
     private int currentBeatIndex = 0;
     private bool isActive = false;
@@ -53,6 +52,47 @@ public class RhythmQTEManager : MonoBehaviour
     // Effets visuels pour indiquer le résultat du QTE
     public GameObject successEffectPrefab;
     public GameObject failEffectPrefab;
+
+    // ------------------------------------------------------------------------------
+    // Gestion des effets sonores
+    // ------------------------------------------------------------------------------
+    /// <summary>
+    /// Récupère une source audio SFX disponible parmi AudioSource_Sfx_1 à 3.
+    /// On privilégie la première source qui ne joue aucun son afin d'éviter les
+    /// coupures lorsque plusieurs effets doivent être joués simultanément.
+    /// </summary>
+    /// <returns>Une source libre ou la première du tableau si toutes sont occupées</returns>
+    private AudioSource GetAvailableSfxSource()
+    {
+        // Sécurise l'accès au gestionnaire audio
+        var manager = AudioManager.Instance;
+        if (manager == null || manager.sfxSources == null || manager.sfxSources.Length == 0)
+            return null;
+
+        // Recherche de la première source inactive
+        foreach (var src in manager.sfxSources)
+        {
+            if (src != null && !src.isPlaying)
+                return src; // Source libre trouvée
+        }
+
+        // Toutes les sources sont en cours de lecture : on réutilise la première
+        return manager.sfxSources[0];
+    }
+
+    /// <summary>
+    /// Joue un effet sonore à l'aide d'une source SFX disponible.
+    /// </summary>
+    /// <param name="clip">Clip audio à jouer</param>
+    private void PlaySfx(AudioClip clip)
+    {
+        if (clip == null)
+            return;
+
+        // On récupère une source libre et on lance la lecture
+        var source = GetAvailableSfxSource();
+        source?.PlayOneShot(clip);
+    }
 
     private CharacterUnit currentCaster;
     private CharacterUnit currentTarget;
@@ -393,7 +433,7 @@ public class RhythmQTEManager : MonoBehaviour
         {
             // Lecture des effets de départ
             if (item.tpSFx_Start != null)
-                audioSource?.PlayOneShot(item.tpSFx_Start);
+                PlaySfx(item.tpSFx_Start);
             if (item.tpVfx_Start != null)
                 Instantiate(item.tpVfx_Start, caster.transform.position, Quaternion.identity);
 
@@ -410,7 +450,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (item.tpVfx_End != null)
                 Instantiate(item.tpVfx_End, destination, Quaternion.identity);
             if (item.tpSFx_End != null)
-                audioSource?.PlayOneShot(item.tpSFx_End);
+                PlaySfx(item.tpSFx_End);
         }
         else
         {
@@ -453,7 +493,7 @@ public class RhythmQTEManager : MonoBehaviour
         if (isTeleport)
         {
             if (item.tpSFx_Start != null)
-                audioSource?.PlayOneShot(item.tpSFx_Start);
+                PlaySfx(item.tpSFx_Start);
             if (item.tpVfx_Start != null)
                 Instantiate(item.tpVfx_Start, caster.transform.position, Quaternion.identity);
 
@@ -467,7 +507,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (item.tpVfx_End != null)
                 Instantiate(item.tpVfx_End, origin, Quaternion.identity);
             if (item.tpSFx_End != null)
-                audioSource?.PlayOneShot(item.tpSFx_End);
+                PlaySfx(item.tpSFx_End);
         }
         else
         {
@@ -534,7 +574,7 @@ public class RhythmQTEManager : MonoBehaviour
         if (isTeleport)
         {
             if (move.tpSFx_Start != null)
-                audioSource?.PlayOneShot(move.tpSFx_Start);
+                PlaySfx(move.tpSFx_Start);
             if (move.tpVfx_Start != null)
                 Instantiate(move.tpVfx_Start, caster.transform.position, Quaternion.identity);
 
@@ -548,7 +588,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (move.tpVfx_End != null)
                 Instantiate(move.tpVfx_End, targetPos, Quaternion.identity);
             if (move.tpSFx_End != null)
-                audioSource?.PlayOneShot(move.tpSFx_End);
+                PlaySfx(move.tpSFx_End);
         }
         else
         {
@@ -603,7 +643,7 @@ public class RhythmQTEManager : MonoBehaviour
         if (isTeleport)
         {
             if (move.tpSFx_Start != null)
-                audioSource?.PlayOneShot(move.tpSFx_Start);
+                PlaySfx(move.tpSFx_Start);
             if (move.tpVfx_Start != null)
                 Instantiate(move.tpVfx_Start, caster.transform.position, Quaternion.identity);
 
@@ -623,7 +663,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (move.tpVfx_End != null)
                 Instantiate(move.tpVfx_End, initialPosition, Quaternion.identity);
             if (move.tpSFx_End != null)
-                audioSource?.PlayOneShot(move.tpSFx_End);
+                PlaySfx(move.tpSFx_End);
         }
         else
         {
