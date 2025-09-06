@@ -358,18 +358,23 @@ public class BattleTransitionManager : MonoBehaviour
             if (firstUnit != null)
                 battleCamera.transform.position = firstUnit.transform.position;
 
-            // Recherche du PlayableDirector même si le composant est sur un enfant inactif
-            PlayableDirector introDirector = battleCamera.transform.parent.GetComponentInChildren<PlayableDirector>(true);
+            // Récupère le PlayableDirector directement sur le même objet que ce gestionnaire.
+            // Cela évite de chercher dans la hiérarchie de la battleCamera et clarifie la structure.
+            PlayableDirector introDirector = transform.GetComponent<PlayableDirector>();
             if (introDirector != null)
             {
-                // On joue la Timeline d'introduction
+                // Signale au TimelineManager de jouer cette Timeline afin qu'il suive
+                // précisément son état (lecture/en pause/arrêt).
                 TimelineManager.Instance.PlayTimeline(introDirector);
-                // On attend la fin de la timeline pour éviter l'affichage de l'UI pendant la cinématique
+
+                // Tant que la Timeline est en cours, on attend avant d'afficher l'UI
+                // pour ne pas interférer avec la cinématique d'introduction.
                 yield return new WaitUntil(() => !TimelineManager.Instance.IsTimelinePlaying);
             }
             else
             {
-                Debug.LogWarning("[BattleTransitionManager] Timeline d'intro introuvable sur la battleCamera.");
+                // Avertissement explicite si aucun PlayableDirector n'est trouvé sur l'objet courant.
+                Debug.LogWarning("[BattleTransitionManager] Aucun PlayableDirector trouvé sur BattleTransitionManager.");
             }
         }
         else
