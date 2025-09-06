@@ -216,6 +216,79 @@ public class BattleTransitionManager : MonoBehaviour
 
     #region Transition
     /// <summary>
+    /// Prépare et lance un combat initié depuis une Timeline en spécifiant
+    /// explicitement les ennemis à affronter via un ScriptableObject.
+    /// Cette surcharge facilite l'appel depuis une Timeline qui ne peut
+    /// transmettre qu'un seul paramètre dans ses signaux.
+    /// </summary>
+    /// <param name="timelineEnemies">ScriptableObject contenant jusqu'à trois ennemis.</param>
+    public void StartTimelineBattle(TimelineEnemiesSO timelineEnemies)
+    {
+        if (timelineEnemies == null)
+        {
+            Debug.LogWarning("[BattleTransitionManager] TimelineEnemiesSO non fourni pour StartTimelineBattle.");
+            return;
+        }
+
+        // Délègue la préparation à la méthode gérant individuellement les ennemis.
+        StartTimelineBattle(timelineEnemies.enemy1, timelineEnemies.enemy2, timelineEnemies.enemy3);
+    }
+
+    /// <summary>
+    /// Prépare et lance un combat initié depuis une Timeline en spécifiant
+    /// explicitement les ennemis à affronter.
+    /// </summary>
+    /// <param name="enemy1">Premier ennemi obligatoire.</param>
+    /// <param name="enemy2">Second ennemi optionnel.</param>
+    /// <param name="enemy3">Troisième ennemi optionnel.</param>
+    public void StartTimelineBattle(CharacterData enemy1, CharacterData enemy2 = null, CharacterData enemy3 = null)
+    {
+        // ------------------------------------------------------------------
+        // 1) Constitution de la liste d'ennemis fournie par la Timeline
+        // ------------------------------------------------------------------
+        List<CharacterData> enemies = new();
+        if (enemy1 != null) enemies.Add(enemy1);
+        if (enemy2 != null) enemies.Add(enemy2);
+        if (enemy3 != null) enemies.Add(enemy3);
+
+        // Sans ennemi valide, on ne peut pas démarrer le combat
+        if (enemies.Count == 0)
+        {
+            Debug.LogWarning("[BattleTransitionManager] Aucun ennemi spécifié pour StartTimelineBattle.");
+            return;
+        }
+
+        // ------------------------------------------------------------------
+        // 2) Copie de cette liste dans le NewBattleManager
+        // ------------------------------------------------------------------
+        if (NewBattleManager.Instance != null)
+        {
+            NewBattleManager.Instance.enemyTemplates.Clear();
+            NewBattleManager.Instance.enemyTemplates.AddRange(enemies);
+        }
+        else
+        {
+            Debug.LogWarning("[BattleTransitionManager] NewBattleManager introuvable, combat annulé.");
+            return;
+        }
+
+        // ------------------------------------------------------------------
+        // 3) Désactivation de la détection automatique pour éviter les conflits
+        // ------------------------------------------------------------------
+        playerDetection ??= FindFirstObjectByType<PlayerDetection>();
+        if (playerDetection != null)
+        {
+            playerDetection.detectionOn = false;
+            playerDetection.detectedEnemies.Clear();
+        }
+
+        // ------------------------------------------------------------------
+        // 4) Lancement de la transition de combat classique
+        // ------------------------------------------------------------------
+        StartCombatTransition();
+    }
+
+    /// <summary>
     /// Lance toutes les étapes de la transition vers le mode combat.
     /// </summary>
     public void StartCombatTransition()
