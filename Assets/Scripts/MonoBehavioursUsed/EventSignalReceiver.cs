@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic; // Permet l'utilisation de listes génériques pour gérer les ennemis
 
 /// <summary>
 /// Récepteur générique pour déclencher des évènements depuis une Timeline.
