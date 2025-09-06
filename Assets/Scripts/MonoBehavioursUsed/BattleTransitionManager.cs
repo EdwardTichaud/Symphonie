@@ -365,7 +365,7 @@ public class BattleTransitionManager : MonoBehaviour
             {
                 // Signale au TimelineManager de jouer cette Timeline afin qu'il suive
                 // précisément son état (lecture/en pause/arrêt).
-                TimelineManager.Instance.PlayTimeline(introDirector);
+                TimelineManager.Instance.PlayTimeline(introDirector, false);
 
                 // Tant que la Timeline est en cours, on attend avant d'afficher l'UI
                 // pour ne pas interférer avec la cinématique d'introduction.
