@@ -22,11 +22,11 @@ public class FadeChildrenOpacity : MonoBehaviour
     }
 
     /// <summary>
-    /// Change l’opacité d’un enfant (Image ou SpriteRenderer) vers la valeur désirée.
+    /// Change lï¿½opacitï¿½ dï¿½un enfant (Image ou SpriteRenderer) vers la valeur dï¿½sirï¿½e.
     /// </summary>
-    /// <param name="childIndex">Indice de l’enfant dans la hiérarchie</param>
-    /// <param name="targetAlpha">Opacité cible (0 = transparent, 1 = opaque)</param>
-    /// <param name="duration">Durée du fade en secondes</param>
+    /// <param name="childIndex">Indice de lï¿½enfant dans la hiï¿½rarchie</param>
+    /// <param name="targetAlpha">Opacitï¿½ cible (0 = transparent, 1 = opaque)</param>
+    /// <param name="duration">Durï¿½e du fade en secondes</param>
     public void ChangeOpacity(int childIndex, float targetAlpha, float duration)
     {
         if (childIndex < 0 || childIndex >= transform.childCount)
@@ -42,12 +42,52 @@ public class FadeChildrenOpacity : MonoBehaviour
 
         if (uiImage == null && spriteRenderer == null)
         {
-            Debug.LogWarning($"[FadeChildrenOpacity] L’enfant {child.name} n’a pas d’Image ni de SpriteRenderer.");
+            Debug.LogWarning($"[FadeChildrenOpacity] Lï¿½enfant {child.name} nï¿½a pas dï¿½Image ni de SpriteRenderer.");
             return;
         }
 
         if (fadeRoutine != null) StopCoroutine(fadeRoutine);
         fadeRoutine = StartCoroutine(FadeRoutine(uiImage, spriteRenderer, targetAlpha, duration));
+    }
+
+    /// <summary>
+    /// S'assure qu'un enfant est complÃ¨tement transparent.
+    /// Si son opacitÃ© est supÃ©rieure Ã  zÃ©ro, un fondu vers 0 est lancÃ©.
+    /// </summary>
+    /// <param name="childIndex">Indice de l'enfant dans la hiÃ©rarchie.</param>
+    /// <param name="duration">DurÃ©e du fondu vers la transparence.</param>
+    public void EnsureTransparency(int childIndex, float duration)
+    {
+        // VÃ©rifie que l'indice est valide avant toute manipulation
+        if (childIndex < 0 || childIndex >= transform.childCount)
+        {
+            Debug.LogWarning($"[FadeChildrenOpacity] Index enfant {childIndex} invalide.");
+            return;
+        }
+
+        GameObject child = transform.GetChild(childIndex).gameObject;
+
+        Image uiImage = child.GetComponent<Image>();
+        SpriteRenderer spriteRenderer = child.GetComponent<SpriteRenderer>();
+
+        // Avertit si aucun composant compatible n'est trouvÃ©
+        if (uiImage == null && spriteRenderer == null)
+        {
+            Debug.LogWarning($"[FadeChildrenOpacity] L'enfant {child.name} n'a pas d'Image ni de SpriteRenderer.");
+            return;
+        }
+
+        // RÃ©cupÃ¨re l'opacitÃ© actuelle de l'enfant
+        float currentAlpha = 0f;
+        if (uiImage != null) currentAlpha = uiImage.color.a;
+        if (spriteRenderer != null) currentAlpha = spriteRenderer.color.a;
+
+        // Si l'opacitÃ© est dÃ©jÃ  nulle, aucune action n'est nÃ©cessaire
+        if (currentAlpha <= 0f)
+            return;
+
+        // Lance un fondu progressif vers la transparence pour nettoyer l'Ã©cran
+        ChangeOpacity(childIndex, 0f, duration);
     }
 
     private IEnumerator FadeRoutine(Image uiImage, SpriteRenderer spriteRenderer, float targetAlpha, float duration)

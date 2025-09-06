@@ -736,6 +736,16 @@ public class TimelineManager : MonoBehaviour
         // 4) Une fois tout rétabli en arrière-plan, on peut revenir progressivement à l'image.
         if (useFade)
             yield return FadeFromBlackRoutine();
+
+        // 5) Vérification finale : on s'assure qu'aucun filtre noir ou blanc ne reste visible.
+        //    Cette étape évite qu'une opacité résiduelle persiste après la timeline.
+        var fader = FadeChildrenOpacity.Instance;
+        if (fader != null)
+        {
+            // Indice 0 = BlackScreen, indice 1 = WhiteScreen
+            fader.EnsureTransparency(0, 0.5f);
+            fader.EnsureTransparency(1, 0.5f);
+        }
     }
 
     /// <summary>
