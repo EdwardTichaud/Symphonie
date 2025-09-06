@@ -475,13 +475,8 @@ public class NewBattleManager : MonoBehaviour
 
         //2 Initialise l’UI de la timeline de combat via le gestionnaire dédié
         BattleTimelineUIManager.Instance?.Initialize(unitsInBattle);
-        // Cache l'UI de timeline jusqu'au premier tour du joueur
-        if (BattleTimelineUIManager.Instance != null)
-        {
-            var container = BattleTimelineUIManager.Instance.TimelineContainer;
-            if (container != null && container.parent != null && container.parent.parent != null)
-                container.parent.parent.gameObject.SetActive(false);
-        }
+        // Cache l'UI de timeline jusqu'au premier tour du joueur via le gestionnaire centralisé
+        BattleTimelineUIManager.Instance?.SetVisible(false);
 
         //3 Affecter currentTarget au premier ennemi de la liste
         SetDefaultCurrentTarget();
@@ -669,6 +664,8 @@ public class NewBattleManager : MonoBehaviour
 
         // Affiche l'interface principale au premier tour du joueur
         BattleTransitionManager.Instance?.ShowBattleUIIfNeeded();
+        // S'assure que la timeline devienne visible dès qu'un tour joueur commence
+        BattleTimelineUIManager.Instance?.SetVisible(true);
 
         ChangeCurrentCharacterUnit(characterUnit);
 
@@ -729,9 +726,8 @@ public class NewBattleManager : MonoBehaviour
 
             // 2) Mise à jour de l’unité courante
             currentCharacterUnit = unit;
-            // Mise à jour de la timeline visuelle pour refléter l'unité active
-            BattleTimelineUIManager.Instance?.UpdateHighlight(unit);
-            BattleTimelineUIManager.Instance?.UpdateWheel(unit);
+            // Mise à jour de la timeline visuelle via le gestionnaire centralisé
+            BattleTimelineUIManager.Instance?.Refresh(unit);
 
             ChangeBattleState(BattleState.NewTurn);
 
@@ -1198,8 +1194,8 @@ public class NewBattleManager : MonoBehaviour
         ChangeBattleState(BattleState.EndTurn);
         // Cache tous les menus à la fin du tour
         ToggleMenuContainers(false, false, false);
-        // Réinitialise la mise en évidence de la timeline visuelle
-        BattleTimelineUIManager.Instance?.UpdateHighlight(null);
+        // Réinitialise la timeline visuelle (ordre + surbrillance)
+        BattleTimelineUIManager.Instance?.Refresh(null);
         isTurnResolving = false;
         HandleEndOfBattle();
 
