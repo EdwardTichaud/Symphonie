@@ -19,6 +19,14 @@ public class ThirdPersonCameraController : MonoBehaviour
     [Tooltip("Limites de l'angle vertical en degrés.")]
     public Vector2 pitchLimits = new Vector2(-20f, 60f);
 
+    [Header("Évitement du sol")]
+    [Tooltip("Couches considérées comme le sol pour empêcher Munin de le traverser.")]
+    public LayerMask groundLayers = ~0; // Par défaut, toutes les couches.
+    [Tooltip("Rayon de la sphère virtuelle utilisée pour détecter les collisions.")]
+    public float collisionRadius = 0.3f;
+    [Tooltip("Marge appliquée pour garder une petite distance avec le sol.")]
+    public float collisionOffset = 0.1f;
+
     private float yaw;
     private float pitch;
 
@@ -59,8 +67,22 @@ public class ThirdPersonCameraController : MonoBehaviour
 
         // Calcul de la nouvelle position de la caméra autour de la cible.
         Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
-        Vector3 offset = rotation * new Vector3(0f, 0f, -distance);
-        transform.position = target.position + offset;
+        Vector3 desiredOffset = rotation * new Vector3(0f, 0f, -distance);
+        Vector3 desiredPosition = target.position + desiredOffset;
+
+        // Empêche Munin, l'observateur de Lucian, de traverser le sol.
+        if (Physics.SphereCast(target.position, collisionRadius, desiredOffset.normalized,
+            out RaycastHit hit, distance, groundLayers))
+        {
+            // Place la caméra juste avant l'obstacle détecté.
+            desiredPosition = target.position + desiredOffset.normalized * (hit.distance - collisionOffset);
+
+            // Si le joueur pousse encore la caméra vers le bas, il souhaite regarder plus haut.
+            // On réduit donc la distance pour se rapprocher de lui et on maintient l'angle vers le haut.
+            pitch = Mathf.Clamp(pitch, pitchLimits.x, pitchLimits.y);
+        }
+
+        transform.position = desiredPosition;
         transform.LookAt(target.position);
     }
 }
