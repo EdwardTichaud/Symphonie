@@ -1,0 +1,84 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbc0c89b53ea7e246ba03cfe31f29194, type: 3}
+  m_Name: Character_CryingAngel
+  m_EditorClassIdentifier: 
+  characterName: L'ange pleureur
+  portrait: {fileID: 21300000, guid: 63e892185fc76ce40b9984efd172a103, type: 3}
+  versusSprites:
+  - {fileID: 21300000, guid: 2cc33908b95b3a84d97187c8229044ce, type: 3}
+  characterType: 1
+  gameplayType: 0
+  harmonicType: 0
+  characterWorldModel: {fileID: 785885411600899343, guid: 12a95245f8913904dbf705866d13f395, type: 3}
+  characterBattleModel: {fileID: 901204007372340786, guid: 987fb89310be6ff409301d43e2849b07, type: 3}
+  battlefieldIndex: 0
+  baseReflex: 0
+  baseMobility: 0
+  baseVitality: 0
+  basePower: 0
+  baseStability: 0
+  baseSagacity: 0
+  baseInitiative: 1
+  baseRange: 2
+  baseHP: 80
+  baseStrength: 1
+  baseDefense: 1
+  baseSpeed: 0
+  baseInterceptionRange: 2
+  baseRage: 0
+  maxRage: 0
+  rageDamageMultiplier: 0
+  baseFatigue: 0
+  maxFatigue: 0
+  musicalAttacks:
+  - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
+  specialMusicalMove: {fileID: 0}
+  currentInitiative: 1
+  currentRange: 2
+  currentHP: 80
+  currentStrength: 1
+  currentDefense: 1
+  currentPower: 0
+  currentStability: 0
+  currentVitality: 0
+  currentSagacity: 0
+  isPlayerControlled: 0
+  currentRage: 0
+  currentFatigue: 0
+  currentReflex: 0
+  currentMobility: 0
+  currentSpeed: 0
+  currentInterceptionRange: 0
+  currentInterceptionChance: 0
+  hitSound: {fileID: 8300000, guid: 495e81bd8d7f10b46a1a310b84a331be, type: 3}
+  criticalHitSound: {fileID: 0}
+  interceptedSound: {fileID: 0}
+  interceptionSound: {fileID: 0}
+  prematureDeathTaunt: {fileID: 0}
+  hitEffect: {fileID: 0}
+  deathEffect: {fileID: 0}
+  hitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
+  deathAnimation: {fileID: 7400000, guid: 7f67a9c1949f03342bd793ce58156a74, type: 2}
+  TPAnimation_Start: {fileID: 7400000, guid: 4326dd0ea3dda9a45b9c75e45eaf1931, type: 3}
+  TPAnimation_Destination: {fileID: 7400000, guid: 4326dd0ea3dda9a45b9c75e45eaf1931, type: 3}
+  prepareToUndergoAnimation: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
+  moveStartClip: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
+  moveEndClip: {fileID: 0}
+  weepForLucianDeath: {fileID: 0}
+  weepForThaliaDeath: {fileID: 0}
+  weepForKaelDeath: {fileID: 0}
+  weepForLinkDeath: {fileID: 0}
+  weepForLunaDeath: {fileID: 0}
+  resonancePoint: 1
+  dissonancePoint: 0
+  owner: {fileID: 0}
