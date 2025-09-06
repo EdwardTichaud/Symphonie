@@ -667,10 +667,6 @@ public class NewBattleManager : MonoBehaviour
         if (currentCharacterUnit != null)
             ToggleMenuContainers(false, false, false);
 
-        // Affiche la timeline et autres UI de combat lorsque le joueur démarre son tour
-        if (timelineContainer != null && timelineContainer.parent != null && timelineContainer.parent.parent != null)
-            timelineContainer.parent.parent.gameObject.SetActive(true);
-
         // Affiche l'interface principale au premier tour du joueur
         BattleTransitionManager.Instance?.ShowBattleUIIfNeeded();
 
