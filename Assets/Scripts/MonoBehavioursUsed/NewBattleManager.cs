@@ -107,11 +107,6 @@ public class NewBattleManager : MonoBehaviour
     private CharacterUnit mvpUnit;
     private Dictionary<CharacterUnit, int> totalDamageDealt = new();
 
-    [Header("Timeline UI")]
-    public RectTransform timelineContainer;
-    public GameObject timelineUnitPrefab;
-    public List<BattleTimelineUnit> timelineUIObjects = new();
-
     [Header("Timeline d'objets")]
     public TimelineAsset itemPreparingTimeline;
     private bool itemMenuTimelineActive = false;
@@ -478,11 +473,15 @@ public class NewBattleManager : MonoBehaviour
                 totalDamageDealt[unit] = 0;
         }
 
-        //2 Initialise l’UI de timeline
-        InitializeTimelineUI(unitsInBattle);
+        //2 Initialise l’UI de la timeline de combat via le gestionnaire dédié
+        BattleTimelineUIManager.Instance?.Initialize(unitsInBattle);
         // Cache l'UI de timeline jusqu'au premier tour du joueur
-        if (timelineContainer != null && timelineContainer.parent != null && timelineContainer.parent.parent != null)
-            timelineContainer.parent.parent.gameObject.SetActive(false);
+        if (BattleTimelineUIManager.Instance != null)
+        {
+            var container = BattleTimelineUIManager.Instance.TimelineContainer;
+            if (container != null && container.parent != null && container.parent.parent != null)
+                container.parent.parent.gameObject.SetActive(false);
+        }
 
         //3 Affecter currentTarget au premier ennemi de la liste
         SetDefaultCurrentTarget();
@@ -514,22 +513,6 @@ public class NewBattleManager : MonoBehaviour
     {
         List<CharacterUnit> activeCharacterUnits = unitsInBattle.Where(c => c.currentHP > 0).ToList();
         return activeCharacterUnits;
-    }
-
-    //2 Initialise l’UI de timeline
-    private void InitializeTimelineUI(List<CharacterUnit> characters)
-    {
-        foreach (var go in timelineUIObjects)
-            Destroy(go.gameObject);
-        timelineUIObjects.Clear();
-
-        foreach (var unit in characters)
-        {
-            var slot = Instantiate(timelineUnitPrefab, timelineContainer);
-            var ui = slot.GetComponent<BattleTimelineUnit>();
-            ui.Initialize(unit);
-            timelineUIObjects.Add(ui);
-        }
     }
 
     //3 Affecter currentTarget au premier ennemi de la liste
@@ -750,8 +733,9 @@ public class NewBattleManager : MonoBehaviour
 
             // 2) Mise à jour de l’unité courante
             currentCharacterUnit = unit;
-            UpdateTimelineHighlight(unit);
-            UpdateTimelineWheel(unit);
+            // Mise à jour de la timeline visuelle pour refléter l'unité active
+            BattleTimelineUIManager.Instance?.UpdateHighlight(unit);
+            BattleTimelineUIManager.Instance?.UpdateWheel(unit);
 
             ChangeBattleState(BattleState.NewTurn);
 
@@ -782,56 +766,17 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
-    private void UpdateTimelineHighlight(CharacterUnit activeUnit)
-    {
-        foreach (var ui in timelineUIObjects)
-        {
-            bool isCurrent = activeUnit != null && ui.characterData == activeUnit.Data;
-            ui.SetHighlight(isCurrent);
-        }
-    }
-
-    private void UpdateTimelineWheel(CharacterUnit activeUnit)
-    {
-        if (activeUnit == null || timelineUIObjects.Count == 0)
-            return;
-
-        int currentIndex = timelineUIObjects.FindIndex(ui => ui.characterData == activeUnit.Data);
-        if (currentIndex == -1)
-            return;
-
-        int count = timelineUIObjects.Count;
-
-        // Place l'unité active sous le curseur en tête de liste
-        int shift = (count - currentIndex) % count;
-        for (int i = 0; i < shift; i++)
-        {
-            var last = timelineUIObjects[count - 1];
-            timelineUIObjects.RemoveAt(count - 1);
-            timelineUIObjects.Insert(0, last);
-        }
-
-        for (int i = 0; i < count; i++)
-        {
-            timelineUIObjects[i].transform.SetSiblingIndex(i);
-
-            float t = count > 1 ? Mathf.Clamp01((float)i / (count - 1)) : 0f;
-            float scale = Mathf.Lerp(1f, 0.8f, t);
-            float alpha = Mathf.Lerp(1f, 0.2f, t);
-            timelineUIObjects[i].SetAppearance(scale, alpha);
-        }
-    }
-
+    /// <summary>
+    /// Retire une unité de la timeline visuelle lorsqu'elle quitte le combat.
+    /// </summary>
+    /// <param name="deadUnit">L'unité vaincue.</param>
     public void RemoveFromTimeline(CharacterUnit deadUnit)
     {
+        // Mise à jour de la liste d'unités actives utilisée par la boucle de combat
         activeCharacterUnits.Remove(deadUnit);
 
-        var ui = timelineUIObjects.FirstOrDefault(x => x.characterData == deadUnit.Data);
-        if (ui != null)
-        {
-            timelineUIObjects.Remove(ui);
-            Destroy(ui.gameObject);
-        }
+        // Le gestionnaire d'UI supprime l'élément graphique correspondant
+        BattleTimelineUIManager.Instance?.RemoveFromTimeline(deadUnit);
     }
 
     public void OnEnemyDefeated(CharacterUnit enemy)
@@ -1257,7 +1202,8 @@ public class NewBattleManager : MonoBehaviour
         ChangeBattleState(BattleState.EndTurn);
         // Cache tous les menus à la fin du tour
         ToggleMenuContainers(false, false, false);
-        UpdateTimelineHighlight(null);
+        // Réinitialise la mise en évidence de la timeline visuelle
+        BattleTimelineUIManager.Instance?.UpdateHighlight(null);
         isTurnResolving = false;
         HandleEndOfBattle();
 
@@ -1986,12 +1932,13 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private void StartItemPreparingTimeline()
     {
-        if (itemPreparingTimeline == null || TimelineManager.Instance == null || itemMenuTimelineActive)
+        // S'assure qu'une Timeline et un gestionnaire existent avant de lancer quoi que ce soit
+        if (itemPreparingTimeline == null || BattleTimelineManager.Instance == null || TimelineManager.Instance == null || itemMenuTimelineActive)
             return;
 
         GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
         // Démarre la Timeline qui boucle tant que le menu est ouvert
-        TimelineManager.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
+        BattleTimelineManager.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
         itemMenuTimelineActive = true;
     }
 
@@ -2718,12 +2665,8 @@ public class NewBattleManager : MonoBehaviour
         currentTurnDamage = 0;
         mvpUnit = null;
 
-        // Réinitialisation UI timeline
-        //foreach (var ui in timelineUIObjects)
-        //{
-        //    Destroy(ui.gameObject);
-        //    timelineUIObjects.Clear();
-        //}
+        // Réinitialisation de l'interface de timeline via le gestionnaire dédié
+        BattleTimelineUIManager.Instance?.Clear();
 
         // Réinitialise le curseur cible si existant
         if (targetCursor != null)
