@@ -87,6 +87,12 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     private bool useFade = true;
 
+    /// <summary>
+    /// Précise si la lecture d'une timeline doit interrompre la musique en cours.
+    /// Lorsque <c>false</c>, la bande-son actuelle est conservée pendant la cinématique.
+    /// </summary>
+    private bool interruptMusic = true;
+
     [Header("Audio")]
     [Tooltip("Musique de fond à jouer pendant les timelines.")]
     [SerializeField] private AudioClip timelineMusicClip;
@@ -394,7 +400,7 @@ public class TimelineManager : MonoBehaviour
     ///     True pour entourer la timeline d'un fondu noir,
     ///     False pour la jouer directement sans transition.
     /// </param>
-    public void PlayTimeline(PlayableDirector newDirector, bool withFade = true)
+    public void PlayTimeline(PlayableDirector newDirector, bool withFade = true, bool interruptMusic = true)
     {
         if (newDirector == null)
         {
@@ -417,8 +423,9 @@ public class TimelineManager : MonoBehaviour
 
         currentDirector = newDirector;
 
-        // Enregistre la préférence de fondu pour cette timeline avant de la jouer.
+        // Enregistre les préférences de lecture pour cette timeline.
         useFade = withFade;
+        this.interruptMusic = interruptMusic;
         currentDirector.Play();
     }
 
@@ -430,7 +437,8 @@ public class TimelineManager : MonoBehaviour
     /// <param name="caster">GameObject jouant la timeline (binding des tracks "Caster" ou "PNJ").</param>
     /// <param name="cameraTag">Tag de la caméra à animer. Peut être null pour n'animer que le caster.</param>
     /// <param name="withFade">True pour jouer la timeline avec fondu, false pour la jouer instantanément.</param>
-    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag, bool withFade = true)
+    /// <param name="interruptMusic">True pour couper ou remplacer la musique actuelle, false pour la conserver.</param>
+    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag, bool withFade = true, bool interruptMusic = true)
     {
         if (timelineAsset == null || reusableDirector == null)
         {
@@ -519,8 +527,8 @@ public class TimelineManager : MonoBehaviour
             reusableDirector.SetGenericBinding(timelineAsset.markerTrack, markerReceiver);
         }
 
-        // Joue la timeline en profitant de toute la gestion centralisée (skip, fondu, etc.)
-        PlayTimeline(reusableDirector, withFade);
+        // Joue la timeline en profitant de toute la gestion centralisée (skip, fondu, musique...)
+        PlayTimeline(reusableDirector, withFade, interruptMusic);
 
         // Suit le lanceur si une caméra est attachée
         if (caster != null && cameraParent != null)
@@ -536,7 +544,8 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     /// <param name="timelineAsset">Timeline à jouer sur le PNJ courant.</param>
     /// <param name="withFade">True pour inclure un fondu, false pour une transition immédiate.</param>
-    public void PlayTimelineOnCurrentNPC(TimelineAsset timelineAsset, bool withFade = true)
+    /// <param name="interruptMusic">True pour interrompre la musique en cours, false pour la conserver.</param>
+    public void PlayTimelineOnCurrentNPC(TimelineAsset timelineAsset, bool withFade = true, bool interruptMusic = true)
     {
         // Récupère le PNJ en cours d'interaction via l'InteractionManager.
         GameObject npc = InteractionManager.Instance != null ? InteractionManager.Instance.currentInteractable : null;
@@ -549,7 +558,7 @@ public class TimelineManager : MonoBehaviour
         }
 
         // Utilise la WorldCamera : la track "Camera" ira chercher l'Animator du parent de la WorldCamera.
-        PlayTimeline(timelineAsset, npc, "WorldCamera", withFade);
+        PlayTimeline(timelineAsset, npc, "WorldCamera", withFade, interruptMusic);
     }
 
     /// <summary>
@@ -661,10 +670,9 @@ public class TimelineManager : MonoBehaviour
             CameraController.Instance.enabled = false;
         Debug.Log($"[TimelineManager] Timeline jouée : {pd.name}");
 
-        // Bascule la musique vers le thème de timeline si disponible.
-        // Si aucun clip n'est fourni, l'AudioManager se charge simplement de couper
-        // la musique de zone en fondu pour laisser la timeline s'exprimer.
-        if (AudioManager.Instance != null)
+        // Bascule la musique vers le thème de timeline si nécessaire.
+        // Si l'option est désactivée, on conserve la musique de fond actuelle.
+        if (interruptMusic && AudioManager.Instance != null)
             AudioManager.Instance.TransitionToTimeline(timelineMusicClip);
 
         // Lance un fondu noir pour encadrer le début de la timeline si demandé.
@@ -720,8 +728,8 @@ public class TimelineManager : MonoBehaviour
         }
 
         // Restaure l'ancienne musique maintenant que la timeline est terminée.
-        // L'AudioManager relancera la musique de zone en fondu si aucune autre timeline n'est active.
-        if (AudioManager.Instance != null)
+        // Ne s'applique que si la timeline avait interrompu la bande-son précédente.
+        if (interruptMusic && AudioManager.Instance != null)
             AudioManager.Instance.ReturnFromTimeline();
 
         // 2) La cinématique est terminée : on redonne le contrôle de Lucian en réactivant les inputs "World".
