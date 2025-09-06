@@ -217,6 +217,25 @@ public class BattleTransitionManager : MonoBehaviour
     #region Transition
     /// <summary>
     /// Prépare et lance un combat initié depuis une Timeline en spécifiant
+    /// explicitement les ennemis à affronter via un ScriptableObject.
+    /// Cette surcharge facilite l'appel depuis une Timeline qui ne peut
+    /// transmettre qu'un seul paramètre dans ses signaux.
+    /// </summary>
+    /// <param name="timelineEnemies">ScriptableObject contenant jusqu'à trois ennemis.</param>
+    public void StartTimelineBattle(TimelineEnemiesSO timelineEnemies)
+    {
+        if (timelineEnemies == null)
+        {
+            Debug.LogWarning("[BattleTransitionManager] TimelineEnemiesSO non fourni pour StartTimelineBattle.");
+            return;
+        }
+
+        // Délègue la préparation à la méthode gérant individuellement les ennemis.
+        StartTimelineBattle(timelineEnemies.enemy1, timelineEnemies.enemy2, timelineEnemies.enemy3);
+    }
+
+    /// <summary>
+    /// Prépare et lance un combat initié depuis une Timeline en spécifiant
     /// explicitement les ennemis à affronter.
     /// </summary>
     /// <param name="enemy1">Premier ennemi obligatoire.</param>

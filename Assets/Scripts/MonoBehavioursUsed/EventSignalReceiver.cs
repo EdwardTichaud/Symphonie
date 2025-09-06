@@ -110,4 +110,5 @@ public class EventSignalReceiver : MonoBehaviour
             Debug.LogWarning("[EventSignalReceiver] Joueur non trouvé !");
         }
     }
+
 }
