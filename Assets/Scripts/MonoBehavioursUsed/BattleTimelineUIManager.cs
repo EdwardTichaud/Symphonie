@@ -53,6 +53,11 @@ public class BattleTimelineUIManager : MonoBehaviour
             ui.Initialize(unit);
             timelineUIObjects.Add(ui);
         }
+
+        // Dès l'initialisation, on tente de trier la liste selon l'ordre
+        // de passage prévu afin d'éviter un affichage incohérent si des
+        // valeurs d'ATB étaient déjà présentes (cas de reprises ou tests).
+        SortTimelineByATB();
     }
 
     /// <summary>
@@ -63,6 +68,42 @@ public class BattleTimelineUIManager : MonoBehaviour
         foreach (var ui in timelineUIObjects)
             if (ui != null) Destroy(ui.gameObject);
         timelineUIObjects.Clear();
+    }
+
+    /// <summary>
+    /// Calcule le nombre d'itérations nécessaires pour qu'une unité soit prête
+    /// à jouer en reproduisant la logique de <see cref="NewBattleManager"/>.
+    /// </summary>
+    private float EstimateTurnsToReady(CharacterUnit unit)
+    {
+        if (unit == null || unit.currentInitiative <= 0f)
+            return float.MaxValue;
+
+        // Reste d'ATB à parcourir avant d'atteindre le seuil de déclenchement.
+        float remaining = Mathf.Max(0f, unit.ATBMax - unit.currentATB);
+        return remaining / unit.currentInitiative;
+    }
+
+    /// <summary>
+    /// Trie les vignettes de la timeline selon l'ordre réel de passage calculé
+    /// à partir des jauges d'ATB et de l'initiative de chaque unité.
+    /// </summary>
+    private void SortTimelineByATB()
+    {
+        if (NewBattleManager.Instance == null)
+            return;
+
+        timelineUIObjects.Sort((a, b) =>
+        {
+            var unitA = NewBattleManager.Instance.activeCharacterUnits
+                .Find(u => u.Data == a.characterData);
+            var unitB = NewBattleManager.Instance.activeCharacterUnits
+                .Find(u => u.Data == b.characterData);
+
+            float turnsA = EstimateTurnsToReady(unitA);
+            float turnsB = EstimateTurnsToReady(unitB);
+            return turnsA.CompareTo(turnsB);
+        });
     }
 
     /// <summary>
@@ -78,28 +119,31 @@ public class BattleTimelineUIManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Réorganise la timeline pour placer l'unité active sous le curseur.
+    /// Réorganise la timeline pour placer l'unité active en première position et
+    /// afficher ensuite les suivantes selon l'ordre réel de passage.
     /// </summary>
     public void UpdateWheel(CharacterUnit activeUnit)
     {
-        if (activeUnit == null || timelineUIObjects.Count == 0)
+        if (timelineUIObjects.Count == 0)
             return;
 
-        int currentIndex = timelineUIObjects.FindIndex(ui => ui.characterData == activeUnit.Data);
-        if (currentIndex == -1)
-            return;
+        // Trie préalablement la liste pour refléter l'ordre de passage calculé.
+        SortTimelineByATB();
 
-        int count = timelineUIObjects.Count;
-
-        // Place l'unité active en tête de liste
-        int shift = (count - currentIndex) % count;
-        for (int i = 0; i < shift; i++)
+        if (activeUnit != null)
         {
-            var last = timelineUIObjects[count - 1];
-            timelineUIObjects.RemoveAt(count - 1);
-            timelineUIObjects.Insert(0, last);
+            // S'assure que l'unité actuellement active est bien en tête.
+            int index = timelineUIObjects.FindIndex(ui => ui.characterData == activeUnit.Data);
+            if (index > 0)
+            {
+                var ui = timelineUIObjects[index];
+                timelineUIObjects.RemoveAt(index);
+                timelineUIObjects.Insert(0, ui);
+            }
         }
 
+        // Met à jour l'apparence et l'ordre des vignettes dans la hiérarchie.
+        int count = timelineUIObjects.Count;
         for (int i = 0; i < count; i++)
         {
             timelineUIObjects[i].transform.SetSiblingIndex(i);
@@ -108,6 +152,8 @@ public class BattleTimelineUIManager : MonoBehaviour
             float scale = Mathf.Lerp(1f, 0.8f, t);
             float alpha = Mathf.Lerp(1f, 0.2f, t);
             timelineUIObjects[i].SetAppearance(scale, alpha);
+            // Met à jour la jauge d'ATB pour refléter l'avancée réelle.
+            timelineUIObjects[i].UpdateATBGauge();
         }
     }
 
