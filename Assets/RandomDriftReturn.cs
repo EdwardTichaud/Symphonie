@@ -4,6 +4,19 @@ using UnityEngine;
 
 public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
 {
+    public enum ModeSelection
+    {
+        ChildrenOnly,  // seulement les enfants directs
+        Descendants    // toute la descendance (limitable par profondeurMax)
+    }
+
+    [Header("Sélection des cibles")]
+    [Tooltip("Choix de la portée: enfants directs ou toute la descendance.")]
+    public ModeSelection modeDeSelection = ModeSelection.ChildrenOnly;
+
+    [Tooltip("Profondeur max quand 'Descendants' est choisi. 1 = enfants directs, 2 = petits-enfants, etc. 0 = illimité.")]
+    [Min(0)] public int profondeurMax = 0;
+
     [Header("Joueur")]
     [Tooltip("Si non renseigné, recherche par tag 'Player'.")]
     public Transform joueur;
@@ -56,28 +69,12 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
         if (dureeRetour < 0f) dureeRetour = 0f;
         if (driftSpeed < 0f) driftSpeed = 0f;
         if (rotationResiduelleDegPerSec < 0f) rotationResiduelleDegPerSec = 0f;
+        if (modeDeSelection == ModeSelection.ChildrenOnly) profondeurMax = 1; // cohérent: enfants directs = profondeur 1
     }
 
     void Start()
     {
-        // Crée un morceau pour chaque petit-enfant
-        foreach (Transform enfant in transform)
-        {
-            foreach (Transform petitEnfant in enfant)
-            {
-                var m = new Morceau
-                {
-                    tr = petitEnfant,
-                    posOrigine = petitEnfant.position,
-                    rotOrigine = petitEnfant.rotation,
-                    directionFixe = Random.onUnitSphere.normalized,  // direction figée
-                    rotAxis = Random.onUnitSphere.normalized,
-                    etat = Etat.Derive,
-                    routine = null
-                };
-                morceaux.Add(m);
-            }
-        }
+        ReconstruireMorceaux();
     }
 
     void Update()
@@ -91,9 +88,7 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
 
         foreach (var m in morceaux)
         {
-            // Rotation uniquement si:
-            // - en dérive ou à l’arrêt max
-            // - OU à l’origine et rotateInPlace = true
+            // Rotation autorisée en dérive/arrêtMax, et éventuellement à l'origine
             bool canRotate = (m.etat == Etat.Derive || m.etat == Etat.ArretMax) ||
                              (rotateInPlace && m.etat == Etat.IdleAOrigine);
 
@@ -178,5 +173,82 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
 
         m.etat = Etat.IdleAOrigine;
         m.routine = null;
+    }
+
+    // ======== Construction de la liste des cibles ========
+
+    [ContextMenu("Reconstruire la liste")]
+    public void ReconstruireMorceaux()
+    {
+        morceaux.Clear();
+
+        if (modeDeSelection == ModeSelection.ChildrenOnly)
+        {
+            // enfants directs uniquement
+            foreach (Transform enfant in transform)
+                AjouterMorceau(enfant);
+        }
+        else // Descendants
+        {
+            if (profondeurMax <= 0)
+            {
+                // illimité
+                foreach (var tr in EnumererDescendanceIllimitee(transform))
+                    AjouterMorceau(tr);
+            }
+            else
+            {
+                // limité à profondeurMax
+                foreach (var tr in EnumererDescendanceLimitee(transform, profondeurMax))
+                    AjouterMorceau(tr);
+            }
+        }
+    }
+
+    private void AjouterMorceau(Transform tr)
+    {
+        if (tr == transform) return; // on ignore le parent lui-même
+        var m = new Morceau
+        {
+            tr = tr,
+            posOrigine = tr.position,
+            rotOrigine = tr.rotation,
+            directionFixe = Random.onUnitSphere.normalized,
+            rotAxis = Random.onUnitSphere.normalized,
+            etat = Etat.Derive,
+            routine = null
+        };
+        morceaux.Add(m);
+    }
+
+    // Descendance illimitée (DFS)
+    private IEnumerable<Transform> EnumererDescendanceIllimitee(Transform root)
+    {
+        foreach (Transform child in root)
+        {
+            yield return child;
+            foreach (var sub in EnumererDescendanceIllimitee(child))
+                yield return sub;
+        }
+    }
+
+    // Descendance limitée en profondeur (BFS)
+    // profondeur = 1 => enfants directs ; 2 => petits-enfants, etc.
+    private IEnumerable<Transform> EnumererDescendanceLimitee(Transform root, int profondeur)
+    {
+        var queue = new Queue<(Transform t, int d)>();
+        queue.Enqueue((root, 0));
+
+        while (queue.Count > 0)
+        {
+            var (t, d) = queue.Dequeue();
+            if (d >= profondeur) continue;
+
+            foreach (Transform child in t)
+            {
+                yield return child;
+                queue.Enqueue((child, d + 1));
+            }
+        }
     }
 }
