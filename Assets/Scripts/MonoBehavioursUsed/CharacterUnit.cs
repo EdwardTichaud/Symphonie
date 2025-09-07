@@ -62,6 +62,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     // Nouvelle réserve d'harmoniques par type
     public Dictionary<HarmonicType, int> harmonicReserve = new();
     public Dictionary<MusicalMoveSO, int> moveCooldowns = new();
+    // Compteurs d'utilisation des attaques musicales
+    // Clé : move, Valeur : nombre d'utilisations
+    public Dictionary<MusicalMoveSO, int> moveUsesThisTurn = new();
+    public Dictionary<MusicalMoveSO, int> moveUsesThisBattle = new();
     public float currentFatigue { get => Data.currentFatigue; set => Data.currentFatigue = value; }
 
     // Gestion de l'initiative
@@ -548,6 +552,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             .Where(m => !m.onlyAwake || IsAwake)
             .Where(m => !m.enterAwake || !IsAwake)
             .Where(m => !m.enterAwake || GetHarmonicCount(Data.harmonicType) >= Data.resonancePoint)
+            .Where(m => CanUseMove(m))
             .ToArray();
 
         if (availableAttacks == null || availableAttacks.Length == 0)
@@ -632,6 +637,71 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         if (move.cooldown > 0)
             moveCooldowns[move] = move.cooldown;
+    }
+
+    // ---------------------------------------------------------------------
+    // Gestion des limitations d'utilisation des attaques musicales
+    // ---------------------------------------------------------------------
+
+    /// <summary>
+    /// Vérifie si ce move peut être utilisé en fonction des limites par tour
+    /// et par combat.
+    /// </summary>
+    public bool CanUseMove(MusicalMoveSO move)
+    {
+        if (move == null)
+            return false;
+
+        if (move.maxUsesPerTurn > 0)
+        {
+            moveUsesThisTurn.TryGetValue(move, out int usedTurn);
+            if (usedTurn >= move.maxUsesPerTurn)
+                return false;
+        }
+
+        if (move.maxUsesPerBattle > 0)
+        {
+            moveUsesThisBattle.TryGetValue(move, out int usedBattle);
+            if (usedBattle >= move.maxUsesPerBattle)
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Enregistre l'utilisation d'un move pour tenir à jour les compteurs.
+    /// </summary>
+    public void RegisterMoveUse(MusicalMoveSO move)
+    {
+        if (move.maxUsesPerTurn > 0)
+        {
+            moveUsesThisTurn.TryGetValue(move, out int usedTurn);
+            moveUsesThisTurn[move] = usedTurn + 1;
+        }
+
+        if (move.maxUsesPerBattle > 0)
+        {
+            moveUsesThisBattle.TryGetValue(move, out int usedBattle);
+            moveUsesThisBattle[move] = usedBattle + 1;
+        }
+    }
+
+    /// <summary>
+    /// Réinitialise les compteurs par tour. À appeler au début de chaque tour.
+    /// </summary>
+    public void ResetTurnMoveUsage()
+    {
+        moveUsesThisTurn.Clear();
+    }
+
+    /// <summary>
+    /// Réinitialise les compteurs globaux du combat. À appeler au début du combat.
+    /// </summary>
+    public void ResetBattleMoveUsage()
+    {
+        moveUsesThisTurn.Clear();
+        moveUsesThisBattle.Clear();
     }
 
     /// <summary>

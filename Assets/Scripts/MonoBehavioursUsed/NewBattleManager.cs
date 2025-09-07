@@ -467,6 +467,11 @@ public class NewBattleManager : MonoBehaviour
         //1 Filtrer pour ne garder que les unités dont les HP sont > 0
         activeCharacterUnits = ReturnActiveUnits();
 
+        // Réinitialise les compteurs d'utilisation des moves et items pour le combat
+        foreach (var unit in activeCharacterUnits)
+            unit.ResetBattleMoveUsage();
+        InventoryManager.Instance?.ResetBattleItemUsage();
+
         foreach (var unit in activeCharacterUnits.Where(u => u.Data.isPlayerControlled))
         {
             if (!totalDamageDealt.ContainsKey(unit))
@@ -719,6 +724,9 @@ public class NewBattleManager : MonoBehaviour
             }
 
             unit.ReduceCooldowns();
+            // Réinitialisation des limites par tour
+            unit.ResetTurnMoveUsage();
+            InventoryManager.Instance?.ResetTurnItemUsage();
             isTurnResolving = true;
 
             // 1) On stocke l’unité qui jouait juste avant (champ de classe)
@@ -868,6 +876,12 @@ public class NewBattleManager : MonoBehaviour
     {
         Debug.Log($"{caster} exécute le mouvement {move.moveName} sur {target}");
         ToggleMenuContainers(false, false, false);
+        // Vérifie les limites d'utilisation avant de lancer le QTE
+        if (!caster.CanUseMove(move))
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction("Limite d'utilisation atteinte");
+            yield break;
+        }
         if (!IsTargetInRange(caster, target, move))
         {
             ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
@@ -942,6 +956,12 @@ public class NewBattleManager : MonoBehaviour
 
     public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
     {
+        if (!InventoryManager.Instance.CanUseItem(item))
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction("Limite d'utilisation atteinte");
+            yield break;
+        }
+
         if (!IsTargetInRange(caster, target, item))
         {
             ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
@@ -1223,6 +1243,7 @@ public class NewBattleManager : MonoBehaviour
             caster.ConsumeHarmonic(caster.Data.harmonicType, cost);
             caster.AddHarmonic(caster.Data.harmonicType, generation);
             caster.SetMoveCooldown(move);
+            caster.RegisterMoveUse(move);
 
             // Activation du mode Awake si le move le permet
             if (move.enterAwake && !caster.IsAwake &&
@@ -1800,10 +1821,12 @@ public class NewBattleManager : MonoBehaviour
         skillChoices = currentCharacterUnit.Data.musicalAttacks
             .Where(m => !m.onlyAwake || currentCharacterUnit.IsAwake)
             .Where(m => !m.enterAwake || !currentCharacterUnit.IsAwake)
+            .Where(m => currentCharacterUnit.CanUseMove(m))
             .ToList();
 
-        // Ajoute le move spécial s'il existe
-        if (currentCharacterUnit.Data.specialMusicalMove != null)
+        // Ajoute le move spécial s'il existe et est autorisé
+        if (currentCharacterUnit.Data.specialMusicalMove != null &&
+            currentCharacterUnit.CanUseMove(currentCharacterUnit.Data.specialMusicalMove))
             skillChoices.Add(currentCharacterUnit.Data.specialMusicalMove);
 
         // 7) Création des boutons de compétences
@@ -1816,7 +1839,8 @@ public class NewBattleManager : MonoBehaviour
             bool resonanceOk = true;
             if (move.enterAwake)
                 resonanceOk = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.resonancePoint;
-            bool available = enoughHarmonic && resonanceOk;
+            bool usageOk = currentCharacterUnit.CanUseMove(move);
+            bool available = enoughHarmonic && resonanceOk && usageOk;
             bool highlight = move == currentCharacterUnit.Data.specialMusicalMove && available;
             SetButtonAvailability(currentSkillsMenuSlots[i], available, highlight);
         }

@@ -2,6 +2,11 @@
 
 Ce document décrit les nouvelles actions musicales et objets utilisables ajoutés au projet **Symphonie**.
 
+## Limites d'utilisation
+Chaque MusicalMove ou Item peut maintenant définir un nombre maximal d'utilisations par tour et par combat. Les champs
+`maxUsesPerTurn` et `maxUsesPerBattle` des ScriptableObjects permettent de configurer ces limites. Une valeur de `0` indique
+une utilisation illimitée.
+
 ## MusicalMove : Crescendo Fulgurant
 - **Type** : Attaque
 - **Effet** : inflige 30 points de dégâts à une cible unique.
