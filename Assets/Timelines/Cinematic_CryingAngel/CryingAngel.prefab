@@ -251,6 +251,7 @@ GameObject:
   - component: {fileID: 6516949246454441680}
   - component: {fileID: 2453295168774687537}
   - component: {fileID: 7747679698531544613}
+  - component: {fileID: 3527516845219876543}
   - component: {fileID: 8420255405211495108}
   m_Layer: 0
   m_Name: Timeline_CryingAngel
@@ -355,8 +356,8 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 0}
-          m_TargetAssemblyTypeName: BattleTransitionManager, Assembly-CSharp
+        - m_Target: {fileID: 3527516845219876543}
+          m_TargetAssemblyTypeName: EventSignalReceiver, Assembly-CSharp
           m_MethodName: StartTimelineBattle
           m_Mode: 2
           m_Arguments:
@@ -364,9 +365,22 @@ MonoBehaviour:
             m_ObjectArgumentAssemblyTypeName: TimelineEnemiesSO, Assembly-CSharp
             m_IntArgument: 0
             m_FloatArgument: 0
-            m_StringArgument: 
+            m_StringArgument:
             m_BoolArgument: 0
           m_CallState: 1
+--- !u!114 &3527516845219876543
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8470188151284366577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9777777e7b9c3045a025aee581ed97b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  moveSpeed: 1.8
 --- !u!114 &8420255405211495108
 MonoBehaviour:
   m_ObjectHideFlags: 0
