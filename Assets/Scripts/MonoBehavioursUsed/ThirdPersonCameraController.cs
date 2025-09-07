@@ -25,13 +25,9 @@ public class ThirdPersonCameraController : MonoBehaviour
     [Tooltip("Limites de l'angle vertical en degrés.")]
     public Vector2 pitchLimits = new Vector2(-20f, 60f);
 
-    [Header("Gestion des obstacles")]
-    [Tooltip("Couches considérées comme obstacles (murs, sol, etc.).")]
-    public LayerMask obstacleLayers = ~0; // Par défaut, toutes les couches.
-    [Tooltip("Rayon de la sphère virtuelle utilisée pour détecter les collisions.")]
-    public float collisionRadius = 0.3f;
-    [Tooltip("Marge appliquée pour garder une petite distance avec l'obstacle.")]
-    public float collisionOffset = 0.1f;
+    // La gestion des obstacles a été volontairement retirée pour simplifier le système.
+    // L'occlusion visuelle est désormais la seule protection : si un mur s'interpose,
+    // un autre script se charge de rendre l'obstacle transparent.
 
     [Header("Ajustements dynamiques")]
     [Tooltip("Temps de lissage du déplacement de la caméra.")]
@@ -96,24 +92,14 @@ public class ThirdPersonCameraController : MonoBehaviour
         // Distance cible initiale (après zoom manuel).
         float targetDistance = distance;
 
-        // Empêche Munin, l'observateur de Lucian, d'entrer en collision avec les obstacles.
-        if (Physics.SphereCast(target.position, collisionRadius, backwardDir,
-            out RaycastHit hit, targetDistance, obstacleLayers))
+        // Sans gestion d'obstacles : si aucun zoom manuel n'est utilisé, on s'éloigne
+        // progressivement pour offrir une meilleure vue d'ensemble du décor.
+        if (Mathf.Approximately(scroll, 0f))
         {
-            // Si un obstacle est détecté, on rapproche la caméra juste avant celui-ci.
-            targetDistance = Mathf.Clamp(hit.distance - collisionOffset, minDistance, targetDistance);
-        }
-        else
-        {
-            // En extérieur, si aucune entrée de zoom n'est utilisée, on s'éloigne progressivement
-            // pour offrir une meilleure vue d'ensemble du décor.
-            if (Mathf.Approximately(scroll, 0f))
-            {
-                targetDistance = Mathf.MoveTowards(targetDistance, maxDistance, zoomSpeed * Time.deltaTime);
-            }
+            targetDistance = Mathf.MoveTowards(targetDistance, maxDistance, zoomSpeed * Time.deltaTime);
         }
 
-        // Position désirée calculée avec la distance ajustée (obstacle ou grand espace).
+        // Position désirée calculée uniquement à partir de la distance cible.
         Vector3 desiredPosition = target.position + backwardDir * targetDistance;
 
         // Lissage du déplacement de la caméra pour un mouvement plus agréable, notamment dans les espaces exigus.
