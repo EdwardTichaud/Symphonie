@@ -35890,6 +35890,7 @@ GameObject:
   - component: {fileID: 738531363}
   - component: {fileID: 738531366}
   - component: {fileID: 738531365}
+  - component: {fileID: 738531367}
   m_Layer: 8
   m_Name: Sol_1
   m_TagString: Untagged
@@ -35964,6 +35965,28 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 738531362}
+  m_Mesh: {fileID: 4300002, guid: 33e6621d2756c044d88f4f9de1a55e7e, type: 3}
+--- !u!64 &738531367
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 738531362}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
   m_Mesh: {fileID: 4300002, guid: 33e6621d2756c044d88f4f9de1a55e7e, type: 3}
 --- !u!224 &739038116 stripped
 RectTransform:
@@ -68660,9 +68683,9 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
+  - {fileID: 1735879495}
   - {fileID: 1880851298}
   - {fileID: 1473904057}
-  - {fileID: 1735879495}
   m_Father: {fileID: 1069589284561750899}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1355218303
@@ -87327,7 +87350,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1735879494}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -87364,7 +87387,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1735879494}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3cf5cb9e1ef590c48b1f919f2a7bd895, type: 3}
+  m_Script: {fileID: 11500000, guid: af64f4bf738e4db8b1c77e2acd2163e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1738493940
