@@ -17,6 +17,12 @@ public class ItemData : ScriptableObject
     public float moveSpeed;
     public float castDistance;
 
+    [Header("Limitations d'utilisation")]
+    [Tooltip("Nombre maximum d'utilisations par tour (0 = illimité)")]
+    public int maxUsesPerTurn = 0;
+    [Tooltip("Nombre maximum d'utilisations par combat (0 = illimité)")]
+    public int maxUsesPerBattle = 0;
+
     [Header("Coup Critique")]
     [Tooltip("Active une variante lorsque le QTE est réussi")]
     public bool useCriticalVariant = false;

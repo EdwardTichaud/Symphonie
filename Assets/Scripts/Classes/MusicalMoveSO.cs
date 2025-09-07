@@ -50,6 +50,12 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Nombre de tours avant de pouvoir réutiliser le move")]
     public int cooldown = 0;
 
+    [Header("Limitations d'utilisation")]
+    [Tooltip("Nombre maximum d'utilisations par tour (0 = illimité)")]
+    public int maxUsesPerTurn = 0;
+    [Tooltip("Nombre maximum d'utilisations par combat (0 = illimité)")]
+    public int maxUsesPerBattle = 0;
+
     [Header("Ciblage")]
     public TargetType targetType = TargetType.SingleEnemy;
     public TargetType defaultTargetType = TargetType.SingleEnemy;

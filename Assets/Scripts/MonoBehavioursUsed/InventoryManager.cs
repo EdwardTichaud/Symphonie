@@ -10,6 +10,10 @@ public class InventoryManager : MonoBehaviour
     [Header("Items actuellement en inventaire")]
     [SerializeField] private List<ItemData> inventoryItems = new();
 
+    // Suivi des limitations d'utilisation des items
+    private Dictionary<ItemData, int> itemUsesThisTurn = new();
+    private Dictionary<ItemData, int> itemUsesThisBattle = new();
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -34,7 +38,7 @@ public class InventoryManager : MonoBehaviour
     /// Renvoie la liste des items possédés et utilisables en combat.
     /// </summary>
     public List<ItemData> GetUsableItems()
-        => inventoryItems.Where(item => item.isUsableInBattle).ToList();
+        => inventoryItems.Where(item => item.isUsableInBattle && CanUseItem(item)).ToList();
 
     /// <summary>
     /// Ajoute un item à l'inventaire (uniquement si c'est un item valide du jeu).
@@ -59,9 +63,16 @@ public class InventoryManager : MonoBehaviour
             return;
         }
 
+        if (!CanUseItem(item))
+        {
+            Debug.LogWarning($"Limite d'utilisation atteinte pour {item.itemName}.");
+            return;
+        }
+
         Debug.Log($"[Inventory] Utilisation de l'objet : {item.itemName} sur {target.Data.characterName}");
 
         item.ApplyEffect(caster, target, isCritical);
+        RegisterItemUse(item);
         inventoryItems.Remove(item);
     }
 
@@ -164,5 +175,69 @@ public class InventoryManager : MonoBehaviour
         var sleep = target.GetComponent<SleepStatus>();
         if (sleep != null)
             sleep.WakeUp();
+    }
+
+    // ------------------------------------------------------------------
+    // Gestion des limitations d'utilisation des items
+    // ------------------------------------------------------------------
+
+    /// <summary>
+    /// Vérifie si l'item peut être utilisé en fonction des limites définies.
+    /// </summary>
+    public bool CanUseItem(ItemData item)
+    {
+        if (item == null)
+            return false;
+
+        if (item.maxUsesPerTurn > 0)
+        {
+            itemUsesThisTurn.TryGetValue(item, out int usedTurn);
+            if (usedTurn >= item.maxUsesPerTurn)
+                return false;
+        }
+
+        if (item.maxUsesPerBattle > 0)
+        {
+            itemUsesThisBattle.TryGetValue(item, out int usedBattle);
+            if (usedBattle >= item.maxUsesPerBattle)
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Enregistre l'utilisation de l'item.
+    /// </summary>
+    public void RegisterItemUse(ItemData item)
+    {
+        if (item.maxUsesPerTurn > 0)
+        {
+            itemUsesThisTurn.TryGetValue(item, out int usedTurn);
+            itemUsesThisTurn[item] = usedTurn + 1;
+        }
+
+        if (item.maxUsesPerBattle > 0)
+        {
+            itemUsesThisBattle.TryGetValue(item, out int usedBattle);
+            itemUsesThisBattle[item] = usedBattle + 1;
+        }
+    }
+
+    /// <summary>
+    /// Réinitialise les compteurs d'utilisation par tour.
+    /// </summary>
+    public void ResetTurnItemUsage()
+    {
+        itemUsesThisTurn.Clear();
+    }
+
+    /// <summary>
+    /// Réinitialise les compteurs d'utilisation par combat.
+    /// </summary>
+    public void ResetBattleItemUsage()
+    {
+        itemUsesThisTurn.Clear();
+        itemUsesThisBattle.Clear();
     }
 }
