@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Events;
 using System.Collections;
+using System.Collections.Generic; // Nécessaire pour manipuler des listes d'objets ramassables
 using UnityEngine.Playables;
 
 public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
@@ -50,6 +51,10 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
     public PlayableDirector directorToPlay;
     [Tooltip("Activer pour entourer la timeline d'un fondu noir via le TimelineManager.")]
     public bool useTimelineFade = true;
+
+    [Header("Pick Up d'objet")]
+    [Tooltip("Liste d'objets (ScriptableObject) ajoutés à l'inventaire lors de l'interaction.")]
+    [SerializeField] private List<ItemData> itemsToPickUp = new();
 
     [Header("Local InfoBox")]
     [Tooltip("Décalage appliqué à la LocalInfoBox pour ce point d'intérêt.")]
@@ -155,6 +160,17 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
             while ((TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying) ||
                    (TimelineManager.Instance == null && directorToPlay != null && directorToPlay.state == PlayState.Playing))
                 yield return null;
+        }
+
+        // 2.b) Ramassage d'objet
+        if (itemsToPickUp != null && itemsToPickUp.Count > 0)
+        {
+            // Ajoute chaque item à l'inventaire du joueur
+            foreach (var item in itemsToPickUp)
+            {
+                if (item != null)
+                    GameManager.Instance?.AddItemToInventory(item);
+            }
         }
 
         // 3) Fin d’orbite
