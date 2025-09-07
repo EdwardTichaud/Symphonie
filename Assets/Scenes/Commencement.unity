@@ -5209,7 +5209,6 @@ GameObject:
   m_Component:
   - component: {fileID: 57461502}
   - component: {fileID: 57461504}
-  - component: {fileID: 57461503}
   - component: {fileID: 57461505}
   m_Layer: 13
   m_Name: Timeline_TP_Fix
@@ -5233,36 +5232,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1768664352}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &57461503
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 57461501}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e52de21a22b6dd44c9cc19f810c65059, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_Events:
-    m_Signals:
-    - {fileID: 11400000, guid: 7557911dfe145a242bb72ae14dad589d, type: 2}
-    m_Events:
-    - m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 57461505}
-          m_TargetAssemblyTypeName: TeleportToPoint, Assembly-CSharp
-          m_MethodName: Teleport
-          m_Mode: 2
-          m_Arguments:
-            m_ObjectArgument: {fileID: 339534061}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.Transform, UnityEngine
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 1
 --- !u!320 &57461504
 PlayableDirector:
   m_ObjectHideFlags: 0
@@ -5286,8 +5255,6 @@ PlayableDirector:
     value: {fileID: 529692717}
   - key: {fileID: -6439417501158834905, guid: 8f268c52259e40e44946f33ead96892e, type: 2}
     value: {fileID: 464953949519303804}
-  - key: {fileID: 3633209151973622782, guid: 8f268c52259e40e44946f33ead96892e, type: 2}
-    value: {fileID: 57461503}
   m_ExposedReferences:
     m_References: []
 --- !u!114 &57461505
@@ -5299,12 +5266,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 57461501}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e7775d1539141a44491806a892bb3749, type: 3}
+  m_Script: {fileID: 11500000, guid: 8fe86e86ef71bb344bbd6e2d37e4e4ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  targetPoint: {fileID: 339534061}
+  director: {fileID: 57461504}
   objectsToTeleport:
   - {fileID: 464953949519303799}
+  targetPoint: {fileID: 339534061}
 --- !u!1001 &57811039
 PrefabInstance:
   m_ObjectHideFlags: 0
