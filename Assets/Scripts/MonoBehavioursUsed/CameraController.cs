@@ -39,6 +39,8 @@ public class CameraController : MonoBehaviour
     private Transform forcedLookTarget;
     private Camera activeCamera;
     private Camera worldCamera; // Référence directe à la WorldCamera
+    private Vector3 worldCamDefaultPosition;    // Position initiale de la WorldCamera au lancement du jeu
+    private Quaternion worldCamDefaultRotation; // Rotation initiale de la WorldCamera au lancement du jeu
 
     [Header("---------- Effet de respiration ----------")]
     [Tooltip("Amplitude du mouvement vertical simulant la respiration.")]
@@ -131,6 +133,14 @@ public class CameraController : MonoBehaviour
         worldCameraParent = worldCamera != null && worldCamera.transform.parent != null
             ? worldCamera.transform.parent
             : worldCamera?.transform; // fallback si aucun parent
+
+        // Sauvegarde la position et la rotation initiales de la caméra
+        // afin de pouvoir les restaurer après l'exécution d'une Timeline.
+        if (worldCamera != null)
+        {
+            worldCamDefaultPosition = worldCamera.transform.position;
+            worldCamDefaultRotation = worldCamera.transform.rotation;
+        }
 
         // Recherche de la BattleCamera et de son parent pour gérer séparément forçage et respiration
         battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
@@ -631,6 +641,18 @@ public class CameraController : MonoBehaviour
 
         // Mémorise l'offset pour le prochain frame
         lastOffset = newOffset;
+    }
+
+    /// <summary>
+    /// Remet immédiatement la WorldCamera à sa position et rotation de départ.
+    /// Utile notamment après l'utilisation d'une Timeline qui aurait déplacé la caméra.
+    /// </summary>
+    public void ResetWorldCameraToDefault()
+    {
+        if (worldCamera == null) return; // Sécurité supplémentaire
+
+        // Replacement direct de la caméra dans l'espace monde
+        worldCamera.transform.SetPositionAndRotation(worldCamDefaultPosition, worldCamDefaultRotation);
     }
 
     /// <summary>

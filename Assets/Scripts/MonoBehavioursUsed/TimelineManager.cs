@@ -739,7 +739,12 @@ public class TimelineManager : MonoBehaviour
 
         // 3) Réactivation du CameraController pour rendre la main après la cinématique
         if (CameraController.Instance != null)
+        {
             CameraController.Instance.enabled = true;
+            // ↩️ Remise en place de la WorldCamera à sa position d'origine
+            // afin d'éviter qu'elle ne reste décalée par la Timeline précédente.
+            CameraController.Instance.ResetWorldCameraToDefault();
+        }
 
         // 4) Une fois tout rétabli en arrière-plan, on peut revenir progressivement à l'image.
         if (useFade)
