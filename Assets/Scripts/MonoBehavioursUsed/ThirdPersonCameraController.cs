@@ -12,8 +12,14 @@ public class ThirdPersonCameraController : MonoBehaviour
     public Transform target;
 
     [Header("Paramètres d'orbite")]
-    [Tooltip("Distance entre la caméra et la cible.")]
+    [Tooltip("Distance par défaut entre la caméra et la cible.")]
     public float distance = 5f;
+    [Tooltip("Distance minimale autorisée, utile dans les couloirs étroits.")]
+    public float minDistance = 2f;
+    [Tooltip("Distance maximale pour admirer le paysage.")]
+    public float maxDistance = 8f;
+    [Tooltip("Vitesse de modification de la distance (zoom manuel ou auto).")]
+    public float zoomSpeed = 5f;
     [Tooltip("Sensibilité de la caméra sur les axes horizontal et vertical.")]
     public Vector2 sensitivity = new Vector2(120f, 120f);
     [Tooltip("Limites de l'angle vertical en degrés.")]
@@ -48,13 +54,17 @@ public class ThirdPersonCameraController : MonoBehaviour
         Vector3 angles = transform.eulerAngles;
         yaw = angles.y;
         pitch = angles.x;
+
+        // On s'assure que la distance initiale respecte bien les bornes min/max.
+        distance = Mathf.Clamp(distance, minDistance, maxDistance);
     }
 
     void LateUpdate()
     {
         if (target == null) return;
 
-        // Récupération des entrées souris / manette via le nouveau système d'input.
+        // --- Gestion des entrées ---
+        // Récupération des mouvements de souris et du stick droit pour orienter la caméra.
         Vector2 lookInput = Vector2.zero;
         if (Mouse.current != null)
         {
@@ -65,6 +75,14 @@ public class ThirdPersonCameraController : MonoBehaviour
             lookInput += Gamepad.current.rightStick.ReadValue();
         }
 
+        // Zoom manuel via la molette de la souris (ou triggers de manette si nécessaire).
+        float scroll = 0f;
+        if (Mouse.current != null)
+        {
+            scroll = Mouse.current.scroll.ReadValue().y;
+        }
+        distance = Mathf.Clamp(distance - scroll * zoomSpeed * Time.deltaTime, minDistance, maxDistance);
+
         // Application de la sensibilité et du delta temps pour une rotation fluide.
         yaw += lookInput.x * sensitivity.x * Time.deltaTime;
         pitch -= lookInput.y * sensitivity.y * Time.deltaTime;
@@ -72,16 +90,31 @@ public class ThirdPersonCameraController : MonoBehaviour
 
         // Calcul de la nouvelle position de la caméra autour de la cible.
         Quaternion rotation = Quaternion.Euler(pitch, yaw, 0f);
-        Vector3 desiredOffset = rotation * new Vector3(0f, 0f, -distance);
-        Vector3 desiredPosition = target.position + desiredOffset;
+        // Direction normalisée opposée à la cible (vecteur vers l'arrière selon l'orientation).
+        Vector3 backwardDir = rotation * Vector3.back;
+
+        // Distance cible initiale (après zoom manuel).
+        float targetDistance = distance;
 
         // Empêche Munin, l'observateur de Lucian, d'entrer en collision avec les obstacles.
-        if (Physics.SphereCast(target.position, collisionRadius, desiredOffset.normalized,
-            out RaycastHit hit, distance, obstacleLayers))
+        if (Physics.SphereCast(target.position, collisionRadius, backwardDir,
+            out RaycastHit hit, targetDistance, obstacleLayers))
         {
-            // Place la caméra juste avant l'obstacle détecté afin d'éviter les passages à travers les murs.
-            desiredPosition = target.position + desiredOffset.normalized * (hit.distance - collisionOffset);
+            // Si un obstacle est détecté, on rapproche la caméra juste avant celui-ci.
+            targetDistance = Mathf.Clamp(hit.distance - collisionOffset, minDistance, targetDistance);
         }
+        else
+        {
+            // En extérieur, si aucune entrée de zoom n'est utilisée, on s'éloigne progressivement
+            // pour offrir une meilleure vue d'ensemble du décor.
+            if (Mathf.Approximately(scroll, 0f))
+            {
+                targetDistance = Mathf.MoveTowards(targetDistance, maxDistance, zoomSpeed * Time.deltaTime);
+            }
+        }
+
+        // Position désirée calculée avec la distance ajustée (obstacle ou grand espace).
+        Vector3 desiredPosition = target.position + backwardDir * targetDistance;
 
         // Lissage du déplacement de la caméra pour un mouvement plus agréable, notamment dans les espaces exigus.
         transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, smoothTime);
