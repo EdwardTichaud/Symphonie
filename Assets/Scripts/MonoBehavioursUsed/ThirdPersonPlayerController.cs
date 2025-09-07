@@ -49,6 +49,12 @@ public class ThirdPersonPlayerController : MonoBehaviour
     public bool isRunning;
     public bool isJumping;
 
+    /// <summary>
+    /// Autorise ou non la course. Peut être modifié par d'autres composants (zones, scripts...).
+    /// </summary>
+    [Tooltip("Si faux, l'input de sprint est ignoré et Lucian marche uniquement.")]
+    public bool canRun = true;
+
     /// <summary>Indique si le personnage touche le sol.</summary>
     public bool isGrounded => controller.isGrounded;
 
@@ -203,11 +209,17 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         // Axes de déplacement (WASD / stick gauche).
         Vector2 input = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
-        bool runPressed = InputsManager.Instance.playerInputs.World.Run.IsPressed();
+
+        // Lecture du bouton de sprint uniquement si la course est autorisée.
+        bool runPressed = canRun && InputsManager.Instance.playerInputs.World.Run.IsPressed();
 
         // Buffer de relâchement du sprint (évite ping-pong marche/course).
         if (runPressed) runReleaseTimer = runReleaseDelay;
         else runReleaseTimer = Mathf.Max(runReleaseTimer - Time.deltaTime, 0f);
+
+        // Si la course est désactivée par une zone, on vide immédiatement le buffer.
+        if (!canRun)
+            runReleaseTimer = 0f;
 
         // Direction voulue relative à la caméra (plan XZ).
         Vector3 camForward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
@@ -217,8 +229,9 @@ public class ThirdPersonPlayerController : MonoBehaviour
         bool hasInput = input.sqrMagnitude > 0.01f;
         bool runBuffered = runPressed || runReleaseTimer > 0f;
 
-        isRunning = hasInput && runBuffered;
-        isWalking = hasInput && !runBuffered;
+        // La course est possible uniquement si canRun est vrai.
+        isRunning = hasInput && runBuffered && canRun;
+        isWalking = hasInput && (!runBuffered || !canRun);
 
         float targetSpeed = isRunning ? runSpeed : (isWalking ? walkSpeed : 0f);
         float accelRate = targetSpeed > currentSpeed ? acceleration : deceleration;
