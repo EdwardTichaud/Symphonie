@@ -274,7 +274,6 @@ public class BattleTransitionManager : MonoBehaviour
             return;
         }
 
-        // --------------------------------------------------------------
         // 4) Lancement de la transition de combat classique
         // --------------------------------------------------------------
         StartCombatTransition();
