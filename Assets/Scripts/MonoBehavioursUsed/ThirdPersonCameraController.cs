@@ -19,14 +19,19 @@ public class ThirdPersonCameraController : MonoBehaviour
     [Tooltip("Limites de l'angle vertical en degrés.")]
     public Vector2 pitchLimits = new Vector2(-20f, 60f);
 
-    [Header("Évitement du sol")]
-    [Tooltip("Couches considérées comme le sol pour empêcher Munin de le traverser.")]
-    public LayerMask groundLayers = ~0; // Par défaut, toutes les couches.
+    [Header("Gestion des obstacles")]
+    [Tooltip("Couches considérées comme obstacles (murs, sol, etc.).")]
+    public LayerMask obstacleLayers = ~0; // Par défaut, toutes les couches.
     [Tooltip("Rayon de la sphère virtuelle utilisée pour détecter les collisions.")]
     public float collisionRadius = 0.3f;
-    [Tooltip("Marge appliquée pour garder une petite distance avec le sol.")]
+    [Tooltip("Marge appliquée pour garder une petite distance avec l'obstacle.")]
     public float collisionOffset = 0.1f;
 
+    [Header("Ajustements dynamiques")]
+    [Tooltip("Temps de lissage du déplacement de la caméra.")]
+    public float smoothTime = 0.05f;
+
+    private Vector3 currentVelocity; // Vecteur utilisé par SmoothDamp
     private float yaw;
     private float pitch;
 
@@ -70,19 +75,16 @@ public class ThirdPersonCameraController : MonoBehaviour
         Vector3 desiredOffset = rotation * new Vector3(0f, 0f, -distance);
         Vector3 desiredPosition = target.position + desiredOffset;
 
-        // Empêche Munin, l'observateur de Lucian, de traverser le sol.
+        // Empêche Munin, l'observateur de Lucian, d'entrer en collision avec les obstacles.
         if (Physics.SphereCast(target.position, collisionRadius, desiredOffset.normalized,
-            out RaycastHit hit, distance, groundLayers))
+            out RaycastHit hit, distance, obstacleLayers))
         {
-            // Place la caméra juste avant l'obstacle détecté.
+            // Place la caméra juste avant l'obstacle détecté afin d'éviter les passages à travers les murs.
             desiredPosition = target.position + desiredOffset.normalized * (hit.distance - collisionOffset);
-
-            // Si le joueur pousse encore la caméra vers le bas, il souhaite regarder plus haut.
-            // On réduit donc la distance pour se rapprocher de lui et on maintient l'angle vers le haut.
-            pitch = Mathf.Clamp(pitch, pitchLimits.x, pitchLimits.y);
         }
 
-        transform.position = desiredPosition;
+        // Lissage du déplacement de la caméra pour un mouvement plus agréable, notamment dans les espaces exigus.
+        transform.position = Vector3.SmoothDamp(transform.position, desiredPosition, ref currentVelocity, smoothTime);
         transform.LookAt(target.position);
     }
 }
