@@ -230,37 +230,39 @@ public class BattleTransitionManager : MonoBehaviour
             return;
         }
 
-        // Délègue la préparation à la méthode gérant individuellement les ennemis.
-        StartTimelineBattle(timelineEnemies.enemy1, timelineEnemies.enemy2, timelineEnemies.enemy3);
-    }
-
-    /// <summary>
-    /// Prépare et lance un combat initié depuis une Timeline en spécifiant
-    /// explicitement les ennemis à affronter.
-    /// </summary>
-    /// <param name="enemy1">Premier ennemi obligatoire.</param>
-    /// <param name="enemy2">Second ennemi optionnel.</param>
-    /// <param name="enemy3">Troisième ennemi optionnel.</param>
-    public void StartTimelineBattle(CharacterData enemy1, CharacterData enemy2 = null, CharacterData enemy3 = null)
-    {
-        // ------------------------------------------------------------------
-        // 1) Constitution de la liste d'ennemis fournie par la Timeline
-        // ------------------------------------------------------------------
+        // --------------------------------------------------------------
+        // 1) Rassemble les ennemis définis dans le ScriptableObject
+        // --------------------------------------------------------------
         List<CharacterData> enemies = new();
-        if (enemy1 != null) enemies.Add(enemy1);
-        if (enemy2 != null) enemies.Add(enemy2);
-        if (enemy3 != null) enemies.Add(enemy3);
+        if (timelineEnemies.enemy1 != null) enemies.Add(timelineEnemies.enemy1);
+        if (timelineEnemies.enemy2 != null) enemies.Add(timelineEnemies.enemy2);
+        if (timelineEnemies.enemy3 != null) enemies.Add(timelineEnemies.enemy3);
 
-        // Sans ennemi valide, on ne peut pas démarrer le combat
         if (enemies.Count == 0)
         {
-            Debug.LogWarning("[BattleTransitionManager] Aucun ennemi spécifié pour StartTimelineBattle.");
+            Debug.LogWarning("[BattleTransitionManager] Aucun ennemi spécifié dans TimelineEnemiesSO.");
             return;
         }
 
-        // ------------------------------------------------------------------
-        // 2) Copie de cette liste dans le NewBattleManager
-        // ------------------------------------------------------------------
+        // --------------------------------------------------------------
+        // 2) Simule la détection classique en remplissant PlayerDetection
+        // --------------------------------------------------------------
+        playerDetection ??= FindFirstObjectByType<PlayerDetection>();
+        if (playerDetection != null)
+        {
+            playerDetection.detectedEnemies.Clear();
+            playerDetection.detectedEnemies.AddRange(enemies);
+            playerDetection.detectionOn = false; // Évite toute nouvelle détection
+            playerDetection.battleEngaged = true; // Marque le combat comme en cours
+        }
+        else
+        {
+            Debug.LogWarning("[BattleTransitionManager] PlayerDetection introuvable, état non synchronisé.");
+        }
+
+        // --------------------------------------------------------------
+        // 3) Transmet la liste au NewBattleManager pour le combat
+        // --------------------------------------------------------------
         if (NewBattleManager.Instance != null)
         {
             NewBattleManager.Instance.enemyTemplates.Clear();
@@ -272,19 +274,9 @@ public class BattleTransitionManager : MonoBehaviour
             return;
         }
 
-        // ------------------------------------------------------------------
-        // 3) Désactivation de la détection automatique pour éviter les conflits
-        // ------------------------------------------------------------------
-        playerDetection ??= FindFirstObjectByType<PlayerDetection>();
-        if (playerDetection != null)
-        {
-            playerDetection.detectionOn = false;
-            playerDetection.detectedEnemies.Clear();
-        }
-
-        // ------------------------------------------------------------------
+        // --------------------------------------------------------------
         // 4) Lancement de la transition de combat classique
-        // ------------------------------------------------------------------
+        // --------------------------------------------------------------
         StartCombatTransition();
     }
 
