@@ -83,6 +83,18 @@ public class CameraController : MonoBehaviour
     private float forcedCamDistance = 5f;
     private Vector3 forcedCamOffset = Vector3.zero; // Décalage monde utilisé en mode forcé
 
+    // --- Sauvegarde de la configuration "normale" ---
+    // Ces valeurs sont enregistrées lorsque la caméra ne touche pas le sol afin
+    // de pouvoir y revenir si le joueur déplace la caméra après une adaptation
+    // automatique au terrain.
+    private float lastNormalForcedCamYaw;
+    private float lastNormalForcedCamPitch;
+    private float lastNormalForcedCamDistance;
+    private Vector3 lastNormalForcedCamOffset;
+
+    // Indique si la caméra a été modifiée pour éviter une collision avec le sol
+    private bool forcedCamGroundAdjusted;
+
     [Header("Forced Camera - Ground Collision")]
     [Tooltip("Distance minimale autorisée entre la caméra forcée et le sol.")]
     [SerializeField] private float forcedCamMinGroundDistance = 0.5f;
@@ -470,32 +482,72 @@ public class CameraController : MonoBehaviour
         // Position désirée de la caméra basée sur l'offset calculé
         Vector3 desiredPos = player.position + forcedCamOffset;
 
-        // Vérifie si la caméra s'enfonce dans le sol
-        if (Physics.Raycast(desiredPos, Vector3.down, out RaycastHit groundHit, forcedCamMinGroundDistance + 0.1f, groundLayerMask))
+        bool collidingGround = false;
+
+        // --- Détection de collision entre le joueur et la caméra ---
+        // Empêche la caméra de traverser un sol ou un obstacle situé entre elle et le joueur.
+        if (Physics.Linecast(player.position, desiredPos, out RaycastHit lineHit, groundLayerMask))
         {
-            // Si la caméra est trop proche du sol, on corrige sa hauteur
+            collidingGround = true;
+
+            // Positionne la caméra juste au-dessus du point d'impact
+            desiredPos = lineHit.point + lineHit.normal * forcedCamMinGroundDistance;
+
+            // Rapproche la caméra du joueur et incline le regard vers le haut
+            forcedCamDistance = Mathf.MoveTowards(
+                forcedCamDistance,
+                forcedCamMinDistance,
+                forcedCamGroundApproachSpeed * Time.deltaTime
+            );
+
+            forcedCamPitch = Mathf.MoveTowards(
+                forcedCamPitch,
+                forcedCamMaxPitch,
+                forcedCamGroundLookUpSpeed * Time.deltaTime
+            );
+
+            // Recalcule l'offset avec les nouvelles valeurs
+            RecalculateForcedCamOffset();
+            desiredPos = player.position + forcedCamOffset;
+        }
+        // --- Vérification supplémentaire de la hauteur par rapport au sol ---
+        else if (Physics.Raycast(desiredPos, Vector3.down, out RaycastHit groundHit, forcedCamMinGroundDistance + 0.1f, groundLayerMask))
+        {
+            collidingGround = true;
+
             if (desiredPos.y < groundHit.point.y + forcedCamMinGroundDistance)
             {
-                desiredPos.y = groundHit.point.y + forcedCamMinGroundDistance;
+                desiredPos = groundHit.point + Vector3.up * forcedCamMinGroundDistance;
 
-                // Rapproche lentement la caméra du joueur pour éviter de traverser le sol
                 forcedCamDistance = Mathf.MoveTowards(
                     forcedCamDistance,
                     forcedCamMinDistance,
                     forcedCamGroundApproachSpeed * Time.deltaTime
                 );
 
-                // Oriente progressivement la caméra vers le haut
                 forcedCamPitch = Mathf.MoveTowards(
                     forcedCamPitch,
                     forcedCamMaxPitch,
                     forcedCamGroundLookUpSpeed * Time.deltaTime
                 );
 
-                // Recalcule l'offset avec les nouvelles valeurs
                 RecalculateForcedCamOffset();
                 desiredPos = player.position + forcedCamOffset;
             }
+        }
+
+        if (!collidingGround)
+        {
+            // Enregistre la dernière configuration jugée "normale" pour pouvoir y revenir
+            lastNormalForcedCamYaw = forcedCamYaw;
+            lastNormalForcedCamPitch = forcedCamPitch;
+            lastNormalForcedCamDistance = forcedCamDistance;
+            lastNormalForcedCamOffset = forcedCamOffset;
+            forcedCamGroundAdjusted = false;
+        }
+        else
+        {
+            forcedCamGroundAdjusted = true;
         }
 
         // Application finale de la position et de la rotation de la caméra
@@ -512,6 +564,17 @@ public class CameraController : MonoBehaviour
 
         Vector2 input = InputsManager.Instance.playerInputs.World.ForcedCamMove.ReadValue<Vector2>();
         isForcedCamMoving = input.magnitude > 0.1f;
+
+        // Si la caméra a été ajustée à cause du sol et que le joueur la bouge,
+        // on revient à la dernière position "normale" mémorisée.
+        if (isForcedCamMoving && forcedCamGroundAdjusted)
+        {
+            forcedCamYaw = lastNormalForcedCamYaw;
+            forcedCamPitch = lastNormalForcedCamPitch;
+            forcedCamDistance = lastNormalForcedCamDistance;
+            forcedCamOffset = lastNormalForcedCamOffset;
+            forcedCamGroundAdjusted = false;
+        }
 
         // Rotation horizontale et verticale autour du joueur
         forcedCamYaw += input.x * forcedCamRotationSpeed * Time.deltaTime;
