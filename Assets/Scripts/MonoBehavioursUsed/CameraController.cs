@@ -83,6 +83,16 @@ public class CameraController : MonoBehaviour
     private float forcedCamDistance = 5f;
     private Vector3 forcedCamOffset = Vector3.zero; // Décalage monde utilisé en mode forcé
 
+    [Header("Forced Camera - Ground Collision")]
+    [Tooltip("Distance minimale autorisée entre la caméra forcée et le sol.")]
+    [SerializeField] private float forcedCamMinGroundDistance = 0.5f;
+    [Tooltip("Vitesse à laquelle la caméra se rapproche du joueur lorsqu'elle touche le sol.")]
+    [SerializeField] private float forcedCamGroundApproachSpeed = 2f;
+    [Tooltip("Vitesse de redressement de la caméra vers le haut lorsque le sol est atteint.")]
+    [SerializeField] private float forcedCamGroundLookUpSpeed = 30f;
+    [Tooltip("Couches considérées comme du sol pour la détection de collision.")]
+    [SerializeField] private LayerMask groundLayerMask = ~0; // Par défaut toutes les couches
+
     [Header("Orbit Settings")]
     public Transform orbitTarget;
     public float orbitDistance = 5f;
@@ -457,8 +467,39 @@ public class CameraController : MonoBehaviour
         Transform camOrigin = worldCamera.transform.parent;
         Transform look = forceLookPoint != null ? forceLookPoint : player;
 
-        // Position collée aux déplacements du joueur mais indépendante de sa rotation
-        camOrigin.position = player.position + forcedCamOffset;
+        // Position désirée de la caméra basée sur l'offset calculé
+        Vector3 desiredPos = player.position + forcedCamOffset;
+
+        // Vérifie si la caméra s'enfonce dans le sol
+        if (Physics.Raycast(desiredPos, Vector3.down, out RaycastHit groundHit, forcedCamMinGroundDistance + 0.1f, groundLayerMask))
+        {
+            // Si la caméra est trop proche du sol, on corrige sa hauteur
+            if (desiredPos.y < groundHit.point.y + forcedCamMinGroundDistance)
+            {
+                desiredPos.y = groundHit.point.y + forcedCamMinGroundDistance;
+
+                // Rapproche lentement la caméra du joueur pour éviter de traverser le sol
+                forcedCamDistance = Mathf.MoveTowards(
+                    forcedCamDistance,
+                    forcedCamMinDistance,
+                    forcedCamGroundApproachSpeed * Time.deltaTime
+                );
+
+                // Oriente progressivement la caméra vers le haut
+                forcedCamPitch = Mathf.MoveTowards(
+                    forcedCamPitch,
+                    forcedCamMaxPitch,
+                    forcedCamGroundLookUpSpeed * Time.deltaTime
+                );
+
+                // Recalcule l'offset avec les nouvelles valeurs
+                RecalculateForcedCamOffset();
+                desiredPos = player.position + forcedCamOffset;
+            }
+        }
+
+        // Application finale de la position et de la rotation de la caméra
+        camOrigin.position = desiredPos;
         camOrigin.rotation = Quaternion.LookRotation(look.position - camOrigin.position);
     }
 
@@ -477,15 +518,8 @@ public class CameraController : MonoBehaviour
         forcedCamPitch -= input.y * forcedCamRotationSpeed * Time.deltaTime;
         forcedCamPitch = Mathf.Clamp(forcedCamPitch, forcedCamMinPitch, forcedCamMaxPitch);
 
-        float yawRad = forcedCamYaw * Mathf.Deg2Rad;
-        float pitchRad = forcedCamPitch * Mathf.Deg2Rad;
-
-        // Conversion sphérique → cartésienne pour obtenir le décalage monde
-        forcedCamOffset = new Vector3(
-            forcedCamDistance * Mathf.Sin(yawRad) * Mathf.Cos(pitchRad),
-            forcedCamDistance * Mathf.Sin(pitchRad),
-            forcedCamDistance * Mathf.Cos(yawRad) * Mathf.Cos(pitchRad)
-        );
+        // Recalcule l'offset monde en fonction des nouvelles valeurs de yaw/pitch
+        RecalculateForcedCamOffset();
     }
 
     /// <summary>
@@ -549,6 +583,24 @@ public class CameraController : MonoBehaviour
     #endregion
 
     #region Utilitaires
+    /// <summary>
+    /// Recalcule l'offset de la caméra forcée à partir de l'angle actuel et de la distance.
+    /// Centralise la conversion sphérique → cartésienne pour faciliter les modifications.
+    /// </summary>
+    void RecalculateForcedCamOffset()
+    {
+        // Conversion des angles en radians pour les fonctions trigonométriques
+        float yawRad = forcedCamYaw * Mathf.Deg2Rad;
+        float pitchRad = forcedCamPitch * Mathf.Deg2Rad;
+
+        // Calcule l'offset relatif dans l'espace monde
+        forcedCamOffset = new Vector3(
+            forcedCamDistance * Mathf.Sin(yawRad) * Mathf.Cos(pitchRad),
+            forcedCamDistance * Mathf.Sin(pitchRad),
+            forcedCamDistance * Mathf.Cos(yawRad) * Mathf.Cos(pitchRad)
+        );
+    }
+
     /// <summary>
     /// Applique un léger mouvement sinusoïdal pour simuler la respiration.
     /// </summary>
