@@ -280,6 +280,10 @@ public class BattleTransitionManager : MonoBehaviour
         {
             playerDetection.detectionOn = false;
             playerDetection.detectedEnemies.Clear();
+            playerDetection.enemiesInFight.Clear();
+            // Réplique l'état que PlayerDetection met en place lorsque le joueur
+            // déclenche un combat afin d'éviter toute redétection pendant la Timeline.
+            playerDetection.battleEngaged = true;
         }
 
         // ------------------------------------------------------------------
