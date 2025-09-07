@@ -460,7 +460,7 @@ public class CameraController : MonoBehaviour
         Transform camOrigin = worldCamera.transform.parent;
         Transform look = forceLookPoint != null ? forceLookPoint : player;
 
-        // Position désirée calculée à partir du joueur et de l'offset courant
+// Position désirée calculée à partir du joueur et de l'offset courant
         Vector3 desiredPos = player.position + forcedCamOffset;
 
         // 1) Détection d'obstacle entre le joueur et la caméra
@@ -491,10 +491,22 @@ public class CameraController : MonoBehaviour
 
         Vector2 input = InputsManager.Instance.playerInputs.World.ForcedCamMove.ReadValue<Vector2>();
 
+        // Si la caméra a été ajustée à cause du sol et que le joueur la bouge,
+        // on revient à la dernière position "normale" mémorisée.
+        if (isForcedCamMoving && forcedCamGroundAdjusted)
+        {
+            forcedCamYaw = lastNormalForcedCamYaw;
+            forcedCamPitch = lastNormalForcedCamPitch;
+            forcedCamDistance = lastNormalForcedCamDistance;
+            forcedCamOffset = lastNormalForcedCamOffset;
+            forcedCamGroundAdjusted = false;
+        }
+
         // Rotation horizontale et verticale autour du joueur
         forcedCamYaw += input.x * forcedCamRotationSpeed * Time.deltaTime;
         forcedCamPitch -= input.y * forcedCamRotationSpeed * Time.deltaTime;
         forcedCamPitch = Mathf.Clamp(forcedCamPitch, forcedCamMinPitch, forcedCamMaxPitch);
+
 
         // Conversion sphérique → cartésienne pour obtenir le nouvel offset
         RecalculateForcedCamOffset();
