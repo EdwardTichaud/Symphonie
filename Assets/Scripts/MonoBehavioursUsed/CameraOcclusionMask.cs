@@ -84,6 +84,14 @@ public class CameraOcclusionMask_ConeLookAtTarget_UIAligned : MonoBehaviour
 
     private void LateUpdate()
     {
+        // Désactive l'occlusion si une Timeline est en cours de lecture pour
+        // empêcher la visibilité du joueur à travers les obstacles pendant les cinématiques.
+        if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
+        {
+            ClearAll();
+            return;
+        }
+
         if (!target || !maskCamera) { ClearAll(); return; }
 
         // --- Géométrie de base ---
