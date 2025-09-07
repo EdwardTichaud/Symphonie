@@ -56,6 +56,10 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
     [Tooltip("Liste d'objets (ScriptableObject) ajoutés à l'inventaire lors de l'interaction.")]
     [SerializeField] private List<ItemData> itemsToPickUp = new();
 
+    [Header("Désactivation d'objets")]
+    [Tooltip("GameObjects désactivés lorsque ce point d'intérêt est déclenché. Utile pour faire disparaître des éléments de la scène après l'interaction.")]
+    [SerializeField] private List<GameObject> objectsToDisable = new();
+
     [Header("Local InfoBox")]
     [Tooltip("Décalage appliqué à la LocalInfoBox pour ce point d'intérêt.")]
     public Vector3 localInfoBoxOffset;
@@ -78,8 +82,21 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
             string key = GetPrefsKey();
             consumed = PlayerPrefs.GetInt(key, 0) == 1;
 
-            if (consumed && autoDisableAfterConsumed)
-                enabled = false;
+            if (consumed)
+            {
+                if (autoDisableAfterConsumed)
+                    enabled = false;
+
+                // Si déjà consommé, on s'assure que les objets à désactiver restent inactifs.
+                if (objectsToDisable != null && objectsToDisable.Count > 0)
+                {
+                    foreach (var obj in objectsToDisable)
+                    {
+                        if (obj != null)
+                            obj.SetActive(false);
+                    }
+                }
+            }
         }
     }
 
@@ -121,7 +138,17 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
             if (whiteFade) fader.ChangeOpacity(1, 0f, 2f);
         }
 
-        // 0.b) Orbit optionnel
+        // 0.b) Désactivation optionnelle d'objets externes
+        if (objectsToDisable != null && objectsToDisable.Count > 0)
+        {
+            foreach (var obj in objectsToDisable)
+            {
+                if (obj != null)
+                    obj.SetActive(false); // Désactive l'objet pour refléter l'évolution de la scène.
+            }
+        }
+
+        // 0.c) Orbit optionnel
         OrbitAround orbitAroundClass = null;
         if (orbitAround)
         {
@@ -237,6 +264,16 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
         }
         if (autoDisableAfterConsumed)
             enabled = true;
+
+        // Réactive les objets potentiellement désactivés lors de l'interaction
+        if (objectsToDisable != null && objectsToDisable.Count > 0)
+        {
+            foreach (var obj in objectsToDisable)
+            {
+                if (obj != null)
+                    obj.SetActive(true);
+            }
+        }
     }
 
 #if UNITY_EDITOR
