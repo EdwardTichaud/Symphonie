@@ -72,6 +72,10 @@ public class BattleTimelineManager : MonoBehaviour
         // S'assure que le TimelineManager utilise bien ce PlayableDirector
         // avant de lancer la lecture de la timeline.
         TimelineManager.Instance.SetExternalDirector(director);
-        TimelineManager.Instance.PlayTimeline(timeline, caster, cameraTag, false);
+        // Les timelines d'Item et de MusicalMove ne doivent ni couper la musique
+        // ni afficher de fondu au noir : on force donc l'absence de fondu
+        // (paramètre withFade = false) et on conserve la bande-son actuelle
+        // en désactivant l'interruption musicale (interruptMusic = false).
+        TimelineManager.Instance.PlayTimeline(timeline, caster, cameraTag, false, false);
     }
 }
