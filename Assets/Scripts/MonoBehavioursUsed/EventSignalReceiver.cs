@@ -111,4 +111,31 @@ public class EventSignalReceiver : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Lance un combat défini par une Timeline en relayant la requête
+    /// au <see cref="BattleTransitionManager"/> central. Cette méthode
+    /// évite d'ajouter des scripts spécifiques pour chaque Timeline.
+    /// </summary>
+    /// <param name="enemies">ScriptableObject contenant la liste des ennemis à invoquer.</param>
+    public void StartTimelineBattle(TimelineEnemiesSO enemies)
+    {
+        // Vérifie que l'asset d'ennemis est bien renseigné afin d'empêcher
+        // les appels silencieux depuis l'Éditeur.
+        if (enemies == null)
+        {
+            Debug.LogWarning("[EventSignalReceiver] Aucun TimelineEnemiesSO fourni.");
+            return;
+        }
+
+        // S'assure que le gestionnaire de transition de combat est présent.
+        if (BattleTransitionManager.Instance == null)
+        {
+            Debug.LogWarning("[EventSignalReceiver] BattleTransitionManager introuvable.");
+            return;
+        }
+
+        // Transmet la demande au gestionnaire, qui se chargera de la suite
+        // (chargement de la scène de combat, initialisation des ennemis, etc.).
+        BattleTransitionManager.Instance.StartTimelineBattle(enemies);
+    }
 }
