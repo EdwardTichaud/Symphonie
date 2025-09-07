@@ -224,6 +224,10 @@ public class BattleTransitionManager : MonoBehaviour
     /// <param name="timelineEnemies">ScriptableObject contenant jusqu'à trois ennemis.</param>
     public void StartTimelineBattle(TimelineEnemiesSO timelineEnemies)
     {
+        // ✅ Dès qu'une timeline demande un combat, on arrête immédiatement
+        // la timeline en cours pour éviter tout chevauchement d'actions.
+        TimelineManager.Instance?.StopTimeline();
+
         if (timelineEnemies == null)
         {
             Debug.LogWarning("[BattleTransitionManager] TimelineEnemiesSO non fourni pour StartTimelineBattle.");
@@ -285,6 +289,10 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     public void StartCombatTransition()
     {
+        // ✅ Sécurité supplémentaire : s'assure qu'aucune timeline ne
+        // continue pendant la transition de combat.
+        TimelineManager.Instance?.StopTimeline();
+
         CombatSkyboxManager.Instance?.ApplyBattleSkybox();
 
         // Masque l'interface jusqu'au premier tour du joueur
