@@ -39,7 +39,7 @@ public class CameraController : MonoBehaviour
     private Transform forcedLookTarget;
     private Camera activeCamera;
     private Camera worldCamera; // Référence directe à la WorldCamera
-    private Vector3 worldCamDefaultPosition;    // Position initiale de la WorldCamera au lancement du jeu
+    private Vector3 worldCamDefaultOffset;      // Décalage initial par rapport au joueur
     private Quaternion worldCamDefaultRotation; // Rotation initiale de la WorldCamera au lancement du jeu
 
     [Header("---------- Effet de respiration ----------")]
@@ -134,11 +134,12 @@ public class CameraController : MonoBehaviour
             ? worldCamera.transform.parent
             : worldCamera?.transform; // fallback si aucun parent
 
-        // Sauvegarde la position et la rotation initiales de la caméra
-        // afin de pouvoir les restaurer après l'exécution d'une Timeline.
-        if (worldCamera != null)
+        // Sauvegarde le décalage initial de la WorldCamera par rapport au joueur
+        // ainsi que sa rotation. Ces valeurs serviront à la replacer correctement
+        // une fois une Timeline terminée.
+        if (worldCamera != null && player != null)
         {
-            worldCamDefaultPosition = worldCamera.transform.position;
+            worldCamDefaultOffset = worldCamera.transform.position - player.position;
             worldCamDefaultRotation = worldCamera.transform.rotation;
         }
 
@@ -649,10 +650,13 @@ public class CameraController : MonoBehaviour
     /// </summary>
     public void ResetWorldCameraToDefault()
     {
-        if (worldCamera == null) return; // Sécurité supplémentaire
+        if (worldCamera == null || player == null) return; // Sécurité supplémentaire
 
-        // Replacement direct de la caméra dans l'espace monde
-        worldCamera.transform.SetPositionAndRotation(worldCamDefaultPosition, worldCamDefaultRotation);
+        // Replace la WorldCamera relativement au joueur en réappliquant
+        // le décalage enregistré au lancement du jeu.
+        worldCamera.transform.SetPositionAndRotation(
+            player.position + worldCamDefaultOffset,
+            worldCamDefaultRotation);
     }
 
     /// <summary>

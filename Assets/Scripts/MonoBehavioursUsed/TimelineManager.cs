@@ -741,8 +741,9 @@ public class TimelineManager : MonoBehaviour
         if (CameraController.Instance != null)
         {
             CameraController.Instance.enabled = true;
-            // ↩️ Remise en place de la WorldCamera à sa position d'origine
-            // afin d'éviter qu'elle ne reste décalée par la Timeline précédente.
+            // ↩️ Remise en place de la WorldCamera autour du joueur
+            // pour qu'elle retrouve exactement le décalage qu'elle avait
+            // avant l'exécution de la Timeline.
             CameraController.Instance.ResetWorldCameraToDefault();
         }
 
