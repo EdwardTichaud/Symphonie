@@ -9,6 +9,13 @@ public class MovementInputHandler : MonoBehaviour
     public bool isRunning;
     public bool isWalking;
 
+    /// <summary>
+    /// Indique si la course est autorisée. Permet à d'autres scripts (zones, cinématiques...) 
+    /// de désactiver temporairement le sprint du joueur.
+    /// </summary>
+    [Tooltip("Si désactivé, l'input de course est ignoré et le joueur marche uniquement.")]
+    public bool canRun = true;
+
     [Tooltip("Transform de la caméra utilisée pour orienter le déplacement.")]
     public Transform cameraTransform;
 
@@ -61,7 +68,10 @@ public class MovementInputHandler : MonoBehaviour
         }
         moveInput = (camForward * input2D.y + camRight * input2D.x).normalized;
 
-        isRunning = inputs.World.Run.IsPressed();
+        // Lecture de l'input de course uniquement si celle-ci est autorisée.
+        isRunning = canRun && inputs.World.Run.IsPressed();
+
+        // Si la course est désactivée, le personnage est considéré comme marchant.
         isWalking = !isRunning;
     }
 }
