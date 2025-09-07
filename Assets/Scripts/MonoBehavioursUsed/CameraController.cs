@@ -67,7 +67,6 @@ public class CameraController : MonoBehaviour
     private EventsManager eventsManager;
 
     [Header("Forced Camera Point Control")]
-    public bool isForcedCamMoving;
     public bool worldCamForced;
 
     public Transform forcedCameraPoint; // Ancien système, conservé pour compatibilité mais non utilisé
@@ -82,6 +81,12 @@ public class CameraController : MonoBehaviour
     private float forcedCamPitch = 20f;
     private float forcedCamDistance = 5f;
     private Vector3 forcedCamOffset = Vector3.zero; // Décalage monde utilisé en mode forcé
+
+    [Header("Forced Camera - Collision avec le sol")]
+    [Tooltip("Distance minimale autorisée entre la caméra forcée et le sol.")]
+    [SerializeField] private float forcedCamMinGroundDistance = 0.5f;
+    [Tooltip("Couches considérées comme du sol pour la détection de collision.")]
+    [SerializeField] private LayerMask groundLayerMask = ~0; // Par défaut toutes les couches
 
     [Header("Orbit Settings")]
     public Transform orbitTarget;
@@ -147,8 +152,6 @@ public class CameraController : MonoBehaviour
     /// </summary>
     void Update()
     {
-        Vector2 fixedCameraMove = InputsManager.Instance.playerInputs.World.ForcedCamMove.ReadValue<Vector2>();
-
         if (cameraPositions == null || cameraPositions.Count == 0)
             UpdateCameraPositionsFromHandler();
 
@@ -448,7 +451,7 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Applique la position forcée de la caméra en suivant le joueur sans reprendre sa rotation.
+    /// Applique la position forcée de la caméra en respectant les collisions avec le sol.
     /// </summary>
     void FollowForcedCameraPoint()
     {
@@ -457,8 +460,25 @@ public class CameraController : MonoBehaviour
         Transform camOrigin = worldCamera.transform.parent;
         Transform look = forceLookPoint != null ? forceLookPoint : player;
 
-        // Position collée aux déplacements du joueur mais indépendante de sa rotation
-        camOrigin.position = player.position + forcedCamOffset;
+        // Position désirée calculée à partir du joueur et de l'offset courant
+        Vector3 desiredPos = player.position + forcedCamOffset;
+
+        // 1) Détection d'obstacle entre le joueur et la caméra
+        // Si un sol est présent, on place la caméra juste au-dessus du point de contact
+        if (Physics.Linecast(player.position, desiredPos, out RaycastHit lineHit, groundLayerMask))
+        {
+            desiredPos = lineHit.point + lineHit.normal * forcedCamMinGroundDistance;
+        }
+
+        // 2) Vérification locale : s'assurer que la caméra reste au-dessus du sol sous elle
+        if (Physics.Raycast(desiredPos, Vector3.down, out RaycastHit groundHit, forcedCamMinGroundDistance + 0.1f, groundLayerMask))
+        {
+            if (desiredPos.y < groundHit.point.y + forcedCamMinGroundDistance)
+                desiredPos = groundHit.point + Vector3.up * forcedCamMinGroundDistance;
+        }
+
+        // Application finale de la position et de l'orientation
+        camOrigin.position = desiredPos;
         camOrigin.rotation = Quaternion.LookRotation(look.position - camOrigin.position);
     }
 
@@ -470,22 +490,14 @@ public class CameraController : MonoBehaviour
         if (player == null) return;
 
         Vector2 input = InputsManager.Instance.playerInputs.World.ForcedCamMove.ReadValue<Vector2>();
-        isForcedCamMoving = input.magnitude > 0.1f;
 
         // Rotation horizontale et verticale autour du joueur
         forcedCamYaw += input.x * forcedCamRotationSpeed * Time.deltaTime;
         forcedCamPitch -= input.y * forcedCamRotationSpeed * Time.deltaTime;
         forcedCamPitch = Mathf.Clamp(forcedCamPitch, forcedCamMinPitch, forcedCamMaxPitch);
 
-        float yawRad = forcedCamYaw * Mathf.Deg2Rad;
-        float pitchRad = forcedCamPitch * Mathf.Deg2Rad;
-
-        // Conversion sphérique → cartésienne pour obtenir le décalage monde
-        forcedCamOffset = new Vector3(
-            forcedCamDistance * Mathf.Sin(yawRad) * Mathf.Cos(pitchRad),
-            forcedCamDistance * Mathf.Sin(pitchRad),
-            forcedCamDistance * Mathf.Cos(yawRad) * Mathf.Cos(pitchRad)
-        );
+        // Conversion sphérique → cartésienne pour obtenir le nouvel offset
+        RecalculateForcedCamOffset();
     }
 
     /// <summary>
@@ -549,6 +561,24 @@ public class CameraController : MonoBehaviour
     #endregion
 
     #region Utilitaires
+    /// <summary>
+    /// Recalcule l'offset de la caméra forcée à partir de l'angle actuel et de la distance.
+    /// Centralise la conversion sphérique → cartésienne pour faciliter les modifications.
+    /// </summary>
+    void RecalculateForcedCamOffset()
+    {
+        // Conversion des angles en radians pour les fonctions trigonométriques
+        float yawRad = forcedCamYaw * Mathf.Deg2Rad;
+        float pitchRad = forcedCamPitch * Mathf.Deg2Rad;
+
+        // Calcule l'offset relatif dans l'espace monde
+        forcedCamOffset = new Vector3(
+            forcedCamDistance * Mathf.Sin(yawRad) * Mathf.Cos(pitchRad),
+            forcedCamDistance * Mathf.Sin(pitchRad),
+            forcedCamDistance * Mathf.Cos(yawRad) * Mathf.Cos(pitchRad)
+        );
+    }
+
     /// <summary>
     /// Applique un léger mouvement sinusoïdal pour simuler la respiration.
     /// </summary>
