@@ -455,6 +455,13 @@ public class TimelineManager : MonoBehaviour
         {
             cameraGO = GameObject.FindGameObjectWithTag(cameraTag);
             cameraParent = cameraGO != null ? cameraGO.transform.parent : null;
+
+            if (cameraTag == "WorldCamera")
+            {
+                // Sauvegarde la position actuelle de la WorldCamera avant que la Timeline ne la déplace
+                CameraController.Instance?.SaveWorldCameraTransform();
+            }
+
             if (caster != null && cameraParent != null)
             {
                 // Replace le parent de la caméra sur le PNJ afin que l'animation suive correctement le mouvement
@@ -737,15 +744,13 @@ public class TimelineManager : MonoBehaviour
         currentDirector = null;
         ToggleWorldInputs(true);
 
-        //// 3) Réactivation du CameraController pour rendre la main après la cinématique
-        //if (CameraController.Instance != null)
-        //{
-        //    CameraController.Instance.enabled = true;
-        //    // ↩️ Remise en place de la WorldCamera autour du joueur
-        //    // pour qu'elle retrouve exactement le décalage qu'elle avait
-        //    // avant l'exécution de la Timeline.
-        //    CameraController.Instance.ResetWorldCameraToDefault();
-        //}
+        // 3) Réactivation du CameraController pour rendre la main après la cinématique
+        if (CameraController.Instance != null)
+        {
+            CameraController.Instance.enabled = true;
+            // ↩️ Replace la WorldCamera à sa dernière position sauvegardée pour garder la continuité
+            CameraController.Instance.RestoreWorldCameraTransform();
+        }
 
         // 4) Une fois tout rétabli en arrière-plan, on peut revenir progressivement à l'image.
         if (useFade)

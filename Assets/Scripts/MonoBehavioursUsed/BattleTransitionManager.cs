@@ -293,6 +293,9 @@ public class BattleTransitionManager : MonoBehaviour
         // continue pendant la transition de combat.
         TimelineManager.Instance?.StopTimeline();
 
+        // Sauvegarde la position actuelle de la WorldCamera pour la restituer après le combat
+        CameraController.Instance?.SaveWorldCameraTransform();
+
         CombatSkyboxManager.Instance?.ApplyBattleSkybox();
 
         // Masque l'interface jusqu'au premier tour du joueur
@@ -510,6 +513,8 @@ public class BattleTransitionManager : MonoBehaviour
 
         // Retour à l'exploration : seule la WorldCam doit être active
         CameraActivationManager.Instance?.ActivateWorldCamera();
+        // Replace la caméra du monde à l'endroit où le joueur l'avait laissée
+        CameraController.Instance?.RestoreWorldCameraTransform();
 
         if (maskRingParticles != null)
         {
