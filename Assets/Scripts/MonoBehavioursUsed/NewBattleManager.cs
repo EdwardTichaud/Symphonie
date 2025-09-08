@@ -157,6 +157,8 @@ public class NewBattleManager : MonoBehaviour
     [HideInInspector] public GameObject targetCursor;
     [HideInInspector] public List<GameObject> multiTargetCursors = new List<GameObject>();
     private List<CharacterUnit> filteredUnits = new();
+    // Liste temporaire réutilisée pour éviter des allocations lors du ciblage multiple
+    private readonly List<CharacterUnit> multiTargetUnits = new();
     private int currentTargetIndex = 0;
     private float navigationCooldown = 0.3f;
     private float lastNavTime = 0f;
@@ -1992,9 +1994,17 @@ public class NewBattleManager : MonoBehaviour
         bool targetEnemies = type == TargetType.SingleEnemy || type == TargetType.AllEnemies;
         CharacterType requiredType = targetEnemies ? CharacterType.EnemyUnit : CharacterType.SquadUnit;
 
-        filteredUnits = activeCharacterUnits
-            .Where(u => u.characterType == requiredType && u.currentHP > 0)
-            .ToList();
+        // On reconstruit la liste filtrée manuellement pour éviter les allocations
+        // liées à l'utilisation de LINQ chaque frame, ce qui générait des pics de GC
+        // responsables de chutes de FPS.
+        filteredUnits.Clear();
+        foreach (var unit in activeCharacterUnits)
+        {
+            if (unit.characterType == requiredType && unit.currentHP > 0)
+            {
+                filteredUnits.Add(unit);
+            }
+        }
 
         if (filteredUnits.Count == 0)
         {
@@ -2057,21 +2067,31 @@ public class NewBattleManager : MonoBehaviour
         {
             targetCursor?.SetActive(false);
 
-            IEnumerable<CharacterUnit> targets = activeCharacterUnits.Where(u => u.currentHP > 0);
-            if (type == TargetType.AllEnemies)
-                targets = targets.Where(u => u.characterType == CharacterType.EnemyUnit);
-            else if (type == TargetType.AllAllies)
-                targets = targets.Where(u => u.characterType == CharacterType.SquadUnit);
+            // Filtre manuel des cibles pour éviter les allocations LINQ à chaque frame
+            multiTargetUnits.Clear();
+            foreach (var unit in activeCharacterUnits)
+            {
+                if (unit.currentHP <= 0) continue; // On ignore les unités KO
 
-            List<CharacterUnit> targetList = targets.ToList();
-            EnsureMultiTargetCursors(targetList.Count);
+                // On conserve uniquement les types d'unités attendus
+                if (type == TargetType.AllEnemies && unit.characterType != CharacterType.EnemyUnit)
+                    continue;
+                if (type == TargetType.AllAllies && unit.characterType != CharacterType.SquadUnit)
+                    continue;
 
+                multiTargetUnits.Add(unit);
+            }
+
+            // S'assure qu'il existe assez de curseurs pour toutes les cibles
+            EnsureMultiTargetCursors(multiTargetUnits.Count);
+
+            // Positionne chaque curseur sur l'unité correspondante
             for (int i = 0; i < multiTargetCursors.Count; i++)
             {
-                if (i < targetList.Count)
+                if (i < multiTargetUnits.Count)
                 {
                     multiTargetCursors[i].SetActive(true);
-                    multiTargetCursors[i].transform.position = targetList[i].transform.position;
+                    multiTargetCursors[i].transform.position = multiTargetUnits[i].transform.position;
                 }
                 else
                 {
