@@ -124,16 +124,29 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
 
         // 0) Fades optionnels
         var fader = FadeChildrenOpacity.Instance;
-        if (fader != null)
-        {
-            if (blackFade) fader.ChangeOpacity(0, 1f, 1f);
-            if (whiteFade) fader.ChangeOpacity(1, 1f, 1f);
-        }
-
-        yield return new WaitForSeconds(3f);
+        bool fadeTriggered = false; // Indique si un fade a réellement été lancé
 
         if (fader != null)
         {
+            // Lance un fondu entrant si demandé et note que l'on devra patienter
+            if (blackFade)
+            {
+                fader.ChangeOpacity(0, 1f, 1f);
+                fadeTriggered = true;
+            }
+
+            if (whiteFade)
+            {
+                fader.ChangeOpacity(1, 1f, 1f);
+                fadeTriggered = true;
+            }
+
+            // En cas de fade (opacité différente de 0), on laisse le temps au joueur
+            // d'observer le fondu avant de poursuivre.
+            if (fadeTriggered)
+                yield return new WaitForSeconds(3f);
+
+            // On relance ensuite un fondu pour revenir progressivement à la transparence.
             if (blackFade) fader.ChangeOpacity(0, 0f, 2f);
             if (whiteFade) fader.ChangeOpacity(1, 0f, 2f);
         }
