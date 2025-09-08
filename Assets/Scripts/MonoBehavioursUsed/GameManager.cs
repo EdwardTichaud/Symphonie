@@ -1,89 +1,11 @@
-﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using System.IO;
-using System.Linq;
 using TMPro; // Nécessaire pour utiliser TMP_InputField
 
-[CreateAssetMenu(fileName = "GameData", menuName = "Symphonie/GameData")]
-public class GameData : ScriptableObject
-{
-    public List<int> defeatedEnemies = new List<int>();
-    public int squadLevel;
-    public int squadXP;
-    public int enemiesDefeatedCount;
-    public string muninName = "Munin"; // Nom de la caméra contrôlée par le joueur
-    // Succès : indique si le joueur a déjà rencontré Munin
-    public bool muninMet;
-
-    public void SaveToFile(string fileName = "save.json")
-    {
-        var save = new GameDataSave
-        {
-            defeatedEnemyIDs = new List<int>(defeatedEnemies),
-            squadLevel = squadLevel,
-            squadXP = squadXP,
-            enemiesDefeatedCount = enemiesDefeatedCount,
-            muninName = muninName,
-            muninMet = muninMet // Persistance du succès "Munin rencontré"
-        };
-
-        string json = JsonUtility.ToJson(save, true);
-        string path = Path.Combine(Application.persistentDataPath, fileName);
-        File.WriteAllText(path, json);
-
-        Debug.Log($"[GameData] Données sauvegardées : {path}");
-    }
-
-    public void LoadFromFile(string fileName = "save.json")
-    {
-        string path = Path.Combine(Application.persistentDataPath, fileName);
-
-        if (!File.Exists(path))
-        {
-            Debug.LogWarning("[GameData] Aucun fichier de sauvegarde trouvé !");
-            return;
-        }
-
-        string json = File.ReadAllText(path);
-        GameDataSave loaded = JsonUtility.FromJson<GameDataSave>(json);
-
-        // Recharge les données
-        defeatedEnemies = new List<int>(loaded.defeatedEnemyIDs);
-        squadLevel = loaded.squadLevel;
-        squadXP = loaded.squadXP;
-        enemiesDefeatedCount = loaded.enemiesDefeatedCount;
-        muninName = loaded.muninName; // Recharge le nom personnalisé de Munin
-        muninMet = loaded.muninMet;   // Recharge le succès "Munin rencontré"
-
-        Debug.Log($"[GameData] Données chargées depuis : {path}");
-    }
-
-    public void ResetGameData()
-    {
-        defeatedEnemies.Clear();
-        squadLevel = 0;
-        squadXP = 0;
-        enemiesDefeatedCount = 0;
-        muninName = "Munin"; // Réinitialise le nom de Munin par défaut
-        muninMet = false;     // Réinitialise le succès
-        Debug.Log("GameData has been reset.");
-}
-}
-
-[System.Serializable]
-public class GameDataSave
-{
-    public List<int> defeatedEnemyIDs = new();
-    public int squadLevel;
-    public int squadXP;
-    public int enemiesDefeatedCount;
-    public string muninName; // Nom sauvegardé de Munin
-    public bool muninMet;    // Sauvegarde du succès "Munin rencontré"
-}
-
+/// <summary>
+/// États possibles du déroulement du jeu.
+/// </summary>
 public enum GameState
 {
     Menu,
@@ -96,6 +18,9 @@ public enum GameState
     GameOver
 }
 
+/// <summary>
+/// Gère les transitions d'états et l'accès aux données de jeu.
+/// </summary>
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance { get; private set; }

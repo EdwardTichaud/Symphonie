@@ -42,12 +42,16 @@ public class ItemData : ScriptableObject
     public int revivePercentage = 50;
 
     [Header("Buff Settings")]
-    public BuffStatType buffStat;
-    public DebuffStatType debuffStat;
-    public int buffAmount;
-    public int debuffAmount;
-    public float buffDuration;
-    public bool buffIsPercentage = false;
+    public BuffStatType buffStat;              // Statistique augmentée
+    public int buffAmount;                     // Valeur du bonus
+    public float buffDuration;                 // Durée du bonus en secondes/tours
+    public bool buffIsPercentage = false;      // Interpréter buffAmount en pourcentage ?
+
+    [Header("Debuff Settings")]
+    public DebuffStatType debuffStat;          // Statistique diminuée
+    public int debuffAmount;                   // Valeur du malus
+    public float debuffDuration;               // Durée du malus en secondes/tours
+    public bool debuffIsPercentage = false;    // Interpréter debuffAmount en pourcentage ?
 
     [Header("Timing Boost Settings")]
     public TimingBoostType timingType;
@@ -184,7 +188,8 @@ public class ItemData : ScriptableObject
 
     private void ApplyDebuff(CharacterUnit target)
     {
-        InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, buffDuration, buffIsPercentage);
+        // Utilise les champs dédiés aux débuffs pour éviter toute confusion
+        InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
     }
 
     private void ApplyDamage(CharacterUnit caster, CharacterUnit target, float value)
