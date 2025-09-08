@@ -60,6 +60,10 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
     [Tooltip("GameObjects désactivés lorsque ce point d'intérêt est déclenché. Utile pour faire disparaître des éléments de la scène après l'interaction.")]
     [SerializeField] private List<GameObject> objectsToDisable = new();
 
+    [Header("Succès")]
+    [Tooltip("Succès à débloquer lors du déclenchement de ce point d'intérêt.")]
+    [SerializeField] private AchievementSO achievementToUnlock; // Référence vers le succès optionnel à déverrouiller
+
     [Header("Local InfoBox")]
     [Tooltip("Décalage appliqué à la LocalInfoBox pour ce point d'intérêt.")]
     public Vector3 localInfoBoxOffset;
@@ -198,6 +202,16 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
                 if (item != null)
                     GameManager.Instance?.AddItemToInventory(item);
             }
+        }
+
+        // 2.c) Déblocage éventuel d'un succès
+        if (achievementToUnlock != null)
+        {
+            // Vérifie la présence d'un AchievementManager avant de tenter le déblocage
+            if (AchievementManager.Instance != null)
+                AchievementManager.Instance.Unlock(achievementToUnlock);
+            else
+                Debug.LogWarning("[PointOfInterest] Aucun AchievementManager dans la scène pour débloquer le succès.");
         }
 
         // 3) Fin d’orbite
