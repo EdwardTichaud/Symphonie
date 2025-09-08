@@ -595,16 +595,6 @@ public class InputsManager : MonoBehaviour
     private void OnForceCamInput(InputAction.CallbackContext ctx)
     {
         CameraController cc = CameraController.Instance;
-        if (cc.currentWorldCameraState != WorldCameraState.Forced)
-        {
-            // Active le mode caméra forcée sans modifier le mode de déplacement du joueur
-            cc.ForceCam();
-        }
-        else
-        {
-            // Retour au comportement par défaut de la caméra
-            cc.ReleaseCam();
-        }
     }
     #endregion
 }

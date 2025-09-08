@@ -13,12 +13,6 @@ public class CameraController : MonoBehaviour
 {
     public static CameraController Instance { get; private set; }
 
-    /// <summary>
-    /// Indique si un CameraPath est actuellement suivi.
-    /// Permet aux autres scripts de connaître la priorité caméra.
-    /// </summary>
-    public static bool IsAnyPathPlaying => Instance != null && Instance.isFollowingPath;
-
     private Coroutine currentTransition;
 
     [Header("---------- Common ----------")]
@@ -27,14 +21,6 @@ public class CameraController : MonoBehaviour
     public List<Camera> managedCameras = new();
     public WorldCameraState currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint; // ✅ Par défaut en recherche de point
 
-    [Header("Path Follow")]
-    [Range(0f, 1f)] public float pathPosition;
-    public bool isFollowingPath;
-    public bool IsFollowingPath => isFollowingPath;
-    [SerializeField] private float followLerpSpeed = 5f;
-    [SerializeField] private float rotateLerpSpeed = 5f;
-    private float pathElapsedTime = 0f;
-    private float pathTotalDuration = 0f;
     private bool forceLookAt;
     private Transform forcedLookTarget;
     private Camera activeCamera;
@@ -241,12 +227,6 @@ public class CameraController : MonoBehaviour
     /// </summary>
     public void OrbitAround(string cameraTag, Transform target, float distance = 5f, float speed = 30f, bool x = false, bool y = true, bool z = false)
     {
-        if (isFollowingPath)
-        {
-            Debug.Log("[CameraController] CameraPath en cours - OrbitAround ignoré.");
-            return;
-        }
-
         StopOrbit();
 
         Camera cam = FindCameraByTag(cameraTag);
@@ -322,12 +302,6 @@ public class CameraController : MonoBehaviour
     /// </summary>
     public Coroutine SetCameraTarget(string positionName, string lookAtName, float transitionSpeed = 2f)
     {
-        if (isFollowingPath)
-        {
-            Debug.Log("[CameraController] CameraPath en cours - SetCameraTarget ignoré.");
-            return null;
-        }
-
         StopOrbit();
 
         Transform pos = GameObject.Find(positionName)?.transform;
@@ -367,72 +341,6 @@ public class CameraController : MonoBehaviour
         targetTransform.position = targetPos;
         targetTransform.rotation = targetRot;
         currentTransition = null;
-    }
-
-    #endregion
-
-    #region Caméra Forcée
-    /// <summary>
-    /// Désactive la logique automatique pour forcer un point de vue fixe.
-    /// Conflit avec OrbitAround et PathFollow.
-    /// </summary>
-    public void ForceCam()
-    {
-        StopOrbit();
-
-        if (currentTransition != null)
-        {
-            StopCoroutine(currentTransition);
-        }
-        activeCamera = worldCamera;
-
-        // Récupération du point d'épaule pour positionner la caméra au plus près du joueur
-        Transform shoulder = FindChildRecursive(player, "Camera_Shoulder_Left_Near");
-        forceLookPoint = FindChildRecursive(player, cameraTargetName);
-
-        if (shoulder != null)
-        {
-            // Calcul initial du décalage sans tenir compte de la rotation du joueur
-            forcedCamOffset = shoulder.position - player.position;
-            forcedCamDistance = forcedCamOffset.magnitude;
-            forcedCamYaw = Mathf.Atan2(forcedCamOffset.x, forcedCamOffset.z) * Mathf.Rad2Deg;
-            forcedCamPitch = Mathf.Asin(forcedCamOffset.y / forcedCamDistance) * Mathf.Rad2Deg;
-        }
-        else
-        {
-            // Repli : on conserve la position actuelle de la caméra
-            forcedCamOffset = worldCamera.transform.position - player.position;
-            forcedCamDistance = forcedCamOffset.magnitude;
-            forcedCamYaw = Mathf.Atan2(forcedCamOffset.x, forcedCamOffset.z) * Mathf.Rad2Deg;
-            forcedCamPitch = Mathf.Asin(forcedCamOffset.y / forcedCamDistance) * Mathf.Rad2Deg;
-        }
-
-        // Application immédiate pour éviter un décalage visuel lors de l'activation
-        FollowForcedCameraPoint();
-
-        currentWorldCameraState = WorldCameraState.Forced;
-        cameraHandlerEnabled = false;
-        worldCamForced = true;
-
-        Debug.Log("[CameraController] ForcedCam activated");
-    }
-
-    /// <summary>
-    /// Réactive la gestion automatique de la caméra après un mode forcé.
-    /// </summary>
-    public void ReleaseCam()
-    {
-        currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint;
-        cameraHandlerEnabled = true;
-        worldCamForced = false;
-
-        // Réinitialise l'offset pour ne pas garder de résidus
-        forcedCamOffset = Vector3.zero;
-
-        // Oublie le dernier point pour relancer une transition propre
-        lastClosestCameraPoint = null;
-
-        Debug.Log("[CameraController] ForcedCam disabled");
     }
 
     #endregion
@@ -595,20 +503,20 @@ public class CameraController : MonoBehaviour
         lastOffset = newOffset;
     }
 
-    /// <summary>
-    /// Remet immédiatement la WorldCamera à sa position et rotation de départ.
-    /// Utile notamment après l'utilisation d'une Timeline qui aurait déplacé la caméra.
-    /// </summary>
-    public void ResetWorldCameraToDefault()
-    {
-        if (worldCamera == null || player == null) return; // Sécurité supplémentaire
+    ///// <summary>
+    ///// Remet immédiatement la WorldCamera à sa position et rotation de départ.
+    ///// Utile notamment après l'utilisation d'une Timeline qui aurait déplacé la caméra.
+    ///// </summary>
+    //public void ResetWorldCameraToDefault()
+    //{
+    //    if (worldCamera == null || player == null) return; // Sécurité supplémentaire
 
-        // Replace la WorldCamera relativement au joueur en réappliquant
-        // le décalage enregistré au lancement du jeu.
-        worldCamera.transform.SetPositionAndRotation(
-            player.position + worldCamDefaultOffset,
-            worldCamDefaultRotation);
-    }
+    //    // Replace la WorldCamera relativement au joueur en réappliquant
+    //    // le décalage enregistré au lancement du jeu.
+    //    worldCamera.transform.SetPositionAndRotation(
+    //        player.position + worldCamDefaultOffset,
+    //        worldCamDefaultRotation);
+    //}
 
     /// <summary>
     /// Récupère dynamiquement les positions caméra à partir du handler dédié.

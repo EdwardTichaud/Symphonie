@@ -679,12 +679,6 @@ public class NewBattleManager : MonoBehaviour
         // Affiche un popup visuel pour indiquer le gain
         AddHarmonicPopupManager.Instance?.ShowAddHarmonic(characterUnit.transform, 1);
 
-        // S'assure que la BattleCamera n'est pas contrôlée par le CameraController
-        // pour éviter les conflits lorsqu'on passe à la prochaine unité
-        CameraController cc = CameraController.Instance;
-        if (cc != null && cc.currentWorldCameraState != WorldCameraState.Forced)
-            cc.ForceCam();
-
         if (characterUnit.Data.characterType == CharacterType.SquadUnit)
             ChangeBattleState(BattleState.SquadUnit_MainMenu);
         else if (characterUnit.Data.characterType == CharacterType.EnemyUnit)
@@ -2428,13 +2422,6 @@ public class NewBattleManager : MonoBehaviour
         // on laisse entièrement la main au TimelineManager.
         if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
             return;
-
-        // Seule une Timeline de la WorldCamera doit interrompre la BattleCamera.
-        // La WorldCamera peut rester forcée sans empêcher cette logique.
-        if (cc != null && cc.IsFollowingPath)
-        {
-            return; // Cutscene en cours : on laisse la gestion au CameraController
-        }
 
         if (itemMenuTimelineActive)
         {
