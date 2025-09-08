@@ -25,8 +25,13 @@ public class CameraController : MonoBehaviour
     private Transform forcedLookTarget;
     private Camera activeCamera;
     private Camera worldCamera; // Référence directe à la WorldCamera
-    private Vector3 worldCamDefaultOffset;      // Décalage initial par rapport au joueur
-    private Quaternion worldCamDefaultRotation; // Rotation initiale de la WorldCamera au lancement du jeu
+    private Transform worldCameraParent;       // Parent direct de la WorldCamera (utilisé pour le forçage)
+
+    // Sauvegarde de la WorldCamera pour assurer la continuité après combats ou timelines
+    private Vector3 savedWorldCamPosition;
+    private Quaternion savedWorldCamRotation;
+    private Vector3 savedWorldCamParentPosition;
+    private Quaternion savedWorldCamParentRotation;
 
     [Header("---------- Effet de respiration ----------")]
     [Tooltip("Amplitude du mouvement vertical simulant la respiration.")]
@@ -35,7 +40,6 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float breathingFrequency = 1f;
 
     private Camera battleCamera;               // Référence directe à la BattleCamera
-    private Transform worldCameraParent;       // Parent direct de la WorldCamera (utilisé pour le forçage)
     private Transform battleCameraParent;      // Parent direct de la BattleCamera (utilisé pour le forçage)
     private float worldBreathOffset;           // Dernier décalage appliqué à la WorldCamera elle-même
     private float battleBreathOffset;          // Dernier décalage appliqué à la BattleCamera elle-même
@@ -106,13 +110,16 @@ public class CameraController : MonoBehaviour
             ? worldCamera.transform.parent
             : worldCamera?.transform; // fallback si aucun parent
 
-        // Sauvegarde le décalage initial de la WorldCamera par rapport au joueur
-        // ainsi que sa rotation. Ces valeurs serviront à la replacer correctement
-        // une fois une Timeline terminée.
-        if (worldCamera != null && player != null)
+        // Initialise les valeurs sauvegardées pour pouvoir restaurer la caméra plus tard
+        if (worldCamera != null)
         {
-            worldCamDefaultOffset = worldCamera.transform.position - player.position;
-            worldCamDefaultRotation = worldCamera.transform.rotation;
+            savedWorldCamPosition = worldCamera.transform.position;
+            savedWorldCamRotation = worldCamera.transform.rotation;
+        }
+        if (worldCameraParent != null)
+        {
+            savedWorldCamParentPosition = worldCameraParent.position;
+            savedWorldCamParentRotation = worldCameraParent.rotation;
         }
 
         // Recherche de la BattleCamera et de son parent pour gérer séparément forçage et respiration
@@ -503,20 +510,37 @@ public class CameraController : MonoBehaviour
         lastOffset = newOffset;
     }
 
-    ///// <summary>
-    ///// Remet immédiatement la WorldCamera à sa position et rotation de départ.
-    ///// Utile notamment après l'utilisation d'une Timeline qui aurait déplacé la caméra.
-    ///// </summary>
-    //public void ResetWorldCameraToDefault()
-    //{
-    //    if (worldCamera == null || player == null) return; // Sécurité supplémentaire
+    /// <summary>
+    /// Mémorise la position et la rotation actuelles de la WorldCamera ainsi que celles de son parent.
+    /// À appeler juste avant qu'un combat ou qu'une Timeline ne prenne la main sur la caméra.
+    /// </summary>
+    public void SaveWorldCameraTransform()
+    {
+        if (worldCamera != null)
+        {
+            savedWorldCamPosition = worldCamera.transform.position;
+            savedWorldCamRotation = worldCamera.transform.rotation;
+        }
 
-    //    // Replace la WorldCamera relativement au joueur en réappliquant
-    //    // le décalage enregistré au lancement du jeu.
-    //    worldCamera.transform.SetPositionAndRotation(
-    //        player.position + worldCamDefaultOffset,
-    //        worldCamDefaultRotation);
-    //}
+        if (worldCameraParent != null)
+        {
+            savedWorldCamParentPosition = worldCameraParent.position;
+            savedWorldCamParentRotation = worldCameraParent.rotation;
+        }
+    }
+
+    /// <summary>
+    /// Replace la WorldCamera et son parent à la dernière position sauvegardée.
+    /// Utilisé à la fin d'un combat ou d'une Timeline pour assurer la continuité de la vue.
+    /// </summary>
+    public void RestoreWorldCameraTransform()
+    {
+        if (worldCameraParent != null)
+            worldCameraParent.SetPositionAndRotation(savedWorldCamParentPosition, savedWorldCamParentRotation);
+
+        if (worldCamera != null)
+            worldCamera.transform.SetPositionAndRotation(savedWorldCamPosition, savedWorldCamRotation);
+    }
 
     /// <summary>
     /// Récupère dynamiquement les positions caméra à partir du handler dédié.
