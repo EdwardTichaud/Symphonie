@@ -52951,8 +52951,6 @@ GameObject:
   - component: {fileID: 5081781857519556175}
   - component: {fileID: 7100154581780127490}
   - component: {fileID: 2828476036957675889}
-  - component: {fileID: 3263753015640438395}
-  - component: {fileID: 6594160056435738662}
   m_Layer: 0
   m_Name: WorldCam_Cam
   m_TagString: WorldCamera
@@ -53167,50 +53165,6 @@ MonoBehaviour:
       enableFptlForForwardOpaque: 0
       enableBigTilePrepass: 0
       isFptlEnabled: 0
---- !u!114 &3263753015640438395
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8087106060399975759}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 08800a83b9da4b43bbae61b184797766, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  target: {fileID: 0}
-  maskCamera: {fileID: 7100154581780127490}
-  coneBaseRadius: 5
-  coneSamples: 8
-  obstacleLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  hitBackfaces: 1
-  raycastSkin: 0.01
-  maskWidthPx: 1
-  maskHeightPx: 1
-  lockAspectCircle: 0
-  worldOffset: {x: 0, y: 0, z: 0}
-  screenOffsetUI: {x: 0, y: 0}
-  maskGraphic: {fileID: 0}
-  occlusionShader: {fileID: 4800000, guid: ba404fbf33284c4c80e35480dbd40a10, type: 3}
-  maskTextureCutoff: 0.5
---- !u!114 &6594160056435738662
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8087106060399975759}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ee1949331e747f742a68ab95e454d811, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  shakeStrength: 0.1
-  shakeFrequency: 25
-  inspectorDuration: 0.5
 --- !u!1 &8108546891803684345
 GameObject:
   m_ObjectHideFlags: 0
