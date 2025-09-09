@@ -226,7 +226,7 @@ public class BattleTransitionManager : MonoBehaviour
     {
         // ✅ Dès qu'une timeline demande un combat, on arrête immédiatement
         // la timeline en cours pour éviter tout chevauchement d'actions.
-        TimelineManager.Instance?.StopTimeline();
+        TimelineManager.Instance?.StopTimeline(); // Met fin à la cinématique en cours
 
         if (timelineEnemies == null)
         {
@@ -441,7 +441,9 @@ public class BattleTransitionManager : MonoBehaviour
             {
                 // Signale au TimelineManager de jouer cette Timeline afin qu'il suive
                 // précisément son état (lecture/en pause/arrêt).
-                TimelineManager.Instance.PlayTimeline(introDirector, false);
+                // Le troisième paramètre à "false" garantit que la musique en cours n'est
+                // pas atténuée ni interrompue lors de l'explosion de l'écran Versus.
+                TimelineManager.Instance.PlayTimeline(introDirector, false, false);
 
                 // Tant que la Timeline est en cours, on attend avant d'afficher l'UI
                 // pour ne pas interférer avec la cinématique d'introduction.
