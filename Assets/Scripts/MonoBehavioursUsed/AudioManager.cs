@@ -249,15 +249,42 @@ public class AudioManager : MonoBehaviour
 
     public void TransitionToCombat(AudioClip combatClip)
     {
-        // ⚠️ Ignore si l'on est déjà en combat ou dans une timeline
-        if (isInCombat || isInTimeline)
+        // 🚫 Ignore si l'on est déjà en combat
+        if (isInCombat)
             return;
 
-        lastExplorationClip = CurrentMusicSource.clip;
-        lastExplorationTime = CurrentMusicSource.time;
-        isInCombat = true;
+        if (isInTimeline)
+        {
+            // ✅ Un combat est lancé depuis une timeline
+            //    → on met fin à la timeline sans relancer l'exploration
+            isInTimeline = false;
 
-        // Brutal switch
+            // Si la timeline provenait de l'exploration, on mémorise la musique à reprendre
+            if (!wasInCombatBeforeTimeline)
+            {
+                lastExplorationClip = clipBeforeTimeline;
+                lastExplorationTime = timeBeforeTimeline;
+            }
+
+            // Stoppe tout fondu éventuel lancé par la timeline
+            if (timelineFadeRoutine != null)
+            {
+                StopCoroutine(timelineFadeRoutine);
+                timelineFadeRoutine = null;
+            }
+
+            // La source active peut avoir été mise en pause : on la remet en lecture
+            CurrentMusicSource.UnPause();
+        }
+        else
+        {
+            // Combat lancé hors timeline : on sauvegarde la musique d'exploration actuelle
+            lastExplorationClip = CurrentMusicSource.clip;
+            lastExplorationTime = CurrentMusicSource.time;
+        }
+
+        // On passe en mode combat puis on bascule immédiatement sur le thème approprié
+        isInCombat = true;
         SwitchImmediately(combatClip);
     }
 
