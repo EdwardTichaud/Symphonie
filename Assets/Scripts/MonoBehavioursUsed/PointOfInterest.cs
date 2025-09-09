@@ -50,6 +50,10 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
     [Header("Désactivation d'objets")]
     [SerializeField] private List<GameObject> objectsToDisable = new();
 
+    [Header("Activation d'objets en fin de combat")]
+    [Tooltip("Objets à activer lorsque la timeline/combat est terminée.")]
+    [SerializeField] private List<GameObject> objectsToEnableAfterTimeline = new();
+
     [Header("Particules")]
     [Tooltip("Particle Systems dont l'émission doit passer à 0 à la fin de l'interaction (ou immédiatement si déjà consommé).")]
     [SerializeField] private List<ParticleSystem> particleSystemsToZeroEmission = new();
@@ -94,6 +98,17 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
                     {
                         if (obj != null)
                             obj.SetActive(false);
+                    }
+                }
+
+                // Activer les objets prévus lorsque l'interaction est déjà consommée
+                if (objectsToEnableAfterTimeline != null && objectsToEnableAfterTimeline.Count > 0)
+                {
+                    foreach (var obj in objectsToEnableAfterTimeline)
+                    {
+                        // On vérifie chaque référence pour éviter les erreurs de scène
+                        if (obj != null)
+                            obj.SetActive(true); // L'objet reste activé entre les sessions
                     }
                 }
 
@@ -247,6 +262,16 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
                 Debug.LogWarning("[PointOfInterest] Aucun AchievementManager pour débloquer le succès.");
         }
 
+        // 2.d) Activation d'objets à la fin du combat/timeline
+        if (objectsToEnableAfterTimeline != null && objectsToEnableAfterTimeline.Count > 0)
+        {
+            foreach (var obj in objectsToEnableAfterTimeline)
+            {
+                if (obj == null) continue; // Sécurité si une référence est manquante
+                obj.SetActive(true); // Active l'objet (ex: porte, PNJ...)
+            }
+        }
+
         // 3) Fin d’orbite
         if (orbitAroundClass != null) orbitAroundClass.isActive = false;
 
@@ -347,6 +372,13 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
         {
             foreach (var obj in objectsToDisable)
                 if (obj != null) obj.SetActive(true);
+        }
+
+        // Désactive de nouveau les objets activés en fin d'interaction
+        if (objectsToEnableAfterTimeline != null && objectsToEnableAfterTimeline.Count > 0)
+        {
+            foreach (var obj in objectsToEnableAfterTimeline)
+                if (obj != null) obj.SetActive(false); // On revient à l'état initial
         }
 
         // (On ne relance pas automatiquement les particules ici)
