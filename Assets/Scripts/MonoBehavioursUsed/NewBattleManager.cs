@@ -102,11 +102,10 @@ public class NewBattleManager : MonoBehaviour
     public bool gameOverOnDefeat = false;
 
     [Header("Timelines de fin de combat")]
-    [Tooltip("Timeline jouée automatiquement si le joueur remporte le combat.")]
-    public TimelineAsset victoryTimeline;
+    [Tooltip("Assignées dynamiquement par la Timeline via un TimelineBattleConfigSO")]
+    [HideInInspector] public TimelineAsset victoryTimeline; // Timeline jouée si le joueur gagne
 
-    [Tooltip("Timeline jouée si le joueur perd mais que l'aventure continue.")]
-    public TimelineAsset defeatTimeline;
+    [HideInInspector] public TimelineAsset defeatTimeline; // Timeline jouée si le joueur perd
 
     /// <summary>
     /// Indique si le dernier combat a été gagné par le joueur.

@@ -222,16 +222,16 @@ public class BattleTransitionManager : MonoBehaviour
     /// Cette surcharge facilite l'appel depuis une Timeline qui ne peut
     /// transmettre qu'un seul paramètre dans ses signaux.
     /// </summary>
-    /// <param name="timelineEnemies">ScriptableObject contenant jusqu'à trois ennemis.</param>
-    public void StartTimelineBattle(TimelineEnemiesSO timelineEnemies)
+    /// <param name="battleConfig">ScriptableObject listant les ennemis et les timelines de fin.</param>
+    public void StartTimelineBattle(TimelineBattleConfigSO battleConfig)
     {
         // ✅ Dès qu'une timeline demande un combat, on arrête immédiatement
         // la timeline en cours pour éviter tout chevauchement d'actions.
         TimelineManager.Instance?.StopTimeline(); // Met fin à la cinématique en cours
 
-        if (timelineEnemies == null)
+        if (battleConfig == null)
         {
-            Debug.LogWarning("[BattleTransitionManager] TimelineEnemiesSO non fourni pour StartTimelineBattle.");
+            Debug.LogWarning("[BattleTransitionManager] TimelineBattleConfigSO non fourni pour StartTimelineBattle.");
             return;
         }
 
@@ -239,13 +239,13 @@ public class BattleTransitionManager : MonoBehaviour
         // 1) Rassemble les ennemis définis dans le ScriptableObject
         // ------------------------------------------------------------------
         List<CharacterData> enemies = new();
-        if (timelineEnemies.enemy1 != null) enemies.Add(timelineEnemies.enemy1);
-        if (timelineEnemies.enemy2 != null) enemies.Add(timelineEnemies.enemy2);
-        if (timelineEnemies.enemy3 != null) enemies.Add(timelineEnemies.enemy3);
+        if (battleConfig.enemy1 != null) enemies.Add(battleConfig.enemy1);
+        if (battleConfig.enemy2 != null) enemies.Add(battleConfig.enemy2);
+        if (battleConfig.enemy3 != null) enemies.Add(battleConfig.enemy3);
 
         if (enemies.Count == 0)
         {
-            Debug.LogWarning("[BattleTransitionManager] Aucun ennemi spécifié dans TimelineEnemiesSO.");
+            Debug.LogWarning("[BattleTransitionManager] Aucun ennemi spécifié dans TimelineBattleConfigSO.");
             return;
         }
 
@@ -266,12 +266,16 @@ public class BattleTransitionManager : MonoBehaviour
         }
 
         // --------------------------------------------------------------
-        // 3) Transmet la liste au NewBattleManager pour le combat
+        // 3) Transmet la configuration au NewBattleManager pour le combat
         // --------------------------------------------------------------
         if (NewBattleManager.Instance != null)
         {
             NewBattleManager.Instance.enemyTemplates.Clear();
             NewBattleManager.Instance.enemyTemplates.AddRange(enemies);
+
+            // Les timelines de fin sont aussi renseignées ici
+            NewBattleManager.Instance.victoryTimeline = battleConfig.victoryTimeline;
+            NewBattleManager.Instance.defeatTimeline = battleConfig.defeatTimeline;
         }
         else
         {
