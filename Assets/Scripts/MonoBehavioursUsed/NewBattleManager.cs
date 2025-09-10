@@ -1584,8 +1584,19 @@ public class NewBattleManager : MonoBehaviour
         else if (allSquadDead)
         {
             Debug.Log("[BattleTurnManager] 💀 Tous les alliés sont morts...");
-            ChangeBattleState(BattleState.GameOverScreen_Await);
-            StartCoroutine(ShowGameOverPanel());
+            // Vérifie si la défaite doit mettre fin au jeu ou permettre la poursuite
+            if (GameManager.Instance != null && GameManager.Instance.gameData.gameOverOnDefeat)
+            {
+                // Passage direct au menu principal
+                CleanupAllSpawnedUnits();
+                GameManager.Instance.TriggerGameOver();
+            }
+            else
+            {
+                // Affichage du panneau Game Over permettant de continuer la partie
+                ChangeBattleState(BattleState.GameOverScreen_Await);
+                StartCoroutine(ShowGameOverPanel());
+            }
         }
     }
 
