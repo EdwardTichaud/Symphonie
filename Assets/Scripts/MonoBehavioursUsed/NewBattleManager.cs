@@ -59,6 +59,16 @@ public enum BattleState
 }
 #endregion
 
+/// <summary>
+/// Représente l'issue d'un combat afin de déterminer la timeline post-combat à jouer.
+/// </summary>
+public enum BattleOutcome
+{
+    None,
+    Victory,
+    Defeat
+}
+
 public class NewBattleManager : MonoBehaviour
 {
     public static NewBattleManager Instance { get; private set; }
@@ -100,6 +110,15 @@ public class NewBattleManager : MonoBehaviour
     [Header("Défaite")]
     [Tooltip("Si vrai, une défaite renvoie directement au menu principal.")]
     public bool gameOverOnDefeat = false;
+
+    [Header("Timelines post-combat")] 
+    [Tooltip("Timeline jouée automatiquement après une victoire, si définie." )]
+    public TimelineAsset victoryTimeline; // Définie via TimelineBattleConfigSO
+
+    [Tooltip("Timeline jouée après une défaite lorsqu'il ne s'agit pas d'un Game Over." )]
+    public TimelineAsset defeatTimeline; // Null = Game Over
+
+    [HideInInspector] public BattleOutcome lastBattleOutcome = BattleOutcome.None; // Stocke l'issue du combat
 
     [Header("Récompenses")]
     public List<ItemData> rewardItems = new();
@@ -1582,14 +1601,25 @@ public class NewBattleManager : MonoBehaviour
         if (allEnemiesDead && currentBattleState != BattleState.VictoryScreen_Await)
         {
             Debug.Log("[BattleTurnManager] 🎉 Tous les ennemis sont vaincus !");
+            lastBattleOutcome = BattleOutcome.Victory; // Enregistre l'issue du combat
             ChangeBattleState(BattleState.VictoryScreen_Await);
             StartCoroutine(ReduceTimeAndShowVictoryPanel());
         }
         else if (allSquadDead)
         {
             Debug.Log("[BattleTurnManager] 💀 Tous les alliés sont morts...");
-            // Vérifie si la défaite doit mettre fin au jeu ou permettre la poursuite
-            if (gameOverOnDefeat)
+            lastBattleOutcome = BattleOutcome.Defeat;
+
+            if (defeatTimeline != null)
+            {
+                // Aucune interface de Game Over, on quitte directement le combat
+                if (BattleTransitionManager.Instance != null)
+                    BattleTransitionManager.Instance.StartCoroutine(
+                        BattleTransitionManager.Instance.ExitVictoryScreenAndBattle());
+                else
+                    Debug.LogWarning("[BattleTurnManager] BattleTransitionManager introuvable pour quitter le combat.");
+            }
+            else if (gameOverOnDefeat)
             {
                 // Passage direct au menu principal
                 CleanupAllSpawnedUnits();
@@ -2710,9 +2740,14 @@ public class NewBattleManager : MonoBehaviour
         maxTurnDamage = 0;
         currentTurnDamage = 0;
         mvpUnit = null;
-
+        
         // Réinitialisation de l'interface de timeline via le gestionnaire dédié
         BattleTimelineUIManager.Instance?.Clear();
+
+        // Réinitialise les timelines et l'issue du combat
+        victoryTimeline = null;
+        defeatTimeline = null;
+        lastBattleOutcome = BattleOutcome.None;
 
         // Réinitialise le curseur cible si existant
         if (targetCursor != null)

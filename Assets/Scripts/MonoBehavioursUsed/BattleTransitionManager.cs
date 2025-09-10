@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Playables;
 using UnityEngine.InputSystem; // Nécessaire pour utiliser les actions d'input
+using UnityEngine.Timeline; // Pour lancer les timelines post-combat
 
 public class BattleTransitionManager : MonoBehaviour
 {
@@ -221,16 +222,16 @@ public class BattleTransitionManager : MonoBehaviour
     /// Cette surcharge facilite l'appel depuis une Timeline qui ne peut
     /// transmettre qu'un seul paramètre dans ses signaux.
     /// </summary>
-    /// <param name="timelineEnemies">ScriptableObject contenant jusqu'à trois ennemis.</param>
-    public void StartTimelineBattle(TimelineEnemiesSO timelineEnemies)
+    /// <param name="config">ScriptableObject contenant les ennemis et les timelines associées.</param>
+    public void StartTimelineBattle(TimelineBattleConfigSO config)
     {
         // ✅ Dès qu'une timeline demande un combat, on arrête immédiatement
         // la timeline en cours pour éviter tout chevauchement d'actions.
         TimelineManager.Instance?.StopTimeline(); // Met fin à la cinématique en cours
 
-        if (timelineEnemies == null)
+        if (config == null)
         {
-            Debug.LogWarning("[BattleTransitionManager] TimelineEnemiesSO non fourni pour StartTimelineBattle.");
+            Debug.LogWarning("[BattleTransitionManager] TimelineBattleConfigSO non fourni pour StartTimelineBattle.");
             return;
         }
 
@@ -238,14 +239,23 @@ public class BattleTransitionManager : MonoBehaviour
         // 1) Rassemble les ennemis définis dans le ScriptableObject
         // ------------------------------------------------------------------
         List<CharacterData> enemies = new();
-        if (timelineEnemies.enemy1 != null) enemies.Add(timelineEnemies.enemy1);
-        if (timelineEnemies.enemy2 != null) enemies.Add(timelineEnemies.enemy2);
-        if (timelineEnemies.enemy3 != null) enemies.Add(timelineEnemies.enemy3);
+        if (config.enemy1 != null) enemies.Add(config.enemy1);
+        if (config.enemy2 != null) enemies.Add(config.enemy2);
+        if (config.enemy3 != null) enemies.Add(config.enemy3);
 
         if (enemies.Count == 0)
         {
-            Debug.LogWarning("[BattleTransitionManager] Aucun ennemi spécifié dans TimelineEnemiesSO.");
+            Debug.LogWarning("[BattleTransitionManager] Aucun ennemi spécifié dans TimelineBattleConfigSO.");
             return;
+        }
+
+        // Stocke les timelines post-combat directement dans le gestionnaire de combat
+        if (NewBattleManager.Instance != null)
+        {
+            NewBattleManager.Instance.victoryTimeline = config.victoryTimeline;
+            NewBattleManager.Instance.defeatTimeline = config.defeatTimeline;
+            NewBattleManager.Instance.gameOverOnDefeat = config.defeatTimeline == null; // Game Over si aucune timeline de défaite
+            NewBattleManager.Instance.lastBattleOutcome = BattleOutcome.None; // Réinitialisation de l'issue du combat
         }
 
         // --------------------------------------------------------------
@@ -546,9 +556,23 @@ public class BattleTransitionManager : MonoBehaviour
         // au joueur de revenir visuellement dans le monde.
         yield return new WaitForSecondsRealtime(1f);
 
+        // Détermine si une timeline post-combat doit être jouée avant de réinitialiser
+        TimelineAsset postBattleTimeline = null;
+        if (NewBattleManager.Instance != null)
+        {
+            if (NewBattleManager.Instance.lastBattleOutcome == BattleOutcome.Victory)
+                postBattleTimeline = NewBattleManager.Instance.victoryTimeline;
+            else if (NewBattleManager.Instance.lastBattleOutcome == BattleOutcome.Defeat)
+                postBattleTimeline = NewBattleManager.Instance.defeatTimeline;
+        }
+
         // Destruction complète du battlefield et remise à zéro des infos du combat
         BattlefieldManager.Instance?.UnloadCurrentBattlefield();
         NewBattleManager.Instance?.ResetBattleInfos();
+
+        // Joue la timeline correspondante si une est définie
+        if (postBattleTimeline != null)
+            TimelineManager.Instance.PlayTimelineOnCurrentNPC(postBattleTimeline);
 
         //yield return FadeToTransparent(1f);
 
