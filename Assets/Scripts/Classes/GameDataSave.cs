@@ -12,4 +12,5 @@ public class GameDataSave
     public int enemiesDefeatedCount;
     public string muninName; // Nom sauvegardé de Munin
     public bool muninMet;    // Sauvegarde du succès "Munin rencontré"
+    public bool gameOverOnDefeat; // Indique si une défaite met fin au jeu
 }
