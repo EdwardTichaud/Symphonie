@@ -97,6 +97,10 @@ public class NewBattleManager : MonoBehaviour
     public RenderTexture VictoryScreenImage;
     public RenderTexture GameOverScreenImage;
 
+    [Header("Défaite")]
+    [Tooltip("Si vrai, une défaite renvoie directement au menu principal.")]
+    public bool gameOverOnDefeat = false;
+
     [Header("Récompenses")]
     public List<ItemData> rewardItems = new();
     public int rewardXP = 0;
@@ -1584,8 +1588,27 @@ public class NewBattleManager : MonoBehaviour
         else if (allSquadDead)
         {
             Debug.Log("[BattleTurnManager] 💀 Tous les alliés sont morts...");
-            ChangeBattleState(BattleState.GameOverScreen_Await);
-            StartCoroutine(ShowGameOverPanel());
+            // Vérifie si la défaite doit mettre fin au jeu ou permettre la poursuite
+            if (gameOverOnDefeat)
+            {
+                // Passage direct au menu principal
+                CleanupAllSpawnedUnits();
+                if (GameManager.Instance != null)
+                {
+                    // Utilisation du GameManager pour charger le menu principal
+                    GameManager.Instance.TriggerGameOver();
+                }
+                else
+                {
+                    Debug.LogWarning("[BattleTurnManager] GameManager absent, impossible de charger le menu principal.");
+                }
+            }
+            else
+            {
+                // Affichage du panneau Game Over permettant de continuer la partie
+                ChangeBattleState(BattleState.GameOverScreen_Await);
+                StartCoroutine(ShowGameOverPanel());
+            }
         }
     }
 
