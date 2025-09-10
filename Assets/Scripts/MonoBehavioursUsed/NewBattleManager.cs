@@ -101,6 +101,20 @@ public class NewBattleManager : MonoBehaviour
     [Tooltip("Si vrai, une défaite renvoie directement au menu principal.")]
     public bool gameOverOnDefeat = false;
 
+    [Header("Timelines de fin de combat")]
+    [Tooltip("Timeline jouée automatiquement si le joueur remporte le combat.")]
+    public TimelineAsset victoryTimeline;
+
+    [Tooltip("Timeline jouée si le joueur perd mais que l'aventure continue.")]
+    public TimelineAsset defeatTimeline;
+
+    /// <summary>
+    /// Indique si le dernier combat a été gagné par le joueur.
+    /// Permet au <see cref="BattleTransitionManager"/> de savoir quelle
+    /// timeline lancer lors du retour à l'exploration.
+    /// </summary>
+    [HideInInspector] public bool playerWonLastBattle = false;
+
     [Header("Récompenses")]
     public List<ItemData> rewardItems = new();
     public int rewardXP = 0;
@@ -1582,16 +1596,19 @@ public class NewBattleManager : MonoBehaviour
         if (allEnemiesDead && currentBattleState != BattleState.VictoryScreen_Await)
         {
             Debug.Log("[BattleTurnManager] 🎉 Tous les ennemis sont vaincus !");
+            playerWonLastBattle = true; // Mémorise la victoire pour le post-combat
             ChangeBattleState(BattleState.VictoryScreen_Await);
             StartCoroutine(ReduceTimeAndShowVictoryPanel());
         }
         else if (allSquadDead)
         {
             Debug.Log("[BattleTurnManager] 💀 Tous les alliés sont morts...");
+            playerWonLastBattle = false; // Enregistre la défaite
+
             // Vérifie si la défaite doit mettre fin au jeu ou permettre la poursuite
             if (gameOverOnDefeat)
             {
-                // Passage direct au menu principal
+                // Passage direct au menu principal (aucune timeline de défaite n'est jouée)
                 CleanupAllSpawnedUnits();
                 if (GameManager.Instance != null)
                 {
@@ -2710,6 +2727,11 @@ public class NewBattleManager : MonoBehaviour
         maxTurnDamage = 0;
         currentTurnDamage = 0;
         mvpUnit = null;
+
+        // Remise à zéro des informations de fin de combat
+        victoryTimeline = null;
+        defeatTimeline = null;
+        playerWonLastBattle = false;
 
         // Réinitialisation de l'interface de timeline via le gestionnaire dédié
         BattleTimelineUIManager.Instance?.Clear();

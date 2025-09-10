@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Playables;
+using UnityEngine.Timeline; // Utilisation de TimelineAsset pour les fins de combat
 using UnityEngine.InputSystem; // Nécessaire pour utiliser les actions d'input
 
 public class BattleTransitionManager : MonoBehaviour
@@ -526,6 +527,25 @@ public class BattleTransitionManager : MonoBehaviour
 
         HideVictoryPanel();
         HideGameOverPanel();
+
+        // ------------------------------------------------------------
+        // 🔚 Lecture éventuelle d'une timeline de fin de combat
+        // ------------------------------------------------------------
+        var bm = NewBattleManager.Instance;
+        if (bm != null)
+        {
+            // Choix de l'asset selon l'issue du combat
+            TimelineAsset endTimeline = bm.playerWonLastBattle ? bm.victoryTimeline : bm.defeatTimeline;
+
+            if (endTimeline != null && TimelineManager.Instance != null)
+            {
+                // Lecture de la timeline en utilisant la WorldCamera.
+                TimelineManager.Instance.PlayTimeline(endTimeline, null, "WorldCamera");
+                // Attente de la fin de la cinématique avant de reprendre l'exploration
+                while (TimelineManager.Instance.IsTimelinePlaying)
+                    yield return null;
+            }
+        }
 
         AudioManager.Instance.ReturnFromBattle();
 
