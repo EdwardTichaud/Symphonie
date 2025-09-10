@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro; // Nécessaire pour utiliser TMP_InputField
+using UnityEngine.SceneManagement; // Pour charger le menu principal lors d'un game over
 
 /// <summary>
 /// États possibles du déroulement du jeu.
@@ -169,5 +170,22 @@ public class GameManager : MonoBehaviour
 
         if (namePanel != null)
             namePanel.SetActive(false); // Cache le panneau après validation
+    }
+
+    /// <summary>
+    /// Déclenche un game over et retourne au menu principal.
+    /// </summary>
+    public void TriggerGameOver()
+    {
+        // Mise à jour de l'état du jeu
+        ChangeGameState(GameState.GameOver);
+        Debug.Log("[GameManager] Game Over déclenché, retour au menu principal.");
+
+        // Restaure la vitesse du temps au cas où elle aurait été modifiée
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = 0.02f;
+
+        // Charge la scène du menu principal
+        SceneManager.LoadScene("MainMenu");
     }
 }
