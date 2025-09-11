@@ -187,6 +187,23 @@ public class InputsManager : MonoBehaviour
                 return;
             }
 
+            // Vérifie que l'altitude de la cible correspond aux exigences du mouvement.
+            // Exemple : un mouvement terrestre ne peut pas toucher une cible en l'air.
+            if (!bm.IsTargetAltitudeValid(bm.currentTargetCharacter, bm.currentMove))
+            {
+                if (bm.currentMove.altitudeCondition == AltitudeCondition.AirOnly)
+                {
+                    // Indique que la cible doit être aérienne.
+                    ActionUIDisplayManager.Instance.DisplayInstruction("La cible doit être en l'air");
+                }
+                else if (bm.currentMove.altitudeCondition == AltitudeCondition.GroundOnly)
+                {
+                    // Indique que la cible doit être au sol.
+                    ActionUIDisplayManager.Instance.DisplayInstruction("La cible doit être au sol");
+                }
+                return;
+            }
+
             bm.ChangeBattleState(BattleState.SquadUnit_PerformingMusicalMove);
             bm.StartCoroutine(bm.ExecuteMoveOnTarget(bm.currentMove, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);

@@ -2220,7 +2220,11 @@ public class NewBattleManager : MonoBehaviour
                     bool inRange = distance <= maxReach;
                     // Vérifie que la position relative est libre avant d'autoriser l'action.
                     bool hasSpace = HasSpaceForMove(currentCharacterUnit, currentTargetCharacter, currentMove);
-                    UpdateTargetCursorColor(inRange && hasSpace);
+                    // Vérifie si la cible possède l'altitude adéquate pour ce mouvement.
+                    bool altitudeValid = IsTargetAltitudeValid(currentTargetCharacter, currentMove);
+                    // La couleur du curseur devient noire si l'une des conditions n'est pas remplie :
+                    // distance, espace disponible ou altitude.
+                    UpdateTargetCursorColor(inRange && hasSpace && altitudeValid);
                 }
                 else if (isItemTargeting)
                 {
@@ -2730,7 +2734,9 @@ public class NewBattleManager : MonoBehaviour
         foreach (var ps in systems)
         {
             var main = ps.main;
-            main.startColor = inRange ? Color.white : Color.red;
+            // Blanc lorsque la cible est valide, noir lorsqu'elle ne peut être touchée
+            // (hors de portée, mauvaise altitude, etc.).
+            main.startColor = inRange ? Color.white : Color.black;
         }
     }
 
