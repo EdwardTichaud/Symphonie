@@ -7,6 +7,15 @@ Chaque MusicalMove ou Item peut maintenant définir un nombre maximal d'utilisat
 `maxUsesPerTurn` et `maxUsesPerBattle` des ScriptableObjects permettent de configurer ces limites. Une valeur de `0` indique
 une utilisation illimitée.
 
+## Conditions d'altitude
+Les MusicalMoves peuvent désormais spécifier une contrainte de hauteur :
+- **Aériens** : réalisables uniquement si la cible ne touche pas le sol.
+- **Terriens** : réalisables uniquement si la cible est au sol.
+- **Aériens et terriens** : utilisables dans toutes les situations.
+
+Cette classification aide les débutants à comprendre rapidement les restrictions tout en offrant aux joueurs avancés des
+combinaisons plus techniques impliquant des changements d'altitude.
+
 ## MusicalMove : Crescendo Fulgurant
 - **Type** : Attaque
 - **Effet** : inflige 30 points de dégâts à une cible unique.

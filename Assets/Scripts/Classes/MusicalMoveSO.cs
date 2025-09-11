@@ -56,6 +56,10 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Nombre maximum d'utilisations par combat (0 = illimité)")]
     public int maxUsesPerBattle = 0;
 
+    [Header("Condition d'altitude")]
+    [Tooltip("Détermine si le move est utilisable lorsque la cible est au sol, en l'air ou dans les deux cas")]
+    public AltitudeCondition altitudeCondition = AltitudeCondition.GroundOrAir; // Par défaut: aucune restriction
+
     [Header("Ciblage")]
     public TargetType targetType = TargetType.SingleEnemy;
     public TargetType defaultTargetType = TargetType.SingleEnemy;
@@ -183,3 +187,8 @@ public class MusicalMoveSO : ScriptableObject
 public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark }
 
 public enum RelativePosition { Front, Back, Left, Right , NC}
+
+/// <summary>
+/// Définit dans quel contexte d'altitude un <see cref="MusicalMoveSO"/> est réalisable.
+/// </summary>
+public enum AltitudeCondition { GroundOnly, AirOnly, GroundOrAir }

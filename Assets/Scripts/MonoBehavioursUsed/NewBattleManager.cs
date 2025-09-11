@@ -914,6 +914,16 @@ public class NewBattleManager : MonoBehaviour
             yield break;
         }
 
+        if (!IsTargetAltitudeValid(target, move))
+        {
+            // Message spécifique selon la contrainte de hauteur définie sur le move.
+            if (move.altitudeCondition == AltitudeCondition.AirOnly)
+                ActionUIDisplayManager.Instance.DisplayInstruction("La cible doit être en l'air");
+            else if (move.altitudeCondition == AltitudeCondition.GroundOnly)
+                ActionUIDisplayManager.Instance.DisplayInstruction("La cible doit être au sol");
+            yield break;
+        }
+
         if (move.enterAwake && (caster.IsAwake ||
             caster.GetHarmonicCount(caster.Data.harmonicType) < caster.Data.resonancePoint))
         {
@@ -1072,6 +1082,28 @@ public class NewBattleManager : MonoBehaviour
         float distance = Vector3.Distance(caster.transform.position, target.transform.position);
         float maxReach = caster.Data.currentRange + item.castDistance;
         return distance <= maxReach;
+    }
+
+    /// <summary>
+    /// Vérifie si la hauteur actuelle de la cible correspond aux exigences du mouvement.
+    /// </summary>
+    public bool IsTargetAltitudeValid(CharacterUnit target, MusicalMoveSO move)
+    {
+        if (target == null || move == null)
+            return false;
+
+        switch (move.altitudeCondition)
+        {
+            case AltitudeCondition.AirOnly:
+                // Mouvement aérien : uniquement si la cible ne touche pas le sol.
+                return !target.IsGrounded;
+            case AltitudeCondition.GroundOnly:
+                // Mouvement terrien : uniquement si la cible est au sol.
+                return target.IsGrounded;
+            default:
+                // Aucune restriction : mouvement utilisable dans toutes les configurations.
+                return true;
+        }
     }
 
     private CharacterUnit CheckForInterception(CharacterUnit caster, CharacterUnit target, float range)

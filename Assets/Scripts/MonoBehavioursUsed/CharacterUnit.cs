@@ -26,6 +26,28 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public bool IsAwake => awakeState != null && awakeState.IsAwake;
 
+    /// <summary>
+    /// Indique si l'unité touche actuellement le sol.
+    /// </summary>
+    public bool IsGrounded
+    {
+        get
+        {
+            // Tente d'abord de récupérer l'information depuis le contrôleur 3D personnalisé.
+            var controller3D = GetComponent<CharacterController3D>();
+            if (controller3D != null)
+                return controller3D.isGrounded;
+
+            // Sinon, se rabat sur le CharacterController classique utilisé en combat/cinématique.
+            var cc = GetComponent<CharacterController>();
+            if (cc != null)
+                return cc.isGrounded;
+
+            // Par défaut, on considère l'unité au sol pour éviter les blocages.
+            return true;
+        }
+    }
+
     public CharacterType characterType => Data.characterType;
 
     private float _currentHP;
