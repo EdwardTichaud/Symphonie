@@ -33,18 +33,21 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         get
         {
-            // Tente d'abord de récupérer l'information depuis le contrôleur 3D personnalisé.
-            var controller3D = GetComponent<CharacterController3D>();
-            if (controller3D != null)
-                return controller3D.isGrounded;
+            // Les unités en combat n'utilisent pas de CharacterController. On se base donc
+            // uniquement sur un raycast vertical pour détecter la présence d'un sol sous
+            // leurs pieds.
 
-            // Sinon, se rabat sur le CharacterController classique utilisé en combat/cinématique.
-            var cc = GetComponent<CharacterController>();
-            if (cc != null)
-                return cc.isGrounded;
+            // Distance maximum pour rechercher le sol. Une petite valeur suffit car les
+            // unités sont légèrement au-dessus de la surface lorsqu'elles touchent le sol.
+            const float checkDistance = 0.1f;
 
-            // Par défaut, on considère l'unité au sol pour éviter les blocages.
-            return true;
+            // Effectue le raycast vers le bas depuis la position de l'unité.
+            if (Physics.Raycast(transform.position, Vector3.down, checkDistance))
+                return true;
+
+            // Aucun sol détecté : l'unité est considérée en l'air afin d'empêcher les
+            // mouvements réservés aux cibles terrestres de se déclencher à tort.
+            return false;
         }
     }
 
