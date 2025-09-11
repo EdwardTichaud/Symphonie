@@ -69,6 +69,10 @@ public class MusicalMoveSO : ScriptableObject
     public MusicalEffectType effectType = MusicalEffectType.Damage;
     public int effectValue = 10;
 
+    [Header("Effets spéciaux")]
+    [Tooltip("Prefab instancié pour certains effets spéciaux comme la création ou la suppression de sol.")]
+    public GameObject effectPrefab;
+
     public float moveSpeed = 20f;
     public float castDistance;
 
@@ -176,6 +180,26 @@ public class MusicalMoveSO : ScriptableObject
             if (target.GetComponent<LinkMark>() == null)
                 target.gameObject.AddComponent<LinkMark>();
         }
+        else if (typeToUse == MusicalEffectType.SpawnGround)
+        {
+            // Crée un sol temporaire sous la cible afin de permettre l'utilisation de moves terrestres
+            // sur des unités normalement en vol.
+            if (effectPrefab != null && target != null)
+            {
+                GameObject ground = Instantiate(effectPrefab, target.transform.position, Quaternion.identity);
+                // Assure que l'objet utilise bien le layer Battle_Ground pour être reconnu comme sol.
+                ground.layer = LayerMask.NameToLayer("Battle_Ground");
+            }
+        }
+        else if (typeToUse == MusicalEffectType.RemoveGround)
+        {
+            // Supprime visuellement le sol sous la cible en instanciant un prefab dédié,
+            // la forçant ainsi à être considérée comme aérienne.
+            if (effectPrefab != null && target != null)
+            {
+                Instantiate(effectPrefab, target.transform.position, Quaternion.identity);
+            }
+        }
 
         if (caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
@@ -184,7 +208,7 @@ public class MusicalMoveSO : ScriptableObject
     }
 }
 
-public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark }
+public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark, SpawnGround, RemoveGround }
 
 public enum RelativePosition { Front, Back, Left, Right , NC}
 
