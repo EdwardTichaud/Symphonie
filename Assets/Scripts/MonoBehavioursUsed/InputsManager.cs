@@ -174,17 +174,16 @@ public class InputsManager : MonoBehaviour
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies
             )
         {
+            // Liste des messages d'erreurs à afficher au joueur.
+            // Cette liste permet de communiquer plusieurs problèmes en même temps
+            // (distance trop grande, cible au mauvais endroit, etc.).
+            var instructions = new System.Collections.Generic.List<string>();
+
+            // Vérifie si la cible est à portée de l'attaque.
+            // Si elle ne l'est pas, on l'ajoute à la liste des messages.
             if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentMove))
             {
-                ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
-                return;
-            }
-
-            // Empêche le lancement si la position relative est déjà occupée par une autre unité.
-            if (!bm.HasSpaceForMove(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentMove))
-            {
-                ActionUIDisplayManager.Instance.DisplayInstruction_TargetPositionOccupied();
-                return;
+                instructions.Add("Cible trop éloignée");
             }
 
             // Vérifie que l'altitude de la cible correspond aux exigences du mouvement.
@@ -194,13 +193,27 @@ public class InputsManager : MonoBehaviour
                 if (bm.currentMove.altitudeCondition == AltitudeCondition.AirOnly)
                 {
                     // Indique que la cible doit être aérienne.
-                    ActionUIDisplayManager.Instance.DisplayInstruction("La cible doit être en l'air");
+                    instructions.Add("La cible doit être en l'air");
                 }
                 else if (bm.currentMove.altitudeCondition == AltitudeCondition.GroundOnly)
                 {
                     // Indique que la cible doit être au sol.
-                    ActionUIDisplayManager.Instance.DisplayInstruction("La cible doit être au sol");
+                    instructions.Add("La cible doit être au sol");
                 }
+            }
+
+            // Si une ou plusieurs erreurs ont été détectées, on les affiche
+            // toutes en même temps, puis on quitte la méthode.
+            if (instructions.Count > 0)
+            {
+                ActionUIDisplayManager.Instance.DisplayInstruction(string.Join("\n", instructions));
+                return;
+            }
+
+            // Empêche le lancement si la position relative est déjà occupée par une autre unité.
+            if (!bm.HasSpaceForMove(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentMove))
+            {
+                ActionUIDisplayManager.Instance.DisplayInstruction_TargetPositionOccupied();
                 return;
             }
 
