@@ -66,6 +66,18 @@ Lorsqu’il accomplit cette Convocation, l’entité qui répond n’est pas Aza
 - Témoin silencieux et affectueux du périple de Lucian.
 - Ne peut pas se regarder lui-même.
 
+### 👼 La Mère — L’Ange Pleureur
+- <!-- La mère de Lucian apparaît sous cette forme lors de la scène d'ouverture. -->
+- Incapable de faire son deuil, elle se manifeste dans le Rêve sous la forme d’un ange aux larmes inépuisables.
+- Sert de boss d’introduction impossible à vaincre ; ses attaques forment un tutoriel tragique.
+- Ses larmes nourrissent les entités du Rêve et symbolisent une âme incomplète que cherche à sauver Azazel.
+
+### 🧔 Le Père
+- <!-- Figure paternelle dont le recul apparent nourrit la détresse familiale. -->
+- Fait semblant d’aller de l’avant mais porte un lourd fardeau émotionnel.
+- Son éloignement est perçu par Munin comme de l’indifférence, accentuant la douleur maternelle.
+- Les souvenirs de son sacrifice surgissent durant le combat contre l’Ange Pleureur.
+
 ### 🕯️ Le Traqueur (nouvel antagoniste secondaire)
 - Une autre âme oubliée, rejetée deux fois : par l’Univers, puis par Azazel.
 - Traque les Séraphins par haine de l’effacement et de l’indifférence.
@@ -74,6 +86,14 @@ Lorsqu’il accomplit cette Convocation, l’entité qui répond n’est pas Aza
 - Pourra jouer un rôle capital dans la fin.
 
 ⸻
+
+## 🎬 Scène d’ouverture : L’Ange Pleureur
+- <!-- Résumé de la scène d'ouverture pour assurer la cohérence avec le document détaillé AngePleureur.md -->
+- Lucian quitte son îlot figé pour affronter un ange aux ailes ternies qui pleure sans fin.
+- Cet ennemi représente sa mère incapable de faire son deuil ; il s’agit d’un boss-tutoriel impossible à vaincre.
+- Munin ressent la douleur maternelle et téléporte Lucian pour éviter sa destruction.
+- Les souvenirs d’un père apparemment distant renforcent la détresse de l’ange.
+- La fracture émotionnelle issue de ce combat attire les entités du Rêve et amorce l’arc sur les âmes incomplètes et Azazel.
 
 ## 🎭 Thèmes principaux
 
