@@ -2734,9 +2734,9 @@ public class NewBattleManager : MonoBehaviour
         foreach (var ps in systems)
         {
             var main = ps.main;
-            // Blanc lorsque la cible est valide, noir lorsqu'elle ne peut être touchée
+            // Blanc lorsque la cible est valide, bleu lorsqu'elle ne peut être touchée
             // (hors de portée, mauvaise altitude, etc.).
-            main.startColor = inRange ? Color.white : Color.black;
+            main.startColor = inRange ? Color.white : Color.blue;
         }
     }
 
