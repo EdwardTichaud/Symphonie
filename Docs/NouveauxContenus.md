@@ -54,3 +54,17 @@ combinaisons plus techniques impliquant des changements d'altitude.
 - **Effet** : inflige 15 points de dégâts à tous les ennemis.
 - **Coût** : aucun.
 - **Utilisation conseillée** : permet d'affaiblir tout un groupe d'ennemis avant d'utiliser des attaques ciblées plus puissantes.
+
+## MusicalMove : Pont Harmonique
+- **Type** : Soutien
+- **Effet** : crée un pont éphémère sous une cible volante afin de la considérer comme au sol.
+- **Coût** : 1 point d'harmonie et 1 point de fatigue.
+- **Gain** : aucun.
+- **Utilisation conseillée** : parfait pour les débutants qui peinent à atteindre les adversaires aériens. Les joueurs expérimentés pourront l'enchaîner avec des attaques terrestres pour réaliser des combinaisons originales.
+
+## MusicalMove : Abîme Harmonique
+- **Type** : Débuff
+- **Effet** : annule le sol sous la cible, la forçant à flotter et la rendant sensible aux stratégies aériennes.
+- **Coût** : 1 point d'harmonie et 1 point de fatigue.
+- **Gain** : aucun.
+- **Utilisation conseillée** : utile pour isoler un ennemi trop bien protégé au sol. Les stratèges confirmés l'utiliseront pour préparer des enchaînements de MusicalMoves aériens.
