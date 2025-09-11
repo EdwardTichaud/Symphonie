@@ -43,8 +43,17 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             if (cc != null)
                 return cc.isGrounded;
 
-            // Par défaut, on considère l'unité au sol pour éviter les blocages.
-            return true;
+            // En dernier recours, effectue un petit raycast vertical pour détecter
+            // la présence d'un sol sous l'unité. Cela évite de considérer par
+            // défaut les unités sans contrôleur comme étant au sol, ce qui
+            // permettrait d'attaquer à tort une cible aérienne avec un move
+            // réservé aux cibles terrestres.
+            if (Physics.Raycast(transform.position, Vector3.down, 0.1f))
+                return true;
+
+            // Si aucune information n'est disponible, on considère l'unité en l'air
+            // afin d'empêcher l'utilisation de mouvements réservés aux cibles au sol.
+            return false;
         }
     }
 
