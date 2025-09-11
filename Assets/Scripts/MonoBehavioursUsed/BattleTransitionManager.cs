@@ -453,7 +453,8 @@ public class BattleTransitionManager : MonoBehaviour
                 // précisément son état (lecture/en pause/arrêt).
                 // Le troisième paramètre à "false" garantit que la musique en cours n'est
                 // pas atténuée ni interrompue lors de l'explosion de l'écran Versus.
-                TimelineManager.Instance.PlayTimeline(introDirector, false, false);
+                // L'introduction de combat doit se dérouler entièrement sans possibilité de l'interrompre
+                TimelineManager.Instance.PlayTimeline(introDirector, false, false, false);
 
                 // Tant que la Timeline est en cours, on attend avant d'afficher l'UI
                 // pour ne pas interférer avec la cinématique d'introduction.

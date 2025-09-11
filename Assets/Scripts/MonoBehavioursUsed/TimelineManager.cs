@@ -93,6 +93,12 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     private bool interruptMusic = true;
 
+    /// <summary>
+    /// Indique si la timeline en cours peut être passée par le joueur.
+    /// Lorsque <c>false</c>, aucune option de passage n'est proposée.
+    /// </summary>
+    private bool allowSkip = true;
+
     [Header("Audio")]
     [Tooltip("Musique de fond à jouer pendant les timelines.")]
     [SerializeField] private AudioClip timelineMusicClip;
@@ -400,7 +406,9 @@ public class TimelineManager : MonoBehaviour
     ///     True pour entourer la timeline d'un fondu noir,
     ///     False pour la jouer directement sans transition.
     /// </param>
-    public void PlayTimeline(PlayableDirector newDirector, bool withFade = true, bool interruptMusic = true)
+    /// <param name="interruptMusic">True pour couper la musique en cours, false pour la laisser jouer.</param>
+    /// <param name="allowSkip">False pour empêcher l'utilisateur de passer la timeline.</param>
+    public void PlayTimeline(PlayableDirector newDirector, bool withFade = true, bool interruptMusic = true, bool allowSkip = true)
     {
         if (newDirector == null)
         {
@@ -426,6 +434,7 @@ public class TimelineManager : MonoBehaviour
         // Enregistre les préférences de lecture pour cette timeline.
         useFade = withFade;
         this.interruptMusic = interruptMusic;
+        this.allowSkip = allowSkip; // Mémorise si le joueur peut passer la cinématique
         currentDirector.Play();
     }
 
@@ -438,7 +447,8 @@ public class TimelineManager : MonoBehaviour
     /// <param name="cameraTag">Tag de la caméra à animer. Peut être null pour n'animer que le caster.</param>
     /// <param name="withFade">True pour jouer la timeline avec fondu, false pour la jouer instantanément.</param>
     /// <param name="interruptMusic">True pour couper ou remplacer la musique actuelle, false pour la conserver.</param>
-    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag, bool withFade = true, bool interruptMusic = true)
+    /// <param name="allowSkip">False pour interdire au joueur de passer la timeline.</param>
+    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag, bool withFade = true, bool interruptMusic = true, bool allowSkip = true)
     {
         if (timelineAsset == null || reusableDirector == null)
         {
@@ -535,7 +545,7 @@ public class TimelineManager : MonoBehaviour
         }
 
         // Joue la timeline en profitant de toute la gestion centralisée (skip, fondu, musique...)
-        PlayTimeline(reusableDirector, withFade, interruptMusic);
+        PlayTimeline(reusableDirector, withFade, interruptMusic, allowSkip);
 
         // Suit le lanceur si une caméra est attachée
         if (caster != null && cameraParent != null)
@@ -552,7 +562,8 @@ public class TimelineManager : MonoBehaviour
     /// <param name="timelineAsset">Timeline à jouer sur le PNJ courant.</param>
     /// <param name="withFade">True pour inclure un fondu, false pour une transition immédiate.</param>
     /// <param name="interruptMusic">True pour interrompre la musique en cours, false pour la conserver.</param>
-    public void PlayTimelineOnCurrentNPC(TimelineAsset timelineAsset, bool withFade = true, bool interruptMusic = true)
+    /// <param name="allowSkip">False pour interdire au joueur de passer la cinématique.</param>
+    public void PlayTimelineOnCurrentNPC(TimelineAsset timelineAsset, bool withFade = true, bool interruptMusic = true, bool allowSkip = true)
     {
         // Récupère le PNJ en cours d'interaction via l'InteractionManager.
         GameObject npc = InteractionManager.Instance != null ? InteractionManager.Instance.currentInteractable : null;
@@ -565,7 +576,7 @@ public class TimelineManager : MonoBehaviour
         }
 
         // Utilise la WorldCamera : la track "Camera" ira chercher l'Animator du parent de la WorldCamera.
-        PlayTimeline(timelineAsset, npc, "WorldCamera", withFade, interruptMusic);
+        PlayTimeline(timelineAsset, npc, "WorldCamera", withFade, interruptMusic, allowSkip);
     }
 
     /// <summary>
@@ -664,14 +675,27 @@ public class TimelineManager : MonoBehaviour
         IsTimelinePlaying = true;
         // Bloque immédiatement toutes les actions "World" pendant l'exécution de la timeline.
         ToggleWorldInputs(false);
-        // Réactive uniquement l'action Cancel pour permettre un éventuel passage de la Timeline.
-        EnableTimelineSkip();
-        // Affiche le Canvas de gestion des timelines pendant la lecture
-        if (timelineCanvas != null)
-            timelineCanvas.SetActive(true);
-        // Active le bouton Passer seulement pendant une Timeline
-        if (passButton != null)
-            passButton.SetActive(true);
+        // Active les options de passage uniquement si autorisé
+        if (allowSkip)
+        {
+            // Réactive uniquement l'action Cancel pour permettre un éventuel passage de la Timeline.
+            EnableTimelineSkip();
+            // Affiche le Canvas de gestion des timelines pendant la lecture
+            if (timelineCanvas != null)
+                timelineCanvas.SetActive(true);
+            // Active le bouton Passer seulement pendant une Timeline
+            if (passButton != null)
+                passButton.SetActive(true);
+        }
+        else
+        {
+            // S'assure que les éléments de skip restent cachés lorsque l'option est désactivée
+            DisableTimelineSkip();
+            if (timelineCanvas != null)
+                timelineCanvas.SetActive(false);
+            if (passButton != null)
+                passButton.SetActive(false);
+        }
         // Désactive le CameraController pour laisser la Timeline contrôler totalement la caméra
         if (CameraController.Instance != null)
             CameraController.Instance.enabled = false;
@@ -708,6 +732,7 @@ public class TimelineManager : MonoBehaviour
         Debug.Log($"[TimelineManager] Timeline stoppée : {pd.name}");
         // On n'a plus besoin d'écouter l'input Cancel une fois la cinématique terminée.
         DisableTimelineSkip();
+        allowSkip = true; // Réinitialise l'autorisation de passage pour les prochaines timelines
 
         // Masque le Canvas car la timeline est terminée
         if (timelineCanvas != null)
