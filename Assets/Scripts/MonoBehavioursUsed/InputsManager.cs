@@ -21,6 +21,14 @@ public class InputsManager : MonoBehaviour
 
     private InputActionMap[] allMaps;
 
+    /// <summary>
+    /// Indique si les validations doivent être temporairement ignorées.
+    /// Cette variable passe à <c>true</c> lorsqu'une compétence ou un objet est
+    /// sélectionné avec la même touche que la confirmation. Toutes les tentatives
+    /// de validation sont alors ignorées jusqu'au relâchement de la touche.
+    /// </summary>
+    private bool ignorerProchaineValidation = false;
+
     #region Initialisation
     /// <summary>
     /// Instancie l'asset d'inputs et configure le singleton.
@@ -91,7 +99,10 @@ public class InputsManager : MonoBehaviour
         battle.Back.started += OnBackStarted;
         battle.Back.performed += OnBackInput;
         battle.Back.canceled += OnBackCanceled;
+        // "Confirm" est également utilisé pour sélectionner la 3e compétence.
+        // On écoute donc l'évènement "canceled" afin de savoir quand la touche est relâchée.
         battle.Confirm.performed += OnConfirm;
+        battle.Confirm.canceled += OnConfirmCanceled;
         battle.EnemiesGroupSelection.performed += OnEnemiesGroupSelection;
         battle.SquadGroupSelection.performed += OnSquadGroupSelection;
 
@@ -113,7 +124,9 @@ public class InputsManager : MonoBehaviour
         battle.Back.started -= OnBackStarted;
         battle.Back.performed -= OnBackInput;
         battle.Back.canceled -= OnBackCanceled;
+        // On se désabonne également de l'évènement "canceled" lié à Confirm.
         battle.Confirm.performed -= OnConfirm;
+        battle.Confirm.canceled -= OnConfirmCanceled;
         battle.EnemiesGroupSelection.performed -= OnEnemiesGroupSelection;
         battle.SquadGroupSelection.performed -= OnSquadGroupSelection;
 
@@ -167,6 +180,16 @@ public class InputsManager : MonoBehaviour
     /// </summary>
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
+        // Si une sélection vient juste d'être effectuée, on ignore cette validation
+        // pour éviter d'exécuter immédiatement le mouvement sans choix de cible.
+        if (ignorerProchaineValidation)
+        {
+            // Le joueur vient de sélectionner une compétence ou un objet
+            // avec la même touche que la validation. On ignore donc toute
+            // tentative de confirmation tant que la touche n'a pas été relâchée.
+            return;
+        }
+
         NewBattleManager bm = NewBattleManager.Instance;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
@@ -246,6 +269,15 @@ public class InputsManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Réinitialise l'indicateur d'ignorance lorsque la touche "Confirm" est relâchée.
+    /// </summary>
+    private void OnConfirmCanceled(InputAction.CallbackContext ctx)
+    {
+        // Dès que le joueur relâche la touche, la validation redevient possible.
+        ignorerProchaineValidation = false;
+    }
+
+    /// <summary>
     /// Sélectionne l'option 1 dans les menus.
     /// </summary>
     private void OnSelect1(InputAction.CallbackContext ctx)
@@ -273,6 +305,9 @@ public class InputsManager : MonoBehaviour
                     return;
                 }
                 bm.ToggleMenuContainers(false, false, false);
+                // La touche utilisée pour cette compétence est aussi celle de confirmation :
+                // on ignore donc toute validation tant qu'elle reste enfoncée.
+                ignorerProchaineValidation = true;
                 bm.HandleTargetSelection(bm.currentMove);
                 // Les animations de visée sont désormais intégrées dans la Timeline de préparation
             }
@@ -287,6 +322,8 @@ public class InputsManager : MonoBehaviour
             {
                 bm.currentItem = bm.itemChoices[0];
                 bm.ToggleMenuContainers(false, false, false);
+                // Empêche une utilisation immédiate de l'objet si la touche est maintenue.
+                ignorerProchaineValidation = true;
                 bm.HandleTargetSelection(bm.currentItem);
                 // La Timeline de préparation gère maintenant les animations liées à l'objet
             }
@@ -325,6 +362,8 @@ public class InputsManager : MonoBehaviour
                     return;
                 }
                 bm.ToggleMenuContainers(false, false, false);
+                // La touche peut rester enfoncée : éviter un lancement automatique.
+                ignorerProchaineValidation = true;
                 bm.HandleTargetSelection(bm.currentMove);
             }
             else
@@ -338,6 +377,8 @@ public class InputsManager : MonoBehaviour
             {
                 bm.currentItem = bm.itemChoices[1];
                 bm.ToggleMenuContainers(false, false, false);
+                // Ignore la validation tant que le bouton est pressé.
+                ignorerProchaineValidation = true;
                 bm.HandleTargetSelection(bm.currentItem);
             }
             else
@@ -371,6 +412,8 @@ public class InputsManager : MonoBehaviour
                     return;
                 }
                 bm.ToggleMenuContainers(false, false, false);
+                // Sans cette ligne, le mouvement serait lancé aussitôt la compétence choisie.
+                ignorerProchaineValidation = true;
                 bm.HandleTargetSelection(bm.currentMove);
             }
             else
@@ -384,6 +427,8 @@ public class InputsManager : MonoBehaviour
             {
                 bm.currentItem = bm.itemChoices[2];
                 bm.ToggleMenuContainers(false, false, false);
+                // Empêche l'utilisation automatique de l'objet.
+                ignorerProchaineValidation = true;
                 bm.HandleTargetSelection(bm.currentItem);
             }
             else
