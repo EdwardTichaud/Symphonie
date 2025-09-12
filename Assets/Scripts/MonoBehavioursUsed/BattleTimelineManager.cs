@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
 using System.Collections; // Nécessaire pour les coroutines
+using System.Collections.Generic; // Gestion des files d'attente de timelines
 
 /// <summary>
 /// Gestionnaire dédié au lancement des <see cref="TimelineAsset"/> durant les combats.
@@ -25,6 +26,32 @@ public class BattleTimelineManager : MonoBehaviour
     /// PlayableDirector utilisé pour lancer les timelines de combat.
     /// </summary>
     private PlayableDirector director;
+
+    /// <summary>
+    /// Représente une demande de lecture de Timeline.
+    /// Chaque appel à <see cref="PlayTimeline"/> est empilé ici afin
+    /// d'être joué séquentiellement sans perdre la caméra.
+    /// </summary>
+    private class TimelineRequest
+    {
+        public TimelineAsset timeline;
+        public GameObject caster;
+        public string cameraTag;
+        public bool autoRestore;
+        public Quaternion? fixedRotation;
+    }
+
+    /// <summary>
+    /// File d'attente des timelines à jouer. Permet le cumul automatique
+    /// lorsque plusieurs moves se déclenchent successivement.
+    /// </summary>
+    private readonly Queue<TimelineRequest> timelineQueue = new Queue<TimelineRequest>();
+
+    /// <summary>
+    /// Référence vers la coroutine de traitement de la file d'attente
+    /// pour éviter les doublons.
+    /// </summary>
+    private Coroutine queueCoroutine;
 
     private void Awake()
     {
@@ -64,27 +91,67 @@ public class BattleTimelineManager : MonoBehaviour
     /// <param name="fixedRotation">Rotation imposée pour la caméra. Si non spécifiée, la rotation actuelle du
     /// caster est utilisée à chaque appel. Ce paramètre permet de conserver l'orientation initiale du lanceur
     /// sur toute la durée d'un move même si plusieurs timelines se succèdent.</param>
+    
     public void PlayTimeline(TimelineAsset timeline, GameObject caster, string cameraTag, bool autoRestore = true, Quaternion? fixedRotation = null)
     {
         if (timeline == null || TimelineManager.Instance == null)
         {
             // Pas de timeline ou de gestionnaire disponible : on abandonne
-            // proprement pour \u00e9viter toute NullReferenceException.
-            Debug.LogWarning("[BattleTimelineManager] Lecture annul\u00e9e : gestionnaire ou timeline manquante.");
+            // proprement pour éviter toute NullReferenceException.
+            Debug.LogWarning("[BattleTimelineManager] Lecture annulée : gestionnaire ou timeline manquante.");
             return;
         }
 
-        // S'assure que le TimelineManager utilise bien ce PlayableDirector
-        // avant de lancer la lecture de la timeline.
-        TimelineManager.Instance.SetExternalDirector(director);
-        // Les timelines d'Item et de MusicalMove ne doivent ni couper la musique
-        // ni afficher de fondu au noir : on force donc l'absence de fondu
-        // (paramètre withFade = false) et on conserve la bande-son actuelle
-        // en désactivant l'interruption musicale (interruptMusic = false).
-        //
-        // On transmet la rotation initiale éventuelle afin que la caméra s'aligne
-        // une seule fois et ignore ensuite les changements d'orientation du caster.
-        TimelineManager.Instance.PlayTimeline(timeline, caster, cameraTag, false, false, true, autoRestore, fixedRotation);
+        // Empile la demande de lecture pour une exécution séquentielle.
+        timelineQueue.Enqueue(new TimelineRequest
+        {
+            timeline = timeline,
+            caster = caster,
+            cameraTag = cameraTag,
+            autoRestore = autoRestore,
+            fixedRotation = fixedRotation
+        });
+
+        // Si aucune coroutine ne traite actuellement la file, on en démarre une.
+        if (queueCoroutine == null)
+            queueCoroutine = StartCoroutine(ProcessQueue());
+    }
+
+    /// <summary>
+    /// Traite séquentiellement toutes les timelines en attente dans la file.
+    /// Cette coroutine garantit qu'une timeline ne démarre qu'une fois la
+    /// précédente terminée, permettant ainsi un véritable cumul.
+    /// </summary>
+    private IEnumerator ProcessQueue()
+    {
+        while (timelineQueue.Count > 0)
+        {
+            var request = timelineQueue.Dequeue();
+
+            // S'assure que le TimelineManager utilise bien ce PlayableDirector
+            // avant chaque lecture.
+            TimelineManager.Instance.SetExternalDirector(director);
+
+            // Si d'autres timelines sont déjà en file, on empêche la
+            // restauration automatique afin de conserver la position de la caméra.
+            bool restore = request.autoRestore && timelineQueue.Count == 0;
+
+            TimelineManager.Instance.PlayTimeline(request.timeline, request.caster, request.cameraTag,
+                                                  false, false, true, restore, request.fixedRotation);
+
+            // Attente de la fin de la timeline en cours.
+            while (TimelineManager.Instance.IsTimelinePlaying)
+            {
+                // Si une nouvelle timeline arrive durant la lecture, on désactive
+                // immédiatement la restauration pour la timeline active.
+                if (timelineQueue.Count > 0)
+                    TimelineManager.Instance.SetAutoRestore(false);
+                yield return null;
+            }
+        }
+
+        // Toutes les timelines ont été jouées : la coroutine peut s'arrêter.
+        queueCoroutine = null;
     }
 
     /// <summary>

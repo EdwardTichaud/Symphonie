@@ -407,6 +407,18 @@ public class TimelineManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Modifie dynamiquement le comportement de restauration automatique
+    /// de la caméra et des entrées à la fin de la Timeline en cours.
+    /// Permet notamment au <see cref="BattleTimelineManager"/> de chaîner
+    /// plusieurs timelines sans repositionnement intempestif.
+    /// </summary>
+    /// <param name="restore">True pour restaurer, False pour désactiver la restauration.</param>
+    public void SetAutoRestore(bool restore)
+    {
+        autoRestore = restore;
+    }
+
+    /// <summary>
     /// Joue une nouvelle Timeline. Arrête proprement la précédente.
     /// </summary>
     /// <param name="withFade">
