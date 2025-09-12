@@ -236,6 +236,11 @@ public class RhythmQTEManager : MonoBehaviour
                           BattleTimelineManager.Instance != null &&
                           TimelineManager.Instance != null &&
                           casterAnimatorGO != null;
+        // Timeline jouée lors du repli après retour éventuel
+        bool hasRetreatTimeline = move.retreatTimeline != null &&
+                                  BattleTimelineManager.Instance != null &&
+                                  TimelineManager.Instance != null &&
+                                  casterAnimatorGO != null;
 
         if (hasTimeline)
         {
@@ -305,6 +310,28 @@ public class RhythmQTEManager : MonoBehaviour
         if (!move.stayInPlace && !hasTimeline)
             // Retourne le lanceur à sa position de départ enregistrée
             yield return ReturnToInitialPosition(move, caster, target, originPosition);
+
+        // Lecture éventuelle de la timeline de repli
+        if (hasRetreatTimeline)
+        {
+            string cameraTag = caster.characterType == CharacterType.EnemyUnit ? null : "BattleCamera";
+            BattleTimelineManager.Instance.PlayTimeline(move.retreatTimeline, casterAnimatorGO, cameraTag);
+
+            float maxRetreatDuration = (float)move.retreatTimeline.duration;
+            float retreatTimer = 0f;
+            while (TimelineManager.Instance != null &&
+                   TimelineManager.Instance.IsTimelineActive &&
+                   retreatTimer < maxRetreatDuration)
+            {
+                retreatTimer += Time.deltaTime;
+                yield return null;
+            }
+
+            if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
+            {
+                Debug.LogWarning($"[MusicalMoveRoutine] Timeline '{move.retreatTimeline.name}' encore active après {maxRetreatDuration}s. Suite forcée.");
+            }
+        }
 
         isActive = false;
         bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
@@ -734,27 +761,36 @@ public class RhythmQTEManager : MonoBehaviour
 
         var note = currentMove.notes[index];
 
-        // Si l'attaquant est un ennemi, la cible doit exécuter le QTE défensif
+        // Si l'attaquant est un ennemi
         if (currentCaster.Data.characterType == CharacterType.EnemyUnit)
         {
-            StartCoroutine(WaitForDefenseQTE(result =>
+            // Si l'ennemi est marqué comme inévitable, aucun QTE défensif n'est proposé
+            if (currentCaster.Data.avoidable)
             {
-                defenseResult = result;
-                switch (result)
-                {
-                    case DefenseResult.Parry:
-                        currentTarget.TakeParry();
-                        break;
-                    case DefenseResult.Dodge:
-                        currentTarget.TakeDodge();
-                        break;
-                    default:
-                        currentMove.ApplyEffect(currentCaster, currentTarget);
-                        break;
-                }
-
+                currentMove.ApplyEffect(currentCaster, currentTarget);
                 pendingNotes = Mathf.Max(0, pendingNotes - 1);
-            }));
+            }
+            else
+            {
+                StartCoroutine(WaitForDefenseQTE(result =>
+                {
+                    defenseResult = result;
+                    switch (result)
+                    {
+                        case DefenseResult.Parry:
+                            currentTarget.TakeParry();
+                            break;
+                        case DefenseResult.Dodge:
+                            currentTarget.TakeDodge();
+                            break;
+                        default:
+                            currentMove.ApplyEffect(currentCaster, currentTarget);
+                            break;
+                    }
+
+                    pendingNotes = Mathf.Max(0, pendingNotes - 1);
+                }));
+            }
         }
         else
         {
