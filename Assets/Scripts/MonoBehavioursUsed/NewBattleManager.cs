@@ -853,7 +853,8 @@ public class NewBattleManager : MonoBehaviour
             yield break;
         }
 
-        if (move.interceptable && !enemy.isInterceptionImmune)
+        // Interception possible uniquement si le move et l'attaquant l'autorisent
+        if (move.interceptable && enemy.Data.interceptable && !enemy.isInterceptionImmune)
         {
             yield return TryPlayerInterception(enemy, target, move);
             if (interceptionSucceeded)
@@ -933,7 +934,8 @@ public class NewBattleManager : MonoBehaviour
 
         OrientUnitTowardTarget(caster, target);
 
-        if (move.interceptable && !caster.isInterceptionImmune)
+        // Vérifie si le move et le lanceur peuvent être interceptés
+        if (move.interceptable && caster.Data.interceptable && !caster.isInterceptionImmune)
         {
             var interceptor = CheckForInterception(caster, target, caster.Data.currentInterceptionRange);
             if (interceptor != null)
@@ -1108,8 +1110,8 @@ public class NewBattleManager : MonoBehaviour
 
     private CharacterUnit CheckForInterception(CharacterUnit caster, CharacterUnit target, float range)
     {
-        if (caster != null && caster.isInterceptionImmune)
-            return null;
+        if (caster != null && (!caster.Data.interceptable || caster.isInterceptionImmune))
+            return null; // Attaquant non interceptable
         foreach (var unit in activeCharacterUnits)
         {
             if (unit == null || unit == caster || unit == target) continue;
@@ -1131,8 +1133,8 @@ public class NewBattleManager : MonoBehaviour
 
     private CharacterUnit FindPlayerInterceptor(CharacterUnit caster, CharacterUnit target, float range)
     {
-        if (caster != null && caster.isInterceptionImmune)
-            return null;
+        if (caster != null && (!caster.Data.interceptable || caster.isInterceptionImmune))
+            return null; // Attaquant non interceptable
         CharacterUnit best = null;
         float bestChance = 0f;
         foreach (var unit in activeCharacterUnits)
@@ -1160,8 +1162,8 @@ public class NewBattleManager : MonoBehaviour
     private IEnumerator TryPlayerInterception(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
     {
         interceptionSucceeded = false;
-        if (caster != null && caster.isInterceptionImmune)
-            yield break;
+        if (caster != null && (!caster.Data.interceptable || caster.isInterceptionImmune))
+            yield break; // Impossible d'intercepter ce lanceur
         var interceptor = FindPlayerInterceptor(caster, target, caster.Data.currentInterceptionRange);
         if (interceptor == null)
             yield break;

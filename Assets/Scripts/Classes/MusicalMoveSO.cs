@@ -111,6 +111,8 @@ public class MusicalMoveSO : ScriptableObject
     public TimelineAsset preparingTimeline;
     [Tooltip("Timeline à jouer lors de l'exécution du move")]
     public TimelineAsset performingTimeline;
+    [Tooltip("Timeline jouée lors du repli après l'exécution du move")]
+    public TimelineAsset retreatTimeline;
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {

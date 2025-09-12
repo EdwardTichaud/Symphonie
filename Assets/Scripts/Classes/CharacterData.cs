@@ -19,6 +19,12 @@ public class CharacterData : ScriptableObject, ITargetable
     [Header("Battlefield")]
     public int battlefieldIndex = 0; // Indice du battlefield dans la zone
 
+    [Header("Comportement en combat")]
+    [Tooltip("Si vrai, ce personnage peut être intercepté lors de ses actions")]
+    public bool interceptable = true;
+    [Tooltip("Si vrai, ses attaques sont inévitables et ne peuvent être esquivées")]
+    public bool avoidable = true;
+
     [Header("Stats")]
     [Header("Attributs")]
     public float baseReflex;
