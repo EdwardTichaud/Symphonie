@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
+using System.Collections; // Nécessaire pour les coroutines
 
 /// <summary>
 /// Gestionnaire dédié au lancement des <see cref="TimelineAsset"/> durant les combats.
@@ -60,7 +61,10 @@ public class BattleTimelineManager : MonoBehaviour
     /// <param name="caster">GameObject jouant la timeline.</param>
     /// <param name="cameraTag">Tag de la caméra à animer. Peut être nul.</param>
     /// <param name="autoRestore">False pour chaîner plusieurs timelines sans rendre la main au contrôleur caméra.</param>
-    public void PlayTimeline(TimelineAsset timeline, GameObject caster, string cameraTag, bool autoRestore = true)
+    /// <param name="fixedRotation">Rotation imposée pour la caméra. Si non spécifiée, la rotation actuelle du
+    /// caster est utilisée à chaque appel. Ce paramètre permet de conserver l'orientation initiale du lanceur
+    /// sur toute la durée d'un move même si plusieurs timelines se succèdent.</param>
+    public void PlayTimeline(TimelineAsset timeline, GameObject caster, string cameraTag, bool autoRestore = true, Quaternion? fixedRotation = null)
     {
         if (timeline == null || TimelineManager.Instance == null)
         {
@@ -77,6 +81,56 @@ public class BattleTimelineManager : MonoBehaviour
         // ni afficher de fondu au noir : on force donc l'absence de fondu
         // (paramètre withFade = false) et on conserve la bande-son actuelle
         // en désactivant l'interruption musicale (interruptMusic = false).
-        TimelineManager.Instance.PlayTimeline(timeline, caster, cameraTag, false, false, true, autoRestore);
+        //
+        // On transmet la rotation initiale éventuelle afin que la caméra s'aligne
+        // une seule fois et ignore ensuite les changements d'orientation du caster.
+        TimelineManager.Instance.PlayTimeline(timeline, caster, cameraTag, false, false, true, autoRestore, fixedRotation);
+    }
+
+    /// <summary>
+    /// Joue une timeline additionnelle sans interrompre celle déjà active.
+    /// Permet une superposition ponctuelle d'animations durant un combat.
+    /// </summary>
+    public void PlayTimelineOverlay(TimelineAsset timeline, GameObject caster)
+    {
+        if (timeline == null || caster == null)
+            return;
+
+        // Crée un PlayableDirector temporaire pour cette timeline
+        var overlayDirector = gameObject.AddComponent<PlayableDirector>();
+        overlayDirector.playableAsset = timeline;
+
+        // Lie uniquement les pistes liées au lanceur et ignore la caméra
+        foreach (var output in timeline.outputs)
+        {
+            string lower = output.streamName.ToLower();
+            if (lower.Contains("camera"))
+                continue; // Caméra gérée ailleurs
+
+            if (lower.Contains("caster") || lower.Contains("pnj"))
+            {
+                var animator = caster.GetComponentInChildren<Animator>();
+                if (animator != null)
+                    overlayDirector.SetGenericBinding(output.sourceObject, animator);
+            }
+            else
+            {
+                overlayDirector.SetGenericBinding(output.sourceObject, caster);
+            }
+        }
+
+        overlayDirector.Play();
+        StartCoroutine(CleanupOverlay(overlayDirector));
+    }
+
+    /// <summary>
+    /// Détruit le PlayableDirector temporaire lorsqu'il a terminé sa lecture.
+    /// </summary>
+    private IEnumerator CleanupOverlay(PlayableDirector dir)
+    {
+        while (dir != null && dir.state == PlayState.Playing)
+            yield return null;
+        if (dir != null)
+            Destroy(dir);
     }
 }
