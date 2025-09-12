@@ -377,7 +377,8 @@ public class InputsManager : MonoBehaviour
             {
                 bm.currentItem = bm.itemChoices[1];
                 bm.ToggleMenuContainers(false, false, false);
-                // Ignore la validation tant que le bouton est pressé.
+
+// Ignore la validation tant que le bouton est pressé.
                 ignorerProchaineValidation = true;
                 bm.HandleTargetSelection(bm.currentItem);
             }
@@ -412,7 +413,8 @@ public class InputsManager : MonoBehaviour
                     return;
                 }
                 bm.ToggleMenuContainers(false, false, false);
-                // Sans cette ligne, le mouvement serait lancé aussitôt la compétence choisie.
+
+// Sans cette ligne, le mouvement serait lancé aussitôt la compétence choisie.
                 ignorerProchaineValidation = true;
                 bm.HandleTargetSelection(bm.currentMove);
             }
