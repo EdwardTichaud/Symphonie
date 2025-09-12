@@ -193,8 +193,12 @@ public class RhythmQTEManager : MonoBehaviour
         isActive = true;
         successResults = new List<bool>();
 
-        // Position initiale du lanceur avant tout déplacement
+        // Position et rotation initiales du lanceur avant tout déplacement.
+        // La rotation capturée ici (début de la phase de préparation) servira de
+        // référence pour la caméra jusqu'à la fin du move, quel que soit le
+        // nombre de timelines jouées.
         Vector3 originPosition = caster != null ? caster.transform.position : Vector3.zero;
+        Quaternion initialRotation = caster != null ? caster.transform.rotation : Quaternion.identity;
 
         // Prépare les variables globales avant toute animation ou téléportation.
         // Des événements d'animation peuvent survenir très tôt et doivent
@@ -235,8 +239,9 @@ public class RhythmQTEManager : MonoBehaviour
             // mouvement reste fluide d'un bout à l'autre du move. Les phases
             // de préparation, d'exécution et de repli sont encore gérées par le
             // code pour conserver les téléportations techniques entre chaque
-            // étape.
-            BattleTimelineManager.Instance.PlayTimeline(move.fullTimeline, casterAnimatorGO, battleCameraTag, true);
+            // étape. La rotation fixée au début de la phase de préparation est
+            // transmise pour que l'orientation reste cohérente jusqu'au repli.
+            BattleTimelineManager.Instance.PlayTimeline(move.fullTimeline, casterAnimatorGO, battleCameraTag, true, initialRotation);
 
             // --- Superposition de la timeline de préparation si elle existe ---
             if (move.preparingTimeline != null)
@@ -326,7 +331,7 @@ public class RhythmQTEManager : MonoBehaviour
                 // La caméra de la timeline est utilisée pour tous les personnages
                 // Pas de restauration automatique si une autre timeline suit
                 bool restoreAfterPrep = move.performingTimeline == null && move.retreatTimeline == null;
-                BattleTimelineManager.Instance.PlayTimeline(move.preparingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPrep);
+                BattleTimelineManager.Instance.PlayTimeline(move.preparingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPrep, initialRotation);
 
                 float maxPrepareDuration = (float)move.preparingTimeline.duration;
                 float prepareTimer = 0f;
@@ -364,7 +369,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (hasTimeline)
             {
                 bool restoreAfterPerform = move.retreatTimeline == null;
-                BattleTimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPerform);
+                BattleTimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPerform, initialRotation);
             }
 
             if (pendingNotes == 0)
@@ -417,7 +422,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             if (hasRetreatTimeline)
             {
-                BattleTimelineManager.Instance.PlayTimeline(move.retreatTimeline, casterAnimatorGO, battleCameraTag, true);
+                BattleTimelineManager.Instance.PlayTimeline(move.retreatTimeline, casterAnimatorGO, battleCameraTag, true, initialRotation);
 
                 float maxRetreatDuration = (float)move.retreatTimeline.duration;
                 float retreatTimer = 0f;
@@ -468,8 +473,12 @@ public class RhythmQTEManager : MonoBehaviour
         Debug.Log($"Début de la séquence d'utilisation de l'objet: {item.itemName} par {itemCasterName}");
         isActive = true;
 
-        // Position de départ du lanceur avant tout mouvement
+        // Position et rotation de départ du lanceur avant toute animation.
+        // La rotation enregistrée ici au tout début de la phase de préparation
+        // est réutilisée pour l'intégralité de l'utilisation de l'objet afin de
+        // conserver une orientation de caméra stable.
         Vector3 originPosition = caster != null ? caster.transform.position : Vector3.zero;
+        Quaternion initialRotation = caster != null ? caster.transform.rotation : Quaternion.identity;
 
         // Prépare la barre de QTE correspondant au motif de l'objet
         if (item.beatPattern != null && item.beatPattern.Count > 0)
@@ -494,7 +503,7 @@ public class RhythmQTEManager : MonoBehaviour
             // ------------------------------------------------------------------
             // Timeline caméra globale pour l'objet
             // ------------------------------------------------------------------
-            BattleTimelineManager.Instance.PlayTimeline(item.fullTimeline, casterAnimatorGO, battleCameraTag, true);
+            BattleTimelineManager.Instance.PlayTimeline(item.fullTimeline, casterAnimatorGO, battleCameraTag, true, initialRotation);
 
             // --- Timeline de préparation en surimpression ---
             if (item.preparingTimeline != null)
@@ -568,7 +577,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (hasPreparingTimeline)
             {
                 bool restoreAfterPrep = item.performingTimeline == null && item.retreatTimeline == null;
-                BattleTimelineManager.Instance.PlayTimeline(item.preparingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPrep);
+                BattleTimelineManager.Instance.PlayTimeline(item.preparingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPrep, initialRotation);
 
                 float maxPrepareDuration = (float)item.preparingTimeline.duration;
                 float prepareTimer = 0f;
@@ -597,7 +606,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (hasPerformingTimeline)
             {
                 bool restoreAfterPerform = item.retreatTimeline == null;
-                BattleTimelineManager.Instance.PlayTimeline(item.performingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPerform);
+                BattleTimelineManager.Instance.PlayTimeline(item.performingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPerform, initialRotation);
             }
 
             LastItemSuccess = true;
@@ -644,7 +653,7 @@ public class RhythmQTEManager : MonoBehaviour
                                       casterAnimatorGO != null;
             if (hasRetreatTimeline)
             {
-                BattleTimelineManager.Instance.PlayTimeline(item.retreatTimeline, casterAnimatorGO, battleCameraTag, true);
+                BattleTimelineManager.Instance.PlayTimeline(item.retreatTimeline, casterAnimatorGO, battleCameraTag, true, initialRotation);
 
                 float maxRetreatDuration = (float)item.retreatTimeline.duration;
                 float retreatTimer = 0f;

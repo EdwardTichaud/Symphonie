@@ -19,8 +19,9 @@ combinaisons plus techniques impliquant des changements d'altitude.
 ## Timeline caméra continue
 Un champ `fullTimeline` est disponible dans chaque **MusicalMove** et désormais dans chaque **Item**. Il définit un
 mouvement de caméra couvrant l'ensemble de l'action (préparation, utilisation/exécution et repli) pour assurer un
-suivi sans coupure. La caméra se cale sur la rotation initiale du lanceur lors de la première frame afin de conserver
-une orientation cohérente tout au long de la séquence.
+suivi sans coupure. La rotation du lanceur est enregistrée dès la première frame de la phase de préparation puis
+conservée jusqu'à la fin du move ou de l'objet, même si plusieurs timelines s'enchaînent, afin de garantir une
+orientation cohérente de la caméra.
 
 Les phases classiques restent gérées par le code du jeu afin de déclencher les téléportations nécessaires entre chaque
 étape. Les timelines `preparingTimeline`, `performingTimeline` et `retreatTimeline` peuvent être lues en

@@ -456,7 +456,10 @@ public class TimelineManager : MonoBehaviour
     /// <param name="withFade">True pour jouer la timeline avec fondu, false pour la jouer instantanément.</param>
     /// <param name="interruptMusic">True pour couper ou remplacer la musique actuelle, false pour la conserver.</param>
     /// <param name="allowSkip">False pour interdire au joueur de passer la timeline.</param>
-    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag, bool withFade = true, bool interruptMusic = true, bool allowSkip = true, bool autoRestore = true)
+    /// <param name="autoRestore">True pour restaurer automatiquement la caméra et les entrées à la fin.</param>
+    /// <param name="fixedRotation">Rotation imposée pour la caméra. Lorsque renseignée, elle remplace la rotation
+    /// du caster et reste utilisée pour toutes les timelines successives d'un même move.</param>
+    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag, bool withFade = true, bool interruptMusic = true, bool allowSkip = true, bool autoRestore = true, Quaternion? fixedRotation = null)
     {
         if (timelineAsset == null || reusableDirector == null)
         {
@@ -482,11 +485,12 @@ public class TimelineManager : MonoBehaviour
 
             if (caster != null && cameraParent != null)
             {
-                // Place la caméra sur le lanceur et capture son orientation initiale.
-                // Cette rotation n'est appliquée qu'une seule fois afin de recaler l'angle,
-                // puis reste fixe pendant le move ou l'utilisation de l'objet.
+                // Place la caméra sur le lanceur et capture l'orientation de référence.
+                // Si une rotation fixe est fournie (début de la phase de préparation),
+                // elle est utilisée pour tout le move afin de garantir une cohérence
+                // malgré les téléportations ou changements d'orientation du caster.
                 cameraParent.position = caster.transform.position;
-                cameraParent.rotation = caster.transform.rotation; // ✅ Rotation initiale uniquement
+                cameraParent.rotation = fixedRotation ?? caster.transform.rotation; // ✅ Rotation initiale conservée
             }
         }
 
