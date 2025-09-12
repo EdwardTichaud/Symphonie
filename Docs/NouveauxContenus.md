@@ -16,6 +16,12 @@ Les MusicalMoves peuvent désormais spécifier une contrainte de hauteur :
 Cette classification aide les débutants à comprendre rapidement les restrictions tout en offrant aux joueurs avancés des
 combinaisons plus techniques impliquant des changements d'altitude.
 
+## Timeline caméra continue
+Un champ `fullTimeline` est disponible dans chaque MusicalMove. Il définit un mouvement de caméra couvrant l'ensemble du
+move (préparation, exécution et repli) pour assurer un suivi sans coupure. Les phases classiques restent gérées par le
+code du jeu afin de déclencher les téléportations nécessaires entre chaque étape. Les timelines `preparingTimeline`,
+`performingTimeline` et `retreatTimeline` peuvent toujours être utilisées pour des animations spécifiques si besoin.
+
 ## MusicalMove : Crescendo Fulgurant
 - **Type** : Attaque
 - **Effet** : inflige 30 points de dégâts à une cible unique.
