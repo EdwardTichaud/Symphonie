@@ -232,7 +232,9 @@ public class RhythmQTEManager : MonoBehaviour
         {
             // La caméra de la timeline est désormais utilisée pour tous,
             // ennemis compris : on fournit toujours le tag de la caméra de combat
-            BattleTimelineManager.Instance.PlayTimeline(move.preparingTimeline, casterAnimatorGO, battleCameraTag);
+            // Pas de restauration automatique si une autre timeline suit
+            bool restoreAfterPrep = move.performingTimeline == null && move.retreatTimeline == null;
+            BattleTimelineManager.Instance.PlayTimeline(move.preparingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPrep);
 
             // Attente sécurisée : on patiente au plus la durée de la timeline
             // pour éviter qu'une timeline bloquée n'empêche la suite de l'attaque.
@@ -277,7 +279,9 @@ public class RhythmQTEManager : MonoBehaviour
         if (hasTimeline)
         {
             // La caméra de combat doit suivre l'action, même pour les ennemis
-            BattleTimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, battleCameraTag);
+            // On ne restaure qu'après la toute dernière timeline éventuelle
+            bool restoreAfterPerform = move.retreatTimeline == null;
+            BattleTimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPerform);
         }
 
         if (pendingNotes == 0)
@@ -346,7 +350,8 @@ public class RhythmQTEManager : MonoBehaviour
         if (hasRetreatTimeline)
         {
             // Même lors du repli, la caméra peut être animée par les timelines ennemies
-            BattleTimelineManager.Instance.PlayTimeline(move.retreatTimeline, casterAnimatorGO, battleCameraTag);
+            // Dernière étape : on restaure forcément le contrôle caméra
+            BattleTimelineManager.Instance.PlayTimeline(move.retreatTimeline, casterAnimatorGO, battleCameraTag, true);
 
             float maxRetreatDuration = (float)move.retreatTimeline.duration;
             float retreatTimer = 0f;
