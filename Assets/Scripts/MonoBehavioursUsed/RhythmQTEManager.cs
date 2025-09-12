@@ -46,6 +46,9 @@ public class RhythmQTEManager : MonoBehaviour
     // Délai entre les effets de téléportation départ et arrivée
     private const float returnDelay = 0.2f;
 
+    // Tag de la caméra de combat à utiliser pour toutes les timelines
+    private const string battleCameraTag = "BattleCamera";
+
     // QTE Effect
     public AudioClip successSFX;
     public AudioClip failSFX;
@@ -227,9 +230,9 @@ public class RhythmQTEManager : MonoBehaviour
                                     casterAnimatorGO != null;
         if (hasPreparingTimeline)
         {
-            // Les ennemis n'animent pas la caméra de combat, on laisse donc le tag nul
-            string cameraTag = caster.characterType == CharacterType.EnemyUnit ? null : "BattleCamera";
-            BattleTimelineManager.Instance.PlayTimeline(move.preparingTimeline, casterAnimatorGO, cameraTag);
+            // La caméra de la timeline est désormais utilisée pour tous,
+            // ennemis compris : on fournit toujours le tag de la caméra de combat
+            BattleTimelineManager.Instance.PlayTimeline(move.preparingTimeline, casterAnimatorGO, battleCameraTag);
 
             // Attente sécurisée : on patiente au plus la durée de la timeline
             // pour éviter qu'une timeline bloquée n'empêche la suite de l'attaque.
@@ -273,9 +276,8 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (hasTimeline)
         {
-            // Les ennemis utilisent la timeline mais sans animer la caméra (cameraTag nul)
-            string cameraTag = caster.characterType == CharacterType.EnemyUnit ? null : "BattleCamera";
-            BattleTimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, cameraTag);
+            // La caméra de combat doit suivre l'action, même pour les ennemis
+            BattleTimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, battleCameraTag);
         }
 
         if (pendingNotes == 0)
@@ -343,8 +345,8 @@ public class RhythmQTEManager : MonoBehaviour
         // Lecture éventuelle de la timeline de repli
         if (hasRetreatTimeline)
         {
-            string cameraTag = caster.characterType == CharacterType.EnemyUnit ? null : "BattleCamera";
-            BattleTimelineManager.Instance.PlayTimeline(move.retreatTimeline, casterAnimatorGO, cameraTag);
+            // Même lors du repli, la caméra peut être animée par les timelines ennemies
+            BattleTimelineManager.Instance.PlayTimeline(move.retreatTimeline, casterAnimatorGO, battleCameraTag);
 
             float maxRetreatDuration = (float)move.retreatTimeline.duration;
             float retreatTimer = 0f;
@@ -417,7 +419,8 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (hasTimeline)
         {
-            BattleTimelineManager.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, "BattleCamera");
+            // Les items utilisent également la caméra de combat par défaut
+            BattleTimelineManager.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, battleCameraTag);
 
             // Attendre la fin réelle de la Timeline, en prévoyant un délai maximum
             // pour éviter les blocages si celle-ci reste en pause sur la dernière frame
