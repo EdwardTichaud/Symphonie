@@ -59,7 +59,8 @@ public class BattleTimelineManager : MonoBehaviour
     /// <param name="timeline">Timeline à exécuter.</param>
     /// <param name="caster">GameObject jouant la timeline.</param>
     /// <param name="cameraTag">Tag de la caméra à animer. Peut être nul.</param>
-    public void PlayTimeline(TimelineAsset timeline, GameObject caster, string cameraTag)
+    /// <param name="autoRestore">False pour chaîner plusieurs timelines sans rendre la main au contrôleur caméra.</param>
+    public void PlayTimeline(TimelineAsset timeline, GameObject caster, string cameraTag, bool autoRestore = true)
     {
         if (timeline == null || TimelineManager.Instance == null)
         {
@@ -76,6 +77,6 @@ public class BattleTimelineManager : MonoBehaviour
         // ni afficher de fondu au noir : on force donc l'absence de fondu
         // (paramètre withFade = false) et on conserve la bande-son actuelle
         // en désactivant l'interruption musicale (interruptMusic = false).
-        TimelineManager.Instance.PlayTimeline(timeline, caster, cameraTag, false, false);
+        TimelineManager.Instance.PlayTimeline(timeline, caster, cameraTag, false, false, true, autoRestore);
     }
 }

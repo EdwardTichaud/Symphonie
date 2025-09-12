@@ -99,6 +99,13 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     private bool allowSkip = true;
 
+    /// <summary>
+    /// Contrôle la restauration automatique de la caméra et des entrées
+    /// à la fin d'une Timeline. Utile pour enchaîner plusieurs timelines
+    /// (préparation/attaque/repli) sans repositionnement brusque de la caméra.
+    /// </summary>
+    private bool autoRestore = true;
+
     [Header("Audio")]
     [Tooltip("Musique de fond à jouer pendant les timelines.")]
     [SerializeField] private AudioClip timelineMusicClip;
@@ -408,7 +415,7 @@ public class TimelineManager : MonoBehaviour
     /// </param>
     /// <param name="interruptMusic">True pour couper la musique en cours, false pour la laisser jouer.</param>
     /// <param name="allowSkip">False pour empêcher l'utilisateur de passer la timeline.</param>
-    public void PlayTimeline(PlayableDirector newDirector, bool withFade = true, bool interruptMusic = true, bool allowSkip = true)
+    public void PlayTimeline(PlayableDirector newDirector, bool withFade = true, bool interruptMusic = true, bool allowSkip = true, bool autoRestore = true)
     {
         if (newDirector == null)
         {
@@ -435,6 +442,7 @@ public class TimelineManager : MonoBehaviour
         useFade = withFade;
         this.interruptMusic = interruptMusic;
         this.allowSkip = allowSkip; // Mémorise si le joueur peut passer la cinématique
+        this.autoRestore = autoRestore; // Indique si la caméra/inputs sont restaurés en fin de timeline
         currentDirector.Play();
     }
 
@@ -448,7 +456,7 @@ public class TimelineManager : MonoBehaviour
     /// <param name="withFade">True pour jouer la timeline avec fondu, false pour la jouer instantanément.</param>
     /// <param name="interruptMusic">True pour couper ou remplacer la musique actuelle, false pour la conserver.</param>
     /// <param name="allowSkip">False pour interdire au joueur de passer la timeline.</param>
-    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag, bool withFade = true, bool interruptMusic = true, bool allowSkip = true)
+    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag, bool withFade = true, bool interruptMusic = true, bool allowSkip = true, bool autoRestore = true)
     {
         if (timelineAsset == null || reusableDirector == null)
         {
@@ -545,7 +553,7 @@ public class TimelineManager : MonoBehaviour
         }
 
         // Joue la timeline en profitant de toute la gestion centralisée (skip, fondu, musique...)
-        PlayTimeline(reusableDirector, withFade, interruptMusic, allowSkip);
+        PlayTimeline(reusableDirector, withFade, interruptMusic, allowSkip, autoRestore);
 
         // Suit le lanceur si une caméra est attachée
         if (caster != null && cameraParent != null)
@@ -764,17 +772,24 @@ public class TimelineManager : MonoBehaviour
         if (interruptMusic && AudioManager.Instance != null)
             AudioManager.Instance.ReturnFromTimeline();
 
-        // 2) La cinématique est terminée : on redonne le contrôle de Lucian en réactivant les inputs "World".
+        // 2) La cinématique est terminée.
         IsTimelinePlaying = false;
         currentDirector = null;
-        ToggleWorldInputs(true);
 
-        // 3) Réactivation du CameraController pour rendre la main après la cinématique
-        if (CameraController.Instance != null)
+        // Restauration optionnelle : certains enchaînements de timelines doivent
+        // conserver le contrôle caméra pour éviter des transitions brutales.
+        if (autoRestore)
         {
-            CameraController.Instance.enabled = true;
-            // ↩️ Replace la WorldCamera à sa dernière position sauvegardée pour garder la continuité
-            CameraController.Instance.RestoreWorldCameraTransform();
+            // On redonne le contrôle de Lucian en réactivant les inputs "World".
+            ToggleWorldInputs(true);
+
+            // Réactivation du CameraController pour rendre la main après la cinématique
+            if (CameraController.Instance != null)
+            {
+                CameraController.Instance.enabled = true;
+                // ↩️ Replace la WorldCamera à sa dernière position sauvegardée pour garder la continuité
+                CameraController.Instance.RestoreWorldCameraTransform();
+            }
         }
 
         // 4) Une fois tout rétabli en arrière-plan, on peut revenir progressivement à l'image.
@@ -790,6 +805,9 @@ public class TimelineManager : MonoBehaviour
             fader.EnsureTransparency(0, 0.5f);
             fader.EnsureTransparency(1, 0.5f);
         }
+
+        // Réinitialise le comportement de restauration pour les prochaines timelines
+        autoRestore = true;
     }
 
     /// <summary>
