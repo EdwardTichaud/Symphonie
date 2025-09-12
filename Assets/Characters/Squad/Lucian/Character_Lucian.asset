@@ -23,6 +23,8 @@ MonoBehaviour:
   characterWorldModel: {fileID: 6728702309075295974, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
   characterBattleModel: {fileID: 901204007372340786, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
   battlefieldIndex: 0
+  interceptable: 1
+  avoidable: 1
   baseReflex: 0
   baseMobility: 0
   baseVitality: 0
@@ -41,10 +43,10 @@ MonoBehaviour:
   rageDamageMultiplier: 0.1
   baseFatigue: 0
   maxFatigue: 0
-  battleIdleAnimation: {fileID: 7400000, guid: 7ba7791d5ca0c3a4c85fdf6c45ceb486, type: 2}
   musicalAttacks:
   - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
   - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
+  - {fileID: 11400000, guid: 677d519fa2d243e48b26e669711c413e, type: 2}
   specialMusicalMove: {fileID: 0}
   currentInitiative: 1
   currentRange: 6
@@ -70,14 +72,7 @@ MonoBehaviour:
   prematureDeathTaunt: {fileID: 8300000, guid: 16a49b678baf55746aeaa953585418ce, type: 3}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
-  TPEffect_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  TPEffect_Destination: {fileID: 0}
-  moveClip: {fileID: 0}
   hitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
-  frontHitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
-  backHitAnimation: {fileID: 7400000, guid: 4f29bb3bce8466a46b164df6f1548782, type: 3}
-  leftHitAnimation: {fileID: 7400000, guid: bb5f3ce1a508e0f4b818fa9dcd74f224, type: 3}
-  rightHitAnimation: {fileID: 7400000, guid: aec2acaacd5ad254189a9d0a886c55c9, type: 3}
   deathAnimation: {fileID: 7400000, guid: 7f67a9c1949f03342bd793ce58156a74, type: 2}
   TPAnimation_Start: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
   TPAnimation_Destination: {fileID: 0}
