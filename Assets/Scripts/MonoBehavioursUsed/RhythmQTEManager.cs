@@ -216,20 +216,49 @@ public class RhythmQTEManager : MonoBehaviour
             target.OnDeath += deathHandler;
             target.PlayPrepareToUndergoAnimation();
         }
+        
+        // --- Timeline de préparation avant le déplacement ---
+        // Permet de jouer une courte animation de "télégraphie" avant que l'ennemi
+        // ne se rapproche de sa cible.
+        GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
+        bool hasPreparingTimeline = move.preparingTimeline != null &&
+                                    BattleTimelineManager.Instance != null &&
+                                    TimelineManager.Instance != null &&
+                                    casterAnimatorGO != null;
+        if (hasPreparingTimeline)
+        {
+            // Les ennemis n'animent pas la caméra de combat, on laisse donc le tag nul
+            string cameraTag = caster.characterType == CharacterType.EnemyUnit ? null : "BattleCamera";
+            BattleTimelineManager.Instance.PlayTimeline(move.preparingTimeline, casterAnimatorGO, cameraTag);
 
-        // --- Téléportation vers la position relative à la cible ---
-        // Cette étape était auparavant manquante, d'où l'absence de déplacement constatée
-        // et le blocage après l'animation du move. On s'assure désormais que le
-        // lanceur se téléporte bien avant de poursuivre la séquence.
+            // Attente sécurisée : on patiente au plus la durée de la timeline
+            // pour éviter qu'une timeline bloquée n'empêche la suite de l'attaque.
+            float maxPrepareDuration = (float)move.preparingTimeline.duration;
+            float prepareTimer = 0f;
+            while (TimelineManager.Instance != null &&
+                   TimelineManager.Instance.IsTimelineActive &&
+                   prepareTimer < maxPrepareDuration)
+            {
+                prepareTimer += Time.deltaTime;
+                yield return null;
+            }
+
+            if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
+            {
+                Debug.LogWarning($"[MusicalMoveRoutine] Timeline '{move.preparingTimeline.name}' encore active après {maxPrepareDuration}s. Suite forcée.");
+            }
+        }
+
+        // --- Déplacement vers la position relative à la cible ---
+        // On attend la fin du déplacement (ou téléportation) avant de continuer.
         if (caster != null && target != null)
         {
-            // On attend la fin de la téléportation avant de continuer
             yield return MoveTo(caster, target, move);
         }
 
         // Récupère le GameObject contenant l'Animator du lanceur après le déplacement
         // afin d'éviter tout souci si l'Animator change de référence pendant la téléportation.
-        GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
+        casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
 
         // Si une Timeline est disponible, on la lit via le BattleTimelineManager
         bool hasTimeline = move.performingTimeline != null &&
@@ -306,8 +335,8 @@ public class RhythmQTEManager : MonoBehaviour
             yield return null;
         }
 
-        // 📝 Si aucune Timeline ne gère déjà le retour, on replace manuellement
-        if (!move.stayInPlace && !hasTimeline)
+        // 📝 Si le move n'impose pas de rester sur place, on ramène le lanceur
+        if (!move.stayInPlace)
             // Retourne le lanceur à sa position de départ enregistrée
             yield return ReturnToInitialPosition(move, caster, target, originPosition);
 
