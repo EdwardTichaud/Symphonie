@@ -21,6 +21,13 @@ public class InputsManager : MonoBehaviour
 
     private InputActionMap[] allMaps;
 
+    /// <summary>
+    /// Indique si le prochain appui sur "Confirmer" doit être ignoré.
+    /// Permet d'éviter le lancement immédiat d'une action après la sélection
+    /// d'une compétence ou d'un objet lorsque le joueur maintient la touche.
+    /// </summary>
+    private bool ignorerProchaineValidation = false;
+
     #region Initialisation
     /// <summary>
     /// Instancie l'asset d'inputs et configure le singleton.
@@ -167,6 +174,14 @@ public class InputsManager : MonoBehaviour
     /// </summary>
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
+        // Si une sélection vient juste d'être effectuée, on ignore cette validation
+        // pour éviter d'exécuter immédiatement le mouvement sans choix de cible.
+        if (ignorerProchaineValidation)
+        {
+            ignorerProchaineValidation = false;
+            return; // Sort prématurément : l'appui actuel est consommé
+        }
+
         NewBattleManager bm = NewBattleManager.Instance;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
@@ -273,6 +288,7 @@ public class InputsManager : MonoBehaviour
                     return;
                 }
                 bm.ToggleMenuContainers(false, false, false);
+                ignorerProchaineValidation = true; // Empêche la validation immédiate après la sélection
                 bm.HandleTargetSelection(bm.currentMove);
                 // Les animations de visée sont désormais intégrées dans la Timeline de préparation
             }
@@ -287,6 +303,7 @@ public class InputsManager : MonoBehaviour
             {
                 bm.currentItem = bm.itemChoices[0];
                 bm.ToggleMenuContainers(false, false, false);
+                ignorerProchaineValidation = true; // Empêche la validation immédiate après la sélection
                 bm.HandleTargetSelection(bm.currentItem);
                 // La Timeline de préparation gère maintenant les animations liées à l'objet
             }
@@ -325,6 +342,7 @@ public class InputsManager : MonoBehaviour
                     return;
                 }
                 bm.ToggleMenuContainers(false, false, false);
+                ignorerProchaineValidation = true; // Empêche la validation immédiate après la sélection
                 bm.HandleTargetSelection(bm.currentMove);
             }
             else
@@ -338,6 +356,7 @@ public class InputsManager : MonoBehaviour
             {
                 bm.currentItem = bm.itemChoices[1];
                 bm.ToggleMenuContainers(false, false, false);
+                ignorerProchaineValidation = true; // Empêche la validation immédiate après la sélection
                 bm.HandleTargetSelection(bm.currentItem);
             }
             else
@@ -371,6 +390,7 @@ public class InputsManager : MonoBehaviour
                     return;
                 }
                 bm.ToggleMenuContainers(false, false, false);
+                ignorerProchaineValidation = true; // Empêche la validation immédiate après la sélection
                 bm.HandleTargetSelection(bm.currentMove);
             }
             else
@@ -384,6 +404,7 @@ public class InputsManager : MonoBehaviour
             {
                 bm.currentItem = bm.itemChoices[2];
                 bm.ToggleMenuContainers(false, false, false);
+                ignorerProchaineValidation = true; // Empêche la validation immédiate après la sélection
                 bm.HandleTargetSelection(bm.currentItem);
             }
             else
