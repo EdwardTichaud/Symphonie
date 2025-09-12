@@ -482,11 +482,11 @@ public class TimelineManager : MonoBehaviour
 
             if (caster != null && cameraParent != null)
             {
-                // Replace le parent de la caméra sur le PNJ afin que l'animation suive correctement
-                // le mouvement. La rotation d'origine est conservée pour éviter que la caméra ne pivote
-                // lorsque le lanceur tourne.
+                // Place la caméra sur le lanceur et capture son orientation initiale.
+                // Cette rotation n'est appliquée qu'une seule fois afin de recaler l'angle,
+                // puis reste fixe pendant le move ou l'utilisation de l'objet.
                 cameraParent.position = caster.transform.position;
-                // cameraParent.rotation = caster.transform.rotation; // ✅ Rotation ignorée
+                cameraParent.rotation = caster.transform.rotation; // ✅ Rotation initiale uniquement
             }
         }
 

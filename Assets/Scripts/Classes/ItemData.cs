@@ -77,6 +77,12 @@ public class ItemData : ScriptableObject
     public TimelineAsset preparingTimeline;
     [Tooltip("Timeline à jouer lors de l'utilisation de l'item")]
     public TimelineAsset performingTimeline;
+    [Tooltip("Timeline jouée lors du repli après utilisation")]
+    public TimelineAsset retreatTimeline;
+    [Tooltip("Timeline de caméra couvrant toute l'action de l'item.\n" +
+             "Elle suit l'utilisateur durant la préparation, l'exécution\n" +
+             "et le repli pour offrir un mouvement continu.")]
+    public TimelineAsset fullTimeline;
 
     [Header("QTE Pattern")]
     public List<float> beatPattern;

@@ -17,10 +17,14 @@ Cette classification aide les débutants à comprendre rapidement les restrictio
 combinaisons plus techniques impliquant des changements d'altitude.
 
 ## Timeline caméra continue
-Un champ `fullTimeline` est disponible dans chaque MusicalMove. Il définit un mouvement de caméra couvrant l'ensemble du
-move (préparation, exécution et repli) pour assurer un suivi sans coupure. Les phases classiques restent gérées par le
-code du jeu afin de déclencher les téléportations nécessaires entre chaque étape. Les timelines `preparingTimeline`,
-`performingTimeline` et `retreatTimeline` peuvent toujours être utilisées pour des animations spécifiques si besoin.
+Un champ `fullTimeline` est disponible dans chaque **MusicalMove** et désormais dans chaque **Item**. Il définit un
+mouvement de caméra couvrant l'ensemble de l'action (préparation, utilisation/exécution et repli) pour assurer un
+suivi sans coupure. La caméra se cale sur la rotation initiale du lanceur lors de la première frame afin de conserver
+une orientation cohérente tout au long de la séquence.
+
+Les phases classiques restent gérées par le code du jeu afin de déclencher les téléportations nécessaires entre chaque
+étape. Les timelines `preparingTimeline`, `performingTimeline` et `retreatTimeline` peuvent être lues en
+**superposition** pour animer le lanceur ou ses effets pendant que la caméra suit la timeline principale.
 
 ## MusicalMove : Crescendo Fulgurant
 - **Type** : Attaque
