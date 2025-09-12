@@ -22,6 +22,8 @@ MonoBehaviour:
   characterWorldModel: {fileID: 0}
   characterBattleModel: {fileID: 901204007372340786, guid: 0ac6742809e506d4fa95804de9e9ff9f, type: 3}
   battlefieldIndex: 0
+  interceptable: 1
+  avoidable: 1
   baseReflex: 0
   baseMobility: 0
   baseVitality: 0
@@ -42,8 +44,6 @@ MonoBehaviour:
   maxFatigue: 0
   musicalAttacks:
   - {fileID: 11400000, guid: ec1327a205d9b39409a53c126d22f942, type: 2}
-  - {fileID: 11400000, guid: 05a9257102a1a444fbc0f8652733139b, type: 2}
-  - {fileID: 11400000, guid: 12649e71a55b8f34d93c30d7cdbffd07, type: 2}
   specialMusicalMove: {fileID: 0}
   currentInitiative: 1
   currentRange: 2
