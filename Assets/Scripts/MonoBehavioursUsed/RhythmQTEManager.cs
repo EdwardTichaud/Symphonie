@@ -220,152 +220,219 @@ public class RhythmQTEManager : MonoBehaviour
             target.PlayPrepareToUndergoAnimation();
         }
         
-        // --- Timeline de préparation avant le déplacement ---
-        // Permet de jouer une courte animation de "télégraphie" avant que l'ennemi
-        // ne se rapproche de sa cible.
         GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
-        bool hasPreparingTimeline = move.preparingTimeline != null &&
-                                    BattleTimelineManager.Instance != null &&
-                                    TimelineManager.Instance != null &&
-                                    casterAnimatorGO != null;
-        if (hasPreparingTimeline)
-        {
-            // La caméra de la timeline est désormais utilisée pour tous,
-            // ennemis compris : on fournit toujours le tag de la caméra de combat
-            // Pas de restauration automatique si une autre timeline suit
-            bool restoreAfterPrep = move.performingTimeline == null && move.retreatTimeline == null;
-            BattleTimelineManager.Instance.PlayTimeline(move.preparingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPrep);
+        bool hasFullTimeline = move.fullTimeline != null &&
+                               BattleTimelineManager.Instance != null &&
+                               TimelineManager.Instance != null &&
+                               casterAnimatorGO != null;
 
-            // Attente sécurisée : on patiente au plus la durée de la timeline
-            // pour éviter qu'une timeline bloquée n'empêche la suite de l'attaque.
-            float maxPrepareDuration = (float)move.preparingTimeline.duration;
-            float prepareTimer = 0f;
+        if (hasFullTimeline)
+        {
+            // ------------------------------------------------------------------
+            // Timeline caméra globale
+            // ------------------------------------------------------------------
+            // La timeline fournie contrôle uniquement la caméra afin que le
+            // mouvement reste fluide d'un bout à l'autre du move. Les phases
+            // de préparation, d'exécution et de repli sont encore gérées par le
+            // code pour conserver les téléportations techniques entre chaque
+            // étape.
+            BattleTimelineManager.Instance.PlayTimeline(move.fullTimeline, casterAnimatorGO, battleCameraTag, true);
+
+            // --- Superposition de la timeline de préparation si elle existe ---
+            if (move.preparingTimeline != null)
+            {
+                BattleTimelineManager.Instance.PlayTimelineOverlay(move.preparingTimeline, casterAnimatorGO);
+                yield return new WaitForSeconds((float)move.preparingTimeline.duration);
+            }
+
+            // --- Préparation éventuelle avant la téléportation ---
+            if (move.startDelay > 0f)
+                yield return new WaitForSeconds(move.startDelay);
+
+            // --- Téléportation vers la cible ---
+            if (caster != null && target != null)
+                yield return MoveTo(caster, target, move);
+
+            // --- Timeline d'exécution en superposition ---
+            if (move.performingTimeline != null)
+                BattleTimelineManager.Instance.PlayTimelineOverlay(move.performingTimeline, casterAnimatorGO);
+
+            // --- Phase de QTE puis application de l'effet ---
+            if (pendingNotes == 0)
+            {
+                move.ApplyEffect(caster, target);
+            }
+            else
+            {
+                while (pendingNotes > 0)
+                {
+                    float safeDelay = move.notes.Sum(n => n.rhythm);
+                    float timer = 0f;
+                    while (pendingNotes > 0 && timer < safeDelay)
+                    {
+                        timer += Time.deltaTime;
+                        yield return null;
+                    }
+                    if (pendingNotes > 0)
+                    {
+                        Debug.LogWarning($"[MusicalMoveRoutine] {pendingNotes} note(s) non résolues pour {move.moveName}. Forçage de la suite.");
+                        pendingNotes = 0;
+                    }
+                }
+            }
+
+            // Attendre la fin de la timeline d'exécution si nécessaire
+            if (move.performingTimeline != null)
+                yield return new WaitForSeconds((float)move.performingTimeline.duration);
+
+            // --- Téléportation de repli ---
+            if (!move.stayInPlace && caster != null && target != null)
+                yield return ReturnToInitialPosition(move, caster, target, originPosition);
+
+            // Timeline de repli superposée si disponible
+            if (move.retreatTimeline != null)
+            {
+                BattleTimelineManager.Instance.PlayTimelineOverlay(move.retreatTimeline, casterAnimatorGO);
+                yield return new WaitForSeconds((float)move.retreatTimeline.duration);
+            }
+
+            // --- Attente de fin de la timeline caméra ---
+            float maxFullDuration = (float)move.fullTimeline.duration;
+            float fullTimer = 0f;
             while (TimelineManager.Instance != null &&
                    TimelineManager.Instance.IsTimelineActive &&
-                   prepareTimer < maxPrepareDuration)
+                   fullTimer < maxFullDuration)
             {
-                prepareTimer += Time.deltaTime;
+                fullTimer += Time.deltaTime;
                 yield return null;
             }
 
             if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
             {
-                Debug.LogWarning($"[MusicalMoveRoutine] Timeline '{move.preparingTimeline.name}' encore active après {maxPrepareDuration}s. Suite forcée.");
-            }
-        }
-
-        // --- Déplacement vers la position relative à la cible ---
-        // On attend la fin du déplacement (ou téléportation) avant de continuer.
-        if (caster != null && target != null)
-        {
-            yield return MoveTo(caster, target, move);
-        }
-
-        // Récupère le GameObject contenant l'Animator du lanceur après le déplacement
-        // afin d'éviter tout souci si l'Animator change de référence pendant la téléportation.
-        casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
-
-        // Si une Timeline est disponible, on la lit via le BattleTimelineManager
-        bool hasTimeline = move.performingTimeline != null &&
-                          BattleTimelineManager.Instance != null &&
-                          TimelineManager.Instance != null &&
-                          casterAnimatorGO != null;
-        // Timeline jouée lors du repli après retour éventuel
-        bool hasRetreatTimeline = move.retreatTimeline != null &&
-                                  BattleTimelineManager.Instance != null &&
-                                  TimelineManager.Instance != null &&
-                                  casterAnimatorGO != null;
-
-        if (hasTimeline)
-        {
-            // La caméra de combat doit suivre l'action, même pour les ennemis
-            // On ne restaure qu'après la toute dernière timeline éventuelle
-            bool restoreAfterPerform = move.retreatTimeline == null;
-            BattleTimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPerform);
-        }
-
-        if (pendingNotes == 0)
-        {
-            // Pas de QTE : on applique immédiatement l'effet de base
-            move.ApplyEffect(caster, target);
-        }
-        else if (!hasTimeline)
-        {
-            // Si aucune Timeline n'est utilisée, on attend la résolution des notes
-            // Les timelines contenant leurs propres QTE gèrent elles-mêmes le rythme
-            while (pendingNotes > 0)
-            {
-                float safeDelay = move.notes.Sum(n => n.rhythm);
-                float timer = 0f;
-                while (pendingNotes > 0 && timer < safeDelay)
-                {
-                    timer += Time.deltaTime;
-                    yield return null;
-                }
-                if (pendingNotes > 0)
-                {
-                    Debug.LogWarning($"[MusicalMoveRoutine] {pendingNotes} note(s) non résolues pour {move.moveName}. Forçage de la suite.");
-                    pendingNotes = 0;
-                }
-            }
-        }
-
-        // Si une Timeline est jouée, on laisse celle-ci dicter le rythme
-        if (hasTimeline)
-        {
-            // Ajout d'une sécurité : certaines timelines peuvent rester actives
-            // indéfiniment (paramétrage ou interruption), ce qui bloquerait la
-            // suite de la séquence. On patiente au maximum la durée théorique de
-            // la timeline plus une petite marge, puis on force la reprise si
-            // nécessaire.
-            float maxTimelineDuration = (float)move.performingTimeline.duration + 0f; // marge de 0 seconde
-            float timelineTimer = 0f;
-            while (TimelineManager.Instance != null &&
-                   TimelineManager.Instance.IsTimelineActive &&
-                   timelineTimer < maxTimelineDuration)
-            {
-                timelineTimer += Time.deltaTime;
-                yield return null;
-            }
-
-            // Si la timeline est toujours signalée comme active, on avertit dans
-            // la console et on poursuit malgré tout pour éviter un blocage.
-            if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
-            {
-                Debug.LogWarning($"[MusicalMoveRoutine] Timeline '{move.performingTimeline.name}' encore active après {maxTimelineDuration}s. Suite forcée.");
+                Debug.LogWarning($"[MusicalMoveRoutine] Timeline '{move.fullTimeline.name}' encore active après {maxFullDuration}s. Suite forcée.");
             }
         }
         else
         {
-            // Pas de timeline : petite attente pour la cohérence des animations
-            yield return null;
-        }
-
-        // 📝 Si le move n'impose pas de rester sur place, on ramène le lanceur
-        if (!move.stayInPlace)
-            // Retourne le lanceur à sa position de départ enregistrée
-            yield return ReturnToInitialPosition(move, caster, target, originPosition);
-
-        // Lecture éventuelle de la timeline de repli
-        if (hasRetreatTimeline)
-        {
-            // Même lors du repli, la caméra peut être animée par les timelines ennemies
-            // Dernière étape : on restaure forcément le contrôle caméra
-            BattleTimelineManager.Instance.PlayTimeline(move.retreatTimeline, casterAnimatorGO, battleCameraTag, true);
-
-            float maxRetreatDuration = (float)move.retreatTimeline.duration;
-            float retreatTimer = 0f;
-            while (TimelineManager.Instance != null &&
-                   TimelineManager.Instance.IsTimelineActive &&
-                   retreatTimer < maxRetreatDuration)
+            // --- Timeline de préparation avant le déplacement ---
+            // Permet de jouer une courte animation de "télégraphie" avant que l'ennemi
+            // ne se rapproche de sa cible.
+            bool hasPreparingTimeline = move.preparingTimeline != null &&
+                                        BattleTimelineManager.Instance != null &&
+                                        TimelineManager.Instance != null &&
+                                        casterAnimatorGO != null;
+            if (hasPreparingTimeline)
             {
-                retreatTimer += Time.deltaTime;
+                // La caméra de la timeline est utilisée pour tous les personnages
+                // Pas de restauration automatique si une autre timeline suit
+                bool restoreAfterPrep = move.performingTimeline == null && move.retreatTimeline == null;
+                BattleTimelineManager.Instance.PlayTimeline(move.preparingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPrep);
+
+                float maxPrepareDuration = (float)move.preparingTimeline.duration;
+                float prepareTimer = 0f;
+                while (TimelineManager.Instance != null &&
+                       TimelineManager.Instance.IsTimelineActive &&
+                       prepareTimer < maxPrepareDuration)
+                {
+                    prepareTimer += Time.deltaTime;
+                    yield return null;
+                }
+
+                if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
+                {
+                    Debug.LogWarning($"[MusicalMoveRoutine] Timeline '{move.preparingTimeline.name}' encore active après {maxPrepareDuration}s. Suite forcée.");
+                }
+            }
+
+            // --- Déplacement vers la position relative à la cible ---
+            if (caster != null && target != null)
+            {
+                yield return MoveTo(caster, target, move);
+            }
+
+            casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
+
+            bool hasTimeline = move.performingTimeline != null &&
+                              BattleTimelineManager.Instance != null &&
+                              TimelineManager.Instance != null &&
+                              casterAnimatorGO != null;
+            bool hasRetreatTimeline = move.retreatTimeline != null &&
+                                      BattleTimelineManager.Instance != null &&
+                                      TimelineManager.Instance != null &&
+                                      casterAnimatorGO != null;
+
+            if (hasTimeline)
+            {
+                bool restoreAfterPerform = move.retreatTimeline == null;
+                BattleTimelineManager.Instance.PlayTimeline(move.performingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPerform);
+            }
+
+            if (pendingNotes == 0)
+            {
+                move.ApplyEffect(caster, target);
+            }
+            else if (!hasTimeline)
+            {
+                while (pendingNotes > 0)
+                {
+                    float safeDelay = move.notes.Sum(n => n.rhythm);
+                    float timer = 0f;
+                    while (pendingNotes > 0 && timer < safeDelay)
+                    {
+                        timer += Time.deltaTime;
+                        yield return null;
+                    }
+                    if (pendingNotes > 0)
+                    {
+                        Debug.LogWarning($"[MusicalMoveRoutine] {pendingNotes} note(s) non résolues pour {move.moveName}. Forçage de la suite.");
+                        pendingNotes = 0;
+                    }
+                }
+            }
+
+            if (hasTimeline)
+            {
+                float maxTimelineDuration = (float)move.performingTimeline.duration + 0f;
+                float timelineTimer = 0f;
+                while (TimelineManager.Instance != null &&
+                       TimelineManager.Instance.IsTimelineActive &&
+                       timelineTimer < maxTimelineDuration)
+                {
+                    timelineTimer += Time.deltaTime;
+                    yield return null;
+                }
+
+                if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
+                {
+                    Debug.LogWarning($"[MusicalMoveRoutine] Timeline '{move.performingTimeline.name}' encore active après {maxTimelineDuration}s. Suite forcée.");
+                }
+            }
+            else
+            {
                 yield return null;
             }
 
-            if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
+            if (!move.stayInPlace)
+                yield return ReturnToInitialPosition(move, caster, target, originPosition);
+
+            if (hasRetreatTimeline)
             {
-                Debug.LogWarning($"[MusicalMoveRoutine] Timeline '{move.retreatTimeline.name}' encore active après {maxRetreatDuration}s. Suite forcée.");
+                BattleTimelineManager.Instance.PlayTimeline(move.retreatTimeline, casterAnimatorGO, battleCameraTag, true);
+
+                float maxRetreatDuration = (float)move.retreatTimeline.duration;
+                float retreatTimer = 0f;
+                while (TimelineManager.Instance != null &&
+                       TimelineManager.Instance.IsTimelineActive &&
+                       retreatTimer < maxRetreatDuration)
+                {
+                    retreatTimer += Time.deltaTime;
+                    yield return null;
+                }
+
+                if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
+                {
+                    Debug.LogWarning($"[MusicalMoveRoutine] Timeline '{move.retreatTimeline.name}' encore active après {maxRetreatDuration}s. Suite forcée.");
+                }
             }
         }
 
@@ -415,62 +482,185 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         Animator animator = caster.GetComponentInChildren<Animator>();
+        GameObject casterAnimatorGO = animator != null ? animator.gameObject : null;
 
-        // Lecture d'une Timeline ou d'une animation d'intro via le BattleTimelineManager
-        bool hasTimeline = item.performingTimeline != null &&
-                           BattleTimelineManager.Instance != null &&
-                           TimelineManager.Instance != null &&
-                           animator != null;
+        bool hasFullTimeline = item.fullTimeline != null &&
+                               BattleTimelineManager.Instance != null &&
+                               TimelineManager.Instance != null &&
+                               casterAnimatorGO != null;
 
-        if (hasTimeline)
+        if (hasFullTimeline)
         {
-            // Les items utilisent également la caméra de combat par défaut
-            BattleTimelineManager.Instance.PlayTimeline(item.performingTimeline, animator.gameObject, battleCameraTag);
+            // ------------------------------------------------------------------
+            // Timeline caméra globale pour l'objet
+            // ------------------------------------------------------------------
+            BattleTimelineManager.Instance.PlayTimeline(item.fullTimeline, casterAnimatorGO, battleCameraTag, true);
 
-            // Attendre la fin réelle de la Timeline, en prévoyant un délai maximum
-            // pour éviter les blocages si celle-ci reste en pause sur la dernière frame
-            float maxTimelineDuration = (float)item.performingTimeline.duration + 0f; // marge de sécurité de 0 seconde
-            float timelineTimer = 0f;
+            // --- Timeline de préparation en surimpression ---
+            if (item.preparingTimeline != null)
+            {
+                BattleTimelineManager.Instance.PlayTimelineOverlay(item.preparingTimeline, casterAnimatorGO);
+                yield return new WaitForSeconds((float)item.preparingTimeline.duration);
+            }
 
+            // --- Téléportation ou déplacement vers la cible ---
+            if (caster != null && target != null)
+                yield return SimpleMoveTo(caster, target, item);
+
+            // --- Timeline principale d'utilisation ---
+            if (item.performingTimeline != null)
+                BattleTimelineManager.Instance.PlayTimelineOverlay(item.performingTimeline, casterAnimatorGO);
+
+            // --- Phase de QTE ---
+            LastItemSuccess = true;
+            if (item.beatPattern != null && item.beatPattern.Count > 0)
+            {
+                successResults = new List<bool>();
+                foreach (float beat in item.beatPattern)
+                {
+                    bool s = false;
+                    yield return WaitForQTE(beat, null, Vector2.zero, r => s = r);
+                    successResults.Add(s);
+                }
+                LastItemSuccess = successResults.All(v => v);
+            }
+
+            // Attente de fin de la timeline principale si nécessaire
+            if (item.performingTimeline != null)
+                yield return new WaitForSeconds((float)item.performingTimeline.duration);
+
+            // --- Retour à la position d'origine ---
+            if (!item.stayInPlace && caster != null && target != null)
+                yield return SimpleReturnToInitialPosition(caster, target, item, originPosition);
+
+            // --- Timeline de repli en surimpression ---
+            if (item.retreatTimeline != null)
+            {
+                BattleTimelineManager.Instance.PlayTimelineOverlay(item.retreatTimeline, casterAnimatorGO);
+                yield return new WaitForSeconds((float)item.retreatTimeline.duration);
+            }
+
+            // --- Attente de fin de la timeline caméra ---
+            float maxFullDuration = (float)item.fullTimeline.duration;
+            float fullTimer = 0f;
             while (TimelineManager.Instance != null &&
                    TimelineManager.Instance.IsTimelineActive &&
-                   timelineTimer < maxTimelineDuration)
+                   fullTimer < maxFullDuration)
             {
-                timelineTimer += Time.deltaTime;
+                fullTimer += Time.deltaTime;
                 yield return null;
             }
 
             if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
             {
-                Debug.LogWarning($"[ItemRoutine] Timeline '{item.performingTimeline.name}' encore active après {maxTimelineDuration}s. Suite forcée.");
+                Debug.LogWarning($"[ItemRoutine] Timeline '{item.fullTimeline.name}' encore active après {maxFullDuration}s. Suite forcée.");
             }
         }
-        // Sans Timeline, aucun visuel n'est joué et l'objet passe directement à l'application de l'effet
-        // Téléportation jusqu'à la cible si aucune Timeline ne gère déjà le mouvement
-        if (!hasTimeline && caster != null && target != null)
+        else
         {
-            yield return SimpleMoveTo(caster, target, item);
-        }
-
-        // Phase de QTE propre à l'objet uniquement sans Timeline
-        LastItemSuccess = true;
-        if (!hasTimeline && item.beatPattern != null && item.beatPattern.Count > 0)
-        {
-            successResults = new List<bool>();
-            foreach (float beat in item.beatPattern)
+            // ------------------------------------------------------------------
+            // Pas de timeline caméra : lecture séquentielle des phases
+            // ------------------------------------------------------------------
+            bool hasPreparingTimeline = item.preparingTimeline != null &&
+                                        BattleTimelineManager.Instance != null &&
+                                        TimelineManager.Instance != null &&
+                                        casterAnimatorGO != null;
+            if (hasPreparingTimeline)
             {
-                bool s = false;
-                yield return WaitForQTE(beat, null, Vector2.zero, r => s = r);
-                successResults.Add(s);
-            }
-            LastItemSuccess = successResults.All(v => v);
-        }
+                bool restoreAfterPrep = item.performingTimeline == null && item.retreatTimeline == null;
+                BattleTimelineManager.Instance.PlayTimeline(item.preparingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPrep);
 
-        // 📝 Retour à la position d'origine uniquement si aucune Timeline ne gère le retour
-        if (!hasTimeline && caster != null && !item.stayInPlace)
-        {
-            // Revenir exactement à la position occupée au lancement de l'objet
-            yield return SimpleReturnToInitialPosition(caster, target, item, originPosition);
+                float maxPrepareDuration = (float)item.preparingTimeline.duration;
+                float prepareTimer = 0f;
+                while (TimelineManager.Instance != null &&
+                       TimelineManager.Instance.IsTimelineActive &&
+                       prepareTimer < maxPrepareDuration)
+                {
+                    prepareTimer += Time.deltaTime;
+                    yield return null;
+                }
+
+                if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
+                {
+                    Debug.LogWarning($"[ItemRoutine] Timeline '{item.preparingTimeline.name}' encore active après {maxPrepareDuration}s. Suite forcée.");
+                }
+            }
+
+            if (caster != null && target != null)
+                yield return SimpleMoveTo(caster, target, item);
+
+            bool hasPerformingTimeline = item.performingTimeline != null &&
+                                         BattleTimelineManager.Instance != null &&
+                                         TimelineManager.Instance != null &&
+                                         casterAnimatorGO != null;
+
+            if (hasPerformingTimeline)
+            {
+                bool restoreAfterPerform = item.retreatTimeline == null;
+                BattleTimelineManager.Instance.PlayTimeline(item.performingTimeline, casterAnimatorGO, battleCameraTag, restoreAfterPerform);
+            }
+
+            LastItemSuccess = true;
+            if (item.beatPattern != null && item.beatPattern.Count > 0 && !hasPerformingTimeline)
+            {
+                successResults = new List<bool>();
+                foreach (float beat in item.beatPattern)
+                {
+                    bool s = false;
+                    yield return WaitForQTE(beat, null, Vector2.zero, r => s = r);
+                    successResults.Add(s);
+                }
+                LastItemSuccess = successResults.All(v => v);
+            }
+
+            if (hasPerformingTimeline)
+            {
+                float maxTimelineDuration = (float)item.performingTimeline.duration;
+                float timelineTimer = 0f;
+                while (TimelineManager.Instance != null &&
+                       TimelineManager.Instance.IsTimelineActive &&
+                       timelineTimer < maxTimelineDuration)
+                {
+                    timelineTimer += Time.deltaTime;
+                    yield return null;
+                }
+
+                if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
+                {
+                    Debug.LogWarning($"[ItemRoutine] Timeline '{item.performingTimeline.name}' encore active après {maxTimelineDuration}s. Suite forcée.");
+                }
+            }
+            else
+            {
+                yield return null;
+            }
+
+            if (!item.stayInPlace)
+                yield return SimpleReturnToInitialPosition(caster, target, item, originPosition);
+
+            bool hasRetreatTimeline = item.retreatTimeline != null &&
+                                      BattleTimelineManager.Instance != null &&
+                                      TimelineManager.Instance != null &&
+                                      casterAnimatorGO != null;
+            if (hasRetreatTimeline)
+            {
+                BattleTimelineManager.Instance.PlayTimeline(item.retreatTimeline, casterAnimatorGO, battleCameraTag, true);
+
+                float maxRetreatDuration = (float)item.retreatTimeline.duration;
+                float retreatTimer = 0f;
+                while (TimelineManager.Instance != null &&
+                       TimelineManager.Instance.IsTimelineActive &&
+                       retreatTimer < maxRetreatDuration)
+                {
+                    retreatTimer += Time.deltaTime;
+                    yield return null;
+                }
+
+                if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
+                {
+                    Debug.LogWarning($"[ItemRoutine] Timeline '{item.retreatTimeline.name}' encore active après {maxRetreatDuration}s. Suite forcée.");
+                }
+            }
         }
 
         isActive = false;

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
+using System.Collections; // Nécessaire pour les coroutines
 
 /// <summary>
 /// Gestionnaire dédié au lancement des <see cref="TimelineAsset"/> durant les combats.
@@ -78,5 +79,52 @@ public class BattleTimelineManager : MonoBehaviour
         // (paramètre withFade = false) et on conserve la bande-son actuelle
         // en désactivant l'interruption musicale (interruptMusic = false).
         TimelineManager.Instance.PlayTimeline(timeline, caster, cameraTag, false, false, true, autoRestore);
+    }
+
+    /// <summary>
+    /// Joue une timeline additionnelle sans interrompre celle déjà active.
+    /// Permet une superposition ponctuelle d'animations durant un combat.
+    /// </summary>
+    public void PlayTimelineOverlay(TimelineAsset timeline, GameObject caster)
+    {
+        if (timeline == null || caster == null)
+            return;
+
+        // Crée un PlayableDirector temporaire pour cette timeline
+        var overlayDirector = gameObject.AddComponent<PlayableDirector>();
+        overlayDirector.playableAsset = timeline;
+
+        // Lie uniquement les pistes liées au lanceur et ignore la caméra
+        foreach (var output in timeline.outputs)
+        {
+            string lower = output.streamName.ToLower();
+            if (lower.Contains("camera"))
+                continue; // Caméra gérée ailleurs
+
+            if (lower.Contains("caster") || lower.Contains("pnj"))
+            {
+                var animator = caster.GetComponentInChildren<Animator>();
+                if (animator != null)
+                    overlayDirector.SetGenericBinding(output.sourceObject, animator);
+            }
+            else
+            {
+                overlayDirector.SetGenericBinding(output.sourceObject, caster);
+            }
+        }
+
+        overlayDirector.Play();
+        StartCoroutine(CleanupOverlay(overlayDirector));
+    }
+
+    /// <summary>
+    /// Détruit le PlayableDirector temporaire lorsqu'il a terminé sa lecture.
+    /// </summary>
+    private IEnumerator CleanupOverlay(PlayableDirector dir)
+    {
+        while (dir != null && dir.state == PlayState.Playing)
+            yield return null;
+        if (dir != null)
+            Destroy(dir);
     }
 }
