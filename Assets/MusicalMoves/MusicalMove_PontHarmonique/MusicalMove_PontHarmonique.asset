@@ -17,7 +17,7 @@ MonoBehaviour:
   onlyAwake: 0
   moveIcon: {fileID: 0}
   description: "Cr\xE9e un sol temporaire sous la cible."
-  stayFaceToTarget: 0
+  stayFaceToTarget: 1
   notes: []
   power: 0
   fatigueCost: 1
@@ -32,7 +32,7 @@ MonoBehaviour:
   cooldown: 0
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0
-  altitudeCondition: 2
+  altitudeCondition: 1
   targetType: 1
   defaultTargetType: 1
   targetTypes: 01000000
