@@ -2,19 +2,22 @@ using UnityEngine;
 using Cinemachine;
 
 /// <summary>
-/// Assigne dynamiquement le lanceur actuel comme cible de suivi pour une CinemachineVirtualCamera.
+/// Assigne dynamiquement le lanceur actuel comme cible de suivi pour une caméra Cinemachine.
 /// </summary>
-[RequireComponent(typeof(CinemachineVirtualCamera))]
+// Utilise CinemachineCamera (Cinemachine 3) à la place de CinemachineVirtualCamera
+[RequireComponent(typeof(CinemachineCamera))]
 public class FollowBattleCaster : MonoBehaviour
 {
     [Tooltip("Décalage appliqué par rapport à la position du lanceur.")]
     public Vector3 offset = new(0, 2, -3);
 
-    private CinemachineVirtualCamera vcam;
+    // Caméra responsable du suivi du lanceur
+    private CinemachineCamera cmCamera;
 
     void Awake()
     {
-        vcam = GetComponent<CinemachineVirtualCamera>();
+        // Obtention de la nouvelle CinemachineCamera
+        cmCamera = GetComponent<CinemachineCamera>();
     }
 
     void LateUpdate()
@@ -22,8 +25,9 @@ public class FollowBattleCaster : MonoBehaviour
         var caster = NewBattleManager.Instance?.currentCharacterUnit;
         if (caster == null) return;
 
-        vcam.Follow = caster.transform;
-        var transposer = vcam.GetCinemachineComponent<CinemachineTransposer>();
+        // Suit le lanceur tout en appliquant un décalage personnalisé
+        cmCamera.Follow = caster.transform;
+        var transposer = cmCamera.GetCinemachineComponent<CinemachineTransposer>();
         if (transposer != null)
             transposer.m_FollowOffset = offset;
     }

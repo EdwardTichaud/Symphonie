@@ -94,7 +94,8 @@ public class ItemData : ScriptableObject
     public TimelineAsset fullTimeline;
 
     [Header("Caméra")]
-    [Tooltip("Nom de la CinemachineVirtualCamera utilisée pour cet objet.\nLaisser vide pour utiliser la caméra de combat par défaut.")]
+    // Nom de la CinemachineCamera à activer lors de l'utilisation de l'objet
+    [Tooltip("Nom de la CinemachineCamera utilisée pour cet objet.\nLaisser vide pour utiliser la caméra de combat par défaut.")]
     public string cameraName;
 
     [Header("QTE Pattern")]

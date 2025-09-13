@@ -4,17 +4,20 @@ using Cinemachine;
 /// <summary>
 /// Oriente la caméra vers la cible actuelle avec un décalage optionnel.
 /// </summary>
-[RequireComponent(typeof(CinemachineVirtualCamera))]
+// Adoption de CinemachineCamera pour être compatible avec Cinemachine 3
+[RequireComponent(typeof(CinemachineCamera))]
 public class LookAtBattleTarget : MonoBehaviour
 {
     [Tooltip("Décalage appliqué lors du ciblage de la cible.")]
     public Vector3 offset;
 
-    private CinemachineVirtualCamera vcam;
+    // Caméra utilisée pour orienter le regard vers la cible
+    private CinemachineCamera cmCamera;
 
     void Awake()
     {
-        vcam = GetComponent<CinemachineVirtualCamera>();
+        // Récupère la CinemachineCamera associée à ce GameObject
+        cmCamera = GetComponent<CinemachineCamera>();
     }
 
     void LateUpdate()
@@ -22,8 +25,9 @@ public class LookAtBattleTarget : MonoBehaviour
         var target = NewBattleManager.Instance?.currentTargetCharacter;
         if (target == null) return;
 
-        vcam.LookAt = target.transform;
-        var composer = vcam.GetCinemachineComponent<CinemachineComposer>();
+        // Oriente la caméra vers la cible actuelle
+        cmCamera.LookAt = target.transform;
+        var composer = cmCamera.GetCinemachineComponent<CinemachineComposer>();
         if (composer != null)
             composer.m_TrackedObjectOffset = offset;
     }

@@ -141,7 +141,8 @@ public class MusicalMoveSO : ScriptableObject
     public TimelineAsset fullTimeline;
 
     [Header("Caméra")]
-    [Tooltip("Nom de la CinemachineVirtualCamera utilisée pour ce move.\nLaisser vide pour garder la caméra de combat par défaut.")]
+    // Référence à la nouvelle CinemachineCamera à activer pour ce move
+    [Tooltip("Nom de la CinemachineCamera utilisée pour ce move.\nLaisser vide pour garder la caméra de combat par défaut.")]
     public string cameraName;
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
