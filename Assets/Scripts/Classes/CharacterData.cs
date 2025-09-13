@@ -19,6 +19,10 @@ public class CharacterData : ScriptableObject, ITargetable
     [Header("Battlefield")]
     public int battlefieldIndex = 0; // Indice du battlefield dans la zone
 
+    [Header("Déplacement")]
+    [Tooltip("Vrai si l'unité évolue dans les airs et n'est pas affectée par la gravité.")]
+    public bool isAirUnit = false;
+
     [Header("Comportement en combat")]
     [Tooltip("Si vrai, ce personnage peut être intercepté lors de ses actions")]
     public bool interceptable = true;

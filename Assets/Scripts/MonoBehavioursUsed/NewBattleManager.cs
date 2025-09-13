@@ -1097,11 +1097,11 @@ public class NewBattleManager : MonoBehaviour
         switch (move.altitudeCondition)
         {
             case AltitudeCondition.AirOnly:
-                // Mouvement aérien : uniquement si la cible ne touche pas le sol.
-                return !target.IsGrounded;
+                // Attaque réservée aux unités aériennes ou aux unités momentanément en l'air.
+                return target.IsAirUnit || !target.IsGrounded;
             case AltitudeCondition.GroundOnly:
-                // Mouvement terrien : uniquement si la cible est au sol.
-                return target.IsGrounded;
+                // Attaque réservée aux unités terrestres posées sur un support.
+                return !target.IsAirUnit && target.IsGrounded;
             default:
                 // Aucune restriction : mouvement utilisable dans toutes les configurations.
                 return true;
