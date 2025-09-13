@@ -104,7 +104,11 @@ public class MusicalMoveSO : ScriptableObject
     public AudioClip warningClip;
 
     [Header("Timing")]
-    [Tooltip("Temps en secondes à attendre après la téléportation avant d'exécuter le move")]
+    // ⏱️ Délai ajouté avant toute timeline de préparation.
+    //    Permet d'insérer un temps mort contrôlé (par exemple pour une
+    //    annonce ou un effet visuel) avant que le move ne commence
+    //    réellement.
+    [Tooltip("Temps en secondes à attendre AVANT de lancer la timeline de préparation du move")]
     public float startDelay = 2f;
 
     [Header("Awake")]
