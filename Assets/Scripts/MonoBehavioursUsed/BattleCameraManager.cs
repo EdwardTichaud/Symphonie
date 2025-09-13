@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using Cinemachine;
+using Unity.Cinemachine;
 
 /// <summary>
 /// Gère l'activation des différentes <see cref="CinemachineCamera"/> en combat.

@@ -1,5 +1,5 @@
 using UnityEngine;
-using Cinemachine;
+using Unity.Cinemachine;
 
 /// <summary>
 /// Assigne dynamiquement le lanceur actuel comme cible de suivi pour une caméra Cinemachine.

@@ -1,5 +1,5 @@
 using UnityEngine;
-using Cinemachine;
+using Unity.Cinemachine;
 
 /// <summary>
 /// Oriente la caméra vers la cible actuelle avec un décalage optionnel.
