@@ -354,9 +354,16 @@ public class RhythmQTEManager : MonoBehaviour
             initialRotation);
         yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay);
 
-        // Déplacement ou téléportation vers la cible.
-        if (caster != null && target != null)
+        // Déplacement ou téléportation vers la cible si nécessaire.
+        if (move.requiresMovement && caster != null && target != null)
             yield return MoveTo(caster, target, move);
+        else if (caster != null && target != null)
+        {
+            // Sans déplacement, on oriente simplement le lanceur vers sa cible
+            Vector3 dir = (target.transform.position - caster.transform.position).normalized;
+            if (dir != Vector3.zero)
+                caster.transform.forward = dir;
+        }
 
         // --- Phase d'exécution ---
         StartTimelinePhase(
@@ -393,7 +400,7 @@ public class RhythmQTEManager : MonoBehaviour
         yield return WaitForTimelinePhase(move.performingTimeline, useOverlay);
 
         // --- Retour ou téléportation de repli ---
-        if (!move.stayInPlace && caster != null && target != null)
+        if (move.requiresMovement && !move.stayInPlace && caster != null && target != null)
             yield return ReturnToInitialPosition(move, caster, target, originPosition);
 
         // --- Phase de repli ---
@@ -500,8 +507,15 @@ public class RhythmQTEManager : MonoBehaviour
         yield return WaitForTimelinePhase(item.preparingTimeline, useOverlay);
 
         // Déplacement ou téléportation éventuel vers la cible.
-        if (caster != null && target != null)
+        if (item.requiresMovement && caster != null && target != null)
             yield return SimpleMoveTo(caster, target, item);
+        else if (caster != null && target != null)
+        {
+            // Sans déplacement, on oriente simplement l'utilisateur vers sa cible
+            Vector3 dir = (target.transform.position - caster.transform.position).normalized;
+            if (dir != Vector3.zero)
+                caster.transform.forward = dir;
+        }
 
         // --- Phase d'utilisation ---
         StartTimelinePhase(
@@ -529,7 +543,7 @@ public class RhythmQTEManager : MonoBehaviour
         yield return WaitForTimelinePhase(item.performingTimeline, useOverlay);
 
         // --- Retour à la position d'origine ---
-        if (!item.stayInPlace && caster != null && target != null)
+        if (item.requiresMovement && !item.stayInPlace && caster != null && target != null)
             yield return SimpleReturnToInitialPosition(caster, target, item, originPosition);
 
         // --- Phase de repli ---
