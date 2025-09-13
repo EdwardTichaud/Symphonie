@@ -22,19 +22,41 @@ public class InstantiateGameObject : MonoBehaviour
     }
 
     /// <summary>
-    /// Surcharge conservée pour compatibilité : instancie par défaut sur le
-    /// lanceur de l'action (caster) si aucun paramètre de cible n'est fourni.
+    /// Instancie un <see cref="GameObject"/> depuis une Timeline. La position
+    /// d'apparition est déterminée par un éventuel composant
+    /// <see cref="TimelineInstantiationParameters"/> présent sur le prefab
+    /// (voir la classe correspondante), permettant de choisir entre le lanceur
+    /// de l'action (caster) et la cible actuelle (target).
     /// </summary>
     /// <param name="gameObjectToInstantiate">Prefab à instancier.</param>
     public void InstantiateFromTimeline(GameObject gameObjectToInstantiate)
     {
-        InstantiateFromTimeline(gameObjectToInstantiate, false);
+        // Par défaut, on instancie sur le lanceur. Ce comportement peut être
+        // redéfini par la présence d'un composant TimelineInstantiationParameters
+        // sur le prefab fourni.
+        bool spawnOnTarget = false;
+
+        if (gameObjectToInstantiate != null)
+        {
+            // Tentative de récupération des paramètres d'instanciation sur le prefab.
+            var parameters = gameObjectToInstantiate.GetComponent<TimelineInstantiationParameters>();
+            if (parameters != null)
+            {
+                spawnOnTarget = parameters.spawnOnTarget;
+            }
+        }
+
+        // Appel à la variante détaillée permettant d'instancier en tenant compte
+        // de la cible désirée.
+        InstantiateFromTimeline(gameObjectToInstantiate, spawnOnTarget);
     }
 
     /// <summary>
-    /// Instancie un <see cref="GameObject"/> depuis une Timeline, en choisissant
-    /// s'il doit apparaître sur le lanceur de l'action (caster) ou sur la cible
-    /// actuellement sélectionnée.
+    /// Variante permettant d'instancier un prefab en choisissant explicitement
+    /// s'il doit apparaître sur le lanceur (caster) ou sur la cible actuelle
+    /// (target). Utile en dehors des Timelines lorsque l'on souhaite forcer une
+    /// position spécifique sans passer par le composant
+    /// <see cref="TimelineInstantiationParameters"/>.
     /// </summary>
     /// <param name="gameObjectToInstantiate">Prefab à instancier.</param>
     /// <param name="spawnOnTarget">
