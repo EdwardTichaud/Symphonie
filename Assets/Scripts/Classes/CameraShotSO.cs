@@ -1,5 +1,7 @@
 using UnityEngine;
-using Cinemachine;
+
+// Ce ScriptableObject est volontairement indépendant de Cinemachine afin de
+// pouvoir être utilisé même si le package n'est pas présent dans le projet.
 
 /// <summary>
 /// ScriptableObject décrivant un plan de caméra réutilisable.

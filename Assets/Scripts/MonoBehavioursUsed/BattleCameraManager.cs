@@ -1,21 +1,32 @@
 using UnityEngine;
+
+#if CINEMACHINE
 using Cinemachine;
+#endif
 
 /// <summary>
-/// Gère les plans de caméra durant les combats en utilisant Cinemachine.
-/// Ce gestionnaire centralise l'activation des CameraShotSO afin de
-/// respecter le point de vue de Munin tout en offrant des transitions
-/// souples entre les actions.
+/// Gère les plans de caméra durant les combats. Lorsque Cinemachine est
+/// disponible, le script s'appuie sur ses composants avancés ; sinon il
+/// se replie sur la caméra standard de Unity pour assurer un minimum de
+/// fonctionnalité.
 /// </summary>
 public class BattleCameraManager : MonoBehaviour
 {
     public static BattleCameraManager Instance { get; private set; }
-
+#if CINEMACHINE
     [Header("Référence de caméra")]
     [Tooltip("Virtual Camera principale utilisée pour les plans de combat.")]
     public CinemachineVirtualCamera mainVirtualCamera;
 
     private CinemachineBrain brain;
+#else
+    [Header("Référence de caméra")]
+    [Tooltip("Caméra standard utilisée lorsque Cinemachine est absent.")]
+    public Camera mainVirtualCamera;
+
+    // Aucun CinemachineBrain n'est disponible ; variable conservée pour cohérence.
+    private Camera brain;
+#endif
 
     private void Awake()
     {
@@ -25,7 +36,10 @@ public class BattleCameraManager : MonoBehaviour
             return;
         }
         Instance = this;
+#if CINEMACHINE
+        // Récupère la référence au CinemachineBrain pour gérer les fondus entre plans.
         brain = Camera.main != null ? Camera.main.GetComponent<CinemachineBrain>() : null;
+#endif
     }
 
     /// <summary>
@@ -43,6 +57,8 @@ public class BattleCameraManager : MonoBehaviour
         if (target == null)
             return;
 
+#if CINEMACHINE
+        // Utilisation complète de Cinemachine : suivi, orientation et FOV.
         mainVirtualCamera.Follow = target;
         mainVirtualCamera.LookAt = target;
         mainVirtualCamera.m_Lens.FieldOfView = shot.fieldOfView;
@@ -53,5 +69,11 @@ public class BattleCameraManager : MonoBehaviour
         // Configure la durée de transition entre les plans
         if (brain != null)
             brain.m_DefaultBlend.m_Time = shot.blendDuration;
+#else
+        // Version de secours : déplace et oriente simplement la caméra standard.
+        mainVirtualCamera.transform.position = target.position + target.TransformDirection(shot.offset);
+        mainVirtualCamera.transform.LookAt(target);
+        mainVirtualCamera.fieldOfView = shot.fieldOfView;
+#endif
     }
 }
