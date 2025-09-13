@@ -326,6 +326,26 @@ public class RhythmQTEManager : MonoBehaviour
                           TimelineManager.Instance != null &&
                           casterAnimatorGO != null;
 
+        // Lorsque la timeline complète est absente, on repositionne par défaut la caméra
+        // de manière à englober à la fois le lanceur et sa cible. Cela permet de
+        // conserver une visibilité correcte pour le joueur sans nécessiter de
+        // configuration spécifique dans chaque MusicalMove.
+        GameObject tempCameraTarget = null;
+        if (!useOverlay && BattleTimelineManager.Instance != null && caster != null && target != null)
+        {
+            tempCameraTarget = BattleTimelineManager.Instance.CreateMidpointCameraTarget(
+                caster.gameObject,
+                target.gameObject,
+                battleCameraTag);
+
+            if (tempCameraTarget != null)
+            {
+                performingCameraTarget = tempCameraTarget;
+                casterCameraTarget = tempCameraTarget;
+                initialRotation = tempCameraTarget.transform.rotation;
+            }
+        }
+
         // Éventuel délai de pré-animation.
         // 🔄 Cette attente se produit désormais AVANT toute timeline
         //     afin d'éviter un à-coup juste avant la téléportation.
@@ -485,6 +505,26 @@ public class RhythmQTEManager : MonoBehaviour
                           BattleTimelineManager.Instance != null &&
                           TimelineManager.Instance != null &&
                           casterAnimatorGO != null;
+
+        // Si aucune timeline caméra globale n'est fournie, on crée un pivot temporaire
+        // afin de centrer automatiquement la vue sur le lanceur et sa cible. Ceci
+        // garantit un cadrage correct même pour les objets simples dépourvus de
+        // configuration dédiée.
+        GameObject tempCameraTarget = null;
+        if (!useOverlay && BattleTimelineManager.Instance != null && caster != null && target != null)
+        {
+            tempCameraTarget = BattleTimelineManager.Instance.CreateMidpointCameraTarget(
+                caster.gameObject,
+                target.gameObject,
+                battleCameraTag);
+
+            if (tempCameraTarget != null)
+            {
+                performingCameraTarget = tempCameraTarget;
+                casterCameraTarget = tempCameraTarget;
+                initialRotation = tempCameraTarget.transform.rotation;
+            }
+        }
 
         // Lance la timeline globale si présente.
         if (useOverlay)
