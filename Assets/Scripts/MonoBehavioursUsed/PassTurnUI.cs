@@ -32,6 +32,17 @@ public class PassTurnUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Réinitialise l'instance statique lorsque cet objet est détruit.
+    /// Cela évite de conserver une référence vers un objet Unity détruit
+    /// qui provoquerait ensuite des MissingReferenceException.
+    /// </summary>
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
     void Start()
     {
         Hide();

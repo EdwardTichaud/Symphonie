@@ -594,8 +594,9 @@ public class InputsManager : MonoBehaviour
             StopCoroutine(passRoutine);
             passRoutine = null;
         }
-
-        PassTurnUI.Instance.ResetProgressSmooth();
+        // Vérifie que l'interface de passage de tour existe toujours
+        // avant de tenter de réinitialiser sa progression.
+        PassTurnUI.Instance?.ResetProgressSmooth();
     }
 
     private IEnumerator PassTurnRoutine()
@@ -606,12 +607,14 @@ public class InputsManager : MonoBehaviour
             if (!playerInputs.Battle.Back.IsPressed())
             {
                 passRoutine = null;
-                PassTurnUI.Instance.ResetProgressSmooth();
+                // L'UI peut avoir été détruite si le combat s'est terminé.
+                PassTurnUI.Instance?.ResetProgressSmooth();
                 yield break;
             }
 
             elapsed += Time.unscaledDeltaTime;
-            PassTurnUI.Instance.SetProgress(elapsed / passHoldDuration);
+            // Met à jour la jauge uniquement si elle est toujours présente.
+            PassTurnUI.Instance?.SetProgress(elapsed / passHoldDuration);
             yield return null;
         }
 
