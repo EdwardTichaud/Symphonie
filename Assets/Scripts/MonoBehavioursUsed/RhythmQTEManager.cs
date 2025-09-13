@@ -295,23 +295,12 @@ public class RhythmQTEManager : MonoBehaviour
         }
         
         GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
-        // 🎯 Détermination de l'ancre de caméra : on privilégie le point "Camera_TargetedPoint"
-        // de la cible (pour centrer l'action sur elle), sinon son Animator, et à défaut le
-        // GameObject de la cible. Si aucune cible n'est fournie, on se rabat sur le lanceur.
-        GameObject cameraTargetGO = null;
-        if (target != null)
-        {
-            // Recherche récursive d'un point de focus spécifique sur la cible
-            Transform targetedPoint = FindChildRecursive(target.transform, "Camera_TargetedPoint");
-            if (targetedPoint != null)
-                cameraTargetGO = targetedPoint.gameObject;
-            else
-                cameraTargetGO = target.GetComponentInChildren<Animator>()?.gameObject ?? target.gameObject;
-        }
-        else
-        {
-            cameraTargetGO = casterAnimatorGO;
-        }
+        // 🎯 La caméra se centre désormais directement sur l'unité ciblée du mouvement.
+        // Si aucune cible n'est définie (attaque de zone, soin personnel, etc.),
+        // on utilise l'Animator du lanceur pour conserver un ancrage valable.
+        GameObject cameraTargetGO = target != null
+            ? target.gameObject         // 👉 Caméra sur la CharacterUnit ciblée
+            : casterAnimatorGO;         // 🔁 Fallback : on reste sur le lanceur
         // Détermine si une timeline caméra couvrant toute l'action est disponible.
         bool useOverlay = move.fullTimeline != null &&
                           BattleTimelineManager.Instance != null &&
@@ -450,22 +439,12 @@ public class RhythmQTEManager : MonoBehaviour
         
         Animator animator = caster.GetComponentInChildren<Animator>();
         GameObject casterAnimatorGO = animator != null ? animator.gameObject : null;
-        // 🎯 Choisit la cible pour l'ancrage de caméra. On vise d'abord le point
-        // "Camera_TargetedPoint" de la cible, puis son Animator, puis le GameObject.
-        // Sans cible, la caméra suit simplement le lanceur.
-        GameObject cameraTargetGO = null;
-        if (target != null)
-        {
-            Transform targetedPoint = FindChildRecursive(target.transform, "Camera_TargetedPoint");
-            if (targetedPoint != null)
-                cameraTargetGO = targetedPoint.gameObject;
-            else
-                cameraTargetGO = target.GetComponentInChildren<Animator>()?.gameObject ?? target.gameObject;
-        }
-        else
-        {
-            cameraTargetGO = casterAnimatorGO;
-        }
+        // 🎯 La caméra se positionne directement sur l'unité ciblée par l'objet.
+        // En l'absence de cible (consommable global, soin personnel...),
+        // on conserve le lanceur comme ancre pour éviter un décalage brusque.
+        GameObject cameraTargetGO = target != null
+            ? target.gameObject         // 🎯 Suivi direct de la CharacterUnit visée
+            : casterAnimatorGO;         // 🔁 Fallback sur le lanceur
 
         // Détermine si une timeline caméra complète est disponible pour l'objet.
         bool useOverlay = item.fullTimeline != null &&
