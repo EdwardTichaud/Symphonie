@@ -8,29 +8,19 @@ using System.Collections.Generic;
 [CreateAssetMenu(fileName = "NewMusicalMove", menuName = "Symphonie/Musical Move")]
 public class MusicalMoveSO : ScriptableObject
 {
-    [Header("Identité")]
+    [Header("Identité et Catégorie")]
+    [Tooltip("Nom de l'action affiché dans les menus et interfaces.")]
     public string moveName;
-
-    // Enumeration des catégories de moves disponibles dans le jeu.
-    // Chaque type permet de classer les actions pour offrir aux joueurs
-    // novices comme expérimentés une meilleure compréhension tactique.
-    public enum MoveType
-    {
-        Empty,      // Move factice utilisé comme espace réservé.
-        Attack,     // Mouvement offensif infligeant des dégâts directs.
-        Buff,       // Action accordant un effet bénéfique à un allié.
-        Debuff,     // Action affaiblissant un adversaire.
-        Alteration  // Modifie le terrain ou l'état d'une cible sans être
-                    // purement offensif ou défensif.
-    }
-
-    // Type actuel de l'action musicale.
-    public MoveType moveType;
+    [Tooltip("Catégorie générale permettant de regrouper les moves pour les joueurs novices comme expérimentés.")]
+    public MoveType moveType = MoveType.Attack;
     [Tooltip("Vrai si l'attaque n'est disponible qu'en état Awake")]
     public bool onlyAwake = false;
+    [Tooltip("Icône utilisée dans les interfaces pour représenter le move.")]
     public Sprite moveIcon;
-    [TextArea] public string description;
+    [TextArea, Tooltip("Description textuelle détaillant l'effet et l'utilisation du move.")]
+    public string description;
     // L'animation de ciblage est désormais pilotée par la Timeline de préparation
+    [Tooltip("Si vrai, le lanceur garde constamment la cible en ligne de mire lors de la préparation.")]
     public bool stayFaceToTarget = true;
 
     [System.Serializable]
@@ -43,13 +33,24 @@ public class MusicalMoveSO : ScriptableObject
     }
 
     [Header("Partition musicale")]
+    [Tooltip("Suite des notes à jouer pour réussir le QTE du move.")]
     public List<NoteData> notes = new();
 
-    [Header("Coût et Dégâts")]
-    public float power = 0;
-    public float fatigueCost = 1;
+    [Header("Ressources")]
+    [Tooltip("Coût en fatigue pour exécuter ce move.")]
+    public float fatigueCost = 1f;
+    [Tooltip("Coût en harmonie pour exécuter ce move.")]
     public int harmonicCost = 1;
+    [Tooltip("Gain d'harmonie généré lors de l'utilisation du move.")]
     public int harmonicGeneration = 0;
+
+    [Header("Puissance et Effet")]
+    [Tooltip("Puissance de base de l'action, utilisée dans les calculs de dégâts ou de soin.")]
+    public float power = 0;
+    [Tooltip("Effet principal appliqué à la cible lors de l'utilisation du move.")]
+    public MusicalEffectType effectType = MusicalEffectType.Damage;
+    [Tooltip("Valeur numérique associée à l'effet principal.")]
+    public int effectValue = 10;
 
     [Header("Coup Critique")]
     [Tooltip("Active une variante lorsque le QTE est réussi")]
@@ -70,40 +71,35 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Nombre maximum d'utilisations par combat (0 = illimité)")]
     public int maxUsesPerBattle = 0;
 
-    [Header("Condition d'altitude")]
+    [Header("Conditions de ciblage")]
     [Tooltip("Détermine si le move est utilisable lorsque la cible est au sol, en l'air ou dans les deux cas")]
     public AltitudeCondition altitudeCondition = AltitudeCondition.GroundOrAir; // Par défaut: aucune restriction
-
-    [Header("Ciblage")]
+    [Tooltip("Type de cible actuellement sélectionné pour ce move")]
     public TargetType targetType = TargetType.SingleEnemy;
+    [Tooltip("Type de cible attribué par défaut lors de l'initialisation")]
     public TargetType defaultTargetType = TargetType.SingleEnemy;
+    [Tooltip("Liste de tous les ciblages possibles pour ce move")]
     public List<TargetType> targetTypes = new List<TargetType>() { TargetType.SingleEnemy };
 
-    [Header("Effet appliqué")]
-    public MusicalEffectType effectType = MusicalEffectType.Damage;
-    public int effectValue = 10;
-
-    [Header("Effets spéciaux")]
+    [Header("Effets spéciaux et déplacement")]
     [Tooltip("Prefab instancié pour certains effets spéciaux comme la création ou la suppression de sol.")]
     public GameObject effectPrefab;
-
+    [Tooltip("Vitesse de déplacement du lanceur lors de l'exécution du move")]
     public float moveSpeed = 20f;
+    [Tooltip("Distance maximale de lancement lorsque le move le nécessite")]
     public float castDistance;
-
     [Tooltip("Si vrai, le lanceur doit se déplacer ou se téléporter pour exécuter ce move")]
     public bool requiresMovement = true;
-
     // Temps entre la disparition et la réapparition lors d'une téléportation
     // Permet de laisser les effets visuels/sonores se jouer avant le déplacement
     [Tooltip("Délai en secondes entre la disparition et la réapparition (0 = instantané)")]
     public float teleportDelay = 0.2f;
-
-    [Tooltip("Si vrai, le lanceur reste à la position cible en fin de move")] public bool stayInPlace = false;
-
+    [Tooltip("Si vrai, le lanceur reste à la position cible en fin de move")]
+    public bool stayInPlace = false;
     [Tooltip("Si faux, le move ne peut pas être intercepté")]
     public bool interceptable = true;
-
     [Header("Placement autour de la cible")]
+    [Tooltip("Position relative prise par le lanceur autour de la cible lors de l'exécution")]
     public RelativePosition relativePosition = RelativePosition.Front;
 
     [Header("Téléportation")]
@@ -238,6 +234,19 @@ public class MusicalMoveSO : ScriptableObject
             caster.GetComponent<FatigueSystem>()?.OnActionPerformed(fatigueToApply);
         }
     }
+}
+
+/// <summary>
+/// Catégorie générale permettant de classer les <see cref="MusicalMoveSO"/>.
+/// Utile pour organiser les actions et guider le joueur dans ses choix.
+/// </summary>
+public enum MoveType
+{
+    Empty,      // Move factice utilisé comme espace réservé.
+    Attack,     // Mouvement offensif infligeant des dégâts directs.
+    Buff,       // Action accordant un effet bénéfique à un allié.
+    Debuff,     // Action affaiblissant un adversaire.
+    Alteration  // Modifie le terrain ou l'état d'une cible sans être purement offensif ou défensif.
 }
 
 public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark, SpawnGround, RemoveGround }
