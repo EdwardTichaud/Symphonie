@@ -81,9 +81,9 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Liste de tous les ciblages possibles pour ce move")]
     public List<TargetType> targetTypes = new List<TargetType>() { TargetType.SingleEnemy };
 
-    [Header("Effets spéciaux et déplacement")]
-    [Tooltip("Prefab instancié pour certains effets spéciaux comme la création ou la suppression de sol.")]
-    public GameObject effectPrefab;
+    [Header("Déplacement")]
+    // La gestion des effets visuels est désormais confiée à la timeline,
+    // seul le déplacement reste paramétrable dans ce ScriptableObject.
     [Tooltip("Vitesse de déplacement du lanceur lors de l'exécution du move")]
     public float moveSpeed = 20f;
     [Tooltip("Distance maximale de lancement lorsque le move le nécessite")]
@@ -208,27 +208,9 @@ public class MusicalMoveSO : ScriptableObject
             if (target.GetComponent<LinkMark>() == null)
                 target.gameObject.AddComponent<LinkMark>();
         }
-        else if (typeToUse == MusicalEffectType.SpawnGround)
-        {
-            // Crée un sol temporaire sous la cible afin de permettre l'utilisation de moves terrestres
-            // sur des unités normalement en vol.
-            if (effectPrefab != null && target != null)
-            {
-                GameObject ground = Instantiate(effectPrefab, target.transform.position, Quaternion.identity);
-                // Assure que l'objet utilise bien le layer Battle_Ground pour être reconnu comme sol.
-                ground.layer = LayerMask.NameToLayer("Battle_Ground");
-            }
-        }
-        else if (typeToUse == MusicalEffectType.RemoveGround)
-        {
-            // Supprime visuellement le sol sous la cible en instanciant un prefab dédié,
-            // la forçant ainsi à être considérée comme aérienne.
-            if (effectPrefab != null && target != null)
-            {
-                Instantiate(effectPrefab, target.transform.position, Quaternion.identity);
-            }
-        }
-
+        // Les effets visuels comme la création ou la suppression de sol sont
+        // désormais entièrement gérés par la timeline, aucune instanciation
+        // de prefab n'est nécessaire ici.
         if (caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
             caster.GetComponent<FatigueSystem>()?.OnActionPerformed(fatigueToApply);
@@ -249,7 +231,7 @@ public enum MoveType
     Alteration  // Modifie le terrain ou l'état d'une cible sans être purement offensif ou défensif.
 }
 
-public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark, SpawnGround, RemoveGround }
+public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark }
 
 public enum RelativePosition { Front, Back, Left, Right , NC}
 
