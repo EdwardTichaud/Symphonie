@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using UnityEngine.Playables;
 using UnityEngine.InputSystem; // Nécessaire pour utiliser les actions d'input
 using UnityEngine.Timeline; // Pour lancer les timelines post-combat
+using Cinemachine; // Accès au composant CinemachineCamera
 
 public class BattleTransitionManager : MonoBehaviour
 {
@@ -26,7 +27,7 @@ public class BattleTransitionManager : MonoBehaviour
     [Header("Music")]
     [SerializeField] private AudioSource musicSource;
 
-    private Camera battleCamera;
+    private CinemachineCamera battleCamera; // Référence à la nouvelle BattleCamera Cinemachine
 
     [Header("Scenes")]
     [SerializeField] private GameObject worldScene; // GameObject racine de la scène du monde à désactiver pendant les combats
@@ -183,7 +184,8 @@ public class BattleTransitionManager : MonoBehaviour
 
         worldFadeOverlay ??= GameObject.Find("WorldFadeOverlayPanel")?.GetComponent<Image>();
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
-        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
+        // Le tag reste "BattleCamera" mais on récupère désormais le composant CinemachineCamera
+        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<CinemachineCamera>();
 
         // Tente de récupérer automatiquement le GameObject "WorldScene" si l'on n'a rien assigné dans l'inspecteur
         worldScene ??= GameObject.Find("WorldScene");

@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using Cinemachine; // Utilisation de CinemachineCamera pour la BattleCamera
 
 /// <summary>
 /// Popup visuel indiquant un gain d'harmonique au-dessus d'une unité.
@@ -17,7 +18,7 @@ public class AddHarmonicPopup : MonoBehaviour
 
     private float elapsed = 0f;        // Temps écoulé depuis l'apparition
     private float floatOffset = 0f;    // Décalage vertical progressif
-    private Camera battleCamera;            // Caméra utilisée pour la conversion Monde/Ecran
+    private CinemachineCamera battleCamera; // Caméra utilisée pour la conversion Monde/Ecran
     private CanvasGroup canvasGroup;   // Pour faire disparaître progressivement le popup
     private Transform target;          // Unité suivie
 
@@ -42,7 +43,8 @@ public class AddHarmonicPopup : MonoBehaviour
 
         textMesh.text = "+" + amount.ToString();
 
-        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").GetComponent<Camera>();
+        // Récupère désormais le composant CinemachineCamera, le tag restant inchangé
+        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").GetComponent<CinemachineCamera>();
 
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null)
