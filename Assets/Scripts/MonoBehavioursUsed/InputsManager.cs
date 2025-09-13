@@ -492,8 +492,23 @@ public class InputsManager : MonoBehaviour
     private void OnNextSkillPage(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
-        if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
-            bm.NextSkillPage();
+
+        // On ne réagit que si le joueur se trouve bien dans le menu des compétences,
+        // afin d'éviter tout comportement inattendu dans les autres états de combat.
+        if (bm.currentBattleState != BattleState.SquadUnit_SkillsMenu)
+            return;
+
+        // Calcule le nombre de cases disponibles pour les attaques musicales classiques
+        // (le dernier slot du menu étant réservé au mouvement spécial).
+        int pageSize = bm.currentSkillsMenuSlots.Count - 1;
+
+        // Si le total des attaques disponibles tient sur une seule page, inutile de tenter
+        // une navigation : on quitte simplement la méthode.
+        if (bm.skillChoices == null || bm.skillChoices.Count <= pageSize)
+            return;
+
+        // Toutes les conditions sont réunies : on peut afficher la page suivante.
+        bm.NextSkillPage();
     }
 
     /// <summary>
@@ -502,8 +517,22 @@ public class InputsManager : MonoBehaviour
     private void OnPreviousSkillPage(InputAction.CallbackContext ctx)
     {
         NewBattleManager bm = NewBattleManager.Instance;
-        if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
-            bm.PreviousSkillPage();
+
+        // De la même manière que pour l'épaule droite, on vérifie d'abord que le menu
+        // des compétences est bien actif avant de traiter l'entrée.
+        if (bm.currentBattleState != BattleState.SquadUnit_SkillsMenu)
+            return;
+
+        // Détermination du nombre d'attaques affichables par page (hors move spécial).
+        int pageSize = bm.currentSkillsMenuSlots.Count - 1;
+
+        // Si une seule page suffit à afficher toutes les compétences, il n'y a rien
+        // à afficher de plus et l'on quitte la méthode.
+        if (bm.skillChoices == null || bm.skillChoices.Count <= pageSize)
+            return;
+
+        // Navigation vers la page précédente.
+        bm.PreviousSkillPage();
     }
 
     private void OnBackInput(InputAction.CallbackContext ctx)
