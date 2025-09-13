@@ -56,9 +56,11 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     /// <summary>
     /// Détecte si un sol existe sous l'unité à portée de <see cref="groundCheckDistance"/>.
-    /// Même en plein vol, cela permet aux attaques terrestres de la toucher,
-    /// comme le veut la légende contée dans l'Histoire de Symphonie où les
-    /// résonances du sol atteignent les cieux.
+    /// Cette information sert non seulement à permettre aux attaques terrestres
+    /// d'atteindre une cible en vol lorsqu'un support se trouve sous elle,
+    /// mais aussi à empêcher toute attaque aérienne lorsque la moindre surface
+    /// solide est détectée, fidèle au récit de l'Histoire de Symphonie où les
+    /// résonances du sol répondent aux cieux.
     /// </summary>
     public bool HasGroundBelow()
     {

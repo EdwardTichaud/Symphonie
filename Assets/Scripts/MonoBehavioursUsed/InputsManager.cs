@@ -215,8 +215,8 @@ public class InputsManager : MonoBehaviour
             {
                 if (bm.currentMove.altitudeCondition == AltitudeCondition.AirOnly)
                 {
-                    // Indique que la cible doit être aérienne.
-                    instructions.Add("La cible doit être en l'air");
+                    // Indique que la cible doit être en l'air sans aucun sol sous elle.
+                    instructions.Add("La cible doit être en l'air sans sol sous elle");
                 }
                 else if (bm.currentMove.altitudeCondition == AltitudeCondition.GroundOnly)
                 {
