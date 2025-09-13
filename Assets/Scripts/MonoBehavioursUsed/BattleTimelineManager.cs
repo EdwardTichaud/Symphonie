@@ -93,58 +93,6 @@ public class BattleTimelineManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Crée dynamiquement une cible de caméra placée entre deux unités
-    /// afin de cadrer simultanément le lanceur et sa cible lorsque
-    /// aucune timeline de caméra complète n'est définie.
-    /// </summary>
-    /// <param name="caster">Unité à l'origine de l'action.</param>
-    /// <param name="target">Unité visée par l'action.</param>
-    /// <param name="cameraTag">Tag de la caméra à orienter.</param>
-    /// <returns>Parent de la caméra de combat après repositionnement.</returns>
-    public GameObject CreateMidpointCameraTarget(GameObject caster, GameObject target, string cameraTag)
-    {
-        if (caster == null || target == null || string.IsNullOrEmpty(cameraTag))
-            return null;
-
-        // 🔍 Récupère la caméra de combat et son parent.
-        GameObject camGO = GameObject.FindGameObjectWithTag(cameraTag);
-        if (camGO == null)
-            return null;
-
-        Transform camParent = camGO.transform.parent;
-        Camera cam = camGO.GetComponent<Camera>();
-        if (camParent == null || cam == null)
-            return null;
-
-        // 📍 Réinitialise le parent à l'origine pour travailler en coordonnées monde.
-        camParent.position = Vector3.zero;
-        camParent.rotation = Quaternion.identity;
-
-        // Positions mondes des unités concernées.
-        Vector3 casterPos = caster.transform.position;
-        Vector3 targetPos = target.transform.position;
-        Vector3 midpoint = (casterPos + targetPos) / 2f; // Milieu entre lanceur et cible
-
-        // 📏 Calcule la distance nécessaire pour englober les deux unités selon le FOV actuel.
-        float distance = Vector3.Distance(casterPos, targetPos);
-        float fovRad = cam.fieldOfView * Mathf.Deg2Rad;
-        float requiredDist = (distance * 0.5f) / Mathf.Tan(fovRad / 2f);
-
-        // 🎯 Conserve une direction proche de celle actuelle afin d'éviter les à-coups.
-        Vector3 direction = (cam.transform.position - midpoint).normalized;
-        if (direction == Vector3.zero)
-            direction = -cam.transform.forward;
-
-        Vector3 cameraPosition = midpoint + direction * requiredDist;
-
-        // 🚚 Positionne la caméra enfant et l'oriente vers le milieu des deux unités.
-        camGO.transform.position = cameraPosition;
-        camGO.transform.rotation = Quaternion.LookRotation(midpoint - cameraPosition);
-
-        // Le parent sert désormais d'ancre neutre pour les éventuelles timelines.
-        return camParent.gameObject;
-    }
 
     /// <summary>
     /// Lance une timeline caméra via le PlayableDirector dédié et la file d'attente.

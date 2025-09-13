@@ -20,6 +20,7 @@ MonoBehaviour:
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 500
+  requiresMovement: 1
   teleportDelay: 0
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0
@@ -49,7 +50,7 @@ MonoBehaviour:
   tpSFx_Start: {fileID: 0}
   tpSFx_End: {fileID: 0}
   preparingTimeline: {fileID: 0}
-  performingTimeline: {fileID: 11400000, guid: 132371f140add7b44bb629233ff86ec1, type: 2}
+  performingTimeline: {fileID: 11400000, guid: f7714b3b704f3c74f98ee23bcd7f4b23, type: 2}
   retreatTimeline: {fileID: 0}
   fullTimeline: {fileID: 0}
   beatPattern: []
