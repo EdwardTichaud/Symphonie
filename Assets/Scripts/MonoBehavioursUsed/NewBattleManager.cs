@@ -729,7 +729,8 @@ public class NewBattleManager : MonoBehaviour
         InputsManager.Instance.playerInputs.Battle.Enable();
         OrientAllUnitsTowardClosestOpponent();
 
-        PassTurnUI.Instance.Show();
+        // Affiche l'interface de passage de tour si elle est disponible.
+        PassTurnUI.Instance?.Show();
     }
 
     private IEnumerator ExecuteTurn(CharacterUnit unit)
@@ -1282,7 +1283,8 @@ public class NewBattleManager : MonoBehaviour
         isTurnResolving = false;
         HandleEndOfBattle();
 
-        PassTurnUI.Instance.Hide(); // Bouclage
+        // Cache la jauge si elle existe pour éviter les références invalides.
+        PassTurnUI.Instance?.Hide(); // Bouclage
     }
 
     public void AfterMusicalMove(MusicalMoveSO move, CharacterUnit caster, bool wasCritical)
@@ -1878,7 +1880,8 @@ public class NewBattleManager : MonoBehaviour
 
     public void ShowMainMenu()
     {
-        PassTurnUI.Instance.Show();
+        // Réaffiche la jauge de passage de tour si elle existe.
+        PassTurnUI.Instance?.Show();
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectItemSkillOrPass();
         ChangeBattleState(BattleState.SquadUnit_MainMenu);
         ToggleMenuContainers(true, false, false);
@@ -1904,7 +1907,8 @@ public class NewBattleManager : MonoBehaviour
 
     public void OpenSkillsMenu()
     {
-        PassTurnUI.Instance.Hide();
+        // Masque la jauge lorsque l'on ouvre le menu des compétences.
+        PassTurnUI.Instance?.Hide();
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectSkill();
         ChangeBattleState(BattleState.SquadUnit_SkillsMenu);
         // S'assure qu'aucun item n'est en cours de sélection
