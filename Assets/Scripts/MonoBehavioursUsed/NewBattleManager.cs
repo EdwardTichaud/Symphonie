@@ -2037,7 +2037,11 @@ public class NewBattleManager : MonoBehaviour
 
         GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
         // Démarre la Timeline qui boucle tant que le menu est ouvert
-        BattleTimelineManager.Instance.PlayTimeline(itemPreparingTimeline, animGO, "BattleCamera");
+        BattleTimelineManager.Instance.PlayTimeline(
+            itemPreparingTimeline,
+            animGO,
+            animGO,
+            "BattleCamera");
         itemMenuTimelineActive = true;
     }
 

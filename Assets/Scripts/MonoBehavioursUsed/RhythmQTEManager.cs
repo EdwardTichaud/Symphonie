@@ -190,10 +190,11 @@ public class RhythmQTEManager : MonoBehaviour
     /// </summary>
     /// <param name="timeline">Timeline à jouer.</param>
     /// <param name="overlay">Vrai pour une timeline en superposition.</param>
-    /// <param name="animatorGO">Objet de référence pour le binding.</param>
+    /// <param name="animatorGO">Objet de référence pour le binding (caster).</param>
+    /// <param name="cameraTarget">Objet servant d'ancre pour la caméra.</param>
     /// <param name="autoRestore">Indique si la caméra doit être restaurée automatiquement.</param>
     /// <param name="initialRotation">Rotation de référence à conserver.</param>
-    private void StartTimelinePhase(TimelineAsset timeline, bool overlay, GameObject animatorGO, bool autoRestore, Quaternion initialRotation)
+    private void StartTimelinePhase(TimelineAsset timeline, bool overlay, GameObject animatorGO, GameObject cameraTarget, bool autoRestore, Quaternion initialRotation)
     {
         if (timeline == null || BattleTimelineManager.Instance == null || animatorGO == null)
             return;
@@ -203,7 +204,7 @@ public class RhythmQTEManager : MonoBehaviour
             // suit déjà la timeline complète.
             BattleTimelineManager.Instance.PlayCasterTimeline(timeline, animatorGO);
         else
-            BattleTimelineManager.Instance.PlayTimeline(timeline, animatorGO, battleCameraTag, autoRestore, initialRotation);
+            BattleTimelineManager.Instance.PlayTimeline(timeline, animatorGO, cameraTarget, battleCameraTag, autoRestore, initialRotation);
     }
 
     /// <summary>
@@ -294,6 +295,12 @@ public class RhythmQTEManager : MonoBehaviour
         }
         
         GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
+        // 🎯 La caméra se centre désormais directement sur l'unité ciblée du mouvement.
+        // Si aucune cible n'est définie (attaque de zone, soin personnel, etc.),
+        // on utilise l'Animator du lanceur pour conserver un ancrage valable.
+        GameObject cameraTargetGO = target != null
+            ? target.gameObject         // 👉 Caméra sur la CharacterUnit ciblée
+            : casterAnimatorGO;         // 🔁 Fallback : on reste sur le lanceur
         // Détermine si une timeline caméra couvrant toute l'action est disponible.
         bool useOverlay = move.fullTimeline != null &&
                           BattleTimelineManager.Instance != null &&
@@ -302,11 +309,22 @@ public class RhythmQTEManager : MonoBehaviour
 
         // Lance la timeline globale de caméra si présente.
         if (useOverlay)
-            BattleTimelineManager.Instance.PlayTimeline(move.fullTimeline, casterAnimatorGO, battleCameraTag, true, initialRotation);
+            BattleTimelineManager.Instance.PlayTimeline(
+                move.fullTimeline,
+                casterAnimatorGO,
+                cameraTargetGO,
+                battleCameraTag,
+                true,
+                initialRotation);
 
         // --- Phase de préparation ---
-        StartTimelinePhase(move.preparingTimeline, useOverlay, casterAnimatorGO,
-                           move.performingTimeline == null && move.retreatTimeline == null, initialRotation);
+        StartTimelinePhase(
+            move.preparingTimeline,
+            useOverlay,
+            casterAnimatorGO,
+            cameraTargetGO,
+            move.performingTimeline == null && move.retreatTimeline == null,
+            initialRotation);
         yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay);
 
         // Éventuel délai de pré-animation.
@@ -318,8 +336,13 @@ public class RhythmQTEManager : MonoBehaviour
             yield return MoveTo(caster, target, move);
 
         // --- Phase d'exécution ---
-        StartTimelinePhase(move.performingTimeline, useOverlay, casterAnimatorGO,
-                           move.retreatTimeline == null, initialRotation);
+        StartTimelinePhase(
+            move.performingTimeline,
+            useOverlay,
+            casterAnimatorGO,
+            cameraTargetGO,
+            move.retreatTimeline == null,
+            initialRotation);
 
         if (pendingNotes == 0)
         {
@@ -351,7 +374,13 @@ public class RhythmQTEManager : MonoBehaviour
             yield return ReturnToInitialPosition(move, caster, target, originPosition);
 
         // --- Phase de repli ---
-        StartTimelinePhase(move.retreatTimeline, useOverlay, casterAnimatorGO, true, initialRotation);
+        StartTimelinePhase(
+            move.retreatTimeline,
+            useOverlay,
+            casterAnimatorGO,
+            cameraTargetGO,
+            true,
+            initialRotation);
         yield return WaitForTimelinePhase(move.retreatTimeline, useOverlay);
 
         // Attente finale de la timeline caméra complète.
@@ -410,6 +439,12 @@ public class RhythmQTEManager : MonoBehaviour
         
         Animator animator = caster.GetComponentInChildren<Animator>();
         GameObject casterAnimatorGO = animator != null ? animator.gameObject : null;
+        // 🎯 La caméra se positionne directement sur l'unité ciblée par l'objet.
+        // En l'absence de cible (consommable global, soin personnel...),
+        // on conserve le lanceur comme ancre pour éviter un décalage brusque.
+        GameObject cameraTargetGO = target != null
+            ? target.gameObject         // 🎯 Suivi direct de la CharacterUnit visée
+            : casterAnimatorGO;         // 🔁 Fallback sur le lanceur
 
         // Détermine si une timeline caméra complète est disponible pour l'objet.
         bool useOverlay = item.fullTimeline != null &&
@@ -419,11 +454,22 @@ public class RhythmQTEManager : MonoBehaviour
 
         // Lance la timeline globale si présente.
         if (useOverlay)
-            BattleTimelineManager.Instance.PlayTimeline(item.fullTimeline, casterAnimatorGO, battleCameraTag, true, initialRotation);
+            BattleTimelineManager.Instance.PlayTimeline(
+                item.fullTimeline,
+                casterAnimatorGO,
+                cameraTargetGO,
+                battleCameraTag,
+                true,
+                initialRotation);
 
         // --- Phase de préparation ---
-        StartTimelinePhase(item.preparingTimeline, useOverlay, casterAnimatorGO,
-                           item.performingTimeline == null && item.retreatTimeline == null, initialRotation);
+        StartTimelinePhase(
+            item.preparingTimeline,
+            useOverlay,
+            casterAnimatorGO,
+            cameraTargetGO,
+            item.performingTimeline == null && item.retreatTimeline == null,
+            initialRotation);
         yield return WaitForTimelinePhase(item.preparingTimeline, useOverlay);
 
         // Déplacement ou téléportation éventuel vers la cible.
@@ -431,8 +477,13 @@ public class RhythmQTEManager : MonoBehaviour
             yield return SimpleMoveTo(caster, target, item);
 
         // --- Phase d'utilisation ---
-        StartTimelinePhase(item.performingTimeline, useOverlay, casterAnimatorGO,
-                           item.retreatTimeline == null, initialRotation);
+        StartTimelinePhase(
+            item.performingTimeline,
+            useOverlay,
+            casterAnimatorGO,
+            cameraTargetGO,
+            item.retreatTimeline == null,
+            initialRotation);
 
         // QTE associé à l'objet durant l'utilisation.
         LastItemSuccess = true;
@@ -455,7 +506,13 @@ public class RhythmQTEManager : MonoBehaviour
             yield return SimpleReturnToInitialPosition(caster, target, item, originPosition);
 
         // --- Phase de repli ---
-        StartTimelinePhase(item.retreatTimeline, useOverlay, casterAnimatorGO, true, initialRotation);
+        StartTimelinePhase(
+            item.retreatTimeline,
+            useOverlay,
+            casterAnimatorGO,
+            cameraTargetGO,
+            true,
+            initialRotation);
         yield return WaitForTimelinePhase(item.retreatTimeline, useOverlay);
 
         // Attente finale de la timeline caméra complète.
@@ -1230,6 +1287,27 @@ public class RhythmQTEManager : MonoBehaviour
     {
         yield return new WaitForSeconds(delay);
         AudioManager.Instance?.PlayVoice(clip);
+    }
+
+    /// <summary>
+    /// Recherche récursivement un enfant portant un nom donné.
+    /// Utilisée ici pour trouver "Camera_TargetedPoint" sur la cible suivie.
+    /// </summary>
+    private Transform FindChildRecursive(Transform parent, string targetName)
+    {
+        if (parent == null) return null;
+
+        foreach (Transform child in parent)
+        {
+            if (child.name == targetName)
+                return child;
+
+            Transform result = FindChildRecursive(child, targetName);
+            if (result != null)
+                return result;
+        }
+
+        return null;
     }
 
     #endregion

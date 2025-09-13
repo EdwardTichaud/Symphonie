@@ -22,10 +22,6 @@ public class TimelineManager : MonoBehaviour
     [Header("Lecture de Timeline")]
     [SerializeField] private PlayableDirector reusableDirector;
 
-    /// <summary>
-    /// Coroutine maintenant la caméra centrée sur le lanceur pendant la lecture.
-    /// </summary>
-    private Coroutine followCoroutine;
 
     /// <summary>
     /// Indique si une Timeline est en train de jouer.
@@ -471,7 +467,16 @@ public class TimelineManager : MonoBehaviour
     /// <param name="autoRestore">True pour restaurer automatiquement la caméra et les entrées à la fin.</param>
     /// <param name="fixedRotation">Rotation imposée pour la caméra. Lorsque renseignée, elle remplace la rotation
     /// du caster et reste utilisée pour toutes les timelines successives d'un même move.</param>
-    public void PlayTimeline(TimelineAsset timelineAsset, GameObject caster, string cameraTag, bool withFade = true, bool interruptMusic = true, bool allowSkip = true, bool autoRestore = true, Quaternion? fixedRotation = null)
+    public void PlayTimeline(
+        TimelineAsset timelineAsset,
+        GameObject caster,
+        string cameraTag,
+        bool withFade = true,
+        bool interruptMusic = true,
+        bool allowSkip = true,
+        bool autoRestore = true,
+        Quaternion? fixedRotation = null,
+        GameObject cameraTarget = null)
     {
         if (timelineAsset == null || reusableDirector == null)
         {
@@ -495,14 +500,18 @@ public class TimelineManager : MonoBehaviour
                 CameraController.Instance?.SaveWorldCameraTransform();
             }
 
-            if (caster != null && cameraParent != null)
+            // 📌 Positionne l'origine de la caméra uniquement sur la cible fournie.
+            // Aucun point spécifique n'est recherché : on se contente du GameObject de la CharacterUnit.
+            if (cameraTarget != null && cameraParent != null)
             {
-                // Place la caméra sur le lanceur et capture l'orientation de référence.
-                // Si une rotation fixe est fournie (début de la phase de préparation),
-                // elle est utilisée pour tout le move afin de garantir une cohérence
-                // malgré les téléportations ou changements d'orientation du caster.
+                cameraParent.position = cameraTarget.transform.position;   // 🡆 BattleCamera_Origin sur la cible
+                cameraParent.rotation = fixedRotation ?? cameraTarget.transform.rotation;
+            }
+            else if (caster != null && cameraParent != null)
+            {
+                // 🕴️ Fallback : si aucune cible n'est renseignée, on se cale sur le lanceur.
                 cameraParent.position = caster.transform.position;
-                cameraParent.rotation = fixedRotation ?? caster.transform.rotation; // ✅ Rotation initiale conservée
+                cameraParent.rotation = fixedRotation ?? caster.transform.rotation;
             }
         }
 
@@ -578,15 +587,8 @@ public class TimelineManager : MonoBehaviour
         }
 
         // Joue la timeline en profitant de toute la gestion centralisée (skip, fondu, musique...)
+        // La caméra est positionnée une seule fois ; aucun suivi continu n'est effectué.
         PlayTimeline(reusableDirector, withFade, interruptMusic, allowSkip, autoRestore);
-
-        // Suit le lanceur si une caméra est attachée
-        if (caster != null && cameraParent != null)
-        {
-            if (followCoroutine != null)
-                StopCoroutine(followCoroutine);
-            followCoroutine = StartCoroutine(FollowCaster(cameraParent, caster.transform));
-        }
     }
 
     /// <summary>
@@ -628,24 +630,6 @@ public class TimelineManager : MonoBehaviour
         else
         {
             reusableDirector.SetGenericBinding(output.sourceObject, go);
-        }
-    }
-
-    /// <summary>
-    /// Suit la position du lanceur pour animer correctement la caméra parentée.
-    /// </summary>
-    private IEnumerator FollowCaster(Transform cameraParent, Transform caster)
-    {
-        while (reusableDirector != null && reusableDirector.state == PlayState.Playing)
-        {
-            if (cameraParent != null && caster != null)
-            {
-                // Suit uniquement la position du lanceur ; la rotation de la caméra reste fixe
-                // afin que les mouvements du caster n'influencent pas l'orientation visuelle.
-                cameraParent.position = caster.position;
-                // cameraParent.rotation = caster.rotation; // ❌ Rotation ignorée volontairement
-            }
-            yield return null;
         }
     }
 
