@@ -11,7 +11,9 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 13146f43f779441a913b73121bab3032, type: 3}
   m_Name: CS_Sforzando
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
+  targetToFollow: 1
+  distance: 5
   fieldOfView: 60
-  offset: {x: 0, y: 3, z: -5}
+  offset: {x: 0, y: 3, z: 0}
   blendDuration: 1
