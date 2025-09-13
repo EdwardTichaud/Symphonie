@@ -39,9 +39,9 @@ MonoBehaviour:
   effectType: 8
   effectValue: 0
   effectPrefab: {fileID: 100000, guid: a9e8b7c3f95d4f278b1a412be0c8e3a1, type: 3}
-  moveSpeed: 20
-  castDistance: 1.5
-  teleportDelay: 0.2
+  moveSpeed: 0
+  castDistance: 0
+  teleportDelay: 0
   stayInPlace: 0
   interceptable: 1
   relativePosition: 0
@@ -53,6 +53,6 @@ MonoBehaviour:
   startDelay: 2
   enterAwake: 0
   preparingTimeline: {fileID: 0}
-  performingTimeline: {fileID: 0}
+  performingTimeline: {fileID: 11400000, guid: 7e17f404f19e47b49bd3243893e2e70d, type: 2}
   retreatTimeline: {fileID: 0}
   fullTimeline: {fileID: 0}
