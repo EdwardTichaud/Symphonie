@@ -27,6 +27,11 @@ Les phases classiques restent gérées par le code du jeu afin de déclencher le
 étape. Les timelines `preparingTimeline`, `performingTimeline` et `retreatTimeline` peuvent être lues en
 **superposition** pour animer le lanceur ou ses effets pendant que la caméra suit la timeline principale.
 
+Lorsqu'un **MusicalMove** ou un **Item** est utilisé, la `fullTimeline` démarre en premier puis les timelines de
+préparation, d'exécution et de repli se succèdent automatiquement en parallèle. Le lanceur peut être téléporté entre la
+fin de la préparation et le début de l'exécution ainsi qu'entre l'exécution et le repli afin d'assurer un enchaînement
+fluide de l'action.
+
 ## MusicalMove : Crescendo Fulgurant
 - **Type** : Attaque
 - **Effet** : inflige 30 points de dégâts à une cible unique.
