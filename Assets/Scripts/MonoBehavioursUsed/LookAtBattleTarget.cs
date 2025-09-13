@@ -1,35 +1,25 @@
 using UnityEngine;
 using Unity.Cinemachine;
 
-/// <summary>
-/// Oriente la caméra vers la cible actuelle avec un décalage optionnel.
-/// </summary>
-// Adoption de CinemachineCamera pour être compatible avec Cinemachine 3
+/// Oriente la caméra vers la cible actuelle avec un offset de visée (Aim = CinemachineComposer).
 [RequireComponent(typeof(CinemachineCamera))]
 public class LookAtBattleTarget : MonoBehaviour
 {
     [Tooltip("Décalage appliqué lors du ciblage de la cible.")]
     public Vector3 offset;
 
-    // Caméra utilisée pour orienter le regard vers la cible
     private CinemachineCamera cmCamera;
 
-    void Awake()
-    {
-        // Récupère la CinemachineCamera associée à ce GameObject
-        cmCamera = GetComponent<CinemachineCamera>();
-    }
+    void Awake() => cmCamera = GetComponent<CinemachineCamera>();
 
     void LateUpdate()
     {
         var target = NewBattleManager.Instance?.currentTargetCharacter;
-        if (target == null) return;
+        if (!target) return;
 
-        // Oriente la caméra vers la cible actuelle
         cmCamera.LookAt = target.transform;
-        // Accède au composer via l'étape de visée pour ajuster l'offset
-        var composer = cmCamera.GetCinemachineComponent(CinemachineCore.Stage.Aim) as CinemachineComposer;
-        if (composer != null)
-            composer.TrackedObjectOffset = offset;
+
+        if (cmCamera.GetCinemachineComponent(CinemachineCore.Stage.Aim) is CinemachineComposer composer)
+            composer.m_TrackedObjectOffset = offset;
     }
 }
