@@ -29,6 +29,10 @@ suivi sans coupure. La rotation du lanceur est enregistrée dès la première fr
 conservée jusqu'à la fin du move ou de l'objet, même si plusieurs timelines s'enchaînent, afin de garantir une
 orientation cohérente de la caméra.
 
+Si ce champ est laissé vide, le jeu place automatiquement la caméra de combat
+de façon à voir simultanément le lanceur et sa cible, garantissant ainsi une
+lisibilité optimale même sans configuration spécifique.
+
 Les phases classiques restent gérées par le code du jeu afin de déclencher les téléportations nécessaires entre chaque
 étape. Les timelines `preparingTimeline`, `performingTimeline` et `retreatTimeline` peuvent être lues en
 **superposition** pour animer le lanceur ou ses effets pendant que la caméra suit la timeline principale.
