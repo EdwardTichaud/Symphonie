@@ -93,6 +93,10 @@ public class ItemData : ScriptableObject
              "et le repli pour offrir un mouvement continu.")]
     public TimelineAsset fullTimeline;
 
+    [Header("Caméra")]
+    [Tooltip("Nom de la CinemachineVirtualCamera utilisée pour cet objet.\nLaisser vide pour utiliser la caméra de combat par défaut.")]
+    public string cameraName;
+
     [Header("QTE Pattern")]
     public List<float> beatPattern;
 
