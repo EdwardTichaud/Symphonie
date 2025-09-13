@@ -3,6 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+/// <summary>
+/// Représente une unité de combat. L'ajout d'un <see cref="CharacterController"/>
+/// permet de déléguer la gestion de la gravité à Unity pour plus de cohérence.
+/// </summary>
+[RequireComponent(typeof(CharacterController))]
 public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, IDebuffable
 {
     public CharacterData Data;
@@ -26,29 +31,29 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public bool IsAwake => awakeState != null && awakeState.IsAwake;
 
+    // Gestionnaire de physique pour déléguer les collisions et la gravité à Unity.
+    private CharacterController controller;
+    // Vitesse verticale utilisée pour la chute des unités terrestres.
+    private Vector3 fallVelocity = Vector3.zero;
+    // Intensité de la gravité appliquée.
+    private const float gravity = -9.81f;
+
     /// <summary>
-    /// Indique si l'unité touche actuellement le sol.
+    /// Indique si l'unité touche actuellement un support solide.
     /// </summary>
-    public bool IsGrounded
+    public bool IsGrounded => controller != null && controller.isGrounded;
+
+    /// <summary>
+    /// Indique si l'unité est de type aérien.
+    /// </summary>
+    public bool IsAirUnit => Data != null && Data.isAirUnit;
+
+    private void Awake()
     {
-        get
-        {
-            // Les unités en combat n'utilisent pas de CharacterController. On se base donc
-            // uniquement sur un raycast vertical pour détecter la présence d'un sol sous
-            // leurs pieds.
-
-            // Distance maximum pour rechercher le sol. Une petite valeur suffit car les
-            // unités sont légèrement au-dessus de la surface lorsqu'elles touchent le sol.
-            const float checkDistance = 0.1f;
-
-            // Effectue le raycast vers le bas depuis la position de l'unité.
-            if (Physics.Raycast(transform.position, Vector3.down, checkDistance))
-                return true;
-
-            // Aucun sol détecté : l'unité est considérée en l'air afin d'empêcher les
-            // mouvements réservés aux cibles terrestres de se déclencher à tort.
-            return false;
-        }
+        // S'assure qu'un CharacterController est présent pour gérer la physique.
+        controller = GetComponent<CharacterController>();
+        if (controller == null)
+            controller = gameObject.AddComponent<CharacterController>();
     }
 
     public CharacterType characterType => Data.characterType;
@@ -185,6 +190,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         HandleDeath();
         HandleCustomBarValue();
+        ApplyGravity();
     }
 
     void HandleCustomBarValue()
@@ -196,6 +202,31 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
                 customBar.SetValue(concentration.currentConcentration);
             else
                 customBar.SetValue(currentFatigue);
+        }
+    }
+
+    /// <summary>
+    /// Applique une gravité basique aux unités terrestres afin qu'elles tombent
+    /// naturellement lorsqu'elles ne sont plus soutenues.
+    /// </summary>
+    private void ApplyGravity()
+    {
+        // Les unités aériennes ne sont pas soumises à la gravité.
+        if (IsAirUnit || controller == null)
+            return;
+
+        if (controller.isGrounded)
+        {
+            // Lorsque l'unité touche le sol, on réinitialise la vitesse de chute
+            // afin d'éviter une accumulation négative.
+            if (fallVelocity.y < 0f)
+                fallVelocity.y = -2f; // Petite force vers le bas pour coller au sol
+        }
+        else
+        {
+            // Accumule la gravité au fil du temps lorsque l'unité est en l'air.
+            fallVelocity.y += gravity * Time.deltaTime;
+            controller.Move(fallVelocity * Time.deltaTime);
         }
     }
 
