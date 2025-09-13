@@ -94,6 +94,52 @@ public class BattleTimelineManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Crée dynamiquement une cible de caméra placée entre deux unités
+    /// afin de cadrer simultanément le lanceur et sa cible lorsque
+    /// aucune timeline de caméra complète n'est définie.
+    /// </summary>
+    /// <param name="caster">Unité à l'origine de l'action.</param>
+    /// <param name="target">Unité visée par l'action.</param>
+    /// <param name="cameraTag">Tag de la caméra à orienter.</param>
+    /// <returns>GameObject temporaire servant d'ancre à la caméra.</returns>
+    public GameObject CreateMidpointCameraTarget(GameObject caster, GameObject target, string cameraTag)
+    {
+        if (caster == null || target == null || string.IsNullOrEmpty(cameraTag))
+            return null;
+
+        // Récupération de la caméra active pour connaître son FOV et sa position actuelle.
+        GameObject camGO = GameObject.FindGameObjectWithTag(cameraTag);
+        Camera cam = camGO != null ? camGO.GetComponent<Camera>() : null;
+        if (cam == null)
+            return null;
+
+        Vector3 casterPos = caster.transform.position;
+        Vector3 targetPos = target.transform.position;
+        // Milieu entre les deux unités.
+        Vector3 midpoint = (casterPos + targetPos) / 2f;
+
+        // Distance nécessaire pour englober les deux unités selon le FOV courant.
+        float distance = Vector3.Distance(casterPos, targetPos);
+        float fovRad = cam.fieldOfView * Mathf.Deg2Rad;
+        float requiredDist = (distance * 0.5f) / Mathf.Tan(fovRad / 2f);
+
+        // Direction conservant l'orientation actuelle de la caméra afin de limiter
+        // les changements brusques d'angle pour le joueur.
+        Vector3 direction = (cam.transform.position - midpoint).normalized;
+        if (direction == Vector3.zero)
+            direction = cam.transform.forward * -1f;
+
+        Vector3 cameraPosition = midpoint + direction * requiredDist;
+
+        // Création de l'ancre temporaire.
+        GameObject pivot = new GameObject("TempCameraTarget");
+        pivot.transform.position = cameraPosition;
+        pivot.transform.rotation = Quaternion.LookRotation(midpoint - cameraPosition);
+
+        return pivot;
+    }
+
+    /// <summary>
     /// Lance une timeline caméra via le PlayableDirector dédié et la file d'attente.
     /// </summary>
     public void PlayTimeline(
