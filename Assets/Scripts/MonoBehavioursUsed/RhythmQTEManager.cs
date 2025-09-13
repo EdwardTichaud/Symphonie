@@ -437,6 +437,10 @@ public class RhythmQTEManager : MonoBehaviour
         if (useOverlay)
             yield return WaitForTimelinePhase(move.fullTimeline, false);
 
+        // Nettoyage de la cible de caméra temporaire si elle a été créée.
+        if (tempCameraTarget != null)
+            Destroy(tempCameraTarget);
+
         isActive = false;
         bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
         NewBattleManager.Instance.AfterMusicalMove(move, caster, critical);
@@ -599,6 +603,10 @@ public class RhythmQTEManager : MonoBehaviour
         // Attente finale de la timeline caméra complète.
         if (useOverlay)
             yield return WaitForTimelinePhase(item.fullTimeline, false);
+
+        // Libère la cible temporaire créée pour cette utilisation d'objet.
+        if (tempCameraTarget != null)
+            Destroy(tempCameraTarget);
 
         isActive = false;
         // Protection en cas de destruction du lanceur avant la fin de la séquence
