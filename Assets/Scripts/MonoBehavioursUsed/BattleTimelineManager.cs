@@ -164,8 +164,28 @@ public class BattleTimelineManager : MonoBehaviour
         if (timeline == null)
             return;
 
-        // Crée un PlayableDirector temporaire pour cette timeline
+        // \u26a0\ufe0f  Il arrive que cette m\u00e9thode soit appel\u00e9e alors que le
+        // gestionnaire a été détruit (changement de sc\u00e8ne, objet d\u00e9sactiv\u00e9...).
+        // Dans ce cas, toute tentative d'ajouter un composant provoquerait
+        // une NullReferenceException. On v\u00e9rifie donc que le GameObject est
+        // toujours valide avant de continuer.
+        if (this == null || gameObject == null)
+        {
+            Debug.LogWarning("[BattleTimelineManager] PlayTimelineOverlay ignor\u00e9e : gestionnaire inexistant.");
+            return;
+        }
+
+        // Cr\u00e9e un PlayableDirector temporaire pour cette timeline.
+        // Si, pour une raison quelconque, l'ajout du composant échoue,
+        // on abandonne la lecture pour éviter de nouveaux plantages.
         var overlayDirector = gameObject.AddComponent<PlayableDirector>();
+        if (overlayDirector == null)
+        {
+            Debug.LogError("[BattleTimelineManager] Impossible de cr\u00e9er un PlayableDirector pour la timeline overlay.");
+            return;
+        }
+
+        // Associe la timeline à ce PlayableDirector temporaire.
         overlayDirector.playableAsset = timeline;
 
         // Lie uniquement les pistes pertinentes. Les pistes sans Caster sont ignorées.
