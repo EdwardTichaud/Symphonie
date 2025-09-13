@@ -140,6 +140,10 @@ public class MusicalMoveSO : ScriptableObject
              "continu, tandis que le code se charge des téléportations entre chaque phase." )]
     public TimelineAsset fullTimeline;
 
+    [Header("Caméra")]
+    [Tooltip("Nom de la CinemachineVirtualCamera utilisée pour ce move.\nLaisser vide pour garder la caméra de combat par défaut.")]
+    public string cameraName;
+
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {
         ApplyEffect(caster, target, false);
