@@ -22,21 +22,26 @@ sans infliger directement un bonus ou un malus classique. Elles ouvrent des
 opportunités tactiques que les novices peuvent appréhender facilement tout en
 permettant aux vétérans de créer des enchaînements complexes.
 
-## Timeline caméra continue
-Un champ `fullTimeline` est disponible dans chaque **MusicalMove** et désormais dans chaque **Item**. Il définit un
-mouvement de caméra couvrant l'ensemble de l'action (préparation, utilisation/exécution et repli) pour assurer un
-suivi sans coupure. La rotation du lanceur est enregistrée dès la première frame de la phase de préparation puis
-conservée jusqu'à la fin du move ou de l'objet, même si plusieurs timelines s'enchaînent, afin de garantir une
-orientation cohérente de la caméra.
+## Plan de caméra réutilisable
+Chaque **MusicalMove** et chaque **Item** dispose désormais d'un champ `cameraShot` faisant référence à un
+**CameraShotSO**. Ce ScriptableObject décrit un plan de caméra (champ de vision, décalage, durée de transition) qui
+accompagne l'action du début à la fin. La rotation du lanceur est enregistrée dès la première frame de la phase de
+préparation puis conservée jusqu'au repli pour maintenir une orientation cohérente.
 
 Les phases classiques restent gérées par le code du jeu afin de déclencher les téléportations nécessaires entre chaque
 étape. Les timelines `preparingTimeline`, `performingTimeline` et `retreatTimeline` peuvent être lues en
-**superposition** pour animer le lanceur ou ses effets pendant que la caméra suit la timeline principale.
+**superposition** pour animer le lanceur ou ses effets pendant que la caméra suit le plan défini par le `CameraShotSO`.
 
-Lorsqu'un **MusicalMove** ou un **Item** est utilisé, la `fullTimeline` démarre en premier puis les timelines de
-préparation, d'exécution et de repli se succèdent automatiquement en parallèle. Le lanceur peut être téléporté entre la
-fin de la préparation et le début de l'exécution ainsi qu'entre l'exécution et le repli afin d'assurer un enchaînement
-fluide de l'action.
+Lorsqu'un **MusicalMove** ou un **Item** est utilisé, le `cameraShot` est activé en premier afin de cadrer l'action puis
+les timelines de préparation, d'exécution et de repli se succèdent automatiquement en parallèle. Le lanceur peut être
+téléporté entre la fin de la préparation et le début de l'exécution ainsi qu'entre l'exécution et le repli afin d'assurer
+un enchaînement fluide de l'action.
+
+## Points d'ancrage de caméra
+Afin d'éviter les recherches dynamiques coûteuses, chaque `CharacterUnit` peut recevoir un composant
+`CameraAnchorProvider`. Ce dernier expose dans l'inspecteur les différents points d'accroche (`Camera_MainMenu`,
+`Camera_TargetedPoint`, etc.) utilisés par le `NewBattleManager` pour positionner la caméra. Les designers peuvent
+ainsi ajuster facilement ces repères selon les besoins narratifs tout en garantissant de bonnes performances.
 
 ## Déplacement optionnel
 Un booléen `requiresMovement` est présent dans chaque **MusicalMove** et **Item**.
