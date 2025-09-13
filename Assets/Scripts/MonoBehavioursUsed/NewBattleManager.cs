@@ -225,6 +225,8 @@ public class NewBattleManager : MonoBehaviour
     // Compétences et items disponibles pour l’unité qui joue
     // Garder en public
     [HideInInspector] public List<MusicalMoveSO> skillChoices = new List<MusicalMoveSO>();
+    // Mouvement spécial actuel (affiché dans le 4e slot du SkillsMenu)
+    [HideInInspector] public MusicalMoveSO specialMoveChoice;
     [HideInInspector] public List<ItemData> itemChoices = new List<ItemData>();
     [HideInInspector] public MusicalMoveSO currentMove;
     [HideInInspector] public ItemData currentItem;
@@ -1843,7 +1845,8 @@ public class NewBattleManager : MonoBehaviour
                 ? skillsSlotsParent.Cast<Transform>().ToList()
                 : new List<Transform>();
 
-            // S'assure de disposer d'au moins 4 emplacements pour le move spécial
+            // S'assure de disposer d'au moins 4 emplacements
+            // (les trois premiers pour les attaques musicales, le dernier pour le move spécial)
             if (currentSkillsMenuSlots.Count > 0)
             {
                 while (currentSkillsMenuSlots.Count < 4)
@@ -1912,17 +1915,18 @@ public class NewBattleManager : MonoBehaviour
         // Réinitialise la page affichée
         currentSkillPageIndex = 0;
 
-        // Récupère toutes les compétences disponibles pour l'unité
+        // Récupère toutes les attaques musicales disponibles (hors move spécial)
         skillChoices = currentCharacterUnit.Data.musicalAttacks
             .Where(m => !m.onlyAwake || currentCharacterUnit.IsAwake)
             .Where(m => !m.enterAwake || !currentCharacterUnit.IsAwake)
             .Where(m => currentCharacterUnit.CanUseMove(m))
             .ToList();
 
-        // Ajoute le mouvement spécial s'il existe et est autorisé
-        if (currentCharacterUnit.Data.specialMusicalMove != null &&
+        // Détermine le mouvement spécial autorisé, qui sera affiché dans le 4e slot
+        specialMoveChoice = (currentCharacterUnit.Data.specialMusicalMove != null &&
             currentCharacterUnit.CanUseMove(currentCharacterUnit.Data.specialMusicalMove))
-            skillChoices.Add(currentCharacterUnit.Data.specialMusicalMove);
+            ? currentCharacterUnit.Data.specialMusicalMove
+            : null;
 
         // Affiche la première page de compétences
         RefreshSkillsMenuDisplay();
@@ -1933,10 +1937,12 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     public void RefreshSkillsMenuDisplay()
     {
-        int pageSize = currentSkillsMenuSlots.Count;
+        // Le dernier slot du SkillsMenu est réservé au Special Musical Move
+        int specialSlotIndex = currentSkillsMenuSlots.Count - 1;
+        int pageSize = specialSlotIndex; // Slots disponibles pour les attaques musicales classiques
         int startIndex = currentSkillPageIndex * pageSize;
 
-        // Parcourt chaque slot disponible pour afficher la compétence correspondante
+        // 1) Affiche les attaques musicales standard dans les premiers slots
         for (int i = 0; i < pageSize; i++)
         {
             int globalIndex = startIndex + i;
@@ -1946,23 +1952,40 @@ public class NewBattleManager : MonoBehaviour
                 UpdateButton(currentSkillsMenuSlots[i], move.moveName, move.moveIcon);
 
                 bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= move.harmonicCost;
-                bool resonanceOk = true;
-                if (move.enterAwake)
-                    resonanceOk = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.resonancePoint;
+                bool resonanceOk = !move.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.resonancePoint;
                 bool usageOk = currentCharacterUnit.CanUseMove(move);
                 bool available = enoughHarmonic && resonanceOk && usageOk;
-                bool highlight = move == currentCharacterUnit.Data.specialMusicalMove && available;
-                SetButtonAvailability(currentSkillsMenuSlots[i], available, highlight);
+                SetButtonAvailability(currentSkillsMenuSlots[i], available, false);
             }
             else
             {
-                // Slot vide ou hors de portée : on affiche l'emplacement vide par défaut
+                // Slot vide ou hors de portée
                 if (emptyMove != null)
                     UpdateButton(currentSkillsMenuSlots[i], emptyMove.moveName, emptyMove.moveIcon);
                 else
                     UpdateButton(currentSkillsMenuSlots[i], "Indisponible", null);
                 SetButtonAvailability(currentSkillsMenuSlots[i], false, false);
             }
+        }
+
+        // 2) Place le mouvement spécial dans le dernier slot
+        if (specialMoveChoice != null)
+        {
+            UpdateButton(currentSkillsMenuSlots[specialSlotIndex], specialMoveChoice.moveName, specialMoveChoice.moveIcon);
+
+            bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= specialMoveChoice.harmonicCost;
+            bool resonanceOk = !specialMoveChoice.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.resonancePoint;
+            bool usageOk = currentCharacterUnit.CanUseMove(specialMoveChoice);
+            bool available = enoughHarmonic && resonanceOk && usageOk;
+            SetButtonAvailability(currentSkillsMenuSlots[specialSlotIndex], available, available);
+        }
+        else
+        {
+            if (emptyMove != null)
+                UpdateButton(currentSkillsMenuSlots[specialSlotIndex], emptyMove.moveName, emptyMove.moveIcon);
+            else
+                UpdateButton(currentSkillsMenuSlots[specialSlotIndex], "Indisponible", null);
+            SetButtonAvailability(currentSkillsMenuSlots[specialSlotIndex], false, false);
         }
     }
 
@@ -1971,7 +1994,9 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     public void NextSkillPage()
     {
-        int maxPage = Mathf.Max(0, (skillChoices.Count - 1) / currentSkillsMenuSlots.Count);
+        // Calcule le nombre de pages possibles (hors slot spécial)
+        int pageSize = currentSkillsMenuSlots.Count - 1;
+        int maxPage = Mathf.Max(0, (skillChoices.Count - 1) / pageSize);
         if (currentSkillPageIndex < maxPage)
         {
             currentSkillPageIndex++;
