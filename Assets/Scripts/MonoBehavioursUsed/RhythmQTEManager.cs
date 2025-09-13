@@ -198,7 +198,9 @@ public class RhythmQTEManager : MonoBehaviour
             return;
 
         if (overlay)
-            BattleTimelineManager.Instance.PlayTimelineOverlay(timeline, animatorGO);
+            // Lecture via le PlayableDirector dédié au lanceur lorsque la caméra
+            // suit déjà la timeline complète.
+            BattleTimelineManager.Instance.PlayCasterTimeline(timeline, animatorGO);
         else
             BattleTimelineManager.Instance.PlayTimeline(timeline, animatorGO, battleCameraTag, autoRestore, initialRotation);
     }
@@ -215,9 +217,19 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (overlay)
         {
-            // Les timelines en superposition ne sont pas gérées par le TimelineManager
-            // global : on attend simplement leur durée déclarée.
-            yield return new WaitForSeconds((float)timeline.duration);
+            // Suivi de la timeline via le PlayableDirector du lanceur.
+            float maxDuration = (float)timeline.duration;
+            float timer = 0f;
+            while (BattleTimelineManager.Instance != null &&
+                   BattleTimelineManager.Instance.IsCasterTimelinePlaying &&
+                   timer < maxDuration)
+            {
+                timer += Time.deltaTime;
+                yield return null;
+            }
+
+            if (BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePlaying)
+                Debug.LogWarning($"[RhythmQTEManager] Timeline '{timeline.name}' encore active après {maxDuration}s. Suite forcée.");
         }
         else
         {
@@ -232,9 +244,7 @@ public class RhythmQTEManager : MonoBehaviour
             }
 
             if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
-            {
                 Debug.LogWarning($"[RhythmQTEManager] Timeline '{timeline.name}' encore active après {maxDuration}s. Suite forcée.");
-            }
         }
     }
 
