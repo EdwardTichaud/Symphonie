@@ -27,9 +27,10 @@ public class LookAtBattleCaster : MonoBehaviour
 
         // Affecte le Transform du lanceur comme cible à regarder
         cmCamera.LookAt = caster.transform;
-        // Récupère le composant Composer pour appliquer le décalage configuré
-        var composer = cmCamera.GetCinemachineComponent<CinemachineComposer>();
+        // Dans Cinemachine 3, on récupère le composer via l'étape "Aim"
+        var composer = cmCamera.GetCinemachineComponent(CinemachineCore.Stage.Aim) as CinemachineComposer;
+        // Si présent, on modifie l'offset de suivi pour ajuster le point visé
         if (composer != null)
-            composer.m_TrackedObjectOffset = offset;
+            composer.TrackedObjectOffset = offset;
     }
 }

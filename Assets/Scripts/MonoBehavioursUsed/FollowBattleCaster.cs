@@ -25,10 +25,12 @@ public class FollowBattleCaster : MonoBehaviour
         var caster = NewBattleManager.Instance?.currentCharacterUnit;
         if (caster == null) return;
 
-        // Suit le lanceur tout en appliquant un décalage personnalisé
+        // Suit le lanceur
         cmCamera.Follow = caster.transform;
-        var transposer = cmCamera.GetCinemachineComponent<CinemachineTransposer>();
+        // Récupère le composant du corps via l'étape correspondante dans Cinemachine 3
+        var transposer = cmCamera.GetCinemachineComponent(CinemachineCore.Stage.Body) as CinemachineTransposer;
+        // Applique le décalage si le composant existe
         if (transposer != null)
-            transposer.m_FollowOffset = offset;
+            transposer.FollowOffset = offset;
     }
 }
