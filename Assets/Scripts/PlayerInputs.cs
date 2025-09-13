@@ -1101,6 +1101,20 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_Battle_EnemiesGroupSelection = m_Battle.FindAction("EnemiesGroupSelection", throwIfNotFound: true);
         m_Battle_SquadGroupSelection = m_Battle.FindAction("SquadGroupSelection", throwIfNotFound: true);
         m_Battle_Awake = m_Battle.FindAction("Awake", throwIfNotFound: true);
+        m_Battle_LeftShoulder = m_Battle.FindAction("LeftShoulder", throwIfNotFound: false);
+        if (m_Battle_LeftShoulder == null)
+        {
+            m_Battle_LeftShoulder = m_Battle.AddAction("LeftShoulder", InputActionType.Button);
+            m_Battle_LeftShoulder.AddBinding("<Gamepad>/leftShoulder");
+            m_Battle_LeftShoulder.AddBinding("<Keyboard>/leftArrow");
+        }
+        m_Battle_RightShoulder = m_Battle.FindAction("RightShoulder", throwIfNotFound: false);
+        if (m_Battle_RightShoulder == null)
+        {
+            m_Battle_RightShoulder = m_Battle.AddAction("RightShoulder", InputActionType.Button);
+            m_Battle_RightShoulder.AddBinding("<Gamepad>/rightShoulder");
+            m_Battle_RightShoulder.AddBinding("<Keyboard>/rightArrow");
+        }
         // InfoBox
         m_InfoBox = asset.FindActionMap("InfoBox", throwIfNotFound: true);
         m_InfoBox_Cancel = m_InfoBox.FindAction("Cancel", throwIfNotFound: true);
@@ -1414,6 +1428,8 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_Battle_EnemiesGroupSelection;
     private readonly InputAction m_Battle_SquadGroupSelection;
     private readonly InputAction m_Battle_Awake;
+    private readonly InputAction m_Battle_LeftShoulder;
+    private readonly InputAction m_Battle_RightShoulder;
     /// <summary>
     /// Provides access to input actions defined in input action map "Battle".
     /// </summary>
@@ -1469,6 +1485,14 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Battle/Awake".
         /// </summary>
         public InputAction @Awake => m_Wrapper.m_Battle_Awake;
+        /// <summary>
+        /// Provides access to the underlying input action "Battle/LeftShoulder".
+        /// </summary>
+        public InputAction @LeftShoulder => m_Wrapper.m_Battle_LeftShoulder;
+        /// <summary>
+        /// Provides access to the underlying input action "Battle/RightShoulder".
+        /// </summary>
+        public InputAction @RightShoulder => m_Wrapper.m_Battle_RightShoulder;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1528,6 +1552,12 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @Awake.started += instance.OnAwake;
             @Awake.performed += instance.OnAwake;
             @Awake.canceled += instance.OnAwake;
+            @LeftShoulder.started += instance.OnLeftShoulder;
+            @LeftShoulder.performed += instance.OnLeftShoulder;
+            @LeftShoulder.canceled += instance.OnLeftShoulder;
+            @RightShoulder.started += instance.OnRightShoulder;
+            @RightShoulder.performed += instance.OnRightShoulder;
+            @RightShoulder.canceled += instance.OnRightShoulder;
         }
 
         /// <summary>
@@ -1572,6 +1602,12 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @Awake.started -= instance.OnAwake;
             @Awake.performed -= instance.OnAwake;
             @Awake.canceled -= instance.OnAwake;
+            @LeftShoulder.started -= instance.OnLeftShoulder;
+            @LeftShoulder.performed -= instance.OnLeftShoulder;
+            @LeftShoulder.canceled -= instance.OnLeftShoulder;
+            @RightShoulder.started -= instance.OnRightShoulder;
+            @RightShoulder.performed -= instance.OnRightShoulder;
+            @RightShoulder.canceled -= instance.OnRightShoulder;
         }
 
         /// <summary>
@@ -2095,6 +2131,20 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnAwake(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "LeftShoulder" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnLeftShoulder(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "RightShoulder" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnRightShoulder(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "InfoBox" which allows adding and removing callbacks.

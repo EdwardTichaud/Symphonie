@@ -230,6 +230,9 @@ public class NewBattleManager : MonoBehaviour
     [HideInInspector] public ItemData currentItem;
     [HideInInspector] public TargetType currentItemTargetType;
     public int currentMenuIndex;
+    // Index de la page actuellement affichée dans le SkillsMenu.
+    // Chaque page contient autant de compétences que de slots disponibles.
+    [HideInInspector] public int currentSkillPageIndex = 0;
     // Sélection nulle pour remplir les emplacements vides
     public MusicalMoveSO emptyMove;
 
@@ -1906,41 +1909,85 @@ public class NewBattleManager : MonoBehaviour
         ToggleMenuContainers(false, true, false);
         currentMenuIndex = 0;
 
+        // Réinitialise la page affichée
+        currentSkillPageIndex = 0;
+
+        // Récupère toutes les compétences disponibles pour l'unité
         skillChoices = currentCharacterUnit.Data.musicalAttacks
             .Where(m => !m.onlyAwake || currentCharacterUnit.IsAwake)
             .Where(m => !m.enterAwake || !currentCharacterUnit.IsAwake)
             .Where(m => currentCharacterUnit.CanUseMove(m))
             .ToList();
 
-        // Ajoute le move spécial s'il existe et est autorisé
+        // Ajoute le mouvement spécial s'il existe et est autorisé
         if (currentCharacterUnit.Data.specialMusicalMove != null &&
             currentCharacterUnit.CanUseMove(currentCharacterUnit.Data.specialMusicalMove))
             skillChoices.Add(currentCharacterUnit.Data.specialMusicalMove);
 
-        // 7) Création des boutons de compétences
-        for (int i = 0; i < skillChoices.Count && i < currentSkillsMenuSlots.Count; i++)
-        {
-            var move = skillChoices[i];
-            UpdateButton(currentSkillsMenuSlots[i], move.moveName, move.moveIcon);
+        // Affiche la première page de compétences
+        RefreshSkillsMenuDisplay();
+    }
 
-            bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= move.harmonicCost;
-            bool resonanceOk = true;
-            if (move.enterAwake)
-                resonanceOk = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.resonancePoint;
-            bool usageOk = currentCharacterUnit.CanUseMove(move);
-            bool available = enoughHarmonic && resonanceOk && usageOk;
-            bool highlight = move == currentCharacterUnit.Data.specialMusicalMove && available;
-            SetButtonAvailability(currentSkillsMenuSlots[i], available, highlight);
-        }
-        // Indique les emplacements vides
-        for (int j = skillChoices.Count; j < currentSkillsMenuSlots.Count; j++)
+    /// <summary>
+    /// Rafraîchit l'affichage des compétences selon la page courante.
+    /// </summary>
+    public void RefreshSkillsMenuDisplay()
+    {
+        int pageSize = currentSkillsMenuSlots.Count;
+        int startIndex = currentSkillPageIndex * pageSize;
+
+        // Parcourt chaque slot disponible pour afficher la compétence correspondante
+        for (int i = 0; i < pageSize; i++)
         {
-            if (emptyMove != null)
-                UpdateButton(currentSkillsMenuSlots[j], emptyMove.moveName, emptyMove.moveIcon);
+            int globalIndex = startIndex + i;
+            if (globalIndex < skillChoices.Count)
+            {
+                var move = skillChoices[globalIndex];
+                UpdateButton(currentSkillsMenuSlots[i], move.moveName, move.moveIcon);
+
+                bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= move.harmonicCost;
+                bool resonanceOk = true;
+                if (move.enterAwake)
+                    resonanceOk = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.resonancePoint;
+                bool usageOk = currentCharacterUnit.CanUseMove(move);
+                bool available = enoughHarmonic && resonanceOk && usageOk;
+                bool highlight = move == currentCharacterUnit.Data.specialMusicalMove && available;
+                SetButtonAvailability(currentSkillsMenuSlots[i], available, highlight);
+            }
             else
-                UpdateButton(currentSkillsMenuSlots[j], "Indisponible", null);
+            {
+                // Slot vide ou hors de portée : on affiche l'emplacement vide par défaut
+                if (emptyMove != null)
+                    UpdateButton(currentSkillsMenuSlots[i], emptyMove.moveName, emptyMove.moveIcon);
+                else
+                    UpdateButton(currentSkillsMenuSlots[i], "Indisponible", null);
+                SetButtonAvailability(currentSkillsMenuSlots[i], false, false);
+            }
+        }
+    }
 
-            SetButtonAvailability(currentSkillsMenuSlots[j], false, false);
+    /// <summary>
+    /// Passe à la page suivante des compétences si possible.
+    /// </summary>
+    public void NextSkillPage()
+    {
+        int maxPage = Mathf.Max(0, (skillChoices.Count - 1) / currentSkillsMenuSlots.Count);
+        if (currentSkillPageIndex < maxPage)
+        {
+            currentSkillPageIndex++;
+            RefreshSkillsMenuDisplay();
+        }
+    }
+
+    /// <summary>
+    /// Revient à la page précédente des compétences si possible.
+    /// </summary>
+    public void PreviousSkillPage()
+    {
+        if (currentSkillPageIndex > 0)
+        {
+            currentSkillPageIndex--;
+            RefreshSkillsMenuDisplay();
         }
     }
 
