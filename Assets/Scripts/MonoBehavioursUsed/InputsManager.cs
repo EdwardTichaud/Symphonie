@@ -21,6 +21,7 @@ public class InputsManager : MonoBehaviour
 
     private InputActionMap[] allMaps;
 
+
     /// <summary>
     /// Indique si les validations doivent être temporairement ignorées.
     /// Cette variable passe à <c>true</c> lorsqu'une compétence ou un objet est
@@ -73,6 +74,9 @@ public class InputsManager : MonoBehaviour
             playerInputs.InfoBox.Get(),
             playerInputs.Menu.Get()
         };
+
+        // Les actions LeftShoulder et RightShoulder sont désormais définies dans
+        // l'asset PlayerInputs. Elles seront reliées aux callbacks dans SetInputs().
     }
 
     /// <summary>
@@ -105,6 +109,9 @@ public class InputsManager : MonoBehaviour
         battle.Confirm.canceled += OnConfirmCanceled;
         battle.EnemiesGroupSelection.performed += OnEnemiesGroupSelection;
         battle.SquadGroupSelection.performed += OnSquadGroupSelection;
+        // Naviguer entre les pages de compétences avec les boutons d'épaules
+        battle.LeftShoulder.performed += OnPreviousSkillPage;
+        battle.RightShoulder.performed += OnNextSkillPage;
 
         var world = playerInputs.World;
         world.ForceCam.performed += OnForceCamInput;
@@ -129,6 +136,8 @@ public class InputsManager : MonoBehaviour
         battle.Confirm.canceled -= OnConfirmCanceled;
         battle.EnemiesGroupSelection.performed -= OnEnemiesGroupSelection;
         battle.SquadGroupSelection.performed -= OnSquadGroupSelection;
+        battle.LeftShoulder.performed -= OnPreviousSkillPage;
+        battle.RightShoulder.performed -= OnNextSkillPage;
 
         var world = playerInputs.World;
         world.ForceCam.performed -= OnForceCamInput;
@@ -157,6 +166,13 @@ public class InputsManager : MonoBehaviour
     void OnDestroy()
     {
         InputSystem.onDeviceChange -= OnDeviceChange;
+        // Nettoyage des abonnements aux boutons d'épaules
+        if (playerInputs != null)
+        {
+            var battle = playerInputs.Battle;
+            battle.LeftShoulder.performed -= OnPreviousSkillPage;
+            battle.RightShoulder.performed -= OnNextSkillPage;
+        }
     }
 
     /// <summary>
@@ -290,9 +306,10 @@ public class InputsManager : MonoBehaviour
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            if (bm.skillChoices.Count > 0)
+            int baseIndex = bm.currentSkillPageIndex * bm.currentSkillsMenuSlots.Count;
+            if (bm.skillChoices.Count > baseIndex)
             {
-                bm.currentMove = bm.skillChoices[0];
+                bm.currentMove = bm.skillChoices[baseIndex];
                 if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
@@ -347,9 +364,10 @@ public class InputsManager : MonoBehaviour
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            if (bm.skillChoices.Count > 1)
+            int baseIndex = bm.currentSkillPageIndex * bm.currentSkillsMenuSlots.Count;
+            if (bm.skillChoices.Count > baseIndex + 1)
             {
-                bm.currentMove = bm.skillChoices[1];
+                bm.currentMove = bm.skillChoices[baseIndex + 1];
                 if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
@@ -398,9 +416,10 @@ public class InputsManager : MonoBehaviour
 
         if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            if (bm.skillChoices.Count > 2)
+            int baseIndex = bm.currentSkillPageIndex * bm.currentSkillsMenuSlots.Count;
+            if (bm.skillChoices.Count > baseIndex + 2)
             {
-                bm.currentMove = bm.skillChoices[2];
+                bm.currentMove = bm.skillChoices[baseIndex + 2];
                 if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
@@ -465,6 +484,26 @@ public class InputsManager : MonoBehaviour
         // Active l'état Awake et rafraîchit les compétences disponibles
         unit.EnterAwakeState();
         bm.OpenSkillsMenu();
+    }
+
+    /// <summary>
+    /// Appelé lorsque le joueur presse l'épaule droite pour afficher la page suivante de compétences.
+    /// </summary>
+    private void OnNextSkillPage(InputAction.CallbackContext ctx)
+    {
+        NewBattleManager bm = NewBattleManager.Instance;
+        if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
+            bm.NextSkillPage();
+    }
+
+    /// <summary>
+    /// Appelé lorsque le joueur presse l'épaule gauche pour afficher la page précédente de compétences.
+    /// </summary>
+    private void OnPreviousSkillPage(InputAction.CallbackContext ctx)
+    {
+        NewBattleManager bm = NewBattleManager.Instance;
+        if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
+            bm.PreviousSkillPage();
     }
 
     private void OnBackInput(InputAction.CallbackContext ctx)

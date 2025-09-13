@@ -1141,8 +1141,20 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_Battle_EnemiesGroupSelection = m_Battle.FindAction("EnemiesGroupSelection", throwIfNotFound: true);
         m_Battle_SquadGroupSelection = m_Battle.FindAction("SquadGroupSelection", throwIfNotFound: true);
         m_Battle_Awake = m_Battle.FindAction("Awake", throwIfNotFound: true);
-        m_Battle_LeftShoulder = m_Battle.FindAction("LeftShoulder", throwIfNotFound: true);
-        m_Battle_RightShoulder = m_Battle.FindAction("RightShoulder", throwIfNotFound: true);
+        m_Battle_LeftShoulder = m_Battle.FindAction("LeftShoulder", throwIfNotFound: false);
+        if (m_Battle_LeftShoulder == null)
+        {
+            m_Battle_LeftShoulder = m_Battle.AddAction("LeftShoulder", InputActionType.Button);
+            m_Battle_LeftShoulder.AddBinding("<Gamepad>/leftShoulder");
+            m_Battle_LeftShoulder.AddBinding("<Keyboard>/leftArrow");
+        }
+        m_Battle_RightShoulder = m_Battle.FindAction("RightShoulder", throwIfNotFound: false);
+        if (m_Battle_RightShoulder == null)
+        {
+            m_Battle_RightShoulder = m_Battle.AddAction("RightShoulder", InputActionType.Button);
+            m_Battle_RightShoulder.AddBinding("<Gamepad>/rightShoulder");
+            m_Battle_RightShoulder.AddBinding("<Keyboard>/rightArrow");
+        }
         // InfoBox
         m_InfoBox = asset.FindActionMap("InfoBox", throwIfNotFound: true);
         m_InfoBox_Cancel = m_InfoBox.FindAction("Cancel", throwIfNotFound: true);
