@@ -19,10 +19,12 @@ MonoBehaviour:
   description: 
   stayFaceToTarget: 1
   notes: []
-  power: 10
   fatigueCost: 1
   harmonicCost: 1
   harmonicGeneration: 0
+  power: 10
+  effectType: 0
+  effectValue: 20
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -32,14 +34,13 @@ MonoBehaviour:
   cooldown: 0
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0
-  altitudeCondition: 0
+  altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
   targetTypes: 01000000
-  effectType: 0
-  effectValue: 20
   moveSpeed: 0
   castDistance: 2
+  requiresMovement: 1
   teleportDelay: 0.2
   stayInPlace: 1
   interceptable: 1
