@@ -17,6 +17,12 @@ public class ItemData : ScriptableObject
     public float moveSpeed;
     public float castDistance;
 
+    [Header("Effets spéciaux")]
+    // Délai entre disparition et réapparition lors d'un téléport
+    // Utile pour synchroniser les effets visuels/sonores
+    [Tooltip("Durée en secondes avant la réapparition après un téléport (0 = instantané)")]
+    public float teleportDelay = 0.2f;
+
     [Header("Limitations d'utilisation")]
     [Tooltip("Nombre maximum d'utilisations par tour (0 = illimité)")]
     public int maxUsesPerTurn = 0;

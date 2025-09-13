@@ -76,6 +76,11 @@ public class MusicalMoveSO : ScriptableObject
     public float moveSpeed = 20f;
     public float castDistance;
 
+    // Temps entre la disparition et la réapparition lors d'une téléportation
+    // Permet de laisser les effets visuels/sonores se jouer avant le déplacement
+    [Tooltip("Délai en secondes entre la disparition et la réapparition (0 = instantané)")]
+    public float teleportDelay = 0.2f;
+
     [Tooltip("Si vrai, le lanceur reste à la position cible en fin de move")] public bool stayInPlace = false;
 
     [Tooltip("Si faux, le move ne peut pas être intercepté")]
