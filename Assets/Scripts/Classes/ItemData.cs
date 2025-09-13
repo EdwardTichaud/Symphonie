@@ -17,6 +17,9 @@ public class ItemData : ScriptableObject
     public float moveSpeed;
     public float castDistance;
 
+    [Tooltip("Si vrai, l'utilisateur doit se déplacer ou se téléporter vers la cible pour l'utiliser")]
+    public bool requiresMovement = true;
+
     [Header("Effets spéciaux")]
     // Délai entre disparition et réapparition lors d'un téléport
     // Utile pour synchroniser les effets visuels/sonores

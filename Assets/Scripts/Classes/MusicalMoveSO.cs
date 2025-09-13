@@ -90,6 +90,9 @@ public class MusicalMoveSO : ScriptableObject
     public float moveSpeed = 20f;
     public float castDistance;
 
+    [Tooltip("Si vrai, le lanceur doit se déplacer ou se téléporter pour exécuter ce move")]
+    public bool requiresMovement = true;
+
     // Temps entre la disparition et la réapparition lors d'une téléportation
     // Permet de laisser les effets visuels/sonores se jouer avant le déplacement
     [Tooltip("Délai en secondes entre la disparition et la réapparition (0 = instantané)")]
