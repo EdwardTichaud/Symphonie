@@ -19,10 +19,12 @@ MonoBehaviour:
   description: "Fait dispara\xEEtre le sol sous la cible."
   stayFaceToTarget: 0
   notes: []
-  power: 0
   fatigueCost: 1
   harmonicCost: 1
   harmonicGeneration: 0
+  power: 0
+  effectType: 0
+  effectValue: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 0
@@ -36,10 +38,9 @@ MonoBehaviour:
   targetType: 1
   defaultTargetType: 1
   targetTypes: 01000000
-  effectType: 0
-  effectValue: 0
   moveSpeed: 20
   castDistance: 1.5
+  requiresMovement: 1
   teleportDelay: 0.2
   stayInPlace: 0
   interceptable: 1
@@ -49,7 +50,7 @@ MonoBehaviour:
   tpSFx_Start: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
   tpSFx_End: {fileID: 0}
   warningClip: {fileID: 0}
-  startDelay: 2
+  startDelay: 0
   enterAwake: 0
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 0}
