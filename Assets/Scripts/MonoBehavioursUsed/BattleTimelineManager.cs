@@ -101,42 +101,49 @@ public class BattleTimelineManager : MonoBehaviour
     /// <param name="caster">Unité à l'origine de l'action.</param>
     /// <param name="target">Unité visée par l'action.</param>
     /// <param name="cameraTag">Tag de la caméra à orienter.</param>
-    /// <returns>GameObject temporaire servant d'ancre à la caméra.</returns>
+    /// <returns>Parent de la caméra de combat après repositionnement.</returns>
     public GameObject CreateMidpointCameraTarget(GameObject caster, GameObject target, string cameraTag)
     {
         if (caster == null || target == null || string.IsNullOrEmpty(cameraTag))
             return null;
 
-        // Récupération de la caméra active pour connaître son FOV et sa position actuelle.
+        // 🔍 Récupère la caméra de combat et son parent.
         GameObject camGO = GameObject.FindGameObjectWithTag(cameraTag);
-        Camera cam = camGO != null ? camGO.GetComponent<Camera>() : null;
-        if (cam == null)
+        if (camGO == null)
             return null;
 
+        Transform camParent = camGO.transform.parent;
+        Camera cam = camGO.GetComponent<Camera>();
+        if (camParent == null || cam == null)
+            return null;
+
+        // 📍 Réinitialise le parent à l'origine pour travailler en coordonnées monde.
+        camParent.position = Vector3.zero;
+        camParent.rotation = Quaternion.identity;
+
+        // Positions mondes des unités concernées.
         Vector3 casterPos = caster.transform.position;
         Vector3 targetPos = target.transform.position;
-        // Milieu entre les deux unités.
-        Vector3 midpoint = (casterPos + targetPos) / 2f;
+        Vector3 midpoint = (casterPos + targetPos) / 2f; // Milieu entre lanceur et cible
 
-        // Distance nécessaire pour englober les deux unités selon le FOV courant.
+        // 📏 Calcule la distance nécessaire pour englober les deux unités selon le FOV actuel.
         float distance = Vector3.Distance(casterPos, targetPos);
         float fovRad = cam.fieldOfView * Mathf.Deg2Rad;
         float requiredDist = (distance * 0.5f) / Mathf.Tan(fovRad / 2f);
 
-        // Direction conservant l'orientation actuelle de la caméra afin de limiter
-        // les changements brusques d'angle pour le joueur.
+        // 🎯 Conserve une direction proche de celle actuelle afin d'éviter les à-coups.
         Vector3 direction = (cam.transform.position - midpoint).normalized;
         if (direction == Vector3.zero)
-            direction = cam.transform.forward * -1f;
+            direction = -cam.transform.forward;
 
         Vector3 cameraPosition = midpoint + direction * requiredDist;
 
-        // Création de l'ancre temporaire.
-        GameObject pivot = new GameObject("TempCameraTarget");
-        pivot.transform.position = cameraPosition;
-        pivot.transform.rotation = Quaternion.LookRotation(midpoint - cameraPosition);
+        // 🚚 Positionne la caméra enfant et l'oriente vers le milieu des deux unités.
+        camGO.transform.position = cameraPosition;
+        camGO.transform.rotation = Quaternion.LookRotation(midpoint - cameraPosition);
 
-        return pivot;
+        // Le parent sert désormais d'ancre neutre pour les éventuelles timelines.
+        return camParent.gameObject;
     }
 
     /// <summary>
