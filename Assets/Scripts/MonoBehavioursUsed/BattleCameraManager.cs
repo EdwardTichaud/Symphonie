@@ -19,7 +19,7 @@ public class BattleCameraManager : MonoBehaviour
     // Composant responsable des priorités et du blend entre caméras
     private CinemachineBlendSwitcher blendSwitcher;
 
-    // Caméra principale de combat (taguée "BattleCamera")
+    // Caméra principale de combat (CinemachineCamera_0_BattleCamera)
     private CinemachineCamera battleCamera;
 
     // Collection de toutes les autres caméras disponibles pour le choix aléatoire
@@ -40,10 +40,13 @@ public class BattleCameraManager : MonoBehaviour
         if (!blendSwitcher)
             Debug.LogWarning("[BattleCameraManager] Aucun CinemachineBlendSwitcher trouvé dans la scène.");
 
-        // Récupération de la caméra principale via son tag
-        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<CinemachineCamera>();
+        // Récupération de la caméra principale explicitement par son nom
+        // On évite ainsi de se baser sur un éventuel tag "BattleCamera" qui
+        // pourrait pointer vers une autre caméra.
+        battleCamera = GameObject.Find("CinemachineCamera_0_BattleCamera")
+            ?.GetComponent<CinemachineCamera>();
         if (!battleCamera)
-            Debug.LogWarning("[BattleCameraManager] Caméra principale introuvable (tag BattleCamera).");
+            Debug.LogWarning("[BattleCameraManager] Caméra principale introuvable (CinemachineCamera_0_BattleCamera).");
 
         // Constitution de la liste des autres caméras pour les sélections aléatoires
         foreach (var cam in FindObjectsOfType<CinemachineCamera>())
@@ -69,6 +72,7 @@ public class BattleCameraManager : MonoBehaviour
             return; // Impossible de switcher sans blendSwitcher
 
         // Cas 1 : aucun move/item en cours ➜ on revient à la BattleCamera
+        // DisplayCamera lui attribuera la priorité active (100)
         if (cameraName == null)
         {
             if (battleCamera)
