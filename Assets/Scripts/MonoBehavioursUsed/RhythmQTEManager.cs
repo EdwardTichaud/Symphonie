@@ -740,6 +740,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
 
+
             // Cache temporairement le GameObject visuel
             if (visualRoot != null)
                 visualRoot.SetActive(false);
