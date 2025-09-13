@@ -200,11 +200,25 @@ public class RhythmQTEManager : MonoBehaviour
             return;
 
         if (overlay)
-            // Lecture via le PlayableDirector dédié au lanceur lorsque la caméra
-            // suit déjà la timeline complète.
+        {
+            // 🎥 Lorsque la caméra globale (overlay) est utilisée, la timeline du lanceur
+            // est lue via le PlayableDirector dédié. Cependant, l'origine de la caméra
+            // (BattleCamera_Origin) ne se repositionnait pas, ce qui provoquait un ancrage
+            // incorrect durant les phases de préparation et de repli. Nous ré-alignons donc
+            // explicitement l'origine avant de lancer l'animation du caster.
+            BattleTimelineManager.Instance.AlignCameraToTarget(
+                cameraTarget ?? animatorGO, // Fallback sur le lanceur si la cible est absente
+                battleCameraTag,
+                initialRotation);
+
+            // Lecture via le PlayableDirector du lanceur en parallèle de la timeline caméra complète.
             BattleTimelineManager.Instance.PlayCasterTimeline(timeline, animatorGO);
+        }
         else
+        {
+            // Cas classique : la timeline contrôle également la caméra.
             BattleTimelineManager.Instance.PlayTimeline(timeline, animatorGO, cameraTarget, battleCameraTag, autoRestore, initialRotation);
+        }
     }
 
     /// <summary>
