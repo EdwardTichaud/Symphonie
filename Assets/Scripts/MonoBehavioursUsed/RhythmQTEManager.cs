@@ -326,7 +326,15 @@ public class RhythmQTEManager : MonoBehaviour
                           TimelineManager.Instance != null &&
                           casterAnimatorGO != null;
 
-        // Lance la timeline globale de caméra si présente.
+        // Éventuel délai de pré-animation.
+        // 🔄 Cette attente se produit désormais AVANT toute timeline
+        //     afin d'éviter un à-coup juste avant la téléportation.
+        //     Elle laisse ainsi le temps de mettre en place des effets
+        //     ou des annonces avant même le début de la préparation.
+        if (move.startDelay > 0f)
+            yield return new WaitForSeconds(move.startDelay);
+
+        // Lance la timeline globale de caméra si présente, une fois le délai écoulé.
         if (useOverlay)
             BattleTimelineManager.Instance.PlayTimeline(
                 move.fullTimeline,
@@ -345,10 +353,6 @@ public class RhythmQTEManager : MonoBehaviour
             move.performingTimeline == null && move.retreatTimeline == null,
             initialRotation);
         yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay);
-
-        // Éventuel délai de pré-animation.
-        if (move.startDelay > 0f)
-            yield return new WaitForSeconds(move.startDelay);
 
         // Déplacement ou téléportation vers la cible.
         if (caster != null && target != null)
