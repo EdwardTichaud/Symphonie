@@ -27,11 +27,12 @@ public class BattleTimelineManager : MonoBehaviour
     /// <summary>Structure interne représentant une demande de lecture de timeline caméra.</summary>
     private class TimelineRequest
     {
-        public TimelineAsset timeline;
-        public GameObject caster;
-        public string cameraTag;
-        public bool autoRestore;
-        public Quaternion? fixedRotation;
+        public TimelineAsset timeline;      // Timeline à jouer
+        public GameObject caster;           // Objet utilisé pour les bindings (animations, signaux...)
+        public GameObject cameraTarget;     // Nouvelle cible pour positionner et suivre la caméra
+        public string cameraTag;            // Tag de la caméra à animer
+        public bool autoRestore;            // Faut-il restaurer la caméra à la fin ?
+        public Quaternion? fixedRotation;   // Rotation imposée pour conserver l'orientation
     }
 
     /// <summary>File d'attente des timelines caméra à jouer séquentiellement.</summary>
@@ -69,8 +70,13 @@ public class BattleTimelineManager : MonoBehaviour
     /// <summary>
     /// Lance une timeline caméra via le PlayableDirector dédié et la file d'attente.
     /// </summary>
-    public void PlayTimeline(TimelineAsset timeline, GameObject caster, string cameraTag,
-                             bool autoRestore = true, Quaternion? fixedRotation = null)
+    public void PlayTimeline(
+        TimelineAsset timeline,
+        GameObject caster,
+        GameObject cameraTarget,
+        string cameraTag,
+        bool autoRestore = true,
+        Quaternion? fixedRotation = null)
     {
         if (timeline == null || TimelineManager.Instance == null || directorCamera == null)
         {
@@ -82,6 +88,7 @@ public class BattleTimelineManager : MonoBehaviour
         {
             timeline = timeline,
             caster = caster,
+            cameraTarget = cameraTarget,
             cameraTag = cameraTag,
             autoRestore = autoRestore,
             fixedRotation = fixedRotation
@@ -104,8 +111,16 @@ public class BattleTimelineManager : MonoBehaviour
             // Restaure la caméra uniquement à la fin de la dernière timeline de la file.
             bool restore = request.autoRestore && timelineQueue.Count == 0;
 
-            TimelineManager.Instance.PlayTimeline(request.timeline, request.caster, request.cameraTag,
-                                                  false, false, true, restore, request.fixedRotation);
+            TimelineManager.Instance.PlayTimeline(
+                request.timeline,
+                request.caster,
+                request.cameraTag,
+                false,
+                false,
+                true,
+                restore,
+                request.fixedRotation,
+                request.cameraTarget);
 
             // Attente de la fin de la timeline en cours.
             while (TimelineManager.Instance.IsTimelinePlaying)
