@@ -16,6 +16,12 @@ Les MusicalMoves peuvent désormais spécifier une contrainte de hauteur :
 Cette classification aide les débutants à comprendre rapidement les restrictions tout en offrant aux joueurs avancés des
 combinaisons plus techniques impliquant des changements d'altitude.
 
+## Nouveau MoveType : Altération
+Ce type regroupe les actions qui transforment le terrain ou l'état d'une cible
+sans infliger directement un bonus ou un malus classique. Elles ouvrent des
+opportunités tactiques que les novices peuvent appréhender facilement tout en
+permettant aux vétérans de créer des enchaînements complexes.
+
 ## Timeline caméra continue
 Un champ `fullTimeline` est disponible dans chaque **MusicalMove** et désormais dans chaque **Item**. Il définit un
 mouvement de caméra couvrant l'ensemble de l'action (préparation, utilisation/exécution et repli) pour assurer un
@@ -72,14 +78,14 @@ fluide de l'action.
 - **Utilisation conseillée** : permet d'affaiblir tout un groupe d'ennemis avant d'utiliser des attaques ciblées plus puissantes.
 
 ## MusicalMove : Pont Harmonique
-- **Type** : Soutien
+- **Type** : Altération
 - **Effet** : crée un pont éphémère sous une cible volante afin de la considérer comme au sol.
 - **Coût** : 1 point d'harmonie et 1 point de fatigue.
 - **Gain** : aucun.
 - **Utilisation conseillée** : parfait pour les débutants qui peinent à atteindre les adversaires aériens. Les joueurs expérimentés pourront l'enchaîner avec des attaques terrestres pour réaliser des combinaisons originales.
 
 ## MusicalMove : Abîme Harmonique
-- **Type** : Débuff
+- **Type** : Altération
 - **Effet** : annule le sol sous la cible, la forçant à flotter et la rendant sensible aux stratégies aériennes.
 - **Coût** : 1 point d'harmonie et 1 point de fatigue.
 - **Gain** : aucun.
