@@ -13,7 +13,7 @@ public class CameraShotSO : ScriptableObject
 {
     [Header("Paramètres de cadrage")]
     [Tooltip("Champ de vision de la caméra pendant ce plan.")]
-    public float fieldOfView = 40f;
+    public float fieldOfView = 60f;
 
     [Tooltip("Décalage appliqué par rapport à la cible suivie.")]
     public Vector3 offset = new Vector3(0f, 3f, -5f);
