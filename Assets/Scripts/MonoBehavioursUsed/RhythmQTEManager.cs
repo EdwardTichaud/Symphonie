@@ -44,8 +44,9 @@ public class RhythmQTEManager : MonoBehaviour
     // MoveTo
     float elapsed = 0f;
 
-    // Délai entre les effets de téléportation départ et arrivée
-    private const float returnDelay = 0.2f;
+    // Durée par défaut utilisée si aucun délai n'est défini dans les données
+    // Conserve l'ancien comportement en cas d'oubli de paramétrage
+    private const float defaultTeleportDelay = 0.2f;
 
     // Tag de la caméra de combat à utiliser pour toutes les timelines
     private const string battleCameraTag = "BattleCamera";
@@ -478,6 +479,8 @@ public class RhythmQTEManager : MonoBehaviour
         // Destination calculée selon la portée de l'objet
         Vector3 destination = target.transform.position + target.transform.forward * item.castDistance;
         Animator animator = caster.GetComponentInChildren<Animator>();
+        // Récupère le GameObject qui porte l'Animator pour pouvoir le masquer
+        GameObject visualRoot = animator != null ? animator.gameObject : null;
 
         bool isTeleport = item.moveSpeed <= 0f;
 
@@ -493,11 +496,20 @@ public class RhythmQTEManager : MonoBehaviour
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
 
-            // Petit délai pour laisser apparaître l'effet
-            yield return new WaitForSeconds(returnDelay);
+            // Cache le visuel le temps de la téléportation
+            if (visualRoot != null)
+                visualRoot.SetActive(false);
+
+            // Délai configurable pour laisser apparaître l'effet de téléport
+            float delay = item.teleportDelay >= 0f ? item.teleportDelay : defaultTeleportDelay;
+            yield return new WaitForSeconds(delay);
 
             // Téléportation instantanée
             caster.transform.position = destination;
+
+            // Réaffiche le personnage à la nouvelle position
+            if (visualRoot != null)
+                visualRoot.SetActive(true);
 
             if (item.tpVfx_End != null)
                 Instantiate(item.tpVfx_End, destination, Quaternion.identity);
@@ -540,6 +552,8 @@ public class RhythmQTEManager : MonoBehaviour
 
         Vector3 origin = originPosition;
         Animator animator = caster.GetComponentInChildren<Animator>();
+        // GameObject contenant l'Animator à masquer pendant la téléportation
+        GameObject visualRoot = animator != null ? animator.gameObject : null;
         bool isTeleport = item.moveSpeed <= 0f;
 
         if (isTeleport)
@@ -552,9 +566,19 @@ public class RhythmQTEManager : MonoBehaviour
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
 
-            yield return new WaitForSeconds(returnDelay);
+            // Cache le GameObject visuel pendant l'attente
+            if (visualRoot != null)
+                visualRoot.SetActive(false);
+
+            // Délai configurable avant la réapparition à la position initiale
+            float delay = item.teleportDelay >= 0f ? item.teleportDelay : defaultTeleportDelay;
+            yield return new WaitForSeconds(delay);
 
             caster.transform.position = origin;
+
+            // Réaffiche le personnage une fois la téléportation effectuée
+            if (visualRoot != null)
+                visualRoot.SetActive(true);
 
             if (item.tpVfx_End != null)
                 Instantiate(item.tpVfx_End, origin, Quaternion.identity);
@@ -621,6 +645,8 @@ public class RhythmQTEManager : MonoBehaviour
         Vector3 targetPos = target.transform.position + offsetDir * (move.castDistance + mobilityBonus);
 
         Animator animator = caster.GetComponentInChildren<Animator>();
+        // Stocke le GameObject visuel pour pouvoir le désactiver durant la téléportation
+        GameObject visualRoot = animator != null ? animator.gameObject : null;
         bool isTeleport = move.moveSpeed <= 0f;
 
         if (isTeleport)
@@ -633,9 +659,19 @@ public class RhythmQTEManager : MonoBehaviour
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
 
-            yield return new WaitForSeconds(returnDelay);
+            // Masque le visuel du lanceur pendant l'attente
+            if (visualRoot != null)
+                visualRoot.SetActive(false);
+
+            // Délai configurable pour la téléportation du MusicalMove
+            float delay = move.teleportDelay >= 0f ? move.teleportDelay : defaultTeleportDelay;
+            yield return new WaitForSeconds(delay);
 
             caster.transform.position = targetPos;
+
+            // Réactive l'apparence du personnage après la téléportation
+            if (visualRoot != null)
+                visualRoot.SetActive(true);
 
             if (move.tpVfx_End != null)
                 Instantiate(move.tpVfx_End, targetPos, Quaternion.identity);
@@ -690,6 +726,8 @@ public class RhythmQTEManager : MonoBehaviour
         Vector3 startPos = caster.transform.position;
         Vector3 initialPosition = originPosition;
         Animator animator = caster.GetComponentInChildren<Animator>();
+        // GameObject contenant l'Animator à désactiver durant la téléportation
+        GameObject visualRoot = animator != null ? animator.gameObject : null;
         bool isTeleport = move.moveSpeed <= 0f;
 
         if (isTeleport)
@@ -702,7 +740,13 @@ public class RhythmQTEManager : MonoBehaviour
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
 
-            yield return new WaitForSeconds(returnDelay);
+            // Cache temporairement le GameObject visuel
+            if (visualRoot != null)
+                visualRoot.SetActive(false);
+
+            // Délai configurable avant de revenir à la position de départ
+            float delay = move.teleportDelay >= 0f ? move.teleportDelay : defaultTeleportDelay;
+            yield return new WaitForSeconds(delay);
 
             if (caster == null)
             {
@@ -711,6 +755,10 @@ public class RhythmQTEManager : MonoBehaviour
             }
 
             caster.transform.position = initialPosition;
+
+            // Réaffiche le personnage à sa position initiale
+            if (visualRoot != null)
+                visualRoot.SetActive(true);
 
             if (move.tpVfx_End != null)
                 Instantiate(move.tpVfx_End, initialPosition, Quaternion.identity);
