@@ -11,11 +11,22 @@ public class BattleCameraManager : MonoBehaviour
     public static BattleCameraManager Instance { get; private set; }
 
     [Tooltip("Nom de la caméra utilisée par défaut lorsque aucun nom n'est fourni.")]
-    public string defaultCameraName = "BattleCam_Default";
+    public string defaultCameraName = "CinemachineCamera_0_BattleCamera";
+
+    [Tooltip("Priorité utilisée par la caméra par défaut.")]
+    public int defaultPriority = 10;
+
+    [Tooltip("Priorité appliquée lorsqu'une caméra secondaire est active (MusicalMove/Item)." )]
+    public int overridePriority = 20;
+
+    // Priorité assignée aux caméras inactives pour permettre le blend via le CinemachineBrain
+    private const int inactivePriority = 0;
 
     // Liste des caméras Cinemachine disponibles, indexées par leur nom de GameObject
     private readonly Dictionary<string, CinemachineCamera> cameras = new();
-    // Caméra actuellement active dans la scène de combat
+    // Caméra de combat par défaut, toujours présente dans la scène
+    private CinemachineCamera defaultCamera;
+    // Caméra actuellement prioritaire dans la scène de combat
     private CinemachineCamera activeCamera;
 
     void Awake()
@@ -28,15 +39,20 @@ public class BattleCameraManager : MonoBehaviour
         Instance = this;
 
         // Recherche toutes les caméras Cinemachine enfants et les enregistre.
+        // Elles restent actives pour permettre un fondu entre elles.
         foreach (var vcam in GetComponentsInChildren<CinemachineCamera>(true))
         {
             cameras[vcam.gameObject.name] = vcam;
-            // Désactive toutes les caméras au départ afin de garder la scène propre
-            vcam.gameObject.SetActive(false);
+            vcam.gameObject.SetActive(true);        // garder actives pour le blend
+            vcam.Priority = inactivePriority;        // priorité minimale par défaut
         }
 
-        // Active la caméra par défaut si définie
-        SwitchToCamera(defaultCameraName);
+        // Récupère la caméra par défaut et lui assigne sa priorité initiale
+        if (cameras.TryGetValue(defaultCameraName, out defaultCamera))
+        {
+            defaultCamera.Priority = defaultPriority;
+            activeCamera = defaultCamera;
+        }
     }
 
     /// <summary>
@@ -51,21 +67,23 @@ public class BattleCameraManager : MonoBehaviour
         if (!string.IsNullOrEmpty(cameraName))
             cameras.TryGetValue(cameraName, out newCam);
 
-        if (newCam == null && !string.IsNullOrEmpty(defaultCameraName))
-            cameras.TryGetValue(defaultCameraName, out newCam);
+        // Si aucune caméra spécifique n'est trouvée, on retombe sur la caméra par défaut
+        if (newCam == null)
+            newCam = defaultCamera;
 
+        // Rien à faire si la caméra demandée est déjà active
         if (newCam == activeCamera)
             return;
 
-        // Désactivation de l'ancienne caméra si elle existe
-        if (activeCamera != null)
-            activeCamera.gameObject.SetActive(false);
+        // Rétablit la priorité de l'ancienne caméra (si ce n'est pas la caméra par défaut)
+        if (activeCamera != null && activeCamera != defaultCamera)
+            activeCamera.Priority = inactivePriority;
 
-        // Activation de la nouvelle caméra
+        // Affecte la priorité appropriée à la nouvelle caméra
         if (newCam != null)
         {
-            newCam.gameObject.SetActive(true);
-            activeCamera = newCam;
+            newCam.Priority = (newCam == defaultCamera) ? defaultPriority : overridePriority;
+            activeCamera = newCam;                    // devient la caméra actuellement prioritaire
         }
     }
 }
