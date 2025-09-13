@@ -222,6 +222,12 @@ public class NewBattleManager : MonoBehaviour
     private float currentOrbitAngle;
     private Transform orbitCenter;
 
+    [Header("Points de focus globaux")]
+    [Tooltip("Transform utilisé pour cadrer l'ensemble de l'équipe sans recherche dynamique.")]
+    public Transform focusSquadAnchor;
+    [Tooltip("Transform utilisé pour cadrer l'ensemble des ennemis sans GameObject.Find.")]
+    public Transform focusEnemiesAnchor;
+
     // Compétences et items disponibles pour l’unité qui joue
     // Garder en public
     [HideInInspector] public List<MusicalMoveSO> skillChoices = new List<MusicalMoveSO>();
@@ -2494,7 +2500,8 @@ public class NewBattleManager : MonoBehaviour
         {
             case BattleState.SquadUnit_MainMenu:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_MainMenu");
+                // Récupère directement l'ancre dédiée sur l'unité active
+                desiredTransform = GetCameraAnchor(currentCharacterUnit, "Camera_MainMenu");
                 OrientTransformTowardEnemyGroupSmoothXY(desiredTransform, 180f);
                 if (desiredTransform == null)
                 {
@@ -2504,7 +2511,7 @@ public class NewBattleManager : MonoBehaviour
 
             case BattleState.SquadUnit_SkillsMenu:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_SkillsMenu");
+                desiredTransform = GetCameraAnchor(currentCharacterUnit, "Camera_SkillsMenu");
                 if (desiredTransform == null)
                 {
                     Debug.LogError("[BattleCameraManager] Aucun point 'Camera_SkillsMenu' trouvé.");
@@ -2513,7 +2520,7 @@ public class NewBattleManager : MonoBehaviour
 
             case BattleState.SquadUnit_ItemsMenu:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_ItemsMenu");
+                desiredTransform = GetCameraAnchor(currentCharacterUnit, "Camera_ItemsMenu");
                 if (desiredTransform == null)
                 {
                     Debug.LogError("[BattleCameraManager] Aucun point 'Camera_ItemsMenu' trouvé.");
@@ -2523,12 +2530,13 @@ public class NewBattleManager : MonoBehaviour
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad:
                 if (currentItem != null)
                 {
-                    desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
+                    desiredTransform = GetCameraAnchor(currentCharacterUnit, "Camera_UseItem_Prepare");
                     isFollowingCurrentTarget = true;
                 }
                 else
                 {
-                    desiredTransform = GameObject.Find("Camera_FocusSquad").transform;
+                    // Utilise le point de focus global configuré dans l'inspecteur
+                    desiredTransform = focusSquadAnchor;
                     isFollowingCurrentTarget = false;
                 }
                 break;
@@ -2536,12 +2544,12 @@ public class NewBattleManager : MonoBehaviour
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies:
                 if (currentItem != null)
                 {
-                    desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
+                    desiredTransform = GetCameraAnchor(currentCharacterUnit, "Camera_UseItem_Prepare");
                     isFollowingCurrentTarget = true;
                 }
                 else
                 {
-                    desiredTransform = GameObject.Find("Camera_FocusEnemies").transform;
+                    desiredTransform = focusEnemiesAnchor;
                     isFollowingCurrentTarget = false;
                 }
                 break;
@@ -2550,39 +2558,39 @@ public class NewBattleManager : MonoBehaviour
                 // Caméra sur la cible sélectionnée, regardant le lanceur
                 isFollowingCurrentTarget = false;
                 lookAtCasterDuringTargetSelection = true;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetCameraAnchor(currentTargetCharacter, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
                 // Même comportement que pour une compétence
                 isFollowingCurrentTarget = false;
                 lookAtCasterDuringTargetSelection = true;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetCameraAnchor(currentTargetCharacter, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
                 // Caméra sur l'ennemi sélectionné, regardant le lanceur
                 isFollowingCurrentTarget = false;
                 lookAtCasterDuringTargetSelection = true;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetCameraAnchor(currentTargetCharacter, "Camera_TargetedPoint");
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
                 // Identique pour un objet visant un ennemi
                 isFollowingCurrentTarget = false;
                 lookAtCasterDuringTargetSelection = true;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetCameraAnchor(currentTargetCharacter, "Camera_TargetedPoint");
                 break;
 
             case BattleState.EnemyUnit_Reflexion:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetCameraAnchor(currentTargetCharacter, "Camera_TargetedPoint");
                 break;
             case BattleState.EnemyUnit_PerformingMusicalMove:
                 // Place la caméra sur la cible et oriente-la vers l'ennemi
                 isFollowingCurrentTarget = false;
                 lookAtCasterFromTargetPoint = true;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetCameraAnchor(currentTargetCharacter, "Camera_TargetedPoint");
                 break;
             case BattleState.EnemyUnit_Item_Prepare:
             case BattleState.EnemyUnit_Item_Use:
@@ -2672,6 +2680,25 @@ public class NewBattleManager : MonoBehaviour
     #endregion
 
     #region Méthodes utilitaires
+
+    /// <summary>
+    /// Récupère un point d'ancrage caméra prédéfini sur une <see cref="CharacterUnit"/>.
+    /// Cette méthode évite les recherches récursives coûteuses à chaque changement d'état.
+    /// </summary>
+    /// <param name="unit">Unité sur laquelle chercher l'ancre.</param>
+    /// <param name="anchorName">Nom logique de l'ancre souhaitée.</param>
+    /// <returns>Transform correspondant ou <c>null</c> si absent.</returns>
+    private Transform GetCameraAnchor(CharacterUnit unit, string anchorName)
+    {
+        if (unit == null || string.IsNullOrEmpty(anchorName))
+            return null;
+
+        var provider = unit.GetComponent<CameraAnchorProvider>();
+        if (provider == null)
+            return null;
+
+        return provider.GetAnchor(anchorName);
+    }
 
     private Transform FindChildRecursive(Transform parent, string targetName)
     {

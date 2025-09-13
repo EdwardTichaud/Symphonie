@@ -37,6 +37,13 @@ les timelines de préparation, d'exécution et de repli se succèdent automatiqu
 téléporté entre la fin de la préparation et le début de l'exécution ainsi qu'entre l'exécution et le repli afin d'assurer
 un enchaînement fluide de l'action.
 
+## Points d'ancrage de caméra
+Afin d'éviter les recherches dynamiques coûteuses, chaque `CharacterUnit` peut recevoir un composant
+`CameraAnchorProvider`. Ce dernier expose dans l'inspecteur les différents points d'accroche (`Camera_MainMenu`,
+`Camera_TargetedPoint`, etc.) utilisés par le `NewBattleManager` pour positionner la caméra. Les designers peuvent
+ainsi ajuster facilement ces repères selon les besoins narratifs tout en garantissant de bonnes performances.
+
+
 ## Déplacement optionnel
 Un booléen `requiresMovement` est présent dans chaque **MusicalMove** et **Item**.
 - `true` : le lanceur se déplace ou se téléporte pour atteindre sa cible.
