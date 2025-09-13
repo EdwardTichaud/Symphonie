@@ -102,6 +102,18 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     private bool autoRestore = true;
 
+    /// <summary>
+    /// Transform de la caméra actuellement animée par la Timeline.
+    /// Utilisé pour lui appliquer une rotation personnalisée chaque frame.
+    /// </summary>
+    private Transform timelineCameraTransform;
+
+    /// <summary>
+    /// Cible que la caméra doit suivre du regard pendant la Timeline.
+    /// Lorsqu'elle est définie, la caméra oriente continuellement sa rotation vers cette cible.
+    /// </summary>
+    private Transform lookAtTarget;
+
     [Header("Audio")]
     [Tooltip("Musique de fond à jouer pendant les timelines.")]
     [SerializeField] private AudioClip timelineMusicClip;
@@ -129,6 +141,20 @@ public class TimelineManager : MonoBehaviour
         {
             // Désactive immédiatement toutes les actions World pour empêcher toute interaction.
             worldMap.Disable();
+        }
+    }
+
+    /// <summary>
+    /// Oriente en continu la caméra contrôlée par la Timeline vers sa cible.
+    /// Utilisée uniquement lorsque la rotation n'est pas animée par la Timeline.
+    /// </summary>
+    private void LateUpdate()
+    {
+        // Vérifie qu'une Timeline joue et que les références sont valides
+        if (IsTimelinePlaying && timelineCameraTransform != null && lookAtTarget != null)
+        {
+            // Ajuste la rotation pour pointer vers le lanceur à chaque frame
+            timelineCameraTransform.LookAt(lookAtTarget);
         }
     }
 
@@ -513,6 +539,11 @@ public class TimelineManager : MonoBehaviour
                 cameraParent.position = caster.transform.position;
                 cameraParent.rotation = fixedRotation ?? caster.transform.rotation;
             }
+
+            // ✅ Enregistre la caméra animée et la cible à suivre du regard
+            //    -> la rotation est recalculée chaque frame pour pointer vers le lanceur
+            timelineCameraTransform = cameraParent != null ? cameraParent : cameraGO?.transform;
+            lookAtTarget = fixedRotation == null && caster != null ? caster.transform : null;
         }
 
         foreach (var output in timelineAsset.outputs)
@@ -752,6 +783,10 @@ public class TimelineManager : MonoBehaviour
         // On n'a plus besoin d'écouter l'input Cancel une fois la cinématique terminée.
         DisableTimelineSkip();
         allowSkip = true; // Réinitialise l'autorisation de passage pour les prochaines timelines
+
+        // Libère les références liées au suivi de caméra
+        timelineCameraTransform = null;
+        lookAtTarget = null;
 
         // Masque le Canvas car la timeline est terminée
         if (timelineCanvas != null)
