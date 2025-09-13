@@ -38,6 +38,14 @@ préparation, d'exécution et de repli se succèdent automatiquement en parallè
 fin de la préparation et le début de l'exécution ainsi qu'entre l'exécution et le repli afin d'assurer un enchaînement
 fluide de l'action.
 
+## Déplacement optionnel
+Un booléen `requiresMovement` est présent dans chaque **MusicalMove** et **Item**.
+- `true` : le lanceur se déplace ou se téléporte pour atteindre sa cible.
+- `false` : l'action se déclenche sans déplacement, évitant toute téléportation.
+
+Cette option rend le jeu plus accessible en autorisant des actions à distance simples tout en offrant aux joueurs avancés
+des possibilités de combinaisons qui n'imposent plus un repositionnement systématique.
+
 ## MusicalMove : Crescendo Fulgurant
 - **Type** : Attaque
 - **Effet** : inflige 30 points de dégâts à une cible unique.
