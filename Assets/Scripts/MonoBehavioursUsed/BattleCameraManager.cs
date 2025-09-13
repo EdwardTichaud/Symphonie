@@ -3,7 +3,7 @@ using UnityEngine;
 using Cinemachine;
 
 /// <summary>
-/// Gère l'activation des différentes CinemachineVirtualCameras en combat.
+/// Gère l'activation des différentes <see cref="CinemachineCamera"/> en combat.
 /// Chaque move ou item peut spécifier le nom d'une caméra à activer.
 /// </summary>
 public class BattleCameraManager : MonoBehaviour
@@ -13,8 +13,10 @@ public class BattleCameraManager : MonoBehaviour
     [Tooltip("Nom de la caméra utilisée par défaut lorsque aucun nom n'est fourni.")]
     public string defaultCameraName = "BattleCam_Default";
 
-    private readonly Dictionary<string, CinemachineVirtualCamera> cameras = new();
-    private CinemachineVirtualCamera activeCamera;
+    // Liste des caméras Cinemachine disponibles, indexées par leur nom de GameObject
+    private readonly Dictionary<string, CinemachineCamera> cameras = new();
+    // Caméra actuellement active dans la scène de combat
+    private CinemachineCamera activeCamera;
 
     void Awake()
     {
@@ -25,11 +27,12 @@ public class BattleCameraManager : MonoBehaviour
         }
         Instance = this;
 
-        // Recherche toutes les caméras virtuelles enfants et les enregistre.
-        foreach (var vcam in GetComponentsInChildren<CinemachineVirtualCamera>(true))
+        // Recherche toutes les caméras Cinemachine enfants et les enregistre.
+        foreach (var vcam in GetComponentsInChildren<CinemachineCamera>(true))
         {
             cameras[vcam.gameObject.name] = vcam;
-            vcam.gameObject.SetActive(false); // Désactive toutes les caméras au départ
+            // Désactive toutes les caméras au départ afin de garder la scène propre
+            vcam.gameObject.SetActive(false);
         }
 
         // Active la caméra par défaut si définie
@@ -40,10 +43,11 @@ public class BattleCameraManager : MonoBehaviour
     /// Active la caméra correspondant au nom fourni. Si aucun nom n'est trouvé,
     /// la caméra par défaut est réactivée.
     /// </summary>
-    /// <param name="cameraName">Nom de la CinemachineVirtualCamera à afficher.</param>
+    /// <param name="cameraName">Nom de la <see cref="CinemachineCamera"/> à afficher.</param>
     public void SwitchToCamera(string cameraName)
     {
-        CinemachineVirtualCamera newCam = null;
+        // Récupère la caméra correspondant au nom demandé
+        CinemachineCamera newCam = null;
         if (!string.IsNullOrEmpty(cameraName))
             cameras.TryGetValue(cameraName, out newCam);
 
@@ -53,9 +57,11 @@ public class BattleCameraManager : MonoBehaviour
         if (newCam == activeCamera)
             return;
 
+        // Désactivation de l'ancienne caméra si elle existe
         if (activeCamera != null)
             activeCamera.gameObject.SetActive(false);
 
+        // Activation de la nouvelle caméra
         if (newCam != null)
         {
             newCam.gameObject.SetActive(true);
