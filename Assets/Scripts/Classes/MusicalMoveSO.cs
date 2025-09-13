@@ -135,10 +135,6 @@ public class MusicalMoveSO : ScriptableObject
     public TimelineAsset performingTimeline;
     [Tooltip("Timeline jouée lors du repli après l'exécution du move")]
     public TimelineAsset retreatTimeline;
-    [Tooltip("Timeline de caméra couvrant toute l'action. La caméra suit le move\n" +
-             "durant la préparation, l'exécution et le repli afin d'offrir un suivi\n" +
-             "continu, tandis que le code se charge des téléportations entre chaque phase." )]
-    public TimelineAsset fullTimeline;
 
     [Header("Caméra")]
     // Référence à la nouvelle CinemachineCamera à activer pour ce move
