@@ -10,7 +10,21 @@ public class MusicalMoveSO : ScriptableObject
 {
     [Header("Identité")]
     public string moveName;
-    public enum MoveType { Empty, Attack, Buff, Debuff}
+
+    // Enumeration des catégories de moves disponibles dans le jeu.
+    // Chaque type permet de classer les actions pour offrir aux joueurs
+    // novices comme expérimentés une meilleure compréhension tactique.
+    public enum MoveType
+    {
+        Empty,      // Move factice utilisé comme espace réservé.
+        Attack,     // Mouvement offensif infligeant des dégâts directs.
+        Buff,       // Action accordant un effet bénéfique à un allié.
+        Debuff,     // Action affaiblissant un adversaire.
+        Alteration  // Modifie le terrain ou l'état d'une cible sans être
+                    // purement offensif ou défensif.
+    }
+
+    // Type actuel de l'action musicale.
     public MoveType moveType;
     [Tooltip("Vrai si l'attaque n'est disponible qu'en état Awake")]
     public bool onlyAwake = false;
