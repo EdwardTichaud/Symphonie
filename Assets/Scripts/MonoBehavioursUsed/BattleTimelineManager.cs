@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -170,13 +171,36 @@ public class BattleTimelineManager : MonoBehaviour
 
         directorCaster.playableAsset = timeline;
 
-        // Binding explicite des pistes vers l'Animator ou le GameObject du lanceur.
+        // Binding explicite des pistes vers l'Animator, le GameObject du lanceur
+        // ou encore le SignalReceiver associé au PlayableDirector.
         foreach (var output in timeline.outputs)
         {
+            // 🔍 Type attendu par la piste (Animator, SignalReceiver, etc.)
+            Type type = output.outputTargetType;
             string lower = output.streamName.ToLower();
-            if (lower.Contains("camera"))
-                continue; // Les pistes caméra sont ignorées ici.
 
+            // Les pistes caméra sont ignorées dans ce director spécialisé.
+            if (lower.Contains("camera"))
+                continue;
+
+            // ✅ Gestion spécifique des pistes de Signaux : on les relie au
+            // SignalReceiver présent sur le PlayableDirector pour que les
+            // événements de la timeline soient correctement reçus.
+            if (type != null && typeof(Component).IsAssignableFrom(type) && type.Name.Contains("SignalReceiver"))
+            {
+                Component receiver = directorCaster.GetComponent(type);
+                if (receiver != null)
+                {
+                    directorCaster.SetGenericBinding(output.sourceObject, receiver);
+                }
+                else
+                {
+                    Debug.LogWarning($"[BattleTimelineManager] {type.Name} manquant sur {directorCaster.gameObject.name} pour la timeline.");
+                }
+                continue; // Rien d'autre à faire pour cette piste
+            }
+
+            // 🎭 Pistes d'animation : on tente de lier un Animator du lanceur
             if (lower.Contains("caster") || lower.Contains("pnj"))
             {
                 if (caster == null)
@@ -190,6 +214,7 @@ public class BattleTimelineManager : MonoBehaviour
             }
             else
             {
+                // 🧍 Autres pistes : on relie simplement le GameObject du lanceur
                 if (caster != null)
                     directorCaster.SetGenericBinding(output.sourceObject, caster);
             }
