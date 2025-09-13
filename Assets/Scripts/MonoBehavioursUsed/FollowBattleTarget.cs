@@ -25,10 +25,12 @@ public class FollowBattleTarget : MonoBehaviour
         var target = NewBattleManager.Instance?.currentTargetCharacter;
         if (target == null) return;
 
-        // Assigne la cible à suivre et ajuste le décalage
+        // Assigne la cible à suivre
         cmCamera.Follow = target.transform;
-        var transposer = cmCamera.GetCinemachineComponent<CinemachineTransposer>();
+        // Dans Cinemachine 3, les composants sont obtenus par étape plutôt que par générique
+        var transposer = cmCamera.GetCinemachineComponent(CinemachineCore.Stage.Body) as CinemachineTransposer;
+        // Si un transposer est trouvé, on applique le décalage voulu via la propriété publique
         if (transposer != null)
-            transposer.m_FollowOffset = offset;
+            transposer.FollowOffset = offset;
     }
 }

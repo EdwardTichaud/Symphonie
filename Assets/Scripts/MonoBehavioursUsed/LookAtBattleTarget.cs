@@ -27,8 +27,9 @@ public class LookAtBattleTarget : MonoBehaviour
 
         // Oriente la caméra vers la cible actuelle
         cmCamera.LookAt = target.transform;
-        var composer = cmCamera.GetCinemachineComponent<CinemachineComposer>();
+        // Accède au composer via l'étape de visée pour ajuster l'offset
+        var composer = cmCamera.GetCinemachineComponent(CinemachineCore.Stage.Aim) as CinemachineComposer;
         if (composer != null)
-            composer.m_TrackedObjectOffset = offset;
+            composer.TrackedObjectOffset = offset;
     }
 }
