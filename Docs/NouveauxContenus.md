@@ -24,8 +24,8 @@ permettant aux vétérans de créer des enchaînements complexes.
 
 ## Plan de caméra réutilisable
 Chaque **MusicalMove** et chaque **Item** dispose désormais d'un champ `cameraShot` faisant référence à un
-**CameraShotSO**. Ce ScriptableObject décrit un plan de caméra (champ de vision, décalage, durée de transition) qui
-accompagne l'action du début à la fin. La rotation du lanceur est enregistrée dès la première frame de la phase de
+**CameraShotSO**. Ce ScriptableObject décrit un plan de caméra (cible à suivre, distance, champ de vision, décalage,
+durée de transition) qui accompagne l'action du début à la fin. La rotation du lanceur est enregistrée dès la première frame de la phase de
 préparation puis conservée jusqu'au repli pour maintenir une orientation cohérente.
 
 Les phases classiques restent gérées par le code du jeu afin de déclencher les téléportations nécessaires entre chaque

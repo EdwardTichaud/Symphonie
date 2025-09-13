@@ -53,26 +53,33 @@ public class BattleCameraManager : MonoBehaviour
         if (shot == null || mainVirtualCamera == null)
             return;
 
-        Transform target = focus != null ? focus : caster;
+        // Détermine la cible à suivre en fonction des paramètres du plan.
+        Transform target = shot.targetToFollow == CameraShotSO.ShotTarget.Caster ? caster : focus;
         if (target == null)
             return;
 
+        // Calcule la position finale de la caméra : on part de la cible, on recule selon son orientation
+        // pour respecter la distance demandée puis on applique l'offset local.
+        Vector3 finalPosition = target.position
+                                - target.forward * shot.distance
+                                + target.TransformDirection(shot.offset);
+
 #if CINEMACHINE
         // Utilisation complète de Cinemachine : suivi, orientation et FOV.
-        mainVirtualCamera.Follow = target;
-        mainVirtualCamera.LookAt = target;
+        mainVirtualCamera.Follow = target;            // La caméra suit la cible choisie.
+        mainVirtualCamera.LookAt = target;            // Et la regarde.
         mainVirtualCamera.m_Lens.FieldOfView = shot.fieldOfView;
 
-        // Positionne la caméra en appliquant l'offset dans l'espace local de la cible
-        mainVirtualCamera.transform.position = target.position + target.TransformDirection(shot.offset);
+        // Positionne la caméra à la position calculée.
+        mainVirtualCamera.transform.position = finalPosition;
 
-        // Configure la durée de transition entre les plans
+        // Configure la durée de transition entre les plans.
         if (brain != null)
             brain.m_DefaultBlend.m_Time = shot.blendDuration;
 #else
         // Version de secours : déplace et oriente simplement la caméra standard.
-        mainVirtualCamera.transform.position = target.position + target.TransformDirection(shot.offset);
-        mainVirtualCamera.transform.LookAt(target);
+        mainVirtualCamera.transform.position = finalPosition;
+        mainVirtualCamera.transform.LookAt(target); // Conserve le regard sur la cible.
         mainVirtualCamera.fieldOfView = shot.fieldOfView;
 #endif
     }
