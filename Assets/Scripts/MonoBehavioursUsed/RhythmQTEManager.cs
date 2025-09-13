@@ -320,10 +320,9 @@ public class RhythmQTEManager : MonoBehaviour
             ? target.gameObject         // 🎯 Caméra sur la CharacterUnit ciblée pendant l'exécution
             : casterAnimatorGO;         // 🔁 Retombe sur le lanceur si aucune cible
         GameObject casterCameraTarget = casterAnimatorGO; // 📌 Ancre sur le lanceur pour préparation et repli
-        // Détermine si une timeline caméra couvrant toute l'action est disponible.
-        bool useOverlay = move.fullTimeline != null &&
-                          BattleTimelineManager.Instance != null &&
-                          TimelineManager.Instance != null &&
+        // Détermine si un plan de caméra dédié doit être utilisé.
+        bool useOverlay = move.cameraShot != null &&
+                          BattleCameraManager.Instance != null &&
                           casterAnimatorGO != null;
 
         // Éventuel délai de pré-animation.
@@ -334,15 +333,12 @@ public class RhythmQTEManager : MonoBehaviour
         if (move.startDelay > 0f)
             yield return new WaitForSeconds(move.startDelay);
 
-        // Lance la timeline globale de caméra si présente, une fois le délai écoulé.
+        // Active le plan de caméra global si défini.
         if (useOverlay)
-            BattleTimelineManager.Instance.PlayTimeline(
-                move.fullTimeline,
-                casterAnimatorGO,
-                performingCameraTarget,
-                battleCameraTag,
-                true,
-                initialRotation);
+            BattleCameraManager.Instance.PlayShot(
+                move.cameraShot,
+                casterAnimatorGO.transform,
+                performingCameraTarget != null ? performingCameraTarget.transform : null);
 
         // --- Phase de préparation ---
         StartTimelinePhase(
@@ -413,9 +409,8 @@ public class RhythmQTEManager : MonoBehaviour
             initialRotation);
         yield return WaitForTimelinePhase(move.retreatTimeline, useOverlay);
 
-        // Attente finale de la timeline caméra complète.
-        if (useOverlay)
-            yield return WaitForTimelinePhase(move.fullTimeline, false);
+        // Aucun suivi supplémentaire n'est requis : le plan Cinemachine gère
+        // automatiquement sa propre transition de sortie.
 
         isActive = false;
         bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
@@ -481,20 +476,16 @@ public class RhythmQTEManager : MonoBehaviour
         GameObject casterCameraTarget = casterAnimatorGO; // 📌 Référence fixe sur le lanceur
 
         // Détermine si une timeline caméra complète est disponible pour l'objet.
-        bool useOverlay = item.fullTimeline != null &&
-                          BattleTimelineManager.Instance != null &&
-                          TimelineManager.Instance != null &&
+        bool useOverlay = item.cameraShot != null &&
+                          BattleCameraManager.Instance != null &&
                           casterAnimatorGO != null;
 
-        // Lance la timeline globale si présente.
+        // Active le plan de caméra global de l'objet.
         if (useOverlay)
-            BattleTimelineManager.Instance.PlayTimeline(
-                item.fullTimeline,
-                casterAnimatorGO,
-                performingCameraTarget,
-                battleCameraTag,
-                true,
-                initialRotation);
+            BattleCameraManager.Instance.PlayShot(
+                item.cameraShot,
+                casterAnimatorGO.transform,
+                performingCameraTarget != null ? performingCameraTarget.transform : null);
 
         // --- Phase de préparation ---
         StartTimelinePhase(
@@ -556,9 +547,8 @@ public class RhythmQTEManager : MonoBehaviour
             initialRotation);
         yield return WaitForTimelinePhase(item.retreatTimeline, useOverlay);
 
-        // Attente finale de la timeline caméra complète.
-        if (useOverlay)
-            yield return WaitForTimelinePhase(item.fullTimeline, false);
+        // Le plan Cinemachine assure sa propre sortie sans synchronisation
+        // supplémentaire côté code.
 
         isActive = false;
         // Protection en cas de destruction du lanceur avant la fin de la séquence

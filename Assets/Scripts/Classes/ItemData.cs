@@ -88,10 +88,11 @@ public class ItemData : ScriptableObject
     public TimelineAsset performingTimeline;
     [Tooltip("Timeline jouée lors du repli après utilisation")]
     public TimelineAsset retreatTimeline;
-    [Tooltip("Timeline de caméra couvrant toute l'action de l'item.\n" +
-             "Elle suit l'utilisateur durant la préparation, l'exécution\n" +
-             "et le repli pour offrir un mouvement continu.")]
-    public TimelineAsset fullTimeline;
+    // Le suivi caméra complet est maintenant défini par un CameraShotSO,
+    // permettant d'utiliser des plans standardisés sans créer une timeline
+    // dédiée à la caméra pour chaque objet.
+    [Tooltip("Plan de caméra couvrant l'utilisation complète de l'objet.")]
+    public CameraShotSO cameraShot;
 
     [Header("QTE Pattern")]
     public List<float> beatPattern;
