@@ -19,10 +19,12 @@ MonoBehaviour:
   description: "Cr\xE9e un sol temporaire sous la cible."
   stayFaceToTarget: 1
   notes: []
-  power: 0
   fatigueCost: 1
   harmonicCost: 1
   harmonicGeneration: 0
+  power: 0
+  effectType: 8
+  effectValue: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 0
@@ -36,11 +38,10 @@ MonoBehaviour:
   targetType: 1
   defaultTargetType: 1
   targetTypes: 01000000
-  effectType: 8
-  effectValue: 0
   effectPrefab: {fileID: 100000, guid: a9e8b7c3f95d4f278b1a412be0c8e3a1, type: 3}
   moveSpeed: 0
   castDistance: 0
+  requiresMovement: 0
   teleportDelay: 0
   stayInPlace: 0
   interceptable: 1
