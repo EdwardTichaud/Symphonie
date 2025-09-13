@@ -43,6 +43,7 @@ Afin d'éviter les recherches dynamiques coûteuses, chaque `CharacterUnit` peut
 `Camera_TargetedPoint`, etc.) utilisés par le `NewBattleManager` pour positionner la caméra. Les designers peuvent
 ainsi ajuster facilement ces repères selon les besoins narratifs tout en garantissant de bonnes performances.
 
+
 ## Déplacement optionnel
 Un booléen `requiresMovement` est présent dans chaque **MusicalMove** et **Item**.
 - `true` : le lanceur se déplace ou se téléporte pour atteindre sa cible.
