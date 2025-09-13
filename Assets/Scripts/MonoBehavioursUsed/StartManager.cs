@@ -39,8 +39,12 @@ public class StartManager : MonoBehaviour
     {
         Debug.Log("Resetting Camera Depths");
         // Le tag "BattleCamera" cible désormais un CinemachineCamera
-        CinemachineCamera battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").GetComponentInChildren<CinemachineCamera>();
-        battleCamera.depth = 0;
+        CinemachineCamera battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")
+            .GetComponentInChildren<CinemachineCamera>();
+        // La profondeur doit être appliquée à la caméra Unity contrôlée par Cinemachine
+        Camera realCamera = battleCamera != null ? battleCamera.OutputCamera : null;
+        if (realCamera != null)
+            realCamera.depth = 0; // Replace la caméra de bataille au-dessus des autres
     }
 
     /// <summary>

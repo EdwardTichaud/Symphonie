@@ -1699,8 +1699,10 @@ public class NewBattleManager : MonoBehaviour
 
         // Utilise la caméra mémorisée ; la recherche est effectuée ponctuellement si nécessaire
         EnsureBattleCamera();
-        // Récupère désormais le composant CinemachineCamera sur l'objet tagué
-        CinemachineCamera screenshotCamera = battleCamera?.GetComponent<CinemachineCamera>();
+        // Récupère le composant CinemachineCamera sur l'objet tagué
+        CinemachineCamera screenshotCinemachine = battleCamera?.GetComponent<CinemachineCamera>();
+        // La capture se fait via la caméra Unity contrôlée par Cinemachine
+        Camera screenshotCamera = screenshotCinemachine != null ? screenshotCinemachine.OutputCamera : null;
         if (screenshotCamera == null)
         {
             Debug.LogError("Aucune caméra trouvée pour la capture !");
@@ -1710,8 +1712,8 @@ public class NewBattleManager : MonoBehaviour
         // Assure-toi que la caméra utilise la render texture pour la capture
         RenderTexture prevRT = screenshotCamera.targetTexture;
         screenshotCamera.targetTexture = VictoryScreenImage;
-        screenshotCamera.Render();
-        screenshotCamera.targetTexture = prevRT;
+        screenshotCamera.Render(); // Rend explicitement la scène dans la texture
+        screenshotCamera.targetTexture = prevRT; // Restaure l'ancienne configuration
 
         Debug.Log("Screenshot de victoire capturé !");
     }

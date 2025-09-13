@@ -609,8 +609,10 @@ public class BattleTransitionManager : MonoBehaviour
         // Utilise la nouvelle méthode FindObjectsByType afin d'éviter l'appel obsolète
         var battleUICanvas = FindObjectsByType<Canvas>(FindObjectsSortMode.None)
             .FirstOrDefault(c => c.renderMode == RenderMode.ScreenSpaceCamera);
-        if (battleUICanvas != null)
-            battleUICanvas.worldCamera = battleCamera;
+        if (battleUICanvas != null && battleCamera != null)
+            // CinemachineCamera ne peut pas être directement assignée : on récupère la
+            // caméra Unity pilotée par Cinemachine pour l'utiliser dans l'UI.
+            battleUICanvas.worldCamera = battleCamera.OutputCamera;
 
         GameObject.Find("BattleScene_TransitionCanvas")?.transform.GetChild(0).gameObject.SetActive(true);
     }
