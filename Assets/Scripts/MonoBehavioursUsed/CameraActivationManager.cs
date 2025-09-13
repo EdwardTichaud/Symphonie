@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using Cinemachine; // Pour la gestion de la BattleCamera Cinemachine
 
 /// <summary>
 /// Gère l'activation des différentes caméras du jeu afin d'éviter qu'elles soient
@@ -10,7 +11,7 @@ public class CameraActivationManager : MonoBehaviour
     public static CameraActivationManager Instance { get; private set; }
 
     private Camera worldCamera;   // Référence à la WorldCam_Cam
-    private Camera battleCamera;  // Référence à la BattleCam_Cam
+    private CinemachineCamera battleCamera;  // Référence à la BattleCam_Cam
     private Camera versusCamera;  // Référence à la VersusCam_Cam
 
     /// <summary>
@@ -41,7 +42,8 @@ public class CameraActivationManager : MonoBehaviour
     {
         // Recherche des caméras par leurs tags respectifs
         worldCamera = GameObject.FindGameObjectWithTag("WorldCamera")?.GetComponent<Camera>();
-        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
+        // Le tag "BattleCamera" pointe désormais vers un CinemachineCamera
+        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<CinemachineCamera>();
         versusCamera = GameObject.FindGameObjectWithTag("VersusCamera")?.GetComponent<Camera>();
 
         ActivateWorldCamera(); // État par défaut : exploration
@@ -98,7 +100,8 @@ public class CameraActivationManager : MonoBehaviour
     /// ne puissent jamais être actives en même temps afin d'éviter des rendus
     /// multiples coûteux.
     /// </summary>
-    private void SetCameraState(Camera cam, bool state)
+    // Utilise Behaviour pour accepter aussi bien Camera que CinemachineCamera
+    private void SetCameraState(Behaviour cam, bool state)
     {
         if (cam == null)
             return;

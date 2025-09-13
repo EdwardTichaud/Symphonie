@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 using TMPro;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
+using Cinemachine; // Nécessaire pour récupérer la BattleCamera Cinemachine
 
 #region TargetType
 public enum TargetType
@@ -1698,7 +1699,8 @@ public class NewBattleManager : MonoBehaviour
 
         // Utilise la caméra mémorisée ; la recherche est effectuée ponctuellement si nécessaire
         EnsureBattleCamera();
-        Camera screenshotCamera = battleCamera?.GetComponent<Camera>();
+        // Récupère désormais le composant CinemachineCamera sur l'objet tagué
+        CinemachineCamera screenshotCamera = battleCamera?.GetComponent<CinemachineCamera>();
         if (screenshotCamera == null)
         {
             Debug.LogError("Aucune caméra trouvée pour la capture !");

@@ -1,4 +1,5 @@
 using UnityEngine;
+using Cinemachine; // Utilisation de CinemachineCamera pour la BattleCamera
 
 /// <summary>
 /// Initialise différents paramètres dès le chargement de la scène Commencement.
@@ -37,7 +38,8 @@ public class StartManager : MonoBehaviour
     void ResetCamerasDepth()
     {
         Debug.Log("Resetting Camera Depths");
-        Camera battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").GetComponentInChildren<Camera>();
+        // Le tag "BattleCamera" cible désormais un CinemachineCamera
+        CinemachineCamera battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").GetComponentInChildren<CinemachineCamera>();
         battleCamera.depth = 0;
     }
 
