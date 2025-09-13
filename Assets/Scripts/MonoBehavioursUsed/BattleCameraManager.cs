@@ -1,7 +1,19 @@
 using UnityEngine;
 
-#if CINEMACHINE
-using Cinemachine;
+//
+// Ce script doit pouvoir compiler que Cinemachine soit installé ou non.
+// La version 3 de Cinemachine a introduit un nouveau namespace et de nouveaux
+// types (CinemachineCamera remplace CinemachineVirtualCamera, par exemple).
+// Les directives de compilation conditionnelle ci-dessous détectent la
+// présence et la version de Cinemachine afin d'utiliser l'API appropriée.
+//
+
+#if CINEMACHINE_3_0_0_OR_NEWER
+using Unity.Cinemachine;          // Nouveau namespace pour Cinemachine 3+
+#define HAS_CINEMACHINE            // Indique que Cinemachine est disponible
+#elif CINEMACHINE
+using Cinemachine;                // Ancien namespace pour Cinemachine 2.x
+#define HAS_CINEMACHINE
 #endif
 
 /// <summary>
@@ -12,17 +24,31 @@ using Cinemachine;
 /// </summary>
 public class BattleCameraManager : MonoBehaviour
 {
+    // Singleton classique utilisé par le reste du projet.
     public static BattleCameraManager Instance { get; private set; }
-#if CINEMACHINE
+
+#if CINEMACHINE_3_0_0_OR_NEWER && HAS_CINEMACHINE
+    // --- Configuration pour Cinemachine 3.x ---
+    [Header("Référence de caméra")]
+    [Tooltip("Caméra Cinemachine (v3+) principale utilisée pour les plans de combat.")]
+    public CinemachineCamera mainVirtualCamera;
+
+    // Le CinemachineBrain reste présent pour gérer les transitions entre plans.
+    private CinemachineBrain brain;
+
+#elif HAS_CINEMACHINE
+    // --- Configuration pour Cinemachine 2.x ---
     [Header("Référence de caméra")]
     [Tooltip("Virtual Camera principale utilisée pour les plans de combat.")]
     public CinemachineVirtualCamera mainVirtualCamera;
 
     private CinemachineBrain brain;
+
 #else
+    // --- Version de secours sans Cinemachine ---
     [Header("Référence de caméra")]
     [Tooltip("Caméra standard utilisée lorsque Cinemachine est absent.")]
-    public CinemachineCamera mainVirtualCamera;
+    public Camera mainVirtualCamera;
 
     // Aucun CinemachineBrain n'est disponible ; variable conservée pour cohérence.
     private Camera brain;
@@ -36,8 +62,11 @@ public class BattleCameraManager : MonoBehaviour
             return;
         }
         Instance = this;
-#if CINEMACHINE
+
+#if HAS_CINEMACHINE
         // Récupère la référence au CinemachineBrain pour gérer les fondus entre plans.
+        // Si aucune caméra principale n'est présente ou si le composant n'est pas trouvé,
+        // "brain" restera nul et les fondus seront ignorés.
         brain = Camera.main != null ? Camera.main.GetComponent<CinemachineBrain>() : null;
 #endif
     }
@@ -64,20 +93,33 @@ public class BattleCameraManager : MonoBehaviour
                                 - target.forward * shot.distance
                                 + target.TransformDirection(shot.offset);
 
-#if CINEMACHINE
-        // Utilisation complète de Cinemachine : suivi, orientation et FOV.
+#if HAS_CINEMACHINE
+        // --- Utilisation de Cinemachine lorsque disponible ---
         mainVirtualCamera.Follow = target;            // La caméra suit la cible choisie.
         mainVirtualCamera.LookAt = target;            // Et la regarde.
+
+#if CINEMACHINE_3_0_0_OR_NEWER
+        // Dans Cinemachine 3, le champ de vision est exposé via la propriété Lens.
+        mainVirtualCamera.Lens.FieldOfView = shot.fieldOfView;
+#else
+        // Ancienne API (Cinemachine 2.x).
         mainVirtualCamera.m_Lens.FieldOfView = shot.fieldOfView;
+#endif
 
         // Positionne la caméra à la position calculée.
         mainVirtualCamera.transform.position = finalPosition;
 
         // Configure la durée de transition entre les plans.
         if (brain != null)
-            brain.m_DefaultBlend.m_Time = shot.blendDuration;
+        {
+#if CINEMACHINE_3_0_0_OR_NEWER
+            brain.DefaultBlend.Time = shot.blendDuration;
 #else
-        // Version de secours : déplace et oriente simplement la caméra standard.
+            brain.m_DefaultBlend.m_Time = shot.blendDuration;
+#endif
+        }
+#else
+        // --- Version de secours : déplace et oriente simplement la caméra standard. ---
         mainVirtualCamera.transform.position = finalPosition;
         mainVirtualCamera.transform.LookAt(target); // Conserve le regard sur la cible.
         mainVirtualCamera.fieldOfView = shot.fieldOfView;
