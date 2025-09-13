@@ -44,8 +44,9 @@ public class RhythmQTEManager : MonoBehaviour
     // MoveTo
     float elapsed = 0f;
 
-    // Délai entre les effets de téléportation départ et arrivée
-    private const float returnDelay = 0.2f;
+    // Durée par défaut utilisée si aucun délai n'est défini dans les données
+    // Conserve l'ancien comportement en cas d'oubli de paramétrage
+    private const float defaultTeleportDelay = 0.2f;
 
     // Tag de la caméra de combat à utiliser pour toutes les timelines
     private const string battleCameraTag = "BattleCamera";
@@ -493,8 +494,9 @@ public class RhythmQTEManager : MonoBehaviour
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
 
-            // Petit délai pour laisser apparaître l'effet
-            yield return new WaitForSeconds(returnDelay);
+            // Délai configurable pour laisser apparaître l'effet de téléport
+            float delay = item.teleportDelay >= 0f ? item.teleportDelay : defaultTeleportDelay;
+            yield return new WaitForSeconds(delay);
 
             // Téléportation instantanée
             caster.transform.position = destination;
@@ -552,7 +554,9 @@ public class RhythmQTEManager : MonoBehaviour
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
 
-            yield return new WaitForSeconds(returnDelay);
+            // Délai configurable avant la réapparition à la position initiale
+            float delay = item.teleportDelay >= 0f ? item.teleportDelay : defaultTeleportDelay;
+            yield return new WaitForSeconds(delay);
 
             caster.transform.position = origin;
 
@@ -633,7 +637,9 @@ public class RhythmQTEManager : MonoBehaviour
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
 
-            yield return new WaitForSeconds(returnDelay);
+            // Délai configurable pour la téléportation du MusicalMove
+            float delay = move.teleportDelay >= 0f ? move.teleportDelay : defaultTeleportDelay;
+            yield return new WaitForSeconds(delay);
 
             caster.transform.position = targetPos;
 
@@ -702,7 +708,9 @@ public class RhythmQTEManager : MonoBehaviour
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
 
-            yield return new WaitForSeconds(returnDelay);
+            // Délai configurable avant de revenir à la position de départ
+            float delay = move.teleportDelay >= 0f ? move.teleportDelay : defaultTeleportDelay;
+            yield return new WaitForSeconds(delay);
 
             if (caster == null)
             {
