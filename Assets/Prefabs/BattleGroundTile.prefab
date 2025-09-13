@@ -9,6 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 200000}
+  - component: {fileID: 5040905755939267835}
   m_Layer: 20
   m_Name: BattleGroundTile
   m_TagString: Untagged
@@ -32,6 +33,19 @@ Transform:
   - {fileID: 8609107256248260017}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5040905755939267835
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a30a20661737496da060243229926737, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spawnOnTarget: 1
 --- !u!1 &732579883773915201
 GameObject:
   m_ObjectHideFlags: 0
