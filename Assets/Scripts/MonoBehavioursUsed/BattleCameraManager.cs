@@ -22,7 +22,7 @@ public class BattleCameraManager : MonoBehaviour
 #else
     [Header("Référence de caméra")]
     [Tooltip("Caméra standard utilisée lorsque Cinemachine est absent.")]
-    public Camera mainVirtualCamera;
+    public CinemachineCamera mainVirtualCamera;
 
     // Aucun CinemachineBrain n'est disponible ; variable conservée pour cohérence.
     private Camera brain;
