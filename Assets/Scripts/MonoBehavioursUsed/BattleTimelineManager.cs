@@ -68,6 +68,31 @@ public class BattleTimelineManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Repositionne immédiatement l'origine de la caméra de combat sur une cible fournie.
+    /// Utilisé lorsque seule l'animation du lanceur est jouée (overlay) afin de
+    /// conserver une mise en scène cohérente malgré l'absence de timeline caméra
+    /// spécifique à la phase en cours.
+    /// </summary>
+    /// <param name="cameraTarget">Objet servant de nouvelle ancre pour la caméra.</param>
+    /// <param name="cameraTag">Tag de la caméra à déplacer.</param>
+    /// <param name="fixedRotation">Rotation imposée, ou null pour reprendre celle de la cible.</param>
+    public void AlignCameraToTarget(GameObject cameraTarget, string cameraTag, Quaternion? fixedRotation = null)
+    {
+        if (cameraTarget == null || string.IsNullOrEmpty(cameraTag))
+            return;
+
+        // Recherche de la caméra puis de son parent direct (BattleCamera_Origin).
+        GameObject cameraGO = GameObject.FindGameObjectWithTag(cameraTag);
+        Transform cameraParent = cameraGO != null ? cameraGO.transform.parent : null;
+
+        if (cameraParent != null)
+        {
+            cameraParent.position = cameraTarget.transform.position;
+            cameraParent.rotation = fixedRotation ?? cameraTarget.transform.rotation;
+        }
+    }
+
+    /// <summary>
     /// Lance une timeline caméra via le PlayableDirector dédié et la file d'attente.
     /// </summary>
     public void PlayTimeline(
