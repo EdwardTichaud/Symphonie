@@ -1,5 +1,5 @@
 %YAML 1.1
-%TAG !u! tag:unity.com,2011:
+%TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16,28 +16,43 @@ MonoBehaviour:
   moveType: 3
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: f507f03eb80bcbf49bb458bd6a54bd9a, type: 3}
-  description: "Endort un ennemi pendant un tour."
+  description: Endort un ennemi pendant un tour.
   stayFaceToTarget: 0
   notes: []
   power: 0
   fatigueCost: 2
   harmonicCost: 2
   harmonicGeneration: 0
+  useCriticalVariant: 0
+  criticalEffectType: 0
+  criticalEffectValue: 20
+  criticalFatigueCost: 1
+  criticalHarmonicCost: 1
+  criticalHarmonicGeneration: 0
   cooldown: 0
+  maxUsesPerTurn: 0
+  maxUsesPerBattle: 0
+  altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
   targetTypes: 01000000
   effectType: 4
   effectValue: 0
+  effectPrefab: {fileID: 0}
   moveSpeed: 20
   castDistance: 1.5
+  teleportDelay: 0.2
   stayInPlace: 0
   interceptable: 1
   relativePosition: 0
-  useTeleportation: 1
-  teleportStartVFXPrefab: {fileID: 6184656141151889893, guid: 79d3634b81de0b747bee2ee9f3358e80, type: 3}
-  teleportEndVFXPrefab: {fileID: 0}
+  tpVfx_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
+  tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
+  tpSFx_Start: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
+  tpSFx_End: {fileID: 0}
+  warningClip: {fileID: 0}
   startDelay: 2
   enterAwake: 0
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 0}
+  retreatTimeline: {fileID: 0}
+  fullTimeline: {fileID: 0}

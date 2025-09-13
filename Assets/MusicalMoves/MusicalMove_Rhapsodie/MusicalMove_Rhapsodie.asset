@@ -38,13 +38,15 @@ MonoBehaviour:
   targetTypes: 01000000
   effectType: 0
   effectValue: 10
+  effectPrefab: {fileID: 0}
   moveSpeed: 0
   castDistance: 1.5
+  teleportDelay: 0.2
   stayInPlace: 0
   interceptable: 1
   relativePosition: 1
   tpVfx_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpVfx_End: {fileID: 0}
+  tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
   tpSFx_Start: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
   tpSFx_End: {fileID: 0}
   warningClip: {fileID: 0}
@@ -52,3 +54,5 @@ MonoBehaviour:
   enterAwake: 0
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 11400000, guid: 361e91e8ca92edc459ed5ed247a853bd, type: 2}
+  retreatTimeline: {fileID: 0}
+  fullTimeline: {fileID: 0}

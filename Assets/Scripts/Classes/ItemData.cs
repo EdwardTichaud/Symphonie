@@ -21,7 +21,7 @@ public class ItemData : ScriptableObject
     // Délai entre disparition et réapparition lors d'un téléport
     // Utile pour synchroniser les effets visuels/sonores
     [Tooltip("Durée en secondes avant la réapparition après un téléport (0 = instantané)")]
-    public float teleportDelay = 0.2f;
+    public float teleportDelay = 0f;
 
     [Header("Limitations d'utilisation")]
     [Tooltip("Nombre maximum d'utilisations par tour (0 = illimité)")]

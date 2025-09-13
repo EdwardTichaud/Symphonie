@@ -20,6 +20,9 @@ MonoBehaviour:
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
+  teleportDelay: 0
+  maxUsesPerTurn: 0
+  maxUsesPerBattle: 0
   useCriticalVariant: 0
   criticalEffectType: 6
   criticalEffectValue: 20
@@ -29,17 +32,25 @@ MonoBehaviour:
   healIsPercentage: 0
   revivePercentage: 0
   buffStat: 0
-  debuffStat: 0
   buffAmount: 0
-  debuffAmount: 0
   buffDuration: 0
   buffIsPercentage: 0
+  debuffStat: 0
+  debuffAmount: 0
+  debuffDuration: 0
+  debuffIsPercentage: 0
   timingType: 0
   timingBoostAmount: 0
   timingDuration: 0
   defaultTargetType: 0
   targetTypes: 00000000
+  tpVfx_Start: {fileID: 0}
+  tpVfx_End: {fileID: 0}
+  tpSFx_Start: {fileID: 0}
+  tpSFx_End: {fileID: 0}
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 11400000, guid: 7e17f404f19e47b49bd3243893e2e70d, type: 2}
+  retreatTimeline: {fileID: 0}
+  fullTimeline: {fileID: 0}
   beatPattern: []
   notes: []

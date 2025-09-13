@@ -11,12 +11,12 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8caee409dd862bf429bf43fff5538c9f, type: 3}
   m_Name: MusicalMove_AbimeHarmonique
-  m_EditorClassIdentifier:
-  moveName: "Abîme Harmonique"
+  m_EditorClassIdentifier: 
+  moveName: "Ab\xEEme Harmonique"
   moveType: 3
   onlyAwake: 0
   moveIcon: {fileID: 0}
-  description: "Fait disparaître le sol sous la cible."
+  description: "Fait dispara\xEEtre le sol sous la cible."
   stayFaceToTarget: 0
   notes: []
   power: 0
@@ -41,15 +41,18 @@ MonoBehaviour:
   effectPrefab: {fileID: 100000, guid: 6e5de56a4c4f4adbb612238f8f4ad971, type: 3}
   moveSpeed: 20
   castDistance: 1.5
+  teleportDelay: 0.2
   stayInPlace: 0
   interceptable: 1
   relativePosition: 0
-  tpVfx_Start: {fileID: 6184656141151889893, guid: 79d3634b81de0b747bee2ee9f3358e80, type: 3}
-  tpVfx_End: {fileID: 0}
-  tpSFx_Start: {fileID: 0}
+  tpVfx_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
+  tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
+  tpSFx_Start: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
   tpSFx_End: {fileID: 0}
   warningClip: {fileID: 0}
   startDelay: 2
   enterAwake: 0
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 0}
+  retreatTimeline: {fileID: 0}
+  fullTimeline: {fileID: 0}

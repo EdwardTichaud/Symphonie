@@ -1,5 +1,5 @@
 %YAML 1.1
-%TAG !u! tag:unity.com,2011:
+%TAG !u! tag:unity3d.com,2011:
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13,30 +13,44 @@ MonoBehaviour:
   m_Name: Item_BombeSonique
   m_EditorClassIdentifier: 
   itemID: BombeSonique
-  itemName: "Bombe Sonique"
+  itemName: Bombe Sonique
   description: "Inflige 15 points de d\xE9g\xE2ts \xE0 tous les ennemis."
   itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
   effectValue: 15
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
+  teleportDelay: 0
+  maxUsesPerTurn: 0
+  maxUsesPerBattle: 0
+  useCriticalVariant: 0
+  criticalEffectType: 6
+  criticalEffectValue: 20
   stayInPlace: 0
   effectType: 6
   healAmount: 0
   healIsPercentage: 0
   revivePercentage: 0
   buffStat: 0
-  debuffStat: 0
   buffAmount: 0
-  debuffAmount: 0
   buffDuration: 0
   buffIsPercentage: 0
+  debuffStat: 0
+  debuffAmount: 0
+  debuffDuration: 0
+  debuffIsPercentage: 0
   timingType: 0
   timingBoostAmount: 0
   timingDuration: 0
   defaultTargetType: 2
   targetTypes: 02000000
-  performingTimeline: {fileID: 0}
+  tpVfx_Start: {fileID: 0}
+  tpVfx_End: {fileID: 0}
+  tpSFx_Start: {fileID: 0}
+  tpSFx_End: {fileID: 0}
   preparingTimeline: {fileID: 0}
+  performingTimeline: {fileID: 0}
+  retreatTimeline: {fileID: 0}
+  fullTimeline: {fileID: 0}
   beatPattern: []
   notes: []
