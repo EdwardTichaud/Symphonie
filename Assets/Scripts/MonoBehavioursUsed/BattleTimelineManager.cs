@@ -160,14 +160,15 @@ public class BattleTimelineManager : MonoBehaviour
     /// </summary>
     public void PlayTimelineOverlay(TimelineAsset timeline, GameObject caster)
     {
-        if (timeline == null || caster == null)
+        // Ignore la demande si aucune timeline n'est fournie
+        if (timeline == null)
             return;
 
         // Crée un PlayableDirector temporaire pour cette timeline
         var overlayDirector = gameObject.AddComponent<PlayableDirector>();
         overlayDirector.playableAsset = timeline;
 
-        // Lie uniquement les pistes liées au lanceur et ignore la caméra
+        // Lie uniquement les pistes pertinentes. Les pistes sans Caster sont ignorées.
         foreach (var output in timeline.outputs)
         {
             string lower = output.streamName.ToLower();
@@ -176,13 +177,21 @@ public class BattleTimelineManager : MonoBehaviour
 
             if (lower.Contains("caster") || lower.Contains("pnj"))
             {
+                // Si aucun caster n'est fourni, on ignore simplement la piste
+                if (caster == null)
+                    continue;
+
                 var animator = caster.GetComponentInChildren<Animator>();
                 if (animator != null)
                     overlayDirector.SetGenericBinding(output.sourceObject, animator);
+                else
+                    Debug.LogWarning("[BattleTimelineManager] Animator manquant sur le caster pour la timeline overlay.");
             }
             else
             {
-                overlayDirector.SetGenericBinding(output.sourceObject, caster);
+                // Les autres pistes nécessitent également la référence du caster
+                if (caster != null)
+                    overlayDirector.SetGenericBinding(output.sourceObject, caster);
             }
         }
 

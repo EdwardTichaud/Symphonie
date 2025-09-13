@@ -509,18 +509,28 @@ public class TimelineManager : MonoBehaviour
         foreach (var output in timelineAsset.outputs)
         {
             string trackName = output.streamName;
+            string lower = trackName.ToLower();
             System.Type type = output.outputTargetType;
 
-            // Pour les timelines de PNJ, le track d'animation s'appelle "PNJ" au lieu de "Caster"
-            if ((trackName.ToLower().Contains("caster") || trackName.ToLower().Contains("pnj")) && caster != null)
+            // Gestion des pistes liées au lanceur (Caster ou PNJ)
+            if (lower.Contains("caster") || lower.Contains("pnj"))
             {
-                BindObjectToTrack(output, caster);
+                if (caster != null)
+                {
+                    BindObjectToTrack(output, caster);
+                }
+                else
+                {
+                    // Aucune référence valide : on ignore cette piste
+                    Debug.LogWarning($"[TimelineManager] Caster introuvable pour la track : {trackName}, piste ignorée.");
+                }
             }
-            else if (trackName.ToLower().Contains("camera"))
+            // Gestion des pistes liées à la caméra
+            else if (lower.Contains("camera"))
             {
-                // L'animation de la caméra doit utiliser l'Animator situé sur le parent de la WorldCamera.
                 if (cameraGO != null)
                 {
+                    // L'animation de la caméra doit utiliser l'Animator situé sur le parent de la WorldCamera.
                     Animator camAnimator = cameraParent != null
                         ? cameraParent.GetComponent<Animator>()
                         : cameraGO.GetComponent<Animator>();
@@ -534,16 +544,13 @@ public class TimelineManager : MonoBehaviour
                         Debug.LogWarning($"[TimelineManager] Animator manquant pour la caméra {cameraTag}");
                     }
                 }
-                else if (caster != null)
-                {
-                    // Aucun tag de caméra fourni : on se rabat sur le PNJ.
-                    BindObjectToTrack(output, caster);
-                }
                 else
                 {
-                    Debug.LogWarning($"[TimelineManager] Aucun GameObject trouvé pour la track camera : {trackName}");
+                    // Aucune caméra correspondante : on ignore la piste
+                    Debug.LogWarning($"[TimelineManager] Caméra introuvable pour la track : {trackName}, piste ignorée.");
                 }
             }
+            // Gestion des receveurs de signaux
             else if (type != null && typeof(Component).IsAssignableFrom(type) && type.Name.Contains("SignalReceiver"))
             {
                 // Récupère le SignalReceiver présent sur le même GameObject que le PlayableDirector
