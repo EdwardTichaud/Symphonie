@@ -23,6 +23,7 @@ MonoBehaviour:
   characterWorldModel: {fileID: 6728702309075295974, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
   characterBattleModel: {fileID: 901204007372340786, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
   battlefieldIndex: 0
+  isAirUnit: 0
   interceptable: 1
   avoidable: 1
   baseReflex: 0
@@ -47,9 +48,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e5d7b6fc3f0d4cc095fd27160e6ef5e5, type: 2}
   - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
   - {fileID: 11400000, guid: 677d519fa2d243e48b26e669711c413e, type: 2}
+  - {fileID: 11400000, guid: 569e2f6c75b54c48a2168cd683ef5a5b, type: 2}
+  - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
+  - {fileID: 11400000, guid: f24e25ca8ff848a2a85b6f865e42c390, type: 2}
   specialMusicalMove: {fileID: 0}
   currentInitiative: 1
-  currentRange: 16
+  currentRange: 26
   currentHP: 50
   currentStrength: 1
   currentDefense: 1
