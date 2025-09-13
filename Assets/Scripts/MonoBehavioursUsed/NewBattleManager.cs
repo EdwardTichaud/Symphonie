@@ -1101,7 +1101,9 @@ public class NewBattleManager : MonoBehaviour
                 return target.IsAirUnit || !target.IsGrounded;
             case AltitudeCondition.GroundOnly:
                 // Attaque réservée aux unités terrestres posées sur un support.
-                return !target.IsAirUnit && target.IsGrounded;
+                // Cependant, si une unité survole un sol, elle peut aussi être touchée
+                // par les attaques terrestres qui résonnent à travers la scène.
+                return (!target.IsAirUnit && target.IsGrounded) || target.HasGroundBelow();
             default:
                 // Aucune restriction : mouvement utilisable dans toutes les configurations.
                 return true;
