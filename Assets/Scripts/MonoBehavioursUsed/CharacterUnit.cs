@@ -38,6 +38,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     // Intensité de la gravité appliquée.
     private const float gravity = -9.81f;
 
+    [Header("Détection du sol")]
+    [Tooltip("Distance maximale pour vérifier la présence d'un sol sous l'unité.")]
+    public float groundCheckDistance = 2f;
+    [Tooltip("Layers considérés comme du sol pendant les combats.")]
+    public LayerMask battleGroundLayer = 0;
+
     /// <summary>
     /// Indique si l'unité touche actuellement un support solide.
     /// </summary>
@@ -47,6 +53,25 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// Indique si l'unité est de type aérien.
     /// </summary>
     public bool IsAirUnit => Data != null && Data.isAirUnit;
+
+    /// <summary>
+    /// Détecte si un sol existe sous l'unité à portée de <see cref="groundCheckDistance"/>.
+    /// Cette information sert non seulement à permettre aux attaques terrestres
+    /// d'atteindre une cible en vol lorsqu'un support se trouve sous elle,
+    /// mais aussi à empêcher toute attaque aérienne lorsque la moindre surface
+    /// solide est détectée, fidèle au récit de l'Histoire de Symphonie où les
+    /// résonances du sol répondent aux cieux.
+    /// </summary>
+    public bool HasGroundBelow()
+    {
+        // Définit un masque par défaut si aucun n'est précisé dans l'éditeur.
+        if (battleGroundLayer == 0)
+            battleGroundLayer = LayerMask.GetMask("Battle_Ground");
+
+        // Lancement d'un rayon vers le bas pour vérifier la présence d'un sol.
+        Vector3 origin = transform.position;
+        return Physics.Raycast(origin, Vector3.down, groundCheckDistance, battleGroundLayer);
+    }
 
     private void Awake()
     {

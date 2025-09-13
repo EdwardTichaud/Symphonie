@@ -919,7 +919,7 @@ public class NewBattleManager : MonoBehaviour
         {
             // Message spécifique selon la contrainte de hauteur définie sur le move.
             if (move.altitudeCondition == AltitudeCondition.AirOnly)
-                ActionUIDisplayManager.Instance.DisplayInstruction("La cible doit être en l'air");
+                ActionUIDisplayManager.Instance.DisplayInstruction("La cible doit être en l'air sans sol sous elle");
             else if (move.altitudeCondition == AltitudeCondition.GroundOnly)
                 ActionUIDisplayManager.Instance.DisplayInstruction("La cible doit être au sol");
             yield break;
@@ -1097,11 +1097,16 @@ public class NewBattleManager : MonoBehaviour
         switch (move.altitudeCondition)
         {
             case AltitudeCondition.AirOnly:
-                // Attaque réservée aux unités aériennes ou aux unités momentanément en l'air.
-                return target.IsAirUnit || !target.IsGrounded;
+                // Attaque réservée aux unités sans aucun sol sous elles.
+                // Qu'une unité soit terrestre ou aérienne, la présence d'un support
+                // en contrebas la protège de ce type d'assaut venu du ciel.
+                return !target.HasGroundBelow();
             case AltitudeCondition.GroundOnly:
                 // Attaque réservée aux unités terrestres posées sur un support.
-                return !target.IsAirUnit && target.IsGrounded;
+                // Cependant, si une unité survole un sol, elle peut aussi être touchée
+                // par les attaques terrestres qui résonnent à travers la scène,
+                // tandis qu'elle devient intouchable par les attaques aériennes.
+                return (!target.IsAirUnit && target.IsGrounded) || target.HasGroundBelow();
             default:
                 // Aucune restriction : mouvement utilisable dans toutes les configurations.
                 return true;
