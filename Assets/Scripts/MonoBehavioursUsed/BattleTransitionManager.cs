@@ -340,6 +340,20 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     private IEnumerator TransitionRoutine()
     {
+        // 🛡️ Assure que les filtres BlackScreen et WhiteScreen sont totalement
+        //    transparents avant même l'affichage de l'écran de Versus.
+        //    Cette précaution évite tout flash résiduel provenant d'une
+        //    transition précédente.
+        var fader = FadeChildrenOpacity.Instance;
+        if (fader != null)
+        {
+            // Indice 0 = BlackScreen, indice 1 = WhiteScreen.
+            // La durée est fixée à 0 pour appliquer instantanément la
+            // transparence complète.
+            fader.EnsureTransparency(0, 0f);
+            fader.EnsureTransparency(1, 0f);
+        }
+
         // Détermine quel champ de bataille doit être chargé en fonction de
         // l'ennemi détecté par le joueur.
         // 
