@@ -11,9 +11,6 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Acces global au gestionnaire de camera de combat.</summary>
     public static BattleCameraManager Instance { get; private set; }
 
-    [Tooltip("Duree du blend entre deux cameras.")]
-    [SerializeField] private float blendDuration = 0.5f;
-
     // Composant responsable du changement de camera via les priorites.
     private CinemachineBlendSwitcher blendSwitcher;
 
@@ -43,6 +40,7 @@ public class BattleCameraManager : MonoBehaviour
         }
 
         // Au demarrage du combat on revient sur la camera principale taggee "BattleCamera".
+        // On force une transition immediate (duree 0) pour eviter un fondu au lancement.
         if (blendSwitcher)
             blendSwitcher.DisplayCamera(null, 0f);
     }
@@ -61,7 +59,8 @@ public class BattleCameraManager : MonoBehaviour
         // Cas 1 : aucun move/item en cours -> on revient sur la camera par defaut.
         if (cameraName == null)
         {
-            blendSwitcher.DisplayCamera(null, blendDuration);
+            // Blend avec la duree par defaut du switcher (1 seconde).
+            blendSwitcher.DisplayCamera(null);
             return;
         }
 
@@ -75,13 +74,14 @@ public class BattleCameraManager : MonoBehaviour
             }
             else
             {
-                // Aucune camera disponible, on retombe sur la camera principale.
-                blendSwitcher.DisplayCamera(null, blendDuration);
+                // Si aucune camera speciale n'est disponible, on retourne sur la camera
+                // principale avec la duree de blend standard.
+                blendSwitcher.DisplayCamera(null);
                 return;
             }
         }
 
-        // Affiche la camera demandee (transition assuree par le blend switcher).
-        blendSwitcher.DisplayCamera(cameraName, blendDuration);
+        // Affiche la camera demandee avec la duree de blend geree par le switcher.
+        blendSwitcher.DisplayCamera(cameraName);
     }
 }
