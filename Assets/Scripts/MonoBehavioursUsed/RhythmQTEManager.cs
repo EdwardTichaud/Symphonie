@@ -538,9 +538,11 @@ public class RhythmQTEManager : MonoBehaviour
         // Récupère le GameObject qui porte l'Animator pour pouvoir le masquer
         GameObject visualRoot = animator != null ? animator.gameObject : null;
 
-        bool isTeleport = item.moveSpeed <= 0f;
+        bool isTeleport = item.moveSpeed <= 0f; // Téléportation si vitesse nulle ou négative
+        float distanceToDestination = Vector3.Distance(caster.transform.position, destination); // Distance à parcourir
 
-        if (isTeleport)
+        // Téléportation uniquement si la destination est différente de la position actuelle
+        if (isTeleport && distanceToDestination > 0.01f)
         {
             // Lecture des effets de départ
             if (item.tpSFx_Start != null)
@@ -572,7 +574,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (item.tpSFx_End != null)
                 PlaySfx(item.tpSFx_End);
         }
-        else
+        else if (!isTeleport)
         {
             // Animation du dash
             if (!caster.IsDead)
@@ -591,6 +593,7 @@ public class RhythmQTEManager : MonoBehaviour
             }
             caster.transform.position = destination;
         }
+        // Si isTeleport mais distance nulle, on ne fait rien : aucune téléportation nécessaire
 
         // Orientation vers la cible
         Vector3 dir = (target.transform.position - caster.transform.position).normalized;
@@ -610,9 +613,11 @@ public class RhythmQTEManager : MonoBehaviour
         Animator animator = caster.GetComponentInChildren<Animator>();
         // GameObject contenant l'Animator à masquer pendant la téléportation
         GameObject visualRoot = animator != null ? animator.gameObject : null;
-        bool isTeleport = item.moveSpeed <= 0f;
+        bool isTeleport = item.moveSpeed <= 0f; // Téléportation si vitesse nulle
+        float distanceToOrigin = Vector3.Distance(caster.transform.position, origin); // Distance de retour
 
-        if (isTeleport)
+        // Téléportation uniquement si le retour nécessite un déplacement
+        if (isTeleport && distanceToOrigin > 0.01f)
         {
             if (item.tpSFx_Start != null)
                 PlaySfx(item.tpSFx_Start);
@@ -641,7 +646,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (item.tpSFx_End != null)
                 PlaySfx(item.tpSFx_End);
         }
-        else
+        else if (!isTeleport)
         {
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
@@ -658,6 +663,7 @@ public class RhythmQTEManager : MonoBehaviour
             }
             caster.transform.position = origin;
         }
+        // Si isTeleport mais distance nulle, aucune action n'est nécessaire
 
         // Orientation optionnelle vers la cible
         if (target != null)
@@ -703,9 +709,11 @@ public class RhythmQTEManager : MonoBehaviour
         Animator animator = caster.GetComponentInChildren<Animator>();
         // Stocke le GameObject visuel pour pouvoir le désactiver durant la téléportation
         GameObject visualRoot = animator != null ? animator.gameObject : null;
-        bool isTeleport = move.moveSpeed <= 0f;
+        bool isTeleport = move.moveSpeed <= 0f; // Téléportation si vitesse nulle
+        float distanceToTarget = Vector3.Distance(caster.transform.position, targetPos); // Distance à la cible
 
-        if (isTeleport)
+        // Téléportation uniquement si la cible est différente de la position actuelle
+        if (isTeleport && distanceToTarget > 0.01f)
         {
             if (move.tpSFx_Start != null)
                 PlaySfx(move.tpSFx_Start);
@@ -734,7 +742,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (move.tpSFx_End != null)
                 PlaySfx(move.tpSFx_End);
         }
-        else
+        else if (!isTeleport)
         {
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
@@ -751,6 +759,7 @@ public class RhythmQTEManager : MonoBehaviour
             }
             caster.transform.position = targetPos;
         }
+        // Si isTeleport mais aucune distance à parcourir, on ignore le déplacement
 
         Vector3 lookDir = Vector3.zero;
         if (target != null)
@@ -784,9 +793,11 @@ public class RhythmQTEManager : MonoBehaviour
         Animator animator = caster.GetComponentInChildren<Animator>();
         // GameObject contenant l'Animator à désactiver durant la téléportation
         GameObject visualRoot = animator != null ? animator.gameObject : null;
-        bool isTeleport = move.moveSpeed <= 0f;
+        bool isTeleport = move.moveSpeed <= 0f; // Téléportation si vitesse nulle
+        float distanceToInitial = Vector3.Distance(caster.transform.position, initialPosition); // Distance à parcourir
 
-        if (isTeleport)
+        // Téléportation uniquement si nécessaire
+        if (isTeleport && distanceToInitial > 0.01f)
         {
             if (move.tpSFx_Start != null)
                 PlaySfx(move.tpSFx_Start);
@@ -795,7 +806,6 @@ public class RhythmQTEManager : MonoBehaviour
 
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
-
 
             // Cache temporairement le GameObject visuel
             if (visualRoot != null)
@@ -822,7 +832,7 @@ public class RhythmQTEManager : MonoBehaviour
             if (move.tpSFx_End != null)
                 PlaySfx(move.tpSFx_End);
         }
-        else
+        else if (!isTeleport)
         {
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
@@ -838,6 +848,7 @@ public class RhythmQTEManager : MonoBehaviour
             }
             caster.transform.position = initialPosition;
         }
+        // Si isTeleport mais distance nulle, pas de retour nécessaire
 
         yield return null;
 

@@ -1644,11 +1644,16 @@ public class NewBattleManager : MonoBehaviour
             anim.Play("Turn_90");
         }
 
-        // Tant que l’angle entre la rotation actuelle et la target est > 0.5f
+        // Verrouille la rotation initiale sur l'axe Y pour éviter tout tilt.
+        unit.transform.rotation = Quaternion.Euler(0f, unit.transform.eulerAngles.y, 0f);
+
+        // Tant que l’angle entre la rotation actuelle et la cible reste significatif
         while (Quaternion.Angle(unit.transform.rotation, targetRotation) > 0.5f)
         {
+            // Applique une rotation progressive uniquement sur l'axe Y
+            Quaternion current = Quaternion.Euler(0f, unit.transform.eulerAngles.y, 0f);
             unit.transform.rotation = Quaternion.RotateTowards(
-                unit.transform.rotation,
+                current,
                 targetRotation,
                 rotationSpeed * Time.deltaTime
             );
