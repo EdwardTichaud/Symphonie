@@ -69,6 +69,9 @@ public class CameraController : MonoBehaviour
     public float forcedCamMinPitch = -20f;
     public float forcedCamMaxPitch = 60f;
 
+    [Tooltip("Vitesse d'interpolation utilisée pour suivre le joueur en mode forcé.")]
+    [SerializeField] private float forcedCamFollowLerpSpeed = 10f;
+
     private float forcedCamYaw = 0f;
     private float forcedCamPitch = 20f;
     private float forcedCamDistance = 5f;
@@ -383,7 +386,7 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Applique simplement la position forcée de la caméra sans gestion des collisions.
+    /// Suit le joueur en mode forcé en interpolant position et rotation pour un mouvement fluide.
     /// </summary>
     void FollowForcedCameraPoint()
     {
@@ -395,10 +398,20 @@ public class CameraController : MonoBehaviour
 
         // Position désirée calculée à partir du joueur et de l'offset courant
         Vector3 desiredPos = player.position + forcedCamOffset;
+        // Rotation désirée pour que la caméra regarde la cible adéquate
+        Quaternion desiredRot = Quaternion.LookRotation(look.position - desiredPos);
 
-        // Aucune gestion d'obstacle : la caméra est placée directement à la position désirée.
-        camOrigin.position = desiredPos;
-        camOrigin.rotation = Quaternion.LookRotation(look.position - camOrigin.position);
+        // Interpolation pour un mouvement et une rotation plus smooth
+        camOrigin.position = Vector3.Lerp(
+            camOrigin.position,
+            desiredPos,
+            forcedCamFollowLerpSpeed * Time.deltaTime
+        );
+        camOrigin.rotation = Quaternion.Slerp(
+            camOrigin.rotation,
+            desiredRot,
+            forcedCamFollowLerpSpeed * Time.deltaTime
+        );
     }
 
     /// <summary>
