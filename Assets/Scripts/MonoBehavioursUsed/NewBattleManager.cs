@@ -547,6 +547,9 @@ public class NewBattleManager : MonoBehaviour
         //5 Détermine quel joueur joue en premier
         CharacterUnit firstPlayer = ReturnFirstStrikeCharacter();
 
+        //6 Intro Camera
+
+
         //7 Démarre la boucle de tours
         StartCoroutine(TurnLoop());
 
