@@ -94,12 +94,9 @@ public class NewBattleManager : MonoBehaviour
     [Header("Début de combat")]
     [SerializeField] private GameObject firstStrikeEffect;
 
-    // Paramètres du ralentissement appliqué lors des animations EquipOnMove.
+    // Paramètres du ralentissement appliqué lors de l'introduction.
     [Tooltip("Facteur de ralentissement au tout début du combat.")]
     public float equipSlowMotionScale = 0.5f;
-
-    [Tooltip("Durée en secondes du ralenti initial.")]
-    public float equipSlowMotionDuration = 1f;
 
     [Header("Fin de combat")]
     public GameObject victoryScreen;
@@ -420,43 +417,16 @@ public class NewBattleManager : MonoBehaviour
 
         // Signale que l'unité a terminé son déplacement
         unitsPendingArrival--;
-        if (unitsPendingArrival <= 0)
-        {
-            // Toutes les unités sont en place : déclencher l'animation EquipOnMove pour chacune
-            TriggerEquipAnimations();
-        }
+        // L'animation d'introduction sera déclenchée séparément une fois
+        // que toutes les unités auront atteint leur position finale.
     }
 
     /// <summary>
-    /// Joue une animation EquipOnMove aléatoire sur l'unité donnée.
+    /// Lance les timelines d'introduction pour chaque unité en appliquant
+    /// un effet de ralenti global. Toutes les timelines démarrent en parallèle
+    /// et la coroutine attend leur terminaison avant de poursuivre.
     /// </summary>
-    private void PlayRandomEquipAnimation(GameObject unitGO)
-    {
-        var animator = unitGO.GetComponentInChildren<Animator>();
-
-        if (animator != null)
-        {
-            // Random.Range avec borne supérieure exclusive : 3 permet d'obtenir 1 ou 2
-            int choice = Random.Range(1, 3);
-            string animationName = $"EquipOnMove_{choice}";
-            animator.Play(animationName);
-        }
-    }
-
-    /// <summary>
-    /// Déclenche les animations EquipOnMove pour toutes les unités présentes
-    /// tout en appliquant un ralenti temporaire pour mettre en valeur la scène.
-    /// </summary>
-    private void TriggerEquipAnimations()
-    {
-        // Lance la coroutine gérant le ralenti et l'animation des unités
-        StartCoroutine(TriggerEquipAnimationsWithSlowTime());
-    }
-
-    /// <summary>
-    /// Coroutine appliquant un ralentissement global pendant l'animation EquipOnMove.
-    /// </summary>
-    private IEnumerator TriggerEquipAnimationsWithSlowTime()
+    private IEnumerator PlayIntroTimelinesWithSlowTime()
     {
         // Sauvegarde des paramètres temporels actuels pour les restaurer ensuite
         float initialTimeScale = Time.timeScale;
@@ -466,26 +436,72 @@ public class NewBattleManager : MonoBehaviour
         Time.timeScale = equipSlowMotionScale;
         Time.fixedDeltaTime = initialFixedDelta * Time.timeScale;
 
-        // Déclenche l'animation EquipOnMove sur chaque unité du combat
+        // Liste des PlayableDirector actifs pour surveiller la fin des timelines
+        List<PlayableDirector> activeDirectors = new();
+
+        // Déclenche les timelines d'introduction sur chaque unité disposant d'une timeline
         foreach (var unit in unitsInBattle)
         {
-            PlayRandomEquipAnimation(unit.gameObject);
+            var timeline = unit.Data.introTimeline;
+            if (timeline == null)
+                continue; // Pas de timeline définie pour cette unité
+
+            // Recherche ou ajoute un PlayableDirector sur l'unité
+            var director = unit.GetComponent<PlayableDirector>();
+            if (director == null)
+                director = unit.gameObject.AddComponent<PlayableDirector>();
+
+            // Associe la timeline et lance la lecture
+            director.playableAsset = timeline;
+            director.Play();
+            activeDirectors.Add(director);
         }
 
-        // Attente en temps réel pour garantir une durée constante malgré le ralenti
-        yield return new WaitForSecondsRealtime(equipSlowMotionDuration);
+        // Attend que toutes les timelines soient terminées
+        bool allFinished = false;
+        while (!allFinished)
+        {
+            allFinished = true;
+            foreach (var director in activeDirectors)
+            {
+                if (director != null && director.state == PlayState.Playing)
+                {
+                    allFinished = false;
+                    break; // Au moins une timeline est encore en cours
+                }
+            }
+            yield return null; // Patiente une frame avant de re-vérifier
+        }
 
-        // Restaure les valeurs temporelles initiales une fois le ralenti terminé
+        // Restaure les valeurs temporelles initiales une fois les timelines terminées
         Time.timeScale = initialTimeScale;
         Time.fixedDeltaTime = initialFixedDelta;
 
-        // Patiente encore une seconde en temps réel après la fin des animations
+        // Patiente encore une seconde en temps réel après la fin des timelines
         // d'introduction pour laisser le temps au joueur d'apprécier la mise en scène.
         yield return new WaitForSecondsRealtime(1f);
 
-        // Retourne ensuite sur la caméra de combat par défaut afin de débuter
-        // effectivement le combat. On force une transition instantanée (0f) pour
-        // éviter un fondu supplémentaire.
+        // La gestion du changement de caméra est réalisée en dehors de cette
+        // coroutine afin de laisser la main à l'appelant sur la transition.
+    }
+
+    /// <summary>
+    /// Gère la caméra d'introduction en priorité orbitale, attend la fin des
+    /// déplacements puis lance les timelines d'introduction des unités.
+    /// </summary>
+    private IEnumerator PlayIntroCameraSequence()
+    {
+        // ⏳ Patiente tant que toutes les unités n'ont pas atteint leur position de départ.
+        while (unitsPendingArrival > 0)
+            yield return null;
+
+        // 🎥 Donne immédiatement la priorité à la caméra orbitale pour présenter le champ de bataille.
+        BattleCameraManager.Instance?.SwitchToCamera("CinemachineCamera_10_OrbitAroundBattlefield", 0f);
+
+        // 🎬 Lance les timelines d'introduction en mode ralenti et attend leur terminaison.
+        yield return PlayIntroTimelinesWithSlowTime();
+
+        // 📷 Retourne ensuite sur la caméra de combat standard avec un léger fondu.
         BattleCameraManager.Instance?.SwitchToCamera(null, 0.5f);
     }
     #endregion
@@ -548,7 +564,8 @@ public class NewBattleManager : MonoBehaviour
         CharacterUnit firstPlayer = ReturnFirstStrikeCharacter();
 
         //6 Intro Camera
-
+        // Lance la séquence d'introduction des caméras avant de débuter les tours.
+        yield return PlayIntroCameraSequence();
 
         //7 Démarre la boucle de tours
         StartCoroutine(TurnLoop());

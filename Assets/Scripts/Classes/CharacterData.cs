@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic; // Permet l'utilisation de listes génériques
+using UnityEngine.Timeline; // Référence aux timelines d'introduction
 
 [CreateAssetMenu(fileName = "CharacterData", menuName = "Symphonie/CharacterData")]
 public class CharacterData : ScriptableObject, ITargetable
@@ -102,6 +103,10 @@ public class CharacterData : ScriptableObject, ITargetable
     public AnimationClip TPAnimation_Start;           // Jouée avant la téléportation
     public AnimationClip TPAnimation_Destination;     // Jouée après la téléportation
     public AnimationClip prepareToUndergoAnimation;   // Prépare la cible à subir un coup
+
+    [Header("Timeline d'introduction")]
+    [Tooltip("Timeline jouée lors de l'introduction du combat pour cette unité.")]
+    public TimelineAsset introTimeline;
 
     [Header("Sons de déplacement")]
     public AudioClip moveStartClip;
