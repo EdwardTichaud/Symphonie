@@ -283,7 +283,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""bf7decb2-66a1-450c-a72f-1df6d5f5b5d9"",
-                    ""path"": ""<Mouse>/leftButton"",
+                    ""path"": ""<Keyboard>/e"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -553,7 +553,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                 {
                     ""name"": ""LeftShoulder"",
                     ""type"": ""Button"",
-                    ""id"": ""f7c0df84-0aac-4654-b1c0-d6d1fe1311af"",
+                    ""id"": ""acc57531-6104-40fa-9706-da7f533dd003"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -562,7 +562,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                 {
                     ""name"": ""RightShoulder"",
                     ""type"": ""Button"",
-                    ""id"": ""c19fcc14-f985-4caa-9b33-c65087e1507b"",
+                    ""id"": ""7c4f6bed-28bd-49ae-807a-b838366b2308"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
@@ -902,7 +902,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""8c4970a8-6f29-4890-a98f-512e79890774"",
+                    ""id"": ""fed2420f-015d-45ad-a0c8-46244b264249"",
                     ""path"": ""<Gamepad>/leftShoulder"",
                     ""interactions"": """",
                     ""processors"": """",
@@ -913,8 +913,30 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                 },
                 {
                     ""name"": """",
-                    ""id"": ""e95ebb61-3159-459a-bd9c-cb6bab634d4c"",
+                    ""id"": ""3e972452-1b57-4a4a-9511-d465cfc441e3"",
+                    ""path"": ""<Keyboard>/leftArrow"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""LeftShoulder"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""87967906-7038-42fc-a4c3-f24ef686c961"",
                     ""path"": ""<Gamepad>/rightShoulder"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""RightShoulder"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""e1aded40-fd53-435a-b081-65d7fe039567"",
+                    ""path"": ""<Keyboard>/rightArrow"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -1141,20 +1163,8 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_Battle_EnemiesGroupSelection = m_Battle.FindAction("EnemiesGroupSelection", throwIfNotFound: true);
         m_Battle_SquadGroupSelection = m_Battle.FindAction("SquadGroupSelection", throwIfNotFound: true);
         m_Battle_Awake = m_Battle.FindAction("Awake", throwIfNotFound: true);
-        m_Battle_LeftShoulder = m_Battle.FindAction("LeftShoulder", throwIfNotFound: false);
-        if (m_Battle_LeftShoulder == null)
-        {
-            m_Battle_LeftShoulder = m_Battle.AddAction("LeftShoulder", InputActionType.Button);
-            m_Battle_LeftShoulder.AddBinding("<Gamepad>/leftShoulder");
-            m_Battle_LeftShoulder.AddBinding("<Keyboard>/leftArrow");
-        }
-        m_Battle_RightShoulder = m_Battle.FindAction("RightShoulder", throwIfNotFound: false);
-        if (m_Battle_RightShoulder == null)
-        {
-            m_Battle_RightShoulder = m_Battle.AddAction("RightShoulder", InputActionType.Button);
-            m_Battle_RightShoulder.AddBinding("<Gamepad>/rightShoulder");
-            m_Battle_RightShoulder.AddBinding("<Keyboard>/rightArrow");
-        }
+        m_Battle_LeftShoulder = m_Battle.FindAction("LeftShoulder", throwIfNotFound: true);
+        m_Battle_RightShoulder = m_Battle.FindAction("RightShoulder", throwIfNotFound: true);
         // InfoBox
         m_InfoBox = asset.FindActionMap("InfoBox", throwIfNotFound: true);
         m_InfoBox_Cancel = m_InfoBox.FindAction("Cancel", throwIfNotFound: true);
