@@ -43,20 +43,44 @@ public class MainMenuManager : MonoBehaviour
         playerInputs = new PlayerInputs();
     }
 
+    /// <summary>
+    /// Masque complètement l'interface du menu. Appelé au démarrage
+    /// et avant l'activation du menu pour éviter tout affichage prématuré
+    /// pendant l'introduction de la caméra.
+    /// </summary>
+    public void HideAllUI()
+    {
+        // Indication "Press A" cachée et alpha réinitialisé
+        if (pressA != null)
+        {
+            pressA.alpha = 0.5f;
+            pressA.gameObject.SetActive(false);
+        }
+
+        // Conteneur du menu principal désactivé
+        if (menuContainer != null)
+            menuContainer.SetActive(false);
+
+        // Sous-menu de chargement masqué
+        if (loadMenu != null)
+            loadMenu.gameObject.SetActive(false);
+
+        // Curseur de navigation hors champ
+        if (menuCursor != null)
+            menuCursor.SetActive(false);
+
+        // Panneau de saisie de nom désactivé par sécurité
+        if (namePanel != null)
+            namePanel.SetActive(false);
+
+        // Aucune interaction autorisée tant que l'intro n'est pas terminée
+        waitingForInput = false;
+    }
+
     private void Start()
     {
         // Au lancement de la scène, on masque toutes les interactions
-        if (pressA != null)
-        {
-            pressA.alpha = 0.5f; // Valeur par défaut du fade
-            pressA.gameObject.SetActive(false); // Caché tant que l'intro n'est pas terminée
-        }
-        if (menuContainer != null)
-            menuContainer.SetActive(false);
-        if (loadMenu != null)
-            loadMenu.gameObject.SetActive(false);
-        if (menuCursor != null)
-            menuCursor.SetActive(false);
+        HideAllUI();
 
         playerInputs.Menu.Enable();
         playerInputs.World.Enable();
