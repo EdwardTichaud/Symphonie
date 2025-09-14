@@ -19,9 +19,9 @@ MonoBehaviour:
   description: 
   stayFaceToTarget: 1
   notes: []
-  fatigueCost: 1
-  harmonicCost: 1
-  harmonicGeneration: 1
+  fatigueCost: 0
+  harmonicCost: 0
+  harmonicGeneration: 0
   power: 10
   effectType: 0
   effectValue: 10
@@ -34,7 +34,7 @@ MonoBehaviour:
   cooldown: 0
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0
-  altitudeCondition: 1
+  altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
   targetTypes: 01000000
@@ -55,5 +55,4 @@ MonoBehaviour:
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 11400000, guid: 361e91e8ca92edc459ed5ed247a853bd, type: 2}
   retreatTimeline: {fileID: 0}
-  fullTimeline: {fileID: 11400000, guid: 9749fda41aa1d3f489ae1280dda9b32b, type: 2}
   cameraName: CinemachineCamera_5_Caster_Near
