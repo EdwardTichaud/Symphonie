@@ -88,8 +88,6 @@ public class NewBattleManager : MonoBehaviour
     [Header("Listes des unités en combat en fonction de leur état")]
     public List<CharacterUnit> unitsInBattle = new(); // Toutes les unités du combat quelque soit leur état
     public List<CharacterUnit> activeCharacterUnits = new List<CharacterUnit>(); // Unités actives en combat (HP > 0)
-    // Nombre d'unités encore en déplacement vers le champ de bataille
-    private int unitsPendingArrival = 0;
 
     [Header("Début de combat")]
     [SerializeField] private GameObject firstStrikeEffect;
@@ -164,8 +162,6 @@ public class NewBattleManager : MonoBehaviour
     private const float ATB_THRESHOLD = 100f;
     // Délai appliqué avant qu'un ennemi n'exécute réellement son attaque
     private const float ENEMY_MOVE_DELAY = 1f;
-    // Durée (en secondes) utilisée pour déplacer les unités vers leur position d'arrivée
-    private const float SPAWN_MOVE_DURATION = 2f;
 
     [Header("Sprites des touches")]
     [SerializeField] private Sprite inputSprite1;
@@ -331,23 +327,18 @@ public class NewBattleManager : MonoBehaviour
                 continue;
             }
 
-            Vector3 offset = spawnPoint.position - spawnPoint.forward * 4f;
-
-            var unitGO = Instantiate(pc.characterBattleModel, offset, Quaternion.identity);
+            // 🧍 Apparition immédiate de l'unité à sa position de combat.
+            var unitGO = Instantiate(pc.characterBattleModel, spawnPoint.position, Quaternion.identity);
             unitGO.transform.SetParent(spawnPoint, worldPositionStays: true);
             unitGO.name = $"SquadUnit_{i}";
 
-            // ✅ Spawn du rayon à la bonne position
+            // ✅ Génère l'effet visuel du rayon directement à l'emplacement final.
             if (squadUnitRay != null)
-                Instantiate(squadUnitRay, offset, Quaternion.identity);
+                Instantiate(squadUnitRay, spawnPoint.position, Quaternion.identity);
 
             var unit = unitGO.GetComponent<CharacterUnit>();
             unit.Initialize(pc);
             unitsInBattle.Add(unit);
-
-            // Comptabilise l'unité et la fait se déplacer vers sa position de combat
-            unitsPendingArrival++;
-            StartCoroutine(AnimateSpawn(unitGO, spawnPoint.position, SPAWN_MOVE_DURATION));
         }
     }
 
@@ -374,53 +365,23 @@ public class NewBattleManager : MonoBehaviour
                 continue;
             }
 
-            Vector3 offset = spawnPoint.position + spawnPoint.forward * 4f;
-
-            var unitGO = Instantiate(enemyData.characterBattleModel, offset, Quaternion.Euler(0f, 180f, 0f));
+            // 🧍 Apparition immédiate de l'ennemi à sa position de combat.
+            var unitGO = Instantiate(enemyData.characterBattleModel, spawnPoint.position, Quaternion.Euler(0f, 180f, 0f));
             unitGO.transform.SetParent(spawnPoint, worldPositionStays: true);
             unitGO.name = $"EnemyUnit_{i}";
 
-            // ✅ Spawn du rayon à la bonne position
+            // ✅ Génère l'effet du rayon directement à l'emplacement final.
             if (enemyUnitRay != null)
-                Instantiate(enemyUnitRay, offset, Quaternion.identity);
+                Instantiate(enemyUnitRay, spawnPoint.position, Quaternion.identity);
 
             var eu = unitGO.GetComponent<CharacterUnit>();
             eu.Initialize(enemyData);
             unitsInBattle.Add(eu);
-
-            // Comptabilise l'unité ennemie en déplacement vers sa position finale
-            unitsPendingArrival++;
-            StartCoroutine(AnimateSpawn(unitGO, spawnPoint.position, SPAWN_MOVE_DURATION));
         }
     }
     #endregion
 
     #region Mise en scène de la scène de bataille
-    private IEnumerator AnimateSpawn(GameObject unitGO, Vector3 targetPosition, float duration)
-    {
-        Vector3 startPos = unitGO.transform.position;
-        float elapsed = 0f;
-
-        CharacterUnit activeUnit = unitGO.GetComponentInChildren<CharacterUnit>();
-        OrientAllUnitsTowardCenter(activeUnit);
-
-        // Interpole la position de l'unité jusqu'à sa destination
-        while (elapsed < duration)
-        {
-            float t = elapsed / duration;
-            unitGO.transform.position = Vector3.Lerp(startPos, targetPosition, t);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-
-        unitGO.transform.position = targetPosition;
-
-        // Signale que l'unité a terminé son déplacement
-        unitsPendingArrival--;
-        // L'animation d'introduction sera déclenchée séparément une fois
-        // que toutes les unités auront atteint leur position finale.
-    }
-
     /// <summary>
     /// Lance les timelines d'introduction pour chaque unité en appliquant
     /// un effet de ralenti global. Toutes les timelines démarrent en parallèle
@@ -506,10 +467,6 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private IEnumerator PlayIntroCameraSequence()
     {
-        // ⏳ Patiente tant que toutes les unités n'ont pas atteint leur position de départ.
-        while (unitsPendingArrival > 0)
-            yield return null;
-
         // 🎥 Donne immédiatement la priorité à la caméra orbitale pour présenter le champ de bataille.
         BattleCameraManager.Instance?.SwitchToCamera("CinemachineCamera_10_OrbitAroundBattlefield", 0f);
 
