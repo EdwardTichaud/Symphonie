@@ -12,5 +12,6 @@ Ce document décrit la procédure pour débloquer un succès lorsque le joueur i
 3. **Configurer le PointOfInterest**
    - Sur le composant `PointOfInterest`, renseignez le champ **Succès** avec l'`AchievementSO` à débloquer.
    - Lors de l'interaction, le succès sera automatiquement débloqué si un `AchievementManager` actif est trouvé.
+   - L'interaction se fait via l'action `Interact` de la map d'entrées **World**, offrant une cohérence de contrôle pour tous les joueurs.
 
 Grâce à cette fonctionnalité, chaque point d'intérêt peut récompenser le joueur par un succès, renforçant ainsi la progression narrative et ludique.

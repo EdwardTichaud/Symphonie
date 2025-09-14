@@ -139,6 +139,11 @@ public class PointOfInterest : MonoBehaviour, IInteractable, ILocalInfoBoxTarget
 #endif
 
     // === Mode OnConfirm ===
+    /// <summary>
+    /// Appelé par l'Input System lorsque le joueur presse l'action
+    /// <c>Interact</c> de la map <c>World</c>. Cette méthode délègue ensuite
+    /// le déroulement de l'interaction au moteur interne.
+    /// </summary>
     public void Interact()
     {
         TryStartInteraction();
