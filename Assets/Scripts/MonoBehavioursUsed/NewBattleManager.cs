@@ -420,11 +420,8 @@ public class NewBattleManager : MonoBehaviour
 
         // Signale que l'unité a terminé son déplacement
         unitsPendingArrival--;
-        if (unitsPendingArrival <= 0)
-        {
-            // Toutes les unités sont en place : déclencher l'animation EquipOnMove pour chacune
-            TriggerEquipAnimations();
-        }
+        // L'animation d'introduction sera déclenchée séparément une fois
+        // que toutes les unités auront atteint leur position finale.
     }
 
     /// <summary>
@@ -441,16 +438,6 @@ public class NewBattleManager : MonoBehaviour
             string animationName = $"EquipOnMove_{choice}";
             animator.Play(animationName);
         }
-    }
-
-    /// <summary>
-    /// Déclenche les animations EquipOnMove pour toutes les unités présentes
-    /// tout en appliquant un ralenti temporaire pour mettre en valeur la scène.
-    /// </summary>
-    private void TriggerEquipAnimations()
-    {
-        // Lance la coroutine gérant le ralenti et l'animation des unités
-        StartCoroutine(TriggerEquipAnimationsWithSlowTime());
     }
 
     /// <summary>
@@ -483,9 +470,27 @@ public class NewBattleManager : MonoBehaviour
         // d'introduction pour laisser le temps au joueur d'apprécier la mise en scène.
         yield return new WaitForSecondsRealtime(1f);
 
-        // Retourne ensuite sur la caméra de combat par défaut afin de débuter
-        // effectivement le combat. On force une transition instantanée (0f) pour
-        // éviter un fondu supplémentaire.
+        // La gestion du changement de caméra est réalisée en dehors de cette
+        // coroutine afin de laisser la main à l'appelant sur la transition.
+    }
+
+    /// <summary>
+    /// Gère la caméra d'introduction en priorité orbitale, attend la fin des
+    /// déplacements puis lance les animations d'équipement des unités.
+    /// </summary>
+    private IEnumerator PlayIntroCameraSequence()
+    {
+        // ⏳ Patiente tant que toutes les unités n'ont pas atteint leur position de départ.
+        while (unitsPendingArrival > 0)
+            yield return null;
+
+        // 🎥 Donne immédiatement la priorité à la caméra orbitale pour présenter le champ de bataille.
+        BattleCameraManager.Instance?.SwitchToCamera("CinemachineCamera_10_OrbitAroundBattlefield", 0f);
+
+        // 🎬 Lance les animations EquipOnMove en mode ralenti et attend leur terminaison.
+        yield return TriggerEquipAnimationsWithSlowTime();
+
+        // 📷 Retourne ensuite sur la caméra de combat standard avec un léger fondu.
         BattleCameraManager.Instance?.SwitchToCamera(null, 0.5f);
     }
     #endregion
@@ -548,7 +553,8 @@ public class NewBattleManager : MonoBehaviour
         CharacterUnit firstPlayer = ReturnFirstStrikeCharacter();
 
         //6 Intro Camera
-
+        // Lance la séquence d'introduction des caméras avant de débuter les tours.
+        yield return PlayIntroCameraSequence();
 
         //7 Démarre la boucle de tours
         StartCoroutine(TurnLoop());
