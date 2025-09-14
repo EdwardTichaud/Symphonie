@@ -4,6 +4,9 @@ using System.Collections.Generic;
 // Les directives UnityEditor sont réservées à l'éditeur et ne doivent pas
 // être incluses dans le build du joueur. Elles ont été retirées pour éviter
 // les erreurs de compilation lors de l'export.
+#if UNITY_EDITOR
+using UnityEditor; // Utilisé uniquement pour charger les assets de référence.
+#endif
 
 [CreateAssetMenu(fileName = "NewMusicalMove", menuName = "Symphonie/Musical Move")]
 public class MusicalMoveSO : ScriptableObject
@@ -146,6 +149,40 @@ public class MusicalMoveSO : ScriptableObject
     // Nom de la caméra utilisée pendant la phase de repli.
     [Tooltip("CinemachineCamera active lors du repli.\nLaisser vide pour garder la caméra précédente.")]
     public string retreatCameraName;
+
+#if UNITY_EDITOR
+    // ------------------------------------------------------------------
+    // Références par défaut
+    // ------------------------------------------------------------------
+    // Lorsque l'on crée un nouveau MusicalMove, les trois champs de caméra
+    // doivent automatiquement reprendre les valeurs de l'exemple
+    // "MusicalMove_Rhapsodie" afin d'assurer une cohérence visuelle dans
+    // tout le projet. Cette méthode est uniquement exécutée dans l'éditeur
+    // afin d'éviter toute dépendance aux fichiers lors du build final.
+    private const string RHAPSODIE_PATH =
+        "Assets/MusicalMoves/MusicalMove_Rhapsodie/MusicalMove_Rhapsodie.asset";
+
+    private void OnValidate()
+    {
+        // Charge le ScriptableObject de référence. Si le fichier est déplacé
+        // ou supprimé, aucune action n'est effectuée pour ne pas provoquer
+        // d'erreur dans l'éditeur.
+        var reference = AssetDatabase.LoadAssetAtPath<MusicalMoveSO>(RHAPSODIE_PATH);
+        if (reference == null)
+            return;
+
+        // Pour chaque champ, si aucune valeur n'est renseignée, on copie
+        // celle de "MusicalMove_Rhapsodie". Les concepteurs peuvent ensuite
+        // remplacer ces valeurs manuellement selon les besoins spécifiques
+        // du nouveau move.
+        if (string.IsNullOrEmpty(preparingCameraName))
+            preparingCameraName = reference.preparingCameraName;
+        if (string.IsNullOrEmpty(performingCameraName))
+            performingCameraName = reference.performingCameraName;
+        if (string.IsNullOrEmpty(retreatCameraName))
+            retreatCameraName = reference.retreatCameraName;
+    }
+#endif
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {

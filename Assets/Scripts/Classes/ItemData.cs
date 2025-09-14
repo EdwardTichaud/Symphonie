@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.Timeline;
 using System.Collections.Generic;
+#if UNITY_EDITOR
+using UnityEditor; // Nécessaire uniquement dans l'éditeur pour charger l'item de référence.
+#endif
 
 [CreateAssetMenu(fileName = "New Item", menuName = "Symphonie/Item")]
 public class ItemData : ScriptableObject
@@ -99,6 +102,34 @@ public class ItemData : ScriptableObject
     // Nom de la caméra pendant la phase de repli.
     [Tooltip("CinemachineCamera active lors du repli.\nLaisser vide pour garder la caméra précédente.")]
     public string retreatCameraName;
+
+#if UNITY_EDITOR
+    // ------------------------------------------------------------------
+    // Références par défaut
+    // ------------------------------------------------------------------
+    // Les nouveaux Items doivent initialiser leurs caméras en se basant sur
+    // l'objet d'exemple "Item_LonguePortee". Cela évite de créer des
+    // variations involontaires et facilite le travail des game designers.
+    private const string LONGUE_PORTEE_PATH =
+        "Assets/Items/Item_LonguePortee/Item_LonguePortee.asset";
+
+    private void OnValidate()
+    {
+        // Récupère l'Item de référence. Si introuvable, on ne fait rien pour
+        // éviter les messages d'erreur intempestifs.
+        var reference = AssetDatabase.LoadAssetAtPath<ItemData>(LONGUE_PORTEE_PATH);
+        if (reference == null)
+            return;
+
+        // Applique les valeurs par défaut uniquement si les champs sont vides.
+        if (string.IsNullOrEmpty(preparingCameraName))
+            preparingCameraName = reference.preparingCameraName;
+        if (string.IsNullOrEmpty(performingCameraName))
+            performingCameraName = reference.performingCameraName;
+        if (string.IsNullOrEmpty(retreatCameraName))
+            retreatCameraName = reference.retreatCameraName;
+    }
+#endif
 
     [Header("QTE Pattern")]
     public List<float> beatPattern;
