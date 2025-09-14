@@ -85,6 +85,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6048776095960774139}
   - component: {fileID: 3399561089178856574}
+  - component: {fileID: 3188643251887260983}
   m_Layer: 0
   m_Name: MainMenu
   m_TagString: Untagged
@@ -129,7 +130,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cbd45d5b19ee4d16b4fa08ad897b1270, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   pressA: {fileID: 1278535571591470836}
   menuContainer: {fileID: 7645946083320227689}
   loadMenu: {fileID: 238922239257272416}
@@ -138,6 +139,21 @@ MonoBehaviour:
   cursorOffset: {x: -150, y: 0, z: 0}
   navigationCooldown: 0.25
   cursorLerpSpeed: 50
+--- !u!114 &3188643251887260983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 897300643701155760}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ddb27e07b63445eaeb05741dcee3185, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  introDirector: {fileID: 0}
+  menuManager: {fileID: 3399561089178856574}
+  introDuration: 3
 --- !u!1 &2251524437557201998
 GameObject:
   m_ObjectHideFlags: 0
