@@ -199,69 +199,39 @@ public class RhythmQTEManager : MonoBehaviour
         if (timeline == null || BattleTimelineManager.Instance == null || animatorGO == null)
             return;
 
-        if (overlay)
-        {
-            // 🎥 Lorsque la caméra globale (overlay) est utilisée, la timeline du lanceur
-            // est lue via le PlayableDirector dédié. Cependant, l'origine de la caméra
-            // (BattleCamera_Origin) ne se repositionnait pas, ce qui provoquait un ancrage
-            // incorrect durant les phases de préparation et de repli. Nous ré-alignons donc
-            // explicitement l'origine avant de lancer l'animation du caster.
-            BattleTimelineManager.Instance.AlignCameraToTarget(
-                cameraTarget ?? animatorGO, // Fallback sur le lanceur si la cible est absente
-                battleCameraTag,
-                initialRotation);
+        // 📽️ La caméra n'étant plus pilotée par les timelines des moves/items,
+        // nous ré-alignons simplement l'origine avant de lancer la timeline du lanceur.
+        BattleTimelineManager.Instance.AlignCameraToTarget(
+            cameraTarget ?? animatorGO, // Fallback sur le lanceur si la cible est absente
+            battleCameraTag,
+            initialRotation);
 
-            // Lecture via le PlayableDirector du lanceur en parallèle de la timeline caméra complète.
-            BattleTimelineManager.Instance.PlayCasterTimeline(timeline, animatorGO);
-        }
-        else
-        {
-            // Cas classique : la timeline contrôle également la caméra.
-            BattleTimelineManager.Instance.PlayTimeline(timeline, animatorGO, cameraTarget, battleCameraTag, autoRestore, initialRotation);
-        }
+        // Lecture de la seule timeline du caster.
+        BattleTimelineManager.Instance.PlayCasterTimeline(timeline, animatorGO);
     }
 
     /// <summary>
     /// Attend la fin d'une timeline précédemment lancée.
     /// </summary>
     /// <param name="timeline">Timeline à surveiller.</param>
-    /// <param name="overlay">Vrai si la timeline est jouée en superposition.</param>
+    /// <param name="overlay">Paramètre conservé pour compatibilité, sans effet.</param>
     private IEnumerator WaitForTimelinePhase(TimelineAsset timeline, bool overlay)
     {
         if (timeline == null)
             yield break;
 
-        if (overlay)
+        float maxDuration = (float)timeline.duration;
+        float timer = 0f;
+        while (BattleTimelineManager.Instance != null &&
+               BattleTimelineManager.Instance.IsCasterTimelinePlaying &&
+               timer < maxDuration)
         {
-            // Suivi de la timeline via le PlayableDirector du lanceur.
-            float maxDuration = (float)timeline.duration;
-            float timer = 0f;
-            while (BattleTimelineManager.Instance != null &&
-                   BattleTimelineManager.Instance.IsCasterTimelinePlaying &&
-                   timer < maxDuration)
-            {
-                timer += Time.deltaTime;
-                yield return null;
-            }
-
-            if (BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePlaying)
-                Debug.LogWarning($"[RhythmQTEManager] Timeline '{timeline.name}' encore active après {maxDuration}s. Suite forcée.");
+            timer += Time.deltaTime;
+            yield return null;
         }
-        else
-        {
-            float maxDuration = (float)timeline.duration;
-            float timer = 0f;
-            while (TimelineManager.Instance != null &&
-                   TimelineManager.Instance.IsTimelineActive &&
-                   timer < maxDuration)
-            {
-                timer += Time.deltaTime;
-                yield return null;
-            }
 
-            if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelineActive)
-                Debug.LogWarning($"[RhythmQTEManager] Timeline '{timeline.name}' encore active après {maxDuration}s. Suite forcée.");
-        }
+        if (BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePlaying)
+            Debug.LogWarning($"[RhythmQTEManager] Timeline '{timeline.name}' encore active après {maxDuration}s. Suite forcée.");
     }
 
     // Séquence du Musicalmove - Ajouter autant de méthodes que d'effets durant le move

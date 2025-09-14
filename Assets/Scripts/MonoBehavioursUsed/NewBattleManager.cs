@@ -2113,16 +2113,14 @@ public class NewBattleManager : MonoBehaviour
     private void StartItemPreparingTimeline()
     {
         // S'assure qu'une Timeline et un gestionnaire existent avant de lancer quoi que ce soit
-        if (itemPreparingTimeline == null || BattleTimelineManager.Instance == null || TimelineManager.Instance == null || itemMenuTimelineActive)
+        if (itemPreparingTimeline == null || BattleTimelineManager.Instance == null || itemMenuTimelineActive)
             return;
 
         GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
-        // Démarre la Timeline qui boucle tant que le menu est ouvert
-        BattleTimelineManager.Instance.PlayTimeline(
-            itemPreparingTimeline,
-            animGO,
-            animGO,
-            "BattleCamera");
+        // La caméra n'étant plus contrôlée par timeline, on la repositionne puis
+        // on joue la boucle d'attente uniquement sur le lanceur.
+        BattleTimelineManager.Instance.AlignCameraToTarget(animGO, "BattleCamera");
+        BattleTimelineManager.Instance.PlayCasterTimeline(itemPreparingTimeline, animGO);
         itemMenuTimelineActive = true;
     }
 
@@ -2131,10 +2129,11 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private void StopItemPreparingTimeline()
     {
-        if (!itemMenuTimelineActive || TimelineManager.Instance == null)
+        if (!itemMenuTimelineActive || BattleTimelineManager.Instance == null)
             return;
 
-        TimelineManager.Instance.StopTimeline();
+        // Arrête la timeline d'attente lancée sur le caster.
+        BattleTimelineManager.Instance.StopCasterTimeline();
         itemMenuTimelineActive = false;
     }
     #endregion
