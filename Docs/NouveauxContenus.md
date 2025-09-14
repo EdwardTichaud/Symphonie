@@ -22,21 +22,16 @@ sans infliger directement un bonus ou un malus classique. Elles ouvrent des
 opportunités tactiques que les novices peuvent appréhender facilement tout en
 permettant aux vétérans de créer des enchaînements complexes.
 
-## Timeline caméra continue
-Un champ `fullTimeline` est disponible dans chaque **MusicalMove** et désormais dans chaque **Item**. Il définit un
-mouvement de caméra couvrant l'ensemble de l'action (préparation, utilisation/exécution et repli) pour assurer un
-suivi sans coupure. La rotation du lanceur est enregistrée dès la première frame de la phase de préparation puis
-conservée jusqu'à la fin du move ou de l'objet, même si plusieurs timelines s'enchaînent, afin de garantir une
-orientation cohérente de la caméra.
+## Caméras par phase
+Chaque **MusicalMove** et chaque **Item** peut désormais définir trois noms de
+caméras Cinemachine :
+`preparingCameraName`, `performingCameraName` et `retreatCameraName`.
+Ces champs autorisent l'utilisation d'une caméra différente pour chaque
+phase sans obligation. Laisser un champ vide conserve la caméra active, ce
+qui garantit une transition fluide.
 
-Les phases classiques restent gérées par le code du jeu afin de déclencher les téléportations nécessaires entre chaque
-étape. Les timelines `preparingTimeline`, `performingTimeline` et `retreatTimeline` peuvent être lues en
-**superposition** pour animer le lanceur ou ses effets pendant que la caméra suit la timeline principale.
-
-Lorsqu'un **MusicalMove** ou un **Item** est utilisé, la `fullTimeline` démarre en premier puis les timelines de
-préparation, d'exécution et de repli se succèdent automatiquement en parallèle. Le lanceur peut être téléporté entre la
-fin de la préparation et le début de l'exécution ainsi qu'entre l'exécution et le repli afin d'assurer un enchaînement
-fluide de l'action.
+Ce nouveau système remplace l'ancien champ `cameraName` unique ainsi que
+la notion de `fullTimeline` qui contrôlait auparavant la caméra.
 
 ## Déplacement optionnel
 Un booléen `requiresMovement` est présent dans chaque **MusicalMove** et **Item**.

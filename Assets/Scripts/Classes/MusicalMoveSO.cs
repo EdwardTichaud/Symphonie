@@ -136,10 +136,16 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Timeline jouée lors du repli après l'exécution du move")]
     public TimelineAsset retreatTimeline;
 
-    [Header("Caméra")]
-    // Référence à la nouvelle CinemachineCamera à activer pour ce move
-    [Tooltip("Nom de la CinemachineCamera utilisée pour ce move.\nLaisser vide pour garder la caméra de combat par défaut.")]
-    public string cameraName;
+    [Header("Caméras par phase")]
+    // Nom de la caméra utilisée pendant la phase de préparation.
+    [Tooltip("CinemachineCamera active lors de la préparation.\nLaisser vide pour conserver la caméra actuelle.")]
+    public string preparingCameraName;
+    // Nom de la caméra utilisée pendant la phase d'exécution.
+    [Tooltip("CinemachineCamera active pendant l'exécution.\nLaisser vide pour garder la caméra précédente.")]
+    public string performingCameraName;
+    // Nom de la caméra utilisée pendant la phase de repli.
+    [Tooltip("CinemachineCamera active lors du repli.\nLaisser vide pour garder la caméra précédente.")]
+    public string retreatCameraName;
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {
