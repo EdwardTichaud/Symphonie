@@ -9,36 +9,46 @@ using UnityEngine.InputSystem;
 /// </summary>
 public class ReveVisionController : MonoBehaviour
 {
-    [Tooltip("Action Input System utilisée pour activer la vision révélée.")]
-    public string actionName = "ReveVisionToggle"; // Nom logique de l'action.
+    [Tooltip("Action d'entrée utilisée pour activer la vision révélée.")]
+    public InputAction toggleAction; // Référence vers l'action écoutée.
 
-    [Tooltip("Action d'entrée réellement écoutée. Si null, une action par défaut sera créée.")]
-    public InputAction toggleAction;
+    // Indique si nous avons créé l'action localement (pour éviter de désactiver l'action globale).
+    private bool ownsLocalAction = false;
 
     // État actuel de la vision révélée.
     private bool reveActive = false;
 
-    private void Awake()
+    private void OnEnable()
     {
-        // Crée une action par défaut si rien n'est assigné dans l'inspecteur.
-        if (toggleAction == null)
+        // Essaie d'utiliser le système d'inputs centralisé.
+        if (toggleAction == null && InputsManager.Instance != null)
         {
-            // Par défaut on associe la touche R du clavier.
-            toggleAction = new InputAction(actionName, binding: "<Keyboard>/r");
+            // Utilise l'action "World.Action" définie dans l'asset d'inputs.
+            toggleAction = InputsManager.Instance.playerInputs.World.Action;
+            ownsLocalAction = false;
         }
 
-        // Abonnement au déclenchement de l'action.
+        // Si aucune action n'a pu être récupérée (jeu lancé sans InputsManager), on crée un fallback local.
+        if (toggleAction == null)
+        {
+            toggleAction = new InputAction("ReveVisionToggle", binding: "<Keyboard>/r");
+            toggleAction.Enable();
+            ownsLocalAction = true;
+        }
+
+        // Abonnement au déclenchement.
         toggleAction.performed += OnTogglePerformed;
-        toggleAction.Enable();
     }
 
-    private void OnDestroy()
+    private void OnDisable()
     {
-        // Nettoie proprement l'action pour éviter les fuites mémoire.
         if (toggleAction != null)
         {
             toggleAction.performed -= OnTogglePerformed;
-            toggleAction.Disable();
+
+            // On ne désactive l'action que si elle a été créée localement.
+            if (ownsLocalAction)
+                toggleAction.Disable();
         }
     }
 
@@ -50,6 +60,7 @@ public class ReveVisionController : MonoBehaviour
 
     /// <summary>
     /// Bascule l'état de la vision révélée et met à jour le shader global.
+    /// Cette mécanique fait directement écho à l'Histoire de Symphonie en révélant les secrets cachés.
     /// </summary>
     private void ToggleVision()
     {

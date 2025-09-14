@@ -85,16 +85,27 @@ public class InteractionManager : MonoBehaviour
         ResetBattleInputs();
     }
 
+    /// <summary>
+    /// Abonne l'action d'interaction du monde à la confirmation pour
+    /// permettre au joueur de déclencher les <see cref="PointOfInterest"/>.
+    /// </summary>
     public void SetInputs()
     {
-        var infoBox = InputsManager.Instance.playerInputs.InfoBox;
-        infoBox.Confirm.performed += OnConfirm;        
+        // L'action "Interact" fait partie du mapping d'entrée "World".
+        // En l'utilisant directement, on garantit une cohérence des contrôles
+        // sur l'ensemble des PointsOfInterest et dans tout le jeu.
+        var world = InputsManager.Instance.playerInputs.World;
+        world.Interact.performed += OnConfirm;
     }
 
+    /// <summary>
+    /// Retire l'abonnement à l'action d'interaction afin d'éviter
+    /// les appels lorsque l'objet est désactivé.
+    /// </summary>
     public void ResetBattleInputs()
     {
-        var infoBox = InputsManager.Instance.playerInputs.InfoBox;
-        infoBox.Confirm.performed -= OnConfirm;
+        var world = InputsManager.Instance.playerInputs.World;
+        world.Interact.performed -= OnConfirm;
     }
 
     void OnConfirm(InputAction.CallbackContext ctx)
@@ -201,10 +212,9 @@ public class InteractionManager : MonoBehaviour
                     // Affiche l'invite locale d'interaction.
                     localInfoBox.SetActive(true);
 
-                    // Active également la map d'inputs InfoBox pour capter la touche de validation.
+                    // Seule la map "World" est nécessaire pour récupérer l'action Interact.
                     InputsManager.Instance.ActivateOnly(
-                        InputsManager.Instance.playerInputs.World.Get(),
-                        InputsManager.Instance.playerInputs.InfoBox.Get());
+                        InputsManager.Instance.playerInputs.World.Get());
                 }
             }
         }

@@ -39,12 +39,25 @@ public class VirtualKeyboard : MonoBehaviour
     // Texte actuellement saisi via le clavier virtuel, accessible aux autres systèmes.
     public string currentVKWordText { get; private set; } = string.Empty;
 
-    // Référence vers le système d'inputs généré par l'Input System.
+    // Référence vers le système d'inputs. On privilégie l'instance centrale fournie par InputsManager
+    // afin de conserver une cohérence des contrôles dans tout le projet.
     private PlayerInputs playerInputs;
+    // Indique si nous avons dû créer une instance locale (cas rare lorsque InputsManager est absent).
+    private bool ownsLocalInputs = false;
 
     private void Awake()
     {
-        playerInputs = new PlayerInputs();
+        // Récupère l'instance globale d'inputs si disponible ; sinon, on en crée une localement.
+        if (InputsManager.Instance != null)
+        {
+            playerInputs = InputsManager.Instance.playerInputs;
+            ownsLocalInputs = false;
+        }
+        else
+        {
+            playerInputs = new PlayerInputs();
+            ownsLocalInputs = true;
+        }
 
         if (Instance == null)
         {
@@ -76,9 +89,9 @@ public class VirtualKeyboard : MonoBehaviour
         if (cursor != null)
             cursor.gameObject.SetActive(false);
 
-        // Recherche d'une instance de PlayerInputs dans la scène.
+        // Avertit si aucune instance d'inputs n'a pu être trouvée.
         if (playerInputs == null)
-            Debug.LogWarning("[VirtualKeyboard] Aucun PlayerInputs trouvé dans la scène.");
+            Debug.LogWarning("[VirtualKeyboard] Aucun PlayerInputs disponible. Les entrées ne fonctionneront pas.");
     }
 
     /// <summary>
@@ -95,9 +108,10 @@ public class VirtualKeyboard : MonoBehaviour
         _currentIndex = 0;
         UpdateCursor();
 
-        // Activation du mapping World afin de recevoir les entrées
-        // du joystick ou du clavier pendant l'utilisation du clavier virtuel.
-        playerInputs.World.Enable();
+        // On s'assure que le mapping World est actif pour recevoir les entrées.
+        // Si l'InputsManager gère déjà cette map, l'appel à Enable() est sans risque.
+        if (playerInputs != null)
+            playerInputs.World.Enable();
 
         // Abonnements aux différentes entrées du joueur.
         playerInputs.World.Move.performed += OnMove;
@@ -123,9 +137,9 @@ public class VirtualKeyboard : MonoBehaviour
             playerInputs.World.Interact.performed -= OnInteract;
             playerInputs.World.Cancel.performed -= OnCancel;
 
-            // Désactivation du mapping World pour éviter
-            // toute réception d'entrées lorsque le clavier est fermé.
-            playerInputs.World.Disable();
+            // On ne désactive le mapping que si nous avons créé les inputs localement.
+            if (ownsLocalInputs)
+                playerInputs.World.Disable();
         }
 
         if (cursor != null)
@@ -143,8 +157,8 @@ public class VirtualKeyboard : MonoBehaviour
         // On ferme proprement le clavier pour retirer les abonnements et désactiver la map.
         CloseVK();
 
-        // Libère les ressources de l'Input System.
-        if (playerInputs != null)
+        // Libère les ressources uniquement si l'on possède une instance locale.
+        if (ownsLocalInputs && playerInputs != null)
             playerInputs.Dispose();
     }
 
