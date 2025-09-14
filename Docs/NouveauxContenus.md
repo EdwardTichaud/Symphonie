@@ -30,6 +30,14 @@ Ces champs autorisent l'utilisation d'une caméra différente pour chaque
 phase sans obligation. Laisser un champ vide conserve la caméra active, ce
 qui garantit une transition fluide.
 
+### Valeurs par défaut recommandées
+Pour assurer une expérience cohérente, tout **nouveau MusicalMove** doit
+initialiser ces trois champs avec les valeurs définies dans
+**MusicalMove_Rhapsodie**. De même, les **nouveaux Items** doivent se baser
+sur les valeurs utilisées par **Item_LonguePortee**. Les concepteurs
+peuvent ensuite adapter ces paramètres selon les besoins spécifiques du
+contenu ajouté.
+
 Ce nouveau système remplace l'ancien champ `cameraName` unique ainsi que
 la notion de `fullTimeline` qui contrôlait auparavant la caméra.
 
