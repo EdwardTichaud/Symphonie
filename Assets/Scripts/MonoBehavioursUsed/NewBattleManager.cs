@@ -2804,9 +2804,27 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private void EnsureBattleCamera()
     {
+        // Si la caméra de combat n'a pas encore été mémorisée, on la recherche.
         if (battleCamera == null)
         {
-            battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+            // On récupère l'objet portant le tag "BattleCamera". Avec Cinemachine 3,
+            // cet objet est généré dynamiquement sous le nom "CinemachineCamera_0_BattleCamera".
+            // Il ne porte toutefois pas directement les panneaux d'interface (MainMenu, SkillsMenu, ItemsMenu).
+            var taggedCam = GameObject.FindGameObjectWithTag("BattleCamera");
+
+            if (taggedCam != null)
+            {
+                // On remonte jusqu'à la racine commune afin de récupérer l'objet
+                // "BattleCamera_Cam" qui héberge l'UI de combat.
+                Transform root = taggedCam.transform.parent?.parent;
+                battleCamera = root?.Find("BattleCamera_Cam")?.gameObject;
+
+                // Si l'objet n'est pas trouvé, on tente l'ancienne structure (parent direct).
+                battleCamera ??= taggedCam.transform.parent?.gameObject;
+
+                // En dernier recours, on conserve l'objet tagué pour éviter une référence nulle.
+                battleCamera ??= taggedCam;
+            }
         }
     }
 
