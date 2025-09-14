@@ -39,7 +39,7 @@ public class CameraController : MonoBehaviour
     [Tooltip("Fréquence de l'oscillation de respiration.")]
     [SerializeField] private float breathingFrequency = 1f;
 
-    private Camera battleCamera;               // Référence directe à la BattleCamera
+    private GameObject battleCamera;               // Référence directe à la BattleCamera
     private Transform battleCameraParent;      // Parent direct de la BattleCamera (utilisé pour le forçage)
     private float worldBreathOffset;           // Dernier décalage appliqué à la WorldCamera elle-même
     private float battleBreathOffset;          // Dernier décalage appliqué à la BattleCamera elle-même
@@ -123,7 +123,7 @@ public class CameraController : MonoBehaviour
         }
 
         // Recherche de la BattleCamera et de son parent pour gérer séparément forçage et respiration
-        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
+        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
         if (battleCamera == null) Debug.LogWarning("[CameraController] BattleCamera introuvable !");
         battleCameraParent = battleCamera != null && battleCamera.transform.parent != null
             ? battleCamera.transform.parent

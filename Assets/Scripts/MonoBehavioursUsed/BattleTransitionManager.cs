@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using UnityEngine.Playables;
 using UnityEngine.InputSystem; // Nécessaire pour utiliser les actions d'input
 using UnityEngine.Timeline; // Pour lancer les timelines post-combat
+using Unity.Cinemachine; // Pour gérer les caméras Cinemachine
 
 public class BattleTransitionManager : MonoBehaviour
 {
@@ -26,7 +27,7 @@ public class BattleTransitionManager : MonoBehaviour
     [Header("Music")]
     [SerializeField] private AudioSource musicSource;
 
-    private Camera battleCamera;
+    private GameObject battleCamera;
 
     [Header("Scenes")]
     [SerializeField] private GameObject worldScene; // GameObject racine de la scène du monde à désactiver pendant les combats
@@ -183,7 +184,7 @@ public class BattleTransitionManager : MonoBehaviour
 
         worldFadeOverlay ??= GameObject.Find("WorldFadeOverlayPanel")?.GetComponent<Image>();
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
-        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
+        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
 
         // Tente de récupérer automatiquement le GameObject "WorldScene" si l'on n'a rien assigné dans l'inspecteur
         worldScene ??= GameObject.Find("WorldScene");
@@ -384,7 +385,7 @@ public class BattleTransitionManager : MonoBehaviour
         AudioManager.Instance.PlaySound(versusThunder);
         StartCoroutine(VersusThunderFlash()); // Déclenche un flash blanc synchronisé avec le son
 
-        battleCamera.gameObject.SetActive(true);
+        battleCamera.SetActive(true);
         versusTransition.SetActive(true);
         versusCameraCanvas.SetActive(true);
 
@@ -439,7 +440,7 @@ public class BattleTransitionManager : MonoBehaviour
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
         if (battleCamera != null)
         {
-            battleCamera.gameObject.SetActive(true); // Active explicitement la caméra d'intro si elle était désactivée
+            battleCamera.SetActive(true); // Active explicitement la caméra d'intro si elle était désactivée
 
             if (firstUnit != null)
                 battleCamera.transform.position = firstUnit.transform.position;
@@ -596,21 +597,38 @@ public class BattleTransitionManager : MonoBehaviour
 
     void SetupBattleCameraAndUI()
     {
-        // Active le GameObject principal de la caméra ainsi que tous ses enfants
-        // pour s'assurer que l'affichage se fasse correctement
-        battleCamera.gameObject.SetActive(true);
+        // Active la hiérarchie caméra
+        battleCamera.SetActive(true);
         foreach (Transform child in battleCamera.transform)
-        {
             child.gameObject.SetActive(true);
+
+        // Récupère la Camera Unity via son GameObject "BattleCamera_Cam"
+        GameObject camObj = GameObject.Find("BattleCamera_Cam");
+        if (camObj == null)
+        {
+            Debug.LogError("Impossible de trouver BattleCamera_Cam dans la scène.");
+            return;
         }
 
-        // Utilise la nouvelle méthode FindObjectsByType afin d'éviter l'appel obsolète
+        Camera unityCam = camObj.GetComponent<Camera>();
+        if (unityCam == null)
+        {
+            Debug.LogError("BattleCamera_Cam n’a pas de composant Camera.");
+            return;
+        }
+
+        // Assigne la caméra au Canvas en ScreenSpace-Camera
         var battleUICanvas = FindObjectsByType<Canvas>(FindObjectsSortMode.None)
             .FirstOrDefault(c => c.renderMode == RenderMode.ScreenSpaceCamera);
-        if (battleUICanvas != null)
-            battleUICanvas.worldCamera = battleCamera;
 
-        GameObject.Find("BattleScene_TransitionCanvas")?.transform.GetChild(0).gameObject.SetActive(true);
+        if (battleUICanvas != null)
+        {
+            battleUICanvas.worldCamera = unityCam;
+        }
+
+        // Active le premier enfant du TransitionCanvas si trouvé
+        GameObject.Find("BattleScene_TransitionCanvas")
+            ?.transform.GetChild(0).gameObject.SetActive(true);
     }
 
     public IEnumerator SlowTimeScale(float to, float speed)

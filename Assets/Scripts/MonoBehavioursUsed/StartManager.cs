@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Cinemachine;
 
 /// <summary>
 /// Initialise différents paramètres dès le chargement de la scène Commencement.
@@ -11,7 +12,6 @@ public class StartManager : MonoBehaviour
     void Awake()
     {
         ResetTimeScale();       // S'assure que le temps s'écoule normalement.
-        ResetCamerasDepth();    // Replace la caméra de bataille au dessus des autres.
         SetIdleInWorld();       // Force le joueur à revenir dans son animation d'attente.
         DialogueManager.Instance.CloseDialogue(); // Ferme tout dialogue résiduel.
     }
@@ -29,16 +29,6 @@ public class StartManager : MonoBehaviour
     {
         Debug.Log("Resetting Time Scale to 1");
         Time.timeScale = 1f;
-    }
-
-    /// <summary>
-    /// Replace la profondeur de la caméra de bataille pour éviter les conflits d'affichage.
-    /// </summary>
-    void ResetCamerasDepth()
-    {
-        Debug.Log("Resetting Camera Depths");
-        Camera battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").GetComponentInChildren<Camera>();
-        battleCamera.depth = 0;
     }
 
     /// <summary>
