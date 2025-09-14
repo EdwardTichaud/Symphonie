@@ -24,6 +24,9 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     private CinemachineBlendDefinition.Styles blendStyle =
         CinemachineBlendDefinition.Styles.EaseInOut;
 
+    [Tooltip("Duree par defaut du blend entre deux cameras (en secondes).")]
+    [SerializeField] private float defaultBlendDuration = 1f;
+
     private readonly Dictionary<string, CinemachineCamera> _byName = new();
     private CinemachineCamera _current; // camera actuellement active
 
@@ -62,6 +65,18 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     /// <para>Si une chaine vide est passee, toutes les cameras sont desactivees
     /// pour revenir a la camera classique.</para>
     /// </summary>
+    public void DisplayCamera(string cameraName)
+    {
+        // Redirige vers la surcharge avec duree explicite en utilisant
+        // la duree de blend par defaut.
+        DisplayCamera(cameraName, defaultBlendDuration);
+    }
+
+    /// <summary>
+    /// Active la <see cref="CinemachineCamera"/> nommee <paramref name="cameraName"/>.
+    /// </summary>
+    /// <param name="cameraName">Nom de la camera a activer.</param>
+    /// <param name="blendDuration">Duree du blend en secondes.</param>
     public void DisplayCamera(string cameraName, float blendDuration)
     {
         // Cas : retour a la camera par defaut (indice 0).
