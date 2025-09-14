@@ -486,7 +486,7 @@ public class NewBattleManager : MonoBehaviour
         // Retourne ensuite sur la caméra de combat par défaut afin de débuter
         // effectivement le combat. On force une transition instantanée (0f) pour
         // éviter un fondu supplémentaire.
-        BattleCameraManager.Instance?.SwitchToCamera(null, 0f);
+        BattleCameraManager.Instance?.SwitchToCamera(null, 0.5f);
     }
     #endregion
 
