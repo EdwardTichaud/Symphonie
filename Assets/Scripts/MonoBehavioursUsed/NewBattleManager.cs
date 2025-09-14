@@ -495,6 +495,17 @@ public class NewBattleManager : MonoBehaviour
     {
         Debug.Log("[BattleTurnManager] Démarrage du combat");
 
+        // 🛡️ Assure que les filtres d'écran sont totalement invisibles au lancement du combat.
+        //    Sans cette étape, un résidu de fondu noir ou blanc pourrait persister d'une timeline précédente.
+        var fader = FadeChildrenOpacity.Instance;
+        if (fader != null)
+        {
+            // Indice 0 = BlackScreen, indice 1 = WhiteScreen
+            // La durée est fixée à 0 pour appliquer la transparence immédiatement.
+            fader.EnsureTransparency(0, 0f);
+            fader.EnsureTransparency(1, 0f);
+        }
+
         GameManager.Instance?.ResetEnemiesDefeatedCount();
 
         battleStartTime = Time.time;
