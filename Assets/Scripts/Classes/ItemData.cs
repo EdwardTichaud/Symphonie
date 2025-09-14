@@ -88,15 +88,17 @@ public class ItemData : ScriptableObject
     public TimelineAsset performingTimeline;
     [Tooltip("Timeline jouée lors du repli après utilisation")]
     public TimelineAsset retreatTimeline;
-    [Tooltip("Timeline de caméra couvrant toute l'action de l'item.\n" +
-             "Elle suit l'utilisateur durant la préparation, l'exécution\n" +
-             "et le repli pour offrir un mouvement continu.")]
-    public TimelineAsset fullTimeline;
 
-    [Header("Caméra")]
-    // Nom de la CinemachineCamera à activer lors de l'utilisation de l'objet
-    [Tooltip("Nom de la CinemachineCamera utilisée pour cet objet.\nLaisser vide pour utiliser la caméra de combat par défaut.")]
-    public string cameraName;
+    [Header("Caméras par phase")]
+    // Nom de la caméra pendant la préparation de l'objet.
+    [Tooltip("CinemachineCamera active lors de la préparation.\nLaisser vide pour conserver la caméra en cours.")]
+    public string preparingCameraName;
+    // Nom de la caméra pendant l'utilisation de l'objet.
+    [Tooltip("CinemachineCamera active pendant l'utilisation.\nLaisser vide pour garder la caméra précédente.")]
+    public string performingCameraName;
+    // Nom de la caméra pendant la phase de repli.
+    [Tooltip("CinemachineCamera active lors du repli.\nLaisser vide pour garder la caméra précédente.")]
+    public string retreatCameraName;
 
     [Header("QTE Pattern")]
     public List<float> beatPattern;
