@@ -25,10 +25,13 @@ public class MainMenuManager : MonoBehaviour
     private int currentIndex = 0;
     private float lastNavTime = 0f;
 
-    private bool waitingForInput = true;
+    private bool waitingForInput = false; // Attente active seulement après l'intro
     private float timer = 0f;
     private PlayerInputs playerInputs;
     private Canvas parentCanvas;
+
+    // Indique si l'on doit demander le nom du joueur après l'intro
+    private bool askNameAfterIntro = false;
 
     [Header("Nom de Munin")]
     public GameObject namePanel; // Panneau UI demandant le nom du joueur
@@ -42,8 +45,12 @@ public class MainMenuManager : MonoBehaviour
 
     private void Start()
     {
+        // Au lancement de la scène, on masque toutes les interactions
         if (pressA != null)
-            pressA.alpha = 0.5f; // Pré-affiche le message "Press A"
+        {
+            pressA.alpha = 0.5f; // Valeur par défaut du fade
+            pressA.gameObject.SetActive(false); // Caché tant que l'intro n'est pas terminée
+        }
         if (menuContainer != null)
             menuContainer.SetActive(false);
         if (loadMenu != null)
@@ -76,8 +83,29 @@ public class MainMenuManager : MonoBehaviour
         }
         else
         {
-            // Aucun nom enregistré : on affiche le panneau de saisie
+            // Aucun nom enregistré : on affichera le panneau après l'intro
+            askNameAfterIntro = true;
+        }
+    }
+
+    /// <summary>
+    /// Méthode appelée à la fin de l'introduction de caméra pour
+    /// afficher l'indication "Press A" ou le panneau de saisie du nom.
+    /// </summary>
+    public void OnIntroFinished()
+    {
+        if (askNameAfterIntro)
+        {
+            // Le joueur doit d'abord choisir son nom
             ShowNamePanel();
+            return;
+        }
+
+        waitingForInput = true;
+        if (pressA != null)
+        {
+            pressA.gameObject.SetActive(true);
+            pressA.alpha = 0.5f; // Valeur initiale du clignotement
         }
     }
 
@@ -97,13 +125,15 @@ public class MainMenuManager : MonoBehaviour
     {
         if (waitingForInput)
         {
+            // Animation de l'indication "Press A"
             timer += Time.deltaTime * fadeSpeed;
             float alpha = 0.25f + 0.25f * (1 + Mathf.Sin(timer));
             if (pressA != null)
                 pressA.alpha = alpha;
         }
-        else
+        else if (menuContainer != null && menuContainer.activeSelf)
         {
+            // Navigation uniquement lorsque le menu est ouvert
             HandleNavigation();
         }
 
@@ -119,6 +149,10 @@ public class MainMenuManager : MonoBehaviour
 
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
+        // Empêche toute interaction tant que l'intro n'est pas terminée
+        if (!waitingForInput && (menuContainer == null || !menuContainer.activeSelf))
+            return;
+
         // Si le panneau de saisie du nom est actif, le bouton de confirmation validera le nom
         if (namePanel != null && namePanel.activeSelf)
         {
