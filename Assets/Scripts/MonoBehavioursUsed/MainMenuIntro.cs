@@ -18,6 +18,16 @@ public class MainMenuIntro : MonoBehaviour
     [Tooltip("Durée de l'introduction si aucun PlayableDirector n'est fourni.")]
     public float introDuration = 3f;
 
+    private void Awake()
+    {
+        // Assure que le menu principal reste caché dès le chargement de la scène
+        // pour éviter qu'il n'apparaisse avant la fin de l'intro de caméra.
+        if (menuManager != null)
+        {
+            menuManager.HideAllUI();
+        }
+    }
+
     private void Start()
     {
         // Si un PlayableDirector est disponible, on attend sa fin
