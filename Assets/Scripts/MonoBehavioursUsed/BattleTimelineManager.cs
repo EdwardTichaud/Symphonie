@@ -25,6 +25,11 @@ public class BattleTimelineManager : MonoBehaviour
         }
         Instance = this;
 
+        FindCasterDirectorPlayer();
+    }
+
+    void FindCasterDirectorPlayer()
+    {
         // Recherche du PlayableDirector dédié au caster.
         Transform casterChild = transform.Find("PlayableDirector_Caster");
         directorCaster = casterChild != null ? casterChild.GetComponent<PlayableDirector>() : null;

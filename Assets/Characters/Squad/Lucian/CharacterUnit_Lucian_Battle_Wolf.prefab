@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 180111092717364156}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.03142122, z: -0, w: 0.99950624}
-  m_LocalPosition: {x: -1.1609644, y: 2.8891468, z: -9.752227}
+  m_LocalPosition: {x: -1.1821138, y: 1.006, z: -9.929885}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -44,9 +44,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb89e75d5c8d9854f89dfa1b40810b9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isActive: 0
+  objectToOrbit: {fileID: 6062351766625578286}
   target: {fileID: 6650510350861729898}
   distance: 10
   speed: 5
+  useHeight: 0
+  heightOffset: 0
   orbitX: 0
   orbitY: 1
   orbitZ: 0
@@ -184,6 +188,7 @@ Transform:
   - {fileID: 8332036018969518551}
   - {fileID: 281895363818789989}
   - {fileID: 7670712415924177528}
+  - {fileID: 8792032067315766270}
   m_Father: {fileID: 5387018186125168565}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &901204007372340786
@@ -199,6 +204,7 @@ GameObject:
   - component: {fileID: 6769647812387645000}
   - component: {fileID: 7489880805926018449}
   - component: {fileID: -8040408662818750823}
+  - component: {fileID: 2416057211758290158}
   m_Layer: 17
   m_Name: CharacterUnit_Lucian_Battle_Wolf
   m_TagString: Player
@@ -241,10 +247,11 @@ MonoBehaviour:
   hurtAnimation: {fileID: 0}
   interceptedAnimation: {fileID: 0}
   interceptionAnimation: {fileID: 0}
-  frontHitAnimation: {fileID: 0}
-  backHitAnimation: {fileID: 0}
-  leftHitAnimation: {fileID: 0}
-  rightHitAnimation: {fileID: 0}
+  animator: {fileID: 0}
+  groundCheckDistance: 2
+  battleGroundLayer:
+    serializedVersion: 2
+    m_Bits: 0
   currentMP: 0
   currentMusicalGauge: 0
   currentATB: 0
@@ -310,6 +317,62 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 126
   m_CollisionDetection: 0
+--- !u!143 &2416057211758290158
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &1089826567255366215
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8792032067315766270}
+  m_Layer: 17
+  m_Name: Camera_UseItem_Prepare
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8792032067315766270
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1089826567255366215}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.036562685, y: 0.0025826867, z: 0.0033164006, w: 0.99932253}
+  m_LocalPosition: {x: -0.23, y: 1.05, z: 0.66}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4246028710237056507}
+  m_LocalEulerAnglesHint: {x: -4.192, y: 0.283, z: 0.37}
 --- !u!1 &3596176972200727365
 GameObject:
   m_ObjectHideFlags: 0
@@ -430,7 +493,7 @@ Transform:
   m_GameObject: {fileID: 7182649117659710025}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.8124934, z: -0, w: 0.5829705}
-  m_LocalPosition: {x: 9.718966, y: -0.17640245, z: 2.035594}
+  m_LocalPosition: {x: 9.787625, y: 1.006, z: 2.0499744}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -448,9 +511,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb89e75d5c8d9854f89dfa1b40810b9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isActive: 0
+  objectToOrbit: {fileID: 7437796999110152934}
   target: {fileID: 6650510350861729898}
   distance: 10
   speed: 10
+  useHeight: 0
+  heightOffset: 0
   orbitX: 0
   orbitY: 1
   orbitZ: 0
