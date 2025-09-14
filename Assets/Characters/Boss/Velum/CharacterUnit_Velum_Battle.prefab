@@ -147,6 +147,10 @@ GameObject:
   - component: {fileID: 5387018186125168565}
   - component: {fileID: 2868098831747274196}
   - component: {fileID: -6230065713269509645}
+  - component: {fileID: 2416057211758290158}
+  - component: {fileID: -1371441354731907631}
+  - component: {fileID: 2715667331872737284}
+  - component: {fileID: 5861697690917470306}
   m_Layer: 17
   m_Name: CharacterUnit_Velum_Battle
   m_TagString: Player
@@ -188,10 +192,11 @@ MonoBehaviour:
   hurtAnimation: {fileID: 0}
   interceptedAnimation: {fileID: 0}
   interceptionAnimation: {fileID: 0}
-  frontHitAnimation: {fileID: 0}
-  backHitAnimation: {fileID: 0}
-  leftHitAnimation: {fileID: 0}
-  rightHitAnimation: {fileID: 0}
+  animator: {fileID: 0}
+  groundCheckDistance: 2
+  battleGroundLayer:
+    serializedVersion: 2
+    m_Bits: 0
   currentMP: 0
   currentMusicalGauge: 0
   currentATB: 0
@@ -228,6 +233,77 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 126
   m_CollisionDetection: 0
+--- !u!143 &2416057211758290158
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!320 &-1371441354731907631
+PlayableDirector:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_PlayableAsset: {fileID: 0}
+  m_InitialState: 1
+  m_WrapMode: 2
+  m_DirectorUpdateMode: 1
+  m_InitialTime: 0
+  m_SceneBindings: []
+  m_ExposedReferences:
+    m_References: []
+--- !u!114 &2715667331872737284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e52de21a22b6dd44c9cc19f810c65059, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Events:
+    m_Signals: []
+    m_Events: []
+--- !u!114 &5861697690917470306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45e8f8d752ab38949b355d871d013619, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  instantiateAtStart: 0
+  gameObjectToInstantiate: {fileID: 0}
 --- !u!1 &3325568263149963469
 GameObject:
   m_ObjectHideFlags: 0
@@ -365,9 +441,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fb89e75d5c8d9854f89dfa1b40810b9a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isActive: 0
+  objectToOrbit: {fileID: 0}
   target: {fileID: 6650510350861729898}
   distance: 10
   speed: 10
+  useHeight: 0
+  heightOffset: 0
   orbitX: 0
   orbitY: 1
   orbitZ: 0

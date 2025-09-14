@@ -3903,7 +3903,7 @@ Transform:
   m_GameObject: {fileID: 1859316357072719661}
   serializedVersion: 2
   m_LocalRotation: {x: 0.27781588, y: -0.36497167, z: 0.1150751, w: 0.8811196}
-  m_LocalPosition: {x: 8.221554, y: 8, z: -12}
+  m_LocalPosition: {x: 2.9555907, y: 8, z: -12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3979,7 +3979,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveHorizontal: 1
   moveVertical: 0
-  horizontalAmplitude: 2
+  horizontalAmplitude: 5
   horizontalSpeed: 2
   verticalAmplitude: 2
   verticalSpeed: 2
@@ -10125,7 +10125,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &4551284211275759610
 Transform:
   m_ObjectHideFlags: 0
@@ -16788,7 +16788,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1076.0005, y: -178.7998}
+  m_AnchoredPosition: {x: -1076.0004, y: -178.7998}
   m_SizeDelta: {x: -2766.6, y: -1139.6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8198485471137816153
@@ -18288,7 +18288,7 @@ Transform:
   m_GameObject: {fileID: 4213698437852393220}
   serializedVersion: 2
   m_LocalRotation: {x: 0.19996412, y: 0.3736123, z: -0.08282785, w: 0.90198}
-  m_LocalPosition: {x: -16.778446, y: 8, z: -10.6}
+  m_LocalPosition: {x: -22.044409, y: 8, z: -10.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -18364,7 +18364,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveHorizontal: 1
   moveVertical: 0
-  horizontalAmplitude: 2
+  horizontalAmplitude: 5
   horizontalSpeed: 2
   verticalAmplitude: 2
   verticalSpeed: 2
@@ -18787,7 +18787,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1076.0005, y: 778.6}
+  m_AnchoredPosition: {x: -1076.0004, y: 778.6}
   m_SizeDelta: {x: -2766.6, y: -1976.8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3204166260224044258
@@ -20353,6 +20353,7 @@ MonoBehaviour:
   forcedCamMaxDistance: 10
   forcedCamMinPitch: -20
   forcedCamMaxPitch: 60
+  forcedCamFollowLerpSpeed: 10
   orbitTarget: {fileID: 0}
   orbitDistance: 5
   orbitSpeed: 30
@@ -22591,7 +22592,7 @@ Transform:
   m_GameObject: {fileID: 6395195699774986732}
   serializedVersion: 2
   m_LocalRotation: {x: 0.08282785, y: 0.90198, z: -0.19996412, w: 0.3736123}
-  m_LocalPosition: {x: -16.778446, y: 8, z: 12}
+  m_LocalPosition: {x: -22.044409, y: 8, z: 12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -22667,7 +22668,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveHorizontal: 1
   moveVertical: 0
-  horizontalAmplitude: 2
+  horizontalAmplitude: 5
   horizontalSpeed: 2
   verticalAmplitude: 2
   verticalSpeed: 2
@@ -23880,7 +23881,7 @@ Transform:
   m_GameObject: {fileID: 7129879460498273630}
   serializedVersion: 2
   m_LocalRotation: {x: 0.08282785, y: -0.90198, z: 0.19996412, w: 0.3736123}
-  m_LocalPosition: {x: 8.221554, y: 8, z: 11.2}
+  m_LocalPosition: {x: 2.9555907, y: 8, z: 11.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -23956,7 +23957,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveHorizontal: 1
   moveVertical: 0
-  horizontalAmplitude: 2
+  horizontalAmplitude: 5
   horizontalSpeed: 2
   verticalAmplitude: 2
   verticalSpeed: 2
@@ -25284,8 +25285,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7666186497415931499}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.08792425, y: 0.899162, z: -0.21226335, w: -0.3724531}
-  m_LocalPosition: {x: 14.142351, y: 10, z: 14.14192}
+  m_LocalRotation: {x: 0.27781588, y: -0.36497167, z: 0.1150751, w: 0.8811196}
+  m_LocalPosition: {x: 2.9555907, y: 8, z: -12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -25325,7 +25326,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 100
-  field of view: 60.000004
+  field of view: 35
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
