@@ -25,7 +25,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         CinemachineBlendDefinition.Styles.EaseInOut;
 
     private readonly Dictionary<string, CinemachineCamera> _byName = new();
-    private CinemachineCamera _current;
+    private CinemachineCamera _current; // camera actuellement active
 
     void Awake()
     {
@@ -49,21 +49,36 @@ public class CinemachineBlendSwitcher : MonoBehaviour
 
         // Toutes les cameras commencent avec une priorite inactive.
         foreach (var c in cameras) c.Priority = inactivePriority;
+
+        // Active immediatement la camera d'indice 0 si elle existe afin
+        // d'avoir une vue de combat par defaut pour les menus et le ciblage.
+        ActivateDefaultCamera();
     }
 
     /// <summary>
-    /// Active la CinemachineCamera nommee <paramref name="cameraName"/>.
-    /// Si <paramref name="cameraName"/> est null ou vide,
-    /// toutes les CinemachineCamera sont desactivees pour revenir
-    /// a la camera classique taggee "BattleCamera".
+    /// Active la <see cref="CinemachineCamera"/> nommee <paramref name="cameraName"/>.
+    /// <para>Si <paramref name="cameraName"/> est <c>null</c>, la camera d'indice 0
+    /// devient la camera par defaut.</para>
+    /// <para>Si une chaine vide est passee, toutes les cameras sont desactivees
+    /// pour revenir a la camera classique.</para>
     /// </summary>
     public void DisplayCamera(string cameraName, float blendDuration)
     {
-        // Cas : aucune camera Cinemachine active souhaitee.
+        // Cas : retour a la camera par defaut (indice 0).
+        if (cameraName == null)
+        {
+            if (brain)
+                brain.DefaultBlend = new CinemachineBlendDefinition(blendStyle, Mathf.Max(0f, blendDuration));
+
+            ActivateDefaultCamera();
+            return;
+        }
+
+        // Cas : aucune camera Cinemachine souhaitee -> toutes inactives.
         if (string.IsNullOrEmpty(cameraName))
         {
             foreach (var c in cameras)
-                c.Priority = inactivePriority; // toutes perdent la main
+                c.Priority = inactivePriority;
 
             _current = null;
             return;
@@ -91,6 +106,21 @@ public class CinemachineBlendSwitcher : MonoBehaviour
             c.Priority = (c == next) ? activePriority : inactivePriority;
 
         _current = next;
+    }
+
+    /// <summary>
+    /// Active la camera placee a l'indice 0 de la liste <see cref="cameras"/>.
+    /// Cette camera represente la vue de combat par defaut.
+    /// </summary>
+    private void ActivateDefaultCamera()
+    {
+        if (cameras == null || cameras.Count == 0)
+            return; // aucune camera a activer
+
+        foreach (var c in cameras)
+            c.Priority = (c == cameras[0]) ? activePriority : inactivePriority;
+
+        _current = cameras[0];
     }
 
     /// <summary>
