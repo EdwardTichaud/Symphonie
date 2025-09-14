@@ -708,8 +708,13 @@ public class BattleTransitionManager : MonoBehaviour
             yield return null;
         }
 
-        // Restaure l'état d'origine de l'overlay
-        worldFadeOverlay.color = originalColor;
+        // Restaure l'overlay en forçant sa transparence.
+        //
+        // Sans cette étape, si un fondu noir précédent (par exemple issu d'une
+        // timeline passée) a laissé l'overlay actif et opaque, le flash se
+        // terminerait sur un écran noir persistant. En imposant un alpha nul,
+        // on garantit que l'effet visuel est toujours correctement réinitialisé.
+        worldFadeOverlay.color = new Color(originalColor.r, originalColor.g, originalColor.b, 0f);
         worldFadeOverlay.gameObject.SetActive(wasActive);
     }
 
