@@ -325,9 +325,12 @@ public class RhythmQTEManager : MonoBehaviour
         else if (caster != null && target != null)
         {
             // Sans déplacement, on oriente simplement le lanceur vers sa cible
-            Vector3 dir = (target.transform.position - caster.transform.position).normalized;
+            // Limitation de la rotation à l'axe Y pour éviter toute inclinaison
+            Vector3 dir = target.transform.position - caster.transform.position;
+            dir.y = 0f; // Ignore la différence de hauteur entre les deux unités
+            dir = dir.normalized; // Normalisation après modification
             if (dir != Vector3.zero)
-                caster.transform.forward = dir;
+                caster.transform.forward = dir; // Applique uniquement la rotation horizontale
         }
 
         // --- Phase d'exécution ---
@@ -469,9 +472,12 @@ public class RhythmQTEManager : MonoBehaviour
         else if (caster != null && target != null)
         {
             // Sans déplacement, on oriente simplement l'utilisateur vers sa cible
-            Vector3 dir = (target.transform.position - caster.transform.position).normalized;
+            // Limite la rotation à l'axe Y pour éviter les inclinaisons verticales
+            Vector3 dir = target.transform.position - caster.transform.position;
+            dir.y = 0f; // Neutralise l'écart de hauteur
+            dir = dir.normalized; // Normalisation après suppression de la composante verticale
             if (dir != Vector3.zero)
-                caster.transform.forward = dir;
+                caster.transform.forward = dir; // Applique la rotation uniquement sur le plan horizontal
         }
 
         // --- Phase d'utilisation ---
@@ -596,9 +602,12 @@ public class RhythmQTEManager : MonoBehaviour
         // Si isTeleport mais distance nulle, on ne fait rien : aucune téléportation nécessaire
 
         // Orientation vers la cible
-        Vector3 dir = (target.transform.position - caster.transform.position).normalized;
+        // Conserve uniquement la rotation horizontale pour éviter les pivots en X
+        Vector3 dir = target.transform.position - caster.transform.position;
+        dir.y = 0f; // Ignore la composante verticale
+        dir = dir.normalized; // Normalisation pour obtenir une direction unitaire
         if (dir != Vector3.zero)
-            caster.transform.forward = dir;
+            caster.transform.forward = dir; // Applique l'orientation sur l'axe Y uniquement
 
         yield return null;
     }
@@ -666,11 +675,14 @@ public class RhythmQTEManager : MonoBehaviour
         // Si isTeleport mais distance nulle, aucune action n'est nécessaire
 
         // Orientation optionnelle vers la cible
+        // Limite la rotation au plan horizontal pour conserver l'orientation naturelle du personnage
         if (target != null)
         {
-            Vector3 lookDir = (target.transform.position - caster.transform.position).normalized;
+            Vector3 lookDir = target.transform.position - caster.transform.position;
+            lookDir.y = 0f; // Ignore la différence de hauteur avec la cible
+            lookDir = lookDir.normalized; // Normalisation après suppression de l'axe vertical
             if (lookDir != Vector3.zero)
-                caster.transform.forward = lookDir;
+                caster.transform.forward = lookDir; // Rotation uniquement autour de l'axe Y
         }
 
         yield return null;
@@ -763,12 +775,23 @@ public class RhythmQTEManager : MonoBehaviour
 
         Vector3 lookDir = Vector3.zero;
         if (target != null)
-            lookDir = (target.transform.position - caster.transform.position).normalized;
+        {
+            lookDir = target.transform.position - caster.transform.position;
+            lookDir.y = 0f; // Ignore l'écart de hauteur
+            lookDir = lookDir.normalized;
+        }
+
+        // Ajuste également la direction d'offset pour éviter tout pivot vertical
+        if (offsetDir != Vector3.zero)
+        {
+            offsetDir.y = 0f;
+            offsetDir = offsetDir.normalized;
+        }
 
         if (lookDir != Vector3.zero)
-            caster.transform.forward = lookDir;
+            caster.transform.forward = lookDir; // Priorité à la direction vers la cible
         else if (offsetDir != Vector3.zero)
-            caster.transform.forward = offsetDir;
+            caster.transform.forward = offsetDir; // Sinon on utilise la direction relative (horizontalement)
 
         yield return null;
         moveCasterName = caster != null ? caster.name : "(caster nul)";
@@ -854,15 +877,19 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (move.stayFaceToTarget && target != null)
         {
-            Vector3 finalDirToTarget = (target.transform.position - caster.transform.position).normalized;
+            Vector3 finalDirToTarget = target.transform.position - caster.transform.position;
+            finalDirToTarget.y = 0f; // Ignore la hauteur de la cible
+            finalDirToTarget = finalDirToTarget.normalized;
             if (finalDirToTarget != Vector3.zero)
-                caster.transform.forward = finalDirToTarget;
+                caster.transform.forward = finalDirToTarget; // Rotation horizontale vers la cible
         }
         else
         {
-            Vector3 finalDirToParent = (initialPosition - caster.transform.position).normalized;
+            Vector3 finalDirToParent = initialPosition - caster.transform.position;
+            finalDirToParent.y = 0f; // Conserve uniquement la composante horizontale
+            finalDirToParent = finalDirToParent.normalized;
             if (finalDirToParent != Vector3.zero)
-                caster.transform.forward = finalDirToParent;
+                caster.transform.forward = finalDirToParent; // Retourne vers sa position initiale sans inclinaison
         }
         Debug.Log("Le caster a terminé son retour.");
     }
