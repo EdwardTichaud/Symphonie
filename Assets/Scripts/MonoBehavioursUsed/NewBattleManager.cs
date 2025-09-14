@@ -141,24 +141,26 @@ public class NewBattleManager : MonoBehaviour
     // File d'attente de timelines à jouer entre deux tours
     /// <summary>
     /// File d'attente des timelines à jouer en fin de tour.
-    /// Chaque entrée décrit l'asset à lancer et l'objet qui sert de référence pour les bindings.
+    /// Chaque entrée décrit l'asset à lancer et l'objet servant de référence pour les bindings.
+    /// La caméra n'étant plus animée via timeline, aucun tag n'est désormais nécessaire.
     /// </summary>
     private readonly Queue<PendingTimeline> pendingTimelines = new();
 
     /// <summary>
-    /// Structure stockant les informations nécessaires pour jouer une timeline via le TimelineManager.
+    /// Structure stockant les informations nécessaires pour jouer une timeline.
+    /// Seul le lanceur est requis : la piste caméra est ignorée.
     /// </summary>
     private struct PendingTimeline
     {
         public TimelineAsset asset;
         public GameObject caster;
-        public string cameraTag;
 
-        public PendingTimeline(TimelineAsset asset, GameObject caster, string cameraTag)
+        public PendingTimeline(TimelineAsset asset, GameObject caster)
         {
+            // Référence vers l'asset de timeline à exécuter
             this.asset = asset;
+            // GameObject jouant la piste "Caster" de la timeline
             this.caster = caster;
-            this.cameraTag = cameraTag;
         }
     }
 
@@ -631,13 +633,14 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     /// <param name="asset">Timeline à exécuter.</param>
     /// <param name="caster">Objet de référence pour les bindings (Animator par exemple).</param>
-    /// <param name="cameraTag">Tag de la caméra à utiliser.</param>
-    public void QueueConditionalTimeline(TimelineAsset asset, GameObject caster, string cameraTag)
+    /// La caméra n'est plus liée à la timeline : elle sera simplement repositionnée sur le lanceur.
+    public void QueueConditionalTimeline(TimelineAsset asset, GameObject caster)
     {
         if (asset == null)
             return;
 
-        pendingTimelines.Enqueue(new PendingTimeline(asset, caster, cameraTag));
+        // Stocke la timeline à jouer et le lanceur associé
+        pendingTimelines.Enqueue(new PendingTimeline(asset, caster));
     }
 
     /// <summary>
@@ -650,9 +653,13 @@ public class NewBattleManager : MonoBehaviour
             var data = pendingTimelines.Dequeue();
             BattleTransitionManager.Instance?.HideBattleUI();
 
+            // Aligne la caméra de combat sur l'unité concernée avant la cinématique
+            BattleTimelineManager.Instance?.AlignCameraToTarget(data.caster, "BattleCamera");
+
             if (TimelineManager.Instance != null)
             {
-                TimelineManager.Instance.PlayTimeline(data.asset, data.caster, data.cameraTag);
+                // Joue la timeline uniquement sur la piste "Caster".
+                TimelineManager.Instance.PlayTimeline(data.asset, data.caster, null);
                 // Attente de la fin de la timeline avant de poursuivre
                 while (TimelineManager.Instance.IsTimelineActive)
                     yield return null;
