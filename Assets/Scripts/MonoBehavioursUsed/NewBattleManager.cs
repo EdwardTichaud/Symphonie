@@ -1812,16 +1812,15 @@ public class NewBattleManager : MonoBehaviour
     private void SetupCurrentUnitMenus()
     {
         // 1) Essaye de récupérer la BattleCamera par tag
-        // Utilise la caméra de combat mémorisée
-        EnsureBattleCamera();
-        Transform battleCam = battleCamera != null ? battleCamera.transform : null;
-        if (battleCam == null)
+        // Utilise la caméra de combat mémorisée        
+        Transform battleCamCam = GameObject.Find("BattleCamera_Cam").transform;
+        if (battleCamCam == null)
         {
             Debug.LogWarning("[SetupCurrentUnitMenus] BattleCamera introuvable.");
             return;
         }
 
-        Transform mainPanel = FindChildRecursive(battleCam, "MainMenu_Panel");
+        Transform mainPanel = FindChildRecursive(battleCamCam, "MainMenu_Panel");
         if (mainPanel == null)
         {
             Debug.LogWarning("[SetupCurrentUnitMenus] 'MainMenu_Panel' introuvable sous la BattleCamera.");
@@ -1839,7 +1838,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         // 3) Panneau SkillsMenu_Panel
-        Transform skillsPanel = FindChildRecursive(battleCam, "SkillsMenu_Panel");
+        Transform skillsPanel = FindChildRecursive(battleCamCam, "SkillsMenu_Panel");
         if (skillsPanel == null)
         {
             Debug.LogWarning("[SetupCurrentUnitMenus] 'SkillsMenu_Panel' introuvable sous la BattleCamera.");
@@ -1868,7 +1867,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         // 4) Panneau ItemsMenu_Panel
-        Transform itemsPanel = FindChildRecursive(battleCam, "ItemsMenu_Panel");
+        Transform itemsPanel = FindChildRecursive(battleCamCam, "ItemsMenu_Panel");
         if (itemsPanel == null)
         {
             Debug.LogWarning("[SetupCurrentUnitMenus] 'ItemsMenu_Panel' introuvable sous la BattleCamera.");
@@ -2798,33 +2797,11 @@ public class NewBattleManager : MonoBehaviour
         currentCharacterUnit = newCurrentCharacterUnit;
     }
 
-    /// <summary>
-    /// Recherche et mémorise la caméra de combat si elle n'a pas encore été trouvée.
-    /// Cette opération est effectuée ponctuellement pour éviter de la répéter chaque frame.
-    /// </summary>
     private void EnsureBattleCamera()
     {
-        // Si la caméra de combat n'a pas encore été mémorisée, on la recherche.
         if (battleCamera == null)
         {
-            // On récupère l'objet portant le tag "BattleCamera". Avec Cinemachine 3,
-            // cet objet est généré dynamiquement sous le nom "CinemachineCamera_0_BattleCamera".
-            // Il ne porte toutefois pas directement les panneaux d'interface (MainMenu, SkillsMenu, ItemsMenu).
-            var taggedCam = GameObject.FindGameObjectWithTag("BattleCamera");
-
-            if (taggedCam != null)
-            {
-                // On remonte jusqu'à la racine commune afin de récupérer l'objet
-                // "BattleCamera_Cam" qui héberge l'UI de combat.
-                Transform root = taggedCam.transform.parent?.parent;
-                battleCamera = root?.Find("BattleCamera_Cam")?.gameObject;
-
-                // Si l'objet n'est pas trouvé, on tente l'ancienne structure (parent direct).
-                battleCamera ??= taggedCam.transform.parent?.gameObject;
-
-                // En dernier recours, on conserve l'objet tagué pour éviter une référence nulle.
-                battleCamera ??= taggedCam;
-            }
+            battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
         }
     }
 
