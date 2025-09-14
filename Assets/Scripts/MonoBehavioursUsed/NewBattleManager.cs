@@ -26,7 +26,7 @@ public enum BattleState
 {
     None,
     Initialization,
-    FirstStrikeSequence,
+    BattleIntro,
     NewTurn,
     EndTurn,
 
@@ -547,17 +547,13 @@ public class NewBattleManager : MonoBehaviour
         //5 Détermine quel joueur joue en premier
         CharacterUnit firstPlayer = ReturnFirstStrikeCharacter();
 
-        //6 Joue la séquence de premier tour
-        if (firstPlayer != null)
-        {
-            yield return FirstStrikeSequenceRoutine(firstPlayer);
-        }
-
         //7 Démarre la boucle de tours
         StartCoroutine(TurnLoop());
 
         //// Change l’état du jeu
         //GameManager.Instance.ChangeGameState(GameState.StartBattle);
+
+        yield break;
     }
 
     //1 Filtrer pour ne garder que les unités dont les HP sont > 0
@@ -596,34 +592,6 @@ public class NewBattleManager : MonoBehaviour
             .FirstOrDefault();
 
         return firstPlayer;
-    }
-
-    //6 Joue la séquence de premier tour
-    private IEnumerator FirstStrikeSequenceRoutine(CharacterUnit unit)
-    {
-        ChangeBattleState(BattleState.FirstStrikeSequence);
-        if (firstStrikeEffect == null)
-            firstStrikeEffect = GameObject.Find("FirstStrikeEffect");
-        if (firstStrikeEffect != null)
-            firstStrikeEffect.SetActive(true);
-        else
-            Debug.LogWarning("[BattleTurnManager] FirstStrikeEffect introuvable.");
-        GameObject fsCam = GameObject.Find("BattleScene_Camera_FirstStrike");
-        if (fsCam != null)
-        {
-            fsCam.transform.position = unit.transform.position + Vector3.up * 2f;
-        }
-        PlayableDirector fsDirector = fsCam ? fsCam.GetComponentInChildren<PlayableDirector>() : null;
-        if (fsDirector != null)
-        {
-            TimelineManager.Instance.PlayTimeline(fsDirector);
-            while (TimelineManager.Instance.IsTimelinePlaying)
-                yield return null;
-        }
-        else
-        {
-            Debug.LogWarning("[BattleTurnManager] Timeline FirstStrike introuvable.");
-        }
     }
 
     //7 Démarre la boucle de tours
