@@ -53,10 +53,11 @@ public class HPThresholdTimelineTrigger : MonoBehaviour
                     // Récupère l'Animator de l'unité pour binder correctement la timeline
                     GameObject animatorGO = unitData.unit.GetComponentInChildren<Animator>()?.gameObject;
                     // Enfile la timeline dans le gestionnaire pour qu'elle soit jouée au bon moment
+                    // La caméra sera automatiquement repositionnée sur l'unité ;
+                    // aucune piste dédiée n'est recherchée.
                     NewBattleManager.Instance.QueueConditionalTimeline(
                         t.timeline,
-                        animatorGO,
-                        "BattleCamera");
+                        animatorGO);
                     break;
                 }
             }
