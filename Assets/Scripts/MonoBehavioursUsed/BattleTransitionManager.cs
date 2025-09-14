@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.Playables;
 using UnityEngine.InputSystem; // Nécessaire pour utiliser les actions d'input
 using UnityEngine.Timeline; // Pour lancer les timelines post-combat
 using Unity.Cinemachine; // Pour gérer les caméras Cinemachine
@@ -440,32 +439,14 @@ public class BattleTransitionManager : MonoBehaviour
         CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
         if (battleCamera != null)
         {
-            battleCamera.SetActive(true); // Active explicitement la caméra d'intro si elle était désactivée
+            battleCamera.SetActive(true); // S'assure que la camera de combat est active
 
             if (firstUnit != null)
                 battleCamera.transform.position = firstUnit.transform.position;
 
-            // Récupère le PlayableDirector directement sur le même objet que ce gestionnaire.
-            // Cela évite de chercher dans la hiérarchie de la battleCamera et clarifie la structure.
-            PlayableDirector introDirector = transform.GetComponent<PlayableDirector>();
-            if (introDirector != null)
-            {
-                // Signale au TimelineManager de jouer cette Timeline afin qu'il suive
-                // précisément son état (lecture/en pause/arrêt).
-                // Le troisième paramètre à "false" garantit que la musique en cours n'est
-                // pas atténuée ni interrompue lors de l'explosion de l'écran Versus.
-                // L'introduction de combat doit se dérouler entièrement sans possibilité de l'interrompre
-                TimelineManager.Instance.PlayTimeline(introDirector, false, false, false);
-
-                // Tant que la Timeline est en cours, on attend avant d'afficher l'UI
-                // pour ne pas interférer avec la cinématique d'introduction.
-                yield return new WaitUntil(() => !TimelineManager.Instance.IsTimelinePlaying);
-            }
-            else
-            {
-                // Avertissement explicite si aucun PlayableDirector n'est trouvé sur l'objet courant.
-                Debug.LogWarning("[BattleTransitionManager] Aucun PlayableDirector trouvé sur BattleTransitionManager.");
-            }
+            // Au lieu de jouer une timeline d'introduction, on affiche directement
+            // la camera orbitale autour du champ de bataille avec une transition instantanée.
+            BattleCameraManager.Instance?.SwitchToCamera("CinemachineCamera_10_OrbitAroundBattlefield", 0f);
         }
         else
         {

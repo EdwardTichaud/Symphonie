@@ -51,7 +51,11 @@ public class BattleCameraManager : MonoBehaviour
     /// - chaine vide : selection d'une camera aleatoire.
     /// </summary>
     /// <param name="cameraName">Nom de la camera souhaitee.</param>
-    public void SwitchToCamera(string cameraName)
+    /// <param name="blendTime">
+    /// Duree du fondu en secondes. Utiliser une valeur negative pour conserver
+    /// la duree definie dans le <see cref="CinemachineBlendSwitcher"/>.
+    /// </param>
+    public void SwitchToCamera(string cameraName, float blendTime = -1f)
     {
         if (!blendSwitcher)
             return; // Impossible de switcher sans blendSwitcher
@@ -59,8 +63,10 @@ public class BattleCameraManager : MonoBehaviour
         // Cas 1 : aucun move/item en cours -> on revient sur la camera par defaut.
         if (cameraName == null)
         {
-            // Blend avec la duree par defaut du switcher (1 seconde).
-            blendSwitcher.DisplayCamera(null);
+            if (blendTime >= 0f)
+                blendSwitcher.DisplayCamera(null, blendTime); // Transition forcee
+            else
+                blendSwitcher.DisplayCamera(null); // Duree par defaut
             return;
         }
 
@@ -75,13 +81,19 @@ public class BattleCameraManager : MonoBehaviour
             else
             {
                 // Si aucune camera speciale n'est disponible, on retourne sur la camera
-                // principale avec la duree de blend standard.
-                blendSwitcher.DisplayCamera(null);
+                // principale avec la duree de blend souhaitee ou celle par defaut.
+                if (blendTime >= 0f)
+                    blendSwitcher.DisplayCamera(null, blendTime);
+                else
+                    blendSwitcher.DisplayCamera(null);
                 return;
             }
         }
 
-        // Affiche la camera demandee avec la duree de blend geree par le switcher.
-        blendSwitcher.DisplayCamera(cameraName);
+        // Affiche la camera demandee avec la duree de blend appropriee.
+        if (blendTime >= 0f)
+            blendSwitcher.DisplayCamera(cameraName, blendTime);
+        else
+            blendSwitcher.DisplayCamera(cameraName);
     }
 }
