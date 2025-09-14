@@ -478,6 +478,15 @@ public class NewBattleManager : MonoBehaviour
         // Restaure les valeurs temporelles initiales une fois le ralenti terminé
         Time.timeScale = initialTimeScale;
         Time.fixedDeltaTime = initialFixedDelta;
+
+        // Patiente encore une seconde en temps réel après la fin des animations
+        // d'introduction pour laisser le temps au joueur d'apprécier la mise en scène.
+        yield return new WaitForSecondsRealtime(1f);
+
+        // Retourne ensuite sur la caméra de combat par défaut afin de débuter
+        // effectivement le combat. On force une transition instantanée (0f) pour
+        // éviter un fondu supplémentaire.
+        BattleCameraManager.Instance?.SwitchToCamera(null, 0f);
     }
     #endregion
 
