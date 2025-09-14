@@ -3,31 +3,26 @@ using UnityEngine;
 using Unity.Cinemachine;
 
 /// <summary>
-/// Gère l'activation des différentes <see cref="CinemachineCamera"/> en combat.
-/// Utilise <see cref="CinemachineBlendSwitcher"/> pour assurer des transitions fluides
-/// entre les angles de caméra.
-/// Chaque <c>MusicalMove</c> ou <c>Item</c> peut spécifier le nom d'une caméra à activer.
+/// Gere l'activation des CinemachineCamera durant les combats.
+/// Les transitions s'effectuent via <see cref="CinemachineBlendSwitcher"/>.
 /// </summary>
 public class BattleCameraManager : MonoBehaviour
 {
-    /// <summary>Accès global au gestionnaire de caméra de combat.</summary>
+    /// <summary>Acces global au gestionnaire de camera de combat.</summary>
     public static BattleCameraManager Instance { get; private set; }
 
-    [Tooltip("Durée du blend entre deux caméras.")]
+    [Tooltip("Duree du blend entre deux cameras.")]
     [SerializeField] private float blendDuration = 0.5f;
 
-    // Composant responsable des priorités et du blend entre caméras
+    // Composant responsable du changement de camera via les priorites.
     private CinemachineBlendSwitcher blendSwitcher;
 
-    // Caméra principale de combat (CinemachineCamera_0_BattleCamera)
-    private CinemachineCamera battleCamera;
-
-    // Collection de toutes les autres caméras disponibles pour le choix aléatoire
-    private readonly List<CinemachineCamera> otherCameras = new();
+    // Ensemble des cameras Cinemachine disponibles pour les moves.
+    private readonly List<CinemachineCamera> availableCameras = new();
 
     void Awake()
     {
-        // Mise en place du singleton
+        // Mise en place du singleton classique.
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -35,67 +30,58 @@ public class BattleCameraManager : MonoBehaviour
         }
         Instance = this;
 
-        // Recherche du CinemachineBlendSwitcher présent dans la scène
+        // Recherche du CinemachineBlendSwitcher present dans la scene.
         blendSwitcher = FindObjectOfType<CinemachineBlendSwitcher>();
         if (!blendSwitcher)
-            Debug.LogWarning("[BattleCameraManager] Aucun CinemachineBlendSwitcher trouvé dans la scène.");
+            Debug.LogWarning("[BattleCameraManager] Aucun CinemachineBlendSwitcher trouve dans la scene.");
 
-        // Récupération de la caméra principale explicitement par son nom
-        // On évite ainsi de se baser sur un éventuel tag "BattleCamera" qui
-        // pourrait pointer vers une autre caméra.
-        battleCamera = GameObject.Find("CinemachineCamera_0_BattleCamera")
-            ?.GetComponent<CinemachineCamera>();
-        if (!battleCamera)
-            Debug.LogWarning("[BattleCameraManager] Caméra principale introuvable (CinemachineCamera_0_BattleCamera).");
-
-        // Constitution de la liste des autres caméras pour les sélections aléatoires
+        // Recense toutes les CinemachineCamera presentes (angles speciaux).
         foreach (var cam in FindObjectsOfType<CinemachineCamera>())
         {
-            if (cam != null && cam != battleCamera)
-                otherCameras.Add(cam);
+            if (cam != null)
+                availableCameras.Add(cam);
         }
 
-        // S'assure que la caméra principale est affichée au démarrage
-        if (blendSwitcher && battleCamera)
-            blendSwitcher.DisplayCamera(battleCamera.gameObject.name, 0f);
+        // Au demarrage du combat on revient sur la camera principale taggee "BattleCamera".
+        if (blendSwitcher)
+            blendSwitcher.DisplayCamera(null, 0f);
     }
 
     /// <summary>
-    /// Active la caméra correspondant au nom fourni.
-    /// - <c>null</c>  : retour à la caméra de combat principale.
-    /// - chaîne vide : sélection d'une caméra aléatoire.
+    /// Active la camera correspondant au nom fourni.
+    /// - <c>null</c>  : retour a la camera de combat par defaut (tag "BattleCamera").
+    /// - chaine vide : selection d'une camera aleatoire.
     /// </summary>
-    /// <param name="cameraName">Nom de la caméra souhaitée.</param>
+    /// <param name="cameraName">Nom de la camera souhaitee.</param>
     public void SwitchToCamera(string cameraName)
     {
         if (!blendSwitcher)
             return; // Impossible de switcher sans blendSwitcher
 
-        // Cas 1 : aucun move/item en cours ➜ on revient à la BattleCamera
-        // DisplayCamera lui attribuera la priorité active (100)
+        // Cas 1 : aucun move/item en cours -> on revient sur la camera par defaut.
         if (cameraName == null)
         {
-            if (battleCamera)
-                blendSwitcher.DisplayCamera(battleCamera.gameObject.name, blendDuration);
+            blendSwitcher.DisplayCamera(null, blendDuration);
             return;
         }
 
-        // Cas 2 : nom vide ➜ choix d'une caméra aléatoire
+        // Cas 2 : nom vide -> choix d'une camera aleatoire.
         if (string.IsNullOrWhiteSpace(cameraName))
         {
-            if (otherCameras.Count > 0)
+            if (availableCameras.Count > 0)
             {
-                var randomCam = otherCameras[Random.Range(0, otherCameras.Count)];
+                var randomCam = availableCameras[Random.Range(0, availableCameras.Count)];
                 cameraName = randomCam.gameObject.name;
             }
-            else if (battleCamera)
+            else
             {
-                // Aucun autre angle disponible, on retombe sur la caméra principale
-                cameraName = battleCamera.gameObject.name;
+                // Aucune camera disponible, on retombe sur la camera principale.
+                blendSwitcher.DisplayCamera(null, blendDuration);
+                return;
             }
         }
 
-        // Affiche la caméra demandée (ou la BattleCamera si tout a échoué)
+        // Affiche la camera demandee (transition assuree par le blend switcher).
         blendSwitcher.DisplayCamera(cameraName, blendDuration);
     }
 }
