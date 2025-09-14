@@ -1455,12 +1455,15 @@ public class NewBattleManager : MonoBehaviour
             averagePosition /= enemies.Count;
 
             // Direction vers le barycentre
-            Vector3 direction = (averagePosition - unit.transform.position).normalized;
+            Vector3 direction = averagePosition - unit.transform.position;
+            direction.y = 0f; // On ignore la hauteur pour une rotation horizontale.
             if (direction == Vector3.zero)
                 continue;
 
-            // Calcul de l’angle entre l’orientation actuelle et la cible
-            float angle = Vector3.Angle(unit.transform.forward, direction);
+            // Calcul de l’angle entre l’orientation actuelle (horizontal) et la cible
+            Vector3 forward = unit.transform.forward;
+            forward.y = 0f;
+            float angle = Vector3.Angle(forward, direction);
             if (angle > 90f)
             {
                 // Si > 90°, déclenche "isTurning" sur l’Animator enfant
@@ -1471,8 +1474,12 @@ public class NewBattleManager : MonoBehaviour
                 }
             }
 
-            // Lance la rotation en douceur vers targetRotation
+            // Normalise le vecteur horizontal obtenu.
+            direction = direction.normalized;
+            // Calcule une rotation ne contenant que l'angle autour de l'axe Y.
             Quaternion targetRotation = Quaternion.LookRotation(direction);
+            targetRotation = Quaternion.Euler(0f, targetRotation.eulerAngles.y, 0f);
+            // Lance la rotation en douceur vers la rotation filtrée.
             StartCoroutine(RotateUnitSmoothly(unit, targetRotation, rotationSpeed));
         }
     }
@@ -1531,11 +1538,16 @@ public class NewBattleManager : MonoBehaviour
         if (unit == null || target == null || unit.currentHP <= 0 || target.currentHP <= 0)
             return;
 
-        Vector3 direction = (target.transform.position - unit.transform.position).normalized;
+        // Calcule la direction vers la cible en ignorant la hauteur pour éviter toute inclinaison.
+        Vector3 direction = target.transform.position - unit.transform.position;
+        direction.y = 0f; // Rotation uniquement sur Y.
         if (direction == Vector3.zero)
             return;
+        direction = direction.normalized;
 
+        // Génère une rotation horizontale filtrée sur l'axe Y.
         Quaternion targetRotation = Quaternion.LookRotation(direction);
+        targetRotation = Quaternion.Euler(0f, targetRotation.eulerAngles.y, 0f);
         StartCoroutine(RotateUnitSmoothly(unit, targetRotation, rotationSpeed));
     }
 
@@ -1562,11 +1574,16 @@ public class NewBattleManager : MonoBehaviour
         if (targetUnit == null)
             return;
 
-        Vector3 direction = (targetUnit.transform.position - unit.transform.position).normalized;
+        Vector3 direction = targetUnit.transform.position - unit.transform.position;
         if (direction == Vector3.zero)
             return;
 
+        // Supprime la composante verticale pour garantir une rotation horizontale.
+        direction.y = 0f;
+        direction = direction.normalized;
+
         Quaternion targetRotation = Quaternion.LookRotation(direction);
+        targetRotation = Quaternion.Euler(0f, targetRotation.eulerAngles.y, 0f);
         StartCoroutine(RotateUnitSmoothly(unit, targetRotation, rotationSpeed));
     }
 
