@@ -1908,6 +1908,14 @@ public class NewBattleManager : MonoBehaviour
         for (int i = 0; i < currentMainMenuSlots.Count; i++)
             Debug.Log($"Slot {i} = {currentMainMenuSlots[i].name}, enfants : {currentMainMenuSlots[i].childCount}");
 
+        // Vérifie que la liste contient au moins deux slots avant de tenter de les utiliser
+        if (currentMainMenuSlots == null || currentMainMenuSlots.Count < 2)
+        {
+            Debug.LogWarning("[ShowMainMenu] Impossible d'afficher le menu principal : nombre de slots insuffisant.");
+            return; // Évite un ArgumentOutOfRangeException
+        }
+
+        // Renseigne les boutons du menu principal
         UpdateButton(currentMainMenuSlots[0], "Compétences", null);
         UpdateButton(currentMainMenuSlots[1], "Objet", null);
     }
@@ -1948,8 +1956,21 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     public void RefreshSkillsMenuDisplay()
     {
+        // Sécurise l'accès à la liste des slots de compétences
+        if (currentSkillsMenuSlots == null || currentSkillsMenuSlots.Count == 0)
+        {
+            Debug.LogWarning("[RefreshSkillsMenuDisplay] Aucun slot de compétences disponible.");
+            return;
+        }
+
         // Le dernier slot du SkillsMenu est réservé au Special Musical Move
         int specialSlotIndex = currentSkillsMenuSlots.Count - 1;
+        if (specialSlotIndex < 0)
+        {
+            Debug.LogWarning("[RefreshSkillsMenuDisplay] Index de slot spécial invalide.");
+            return;
+        }
+
         int pageSize = specialSlotIndex; // Slots disponibles pour les attaques musicales classiques
         int startIndex = currentSkillPageIndex * pageSize;
 
@@ -2007,6 +2028,13 @@ public class NewBattleManager : MonoBehaviour
     {
         // Calcule le nombre de pages possibles (hors slot spécial)
         int pageSize = currentSkillsMenuSlots.Count - 1;
+        if (pageSize <= 0)
+        {
+            // Évite une division par zéro si aucun slot n'est disponible
+            Debug.LogWarning("[NextSkillPage] Impossible de changer de page : nombre de slots insuffisant.");
+            return;
+        }
+
         int maxPage = Mathf.Max(0, (skillChoices.Count - 1) / pageSize);
         if (currentSkillPageIndex < maxPage)
         {
@@ -2020,6 +2048,7 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     public void PreviousSkillPage()
     {
+        // Vérifie qu'il existe réellement des pages avant de revenir en arrière
         if (currentSkillPageIndex > 0)
         {
             currentSkillPageIndex--;
