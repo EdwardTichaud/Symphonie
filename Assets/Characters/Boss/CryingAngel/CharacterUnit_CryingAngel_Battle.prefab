@@ -151,6 +151,7 @@ GameObject:
   - component: {fileID: 3468119209878275080}
   - component: {fileID: -3209986247612668936}
   - component: {fileID: 3013038446078627597}
+  - component: {fileID: 643257652111682297}
   m_Layer: 17
   m_Name: CharacterUnit_CryingAngel_Battle
   m_TagString: Player
@@ -305,6 +306,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   instantiateAtStart: 0
   gameObjectToInstantiate: {fileID: 0}
+--- !u!95 &643257652111682297
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &3074037081284060824
 GameObject:
   m_ObjectHideFlags: 0

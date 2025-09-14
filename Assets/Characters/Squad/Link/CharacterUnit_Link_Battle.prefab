@@ -184,6 +184,7 @@ GameObject:
   - component: {fileID: -5794538980488453794}
   - component: {fileID: -5986457650388478768}
   - component: {fileID: -2189860924903002732}
+  - component: {fileID: -2616143949176961998}
   m_Layer: 17
   m_Name: CharacterUnit_Link_Battle
   m_TagString: Player
@@ -355,6 +356,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   instantiateAtStart: 0
   gameObjectToInstantiate: {fileID: 0}
+--- !u!95 &-2616143949176961998
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &3325568263149963469
 GameObject:
   m_ObjectHideFlags: 0

@@ -208,6 +208,7 @@ GameObject:
   - component: {fileID: -2959227758675232356}
   - component: {fileID: 5929205752976638790}
   - component: {fileID: -2340834141694389633}
+  - component: {fileID: -3466763467974313320}
   m_Layer: 17
   m_Name: CharacterUnit_Lucian_Battle_Wolf
   m_TagString: Player
@@ -391,6 +392,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   instantiateAtStart: 0
   gameObjectToInstantiate: {fileID: 0}
+--- !u!95 &-3466763467974313320
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &1089826567255366215
 GameObject:
   m_ObjectHideFlags: 0
