@@ -155,14 +155,17 @@ public class NewBattleManager : MonoBehaviour
     private struct PendingTimeline
     {
         public TimelineAsset asset;
-        public GameObject caster;
+        public CharacterUnit unit;
+        public GameObject casterBinding;
 
-        public PendingTimeline(TimelineAsset asset, GameObject caster)
+        public PendingTimeline(TimelineAsset asset, CharacterUnit unit, GameObject casterBinding)
         {
             // Référence vers l'asset de timeline à exécuter
             this.asset = asset;
+            // Unité propriétaire de la timeline (et donc du PlayableDirector utilisé)
+            this.unit = unit;
             // GameObject jouant la piste "Caster" de la timeline
-            this.caster = caster;
+            this.casterBinding = casterBinding;
         }
     }
 
@@ -636,15 +639,19 @@ public class NewBattleManager : MonoBehaviour
     /// Ajoute une timeline à jouer avant le prochain tour.
     /// </summary>
     /// <param name="asset">Timeline à exécuter.</param>
-    /// <param name="caster">Objet de référence pour les bindings (Animator par exemple).</param>
+    /// <param name="casterUnit">Unité propriétaire du PlayableDirector utilisé.</param>
+    /// <param name="casterBinding">Objet de référence pour les bindings (Animator par exemple).</param>
     /// La caméra n'est plus liée à la timeline : elle sera simplement repositionnée sur le lanceur.
-    public void QueueConditionalTimeline(TimelineAsset asset, GameObject caster)
+    public void QueueConditionalTimeline(TimelineAsset asset, CharacterUnit casterUnit, GameObject casterBinding = null)
     {
-        if (asset == null)
+        if (asset == null || casterUnit == null)
             return;
 
+        // Détermine automatiquement l'objet d'animation si aucun binding spécifique n'est fourni.
+        GameObject binding = casterBinding ?? casterUnit.animator?.gameObject ?? casterUnit.gameObject;
+
         // Stocke la timeline à jouer et le lanceur associé
-        pendingTimelines.Enqueue(new PendingTimeline(asset, caster));
+        pendingTimelines.Enqueue(new PendingTimeline(asset, casterUnit, binding));
     }
 
     /// <summary>
@@ -658,13 +665,25 @@ public class NewBattleManager : MonoBehaviour
             BattleTransitionManager.Instance?.HideBattleUI();
 
             // Aligne la caméra de combat sur l'unité concernée avant la cinématique
-            BattleTimelineManager.Instance?.AlignCameraToTarget(data.caster, "BattleCamera");
+            if (data.casterBinding != null)
+                BattleTimelineManager.Instance?.AlignCameraToTarget(data.casterBinding, "BattleCamera");
 
-            if (TimelineManager.Instance != null)
+            bool timelinePlayed = false;
+
+            if (BattleTimelineManager.Instance != null && data.unit != null)
             {
-                // Joue la timeline uniquement sur la piste "Caster".
-                TimelineManager.Instance.PlayTimeline(data.asset, data.caster, null);
+                BattleTimelineManager.Instance.PlayCasterTimeline(data.asset, data.unit, data.casterBinding);
+                timelinePlayed = true;
+
                 // Attente de la fin de la timeline avant de poursuivre
+                while (BattleTimelineManager.Instance.IsCasterTimelinePlaying(data.unit))
+                    yield return null;
+            }
+
+            // Fallback pour les situations de test où le BattleTimelineManager n'est pas présent
+            if (!timelinePlayed && TimelineManager.Instance != null)
+            {
+                TimelineManager.Instance.PlayTimeline(data.asset, data.casterBinding, null);
                 while (TimelineManager.Instance.IsTimelineActive)
                     yield return null;
             }
@@ -2220,7 +2239,7 @@ public class NewBattleManager : MonoBehaviour
 
             // La timeline reste utile pour jouer les éventuels signaux ou effets complémentaires.
             if (itemPreparingTimeline != null)
-                BattleTimelineManager.Instance.PlayCasterTimeline(itemPreparingTimeline, animGO);
+                BattleTimelineManager.Instance.PlayCasterTimeline(itemPreparingTimeline, currentCharacterUnit, animGO);
         }
 
         itemMenuTimelineActive = true;
@@ -2254,7 +2273,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         // Arrête la timeline d'attente lancée sur le caster si elle existe.
-        BattleTimelineManager.Instance?.StopCasterTimeline();
+        BattleTimelineManager.Instance?.StopCasterTimeline(currentCharacterUnit);
         itemMenuTimelineActive = false;
     }
     #endregion

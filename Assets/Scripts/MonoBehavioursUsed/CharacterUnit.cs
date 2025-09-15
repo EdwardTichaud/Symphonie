@@ -1,4 +1,6 @@
 using UnityEngine;
+using UnityEngine.Playables; // 📽️ Gestion des timelines propres à l'unité
+using UnityEngine.Timeline;  // 🎼 Lecture des TimelineAsset assignés au PlayableDirector local
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,8 +8,12 @@ using System.Linq;
 /// <summary>
 /// Représente une unité de combat. L'ajout d'un <see cref="CharacterController"/>
 /// permet de déléguer la gestion de la gravité à Unity pour plus de cohérence.
+/// Chaque unité embarque désormais son propre <see cref="PlayableDirector"/>
+/// afin de conserver l'ensemble des effets narratifs décrits dans l'Histoire de
+/// Symphonie tout en gagnant en modularité lors de la lecture des timelines.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(PlayableDirector))]
 public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, IDebuffable
 {
     public CharacterData Data;
@@ -25,6 +31,19 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private AudioSource audioSource;
     [HideInInspector] public Animator animator;
     private AwakeState awakeState;
+
+    /// <summary>
+    /// PlayableDirector individuel utilisé pour jouer les timelines de combat
+    /// propres à cette unité. Ce composant remplace l'ancien système centralisé
+    /// et garantit que les pistes "Caster" restent toujours correctement liées.
+    /// </summary>
+    private PlayableDirector battleDirector;
+
+    /// <summary>
+    /// Expose le PlayableDirector de combat à des fins de diagnostic tout en
+    /// conservant la protection d'accès pour éviter toute réaffectation externe.
+    /// </summary>
+    public PlayableDirector BattleDirector => battleDirector;
 
     /// <summary>
     /// Indique si l'unité est en état Awake (fusion avec l'ange gardien).
@@ -79,6 +98,16 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         controller = GetComponent<CharacterController>();
         if (controller == null)
             controller = gameObject.AddComponent<CharacterController>();
+
+        // Centralise la récupération (ou l'ajout) du PlayableDirector afin que
+        // chaque unité puisse lire ses propres timelines de MusicalMoves ou d'objets.
+        battleDirector = GetComponent<PlayableDirector>();
+        if (battleDirector == null)
+            battleDirector = gameObject.AddComponent<PlayableDirector>();
+
+        // Les timelines sont déclenchées manuellement, on désactive donc toute
+        // lecture automatique pour éviter une répétition non désirée en scène.
+        battleDirector.playOnAwake = false;
     }
 
     public CharacterType characterType => Data.characterType;
@@ -206,6 +235,162 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
                 customBar.SetValue(currentFatigue);
             }
         }
+    }
+
+    /// <summary>
+    /// Assure la cohérence des liens entre une timeline et le PlayableDirector
+    /// de l'unité avant de déclencher sa lecture. Les pistes portant la mention
+    /// "Caster" sont reliées en priorité à l'Animator du lanceur afin de
+    /// préserver l'intention chorégraphique des MusicalMoves.
+    /// </summary>
+    /// <param name="timeline">Timeline à jouer via le PlayableDirector local.</param>
+    /// <param name="casterBinding">
+    /// Objet de référence pour les pistes d'animation. S'il est omis, l'Animator
+    /// principal de l'unité est utilisé automatiquement.
+    /// </param>
+    public void PlayBattleTimeline(TimelineAsset timeline, GameObject casterBinding = null)
+    {
+        if (timeline == null)
+            return;
+
+        // Sécurise l'accès au PlayableDirector même si le composant a été ajouté
+        // dynamiquement après l'Awake (cas de duplication à l'éditeur par exemple).
+        if (battleDirector == null)
+            battleDirector = GetComponent<PlayableDirector>();
+
+        if (battleDirector == null)
+        {
+            Debug.LogError($"[CharacterUnit] Aucun PlayableDirector disponible sur {name}. La timeline '{timeline.name}' ne peut pas être jouée.");
+            return;
+        }
+
+        // Évite que plusieurs timelines se chevauchent sur la même unité.
+        battleDirector.Stop();
+
+        battleDirector.playableAsset = timeline;
+
+        // Détermine les cibles de binding prioritaires.
+        GameObject bindingRoot = casterBinding ?? animator?.gameObject ?? gameObject;
+        Animator bindingAnimator = casterBinding != null
+            ? casterBinding.GetComponent<Animator>() ?? casterBinding.GetComponentInChildren<Animator>()
+            : animator;
+
+        if (bindingAnimator == null && animator != null)
+            bindingAnimator = animator;
+
+        foreach (var output in timeline.outputs)
+        {
+            BindTimelineOutput(output, bindingRoot, bindingAnimator);
+        }
+
+        battleDirector.time = 0d;
+        battleDirector.Play();
+    }
+
+    /// <summary>
+    /// Arrête proprement la timeline de combat en cours sur cette unité. Cette
+    /// méthode est utilisée notamment lors de la fermeture des menus d'objets.
+    /// </summary>
+    public void StopBattleTimeline()
+    {
+        if (battleDirector != null && battleDirector.state == PlayState.Playing)
+            battleDirector.Stop();
+    }
+
+    /// <summary>
+    /// Indique si la timeline de combat locale est actuellement en cours
+    /// d'exécution. Utile pour synchroniser les différentes phases d'un move.
+    /// </summary>
+    public bool IsBattleTimelinePlaying => battleDirector != null && battleDirector.state == PlayState.Playing;
+
+    /// <summary>
+    /// Réalise le binding d'une piste individuelle d'une timeline vers les
+    /// cibles adéquates (Animator, GameObject ou composant spécialisé).
+    /// </summary>
+    private void BindTimelineOutput(PlayableBinding output, GameObject bindingRoot, Animator bindingAnimator)
+    {
+        // Les pistes caméra restent gérées par le BattleCameraManager pour
+        // conserver les transitions cinématographiques écrites dans la Bible du jeu.
+        string streamName = output.streamName ?? string.Empty;
+        if (streamName.IndexOf("camera", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            return;
+
+        System.Type targetType = output.outputTargetType;
+
+        // Les pistes de signaux doivent pointer vers les récepteurs attachés au director.
+        if (targetType != null && typeof(Component).IsAssignableFrom(targetType) && targetType.Name.Contains("SignalReceiver"))
+        {
+            Component receiver = battleDirector.GetComponent(targetType);
+            if (receiver != null)
+                battleDirector.SetGenericBinding(output.sourceObject, receiver);
+            else
+                Debug.LogWarning($"[CharacterUnit] SignalReceiver {targetType.Name} introuvable sur {battleDirector.gameObject.name} pour la timeline '{battleDirector.playableAsset.name}'.");
+            return;
+        }
+
+        // Priorité absolue : toute piste mentionnant explicitement le caster suit l'Animator principal.
+        if (streamName.IndexOf("caster", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+            streamName.IndexOf("pnj", System.StringComparison.OrdinalIgnoreCase) >= 0)
+        {
+            if (bindingAnimator != null)
+                battleDirector.SetGenericBinding(output.sourceObject, bindingAnimator);
+            else if (bindingRoot != null)
+                battleDirector.SetGenericBinding(output.sourceObject, bindingRoot);
+            else
+                battleDirector.SetGenericBinding(output.sourceObject, gameObject);
+            return;
+        }
+
+        // Les pistes "Model" visent généralement l'objet contenant l'Animator.
+        if (streamName.IndexOf("model", System.StringComparison.OrdinalIgnoreCase) >= 0 && bindingAnimator != null)
+        {
+            battleDirector.SetGenericBinding(output.sourceObject, bindingAnimator.gameObject);
+            return;
+        }
+
+        // Fallback : on s'appuie sur le type de sortie pour trouver un composant compatible.
+        if (targetType != null)
+        {
+            if (typeof(Animator).IsAssignableFrom(targetType))
+            {
+                if (bindingAnimator != null)
+                {
+                    battleDirector.SetGenericBinding(output.sourceObject, bindingAnimator);
+                    return;
+                }
+            }
+            else if (typeof(GameObject).IsAssignableFrom(targetType))
+            {
+                battleDirector.SetGenericBinding(output.sourceObject, bindingRoot ?? gameObject);
+                return;
+            }
+            else if (typeof(Component).IsAssignableFrom(targetType))
+            {
+                Component component = null;
+
+                if (bindingRoot != null)
+                {
+                    component = bindingRoot.GetComponent(targetType);
+                    if (component == null)
+                        component = bindingRoot.GetComponentInChildren(targetType);
+                }
+
+                if (component == null && bindingAnimator != null)
+                    component = bindingAnimator.GetComponent(targetType);
+
+                if (component == null)
+                    component = battleDirector.GetComponent(targetType);
+
+                if (component != null)
+                {
+                    battleDirector.SetGenericBinding(output.sourceObject, component);
+                    return;
+                }
+            }
+        }
+
+        // Dernier recours : on relie la piste à l'objet principal de l'unité.
+        battleDirector.SetGenericBinding(output.sourceObject, bindingRoot ?? gameObject);
     }
 
     /// <summary>

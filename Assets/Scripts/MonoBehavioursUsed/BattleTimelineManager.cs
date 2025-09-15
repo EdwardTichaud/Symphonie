@@ -1,19 +1,22 @@
 using UnityEngine;
-using UnityEngine.Playables;
 using UnityEngine.Timeline;
-using System;
 
 /// <summary>
 /// Gestionnaire centralisant les <see cref="TimelineAsset"/> jouées durant les combats.
-/// Désormais seule la timeline du lanceur est utilisée, la caméra étant gérée par ailleurs.
+/// Chaque CharacterUnit pilote désormais sa propre timeline via son PlayableDirector ;
+/// ce gestionnaire coordonne simplement les alignements caméra et les appels haut niveau.
 /// </summary>
 public class BattleTimelineManager : MonoBehaviour
 {
     /// <summary>Instance statique accessible depuis les autres scripts.</summary>
     public static BattleTimelineManager Instance { get; private set; }
 
-    /// <summary>Director chargé des animations du lanceur.</summary>
-    private PlayableDirector directorCaster;
+    /// <summary>
+    /// Mémorise l'unité ayant lancé la dernière timeline. Cette information
+    /// permet de fournir un arrêt ou un suivi de lecture par défaut lorsque
+    /// l'appelant n'en précise pas explicitement l'unité.
+    /// </summary>
+    private CharacterUnit lastUnitPlaying;
 
     private void Awake()
     {
@@ -24,18 +27,6 @@ public class BattleTimelineManager : MonoBehaviour
             return;
         }
         Instance = this;
-
-        FindCasterDirectorPlayer();
-    }
-
-    void FindCasterDirectorPlayer()
-    {
-        // Recherche du PlayableDirector dédié au caster.
-        Transform casterChild = transform.Find("PlayableDirector_Caster");
-        directorCaster = casterChild != null ? casterChild.GetComponent<PlayableDirector>() : null;
-
-        if (directorCaster == null)
-            Debug.LogError("[BattleTimelineManager] PlayableDirector_Caster introuvable.");
     }
 
     /// <summary>
@@ -61,74 +52,44 @@ public class BattleTimelineManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Joue uniquement la timeline du lanceur. Aucune piste caméra n'est prise en compte.
+    /// Joue uniquement la timeline du lanceur via son PlayableDirector local.
     /// </summary>
     /// <param name="timeline">Timeline à exécuter.</param>
-    /// <param name="caster">Objet servant de référence pour les bindings.</param>
-    public void PlayCasterTimeline(TimelineAsset timeline, GameObject caster)
+    /// <param name="unit">Unité dont le PlayableDirector doit être utilisé.</param>
+    /// <param name="casterBinding">Objet servant de référence pour les bindings (Animator, etc.).</param>
+    public void PlayCasterTimeline(TimelineAsset timeline, CharacterUnit unit, GameObject casterBinding)
     {
-        if (timeline == null || directorCaster == null)
+        if (timeline == null || unit == null)
             return;
 
-        directorCaster.playableAsset = timeline;
+        GameObject binding = casterBinding ?? unit.animator?.gameObject ?? unit.gameObject;
 
-        // Parcourt toutes les pistes pour relier dynamiquement les bons objets.
-        foreach (var output in timeline.outputs)
-        {
-            Type type = output.outputTargetType;
-            string lower = output.streamName.ToLower();
-
-            // Les pistes caméra sont ignorées : la caméra n'est plus contrôlée par timeline.
-            if (lower.Contains("camera"))
-                continue;
-
-            // Les pistes de signaux sont reliées au SignalReceiver du PlayableDirector.
-            if (type != null && typeof(Component).IsAssignableFrom(type) && type.Name.Contains("SignalReceiver"))
-            {
-                Component receiver = directorCaster.GetComponent(type);
-                if (receiver != null)
-                {
-                    directorCaster.SetGenericBinding(output.sourceObject, receiver);
-                }
-                else
-                {
-                    Debug.LogWarning($"[BattleTimelineManager] {type.Name} manquant sur {directorCaster.gameObject.name} pour la timeline.");
-                }
-                continue;
-            }
-
-            // Pistes d'animation : on tente de lier un Animator du lanceur.
-            if (lower.Contains("caster") || lower.Contains("pnj"))
-            {
-                if (caster == null)
-                    continue;
-
-                var animator = caster.GetComponentInChildren<Animator>();
-                if (animator != null)
-                    directorCaster.SetGenericBinding(output.sourceObject, animator);
-                else
-                    Debug.LogWarning("[BattleTimelineManager] Animator manquant sur le caster pour la timeline.");
-            }
-            else if (caster != null)
-            {
-                // Autres pistes : on relie simplement le GameObject du lanceur.
-                directorCaster.SetGenericBinding(output.sourceObject, caster);
-            }
-        }
-
-        directorCaster.time = 0;
-        directorCaster.Play();
+        unit.PlayBattleTimeline(timeline, binding);
+        lastUnitPlaying = unit;
     }
 
-    /// <summary>Arrête la timeline du lanceur si elle est en cours.</summary>
-    public void StopCasterTimeline()
+    /// <summary>Arrête la timeline en cours pour l'unité spécifiée.</summary>
+    /// <param name="unit">Unité ciblée, ou null pour cibler la dernière unité connue.</param>
+    public void StopCasterTimeline(CharacterUnit unit = null)
     {
-        if (directorCaster != null && directorCaster.state == PlayState.Playing)
-            directorCaster.Stop();
+        CharacterUnit target = unit ?? lastUnitPlaying;
+        if (target == null)
+            return;
+
+        target.StopBattleTimeline();
+
+        if (target == lastUnitPlaying)
+            lastUnitPlaying = null;
     }
 
-    /// <summary>Indique si le director du lanceur joue actuellement une timeline.</summary>
-    public bool IsCasterTimelinePlaying =>
-        directorCaster != null && directorCaster.state == PlayState.Playing;
+    /// <summary>
+    /// Indique si une timeline est actuellement jouée sur l'unité demandée.
+    /// </summary>
+    /// <param name="unit">Unité à interroger, ou null pour consulter la dernière unité utilisée.</param>
+    public bool IsCasterTimelinePlaying(CharacterUnit unit = null)
+    {
+        CharacterUnit target = unit ?? lastUnitPlaying;
+        return target != null && target.IsBattleTimelinePlaying;
+    }
 }
 

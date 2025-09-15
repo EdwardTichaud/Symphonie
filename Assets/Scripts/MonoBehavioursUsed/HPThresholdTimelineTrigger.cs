@@ -57,6 +57,7 @@ public class HPThresholdTimelineTrigger : MonoBehaviour
                     // aucune piste dédiée n'est recherchée.
                     NewBattleManager.Instance.QueueConditionalTimeline(
                         t.timeline,
+                        unitData.unit,
                         animatorGO);
                     break;
                 }
