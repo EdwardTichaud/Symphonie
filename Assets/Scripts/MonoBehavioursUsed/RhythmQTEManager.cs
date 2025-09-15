@@ -190,13 +190,14 @@ public class RhythmQTEManager : MonoBehaviour
     /// </summary>
     /// <param name="timeline">Timeline à jouer.</param>
     /// <param name="overlay">Vrai pour une timeline en superposition.</param>
+    /// <param name="caster">Unité lançant la timeline.</param>
     /// <param name="animatorGO">Objet de référence pour le binding (caster).</param>
     /// <param name="cameraTarget">Objet servant d'ancre pour la caméra.</param>
     /// <param name="autoRestore">Indique si la caméra doit être restaurée automatiquement.</param>
     /// <param name="initialRotation">Rotation de référence à conserver.</param>
-    private void StartTimelinePhase(TimelineAsset timeline, bool overlay, GameObject animatorGO, GameObject cameraTarget, bool autoRestore, Quaternion initialRotation, string cameraName = null)
+    private void StartTimelinePhase(TimelineAsset timeline, bool overlay, CharacterUnit caster, GameObject animatorGO, GameObject cameraTarget, bool autoRestore, Quaternion initialRotation, string cameraName = null)
     {
-        if (timeline == null || BattleTimelineManager.Instance == null || animatorGO == null)
+        if (timeline == null || BattleTimelineManager.Instance == null || caster == null)
             return;
 
         // 🎥 Active la caméra dédiée à cette phase si elle est renseignée.
@@ -206,12 +207,13 @@ public class RhythmQTEManager : MonoBehaviour
         // 📽️ La caméra n'étant plus pilotée par les timelines des moves/items,
         // nous ré-alignons simplement l'origine avant de lancer la timeline du lanceur.
         BattleTimelineManager.Instance.AlignCameraToTarget(
-            cameraTarget ?? animatorGO, // Fallback sur le lanceur si la cible est absente
+            cameraTarget ?? animatorGO ?? caster.gameObject, // Fallback sur le lanceur si la cible est absente
             battleCameraTag,
             initialRotation);
 
-        // Lecture de la seule timeline du caster.
-        BattleTimelineManager.Instance.PlayCasterTimeline(timeline, animatorGO);
+        // Lecture de la timeline via le PlayableDirector de l'unité concernée.
+        GameObject binding = animatorGO ?? caster.animator?.gameObject ?? caster.gameObject;
+        BattleTimelineManager.Instance.PlayCasterTimeline(timeline, caster, binding);
     }
 
     /// <summary>
@@ -219,22 +221,22 @@ public class RhythmQTEManager : MonoBehaviour
     /// </summary>
     /// <param name="timeline">Timeline à surveiller.</param>
     /// <param name="overlay">Paramètre conservé pour compatibilité, sans effet.</param>
-    private IEnumerator WaitForTimelinePhase(TimelineAsset timeline, bool overlay)
+    private IEnumerator WaitForTimelinePhase(TimelineAsset timeline, bool overlay, CharacterUnit caster)
     {
-        if (timeline == null)
+        if (timeline == null || caster == null)
             yield break;
 
         float maxDuration = (float)timeline.duration;
         float timer = 0f;
         while (BattleTimelineManager.Instance != null &&
-               BattleTimelineManager.Instance.IsCasterTimelinePlaying &&
+               BattleTimelineManager.Instance.IsCasterTimelinePlaying(caster) &&
                timer < maxDuration)
         {
             timer += Time.deltaTime;
             yield return null;
         }
 
-        if (BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePlaying)
+        if (BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePlaying(caster))
             Debug.LogWarning($"[RhythmQTEManager] Timeline '{timeline.name}' encore active après {maxDuration}s. Suite forcée.");
     }
 
@@ -312,12 +314,13 @@ public class RhythmQTEManager : MonoBehaviour
         StartTimelinePhase(
             move.preparingTimeline,
             useOverlay,
+            caster,
             casterAnimatorGO,
             casterCameraTarget,
             move.performingTimeline == null && move.retreatTimeline == null,
             initialRotation,
             move.preparingCameraName);
-        yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay);
+        yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay, caster);
 
         // Déplacement ou téléportation vers la cible si nécessaire.
         if (move.requiresMovement && caster != null && target != null)
@@ -337,6 +340,7 @@ public class RhythmQTEManager : MonoBehaviour
         StartTimelinePhase(
             move.performingTimeline,
             useOverlay,
+            caster,
             casterAnimatorGO,
             performingCameraTarget,
             move.retreatTimeline == null,
@@ -366,7 +370,7 @@ public class RhythmQTEManager : MonoBehaviour
             }
         }
 
-        yield return WaitForTimelinePhase(move.performingTimeline, useOverlay);
+        yield return WaitForTimelinePhase(move.performingTimeline, useOverlay, caster);
 
         // --- Retour ou téléportation de repli ---
         if (move.requiresMovement && !move.stayInPlace && caster != null && target != null)
@@ -376,12 +380,13 @@ public class RhythmQTEManager : MonoBehaviour
         StartTimelinePhase(
             move.retreatTimeline,
             useOverlay,
+            caster,
             casterAnimatorGO,
             casterCameraTarget,
             true,
             initialRotation,
             move.retreatCameraName);
-        yield return WaitForTimelinePhase(move.retreatTimeline, useOverlay);
+        yield return WaitForTimelinePhase(move.retreatTimeline, useOverlay, caster);
 
         // Attente finale de la timeline caméra complète (désactivée).
 
@@ -459,12 +464,13 @@ public class RhythmQTEManager : MonoBehaviour
         StartTimelinePhase(
             item.preparingTimeline,
             useOverlay,
+            caster,
             casterAnimatorGO,
             casterCameraTarget,
             item.performingTimeline == null && item.retreatTimeline == null,
             initialRotation,
             item.preparingCameraName);
-        yield return WaitForTimelinePhase(item.preparingTimeline, useOverlay);
+        yield return WaitForTimelinePhase(item.preparingTimeline, useOverlay, caster);
 
         // Déplacement ou téléportation éventuel vers la cible.
         if (item.requiresMovement && caster != null && target != null)
@@ -484,6 +490,7 @@ public class RhythmQTEManager : MonoBehaviour
         StartTimelinePhase(
             item.performingTimeline,
             useOverlay,
+            caster,
             casterAnimatorGO,
             performingCameraTarget,
             item.retreatTimeline == null,
@@ -504,7 +511,7 @@ public class RhythmQTEManager : MonoBehaviour
             LastItemSuccess = successResults.All(v => v);
         }
 
-        yield return WaitForTimelinePhase(item.performingTimeline, useOverlay);
+        yield return WaitForTimelinePhase(item.performingTimeline, useOverlay, caster);
 
         // --- Retour à la position d'origine ---
         if (item.requiresMovement && !item.stayInPlace && caster != null && target != null)
@@ -514,12 +521,13 @@ public class RhythmQTEManager : MonoBehaviour
         StartTimelinePhase(
             item.retreatTimeline,
             useOverlay,
+            caster,
             casterAnimatorGO,
             casterCameraTarget,
             true,
             initialRotation,
             item.retreatCameraName);
-        yield return WaitForTimelinePhase(item.retreatTimeline, useOverlay);
+        yield return WaitForTimelinePhase(item.retreatTimeline, useOverlay, caster);
 
         isActive = false;
         // Protection en cas de destruction du lanceur avant la fin de la séquence
