@@ -400,19 +400,28 @@ public class NewBattleManager : MonoBehaviour
         float initialTimeScale = Time.timeScale;
         float initialFixedDelta = Time.fixedDeltaTime;
 
-        // Application du facteur de ralenti défini dans l'inspecteur
+        // 🕵️‍♂️ Identifie les unités disposant réellement d'une timeline d'introduction
+        // pour éviter d'appliquer un délai inutile lorsqu'aucune scène n'est configurée.
+        var unitsWithIntro = unitsInBattle
+            .Where(u => u.Data.introTimeline != null)
+            .ToList();
+
+        // 🚀 Si aucune timeline n'est définie, on quitte immédiatement sans ralentir le jeu.
+        if (unitsWithIntro.Count == 0)
+            yield break;
+
+        // Application du facteur de ralenti défini dans l'inspecteur uniquement
+        // lorsque la mise en scène doit effectivement se jouer.
         Time.timeScale = equipSlowMotionScale;
         Time.fixedDeltaTime = initialFixedDelta * Time.timeScale;
 
         // Liste des PlayableDirector actifs pour surveiller la fin des timelines
         List<PlayableDirector> activeDirectors = new();
 
-        // Déclenche les timelines d'introduction sur chaque unité disposant d'une timeline
-        foreach (var unit in unitsInBattle)
+        // Déclenche les timelines d'introduction sur chaque unité concernée
+        foreach (var unit in unitsWithIntro)
         {
             var timeline = unit.Data.introTimeline;
-            if (timeline == null)
-                continue; // Pas de timeline définie pour cette unité
 
             // Recherche ou ajoute un PlayableDirector sur l'unité
             var director = unit.GetComponent<PlayableDirector>();
@@ -428,11 +437,15 @@ public class NewBattleManager : MonoBehaviour
             {
                 // La piste "Root" contrôle le GameObject principal portant le CharacterUnit.
                 if (track.name == "Root")
+                {
                     director.SetGenericBinding(track, unit.gameObject);
+                }
 
                 // La piste "Model" anime l'enfant qui possède l'Animator.
                 else if (track.name == "Model" && unit.animator != null)
+                {
                     director.SetGenericBinding(track, unit.animator.gameObject);
+                }
             }
 
             // Lance la lecture de la timeline correctement configurée
@@ -440,20 +453,24 @@ public class NewBattleManager : MonoBehaviour
             activeDirectors.Add(director);
         }
 
-        // Attend que toutes les timelines soient terminées
-        bool allFinished = false;
-        while (!allFinished)
+        // Attend que toutes les timelines soient terminées sans imposer une frame
+        // supplémentaire après la fin de la dernière animation.
+        bool timelinesStillPlaying = true;
+        while (timelinesStillPlaying)
         {
-            allFinished = true;
+            timelinesStillPlaying = false;
+
             foreach (var director in activeDirectors)
             {
                 if (director != null && director.state == PlayState.Playing)
                 {
-                    allFinished = false;
-                    break; // Au moins une timeline est encore en cours
+                    timelinesStillPlaying = true;
+                    break; // Au moins une timeline est encore en cours, on attend la prochaine frame.
                 }
             }
-            yield return null; // Patiente une frame avant de re-vérifier
+
+            if (timelinesStillPlaying)
+                yield return null; // Patiente une frame avant de re-vérifier.
         }
 
         // Restaure les valeurs temporelles initiales une fois les timelines terminées
