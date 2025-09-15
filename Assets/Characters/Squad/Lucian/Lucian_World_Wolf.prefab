@@ -206,6 +206,7 @@ MonoBehaviour:
   isWalking: 0
   isRunning: 0
   isJumping: 0
+  canRun: 1
   walkSpeed: 3
   runSpeed: 10
   jumpHeight: 2
@@ -2624,7 +2625,8 @@ PrefabInstance:
     - {fileID: 7845570541199553566, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
     - {fileID: 311104674272494223, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
     - {fileID: 9183249077022547887, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 7636438411831859811, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 260817979026527798, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
@@ -2649,10 +2651,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 8661335685232619521}
-  clip: {fileID: -203655887218126122, guid: f9d8ede15d6503448997b9dc7c16403e, type: 3}
+  clip: {fileID: -203655887218126122, guid: e5d32097e337858448a1104a329b0694, type: 3}
   speed: 1
   loop: 1
-  previewTime: 3.3259315
+  previewTime: 6.561927
 --- !u!4 &3374060607552203387 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 636498749171502220, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}

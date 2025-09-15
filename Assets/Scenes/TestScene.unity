@@ -488,6 +488,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &602261869
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 602261871}
+  - component: {fileID: 602261870}
+  m_Layer: 0
+  m_Name: Timeline_Item_Preparing
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!320 &602261870
+PlayableDirector:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 602261869}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_PlayableAsset: {fileID: 11400000, guid: e369e34d45f3da848b3c59c52443a3bb, type: 2}
+  m_InitialState: 1
+  m_WrapMode: 2
+  m_DirectorUpdateMode: 1
+  m_InitialTime: 0
+  m_SceneBindings:
+  - key: {fileID: -4912080060666246562, guid: e369e34d45f3da848b3c59c52443a3bb, type: 2}
+    value: {fileID: 2071481164449061754}
+  m_ExposedReferences:
+    m_References: []
+--- !u!4 &602261871
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 602261869}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1490225089
 GameObject:
   m_ObjectHideFlags: 0
@@ -22907,7 +22958,7 @@ Transform:
   m_GameObject: {fileID: 180111092738696371}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.59200203, z: -0, w: -0.8059366}
-  m_LocalPosition: {x: 9.36102, y: 1.006, z: -3.5172877}
+  m_LocalPosition: {x: 9.361019, y: 1.006, z: -3.5172873}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -27514,3 +27565,4 @@ SceneRoots:
   - {fileID: 1631362845}
   - {fileID: 492144970}
   - {fileID: 1819694249}
+  - {fileID: 602261871}
