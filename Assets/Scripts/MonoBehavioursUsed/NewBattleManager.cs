@@ -129,6 +129,13 @@ public class NewBattleManager : MonoBehaviour
     public TimelineAsset itemPreparingTimeline;
     private bool itemMenuTimelineActive = false;
 
+    /// <summary>Nom de la CinemachineCamera dédiée à l'attente de sélection d'objet.</summary>
+    private const string ItemPreparingCameraName = "CinemachineCamera_9_Item_Preparing";
+    /// <summary>Hash du state Animator "Item_Prepare" pour lancer rapidement l'animation correspondante.</summary>
+    private static readonly int AnimatorStateItemPrepare = Animator.StringToHash("Item_Prepare");
+    /// <summary>Hash du state Animator "Idle_Battle" afin de revenir proprement à la pose neutre.</summary>
+    private static readonly int AnimatorStateIdleBattle = Animator.StringToHash("Idle_Battle");
+
     private CharacterUnit previousUnit; // Champ de classe, pas une variable locale
     [HideInInspector] public CharacterUnit currentCharacterUnit;
     private bool isTurnResolving = false;
@@ -2145,32 +2152,92 @@ public class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Lance la Timeline d'attente de sélection d'objet si elle n'est pas déjà active.
+    /// Démarre la séquence d'attente liée au menu d'objets.
+    /// - Active la Cinemachine dédiée pour donner la priorité à l'angle "Item_Preparing".
+    /// - Lance l'animation "Item_Prepare" du lanceur pour un retour visuel clair.
+    /// - Joue la timeline (si disponible) afin de conserver les effets annexes prévus.
     /// </summary>
     private void StartItemPreparingTimeline()
     {
-        // S'assure qu'une Timeline et un gestionnaire existent avant de lancer quoi que ce soit
-        if (itemPreparingTimeline == null || BattleTimelineManager.Instance == null || itemMenuTimelineActive)
+        // Évite de relancer la séquence plusieurs fois si l'on reste dans le menu d'objets.
+        if (itemMenuTimelineActive)
             return;
 
-        GameObject animGO = currentCharacterUnit.GetComponentInChildren<Animator>()?.gameObject;
-        // La caméra n'étant plus contrôlée par timeline, on la repositionne puis
-        // on joue la boucle d'attente uniquement sur le lanceur.
-        BattleTimelineManager.Instance.AlignCameraToTarget(animGO, "BattleCamera");
-        BattleTimelineManager.Instance.PlayCasterTimeline(itemPreparingTimeline, animGO);
+        if (currentCharacterUnit == null)
+        {
+            Debug.LogWarning("[StartItemPreparingTimeline] Impossible de lancer la séquence : aucune unité courante n'est définie.");
+            return;
+        }
+
+        // Récupère l'Animator du lanceur : priorité au cache déjà exposé sur CharacterUnit.
+        Animator casterAnimator = currentCharacterUnit.animator;
+        if (casterAnimator == null)
+        {
+            // Sécurité supplémentaire : on tente de retrouver un Animator dans la hiérarchie.
+            casterAnimator = currentCharacterUnit.GetComponentInChildren<Animator>();
+        }
+
+        if (casterAnimator != null)
+        {
+            // CrossFade permet d'éviter un cut sec lorsque l'on ouvre le menu après une autre animation.
+            if (casterAnimator.HasState(0, AnimatorStateItemPrepare))
+                casterAnimator.CrossFade(AnimatorStateItemPrepare, 0.1f, 0, 0f);
+            else
+                casterAnimator.Play("Item_Prepare"); // Fallback si le hash n'est pas disponible dans le contrôleur.
+        }
+        else
+        {
+            Debug.LogWarning("[StartItemPreparingTimeline] Aucun Animator trouvé pour le lanceur : l'animation Item_Prepare ne sera pas jouée.");
+        }
+
+        // Confie la priorité caméra à la Cinemachine dédiée à l'attente d'objet.
+        BattleCameraManager.Instance?.SwitchToCamera(ItemPreparingCameraName);
+
+        // L'objet d'animation sert de point d'ancrage pour la timeline et l'alignement caméra.
+        GameObject animGO = casterAnimator != null ? casterAnimator.gameObject : currentCharacterUnit.gameObject;
+
+        // Même si la timeline est optionnelle, on garde l'alignement pour replacer la BattleCamera sur le lanceur.
+        if (BattleTimelineManager.Instance != null && animGO != null)
+        {
+            BattleTimelineManager.Instance.AlignCameraToTarget(animGO, "BattleCamera");
+
+            // La timeline reste utile pour jouer les éventuels signaux ou effets complémentaires.
+            if (itemPreparingTimeline != null)
+                BattleTimelineManager.Instance.PlayCasterTimeline(itemPreparingTimeline, animGO);
+        }
+
         itemMenuTimelineActive = true;
     }
 
     /// <summary>
-    /// Arrête la Timeline d'attente si elle est en cours d'exécution.
+    /// Arrête la séquence de préparation d'objet.
+    /// - Rend la main à la caméra principale.
+    /// - Replace le lanceur sur sa pose d'attente.
+    /// - Coupe la timeline d'attente si elle était lancée.
     /// </summary>
     private void StopItemPreparingTimeline()
     {
-        if (!itemMenuTimelineActive || BattleTimelineManager.Instance == null)
+        if (!itemMenuTimelineActive)
             return;
 
-        // Arrête la timeline d'attente lancée sur le caster.
-        BattleTimelineManager.Instance.StopCasterTimeline();
+        // On redonne la priorité à la BattleCamera classique pour la suite des actions.
+        BattleCameraManager.Instance?.SwitchToCamera(null);
+
+        if (currentCharacterUnit != null)
+        {
+            // Même logique que dans Start : priorité au cache, puis recherche de secours.
+            Animator casterAnimator = currentCharacterUnit.animator ?? currentCharacterUnit.GetComponentInChildren<Animator>();
+            if (casterAnimator != null)
+            {
+                if (casterAnimator.HasState(0, AnimatorStateIdleBattle))
+                    casterAnimator.CrossFade(AnimatorStateIdleBattle, 0.1f, 0, 0f);
+                else
+                    casterAnimator.Play("Idle_Battle");
+            }
+        }
+
+        // Arrête la timeline d'attente lancée sur le caster si elle existe.
+        BattleTimelineManager.Instance?.StopCasterTimeline();
         itemMenuTimelineActive = false;
     }
     #endregion
