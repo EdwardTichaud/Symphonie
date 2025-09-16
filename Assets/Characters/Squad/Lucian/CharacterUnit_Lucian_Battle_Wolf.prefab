@@ -376,8 +376,98 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Events:
-    m_Signals: []
-    m_Events: []
+    m_Signals:
+    - {fileID: 11400000, guid: 7bb3595e600d6574aab65e5a46aefcf3, type: 2}
+    - {fileID: 11400000, guid: 2c4d6a9dac3ea7d49bcf1ecf606893b1, type: 2}
+    - {fileID: 11400000, guid: 4fe02b1c980fde04e875a745c5df5743, type: 2}
+    - {fileID: 11400000, guid: 773dbe27eddb25945b3418dea33c8128, type: 2}
+    - {fileID: 11400000, guid: d2a3c95ec1d914e4b93b460a997e16bc, type: 2}
+    - {fileID: 11400000, guid: d08033fa8c2f6494c883a2e7a12961fb, type: 2}
+    m_Events:
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: -2340834141694389633}
+          m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
+          m_MethodName: InstantiateFromTimeline
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 3138876450911499522, guid: 0b9e7be000ea2934ea441830433fc652, type: 3}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: -2340834141694389633}
+          m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
+          m_MethodName: InstantiateFromTimeline
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 8476998547781510526, guid: 23729c2043128e84587f8924c371613e, type: 3}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: -2340834141694389633}
+          m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
+          m_MethodName: InstantiateFromTimeline
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 6712169537145002962, guid: 00fff868c338861449d838f2924decc4, type: 3}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: -2340834141694389633}
+          m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
+          m_MethodName: InstantiateFromTimeline
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 100000, guid: a9e8b7c3f95d4f278b1a412be0c8e3a1, type: 3}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: -2340834141694389633}
+          m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
+          m_MethodName: InstantiateFromTimeline
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 7504243534523899951, guid: 1debf2470229d9f479461f19363c6547, type: 3}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: -2340834141694389633}
+          m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
+          m_MethodName: InstantiateFromTimeline
+          m_Mode: 2
+          m_Arguments:
+            m_ObjectArgument: {fileID: 6874629054999197042, guid: b631e9dc66c674a4a95a57982794e5f7, type: 3}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
 --- !u!114 &-2340834141694389633
 MonoBehaviour:
   m_ObjectHideFlags: 0
