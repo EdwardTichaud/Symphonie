@@ -269,12 +269,18 @@ PlayableDirector:
   m_GameObject: {fileID: 901204007372340786}
   m_Enabled: 1
   serializedVersion: 3
-  m_PlayableAsset: {fileID: 0}
+  m_PlayableAsset: {fileID: 11400000, guid: 2685cb01e665faa428a61ed02811523b, type: 2}
   m_InitialState: 1
   m_WrapMode: 2
   m_DirectorUpdateMode: 1
   m_InitialTime: 0
-  m_SceneBindings: []
+  m_SceneBindings:
+  - key: {fileID: -5806974088241429290, guid: 2685cb01e665faa428a61ed02811523b, type: 2}
+    value: {fileID: 1297105958416379964}
+  - key: {fileID: 1025858475875766644, guid: 2685cb01e665faa428a61ed02811523b, type: 2}
+    value: {fileID: 0}
+  - key: {fileID: 1920216392129803547, guid: 2685cb01e665faa428a61ed02811523b, type: 2}
+    value: {fileID: 0}
   m_ExposedReferences:
     m_References: []
 --- !u!114 &-3209986247612668936
@@ -354,7 +360,7 @@ Transform:
   m_GameObject: {fileID: 3074037081284060824}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.033141788, z: -0, w: 0.9994507}
-  m_LocalPosition: {x: -1.8478931, y: 1.4, z: -9.827782}
+  m_LocalPosition: {x: -0.92394656, y: 1.4, z: -4.913891}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -470,7 +476,7 @@ Transform:
   m_GameObject: {fileID: 7182649117659710025}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.033141788, z: -0, w: 0.9994507}
-  m_LocalPosition: {x: -1.8478931, y: 1.4, z: -9.827782}
+  m_LocalPosition: {x: -0.92394656, y: 1.4, z: -4.913891}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2890,6 +2896,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d152eae071e9c1c478f3905116c51a2a, type: 3}
+--- !u!95 &1297105958416379964 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 8544375071599694196, guid: d152eae071e9c1c478f3905116c51a2a, type: 3}
+  m_PrefabInstance: {fileID: 7247287015850664264}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &2735327710561885988 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4712558701889109612, guid: d152eae071e9c1c478f3905116c51a2a, type: 3}
