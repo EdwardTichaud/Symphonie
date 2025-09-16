@@ -288,6 +288,83 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     }
 
     /// <summary>
+    /// Prépare la timeline d'introduction de combat en reliant explicitement
+    /// les pistes "Root" et "Model" du <see cref="PlayableDirector"/> local.
+    /// Les autres pistes potentiellement présentes sont nettoyées afin d'éviter
+    /// qu'un binding issu d'une précédente timeline ne perturbe la mise en scène.
+    /// </summary>
+    /// <param name="introTimeline">Timeline d'introduction à jouer.</param>
+    /// <returns>
+    /// Le <see cref="PlayableDirector"/> prêt à être lancé, ou <c>null</c> si la
+    /// configuration n'a pas pu être réalisée.
+    /// </returns>
+    public PlayableDirector PrepareIntroTimeline(TimelineAsset introTimeline)
+    {
+        if (introTimeline == null)
+            return null;
+
+        // Sécurise la récupération du PlayableDirector, indispensable pour jouer la timeline.
+        if (battleDirector == null)
+            battleDirector = GetComponent<PlayableDirector>();
+
+        // Si pour une raison quelconque le PlayableDirector est absent, on le recrée afin de garantir la lecture.
+        if (battleDirector == null)
+            battleDirector = gameObject.AddComponent<PlayableDirector>();
+
+        if (battleDirector == null)
+        {
+            Debug.LogError($"[CharacterUnit] Aucun PlayableDirector disponible sur {name}. La timeline d'introduction '{introTimeline.name}' ne peut pas être préparée.");
+            return null;
+        }
+
+        // Rafraîchit la référence à l'Animator au cas où l'unité aurait été instanciée dynamiquement.
+        if (animator == null)
+            animator = GetComponentInChildren<Animator>();
+
+        // Coupe toute éventuelle lecture en cours pour éviter qu'une timeline précédente ne continue.
+        battleDirector.Stop();
+
+        battleDirector.playableAsset = introTimeline;
+
+        // Parcourt toutes les pistes afin de ne conserver que les bindings nécessaires.
+        foreach (var track in introTimeline.GetOutputTracks())
+        {
+            // On se concentre sur les AnimationTrack car seules les pistes "Root" et "Model" doivent être reliées.
+            if (track is AnimationTrack)
+            {
+                string trackName = track.name;
+
+                // La piste "Root" manipule le GameObject principal portant le CharacterUnit.
+                if (string.Equals(trackName, "Root", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    battleDirector.SetGenericBinding(track, gameObject);
+                    continue; // Binding réalisé, on passe à la piste suivante.
+                }
+
+                // La piste "Model" anime l'objet contenant l'Animator du personnage.
+                if (string.Equals(trackName, "Model", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (animator != null)
+                    {
+                        battleDirector.SetGenericBinding(track, animator.gameObject);
+                        continue; // Binding réussi, rien à nettoyer.
+                    }
+
+                    // Si aucun Animator n'est disponible, on laisse le nettoyage se faire en sortie de boucle.
+                }
+            }
+
+            // Pour toutes les autres pistes, on supprime tout binding résiduel pour éviter des références incohérentes.
+            battleDirector.ClearGenericBinding(track);
+        }
+
+        // S'assure que la timeline repart du début lorsque le BattleManager la lancera.
+        battleDirector.time = 0d;
+
+        return battleDirector;
+    }
+
+    /// <summary>
     /// Arrête proprement la timeline de combat en cours sur cette unité. Cette
     /// méthode est utilisée notamment lors de la fermeture des menus d'objets.
     /// </summary>
