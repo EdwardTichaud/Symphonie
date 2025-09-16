@@ -95,6 +95,13 @@ des possibilités de combinaisons qui n'imposent plus un repositionnement systé
 - **Gain** : aucun.
 - **Utilisation conseillée** : parfait pour les débutants qui peinent à atteindre les adversaires aériens. Les joueurs expérimentés pourront l'enchaîner avec des attaques terrestres pour réaliser des combinaisons originales.
 
+## MusicalMove : Sforzando
+- **Type** : Attaque téléportée.
+- **Effet** : Lucian se matérialise face à une cible unique et libère une onde percussive qui inflige 20 points de dégâts (plus la puissance courante) tout en générant 1 point d'harmonie supplémentaire.
+- **Coût** : 1 point d'harmonie et 1 point de fatigue.
+- **Gain** : +1 harmonie grâce à la puissance du choc musical.
+- **Utilisation conseillée** : idéal pour surprendre un adversaire isolé. L'attaque place Lucian au contact de sa cible ; les débutants peuvent l'utiliser comme finisher direct, tandis que les joueurs expérimentés profiteront du maintien en mêlée pour enchaîner immédiatement un combo ou préparer une interception.
+
 ## MusicalMove : Abîme Harmonique
 - **Type** : Altération
 - **Effet** : annule le sol sous la cible, la forçant à flotter et la rendant sensible aux stratégies aériennes.
