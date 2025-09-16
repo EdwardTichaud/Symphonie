@@ -450,13 +450,9 @@ public class BattleTransitionManager : MonoBehaviour
 
         SetRenderingLayer.Instance.ApplyToAll();
 
-        CharacterUnit firstUnit = NewBattleManager.Instance.ReturnFirstStrikeCharacter();
         if (battleCamera != null)
         {
             battleCamera.SetActive(true); // S'assure que la camera de combat est active
-
-            if (firstUnit != null)
-                battleCamera.transform.position = firstUnit.transform.position;
 
             // Au lieu de jouer une timeline d'introduction, on affiche directement
             // la camera orbitale autour du champ de bataille avec une transition instantanée.
@@ -477,8 +473,8 @@ public class BattleTransitionManager : MonoBehaviour
         while (NewBattleManager.Instance.unitsInBattle.Count <= 0)
             yield return null;
 
-        // ⏳ Petite pause pour laisser les timelines d'intro se jouer avant le début réel du combat.
-        yield return new WaitForSeconds(3f);
+        // ⏳ laisser les timelines d'intro se jouer avant le début réel du combat.
+        
 
         // 🎮 Lancement du combat et affichage du menu principal après la pause.
         yield return NewBattleManager.Instance.StartBattle();

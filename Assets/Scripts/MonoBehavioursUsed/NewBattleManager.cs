@@ -559,9 +559,6 @@ public class NewBattleManager : MonoBehaviour
         //4 Réinitialise les ATB
         ResetAllATB();
 
-        //5 Détermine quel joueur joue en premier
-        CharacterUnit firstPlayer = ReturnFirstStrikeCharacter();
-
         //6 Intro Camera
         // Lance la séquence d'introduction des caméras avant de débuter les tours.
         yield return PlayIntroCameraSequence();
