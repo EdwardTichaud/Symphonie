@@ -426,32 +426,14 @@ public class NewBattleManager : MonoBehaviour
         {
             var timeline = unit.Data.introTimeline;
 
-            // Recherche ou ajoute un PlayableDirector sur l'unité
-            var director = unit.GetComponent<PlayableDirector>();
+            // Demande à la CharacterUnit de préparer les bindings "Root" et "Model" de sa timeline d'intro.
+            PlayableDirector director = unit.PrepareIntroTimeline(timeline);
+
+            // Si la préparation échoue (timeline incomplète, aucun PlayableDirector, etc.), on ignore simplement cette unité.
             if (director == null)
-                director = unit.gameObject.AddComponent<PlayableDirector>();
+                continue;
 
-            // Associe la timeline au PlayableDirector
-            director.playableAsset = timeline;
-
-            // Parcourt les pistes de sortie de la timeline pour leur affecter
-            // les bons GameObjects avant de jouer l'animation.
-            foreach (var track in timeline.GetOutputTracks())
-            {
-                // La piste "Root" contrôle le GameObject principal portant le CharacterUnit.
-                if (track.name == "Root")
-                {
-                    director.SetGenericBinding(track, unit.gameObject);
-                }
-
-                // La piste "Model" anime l'enfant qui possède l'Animator.
-                else if (track.name == "Model" && unit.animator != null)
-                {
-                    director.SetGenericBinding(track, unit.animator.gameObject);
-                }
-            }
-
-            // Lance la lecture de la timeline correctement configurée
+            // Lance la lecture de la timeline correctement configurée et l'ajoute à la liste de suivi.
             director.Play();
             activeDirectors.Add(director);
         }
