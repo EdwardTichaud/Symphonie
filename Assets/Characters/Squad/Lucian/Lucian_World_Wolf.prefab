@@ -139,6 +139,7 @@ GameObject:
   - component: {fileID: 3659928910049611679}
   - component: {fileID: 953001759524285674}
   - component: {fileID: 8432707127198632764}
+  - component: {fileID: 1468040604511462208}
   m_Layer: 10
   m_Name: Lucian_World_Wolf
   m_TagString: Player
@@ -394,6 +395,35 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!320 &1468040604511462208
+PlayableDirector:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5021491593266416669}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_PlayableAsset: {fileID: 0}
+  m_InitialState: 1
+  m_WrapMode: 2
+  m_DirectorUpdateMode: 1
+  m_InitialTime: 0
+  m_SceneBindings:
+  - key: {fileID: -2477970755808460308, guid: bc1a72aa23e36b84d8d545619e3b5f19, type: 2}
+    value: {fileID: 8661335685232619521}
+  - key: {fileID: 7392225453373392422, guid: 361e91e8ca92edc459ed5ed247a853bd, type: 2}
+    value: {fileID: 8661335685232619521}
+  - key: {fileID: -4833114901060875364, guid: 361e91e8ca92edc459ed5ed247a853bd, type: 2}
+    value: {fileID: 0}
+  - key: {fileID: -1807950700000000000, guid: bc1a72aa23e36b84d8d545619e3b5f19, type: 2}
+    value: {fileID: 0}
+  - key: {fileID: -8570237761649213152, guid: 5f0dceeed3fcd914ebde5933df0b5223, type: 2}
+    value: {fileID: 3659928910049611679}
+  - key: {fileID: 3094298237455746717, guid: 5f0dceeed3fcd914ebde5933df0b5223, type: 2}
+    value: {fileID: 8661335685232619521}
+  m_ExposedReferences:
+    m_References: []
 --- !u!1 &5289886659859999516
 GameObject:
   m_ObjectHideFlags: 0
@@ -2278,6 +2308,15 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6788438571220260598, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
+      propertyPath: m_WarningMessage
+      value: "\nBinding warning: Some generic clip(s) animate transforms that are
+        already bound by a Humanoid avatar. These transforms can only be changed
+        by Humanoid clips.\n\tTransform 'L2ndNb'\n\tTransform 'L4thNb'\n\tTransform
+        'L1stNa'\n\tTransform 'RHandN'\n\tTransform 'RThumbNb'\n\tTransform 'NeckN'\n\tTransform
+        'RArmJ'\n\tTransform 'R4thNa'\n\tTransform 'L3rdNb'\n\tTransform 'RThumbNa'\n\tand
+        more ..."
+      objectReference: {fileID: 0}
+    - target: {fileID: 6788438571220260598, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
       propertyPath: m_ApplyRootMotion
       value: 0
       objectReference: {fileID: 0}
@@ -2654,7 +2693,7 @@ MonoBehaviour:
   clip: {fileID: -203655887218126122, guid: e5d32097e337858448a1104a329b0694, type: 3}
   speed: 1
   loop: 1
-  previewTime: 6.561927
+  previewTime: 9.990746
 --- !u!4 &3374060607552203387 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 636498749171502220, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}

@@ -94,7 +94,7 @@ public class NewBattleManager : MonoBehaviour
 
     // Paramètres du ralentissement appliqué lors de l'introduction.
     [Tooltip("Facteur de ralentissement au tout début du combat.")]
-    public float equipSlowMotionScale = 0.5f;
+    public float equipSlowMotionScale = 1f;
 
     [Header("Fin de combat")]
     public GameObject victoryScreen;
@@ -464,7 +464,7 @@ public class NewBattleManager : MonoBehaviour
 
         // Patiente encore une seconde en temps réel après la fin des timelines
         // d'introduction pour laisser le temps au joueur d'apprécier la mise en scène.
-        yield return new WaitForSecondsRealtime(1f);
+        yield return new WaitForSecondsRealtime(0f);
 
         // La gestion du changement de caméra est réalisée en dehors de cette
         // coroutine afin de laisser la main à l'appelant sur la transition.
