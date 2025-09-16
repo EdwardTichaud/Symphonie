@@ -1,6 +1,5 @@
 using UnityEngine;
 
-[ExecuteAlways]
 public class LookAtMiddleEnemy : MonoBehaviour
 {
     public Transform currentTarget;
@@ -9,7 +8,7 @@ public class LookAtMiddleEnemy : MonoBehaviour
 
     void LateUpdate()
     {
-        if (NewBattleManager.Instance.currentBattleState == BattleState.BattleIntro)
+        if (NewBattleManager.Instance.currentBattleState == BattleState.Initialization)
         {
             if (currentTarget == null)
             {

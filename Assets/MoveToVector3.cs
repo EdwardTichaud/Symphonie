@@ -17,7 +17,7 @@ public class MoveToVector3 : MonoBehaviour
     void LateUpdate()
     {
         if (NewBattleManager.Instance != null &&
-            NewBattleManager.Instance.currentBattleState == BattleState.BattleIntro)
+            NewBattleManager.Instance.currentBattleState == BattleState.Initialization)
         {
             // Déplacement infini basé sur le temps écoulé
             transform.position += direction.normalized * speed * Time.deltaTime;
