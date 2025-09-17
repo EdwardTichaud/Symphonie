@@ -62,7 +62,8 @@ public class BattleTimelineManager : MonoBehaviour
         if (timeline == null || unit == null)
             return;
 
-        GameObject binding = casterBinding ?? unit.animator?.gameObject ?? unit.gameObject;
+        // Identifie automatiquement le GameObject portant l'Animator enfant du lanceur.
+        GameObject binding = casterBinding ?? unit.GetCasterBindingTarget();
 
         unit.PlayBattleTimeline(timeline, binding);
         lastUnitPlaying = unit;

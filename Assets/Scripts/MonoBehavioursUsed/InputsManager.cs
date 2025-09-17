@@ -549,7 +549,7 @@ public class InputsManager : MonoBehaviour
         if (IsSkillTargetSelectionState(bm.currentBattleState))
         {
             bm.OpenSkillsMenu();
-            bm.currentCharacterUnit.GetComponentInChildren<Animator>().SetTrigger("exitAction");
+            bm.currentCharacterUnit.GetCasterAnimator()?.SetTrigger("exitAction");
         }
         else if (IsItemTargetSelectionState(bm.currentBattleState))
         {

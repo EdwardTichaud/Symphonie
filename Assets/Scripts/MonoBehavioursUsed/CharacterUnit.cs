@@ -30,6 +30,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
     [HideInInspector] public Animator animator;
+    // Indicateur évitant les multiples avertissements lorsque l'Animator enfant est introuvable.
+    private bool hasLoggedMissingChildAnimator;
     private AwakeState awakeState;
 
     /// <summary>
@@ -90,6 +92,110 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // Lancement d'un rayon vers le bas pour vérifier la présence d'un sol.
         Vector3 origin = transform.position;
         return Physics.Raycast(origin, Vector3.down, groundCheckDistance, battleGroundLayer);
+    }
+
+    /// <summary>
+    /// Recherche un Animator enfant à utiliser pour les timelines des MusicalMoves
+    /// ou des Items. Les GameObjects inactifs sont examinés pour couvrir les
+    /// modèles masqués dans l'éditeur, et l'objet racine portant le CharacterUnit
+    /// est explicitement ignoré afin de respecter les consignes de binding.
+    /// </summary>
+    private Animator FindChildAnimatorForBindings()
+    {
+        var childAnimators = GetComponentsInChildren<Animator>(includeInactive: true);
+        foreach (var candidate in childAnimators)
+        {
+            if (candidate == null)
+                continue;
+
+            if (candidate.gameObject == gameObject)
+                continue; // On passe l'objet racine pour se concentrer sur les véritables modèles.
+
+            return candidate;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Expose (et met en cache) l'Animator enfant servant de référence lors du
+    /// lancement d'un MusicalMove ou de l'utilisation d'un objet. Un repli sur
+    /// l'Animator du GameObject principal est effectué si aucun enfant n'est
+    /// trouvé afin d'éviter de bloquer la progression du combat.
+    /// </summary>
+    public Animator GetCasterAnimator(bool forceRefresh = false)
+    {
+        bool cacheInvalid = forceRefresh || animator == null
+            || (animator.gameObject == gameObject && !hasLoggedMissingChildAnimator);
+
+        if (!cacheInvalid)
+            return animator;
+
+        Animator childAnimator = FindChildAnimatorForBindings();
+        if (childAnimator != null)
+        {
+            animator = childAnimator;
+            hasLoggedMissingChildAnimator = false;
+            return animator;
+        }
+
+        Animator rootAnimator = GetComponent<Animator>();
+        if (rootAnimator != null)
+        {
+            animator = rootAnimator;
+
+            if (!hasLoggedMissingChildAnimator)
+            {
+                Debug.LogWarning($"[CharacterUnit] Aucun Animator enfant trouvé sur '{name}'. Utilisation de l'Animator du GameObject racine par défaut.");
+                hasLoggedMissingChildAnimator = true;
+            }
+
+            return animator;
+        }
+
+        if (!hasLoggedMissingChildAnimator)
+        {
+            Debug.LogWarning($"[CharacterUnit] Impossible de localiser un Animator pour '{name}'. Les timelines risquent de ne pas se jouer correctement.");
+            hasLoggedMissingChildAnimator = true;
+        }
+
+        animator = null;
+        return animator;
+    }
+
+    /// <summary>
+    /// Fournit directement l'objet à utiliser comme binding "Caster" pour les
+    /// timelines. En absence d'Animator enfant, l'objet racine est renvoyé pour
+    /// éviter toute erreur bloquante.
+    /// </summary>
+    public GameObject GetCasterBindingTarget()
+    {
+        Animator casterAnimator = GetCasterAnimator();
+        return casterAnimator != null ? casterAnimator.gameObject : gameObject;
+    }
+
+    /// <summary>
+    /// Détermine l'Animator le plus adapté à partir d'un GameObject donné pour
+    /// configurer les bindings d'une timeline. Cette méthode garantit que la
+    /// recherche respecte la règle imposant l'utilisation d'un Animator enfant.
+    /// </summary>
+    private Animator ResolveAnimatorForBinding(GameObject bindingSource)
+    {
+        if (bindingSource == null)
+            return GetCasterAnimator();
+
+        if (bindingSource == gameObject)
+            return GetCasterAnimator();
+
+        Animator directAnimator = bindingSource.GetComponent<Animator>();
+        if (directAnimator != null)
+            return directAnimator;
+
+        Animator nestedAnimator = bindingSource.GetComponentInChildren<Animator>(includeInactive: true);
+        if (nestedAnimator != null)
+            return nestedAnimator;
+
+        return GetCasterAnimator();
     }
 
     private void Awake()
@@ -207,7 +313,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         spriteRenderer = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
-        animator = GetComponentInChildren<Animator>();
+        // Recherche proactive de l'Animator dédié aux timelines dans les enfants (même inactifs).
+        animator = GetCasterAnimator(forceRefresh: true);
         awakeState = GetComponent<AwakeState>();
 
         // Setup graphique
@@ -270,10 +377,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         battleDirector.playableAsset = timeline;
 
         // Détermine les cibles de binding prioritaires.
-        GameObject bindingRoot = casterBinding ?? animator?.gameObject ?? gameObject;
-        Animator bindingAnimator = casterBinding != null
-            ? casterBinding.GetComponent<Animator>() ?? casterBinding.GetComponentInChildren<Animator>()
-            : animator;
+        GameObject bindingRoot = casterBinding ?? GetCasterBindingTarget();
+        // Sélectionne l'Animator le plus pertinent pour les pistes "Caster".
+        Animator bindingAnimator = ResolveAnimatorForBinding(bindingRoot);
 
         if (bindingAnimator == null && animator != null)
             bindingAnimator = animator;
@@ -660,7 +766,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         {
             Instantiate(Data.deathEffect, transform.position, Quaternion.identity);
         }
-        Animator animator = GetComponentInChildren<Animator>();
+        Animator animator = GetCasterAnimator();
         Debug.Log(this + " handleDeath called, playing death animation.");
         if (animator != null)
         {
