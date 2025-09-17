@@ -283,8 +283,7 @@ public class RhythmQTEManager : MonoBehaviour
         {
             target.OnDeath += deathHandler;
             target.PlayPrepareToUndergoAnimation();
-        }
-        
+        }       
         GameObject casterAnimatorGO = caster.GetCasterBindingTarget();
         // 🎯 La caméra se centre désormais directement sur l'unité ciblée du mouvement.
         // Si aucune cible n'est définie (attaque de zone, soin personnel, etc.),
