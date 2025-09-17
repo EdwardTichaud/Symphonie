@@ -627,7 +627,8 @@ public class NewBattleManager : MonoBehaviour
             return;
 
         // Détermine automatiquement l'objet d'animation si aucun binding spécifique n'est fourni.
-        GameObject binding = casterBinding ?? casterUnit.animator?.gameObject ?? casterUnit.gameObject;
+        // Sélection automatique de l'Animator enfant du lanceur pour respecter la règle de binding.
+        GameObject binding = casterBinding ?? casterUnit.GetCasterBindingTarget();
 
         // Stocke la timeline à jouer et le lanceur associé
         pendingTimelines.Enqueue(new PendingTimeline(asset, casterUnit, binding));
@@ -1421,7 +1422,7 @@ public class NewBattleManager : MonoBehaviour
             if (angle > 90f)
             {
                 // Si l’angle est > 90°, on déclenche le trigger "isTurning" sur l’Animator enfant
-                Animator anim = unit.GetComponentInChildren<Animator>();
+                Animator anim = unit.GetCasterAnimator();
                 if (anim != null)
                 {
                     anim.SetTrigger("isTurning");
@@ -1469,7 +1470,7 @@ public class NewBattleManager : MonoBehaviour
             if (angle > 90f)
             {
                 // Si > 90°, déclenche "isTurning" sur l’Animator enfant
-                Animator anim = unit.GetComponentInChildren<Animator>();
+                Animator anim = unit.GetCasterAnimator();
                 if (anim != null)
                 {
                     anim.SetTrigger("isTurning");
@@ -1619,7 +1620,7 @@ public class NewBattleManager : MonoBehaviour
 
     private IEnumerator RotateUnitSmoothly(CharacterUnit unit, Quaternion targetRotation, float rotationSpeed)
     {
-        Animator anim = unit.GetComponentInChildren<Animator>();
+        Animator anim = unit.GetCasterAnimator();
         if (anim != null)
         {
             // Joue l'animation de rotation en boucle pendant la rotation
@@ -2184,13 +2185,8 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        // Récupère l'Animator du lanceur : priorité au cache déjà exposé sur CharacterUnit.
-        Animator casterAnimator = currentCharacterUnit.animator;
-        if (casterAnimator == null)
-        {
-            // Sécurité supplémentaire : on tente de retrouver un Animator dans la hiérarchie.
-            casterAnimator = currentCharacterUnit.GetComponentInChildren<Animator>();
-        }
+        // Récupère l'Animator enfant du lanceur via l'utilitaire centralisé pour garantir un binding correct.
+        Animator casterAnimator = currentCharacterUnit.GetCasterAnimator();
 
         if (casterAnimator != null)
         {
@@ -2209,7 +2205,7 @@ public class NewBattleManager : MonoBehaviour
         BattleCameraManager.Instance?.SwitchToCamera(ItemPreparingCameraName);
 
         // L'objet d'animation sert de point d'ancrage pour la timeline et l'alignement caméra.
-        GameObject animGO = casterAnimator != null ? casterAnimator.gameObject : currentCharacterUnit.gameObject;
+        GameObject animGO = casterAnimator != null ? casterAnimator.gameObject : currentCharacterUnit.GetCasterBindingTarget();
 
         // Même si la timeline est optionnelle, on garde l'alignement pour replacer la BattleCamera sur le lanceur.
         if (BattleTimelineManager.Instance != null && animGO != null)
@@ -2241,7 +2237,7 @@ public class NewBattleManager : MonoBehaviour
         if (currentCharacterUnit != null)
         {
             // Même logique que dans Start : priorité au cache, puis recherche de secours.
-            Animator casterAnimator = currentCharacterUnit.animator ?? currentCharacterUnit.GetComponentInChildren<Animator>();
+            Animator casterAnimator = currentCharacterUnit.GetCasterAnimator();
             if (casterAnimator != null)
             {
                 if (casterAnimator.HasState(0, AnimatorStateIdleBattle))

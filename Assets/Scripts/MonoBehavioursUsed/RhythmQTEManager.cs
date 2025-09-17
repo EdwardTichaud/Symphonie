@@ -206,13 +206,14 @@ public class RhythmQTEManager : MonoBehaviour
 
         // 📽️ La caméra n'étant plus pilotée par les timelines des moves/items,
         // nous ré-alignons simplement l'origine avant de lancer la timeline du lanceur.
+        GameObject defaultCasterTarget = caster.GetCasterBindingTarget();
         BattleTimelineManager.Instance.AlignCameraToTarget(
-            cameraTarget ?? animatorGO ?? caster.gameObject, // Fallback sur le lanceur si la cible est absente
+            cameraTarget ?? animatorGO ?? defaultCasterTarget, // Fallback sur l'Animator enfant du lanceur
             battleCameraTag,
             initialRotation);
 
         // Lecture de la timeline via le PlayableDirector de l'unité concernée.
-        GameObject binding = animatorGO ?? caster.animator?.gameObject ?? caster.gameObject;
+        GameObject binding = animatorGO ?? defaultCasterTarget;
         BattleTimelineManager.Instance.PlayCasterTimeline(timeline, caster, binding);
     }
 
@@ -284,7 +285,7 @@ public class RhythmQTEManager : MonoBehaviour
             target.PlayPrepareToUndergoAnimation();
         }
         
-        GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
+        GameObject casterAnimatorGO = caster.GetCasterBindingTarget();
         // 🎯 La caméra se centre désormais directement sur l'unité ciblée du mouvement.
         // Si aucune cible n'est définie (attaque de zone, soin personnel, etc.),
         // on utilise l'Animator du lanceur pour conserver un ancrage valable.
@@ -443,7 +444,7 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         
-        Animator animator = caster.GetComponentInChildren<Animator>();
+        Animator animator = caster.GetCasterAnimator();
         GameObject casterAnimatorGO = animator != null ? animator.gameObject : null;
         // 🎯 La caméra se positionne directement sur l'unité ciblée par l'objet.
         // En l'absence de cible (consommable global, soin personnel...),
@@ -548,7 +549,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         // Destination calculée selon la portée de l'objet
         Vector3 destination = target.transform.position + target.transform.forward * item.castDistance;
-        Animator animator = caster.GetComponentInChildren<Animator>();
+        Animator animator = caster.GetCasterAnimator();
         // Récupère le GameObject qui porte l'Animator pour pouvoir le masquer
         GameObject visualRoot = animator != null ? animator.gameObject : null;
 
@@ -627,7 +628,7 @@ public class RhythmQTEManager : MonoBehaviour
             yield break;
 
         Vector3 origin = originPosition;
-        Animator animator = caster.GetComponentInChildren<Animator>();
+        Animator animator = caster.GetCasterAnimator();
         // GameObject contenant l'Animator à masquer pendant la téléportation
         GameObject visualRoot = animator != null ? animator.gameObject : null;
         bool isTeleport = item.moveSpeed <= 0f; // Téléportation si vitesse nulle
@@ -726,7 +727,7 @@ public class RhythmQTEManager : MonoBehaviour
         float mobilityBonus = caster.currentMobility;
         Vector3 targetPos = target.transform.position + offsetDir * (move.castDistance + mobilityBonus);
 
-        Animator animator = caster.GetComponentInChildren<Animator>();
+        Animator animator = caster.GetCasterAnimator();
         // Stocke le GameObject visuel pour pouvoir le désactiver durant la téléportation
         GameObject visualRoot = animator != null ? animator.gameObject : null;
         bool isTeleport = move.moveSpeed <= 0f; // Téléportation si vitesse nulle
@@ -821,7 +822,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         Vector3 startPos = caster.transform.position;
         Vector3 initialPosition = originPosition;
-        Animator animator = caster.GetComponentInChildren<Animator>();
+        Animator animator = caster.GetCasterAnimator();
         // GameObject contenant l'Animator à désactiver durant la téléportation
         GameObject visualRoot = animator != null ? animator.gameObject : null;
         bool isTeleport = move.moveSpeed <= 0f; // Téléportation si vitesse nulle
@@ -905,7 +906,7 @@ public class RhythmQTEManager : MonoBehaviour
     IEnumerator PlayMoveAnimations(string[] animationClips, CharacterUnit caster)
     {
         // Récupère une fois l’Animator plutôt que de l’appeler à chaque itération
-        Animator animator = caster.GetComponentInChildren<Animator>();
+        Animator animator = caster.GetCasterAnimator();
 
         foreach (string clip in animationClips)
         {
