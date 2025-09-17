@@ -30,7 +30,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     [SerializeField] private float defaultBlendDuration = 1f;
 
     [Header("Fondu visuel")] // Permet de remplacer le mouvement par un fondu
-    [Tooltip("Active un fondu visuel entre deux plans au lieu d'un mouvement de camera.")]
+    [Tooltip("Active la possibilite de realiser un fondu visuel entre deux plans.")]
     [SerializeField] private bool useVisualCrossFade = true;
 
     [Tooltip("Courbe d'evolution de l'opacite durant le fondu (0 = transparent, 1 = opaque).")]
@@ -66,6 +66,9 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         _byName.Clear();
         foreach (var c in cameras)
         {
+            // S'assure que chaque camera dispose du composant definissant son type de transition.
+            EnsureFadeConfiguration(c);
+
             var key = c.gameObject.name;
             if (!_byName.ContainsKey(key)) _byName.Add(key, c);
         }
@@ -99,9 +102,9 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     /// <param name="blendDuration">Duree du blend en secondes.</param>
     public void DisplayCamera(string cameraName, float blendDuration)
     {
-        // Si le fondu visuel est actif, on lance une coroutine dediee qui
+        // Si la camera cible exige un fondu visuel, on lance une coroutine dediee qui
         // capture l'image actuelle avant de basculer sur la nouvelle camera.
-        if (useVisualCrossFade && blendDuration > 0f)
+        if (ShouldUseCrossFade(cameraName, blendDuration))
         {
             // Si le composant est desactive ou si la coroutine n'a pas le droit de tourner,
             // on retombe sur le comportement classique pour eviter de bloquer la transition.
@@ -152,7 +155,11 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         cameras = FindObjectsByType<CinemachineCamera>(FindObjectsSortMode.None)
             .Where(c => c != null).Distinct().ToList();
         _byName.Clear();
-        foreach (var c in cameras) _byName[c.gameObject.name] = c;
+        foreach (var c in cameras)
+        {
+            EnsureFadeConfiguration(c);
+            _byName[c.gameObject.name] = c;
+        }
     }
 
     /// <summary>
@@ -395,6 +402,68 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         rect.offsetMax = Vector2.zero;
 
         return rawImage;
+    }
+
+    /// <summary>
+    /// Determine si la camera cible prefere l'utilisation d'un fondu visuel.
+    /// </summary>
+    private bool ShouldUseCrossFade(string cameraName, float blendDuration)
+    {
+        // Aucun fondu possible si l'option globale est desactivee ou si la duree est nulle.
+        if (!useVisualCrossFade || blendDuration <= 0f)
+            return false;
+
+        var targetCamera = ResolveTargetCamera(cameraName);
+        if (!targetCamera)
+            return false;
+
+        // Le composant est garanti present via EnsureFadeConfiguration, on peut donc l'utiliser.
+        var configuration = EnsureFadeConfiguration(targetCamera);
+        return configuration != null && configuration.fadeType == FadeType.Fade;
+    }
+
+    /// <summary>
+    /// Retrouve la camera visee par <paramref name="cameraName"/> sans modifier les priorites.
+    /// </summary>
+    private CinemachineCamera ResolveTargetCamera(string cameraName)
+    {
+        if (cameras == null || cameras.Count == 0)
+            return null;
+
+        // Un nom nul designe la camera par defaut placee a l'indice 0.
+        if (cameraName == null)
+            return cameras[0];
+
+        // Une chaine vide signifie qu'aucune camera Cinemachine n'est desiree.
+        if (string.IsNullOrEmpty(cameraName))
+            return null;
+
+        if (!_byName.TryGetValue(cameraName, out var target))
+        {
+            // Rebat l'inventaire en cas de desynchronisation (cameras ajoutees ou renommees).
+            RebuildMap();
+            _byName.TryGetValue(cameraName, out target);
+        }
+
+        return target;
+    }
+
+    /// <summary>
+    /// Ajoute le composant <see cref="CinemachineFadeConfiguration"/> si la camera n'en possede pas.
+    /// </summary>
+    private CinemachineFadeConfiguration EnsureFadeConfiguration(CinemachineCamera camera)
+    {
+        if (!camera)
+            return null;
+
+        var configuration = camera.GetComponent<CinemachineFadeConfiguration>();
+        if (!configuration)
+        {
+            // Ajout automatique afin que toutes les cameras respectent la convention imposee.
+            configuration = camera.gameObject.AddComponent<CinemachineFadeConfiguration>();
+        }
+
+        return configuration;
     }
 
     /// <summary>
