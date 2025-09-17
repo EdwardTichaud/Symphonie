@@ -212,7 +212,13 @@ public class RhythmQTEManager : MonoBehaviour
             initialRotation);
 
         // Lecture de la timeline via le PlayableDirector de l'unité concernée.
-        GameObject binding = animatorGO ?? caster.animator?.gameObject ?? caster.gameObject;
+        Animator childAnimator = caster.GetComponentsInChildren<Animator>(true)
+                                       .FirstOrDefault(a => a.gameObject != caster.gameObject);
+
+        GameObject binding = animatorGO
+                             ?? childAnimator?.gameObject
+                             ?? caster.gameObject;
+
         BattleTimelineManager.Instance.PlayCasterTimeline(timeline, caster, binding);
     }
 
@@ -283,8 +289,8 @@ public class RhythmQTEManager : MonoBehaviour
             target.OnDeath += deathHandler;
             target.PlayPrepareToUndergoAnimation();
         }
-        
-        GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>()?.gameObject;
+
+        GameObject casterAnimatorGO = caster.GetComponentInChildren<Animator>(true)?.gameObject;
         // 🎯 La caméra se centre désormais directement sur l'unité ciblée du mouvement.
         // Si aucune cible n'est définie (attaque de zone, soin personnel, etc.),
         // on utilise l'Animator du lanceur pour conserver un ancrage valable.
