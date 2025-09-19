@@ -116,9 +116,11 @@ public class BattleCameraManager : MonoBehaviour
     {
         if (role == BattleCameraRole.None)
         {
+            // Retour explicite sur la caméra de base : on ne passe surtout pas par la surcharge string
+            // pour éviter tout aller-retour inutile.
             currentRole = BattleCameraRole.None;
             cameraRig?.NotifyActiveRole(BattleCameraRole.None);
-            SwitchToCamera((string)null, blendTime, overrideStyle);
+            DisplayCameraWithBlend(null, blendTime, overrideStyle);
             return;
         }
 
@@ -133,7 +135,7 @@ public class BattleCameraManager : MonoBehaviour
 
         currentRole = role;
         cameraRig?.NotifyActiveRole(role);
-        SwitchToCamera(cameraName, duration, style);
+        DisplayCameraWithBlend(cameraName, duration, style);
     }
 
     /// <summary>
@@ -156,17 +158,20 @@ public class BattleCameraManager : MonoBehaviour
         {
             currentRole = BattleCameraRole.None;
             cameraRig?.NotifyActiveRole(BattleCameraRole.None);
-            if (blendTime >= 0f)
-                blendSwitcher.DisplayCamera(null, blendTime, overrideStyle); // Transition forcee
-            else
-                blendSwitcher.DisplayCamera(null, blendTime, overrideStyle); // Duree par defaut
+            DisplayCameraWithBlend(null, blendTime, overrideStyle);
             return;
         }
 
         if (nameToRole.TryGetValue(cameraName, out var resolvedRole))
         {
-            // Permet de rester compatible avec les appels legacy basés sur le nom.
-            SwitchToCamera(resolvedRole, blendTime, overrideStyle);
+            // Compatibilité avec les anciennes séquences qui adressaient les cams par nom :
+            // on profite quand même des durées/styles personnalisés.
+            float duration = blendTime >= 0f ? blendTime : ComputeBlendDuration(currentRole, resolvedRole);
+            var style = overrideStyle ?? ComputeBlendStyle(currentRole, resolvedRole);
+
+            currentRole = resolvedRole;
+            cameraRig?.NotifyActiveRole(resolvedRole);
+            DisplayCameraWithBlend(cameraName, duration, style);
             return;
         }
 
@@ -184,10 +189,7 @@ public class BattleCameraManager : MonoBehaviour
                 cameraRig?.NotifyActiveRole(BattleCameraRole.None);
                 // Si aucune camera speciale n'est disponible, on retourne sur la camera
                 // principale avec la duree de blend souhaitee ou celle par defaut.
-                if (blendTime >= 0f)
-                    blendSwitcher.DisplayCamera(null, blendTime, overrideStyle);
-                else
-                    blendSwitcher.DisplayCamera(null, blendTime, overrideStyle);
+                DisplayCameraWithBlend(null, blendTime, overrideStyle);
                 return;
             }
         }
@@ -195,10 +197,22 @@ public class BattleCameraManager : MonoBehaviour
         currentRole = BattleCameraRole.None;
         cameraRig?.NotifyActiveRole(BattleCameraRole.None);
         // Affiche la camera demandee avec la duree de blend appropriee.
-        if (blendTime >= 0f)
-            blendSwitcher.DisplayCamera(cameraName, blendTime, overrideStyle);
-        else
-            blendSwitcher.DisplayCamera(cameraName, blendTime, overrideStyle);
+        DisplayCameraWithBlend(cameraName, blendTime, overrideStyle);
+    }
+
+    /// <summary>
+    /// Envoie la requête de blend au <see cref="CinemachineBlendSwitcher"/> en gérant le cas « durée par défaut ».
+    /// </summary>
+    /// <param name="cameraName">Nom de la caméra ciblée (ou <c>null</c> pour la caméra principale).</param>
+    /// <param name="blendTime">Durée imposée, ou valeur négative pour conserver la configuration du blend switcher.</param>
+    /// <param name="overrideStyle">Style de blend optionnel.</param>
+    private void DisplayCameraWithBlend(string cameraName, float blendTime, CinemachineBlendDefinition.Styles? overrideStyle)
+    {
+        if (!blendSwitcher)
+            return;
+
+        // CinemachineBlendSwitcher gère déjà le cas d'une durée négative en retombant sur sa valeur par défaut.
+        blendSwitcher.DisplayCamera(cameraName, blendTime, overrideStyle);
     }
 
     private float ComputeBlendDuration(BattleCameraRole from, BattleCameraRole to)
