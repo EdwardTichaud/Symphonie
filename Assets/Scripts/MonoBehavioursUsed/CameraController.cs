@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Cinemachine; // Permet de distinguer les CinemachineCamera des Camera classiques pour éviter les conflits de pilotage.
 
 public enum WorldCameraState
 {
@@ -41,6 +42,7 @@ public class CameraController : MonoBehaviour
 
     private GameObject battleCamera;               // Référence directe à la BattleCamera
     private Transform battleCameraParent;      // Parent direct de la BattleCamera (utilisé pour le forçage)
+    private bool battleCameraSupportsBreathing; // Indique si l'effet de respiration peut être appliqué sans perturber Cinemachine.
     private float worldBreathOffset;           // Dernier décalage appliqué à la WorldCamera elle-même
     private float battleBreathOffset;          // Dernier décalage appliqué à la BattleCamera elle-même
 
@@ -127,10 +129,36 @@ public class CameraController : MonoBehaviour
 
         // Recherche de la BattleCamera et de son parent pour gérer séparément forçage et respiration
         battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
-        if (battleCamera == null) Debug.LogWarning("[CameraController] BattleCamera introuvable !");
-        battleCameraParent = battleCamera != null && battleCamera.transform.parent != null
-            ? battleCamera.transform.parent
-            : battleCamera?.transform;
+        if (battleCamera == null)
+        {
+            Debug.LogWarning("[CameraController] BattleCamera introuvable !");
+            battleCameraSupportsBreathing = false; // Sans référence valide on évite toute tentative d'animation.
+        }
+        else
+        {
+            battleCameraParent = battleCamera.transform.parent != null
+                ? battleCamera.transform.parent
+                : battleCamera.transform;
+
+            // Vérifie si l'objet tagué "BattleCamera" est une caméra Unity classique ou une entité Cinemachine
+            // (caméra virtuelle ou caméra physique contrôlée par un CinemachineBrain).
+            // Les entités Cinemachine sont déjà animées par BattleCameraRig : appliquer ici l'effet de respiration
+            // provoquerait une lutte de positions (saccades observées en jeu).
+            // On ne conserve donc l'effet que pour les caméras physiques libres.
+            bool hasUnityCameraComponent = battleCamera.TryGetComponent(out Camera _);
+            bool hasCinemachineComponent = battleCamera.TryGetComponent(out CinemachineCamera _);
+            bool hasCinemachineBrain = battleCamera.TryGetComponent(out CinemachineBrain _);
+
+            battleCameraSupportsBreathing = hasUnityCameraComponent && !hasCinemachineComponent && !hasCinemachineBrain;
+
+            if (!battleCameraSupportsBreathing && (hasCinemachineComponent || hasCinemachineBrain))
+            {
+                // Par sécurité on remet l'offset à zéro afin d'éviter toute valeur résiduelle si l'on change de scène.
+                battleBreathOffset = 0f;
+                // Journalisation détaillée pour diagnostiquer plus facilement les conflits de caméra dans le futur.
+                Debug.Log("[CameraController] Effet de respiration désactivé pour la BattleCamera car elle est pilotée par Cinemachine.");
+            }
+        }
 
         cameraTargetName = FindChildRecursive(player, "Point_Chest")?.name;
         eventsManager = FindFirstObjectByType<EventsManager>();
@@ -216,7 +244,12 @@ public class CameraController : MonoBehaviour
         // Applique le léger mouvement de respiration directement sur les GameObjects caméra
         // (leurs parents restent libres pour recevoir les déplacements forcés)
         ApplyBreathing(worldCamera != null ? worldCamera.transform : null, ref worldBreathOffset);
-        ApplyBreathing(battleCamera != null ? battleCamera.transform : null, ref battleBreathOffset);
+        // Si la BattleCamera est contrôlée par Cinemachine, on évite tout déplacement manuel
+        // pour ne pas contrarier BattleCameraRig.
+        Transform battleBreathingTarget = battleCameraSupportsBreathing && battleCamera != null
+            ? battleCamera.transform
+            : null;
+        ApplyBreathing(battleBreathingTarget, ref battleBreathOffset);
     }
 
     /// <summary>
