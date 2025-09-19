@@ -456,7 +456,7 @@ public class BattleTransitionManager : MonoBehaviour
 
             // Au lieu de jouer une timeline d'introduction, on affiche directement
             // la camera orbitale autour du champ de bataille avec une transition instantanée.
-            BattleCameraManager.Instance?.SwitchToCamera("CinemachineCamera_10_OrbitAroundBattlefield", 0f);
+            BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.WideEstablish, 0f);
         }
         else
         {

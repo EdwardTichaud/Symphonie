@@ -93,15 +93,12 @@ public class ItemData : ScriptableObject
     public TimelineAsset retreatTimeline;
 
     [Header("Caméras par phase")]
-    // Nom de la caméra pendant la préparation de l'objet.
-    [Tooltip("CinemachineCamera active lors de la préparation.\nLaisser vide pour conserver la caméra en cours.")]
-    public string preparingCameraName;
-    // Nom de la caméra pendant l'utilisation de l'objet.
-    [Tooltip("CinemachineCamera active pendant l'utilisation.\nLaisser vide pour garder la caméra précédente.")]
-    public string performingCameraName;
-    // Nom de la caméra pendant la phase de repli.
-    [Tooltip("CinemachineCamera active lors du repli.\nLaisser vide pour garder la caméra précédente.")]
-    public string retreatCameraName;
+    [Tooltip("Plan cinématique utilisé lors de la préparation (None = conserver la vue actuelle).")]
+    public BattleCameraRole preparingCameraRole = BattleCameraRole.MainMenuIdle;
+    [Tooltip("Plan cinématique utilisé pendant l'utilisation (None = conserver la caméra précédente).")]
+    public BattleCameraRole performingCameraRole = BattleCameraRole.OverShoulderCasterToTarget;
+    [Tooltip("Plan cinématique utilisé lors du repli (None = conserver la caméra précédente).")]
+    public BattleCameraRole retreatCameraRole = BattleCameraRole.TargetReaction;
 
 #if UNITY_EDITOR
     // ------------------------------------------------------------------
@@ -122,12 +119,12 @@ public class ItemData : ScriptableObject
             return;
 
         // Applique les valeurs par défaut uniquement si les champs sont vides.
-        if (string.IsNullOrEmpty(preparingCameraName))
-            preparingCameraName = reference.preparingCameraName;
-        if (string.IsNullOrEmpty(performingCameraName))
-            performingCameraName = reference.performingCameraName;
-        if (string.IsNullOrEmpty(retreatCameraName))
-            retreatCameraName = reference.retreatCameraName;
+        if (preparingCameraRole == BattleCameraRole.None)
+            preparingCameraRole = reference.preparingCameraRole;
+        if (performingCameraRole == BattleCameraRole.None)
+            performingCameraRole = reference.performingCameraRole;
+        if (retreatCameraRole == BattleCameraRole.None)
+            retreatCameraRole = reference.retreatCameraRole;
     }
 #endif
 

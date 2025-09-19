@@ -90,27 +90,30 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     /// </summary>
     public void DisplayCamera(string cameraName)
     {
-        // Redirige vers la surcharge avec duree explicite en utilisant
-        // la duree de blend par defaut.
-        DisplayCamera(cameraName, defaultBlendDuration);
+        // Redirige vers la surcharge avec durée explicite en utilisant
+        // la durée de blend par défaut.
+        DisplayCamera(cameraName, defaultBlendDuration, null);
     }
 
     /// <summary>
     /// Active la <see cref="CinemachineCamera"/> nommee <paramref name="cameraName"/>.
     /// </summary>
     /// <param name="cameraName">Nom de la camera a activer.</param>
-    /// <param name="blendDuration">Duree du blend en secondes.</param>
-    public void DisplayCamera(string cameraName, float blendDuration)
+    /// <param name="blendDuration">Durée du blend en secondes.</param>
+    /// <param name="overrideStyle">Style de blend à forcer (null = style par défaut).</param>
+    public void DisplayCamera(string cameraName, float blendDuration, CinemachineBlendDefinition.Styles? overrideStyle = null)
     {
+        float resolvedDuration = blendDuration >= 0f ? blendDuration : defaultBlendDuration;
+
         // Si la camera cible exige un fondu visuel, on lance une coroutine dediee qui
         // capture l'image actuelle avant de basculer sur la nouvelle camera.
-        if (ShouldUseCrossFade(cameraName, blendDuration))
+        if (ShouldUseCrossFade(cameraName, resolvedDuration))
         {
             // Si le composant est desactive ou si la coroutine n'a pas le droit de tourner,
             // on retombe sur le comportement classique pour eviter de bloquer la transition.
             if (!isActiveAndEnabled)
             {
-                ApplyCameraSwitch(cameraName, blendDuration, false);
+                ApplyCameraSwitch(cameraName, resolvedDuration, false, overrideStyle);
                 return;
             }
 
@@ -124,12 +127,12 @@ public class CinemachineBlendSwitcher : MonoBehaviour
             }
 
             // Lancement du fondu asynchrone (capture + bascule + interpolation).
-            crossFadeRoutine = StartCoroutine(DisplayCameraWithCrossFade(cameraName, blendDuration));
+            crossFadeRoutine = StartCoroutine(DisplayCameraWithCrossFade(cameraName, resolvedDuration, overrideStyle));
             return;
         }
 
         // Sinon (fondu desactive ou duree nulle) on applique directement la transition.
-        ApplyCameraSwitch(cameraName, blendDuration, false);
+        ApplyCameraSwitch(cameraName, resolvedDuration, false, overrideStyle);
     }
 
     /// <summary>
@@ -169,14 +172,14 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     /// <param name="cameraName">Nom de la camera cible (ou <c>null</c>/<see cref="string.Empty"/> pour les cas speciaux).</param>
     /// <param name="blendDuration">Duree de blend desiree (utilisee si <paramref name="forceCut"/> est faux).</param>
     /// <param name="forceCut">Si vrai, impose un cut direct sans interpolation de position.</param>
-    private void ApplyCameraSwitch(string cameraName, float blendDuration, bool forceCut)
+    private void ApplyCameraSwitch(string cameraName, float blendDuration, bool forceCut, CinemachineBlendDefinition.Styles? overrideStyle)
     {
-        float duration = Mathf.Max(0f, blendDuration);
+        float duration = Mathf.Max(0f, blendDuration >= 0f ? blendDuration : defaultBlendDuration);
 
         // Cas : retour a la camera par defaut (indice 0).
         if (cameraName == null)
         {
-            ApplyBrainBlend(duration, forceCut);
+            ApplyBrainBlend(duration, forceCut, overrideStyle);
             ActivateDefaultCameraPriorities();
             return;
         }
@@ -205,7 +208,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         if (_current == next) return;
 
         // Definition du blend par defaut juste avant le switch.
-        ApplyBrainBlend(duration, forceCut);
+        ApplyBrainBlend(duration, forceCut, overrideStyle);
 
         // Gestion des priorites : seule la camera cible obtient la priorite active.
         foreach (var c in cameras)
@@ -219,13 +222,13 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     /// </summary>
     /// <param name="blendDuration">Duree du blend si <paramref name="forceCut"/> est faux.</param>
     /// <param name="forceCut">Si vrai, force un cut instantane.</param>
-    private void ApplyBrainBlend(float blendDuration, bool forceCut)
+    private void ApplyBrainBlend(float blendDuration, bool forceCut, CinemachineBlendDefinition.Styles? overrideStyle)
     {
         if (!brain) return; // Rien a configurer si aucun brain n'est disponible.
 
         // Lors d'un fondu visuel, on force un cut afin d'eviter le mouvement.
-        var style = forceCut ? CinemachineBlendDefinition.Styles.Cut : blendStyle;
-        var duration = forceCut ? 0f : blendDuration;
+        var style = forceCut ? CinemachineBlendDefinition.Styles.Cut : (overrideStyle ?? blendStyle);
+        var duration = forceCut ? 0f : Mathf.Max(0f, blendDuration);
         brain.DefaultBlend = new CinemachineBlendDefinition(style, duration);
     }
 
@@ -233,13 +236,13 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     /// Lance un fondu visuel : capture du frame courant, activation de la nouvelle camera,
     /// puis interpolation de l'opacite de l'image capturee.
     /// </summary>
-    private IEnumerator DisplayCameraWithCrossFade(string cameraName, float fadeDuration)
+    private IEnumerator DisplayCameraWithCrossFade(string cameraName, float fadeDuration, CinemachineBlendDefinition.Styles? overrideStyle)
     {
         // S'assure que l'overlay est pret. Si ce n'est pas possible, on retombe
         // sur le comportement standard afin de ne pas bloquer le changement de plan.
         if (!EnsureCrossFadeOverlay())
         {
-            ApplyCameraSwitch(cameraName, fadeDuration, false);
+            ApplyCameraSwitch(cameraName, fadeDuration, false, overrideStyle);
             crossFadeRoutine = null;
             yield break;
         }
@@ -260,7 +263,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         if (screenshot == null)
         {
             // Aucune capture disponible : retour au comportement classique.
-            ApplyCameraSwitch(cameraName, fadeDuration, false);
+            ApplyCameraSwitch(cameraName, fadeDuration, false, overrideStyle);
             crossFadeRoutine = null;
             yield break;
         }
@@ -274,7 +277,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         SetCrossFadeAlpha(1f); // on commence totalement opaque
 
         // Bascule vers la nouvelle camera via un cut (aucun mouvement de camera).
-        ApplyCameraSwitch(cameraName, fadeDuration, true);
+        ApplyCameraSwitch(cameraName, fadeDuration, true, overrideStyle);
 
         float elapsed = 0f;
         while (elapsed < fadeDuration)
