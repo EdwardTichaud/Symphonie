@@ -98,7 +98,6 @@ GameObject:
   - component: {fileID: 4438600320584170281}
   - component: {fileID: 1908932713936211939}
   - component: {fileID: 2474908719304271215}
-  - component: {fileID: 3990869735896681074}
   m_Layer: 16
   m_Name: SM_Ceiling_Arch_Brick_01_1Way_Sml_2
   m_TagString: Untagged
@@ -196,24 +195,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -3074279993466110768, guid: 325bb3bc1fe1ebd4ca3adfccf9bc1bc0, type: 3}
---- !u!114 &3990869735896681074
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 107268630573870646}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &130204183196916728
 GameObject:
   m_ObjectHideFlags: 0
@@ -616,7 +597,6 @@ GameObject:
   - component: {fileID: 4100898606012927464}
   - component: {fileID: 2237627950975121698}
   - component: {fileID: 2821758786358006702}
-  - component: {fileID: 9102413470665574474}
   m_Layer: 16
   m_Name: Arch_Brick_01_Sml Variant_1
   m_TagString: Untagged
@@ -714,24 +694,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -4499155394268667584, guid: 6805abf44a1488b42bf6fbbccbed3d5f, type: 3}
---- !u!114 &9102413470665574474
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 291989280592812279}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &349425535758867819
 GameObject:
   m_ObjectHideFlags: 0
@@ -1475,7 +1437,6 @@ GameObject:
   - component: {fileID: 3593515195283668453}
   - component: {fileID: 3337094531094253841}
   - component: {fileID: 6883479274068377389}
-  - component: {fileID: 2803954420781675877}
   m_Layer: 16
   m_Name: BrickPile_02 Variant_1
   m_TagString: Untagged
@@ -1573,24 +1534,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8645227633108581643, guid: 042c0c315b7b7db4c9bd0cfce313083e, type: 3}
---- !u!114 &2803954420781675877
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 687511818537391066}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &697266486767155120
 GameObject:
   m_ObjectHideFlags: 0
@@ -1946,7 +1889,6 @@ GameObject:
   - component: {fileID: 704301408785123223}
   - component: {fileID: 2465326524345801591}
   - component: {fileID: 704301408766071607}
-  - component: {fileID: 934290006623291853}
   m_Layer: 16
   m_Name: SM_Brick_Loose_09
   m_TagString: Untagged
@@ -2022,24 +1964,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 704301408783222131}
   m_Enabled: 1
---- !u!114 &934290006623291853
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 704301408785423287}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &730416195028744610
 GameObject:
   m_ObjectHideFlags: 0
@@ -2700,7 +2624,6 @@ GameObject:
   - component: {fileID: 3591135748836711367}
   - component: {fileID: 1599536145057623821}
   - component: {fileID: 3321389092853319041}
-  - component: {fileID: 6541070016634929193}
   m_Layer: 16
   m_Name: Arch_Brick_01_Sml Variant_4
   m_TagString: Untagged
@@ -2798,24 +2721,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -4499155394268667584, guid: 6805abf44a1488b42bf6fbbccbed3d5f, type: 3}
---- !u!114 &6541070016634929193
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 950908052932988632}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &974760695300166985
 GameObject:
   m_ObjectHideFlags: 0
@@ -2827,7 +2732,6 @@ GameObject:
   - component: {fileID: 974760695300524393}
   - component: {fileID: 2771891625132922249}
   - component: {fileID: 974760695316372937}
-  - component: {fileID: 6776572811968411644}
   m_Layer: 16
   m_Name: SM_Brick_Loose_11
   m_TagString: Untagged
@@ -2903,24 +2807,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 5885445318471442699}
   m_Enabled: 1
---- !u!114 &6776572811968411644
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 974760695300166985}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &1043267326095481276
 GameObject:
   m_ObjectHideFlags: 0
@@ -7562,7 +7448,6 @@ GameObject:
   - component: {fileID: 6511899584584950906}
   - component: {fileID: 7199273009186575037}
   - component: {fileID: 4376721584376040974}
-  - component: {fileID: 3597573058753872728}
   m_Layer: 16
   m_Name: BrickPile_02 Variant
   m_TagString: Untagged
@@ -7660,24 +7545,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8645227633108581643, guid: 042c0c315b7b7db4c9bd0cfce313083e, type: 3}
---- !u!114 &3597573058753872728
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1107106576932639432}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &1109757936564980913
 GameObject:
   m_ObjectHideFlags: 0
@@ -7775,7 +7642,6 @@ GameObject:
   - component: {fileID: 1109757936565473427}
   - component: {fileID: 2636314395234061427}
   - component: {fileID: 1109757936547726387}
-  - component: {fileID: 5932234396731747046}
   m_Layer: 16
   m_Name: SM_Brick_01_02
   m_TagString: Untagged
@@ -7856,24 +7722,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 8045056575614539375}
   m_Enabled: 1
---- !u!114 &5932234396731747046
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1109757936564980915}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &1109757936564980917
 GameObject:
   m_ObjectHideFlags: 0
@@ -8494,7 +8342,6 @@ GameObject:
   - component: {fileID: 3424313117481652182}
   - component: {fileID: 603884680544303900}
   - component: {fileID: 3477954860396777872}
-  - component: {fileID: 7998337473785563453}
   m_Layer: 16
   m_Name: SM_Ceiling_Arch_Brick_01_1Way_Sml_1
   m_TagString: Untagged
@@ -8592,24 +8439,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -3074279993466110768, guid: 325bb3bc1fe1ebd4ca3adfccf9bc1bc0, type: 3}
---- !u!114 &7998337473785563453
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1396557454024317641}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &1516994251968946831
 GameObject:
   m_ObjectHideFlags: 0
@@ -8621,7 +8450,6 @@ GameObject:
   - component: {fileID: 1516994251969052335}
   - component: {fileID: 4539000823189316175}
   - component: {fileID: 1516994251984103951}
-  - component: {fileID: 5202429393169521953}
   m_Layer: 16
   m_Name: SM_Brick_01_01
   m_TagString: Untagged
@@ -8702,24 +8530,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 1109757936563049077}
   m_Enabled: 1
---- !u!114 &5202429393169521953
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1516994251968946831}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &1531862702830934819
 GameObject:
   m_ObjectHideFlags: 0
@@ -8731,7 +8541,6 @@ GameObject:
   - component: {fileID: 1531862702831421187}
   - component: {fileID: 4517939510522469347}
   - component: {fileID: 1531862702846186403}
-  - component: {fileID: 4074656855287039607}
   m_Layer: 16
   m_Name: SM_Brick_01_03
   m_TagString: Untagged
@@ -8812,24 +8621,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 4730180376477265968}
   m_Enabled: 1
---- !u!114 &4074656855287039607
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1531862702830934819}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &1549020452633970278
 GameObject:
   m_ObjectHideFlags: 0
@@ -9191,7 +8982,6 @@ GameObject:
   - component: {fileID: 2960730297246556713}
   - component: {fileID: 1077019799429502691}
   - component: {fileID: 3951653188010081391}
-  - component: {fileID: 4240409356006146532}
   m_Layer: 16
   m_Name: SM_Ceiling_Arch_Brick_01_1Way_Sml_4
   m_TagString: Untagged
@@ -9289,24 +9079,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -3074279993466110768, guid: 325bb3bc1fe1ebd4ca3adfccf9bc1bc0, type: 3}
---- !u!114 &4240409356006146532
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1581515247794091830}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &1597888548276042266
 GameObject:
   m_ObjectHideFlags: 0
@@ -33426,7 +33198,6 @@ GameObject:
   - component: {fileID: 2062179856609486892}
   - component: {fileID: 3994379132714071244}
   - component: {fileID: 2062179856624549004}
-  - component: {fileID: 2860449756342002402}
   m_Layer: 16
   m_Name: SM_Brick_Loose_12
   m_TagString: Untagged
@@ -33502,24 +33273,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 1518481283071548082}
   m_Enabled: 1
---- !u!114 &2860449756342002402
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2062179856609391628}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &2065656595900694638
 GameObject:
   m_ObjectHideFlags: 0
@@ -34065,7 +33818,6 @@ GameObject:
   - component: {fileID: 2470508000946836472}
   - component: {fileID: 409254419501328178}
   - component: {fileID: 4433994870009171390}
-  - component: {fileID: 6724119202644074481}
   m_Layer: 16
   m_Name: Arch_Brick_01_Sml Variant_3
   m_TagString: Untagged
@@ -34163,24 +33915,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -4499155394268667584, guid: 6805abf44a1488b42bf6fbbccbed3d5f, type: 3}
---- !u!114 &6724119202644074481
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2210434854264047335}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &2246972286252727168
 GameObject:
   m_ObjectHideFlags: 0
@@ -49029,7 +48763,6 @@ GameObject:
   - component: {fileID: 2685517228633566708}
   - component: {fileID: 1059586985333502228}
   - component: {fileID: 2685517228649740628}
-  - component: {fileID: 6837739721030197401}
   m_Layer: 16
   m_Name: SM_Brick_01_05
   m_TagString: Untagged
@@ -49110,24 +48843,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 1400414268451373360}
   m_Enabled: 1
---- !u!114 &6837739721030197401
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2685517228633403860}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &2714430286513990968
 GameObject:
   m_ObjectHideFlags: 0
@@ -49138,7 +48853,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3377778173902731138}
   - component: {fileID: 7546441926351028467}
-  - component: {fileID: 6978283354687518513}
   m_Layer: 16
   m_Name: SM_Brick_Wall_FullXFull_47
   m_TagString: Untagged
@@ -49211,24 +48925,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 8180530722713006396}
   m_Enabled: 1
---- !u!114 &6978283354687518513
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2714430286513990968}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &2716896137824952495
 GameObject:
   m_ObjectHideFlags: 0
@@ -49520,7 +49216,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3179365870777183357}
   - component: {fileID: 7657667218005695244}
-  - component: {fileID: 1120417712751334116}
   m_Layer: 16
   m_Name: SM_Brick_Wall_FullXFull_45
   m_TagString: Untagged
@@ -49593,24 +49288,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 3155943664319981484}
   m_Enabled: 1
---- !u!114 &1120417712751334116
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2834084432122279623}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &2853237873162087229
 GameObject:
   m_ObjectHideFlags: 0
@@ -54673,7 +54350,6 @@ GameObject:
   - component: {fileID: 1565472713926185260}
   - component: {fileID: 3629156287942747622}
   - component: {fileID: 754381542383177578}
-  - component: {fileID: 418677696744474547}
   m_Layer: 16
   m_Name: BrickPile_02 Variant_4
   m_TagString: Untagged
@@ -54771,24 +54447,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8645227633108581643, guid: 042c0c315b7b7db4c9bd0cfce313083e, type: 3}
---- !u!114 &418677696744474547
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2980721160189920307}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &2992521570156050593
 GameObject:
   m_ObjectHideFlags: 0
@@ -60044,7 +59702,6 @@ GameObject:
   - component: {fileID: 1385539823869343271}
   - component: {fileID: 3809652110932525805}
   - component: {fileID: 935581073190742113}
-  - component: {fileID: 2118440695848548031}
   m_Layer: 16
   m_Name: SM_BrickPile_03
   m_TagString: Untagged
@@ -60142,24 +59799,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8645227633108581643, guid: 042c0c315b7b7db4c9bd0cfce313083e, type: 3}
---- !u!114 &2118440695848548031
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3449306622765884216}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &3466193809692116557
 GameObject:
   m_ObjectHideFlags: 0
@@ -70405,7 +70044,7 @@ GameObject:
   - component: {fileID: 797884909345775765}
   - component: {fileID: 3239881783086666847}
   - component: {fileID: 1500577454288043731}
-  m_Layer: 16
+  m_Layer: 20
   m_Name: Pillar_01_Top Variant
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -70899,7 +70538,6 @@ GameObject:
   - component: {fileID: 186290179406168051}
   - component: {fileID: 2697975754753641273}
   - component: {fileID: 2113422744486584757}
-  - component: {fileID: 3709571063431889169}
   m_Layer: 16
   m_Name: SM_BrickPile_02
   m_TagString: Untagged
@@ -70997,24 +70635,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8645227633108581643, guid: 042c0c315b7b7db4c9bd0cfce313083e, type: 3}
---- !u!114 &3709571063431889169
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4499622520875035372}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &4576551712151376414
 GameObject:
   m_ObjectHideFlags: 0
@@ -71025,7 +70645,6 @@ GameObject:
   m_Component:
   - component: {fileID: 3803568217453840548}
   - component: {fileID: 8255910162603442133}
-  - component: {fileID: 7556543084246372975}
   m_Layer: 16
   m_Name: SM_Brick_Wall_FullXFull_48
   m_TagString: Untagged
@@ -71098,24 +70717,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 732270602016809826}
   m_Enabled: 1
---- !u!114 &7556543084246372975
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4576551712151376414}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &4652018283316194854
 GameObject:
   m_ObjectHideFlags: 0
@@ -71128,7 +70729,6 @@ GameObject:
   - component: {fileID: 8965332888179473209}
   - component: {fileID: 6597691587843624947}
   - component: {fileID: 7181822921385387391}
-  - component: {fileID: 505249318561807371}
   m_Layer: 16
   m_Name: BrickPile_02 Variant_2
   m_TagString: Untagged
@@ -71226,24 +70826,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8645227633108581643, guid: 042c0c315b7b7db4c9bd0cfce313083e, type: 3}
---- !u!114 &505249318561807371
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4652018283316194854}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &4655583733996784105
 GameObject:
   m_ObjectHideFlags: 0
@@ -71256,7 +70838,6 @@ GameObject:
   - component: {fileID: 8971169927331863798}
   - component: {fileID: 6600879357153552444}
   - component: {fileID: 7187261920443302576}
-  - component: {fileID: 820973406647771375}
   m_Layer: 16
   m_Name: Arch_Brick_01_Sml Variant_2
   m_TagString: Untagged
@@ -71354,24 +70935,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -4499155394268667584, guid: 6805abf44a1488b42bf6fbbccbed3d5f, type: 3}
---- !u!114 &820973406647771375
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4655583733996784105}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &4660942154628047969
 GameObject:
   m_ObjectHideFlags: 0
@@ -72376,7 +71939,6 @@ GameObject:
   - component: {fileID: 8733270122241057966}
   - component: {fileID: 6833712904767082596}
   - component: {fileID: 7418406877996432104}
-  - component: {fileID: 3094422182175654579}
   m_Layer: 16
   m_Name: SM_BrickPile_06
   m_TagString: Untagged
@@ -72474,24 +72036,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8645227633108581643, guid: 042c0c315b7b7db4c9bd0cfce313083e, type: 3}
---- !u!114 &3094422182175654579
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5032427191427314097}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &5054665694952224791
 GameObject:
   m_ObjectHideFlags: 0
@@ -83473,7 +83017,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5103337160185628528}
   - component: {fileID: 38471579300327425}
-  - component: {fileID: 4811842296458721402}
   m_Layer: 16
   m_Name: SM_Brick_Wall_FullXFull_46
   m_TagString: Untagged
@@ -83546,24 +83089,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 4504982648380230555}
   m_Enabled: 1
---- !u!114 &4811842296458721402
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5591608951874133450}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &5592439148537261415
 GameObject:
   m_ObjectHideFlags: 0
@@ -88520,7 +88045,6 @@ GameObject:
   - component: {fileID: 7798280190133200339}
   - component: {fileID: 5466800185416487193}
   - component: {fileID: 8356633220567382933}
-  - component: {fileID: 1333464318435156334}
   m_Layer: 16
   m_Name: SM_Ceiling_Arch_Brick_01_1Way_Sml
   m_TagString: Untagged
@@ -88618,24 +88142,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -3074279993466110768, guid: 325bb3bc1fe1ebd4ca3adfccf9bc1bc0, type: 3}
---- !u!114 &1333464318435156334
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5826819805740904652}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &5840517357030434239
 GameObject:
   m_ObjectHideFlags: 0
@@ -98772,7 +98278,6 @@ GameObject:
   - component: {fileID: 6069736223026527255}
   - component: {fileID: 9208946309851652343}
   - component: {fileID: 6069736223011760311}
-  - component: {fileID: 2118136780322830079}
   m_Layer: 16
   m_Name: SM_Brick_Loose_10
   m_TagString: Untagged
@@ -98848,24 +98353,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 833130352998799374}
   m_Enabled: 1
---- !u!114 &2118136780322830079
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6069736223026880567}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &6121126398208364860
 GameObject:
   m_ObjectHideFlags: 0
@@ -98964,7 +98451,6 @@ GameObject:
   - component: {fileID: 7616756515181595220}
   - component: {fileID: 5643240097036533406}
   - component: {fileID: 8535887644649182226}
-  - component: {fileID: 3026796525048839871}
   m_Layer: 16
   m_Name: SM_BrickPile_04
   m_TagString: Untagged
@@ -99062,24 +98548,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8645227633108581643, guid: 042c0c315b7b7db4c9bd0cfce313083e, type: 3}
---- !u!114 &3026796525048839871
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6147462454536691531}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &6161856973085145727
 GameObject:
   m_ObjectHideFlags: 0
@@ -104654,7 +104122,6 @@ GameObject:
   - component: {fileID: 7382211317282338399}
   - component: {fileID: 4725988350252253845}
   - component: {fileID: 8769446577464158233}
-  - component: {fileID: 678789183952637003}
   m_Layer: 16
   m_Name: BrickPile_02 Variant_3
   m_TagString: Untagged
@@ -104752,24 +104219,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8645227633108581643, guid: 042c0c315b7b7db4c9bd0cfce313083e, type: 3}
---- !u!114 &678789183952637003
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6527661090674058048}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &6663356148290742334
 GameObject:
   m_ObjectHideFlags: 0
@@ -115588,7 +115037,6 @@ GameObject:
   - component: {fileID: 6371495266499871640}
   - component: {fileID: 9189857161602021202}
   - component: {fileID: 5164975698761326046}
-  - component: {fileID: 5222398061691117965}
   m_Layer: 16
   m_Name: SM_Ceiling_Arch_Brick_01_1Way_Sml_3
   m_TagString: Untagged
@@ -115686,24 +115134,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -3074279993466110768, guid: 325bb3bc1fe1ebd4ca3adfccf9bc1bc0, type: 3}
---- !u!114 &5222398061691117965
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7244059887187105415}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &7318134100572271075
 GameObject:
   m_ObjectHideFlags: 0
@@ -121383,7 +120813,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6979804806082593332}
   - component: {fileID: 2776223793688917317}
-  - component: {fileID: 4919272897548738853}
   m_Layer: 16
   m_Name: SM_Brick_Wall_FullXFull_49
   m_TagString: Untagged
@@ -121456,24 +120885,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 3308113528543100159}
   m_Enabled: 1
---- !u!114 &4919272897548738853
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7752647489738397838}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &7795132175199654572
 GameObject:
   m_ObjectHideFlags: 0
@@ -126114,7 +125525,6 @@ GameObject:
   - component: {fileID: 7798972406677013683}
   - component: {fileID: 5173284785447344211}
   - component: {fileID: 7798972406662451219}
-  - component: {fileID: 494662788875429000}
   m_Layer: 16
   m_Name: SM_Brick_01_04
   m_TagString: Untagged
@@ -126195,24 +125605,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 5449188774424113276}
   m_Enabled: 1
---- !u!114 &494662788875429000
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7798972406676658323}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &7852853078320081673
 GameObject:
   m_ObjectHideFlags: 0
@@ -135624,7 +135016,6 @@ GameObject:
   - component: {fileID: 8076839781628344732}
   - component: {fileID: 6621986839642793340}
   - component: {fileID: 8076839781609090364}
-  - component: {fileID: 8059839495292820161}
   m_Layer: 16
   m_Name: SM_Brick_Loose_13
   m_TagString: Untagged
@@ -135700,24 +135091,6 @@ LODGroup:
     renderers:
     - renderer: {fileID: 1656317562549444039}
   m_Enabled: 1
---- !u!114 &8059839495292820161
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8076839781628437948}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &8087989897338767594
 GameObject:
   m_ObjectHideFlags: 0
@@ -147018,7 +146391,6 @@ GameObject:
   - component: {fileID: 5201817600797866858}
   - component: {fileID: 8058178632855490464}
   - component: {fileID: 6336888669253739820}
-  - component: {fileID: 6543600126485543212}
   m_Layer: 16
   m_Name: Arch_Brick_01_Sml Variant
   m_TagString: Untagged
@@ -147116,24 +146488,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -4499155394268667584, guid: 6805abf44a1488b42bf6fbbccbed3d5f, type: 3}
---- !u!114 &6543600126485543212
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8418523709757795957}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1 &8517052189761067942
 GameObject:
   m_ObjectHideFlags: 0
@@ -158160,7 +157514,6 @@ GameObject:
   - component: {fileID: 4763224172013711350}
   - component: {fileID: 7349496824740092732}
   - component: {fileID: 6763254362317861296}
-  - component: {fileID: 1050023648966692049}
   m_Layer: 16
   m_Name: SM_BrickPile_05
   m_TagString: Untagged
@@ -158258,24 +157611,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -8645227633108581643, guid: 042c0c315b7b7db4c9bd0cfce313083e, type: 3}
---- !u!114 &1050023648966692049
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9150843972280728297}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 974984313173eb547ace2602da5c1898, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pivot: {fileID: 6457383529989011096}
-  minDistance: 50
-  maxDistance: 800
-  minSpeed: 10
-  maxSpeed: 20
-  scaleFactor: 0.03
 --- !u!1001 &2371794630102959865
 PrefabInstance:
   m_ObjectHideFlags: 0
