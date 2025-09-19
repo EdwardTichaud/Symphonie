@@ -2661,8 +2661,6 @@ GameObject:
   m_Component:
   - component: {fileID: 765918948284534443}
   - component: {fileID: 5442854646683307267}
-  - component: {fileID: 3584404135210767579}
-  - component: {fileID: 7391020172167444715}
   m_Layer: 0
   m_Name: CMV_ClosePush_Caster
   m_TagString: Untagged
@@ -2728,32 +2726,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &3584404135210767579
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1332456961851866915}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96875f71011145958497a3e0d84a965a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 2, z: -3}
---- !u!114 &7391020172167444715
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1332456961851866915}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd0c66a6675b44348a08af2d8c9305ef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 1, z: 0}
 --- !u!1 &1338408168341546845
 GameObject:
   m_ObjectHideFlags: 0
@@ -2801,8 +2773,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1861995296882804291}
   - component: {fileID: 7905315835598155209}
-  - component: {fileID: 7671916787481824121}
-  - component: {fileID: 8633783132696690773}
   m_Layer: 0
   m_Name: CMV_Victory
   m_TagString: Untagged
@@ -2868,32 +2838,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &7671916787481824121
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1409981869348436312}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96875f71011145958497a3e0d84a965a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 10, z: -20}
---- !u!114 &8633783132696690773
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1409981869348436312}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd0c66a6675b44348a08af2d8c9305ef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 1, z: 0}
 --- !u!1 &1416304818011472948
 GameObject:
   m_ObjectHideFlags: 0
@@ -3885,7 +3829,6 @@ GameObject:
   m_Component:
   - component: {fileID: 853255619221889716}
   - component: {fileID: 8293381464646350377}
-  - component: {fileID: 5372850260111355708}
   - component: {fileID: 3770441389169143508}
   m_Layer: 0
   m_Name: CMV_OverShoulder_CasterToTarget
@@ -3952,19 +3895,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &5372850260111355708
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1859316357072719661}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd0c66a6675b44348a08af2d8c9305ef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 1, z: 0}
 --- !u!114 &3770441389169143508
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18270,7 +18200,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5369416762833820686}
   - component: {fileID: 409564465186596936}
-  - component: {fileID: 7385812210744443263}
   - component: {fileID: 8400635551117546844}
   m_Layer: 0
   m_Name: CinemachineCamera_4_Corner_SU_L
@@ -18337,19 +18266,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &7385812210744443263
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4213698437852393220}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd0c66a6675b44348a08af2d8c9305ef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 1, z: 0}
 --- !u!114 &8400635551117546844
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19731,8 +19647,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6595896132668960984}
   - component: {fileID: 647156252857778881}
-  - component: {fileID: 5685221751218825458}
-  - component: {fileID: 1018077752310160250}
   m_Layer: 0
   m_Name: CinemachineCamera_9_Item_Preparing
   m_TagString: Untagged
@@ -19798,32 +19712,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &5685221751218825458
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5168033881259134670}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 96875f71011145958497a3e0d84a965a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0.09, y: 1.32, z: 0.71}
---- !u!114 &1018077752310160250
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5168033881259134670}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd0c66a6675b44348a08af2d8c9305ef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0.25, y: 1.1, z: 0}
 --- !u!1 &5251542583675275799
 GameObject:
   m_ObjectHideFlags: 0
@@ -22651,7 +22539,6 @@ GameObject:
   m_Component:
   - component: {fileID: 417519990125556204}
   - component: {fileID: 5832373322927623593}
-  - component: {fileID: 1271469576673634462}
   - component: {fileID: 8945546879734488035}
   m_Layer: 0
   m_Name: CinemachineCamera_3_Corner_EU_R
@@ -22718,19 +22605,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &1271469576673634462
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6395195699774986732}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd0c66a6675b44348a08af2d8c9305ef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 1, z: 0}
 --- !u!114 &8945546879734488035
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -23940,7 +23814,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4402162805732094894}
   - component: {fileID: 8558631538153174282}
-  - component: {fileID: 5978707384752832258}
   - component: {fileID: 5917678754388916665}
   m_Layer: 0
   m_Name: CinemachineCamera_2_Corner_EU_R
@@ -24007,19 +23880,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &5978707384752832258
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7129879460498273630}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cd0c66a6675b44348a08af2d8c9305ef, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 1, z: 0}
 --- !u!114 &5917678754388916665
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26827,8 +26687,6 @@ GameObject:
   m_Component:
   - component: {fileID: 8634116392376175596}
   - component: {fileID: 51653092089696792}
-  - component: {fileID: 6135393580583796001}
-  - component: {fileID: 4476130508735556143}
   m_Layer: 0
   m_Name: CMV_WideEstablish
   m_TagString: Untagged
@@ -26894,33 +26752,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &6135393580583796001
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8430200889145386172}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2f9d6684fa047424dae6fc6d2d2413d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  direction: {x: 0, y: 0, z: 1}
-  speed: 2
---- !u!114 &4476130508735556143
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8430200889145386172}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 89ead8f4897333e45b1901ec50908d25, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 0, z: 0}
 --- !u!1 &8444733777229188305
 GameObject:
   m_ObjectHideFlags: 0
