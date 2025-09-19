@@ -88,6 +88,29 @@ public class PlayerDetection : MonoBehaviour
         if (initialHits.Length == 0)
             return; // aucun ennemi trouvé dans le rayon de base
 
+        // ------------------------------------------------------------------
+        // Effet visuel : flash blanc à la toute première confirmation qu'un
+        // adversaire se trouve dans le rayon de détection du joueur. Le but
+        // est d'amorcer visuellement la transition vers l'écran de Versus.
+        // On force l'opacité du WhiteScreen à 1 instantanément, puis on
+        // déclenche un fondu progressif sur 3 secondes pour accompagner le
+        // changement de contexte. L'indice 1 correspond au filtre blanc dans
+        // la hiérarchie de ScreenFade (indice 0 étant le BlackScreen).
+        // ------------------------------------------------------------------
+        var screenFade = FadeChildrenOpacity.Instance;
+        if (screenFade != null)
+        {
+            // Opacité maximale instantanée afin d'obtenir un flash franc.
+            screenFade.ChangeOpacity(1, 1f, 0f);
+            // Retour progressif à la transparence pour une transition douce.
+            screenFade.ChangeOpacity(1, 0f, 3f);
+        }
+        else
+        {
+            // On loggue un avertissement si aucun ScreenFade n'est trouvé.
+            Debug.LogWarning("[PlayerDetection] Aucun ScreenFade (WhiteScreen) disponible pour jouer le flash de rencontre.");
+        }
+
         // Lecture du clip vocal uniquement lors de la première détection effective d'un ennemi
         if (!firstEnemyDetected && firstDetectionVoices.Count > 0)
         {
