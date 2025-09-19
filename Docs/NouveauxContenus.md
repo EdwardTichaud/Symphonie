@@ -23,19 +23,22 @@ opportunités tactiques que les novices peuvent appréhender facilement tout en
 permettant aux vétérans de créer des enchaînements complexes.
 
 ## Caméras par phase
-Chaque **MusicalMove** et chaque **Item** peut désormais définir trois noms de
-caméras Cinemachine :
-`preparingCameraName`, `performingCameraName` et `retreatCameraName`.
-Ces champs autorisent l'utilisation d'une caméra différente pour chaque
-phase sans obligation. Laisser un champ vide conserve la caméra active, ce
-qui garantit une transition fluide.
+Chaque **MusicalMove** et chaque **Item** référence désormais un rôle de caméra
+cinématique plutôt qu'un nom explicite :
+`preparingCameraRole`, `performingCameraRole` et `retreatCameraRole`.
+Ces rôles correspondent aux plans définis par le nouveau rig
+(`MainMenuIdle`, `OverShoulderCasterToTarget`, `ClosePushCaster`,
+`TargetReaction`, `WideEstablish`, `ProjectileFlyby`, `Victory`).
+Sélectionner `None` conserve la caméra actuellement active afin de garantir une
+transition fluide.
 
 ### Valeurs par défaut recommandées
 Pour assurer une expérience cohérente, tout **nouveau MusicalMove** doit
 initialiser ces trois champs avec les valeurs définies dans
-**MusicalMove_Rhapsodie**. De même, les **nouveaux Items** doivent se baser
-sur les valeurs utilisées par **Item_LonguePortee**. Les concepteurs
-peuvent ensuite adapter ces paramètres selon les besoins spécifiques du
+**MusicalMove_Rhapsodie** (WideEstablish → OverShoulder → TargetReaction).
+De même, les **nouveaux Items** doivent se baser sur les valeurs utilisées par
+**Item_LonguePortee** (OverShoulder → OverShoulder → TargetReaction). Les
+concepteurs peuvent ensuite adapter ces paramètres selon les besoins spécifiques du
 contenu ajouté.
 
 Ce nouveau système remplace l'ancien champ `cameraName` unique ainsi que
