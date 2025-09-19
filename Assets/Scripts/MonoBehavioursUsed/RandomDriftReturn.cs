@@ -69,7 +69,7 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
         if (dureeRetour < 0f) dureeRetour = 0f;
         if (driftSpeed < 0f) driftSpeed = 0f;
         if (rotationResiduelleDegPerSec < 0f) rotationResiduelleDegPerSec = 0f;
-        if (modeDeSelection == ModeSelection.ChildrenOnly) profondeurMax = 1; // cohérent: enfants directs = profondeur 1
+        if (modeDeSelection == ModeSelection.ChildrenOnly) profondeurMax = 1; // cohérent
     }
 
     void Start()
@@ -88,9 +88,10 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
 
         foreach (var m in morceaux)
         {
-            // Rotation autorisée en dérive/arrêtMax, et éventuellement à l'origine
-            bool canRotate = (m.etat == Etat.Derive || m.etat == Etat.ArretMax) ||
-                             (rotateInPlace && m.etat == Etat.IdleAOrigine);
+            // CHANGEMENT: on autorise la rotation aussi pendant le retour
+            bool canRotate =
+                (m.etat == Etat.Derive || m.etat == Etat.ArretMax || m.etat == Etat.Retour) ||
+                (rotateInPlace && m.etat == Etat.IdleAOrigine);
 
             if (canRotate && rotationResiduelleDegPerSec > 0f)
                 m.tr.Rotate(m.rotAxis, rotationResiduelleDegPerSec * Time.deltaTime, Space.Self);
@@ -127,7 +128,7 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
                     break;
 
                 case Etat.Retour:
-                    // géré par la coroutine
+                    // géré par la coroutine (position), la rotation continue via canRotate ci-dessus
                     break;
             }
         }
@@ -146,14 +147,14 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
         if (dureeRetour <= 0f)
         {
             m.tr.position = m.posOrigine;
-            m.tr.rotation = m.rotOrigine;
+            m.tr.rotation = m.rotOrigine; // réalignement final
             m.etat = Etat.IdleAOrigine;
             m.routine = null;
             yield break;
         }
 
         Vector3 startPos = m.tr.position;
-        Quaternion startRot = m.tr.rotation;
+        Quaternion startRot = m.tr.rotation; // conservé si jamais tu veux revenir à l'ancien comportement
 
         float t = 0f;
         float inv = 1f / Mathf.Max(0.0001f, dureeRetour);
@@ -163,11 +164,14 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
             t += Time.deltaTime * inv;
             float k = Mathf.SmoothStep(0f, 1f, t);
 
+            // CHANGEMENT: on ne touche plus à la rotation ici (elle continue de tourner dans Update)
+            // On ne lerp que la position vers l'origine.
             m.tr.position = Vector3.LerpUnclamped(startPos, m.posOrigine, k);
-            m.tr.rotation = Quaternion.SlerpUnclamped(startRot, m.rotOrigine, k);
+
             yield return null;
         }
 
+        // Snap propre à la fin: position + rotation d'origine
         m.tr.position = m.posOrigine;
         m.tr.rotation = m.rotOrigine;
 
@@ -184,21 +188,18 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
 
         if (modeDeSelection == ModeSelection.ChildrenOnly)
         {
-            // enfants directs uniquement
             foreach (Transform enfant in transform)
                 AjouterMorceau(enfant);
         }
-        else // Descendants
+        else
         {
             if (profondeurMax <= 0)
             {
-                // illimité
                 foreach (var tr in EnumererDescendanceIllimitee(transform))
                     AjouterMorceau(tr);
             }
             else
             {
-                // limité à profondeurMax
                 foreach (var tr in EnumererDescendanceLimitee(transform, profondeurMax))
                     AjouterMorceau(tr);
             }
@@ -207,7 +208,7 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
 
     private void AjouterMorceau(Transform tr)
     {
-        if (tr == transform) return; // on ignore le parent lui-même
+        if (tr == transform) return;
         var m = new Morceau
         {
             tr = tr,
@@ -232,8 +233,7 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
         }
     }
 
-    // Descendance limitée en profondeur (BFS)
-    // profondeur = 1 => enfants directs ; 2 => petits-enfants, etc.
+    // Descendance limitée (BFS)
     private IEnumerable<Transform> EnumererDescendanceLimitee(Transform root, int profondeur)
     {
         var queue = new Queue<(Transform t, int d)>();
