@@ -108,6 +108,12 @@ public class BattleCameraRig : MonoBehaviour
     private readonly Dictionary<BattleCameraRole, CinemachineCamera> cameraByRole = new();
     private readonly Dictionary<BattleCameraRole, string> legacyNames = new();
 
+    // Les dictionnaires ci-dessous mémorisent les vitesses intermédiaires utilisées par SmoothDamp.
+    // Sans cette persistance explicite, chaque appel repartirait de zéro et générerait des à-coups visibles
+    // dès que les cibles changent brutalement de position.
+    private readonly Dictionary<CinemachineCamera, Vector3> positionVelocities = new();
+    private readonly Dictionary<CinemachineCamera, Vector3> rotationVelocities = new();
+
     private CinemachineTargetGroup targetGroup;
     private Transform midAnchor;
     private Transform caster;
@@ -167,6 +173,10 @@ public class BattleCameraRig : MonoBehaviour
             cameraByRole[role] = cam;
             legacyNames[role] = cam.gameObject.name;
             DisableLegacyControllers(cam);
+
+            // Chaque re-cache invalide les vitesses stockées précédemment : sans cette remise à zéro,
+            // une caméra réassignée conserverait une inertie obsolète et réintroduirait du jitter.
+            ResetCameraSmoothing(cam);
         }
     }
 
@@ -539,7 +549,11 @@ public class BattleCameraRig : MonoBehaviour
         float sine = Mathf.Sin(projectileTimer * projectileSideFrequency) * projectileSideAmplitude;
         Vector3 desiredPos = lerp + side * sine;
 
+        // Le plan travelling doit conserver un contrôle direct sur la trajectoire pour respecter la vitesse
+        // du projectile. On impose donc la position immédiatement tout en purgeant les vitesses mémorisées
+        // afin que les prochains appels SmoothDamp repartent d'un état propre.
         cam.transform.position = desiredPos;
+        ResetPositionSmoothing(cam);
         Vector3 midFocus = Vector3.Lerp(
             GetCasterFocusPosition(projectileFocusHeight),
             GetTargetFocusPosition(projectileFocusHeight),
@@ -559,7 +573,7 @@ public class BattleCameraRig : MonoBehaviour
 
         SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.4f);
         Quaternion targetRot = Quaternion.LookRotation((focus - desiredPos).normalized, Vector3.up) * Quaternion.Euler(victoryTilt, 0f, 0f);
-        cam.transform.rotation = Quaternion.Slerp(cam.transform.rotation, targetRot, dt * rotationLerpSpeed * 0.5f);
+        SmoothRotation(cam, targetRot, dt, rotationLerpSpeed * 0.5f);
         cam.Lens.FieldOfView = Mathf.Lerp(cam.Lens.FieldOfView, victoryFov, dt * 0.6f);
     }
 
@@ -596,8 +610,22 @@ public class BattleCameraRig : MonoBehaviour
 
     private void SmoothPosition(CinemachineCamera cam, Vector3 desiredPos, float dt, float speed)
     {
+        if (speed <= 0f)
+        {
+            // Vitesse nulle : on applique directement la cible et on réinitialise les vitesses mémorisées.
+            cam.transform.position = desiredPos;
+            ResetPositionSmoothing(cam);
+            return;
+        }
+
+        // Conversion "vitesse" -> "smoothTime" : plus la vitesse est élevée, plus le temps de lissage est court.
+        float smoothTime = GetSmoothTime(speed);
         Vector3 current = cam.transform.position;
-        Vector3 next = Vector3.Lerp(current, desiredPos, Mathf.Clamp01(dt * speed));
+        Vector3 velocity = positionVelocities.TryGetValue(cam, out var storedVelocity) ? storedVelocity : Vector3.zero;
+
+        // SmoothDamp fournit un amortissement critique très proche du comportement attendu pour des caméras cinématiques.
+        Vector3 next = Vector3.SmoothDamp(current, desiredPos, ref velocity, smoothTime, Mathf.Infinity, dt);
+        positionVelocities[cam] = velocity;
         cam.transform.position = next;
     }
 
@@ -610,6 +638,65 @@ public class BattleCameraRig : MonoBehaviour
         Quaternion targetRot = Quaternion.LookRotation(direction.normalized, Vector3.up);
         if (noiseEuler != Vector3.zero)
             targetRot *= Quaternion.Euler(noiseEuler);
-        cam.transform.rotation = Quaternion.Slerp(cam.transform.rotation, targetRot, Mathf.Clamp01(dt * speed));
+
+        SmoothRotation(cam, targetRot, dt, speed);
+    }
+
+    private void SmoothRotation(
+        CinemachineCamera cam,
+        Quaternion targetRot,
+        float dt,
+        float speed)
+    {
+        if (speed <= 0f)
+        {
+            cam.transform.rotation = targetRot;
+            ResetRotationSmoothing(cam);
+            return;
+        }
+
+        float smoothTime = GetSmoothTime(speed);
+        Vector3 currentEuler = cam.transform.rotation.eulerAngles;
+        Vector3 targetEuler = targetRot.eulerAngles;
+        Vector3 velocity = rotationVelocities.TryGetValue(cam, out var storedVelocity) ? storedVelocity : Vector3.zero;
+
+        float velX = velocity.x;
+        float velY = velocity.y;
+        float velZ = velocity.z;
+
+        // On amortit indépendamment chaque axe d'Euler afin de conserver une transition régulière, même lorsque
+        // les angles traversent la discontinuité 0°/360°.
+        float nextX = Mathf.SmoothDampAngle(currentEuler.x, targetEuler.x, ref velX, smoothTime, Mathf.Infinity, dt);
+        float nextY = Mathf.SmoothDampAngle(currentEuler.y, targetEuler.y, ref velY, smoothTime, Mathf.Infinity, dt);
+        float nextZ = Mathf.SmoothDampAngle(currentEuler.z, targetEuler.z, ref velZ, smoothTime, Mathf.Infinity, dt);
+
+        rotationVelocities[cam] = new Vector3(velX, velY, velZ);
+        cam.transform.rotation = Quaternion.Euler(nextX, nextY, nextZ);
+    }
+
+    private float GetSmoothTime(float speed)
+    {
+        // Clamp agressif pour éviter les divisions par zéro tout en conservant une réponse fine sur les vitesses élevées.
+        return Mathf.Max(0.0001f, 1f / Mathf.Max(0.0001f, speed));
+    }
+
+    private void ResetCameraSmoothing(CinemachineCamera cam)
+    {
+        ResetPositionSmoothing(cam);
+        ResetRotationSmoothing(cam);
+    }
+
+    private void ResetPositionSmoothing(CinemachineCamera cam)
+    {
+        // Remove renvoie false si la clé est absente : l'appel reste donc sans effet secondaire et évite
+        // un branching supplémentaire lorsque la caméra n'avait pas encore été amortie.
+        positionVelocities.Remove(cam);
+    }
+
+    private void ResetRotationSmoothing(CinemachineCamera cam)
+    {
+        // Même logique que pour la position : un simple Remove garantit la suppression des inerties obsolètes
+        // sans créer d'allocation supplémentaire.
+        rotationVelocities.Remove(cam);
     }
 }
