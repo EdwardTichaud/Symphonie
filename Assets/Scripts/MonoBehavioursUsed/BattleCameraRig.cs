@@ -200,14 +200,20 @@ public class BattleCameraRig : MonoBehaviour
 
     private void PrepareImpulseListener()
     {
-        var brain = Camera.main ? Camera.main.GetComponent<CinemachineBrain>() : null;
-        if (brain != null && !brain.TryGetComponent(out CinemachineImpulseListener listener))
-        {
-            listener = brain.gameObject.AddComponent<CinemachineImpulseListener>();
-            listener.m_ReactionSettings.m_ReactionScale = 0.85f;
-            listener.m_ReactionSettings.m_TimeToPeak = 0.12f;
-            listener.m_ReactionSettings.m_DecayTime = 0.45f;
-        }
+        var brain = Camera.main ? Camera.main.GetComponent<Unity.Cinemachine.CinemachineBrain>() : null;
+        if (brain == null) return;
+
+        var ext = brain.GetComponent<Unity.Cinemachine.CinemachineExternalImpulseListener>();
+        if (ext == null)
+            ext = brain.gameObject.AddComponent<Unity.Cinemachine.CinemachineExternalImpulseListener>();
+
+        ext.Gain = 1f;
+
+        var reaction = ext.ReactionSettings;    // remplace m_ReactionSettings
+        reaction.AmplitudeGain = 0.85f;
+        reaction.FrequencyGain = 1f;
+        reaction.Duration = 0.12f + 0.45f;
+        ext.ReactionSettings = reaction;
     }
 
     private void DisableLegacyControllers(CinemachineCamera cam)
