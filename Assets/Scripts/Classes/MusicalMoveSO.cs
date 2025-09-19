@@ -140,15 +140,12 @@ public class MusicalMoveSO : ScriptableObject
     public TimelineAsset retreatTimeline;
 
     [Header("Caméras par phase")]
-    // Nom de la caméra utilisée pendant la phase de préparation.
-    [Tooltip("CinemachineCamera active lors de la préparation.\nLaisser vide pour conserver la caméra actuelle.")]
-    public string preparingCameraName;
-    // Nom de la caméra utilisée pendant la phase d'exécution.
-    [Tooltip("CinemachineCamera active pendant l'exécution.\nLaisser vide pour garder la caméra précédente.")]
-    public string performingCameraName;
-    // Nom de la caméra utilisée pendant la phase de repli.
-    [Tooltip("CinemachineCamera active lors du repli.\nLaisser vide pour garder la caméra précédente.")]
-    public string retreatCameraName;
+    [Tooltip("Plan cinématique utilisé durant la préparation (None = conserver la caméra courante).")]
+    public BattleCameraRole preparingCameraRole = BattleCameraRole.WideEstablish;
+    [Tooltip("Plan cinématique utilisé durant l'exécution (None = conserver la caméra précédente).")]
+    public BattleCameraRole performingCameraRole = BattleCameraRole.OverShoulderCasterToTarget;
+    [Tooltip("Plan cinématique utilisé durant le repli (None = conserver la caméra précédente).")]
+    public BattleCameraRole retreatCameraRole = BattleCameraRole.ClosePushCaster;
 
 #if UNITY_EDITOR
     // ------------------------------------------------------------------
@@ -175,12 +172,12 @@ public class MusicalMoveSO : ScriptableObject
         // celle de "MusicalMove_Rhapsodie". Les concepteurs peuvent ensuite
         // remplacer ces valeurs manuellement selon les besoins spécifiques
         // du nouveau move.
-        if (string.IsNullOrEmpty(preparingCameraName))
-            preparingCameraName = reference.preparingCameraName;
-        if (string.IsNullOrEmpty(performingCameraName))
-            performingCameraName = reference.performingCameraName;
-        if (string.IsNullOrEmpty(retreatCameraName))
-            retreatCameraName = reference.retreatCameraName;
+        if (preparingCameraRole == BattleCameraRole.None)
+            preparingCameraRole = reference.preparingCameraRole;
+        if (performingCameraRole == BattleCameraRole.None)
+            performingCameraRole = reference.performingCameraRole;
+        if (retreatCameraRole == BattleCameraRole.None)
+            retreatCameraRole = reference.retreatCameraRole;
     }
 #endif
 

@@ -129,8 +129,8 @@ public class NewBattleManager : MonoBehaviour
     public TimelineAsset itemPreparingTimeline;
     private bool itemMenuTimelineActive = false;
 
-    /// <summary>Nom de la CinemachineCamera dédiée à l'attente de sélection d'objet.</summary>
-    private const string ItemPreparingCameraName = "CinemachineCamera_9_Item_Preparing";
+    /// <summary>Rôle caméra utilisé lors de l'attente de sélection d'objet.</summary>
+    private const BattleCameraRole ItemPreparingCameraRole = BattleCameraRole.MainMenuIdle;
     /// <summary>Hash du state Animator "Item_Prepare" pour lancer rapidement l'animation correspondante.</summary>
     private static readonly int AnimatorStateItemPrepare = Animator.StringToHash("Item_Prepare");
     /// <summary>Hash du state Animator "Idle_Battle" afin de revenir proprement à la pose neutre.</summary>
@@ -477,13 +477,13 @@ public class NewBattleManager : MonoBehaviour
     private IEnumerator PlayIntroCameraSequence()
     {
         // 🎥 Donne immédiatement la priorité à la caméra orbitale pour présenter le champ de bataille.
-        BattleCameraManager.Instance?.SwitchToCamera("CinemachineCamera_10_OrbitAroundBattlefield", 0f);
+        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.WideEstablish, 0f);
 
         // 🎬 Lance les timelines d'introduction en mode ralenti et attend leur terminaison.
         yield return PlayIntroTimelinesWithSlowTime();
 
         // 📷 Retourne ensuite sur la caméra de combat standard avec un léger fondu.
-        BattleCameraManager.Instance?.SwitchToCamera(null, 0.5f);
+        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None, 0.5f);
     }
     #endregion
 
@@ -2202,7 +2202,20 @@ public class NewBattleManager : MonoBehaviour
         }
 
         // Confie la priorité caméra à la Cinemachine dédiée à l'attente d'objet.
-        BattleCameraManager.Instance?.SwitchToCamera(ItemPreparingCameraName);
+        Transform casterCameraAnchor = null;
+        if (currentCharacterUnit != null)
+        {
+            GameObject casterBinding = currentCharacterUnit.GetCasterBindingTarget();
+            casterCameraAnchor = casterBinding != null ? casterBinding.transform : null;
+        }
+
+        BattleCameraManager.Instance?.ConfigureActionTargets(
+            currentCharacterUnit,
+            null,
+            null,
+            casterCameraAnchor,
+            null);
+        BattleCameraManager.Instance?.SwitchToCamera(ItemPreparingCameraRole);
 
         // L'objet d'animation sert de point d'ancrage pour la timeline et l'alignement caméra.
         GameObject animGO = casterAnimator != null ? casterAnimator.gameObject : currentCharacterUnit.GetCasterBindingTarget();
@@ -2232,7 +2245,8 @@ public class NewBattleManager : MonoBehaviour
             return;
 
         // On redonne la priorité à la BattleCamera classique pour la suite des actions.
-        BattleCameraManager.Instance?.SwitchToCamera(null);
+        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
+        BattleCameraManager.Instance?.ClearRigTargets();
 
         if (currentCharacterUnit != null)
         {
