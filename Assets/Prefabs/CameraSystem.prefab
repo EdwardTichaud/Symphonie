@@ -3829,7 +3829,6 @@ GameObject:
   m_Component:
   - component: {fileID: 853255619221889716}
   - component: {fileID: 8293381464646350377}
-  - component: {fileID: 3770441389169143508}
   m_Layer: 0
   m_Name: CMV_OverShoulder_CasterToTarget
   m_TagString: Untagged
@@ -3846,7 +3845,7 @@ Transform:
   m_GameObject: {fileID: 1859316357072719661}
   serializedVersion: 2
   m_LocalRotation: {x: 0.27781588, y: -0.36497167, z: 0.1150751, w: 0.8811196}
-  m_LocalPosition: {x: 27.057014, y: 8, z: -12}
+  m_LocalPosition: {x: 25.032242, y: 8, z: -12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3895,26 +3894,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &3770441389169143508
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1859316357072719661}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5caa60439f1cd4241ab3d70e087825d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveHorizontal: 1
-  moveVertical: 0
-  horizontalAmplitude: 5
-  horizontalSpeed: 2
-  verticalAmplitude: 2
-  verticalSpeed: 2
-  localSpace: 0
-  startWithRandomOffset: 0
 --- !u!1 &1861780073550021084
 GameObject:
   m_ObjectHideFlags: 0
@@ -17195,8 +17174,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4708325580689597386}
   - component: {fileID: 5639254888972820362}
-  - component: {fileID: 8978484750989929765}
-  - component: {fileID: 5142582960034785498}
   m_Layer: 0
   m_Name: CMV_TargetReaction
   m_TagString: Untagged
@@ -17262,32 +17239,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &8978484750989929765
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3661682233202178330}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5118b13059d3426f9656697a02b55ec6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 2, z: -3}
---- !u!114 &5142582960034785498
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3661682233202178330}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 277b7ecb732949b48277243c6502886e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 1, z: 0}
 --- !u!1 &3747592525053404212
 GameObject:
   m_ObjectHideFlags: 0
@@ -18200,7 +18151,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5369416762833820686}
   - component: {fileID: 409564465186596936}
-  - component: {fileID: 8400635551117546844}
   m_Layer: 0
   m_Name: CinemachineCamera_4_Corner_SU_L
   m_TagString: Untagged
@@ -18217,7 +18167,7 @@ Transform:
   m_GameObject: {fileID: 4213698437852393220}
   serializedVersion: 2
   m_LocalRotation: {x: 0.19996412, y: 0.3736123, z: -0.08282785, w: 0.90198}
-  m_LocalPosition: {x: 2.057013, y: 8, z: -10.6}
+  m_LocalPosition: {x: -2.0153503, y: 8, z: -10.6}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -18266,26 +18216,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &8400635551117546844
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4213698437852393220}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5caa60439f1cd4241ab3d70e087825d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveHorizontal: 1
-  moveVertical: 0
-  horizontalAmplitude: 5
-  horizontalSpeed: 2
-  verticalAmplitude: 2
-  verticalSpeed: 2
-  localSpace: 0
-  startWithRandomOffset: 0
 --- !u!1 &4275251702766554549
 GameObject:
   m_ObjectHideFlags: 0
@@ -20325,6 +20255,33 @@ MonoBehaviour:
   inactivePriority: 10
   blendStyle: 1
   defaultBlendDuration: 0.5
+  useVisualCrossFade: 1
+  crossFadeCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: -1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: -1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  crossFadeCanvas: {fileID: 0}
+  crossFadeImage: {fileID: 0}
 --- !u!114 &5863328437811166610
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21843,14 +21800,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 917f9cea1dea49739bd0d736665aebf8, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   baseLerpSpeed: 6
   rotationLerpSpeed: 8
   epsilon: 0.0001
-  idleOrbitRadius: 3.5
+  defaultCasterFocusHeight: 1.6
+  defaultTargetFocusHeight: 1.5
+  attackNoiseAmplitude: 0.12
+  attackNoiseVerticalMultiplier: 0.45
+  attackNoiseFrequency: 2.2
+  attackNoiseRotationAmplitude: 0.9
+  idleOrbitRadius: 5
   idleOrbitSpeed: 0.35
-  idleFocusHeight: 1.6
+  idleFocusHeight: 2
   idleFovAmplitude: 2.5
   idleFovSpeed: 0.75
   idleBaseDistance: 2.25
@@ -22539,7 +22502,6 @@ GameObject:
   m_Component:
   - component: {fileID: 417519990125556204}
   - component: {fileID: 5832373322927623593}
-  - component: {fileID: 8945546879734488035}
   m_Layer: 0
   m_Name: CinemachineCamera_3_Corner_EU_R
   m_TagString: Untagged
@@ -22556,7 +22518,7 @@ Transform:
   m_GameObject: {fileID: 6395195699774986732}
   serializedVersion: 2
   m_LocalRotation: {x: 0.08282785, y: 0.90198, z: -0.19996412, w: 0.3736123}
-  m_LocalPosition: {x: 2.057013, y: 8, z: 12}
+  m_LocalPosition: {x: -6.5700397, y: 8, z: 12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -22605,26 +22567,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &8945546879734488035
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6395195699774986732}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5caa60439f1cd4241ab3d70e087825d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveHorizontal: 1
-  moveVertical: 0
-  horizontalAmplitude: 5
-  horizontalSpeed: 2
-  verticalAmplitude: 2
-  verticalSpeed: 2
-  localSpace: 0
-  startWithRandomOffset: 0
 --- !u!1 &6395509717556827771
 GameObject:
   m_ObjectHideFlags: 0
@@ -23179,8 +23121,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4410862207711006677}
   - component: {fileID: 7579079771466216716}
-  - component: {fileID: 8581123000290381111}
-  - component: {fileID: 8461187766339815685}
   m_Layer: 0
   m_Name: CMV_Projectile_Flyby
   m_TagString: Untagged
@@ -23246,32 +23186,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &8581123000290381111
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6812429175395904150}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5118b13059d3426f9656697a02b55ec6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 10, z: -20}
---- !u!114 &8461187766339815685
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6812429175395904150}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 277b7ecb732949b48277243c6502886e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 1, z: 0}
 --- !u!1 &6914382871196026634
 GameObject:
   m_ObjectHideFlags: 0
@@ -23814,7 +23728,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4402162805732094894}
   - component: {fileID: 8558631538153174282}
-  - component: {fileID: 5917678754388916665}
   m_Layer: 0
   m_Name: CinemachineCamera_2_Corner_EU_R
   m_TagString: Untagged
@@ -23831,7 +23744,7 @@ Transform:
   m_GameObject: {fileID: 7129879460498273630}
   serializedVersion: 2
   m_LocalRotation: {x: 0.08282785, y: -0.90198, z: 0.19996412, w: 0.3736123}
-  m_LocalPosition: {x: 27.057014, y: 8, z: 11.2}
+  m_LocalPosition: {x: 17.250975, y: 8, z: 11.2}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -23880,26 +23793,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &5917678754388916665
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7129879460498273630}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5caa60439f1cd4241ab3d70e087825d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveHorizontal: 1
-  moveVertical: 0
-  horizontalAmplitude: 5
-  horizontalSpeed: 2
-  verticalAmplitude: 2
-  verticalSpeed: 2
-  localSpace: 0
-  startWithRandomOffset: 0
 --- !u!1 &7245869694889146259
 GameObject:
   m_ObjectHideFlags: 0
@@ -25222,8 +25115,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7666186497415931499}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.08282785, y: 0.90198, z: -0.19996412, w: 0.3736123}
-  m_LocalPosition: {x: 2.057013, y: 8, z: 12}
+  m_LocalRotation: {x: 0.27781588, y: -0.36497167, z: 0.1150751, w: 0.8811196}
+  m_LocalPosition: {x: 10, y: 8, z: -12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -25263,7 +25156,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 100
-  field of view: 35
+  field of view: 60.000004
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
