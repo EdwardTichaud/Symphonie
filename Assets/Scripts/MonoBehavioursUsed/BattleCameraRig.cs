@@ -218,23 +218,15 @@ public class BattleCameraRig : MonoBehaviour
 
     private void DisableLegacyControllers(CinemachineCamera cam)
     {
-        var followCaster = cam.GetComponent<FollowBattleCaster>();
-        if (followCaster) followCaster.enabled = false;
-
-        var lookAtCaster = cam.GetComponent<LookAtBattleCaster>();
-        if (lookAtCaster) lookAtCaster.enabled = false;
-
-        var lookAtMiddle = cam.GetComponent<LookAtMiddleEnemy>();
-        if (lookAtMiddle) lookAtMiddle.enabled = false;
-
-        var lookAtAll = cam.GetComponent<LookAtAllCharacters>();
-        if (lookAtAll) lookAtAll.enabled = false;
-
-        var moveTo = cam.GetComponent<MoveToVector3>();
-        if (moveTo) moveTo.enabled = false;
-
-        var orbit = cam.GetComponent<OrbitWithScale>();
-        if (orbit) orbit.enabled = false;
+        // Les anciens contrôleurs dédiés au prototype initial ont été supprimés du projet.
+        // On conserve néanmoins la méthode afin de documenter l'intention : toute caméra instanciée par le rig
+        // ne doit plus embarquer de MonoBehaviours hérités des prototypes initiaux. Si un composant obsolète est
+        // réintroduit par erreur dans l'éditeur, le simple fait de garder ce point d'extension permettra de
+        // réimplémenter facilement la désactivation ciblée sans toucher au reste du pipeline caméra.
+        if (!cam)
+        {
+            return; // Sécurité supplémentaire : les appels protecteurs évitent les NullReference en cas d'appel inattendu.
+        }
     }
 
     /// <summary>
