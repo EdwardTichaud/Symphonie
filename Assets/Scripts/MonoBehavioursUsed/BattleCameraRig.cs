@@ -96,11 +96,33 @@ public class BattleCameraRig : MonoBehaviour
     [SerializeField] private float projectileSideFrequency = 1.2f;
     [SerializeField] private float projectileFocusHeight = 1.5f;
 
-    [Header("Victory")] 
+    [Header("Victory")]
     [SerializeField] private float victoryHeight = 2.4f;
     [SerializeField] private float victoryDistance = 3.5f;
     [SerializeField] private float victoryFov = 38f;
     [SerializeField] private float victoryTilt = 12f;
+
+    [Header("Battle Intro Travel")]
+    [SerializeField, Tooltip("Durée par défaut du travelling d'introduction (en secondes).")]
+    private float introTravelDuration = 3f;
+
+    [SerializeField, Tooltip("Facteur appliqué à la profondeur du plan large pour déterminer le point de départ du travelling.")]
+    private float introTravelDistanceMultiplier = 1.85f;
+
+    [SerializeField, Tooltip("Offset vertical ajouté au départ du travelling pour offrir une plongée cinématique.")]
+    private float introTravelHeightBoost = 3.25f;
+
+    [SerializeField, Tooltip("Multiplicateur appliqué au décalage latéral du plan large au début du travelling.")]
+    private float introTravelSideMultiplier = 1.45f;
+
+    [SerializeField, Tooltip("Angle (en degrés) autour du binôme caster/cible au lancement du travelling.")]
+    private float introTravelLateralAngle = 42f;
+
+    [SerializeField, Tooltip("Courbe d'interpolation utilisée pour animer le travelling (0 = départ, 1 = fin).")]
+    private AnimationCurve introTravelEase = new AnimationCurve(
+        new Keyframe(0f, 0f, 0f, 1.9f),
+        new Keyframe(0.65f, 0.82f, 1.1f, 0.4f),
+        new Keyframe(1f, 1f, 0f, 0f));
 
     // ------------------------------------------------------------------------------
     // Etat interne
@@ -124,6 +146,18 @@ public class BattleCameraRig : MonoBehaviour
     private BattleCameraRole currentActiveRole = BattleCameraRole.None;
     private float projectileTimer;
     private Vector3 attackNoiseSeed;
+
+    // Etat interne du travelling d'introduction : stockage des valeurs runtime pour
+    // pouvoir réinitialiser le plan large sur commande depuis le BattleCameraManager.
+    private bool introTravelActive;
+    private float introTravelTimer;
+    private float introTravelRuntimeDuration;
+    private float introTravelRuntimeDistanceMultiplier;
+    private float introTravelRuntimeHeightBoost;
+    private float introTravelRuntimeSideMultiplier;
+    private float introTravelRuntimeAngle;
+    private AnimationCurve introTravelRuntimeCurve;
+    private Vector3 introTravelStartDirection;
 
     private static readonly Dictionary<string, BattleCameraRole> NameToRole = new()
     {
@@ -161,12 +195,28 @@ public class BattleCameraRig : MonoBehaviour
 
         foreach (var cam in GetComponentsInChildren<CinemachineCamera>(true))
         {
+            if (!cam)
+                continue; // Sécurité supplémentaire en cas de référence cassée dans le prefab.
+
+            // Neutralise immédiatement tous les comportements hérités placés sur la caméra
+            // (PingPongMover, anciennes contraintes Cinemachine, etc.) afin que le rig
+            // soit l'unique source de vérité sur sa position.
+            DisableLegacyControllers(cam);
+
+            // Les caméras "Corner" provenaient de l'ancien prototype et provoquaient des
+            // oscillations parasites. On les met hors service dès le cache pour éviter
+            // qu'elles ne soient référencées accidentellement par le manager.
+            if (cam.gameObject.name.IndexOf("Corner", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                cam.gameObject.SetActive(false);
+                continue;
+            }
+
             if (!NameToRole.TryGetValue(cam.gameObject.name, out var role))
                 continue;
 
             cameraByRole[role] = cam;
             legacyNames[role] = cam.gameObject.name;
-            DisableLegacyControllers(cam);
         }
     }
 
@@ -218,14 +268,27 @@ public class BattleCameraRig : MonoBehaviour
 
     private void DisableLegacyControllers(CinemachineCamera cam)
     {
-        // Les anciens contrôleurs dédiés au prototype initial ont été supprimés du projet.
-        // On conserve néanmoins la méthode afin de documenter l'intention : toute caméra instanciée par le rig
-        // ne doit plus embarquer de MonoBehaviours hérités des prototypes initiaux. Si un composant obsolète est
-        // réintroduit par erreur dans l'éditeur, le simple fait de garder ce point d'extension permettra de
-        // réimplémenter facilement la désactivation ciblée sans toucher au reste du pipeline caméra.
         if (!cam)
+            return; // Sécurité supplémentaire : si une caméra est manquante, on évite tout NullReference.
+
+        // On récupère tous les Behaviour (MonoBehaviour + composants cinemachine) présents sur la caméra.
+        // L'objectif est de désactiver automatiquement tout script pouvant déplacer la caméra en parallèle du rig
+        // (PingPongMover, anciens contrôleurs orbitaux, etc.). Sans cela on observait un "tremblement" car plusieurs
+        // systèmes tentaient de piloter la même Transform au même frame.
+        foreach (var behaviour in cam.GetComponents<Behaviour>())
         {
-            return; // Sécurité supplémentaire : les appels protecteurs évitent les NullReference en cas d'appel inattendu.
+            if (!behaviour || ReferenceEquals(behaviour, cam))
+                continue; // On conserve évidemment le CinemachineCamera lui-même.
+
+            if (behaviour is CinemachineFadeConfiguration)
+                continue; // Ce composant ne manipule pas la Transform : il indique simplement le type de fondu.
+
+            // Certains profils peuvent embarquer CinemachineVolumeSettings pour gérer l'étalonnage.
+            // On les laisse actifs car ils n'influencent pas la position.
+            if (behaviour.GetType().Name == "CinemachineVolumeSettings")
+                continue;
+
+            behaviour.enabled = false;
         }
     }
 
@@ -258,6 +321,7 @@ public class BattleCameraRig : MonoBehaviour
         manualMidpoint = null;
         casterFocusAnchor = null;
         targetFocusAnchor = null;
+        introTravelActive = false; // Empêche tout travelling résiduel une fois les cibles libérées.
         UpdateTargetGroupMembers();
     }
 
@@ -310,6 +374,71 @@ public class BattleCameraRig : MonoBehaviour
         currentActiveRole = role;
         if (role == BattleCameraRole.ProjectileFlyby)
             projectileTimer = 0f; // Ré-initialise le travelling à chaque activation.
+
+        // Dès qu'on quitte le plan large, on interrompt le travelling d'introduction pour
+        // éviter que le rig continue à déplacer une caméra qui n'est plus prioritaire.
+        if (role != BattleCameraRole.WideEstablish)
+            introTravelActive = false;
+    }
+
+    /// <summary>
+    /// Lance le travelling d'introduction façon « Clair Obscur: Expedition 33 ».
+    /// Les paramètres sont optionnels afin de permettre un override ponctuel depuis un script externe.
+    /// </summary>
+    public void PlayIntroTravel(
+        float? durationOverride = null,
+        float? distanceMultiplierOverride = null,
+        float? heightBoostOverride = null,
+        float? sideMultiplierOverride = null,
+        float? angleOverride = null,
+        AnimationCurve customCurve = null)
+    {
+        if (!TryGetCamera(BattleCameraRole.WideEstablish, out var cam))
+            return; // Sans plan large disponible, impossible de proposer le travelling.
+
+        // On mémorise les paramètres runtime afin que la mise à jour puisse interpoler correctement.
+        introTravelRuntimeDuration = Mathf.Max(0.01f, durationOverride ?? introTravelDuration);
+        introTravelRuntimeDistanceMultiplier = Mathf.Max(1f, distanceMultiplierOverride ?? introTravelDistanceMultiplier);
+        introTravelRuntimeHeightBoost = heightBoostOverride ?? introTravelHeightBoost;
+        introTravelRuntimeSideMultiplier = Mathf.Max(0f, sideMultiplierOverride ?? introTravelSideMultiplier);
+        introTravelRuntimeAngle = angleOverride ?? introTravelLateralAngle;
+        introTravelRuntimeCurve = customCurve ?? introTravelEase ?? AnimationCurve.Linear(0f, 0f, 1f, 1f);
+
+        Vector3 center = GetWeightedCenter();
+        Vector3 separation = GetTargetFocusPosition() - GetCasterFocusPosition();
+        if (separation.sqrMagnitude < epsilon)
+            separation = caster ? caster.forward : Vector3.forward;
+        Vector3 forward = separation.normalized;
+
+        // On part d'un angle latéral (comme dans Clair Obscur) pour dévoiler progressivement la scène.
+        Vector3 startForward = Quaternion.AngleAxis(introTravelRuntimeAngle, Vector3.up) * forward;
+        if (startForward.sqrMagnitude < epsilon)
+            startForward = forward;
+        startForward.Normalize();
+
+        Vector3 startSide = Vector3.Cross(Vector3.up, startForward).normalized;
+
+        float startDistance = wideDepth * introTravelRuntimeDistanceMultiplier;
+        float startSideOffset = wideSide * introTravelRuntimeSideMultiplier;
+        float startHeight = wideHeight + introTravelRuntimeHeightBoost;
+
+        Vector3 startPos = center - startForward * startDistance + startSide * startSideOffset + Vector3.up * startHeight;
+
+        cam.transform.position = startPos;
+        cam.transform.rotation = Quaternion.LookRotation((center + Vector3.up * 1.2f - startPos).normalized, Vector3.up);
+        cam.Lens.FieldOfView = wideFov;
+
+        introTravelStartDirection = startForward;
+        introTravelTimer = 0f;
+        introTravelActive = introTravelRuntimeDuration > 0.001f;
+    }
+
+    /// <summary>
+    /// Permet d'interrompre manuellement le travelling (utile si une cinématique reprend la main).
+    /// </summary>
+    public void StopIntroTravel()
+    {
+        introTravelActive = false;
     }
 
     private void ClearTargetGroupMembers()
@@ -509,6 +638,47 @@ public class BattleCameraRig : MonoBehaviour
         Vector3 side = Vector3.Cross(Vector3.up, forward).normalized;
 
         Vector3 desiredPos = center - forward * wideDepth + side * wideSide + Vector3.up * wideHeight;
+        if (introTravelActive)
+        {
+            introTravelTimer += dt;
+            float normalized = introTravelRuntimeDuration > 0.001f
+                ? introTravelTimer / introTravelRuntimeDuration
+                : 1f;
+            float eased = EvaluateIntroTravel(Mathf.Clamp01(normalized));
+
+            Vector3 travelDir = Vector3.Slerp(introTravelStartDirection, forward, eased).normalized;
+            if (travelDir.sqrMagnitude < epsilon)
+                travelDir = forward;
+
+            Vector3 travelSide = Vector3.Cross(Vector3.up, travelDir).normalized;
+
+            float travelDistance = Mathf.Lerp(
+                wideDepth * introTravelRuntimeDistanceMultiplier,
+                wideDepth,
+                eased);
+
+            float travelSideOffset = Mathf.Lerp(
+                wideSide * introTravelRuntimeSideMultiplier,
+                wideSide,
+                eased);
+
+            float travelHeight = Mathf.Lerp(
+                wideHeight + introTravelRuntimeHeightBoost,
+                wideHeight,
+                eased);
+
+            Vector3 travelPos = center - travelDir * travelDistance + travelSide * travelSideOffset + Vector3.up * travelHeight;
+
+            SmoothPosition(cam, travelPos, dt, baseLerpSpeed * 0.85f);
+            SmoothLookAt(cam, center + Vector3.up * 1.2f, dt, rotationLerpSpeed * 0.65f);
+            cam.Lens.FieldOfView = Mathf.Lerp(cam.Lens.FieldOfView, wideFov, dt * 0.45f);
+
+            if (normalized >= 1f - Mathf.Epsilon)
+                introTravelActive = false; // Le travelling est terminé : on repasse sur le comportement standard.
+
+            return; // Empêche la logique standard de reprendre immédiatement la main durant le travelling.
+        }
+
         SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.6f);
         SmoothLookAt(cam, center + Vector3.up * 1.2f, dt, rotationLerpSpeed * 0.6f);
         cam.Lens.FieldOfView = Mathf.Lerp(cam.Lens.FieldOfView, wideFov, dt * 0.5f);
@@ -611,5 +781,15 @@ public class BattleCameraRig : MonoBehaviour
         if (noiseEuler != Vector3.zero)
             targetRot *= Quaternion.Euler(noiseEuler);
         cam.transform.rotation = Quaternion.Slerp(cam.transform.rotation, targetRot, Mathf.Clamp01(dt * speed));
+    }
+
+    private float EvaluateIntroTravel(float normalizedTime)
+    {
+        float clamped = Mathf.Clamp01(normalizedTime);
+        if (introTravelRuntimeCurve != null && introTravelRuntimeCurve.length >= 2)
+            return Mathf.Clamp01(introTravelRuntimeCurve.Evaluate(clamped));
+
+        // Par défaut on applique un easing doux pour rappeler l'animation d'introduction du jeu de référence.
+        return Mathf.SmoothStep(0f, 1f, clamped);
     }
 }

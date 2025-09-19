@@ -110,6 +110,27 @@ public class BattleCameraManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Démarre le travelling d'introduction géré par le <see cref="BattleCameraRig"/>.
+    /// Les paramètres sont optionnels et permettent d'ajuster ponctuellement la mise en scène.
+    /// </summary>
+    public void PlayBattleIntroTravel(
+        float? durationOverride = null,
+        float? distanceMultiplierOverride = null,
+        float? heightBoostOverride = null,
+        float? sideMultiplierOverride = null,
+        float? angleOverride = null,
+        AnimationCurve customCurve = null)
+    {
+        cameraRig?.PlayIntroTravel(
+            durationOverride,
+            distanceMultiplierOverride,
+            heightBoostOverride,
+            sideMultiplierOverride,
+            angleOverride,
+            customCurve);
+    }
+
+    /// <summary>
     /// Active une caméra en s'appuyant sur un rôle cinématique.
     /// </summary>
     public void SwitchToCamera(BattleCameraRole role, float blendTime = -1f, CinemachineBlendDefinition.Styles? overrideStyle = null)

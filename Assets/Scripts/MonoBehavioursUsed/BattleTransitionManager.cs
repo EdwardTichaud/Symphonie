@@ -454,9 +454,14 @@ public class BattleTransitionManager : MonoBehaviour
         {
             battleCamera.SetActive(true); // S'assure que la camera de combat est active
 
-            // Au lieu de jouer une timeline d'introduction, on affiche directement
-            // la camera orbitale autour du champ de bataille avec une transition instantanée.
-            BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.WideEstablish, 0f);
+            // On déclenche désormais un travelling introductif pour rappeler Clair Obscur :
+            // 1) Cut immédiat sur le plan large.
+            // 2) Animation pilotée par le rig pour dévoiler la scène.
+            BattleCameraManager.Instance?.SwitchToCamera(
+                BattleCameraRole.WideEstablish,
+                0f,
+                CinemachineBlendDefinition.Styles.Cut);
+            BattleCameraManager.Instance?.PlayBattleIntroTravel();
         }
         else
         {
