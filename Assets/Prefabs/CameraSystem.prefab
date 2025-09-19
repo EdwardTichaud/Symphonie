@@ -1575,7 +1575,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3949434785713621470}
-  - component: {fileID: 5037683982403342743}
   m_Layer: 0
   m_Name: BattleCamera_Origin
   m_TagString: Untagged
@@ -1591,37 +1590,15 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 742718014156528111}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0.19232568, y: 0.35512945, z: -0.08182373, w: 0.9111524}
+  m_LocalPosition: {x: 2.1, y: 8.5, z: 0.7}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2211083621015039421}
   - {fileID: 1318187734422061808}
   m_Father: {fileID: 5849700187293665785}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!95 &5037683982403342743
-Animator:
-  serializedVersion: 7
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 742718014156528111}
-  m_Enabled: 1
-  m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 9100000, guid: 24f0f9a20bef66745a2dea6d440bc2b0, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage: 
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
+  m_LocalEulerAnglesHint: {x: -16.999, y: 45.205, z: -17.383}
 --- !u!1 &779619903858596497
 GameObject:
   m_ObjectHideFlags: 0
@@ -17298,7 +17275,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 2100000, guid: 391808cc39a8cdf41b7e617a53d3ab0c, type: 2}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 0}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -25122,7 +25099,7 @@ Transform:
   m_Children:
   - {fileID: 4390614218115549448}
   m_Father: {fileID: 3949434785713621470}
-  m_LocalEulerAnglesHint: {x: -74.647, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 29.652, y: -9.391, z: 19.51}
 --- !u!20 &6052484475872995002
 Camera:
   m_ObjectHideFlags: 0
