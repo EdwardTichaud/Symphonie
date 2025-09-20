@@ -66,6 +66,17 @@ public class CharacterController3D : MonoBehaviour
     public float autoAlignSpeed = 5f;    // Vitesse du recadrage
     private float idleTimer = 0f;
 
+    [Header("Battle Camera Manual Control")]
+    [Tooltip("Vitesse de déplacement appliquée au BattleCamera_Origin lorsque le joueur prend le contrôle manuel.")]
+    [SerializeField] private float battleCameraMoveSpeed = 8f;
+    [Tooltip("Nom du GameObject représentant l'origine du rig de caméra de combat.")]
+    [SerializeField] private string battleCameraOriginName = "BattleCamera_Origin";
+
+    private Transform battleCameraOrigin;          // Référence au BattleCamera_Origin dans la scène courante
+    private bool manualBattleCameraControl;        // Indique si les entrées pilotent actuellement la caméra au lieu du joueur
+    private InputAction switchLucianToCameraAction; // Action d'entrée dédiée pour basculer entre Lucian et la caméra
+    private bool switchActionWarningLogged;        // Évite de spammer la console si l'action n'existe pas dans l'asset
+
     #region Cycle de Vie
     /// <summary>
     /// Récupère le CharacterController associé.
@@ -80,6 +91,28 @@ public class CharacterController3D : MonoBehaviour
             groundLayer = LayerMask.GetMask("Default");
             Debug.LogWarning("[CharacterController3D] 'groundLayer' non spécifié, utilisation du layer 'Default'.");
         }
+
+        TryRegisterSwitchAction();
+    }
+
+    void OnEnable()
+    {
+        // Lors du rechargement d'une scène ou après une désactivation temporaire, on s'assure
+        // que l'action d'entrée est bien reliée afin que le joueur puisse reprendre la main.
+        TryRegisterSwitchAction();
+    }
+
+    void OnDisable()
+    {
+        if (switchLucianToCameraAction != null)
+        {
+            switchLucianToCameraAction.performed -= OnSwitchLucianToCamera;
+            switchLucianToCameraAction = null;
+        }
+
+        // On réinitialise le mode de contrôle manuel afin d'éviter qu'il reste actif après un changement de scène.
+        manualBattleCameraControl = false;
+        switchActionWarningLogged = false;
     }
 
     /// <summary>
@@ -89,6 +122,29 @@ public class CharacterController3D : MonoBehaviour
     {
         if (!controller.enabled) return;
         isGrounded = controller.isGrounded;
+
+        // Tant que l'action SwitchLucianToCamera n'a pas été trouvée (par exemple au chargement d'une scène),
+        // on retente discrètement le câblage. Cela évite d'avoir à redémarrer le jeu si le InputsManager est créé après nous.
+        if (switchLucianToCameraAction == null)
+        {
+            TryRegisterSwitchAction();
+        }
+
+        if (manualBattleCameraControl)
+        {
+            // Lorsque la caméra est pilotée manuellement, on neutralise les états de déplacement
+            // pour éviter toute animation résiduelle côté personnage.
+            isWalking = false;
+            isRunning = false;
+            wasWalking = false;
+            wasRunning = false;
+            dashTriggered = false;
+            jumpRequested = false;
+            velocity = Vector3.zero; // Empêche la gravité de faire glisser Lucian pendant que la caméra est contrôlée.
+
+            HandleManualBattleCameraMovement();
+            return;
+        }
 
         ReadInputs();
         HandleMovement();
@@ -265,6 +321,117 @@ public class CharacterController3D : MonoBehaviour
 
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
+    }
+
+    #endregion
+
+    #region Contrôle Manuel de la BattleCamera
+
+    /// <summary>
+    /// Recherche et abonne dynamiquement l'action d'entrée <c>SwitchLucianToCamera</c>.
+    /// </summary>
+    private void TryRegisterSwitchAction()
+    {
+        if (switchLucianToCameraAction != null || InputsManager.Instance == null || InputsManager.Instance.playerInputs == null)
+            return; // Rien à faire si déjà branché ou si l'InputsManager n'est pas prêt.
+
+        var asset = InputsManager.Instance.playerInputs.asset;
+        if (asset == null)
+            return;
+
+        var action = asset.FindAction("SwitchLucianToCamera", throwIfNotFound: false);
+
+        if (action != null)
+        {
+            switchLucianToCameraAction = action;
+            switchLucianToCameraAction.performed += OnSwitchLucianToCamera;
+            switchActionWarningLogged = false; // On réinitialise le flag pour autoriser un nouveau warning si l'action disparaît plus tard.
+        }
+        else if (!switchActionWarningLogged)
+        {
+            Debug.LogWarning("[CharacterController3D] Action 'SwitchLucianToCamera' introuvable dans PlayerInputs. Le contrôle manuel de la BattleCamera restera désactivé tant qu'elle ne sera pas définie.");
+            switchActionWarningLogged = true;
+        }
+    }
+
+    /// <summary>
+    /// Callback invoqué lors de l'appui sur l'action <c>SwitchLucianToCamera</c>.
+    /// </summary>
+    private void OnSwitchLucianToCamera(InputAction.CallbackContext context)
+    {
+        if (!context.performed)
+            return; // On attend la validation de l'entrée pour éviter les toggles parasites.
+
+        manualBattleCameraControl = !manualBattleCameraControl;
+
+        if (manualBattleCameraControl)
+        {
+            // Lors de l'activation on essaie immédiatement de récupérer la référence du rig de caméra.
+            if (!EnsureBattleCameraOrigin())
+            {
+                Debug.LogWarning("[CharacterController3D] BattleCamera_Origin introuvable : retour automatique au contrôle de Lucian.");
+                manualBattleCameraControl = false;
+            }
+            else
+            {
+                // On s'assure que Lucian reste immobile pour éviter toute glissade pendant l'utilisation libre de la caméra.
+                controller.Move(Vector3.zero);
+                velocity = Vector3.zero;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Déplace librement le <c>BattleCamera_Origin</c> à l'aide des entrées de déplacement usuelles.
+    /// </summary>
+    private void HandleManualBattleCameraMovement()
+    {
+        if (!EnsureBattleCameraOrigin() || InputsManager.Instance == null)
+            return;
+
+        // Projection des axes selon l'orientation de la caméra active afin que W/S avance et recule dans la direction visée.
+        Transform reference = Camera.main != null ? Camera.main.transform : transform;
+        Vector3 forward = Vector3.ProjectOnPlane(reference.forward, Vector3.up).normalized;
+        Vector3 right = Vector3.ProjectOnPlane(reference.right, Vector3.up).normalized;
+
+        if (forward.sqrMagnitude < 0.001f)
+            forward = Vector3.forward;
+        if (right.sqrMagnitude < 0.001f)
+            right = Vector3.right;
+
+        Vector2 moveInput = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
+        Vector3 displacement = (forward * moveInput.y + right * moveInput.x);
+
+        // Les touches de saut/dash contrôlent l'altitude lors du déplacement manuel pour véritablement naviguer "dans tous les sens".
+        float vertical = 0f;
+        if (InputsManager.Instance.playerInputs.World.Jump.IsPressed())
+            vertical += 1f;
+        if (InputsManager.Instance.playerInputs.World.Dash.IsPressed())
+            vertical -= 1f;
+        displacement += Vector3.up * vertical;
+
+        if (displacement.sqrMagnitude > 0.001f)
+        {
+            battleCameraOrigin.position += displacement.normalized * battleCameraMoveSpeed * Time.deltaTime;
+        }
+    }
+
+    /// <summary>
+    /// Tente de retrouver la référence du BattleCamera_Origin s'il est absent ou a été recréé.
+    /// </summary>
+    private bool EnsureBattleCameraOrigin()
+    {
+        if (battleCameraOrigin != null)
+            return true;
+
+        GameObject origin = GameObject.Find(battleCameraOriginName);
+        if (origin != null)
+        {
+            battleCameraOrigin = origin.transform;
+            return true;
+        }
+
+        return false;
     }
 
     #endregion
