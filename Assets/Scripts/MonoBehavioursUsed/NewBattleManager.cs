@@ -2712,39 +2712,39 @@ public class NewBattleManager : MonoBehaviour
                 // Caméra sur la cible sélectionnée, regardant le lanceur
                 isFollowingCurrentTarget = false;
                 lookAtCasterDuringTargetSelection = true;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
                 // Même comportement que pour une compétence
                 isFollowingCurrentTarget = false;
                 lookAtCasterDuringTargetSelection = true;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
                 // Caméra sur l'ennemi sélectionné, regardant le lanceur
                 isFollowingCurrentTarget = false;
                 lookAtCasterDuringTargetSelection = true;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
                 // Identique pour un objet visant un ennemi
                 isFollowingCurrentTarget = false;
                 lookAtCasterDuringTargetSelection = true;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
                 break;
 
             case BattleState.EnemyUnit_Reflexion:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
                 break;
             case BattleState.EnemyUnit_PerformingMusicalMove:
                 // Place la caméra sur la cible et oriente-la vers l'ennemi
                 isFollowingCurrentTarget = false;
                 lookAtCasterFromTargetPoint = true;
-                desiredTransform = FindChildRecursive(currentTargetCharacter.transform, "Camera_TargetedPoint");
+                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
                 break;
             case BattleState.EnemyUnit_Item_Prepare:
             case BattleState.EnemyUnit_Item_Use:
@@ -3007,6 +3007,36 @@ public class NewBattleManager : MonoBehaviour
                 return result;
         }
         return null;
+    }
+
+    /// <summary>
+    /// Tente de récupérer l'ancre "Camera_TargetedPoint" d'une unité afin
+    /// d'offrir un point de vue stable durant la sélection de cible.
+    /// </summary>
+    /// <param name="unit">Unité pré-ciblée actuellement suivie par l'UI.</param>
+    /// <returns>
+    /// L'ancre dédiée si elle existe, sinon le transform racine de l'unité
+    /// pour garantir un focus caméra cohérent.
+    /// </returns>
+    private Transform GetTargetedAnchorOrFallback(CharacterUnit unit)
+    {
+        if (unit == null)
+        {
+            // Sécurité : sans unité, on ne peut pas proposer d'ancre valide.
+            return null;
+        }
+
+        // Recherche prioritaire de l'ancre spécifique prévue par les artistes.
+        Transform targetedAnchor = FindChildRecursive(unit.transform, "Camera_TargetedPoint");
+        if (targetedAnchor != null)
+        {
+            return targetedAnchor;
+        }
+
+        // Fallback : on renvoie la racine de l'unité pour conserver un focus
+        // immédiat. Sans cela, la caméra resterait sur sa position précédente
+        // jusqu'à ce que le joueur navigue manuellement entre les cibles.
+        return unit.transform;
     }
 
     private Sprite GetInputSprite(int index)
