@@ -2656,30 +2656,40 @@ public class NewBattleManager : MonoBehaviour
         {
             case BattleState.SquadUnit_MainMenu:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_MainMenu");
-                OrientTransformTowardEnemyGroupSmoothXY(desiredTransform, 180f);
-                if (desiredTransform == null)
+                // On récupère l'ancre dédiée au plan d'attente du menu principal.
+                // L'objectif est de garantir un cadrage cohérent, propre à chaque personnage.
+                desiredTransform = ResolveCameraAnchor(
+                    currentCharacterUnit.transform,
+                    "Camera_MainMenu",
+                    "[BattleCameraManager] Aucun point 'Camera_MainMenu' trouvé."
+                );
+                // Lorsque l'ancre existe, on la fait pivoter en douceur vers les ennemis pour
+                // conserver la grammaire cinématographique prévue par l'équipe artistique.
+                if (desiredTransform != null && desiredTransform != currentCharacterUnit.transform)
                 {
-                    Debug.LogError("[BattleCameraManager] Aucun point 'Camera_MainMenu' trouvé.");
+                    OrientTransformTowardEnemyGroupSmoothXY(desiredTransform, 180f);
                 }
                 break;
 
             case BattleState.SquadUnit_SkillsMenu:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_SkillsMenu");
-                if (desiredTransform == null)
-                {
-                    Debug.LogError("[BattleCameraManager] Aucun point 'Camera_SkillsMenu' trouvé.");
-                }
+                // Même logique que pour le menu principal : chaque unité possède un point de vue
+                // spécifique lorsqu'elle consulte ses compétences.
+                desiredTransform = ResolveCameraAnchor(
+                    currentCharacterUnit.transform,
+                    "Camera_SkillsMenu",
+                    "[BattleCameraManager] Aucun point 'Camera_SkillsMenu' trouvé."
+                );
                 break;
 
             case BattleState.SquadUnit_ItemsMenu:
                 isFollowingCurrentTarget = false;
-                desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_ItemsMenu");
-                if (desiredTransform == null)
-                {
-                    Debug.LogError("[BattleCameraManager] Aucun point 'Camera_ItemsMenu' trouvé.");
-                }
+                // Point de vue spécialisé pour l'utilisation ou la préparation des objets.
+                desiredTransform = ResolveCameraAnchor(
+                    currentCharacterUnit.transform,
+                    "Camera_ItemsMenu",
+                    "[BattleCameraManager] Aucun point 'Camera_ItemsMenu' trouvé."
+                );
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad:
@@ -2990,6 +3000,25 @@ public class NewBattleManager : MonoBehaviour
             camTransform.position = Vector3.Lerp(camTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
             camTransform.rotation = Quaternion.Slerp(camTransform.rotation, desiredTransform.rotation, Time.deltaTime * cameraSmoothSpeed);
         }
+
+        // Si un curseur de cible est affiché (sélection d'une unité, d'un objet, etc.),
+        // on force la caméra à orienter son regard vers ce repère visuel. Cela garantit que
+        // le joueur garde toujours le contexte de sa sélection, même lorsque la position de
+        // la caméra est pilotée par une ancre prédéfinie.
+        bool targetCursorVisible = targetCursor != null && targetCursor.activeInHierarchy;
+        if (targetCursorVisible)
+        {
+            Vector3 toCursor = targetCursor.transform.position - camTransform.position;
+            if (toCursor.sqrMagnitude > 0.0001f)
+            {
+                Quaternion cursorRotation = Quaternion.LookRotation(toCursor.normalized, Vector3.up);
+                camTransform.rotation = Quaternion.Slerp(
+                    camTransform.rotation,
+                    cursorRotation,
+                    Time.deltaTime * cameraSmoothSpeed
+                );
+            }
+        }
     }
     #endregion
 
@@ -3007,6 +3036,35 @@ public class NewBattleManager : MonoBehaviour
                 return result;
         }
         return null;
+    }
+
+    /// <summary>
+    /// Sécurise la récupération d'un point caméra propre à l'unité active.
+    /// En cas d'oubli dans un prefab, on renvoie la racine de l'unité afin de conserver
+    /// un focus cohérent et d'éviter les null references côté caméra.
+    /// </summary>
+    /// <param name="unitRoot">Transform racine de l'unité courante.</param>
+    /// <param name="anchorName">Nom de l'ancre recherchée dans la hiérarchie.</param>
+    /// <param name="errorMessage">Message détaillé affiché si l'ancre manque.</param>
+    /// <returns>L'ancre trouvée ou, en dernier recours, la racine de l'unité.</returns>
+    private Transform ResolveCameraAnchor(Transform unitRoot, string anchorName, string errorMessage)
+    {
+        if (unitRoot == null)
+        {
+            Debug.LogWarning("[BattleCameraManager] Impossible de résoudre l'ancre caméra : unité courante absente.");
+            return null;
+        }
+
+        Transform anchor = FindChildRecursive(unitRoot, anchorName);
+        if (anchor != null)
+        {
+            return anchor;
+        }
+
+        Debug.LogError(errorMessage);
+        // On renvoie la racine pour garder une position valide et permettre au designer
+        // d'identifier rapidement l'oubli via la log d'erreur.
+        return unitRoot;
     }
 
     /// <summary>
