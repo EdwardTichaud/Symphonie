@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 using TMPro;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
+using Unity.Cinemachine;
 
 #region TargetType
 public enum TargetType
@@ -131,6 +132,16 @@ public class NewBattleManager : MonoBehaviour
 
     /// <summary>Rôle caméra utilisé lors de l'attente de sélection d'objet.</summary>
     private const BattleCameraRole ItemPreparingCameraRole = BattleCameraRole.MainMenuIdle;
+    /// <summary>Nom de la Cinemachine dédiée au menu principal.</summary>
+    private const string MainMenuCameraName = "CMV_MainMenu";
+    /// <summary>Nom de la Cinemachine dédiée au menu des compétences.</summary>
+    private const string SkillsMenuCameraName = "CMV_SkillsMenu";
+    /// <summary>Nom de la Cinemachine dédiée au menu des objets.</summary>
+    private const string ItemsMenuCameraName = "CMV_ItemsMenu";
+    /// <summary>Style de transition privilégié pour les menus (cut instantané).</summary>
+    private const CinemachineBlendDefinition.Styles MenuCameraBlendStyle = CinemachineBlendDefinition.Styles.Cut;
+    /// <summary>Durée par défaut des transitions de menu (0 = cut immédiat).</summary>
+    private const float MenuCameraBlendDuration = 0f;
     /// <summary>Hash du state Animator "Item_Prepare" pour lancer rapidement l'animation correspondante.</summary>
     private static readonly int AnimatorStateItemPrepare = Animator.StringToHash("Item_Prepare");
     /// <summary>Hash du state Animator "Idle_Battle" afin de revenir proprement à la pose neutre.</summary>
@@ -223,9 +234,10 @@ public class NewBattleManager : MonoBehaviour
     private bool lookAtCasterDuringTargetSelection = false;
     // Indique si la caméra doit se placer sur la cible et regarder le lanceur (tour ennemi)
     private bool lookAtCasterFromTargetPoint = false;
-    private bool isOrbiting = false;
-    private float currentOrbitAngle;
-    private Transform orbitCenter;
+    // Indique si une Cinemachine de menu est actuellement prioritaire (afin de ne pas déplacer la caméra Unity).
+    private bool isMenuCinemachineActive = false;
+    // Mémorise le nom de la Cinemachine actuellement utilisée pour le menu afin de pouvoir la libérer proprement.
+    private string activeMenuCameraName;
 
     [Header("Cinématique de début de tour joueur")]
     [SerializeField, Tooltip("Durée du travelling inspiré de l'introduction de combat (en secondes).")]
@@ -2629,6 +2641,41 @@ public class NewBattleManager : MonoBehaviour
     #endregion
 
     #region Gestion des mouvements de la caméra de combat
+    /// <summary>
+    /// Donne la priorité à une Cinemachine de menu et l'aligne sur l'ancre fournie.
+    /// Retourne <c>true</c> si l'opération s'est déroulée correctement.
+    /// </summary>
+    private bool ActivateMenuCinemachineCamera(string cameraName, Transform anchor)
+    {
+        if (string.IsNullOrEmpty(cameraName) || anchor == null)
+            return false;
+
+        var manager = BattleCameraManager.Instance;
+        if (manager == null)
+            return false;
+
+        manager.SwitchToCameraAndAlign(cameraName, anchor, MenuCameraBlendDuration, MenuCameraBlendStyle);
+        isMenuCinemachineActive = true;
+        activeMenuCameraName = cameraName;
+        return true;
+    }
+
+    /// <summary>
+    /// Libère la Cinemachine dédiée aux menus si elle possède encore la priorité.
+    /// </summary>
+    private void DeactivateMenuCinemachineCamera()
+    {
+        if (!isMenuCinemachineActive)
+            return;
+
+        var manager = BattleCameraManager.Instance;
+        if (manager != null && manager.CurrentCinemachineCameraName == activeMenuCameraName)
+            manager.SwitchToCamera(null, MenuCameraBlendDuration, MenuCameraBlendStyle);
+
+        isMenuCinemachineActive = false;
+        activeMenuCameraName = null;
+    }
+
     public void UpdateCameraBehaviour(BattleState newState)
     {
         // On vérifie ponctuellement que la caméra de combat est bien référencée
@@ -2652,6 +2699,8 @@ public class NewBattleManager : MonoBehaviour
         // Désactive le focus spécial utilisé pendant le tour ennemi
         lookAtCasterFromTargetPoint = false;
 
+        bool handledByMenuCamera = false;
+
         switch (currentBattleState)
         {
             case BattleState.SquadUnit_MainMenu:
@@ -2669,6 +2718,7 @@ public class NewBattleManager : MonoBehaviour
                 {
                     OrientTransformTowardEnemyGroupSmoothXY(desiredTransform, 180f);
                 }
+                handledByMenuCamera = ActivateMenuCinemachineCamera(MainMenuCameraName, desiredTransform);
                 break;
 
             case BattleState.SquadUnit_SkillsMenu:
@@ -2680,6 +2730,7 @@ public class NewBattleManager : MonoBehaviour
                     "Camera_SkillsMenu",
                     "[BattleCameraManager] Aucun point 'Camera_SkillsMenu' trouvé."
                 );
+                handledByMenuCamera = ActivateMenuCinemachineCamera(SkillsMenuCameraName, desiredTransform);
                 break;
 
             case BattleState.SquadUnit_ItemsMenu:
@@ -2690,6 +2741,7 @@ public class NewBattleManager : MonoBehaviour
                     "Camera_ItemsMenu",
                     "[BattleCameraManager] Aucun point 'Camera_ItemsMenu' trouvé."
                 );
+                handledByMenuCamera = ActivateMenuCinemachineCamera(ItemsMenuCameraName, desiredTransform);
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad:
@@ -2772,6 +2824,9 @@ public class NewBattleManager : MonoBehaviour
                 desiredTransform = null;
                 break;
         }
+
+        if (!handledByMenuCamera)
+            DeactivateMenuCinemachineCamera();
     }
 
     /// <summary>
@@ -2935,10 +2990,12 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
+        // Lorsque les menus affichent une Cinemachine dédiée, on laisse cette dernière piloter le rendu.
+        if (isMenuCinemachineActive)
+            return;
+
         // Accès direct au transform de la caméra pour limiter les appels
         Transform camTransform = battleCamera.transform;
-
-        CameraController cc = CameraController.Instance;
         // Si une Timeline globale contrôle la caméra (cutscene ou attaque),
         // on laisse entièrement la main au TimelineManager.
         if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)

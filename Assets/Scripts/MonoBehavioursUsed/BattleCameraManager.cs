@@ -20,6 +20,9 @@ public class BattleCameraManager : MonoBehaviour
     // Ensemble des cameras Cinemachine disponibles pour les moves.
     private readonly List<CinemachineCamera> availableCameras = new();
 
+    // Accès direct aux caméras via leur nom pour faciliter les repositionnements ponctuels.
+    private readonly Dictionary<string, CinemachineCamera> cameraByName = new();
+
     // Mapping role -> nom de caméra utilisé par le blend switcher.
     private readonly Dictionary<BattleCameraRole, string> roleToCameraName = new();
     private readonly Dictionary<string, BattleCameraRole> nameToRole = new();
@@ -49,6 +52,8 @@ public class BattleCameraManager : MonoBehaviour
                 availableCameras.Add(cam);
         }
 
+        RefreshCameraCache();
+
         cameraRig = FindFirstObjectByType<BattleCameraRig>();
         if (!cameraRig)
             Debug.LogWarning("[BattleCameraManager] Aucun BattleCameraRig détecté : les rôles caméra ne seront pas configurés.");
@@ -59,6 +64,20 @@ public class BattleCameraManager : MonoBehaviour
         // On force une transition immediate (duree 0) pour eviter un fondu au lancement.
         if (blendSwitcher)
             blendSwitcher.DisplayCamera(null, 0f);
+    }
+
+    /// <summary>
+    /// Reconstitue le dictionnaire nom -> caméra afin de toujours disposer d'une référence valide.
+    /// </summary>
+    private void RefreshCameraCache()
+    {
+        cameraByName.Clear();
+
+        // Nettoie les entrées nulles pouvant apparaître après un changement de scène.
+        availableCameras.RemoveAll(cam => cam == null);
+
+        foreach (var cam in availableCameras)
+            cameraByName[cam.gameObject.name] = cam;
     }
 
     /// <summary>
@@ -107,6 +126,66 @@ public class BattleCameraManager : MonoBehaviour
     public void ClearRigTargets()
     {
         cameraRig?.ClearTargets();
+    }
+
+    /// <summary>
+    /// Tente de récupérer une <see cref="CinemachineCamera"/> via son nom de GameObject.
+    /// </summary>
+    public bool TryGetCameraByName(string cameraName, out CinemachineCamera camera)
+    {
+        if (string.IsNullOrEmpty(cameraName))
+        {
+            camera = null;
+            return false;
+        }
+
+        if (!cameraByName.TryGetValue(cameraName, out camera) || camera == null)
+        {
+            RefreshCameraCache();
+            if (!cameraByName.TryGetValue(cameraName, out camera) || camera == null)
+            {
+                availableCameras.Clear();
+                foreach (var cam in FindObjectsOfType<CinemachineCamera>())
+                {
+                    if (cam != null)
+                        availableCameras.Add(cam);
+                }
+
+                RefreshCameraCache();
+                cameraByName.TryGetValue(cameraName, out camera);
+            }
+        }
+
+        return camera != null;
+    }
+
+    /// <summary>
+    /// Replace une caméra statique sur une ancre donnée puis lui donne la priorité.
+    /// Utile pour les menus qui disposent d'un point de vue par personnage.
+    /// </summary>
+    public void SwitchToCameraAndAlign(
+        string cameraName,
+        Transform anchor,
+        float blendTime = 0f,
+        CinemachineBlendDefinition.Styles? overrideStyle = null)
+    {
+        if (anchor == null)
+        {
+            Debug.LogWarning("[BattleCameraManager] Impossible d'aligner la caméra : ancre absente.");
+            return;
+        }
+
+        if (!TryGetCameraByName(cameraName, out var camera))
+        {
+            Debug.LogWarning($"[BattleCameraManager] Caméra inconnue : {cameraName}.");
+            return;
+        }
+
+        // Positionne immédiatement la caméra sur l'ancre du personnage pour garantir un cadrage cohérent.
+        camera.transform.SetPositionAndRotation(anchor.position, anchor.rotation);
+
+        // Puis donne la priorité à cette caméra en privilégiant un cut (blendTime = 0 par défaut).
+        SwitchToCamera(cameraName, blendTime, overrideStyle);
     }
 
     /// <summary>
@@ -246,4 +325,14 @@ public class BattleCameraManager : MonoBehaviour
 
         return null;
     }
+
+    /// <summary>
+    /// Nom de la caméra actuellement prioritaire (ou <c>null</c> si aucune Cinemachine n'est active).
+    /// </summary>
+    public string CurrentCinemachineCameraName => blendSwitcher ? blendSwitcher.CurrentCameraName : null;
+
+    /// <summary>
+    /// Indique si une Cinemachine est actuellement prioritaire dans le <see cref="CinemachineBrain"/>.
+    /// </summary>
+    public bool HasActiveCinemachineCamera => blendSwitcher && blendSwitcher.HasActiveCamera;
 }
