@@ -227,6 +227,37 @@ public class NewBattleManager : MonoBehaviour
     private float currentOrbitAngle;
     private Transform orbitCenter;
 
+    [Header("Cinématique de début de tour joueur")]
+    [SerializeField, Tooltip("Durée du travelling inspiré de l'introduction de combat (en secondes).")]
+    private float firstTurnRailDuration = 2.75f;
+    [SerializeField, Tooltip("Distance en mètres séparant le point de départ du rail et l'ancre finale du joueur.")]
+    private float firstTurnRailDepartureDistance = 6.5f;
+    [SerializeField, Tooltip("Décalage latéral appliqué au rail pour rappeler le léger travelling sur rail.")]
+    private float firstTurnRailLateralOffset = 1.75f;
+    [SerializeField, Tooltip("Rehaussement vertical appliqué au rail afin de dominer légèrement la scène.")]
+    private float firstTurnRailHeightOffset = 1.35f;
+    [SerializeField, Tooltip("Distance de freinage avant l'arrivée sur l'ancre finale (en mètres).")]
+    private float firstTurnRailApproachOffset = 2.1f;
+    [SerializeField, Tooltip("Hauteur du point focal regardé pendant le travelling (en mètres).")]
+    private float firstTurnRailFocusHeight = 1.7f;
+    [SerializeField, Tooltip("Influence de la position actuelle de la caméra lors du calcul du point de départ. 0 = ignore la position actuelle, 1 = conserve la position actuelle.")]
+    [Range(0f, 1f)] private float firstTurnRailCurrentPositionBlend = 0.35f;
+    [SerializeField, Tooltip("Courbe d'asservissement utilisée pour lisser l'accélération et la décélération du rail.")]
+    private AnimationCurve firstTurnRailEase = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+    // États runtime du travelling d'introduction
+    private bool hasPlayedFirstTurnCameraRail = false;
+    private bool isFirstTurnRailActive = false;
+    private float firstTurnRailTimer = 0f;
+    private Vector3 firstTurnRailStartPos;
+    private Vector3 firstTurnRailEndPos;
+    private Vector3 firstTurnRailControlPointA;
+    private Vector3 firstTurnRailControlPointB;
+    private Quaternion firstTurnRailStartRot;
+    private Quaternion firstTurnRailEndRot;
+    private Vector3 firstTurnRailFocusStart;
+    private Vector3 firstTurnRailFocusEnd;
+
     // Compétences et items disponibles pour l’unité qui joue
     // Garder en public
     [HideInInspector] public List<MusicalMoveSO> skillChoices = new List<MusicalMoveSO>();
@@ -773,6 +804,9 @@ public class NewBattleManager : MonoBehaviour
             BattleTimelineUIManager.Instance?.Refresh(unit);
 
             ChangeBattleState(BattleState.NewTurn);
+
+            // Initialise un travelling lent rappelant l'intro de combat lorsque le premier joueur prend la main.
+            TryLaunchFirstTurnCameraRail(unit);
 
             Debug.Log($"[BattleTurnManager] Tour de {unit.name} (ATB: {unit.currentATB})");
             OrientAllUnitsTowardClosestOpponent();
@@ -2730,6 +2764,159 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Prépare un travelling lent rappelant l'introduction de Clair Obscur avant le tout premier tour joueur.
+    /// Cette séquence met en valeur l'unité active via un mouvement sur rail progressif.
+    /// </summary>
+    /// <param name="unit">Unité qui s'apprête à jouer.</param>
+    private void TryLaunchFirstTurnCameraRail(CharacterUnit unit)
+    {
+        if (hasPlayedFirstTurnCameraRail)
+            return; // Le travelling ne doit être joué qu'une seule fois par combat.
+
+        if (unit == null || !unit.Data.isPlayerControlled)
+            return; // On ne déclenche l'effet que pour le premier tour du joueur.
+
+        EnsureBattleCamera();
+        if (battleCamera == null)
+            return; // Impossible d'animer une caméra inexistante.
+
+        Transform anchor = FindChildRecursive(unit.transform, "Camera_MainMenu");
+        if (anchor == null)
+        {
+            Debug.LogWarning("[BattleCameraManager] Aucun point 'Camera_MainMenu' trouvé pour lancer le travelling introductif.");
+            hasPlayedFirstTurnCameraRail = true; // On évite de répéter l'avertissement si la configuration est manquante.
+            return;
+        }
+
+        hasPlayedFirstTurnCameraRail = true;
+
+        Transform camTransform = battleCamera.transform;
+
+        // On dérive la base du rail à partir de l'orientation de l'ancre finale afin de reproduire le mouvement "sur rail".
+        Vector3 anchorForward = anchor.forward.sqrMagnitude > 0.0001f
+            ? anchor.forward.normalized
+            : (unit.transform.forward.sqrMagnitude > 0.0001f ? unit.transform.forward.normalized : Vector3.forward);
+        Vector3 anchorRight = Vector3.Cross(Vector3.up, anchorForward).normalized;
+        if (anchorRight.sqrMagnitude < 0.0001f)
+            anchorRight = Vector3.Cross(anchorForward, Vector3.forward).normalized;
+        if (anchorRight.sqrMagnitude < 0.0001f)
+            anchorRight = Vector3.right;
+
+        Vector3 computedStart = anchor.position
+                                 - anchorForward * firstTurnRailDepartureDistance
+                                 + anchorRight * firstTurnRailLateralOffset
+                                 + Vector3.up * firstTurnRailHeightOffset;
+
+        // Mélange entre la position actuelle et le point de départ théorique pour éviter un cut trop brutal.
+        Vector3 startPos = Vector3.Lerp(computedStart, camTransform.position, Mathf.Clamp01(firstTurnRailCurrentPositionBlend));
+        Vector3 focusPoint = unit.transform.position + Vector3.up * firstTurnRailFocusHeight;
+
+        Vector3 directionToEnd = anchor.position - startPos;
+        if (directionToEnd.sqrMagnitude < 0.0001f)
+            directionToEnd = anchorForward;
+        Vector3 startForward = directionToEnd.normalized;
+        Vector3 startRight = Vector3.Cross(Vector3.up, startForward).normalized;
+        if (startRight.sqrMagnitude < 0.0001f)
+            startRight = Vector3.Cross(startForward, Vector3.forward).normalized;
+        if (startRight.sqrMagnitude < 0.0001f)
+            startRight = Vector3.right;
+
+        firstTurnRailStartPos = startPos;
+        firstTurnRailEndPos = anchor.position;
+        firstTurnRailControlPointA = startPos
+                                     + startForward * Mathf.Max(1f, firstTurnRailDepartureDistance * 0.5f)
+                                     + Vector3.up * (firstTurnRailHeightOffset * 0.5f)
+                                     + startRight * (firstTurnRailLateralOffset * 0.35f);
+        firstTurnRailControlPointB = anchor.position
+                                     - anchorForward * firstTurnRailApproachOffset
+                                     + anchorRight * firstTurnRailLateralOffset
+                                     + Vector3.up * (firstTurnRailHeightOffset * 0.8f);
+
+        firstTurnRailFocusStart = Vector3.Lerp(focusPoint + anchorRight * (firstTurnRailLateralOffset * 0.5f), focusPoint, 0.25f);
+        firstTurnRailFocusEnd = focusPoint;
+
+        Vector3 startLook = firstTurnRailFocusStart - startPos;
+        if (startLook.sqrMagnitude < 0.0001f)
+            startLook = startForward;
+        Vector3 endLook = firstTurnRailFocusEnd - firstTurnRailEndPos;
+        if (endLook.sqrMagnitude < 0.0001f)
+            endLook = anchorForward;
+
+        firstTurnRailStartRot = Quaternion.LookRotation(startLook.normalized, Vector3.up);
+        firstTurnRailEndRot = Quaternion.LookRotation(endLook.normalized, Vector3.up);
+
+        camTransform.SetPositionAndRotation(firstTurnRailStartPos, firstTurnRailStartRot);
+
+        // On force le comportement standard de la caméra sur l'ancre finale pour assurer la transition post-travelling.
+        desiredTransform = anchor;
+        isFollowingCurrentTarget = false;
+        lookAtCasterDuringTargetSelection = false;
+        lookAtCasterFromTargetPoint = false;
+
+        firstTurnRailTimer = 0f;
+        isFirstTurnRailActive = firstTurnRailDuration > 0.0001f;
+
+        if (!isFirstTurnRailActive)
+        {
+            // En cas de durée nulle, on se place directement sur l'ancre finale.
+            camTransform.SetPositionAndRotation(firstTurnRailEndPos, firstTurnRailEndRot);
+        }
+    }
+
+    /// <summary>
+    /// Met à jour l'interpolation du travelling introductif à chaque frame.
+    /// </summary>
+    /// <param name="camTransform">Transform de la caméra de combat.</param>
+    private void UpdateFirstTurnCameraRail(Transform camTransform)
+    {
+        if (!isFirstTurnRailActive)
+            return;
+
+        if (firstTurnRailDuration <= 0.0001f)
+        {
+            camTransform.SetPositionAndRotation(firstTurnRailEndPos, firstTurnRailEndRot);
+            isFirstTurnRailActive = false;
+            return;
+        }
+
+        firstTurnRailTimer += Time.deltaTime;
+        float normalizedTime = Mathf.Clamp01(firstTurnRailTimer / firstTurnRailDuration);
+        float easedT = firstTurnRailEase != null ? firstTurnRailEase.Evaluate(normalizedTime) : normalizedTime;
+
+        Vector3 newPos = EvaluateCubicBezier(firstTurnRailStartPos, firstTurnRailControlPointA, firstTurnRailControlPointB, firstTurnRailEndPos, easedT);
+        camTransform.position = newPos;
+
+        Vector3 focus = Vector3.Lerp(firstTurnRailFocusStart, firstTurnRailFocusEnd, easedT);
+        Vector3 forward = focus - newPos;
+        if (forward.sqrMagnitude < 0.0001f)
+            forward = firstTurnRailEndRot * Vector3.forward;
+
+        Quaternion targetRotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
+        camTransform.rotation = Quaternion.Slerp(firstTurnRailStartRot, targetRotation, easedT);
+
+        if (normalizedTime >= 0.999f)
+        {
+            camTransform.SetPositionAndRotation(firstTurnRailEndPos, firstTurnRailEndRot);
+            isFirstTurnRailActive = false;
+        }
+    }
+
+    /// <summary>
+    /// Évalue une courbe de Bézier cubique utilisée pour générer le chemin du travelling.
+    /// </summary>
+    private static Vector3 EvaluateCubicBezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
+    {
+        t = Mathf.Clamp01(t);
+        float u = 1f - t;
+        float uu = u * u;
+        float uuu = uu * u;
+        float tt = t * t;
+        float ttt = tt * t;
+
+        return uuu * p0 + 3f * uu * t * p1 + 3f * u * tt * p2 + ttt * p3;
+    }
+
     private void LateUpdate()
     {
         // Si la caméra de combat n'est pas disponible, on ne poursuit pas
@@ -2746,6 +2933,13 @@ public class NewBattleManager : MonoBehaviour
         // on laisse entièrement la main au TimelineManager.
         if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
             return;
+
+        if (isFirstTurnRailActive)
+        {
+            // Tant que le travelling d'introduction est en cours, on laisse la cinématique piloter entièrement la caméra.
+            UpdateFirstTurnCameraRail(camTransform);
+            return;
+        }
 
         if (itemMenuTimelineActive)
         {
@@ -2989,6 +3183,11 @@ public class NewBattleManager : MonoBehaviour
         maxTurnDamage = 0;
         currentTurnDamage = 0;
         mvpUnit = null;
+
+        // Réinitialise les informations liées au travelling d'introduction pour la prochaine confrontation.
+        hasPlayedFirstTurnCameraRail = false;
+        isFirstTurnRailActive = false;
+        firstTurnRailTimer = 0f;
 
         // Réinitialisation de l'interface de timeline via le gestionnaire dédié
         BattleTimelineUIManager.Instance?.Clear();
