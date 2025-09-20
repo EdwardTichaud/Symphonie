@@ -4,6 +4,7 @@ using UnityEngine;
 /// Fait avancer ce GameObject sur X, Y, Z selon des bool.
 /// Déclenchement contrôlé après un délai automatique ou manuellement.
 /// </summary>
+[ExecuteAlways]
 public class AxisMover : MonoBehaviour
 {
     [Header("Mouvement")]
@@ -36,7 +37,7 @@ public class AxisMover : MonoBehaviour
         }
     }
 
-    void Update()
+    void LateUpdate()
     {
         if (startAfterDelay && !isMoving)
         {
