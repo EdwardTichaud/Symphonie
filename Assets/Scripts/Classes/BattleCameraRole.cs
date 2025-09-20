@@ -46,5 +46,11 @@ public enum BattleCameraRole
     /// <summary>
     /// Plan final héroïque utilisé lors des victoires ou fin d'affrontement.
     /// </summary>
-    Victory = 7
+    Victory = 7,
+
+    /// <summary>
+    /// Travelling introductif sur rail qui met en valeur le premier joueur amené à jouer.
+    /// Cette caméra est pensée pour s'activer pendant les animations d'introduction.
+    /// </summary>
+    IntroCinematicRail = 8
 }

@@ -44,6 +44,31 @@ public class BattleCameraRig : MonoBehaviour
     [SerializeField, Tooltip("Amplitude maximale du bruit de rotation (en degrés) pour renforcer l'impact visuel.")]
     private float attackNoiseRotationAmplitude = 0.9f;
 
+    [Header("Intro cinématique (rail premier joueur)")]
+    [SerializeField, Tooltip("Durée totale du travelling introductif (en secondes).")]
+    private float introRailDuration = 2.75f;
+
+    [SerializeField, Tooltip("Distance séparant le point de départ du rail de l'ancre finale du joueur (en mètres).")]
+    private float introRailDepartureDistance = 6.5f;
+
+    [SerializeField, Tooltip("Décalage latéral appliqué au rail pour rappeler le travelling sur dolly.")]
+    private float introRailLateralOffset = 1.75f;
+
+    [SerializeField, Tooltip("Décalage vertical appliqué à la caméra tout au long du travelling (en mètres).")]
+    private float introRailHeightOffset = 1.35f;
+
+    [SerializeField, Tooltip("Distance de freinage avant l'arrivée sur le point final (en mètres).")]
+    private float introRailApproachOffset = 2.1f;
+
+    [SerializeField, Tooltip("Hauteur du point regardé par la caméra pendant le travelling (en mètres).")]
+    private float introRailFocusHeight = 1.7f;
+
+    [SerializeField, Tooltip("Part conservée de la position actuelle de la caméra pour définir le point de départ (0 = ignorée).")]
+    [Range(0f, 1f)] private float introRailCurrentPositionBlend = 0.35f;
+
+    [SerializeField, Tooltip("Courbe d'asservissement utilisée pour lisser l'accélération et la décélération du rail.")]
+    private AnimationCurve introRailEase = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
     [Header("Main Menu Idle")]
     [SerializeField, Tooltip("Distance orbitale du plan d'attente autour du caster.")]
     private float idleOrbitRadius = 3.5f;
@@ -131,6 +156,19 @@ public class BattleCameraRig : MonoBehaviour
     private float projectileTimer;
     private Vector3 attackNoiseSeed;
 
+    // Etats dédiés au travelling introductif
+    private bool introRailActive;
+    private float introRailTimer;
+    private Vector3 introRailStartPos;
+    private Vector3 introRailControlPointA;
+    private Vector3 introRailControlPointB;
+    private Vector3 introRailEndPos;
+    private Quaternion introRailStartRot;
+    private Quaternion introRailEndRot;
+    private Vector3 introRailFocusStart;
+    private Vector3 introRailFocusEnd;
+    private Transform introRailAnchor;
+
     private static readonly Dictionary<string, BattleCameraRole> NameToRole = new()
     {
         {"CMV_MainMenuIdle", BattleCameraRole.MainMenuIdle},
@@ -139,7 +177,8 @@ public class BattleCameraRig : MonoBehaviour
         {"CMV_TargetReaction", BattleCameraRole.TargetReaction},
         {"CMV_WideEstablish", BattleCameraRole.WideEstablish},
         {"CMV_Projectile_Flyby", BattleCameraRole.ProjectileFlyby},
-        {"CMV_Victory", BattleCameraRole.Victory}
+        {"CMV_Victory", BattleCameraRole.Victory},
+        {"CMV_IntroRail", BattleCameraRole.IntroCinematicRail}
     };
 
     /// <summary>
@@ -322,6 +361,124 @@ public class BattleCameraRig : MonoBehaviour
             projectileTimer = 0f; // Ré-initialise le travelling à chaque activation.
     }
 
+    /// <summary>
+    /// Indique si le travelling introductif est toujours en cours d'exécution.
+    /// </summary>
+    public bool IsIntroRailRunning => introRailActive;
+
+    /// <summary>
+    /// Prépare la caméra dédiée au travelling introductif inspiré de Clair Obscur.
+    /// </summary>
+    /// <param name="focusUnit">Unité joueur à mettre en avant.</param>
+    /// <returns>
+    /// <c>true</c> si le travelling a pu être initialisé correctement,
+    /// <c>false</c> lorsque la caméra ou l'ancre requise est introuvable.
+    /// </returns>
+    public bool BeginIntroRail(CharacterUnit focusUnit)
+    {
+        if (!TryGetCamera(BattleCameraRole.IntroCinematicRail, out var cam))
+        {
+            Debug.LogWarning("[BattleCameraRig] Impossible de lancer le travelling : caméra 'IntroCinematicRail' absente.");
+            return false;
+        }
+
+        introRailAnchor = ResolveIntroAnchor(focusUnit);
+        if (!introRailAnchor)
+        {
+            Debug.LogWarning("[BattleCameraRig] Aucun point 'Camera_MainMenu' n'a été trouvé pour préparer le travelling introductif.");
+            return false;
+        }
+
+        // Détermination des axes locaux du rail à partir de l'ancre finale du joueur.
+        Vector3 anchorForward = introRailAnchor.forward.sqrMagnitude > epsilon
+            ? introRailAnchor.forward.normalized
+            : (focusUnit && focusUnit.transform.forward.sqrMagnitude > epsilon
+                ? focusUnit.transform.forward.normalized
+                : Vector3.forward);
+        Vector3 anchorRight = Vector3.Cross(Vector3.up, anchorForward).normalized;
+        if (anchorRight.sqrMagnitude < epsilon)
+            anchorRight = Vector3.Cross(anchorForward, Vector3.forward).normalized;
+        if (anchorRight.sqrMagnitude < epsilon)
+            anchorRight = Vector3.right;
+
+        Vector3 computedStart = introRailAnchor.position
+                                 - anchorForward * introRailDepartureDistance
+                                 + anchorRight * introRailLateralOffset
+                                 + Vector3.up * introRailHeightOffset;
+
+        // Mélange de la position actuelle de la caméra afin d'éviter un cut trop abrupt.
+        Vector3 startPos = Vector3.Lerp(
+            computedStart,
+            cam.transform.position,
+            Mathf.Clamp01(introRailCurrentPositionBlend));
+
+        Vector3 focusBase = (focusUnit ? focusUnit.transform.position : introRailAnchor.position)
+                            + Vector3.up * introRailFocusHeight;
+
+        Vector3 directionToEnd = introRailAnchor.position - startPos;
+        if (directionToEnd.sqrMagnitude < epsilon)
+            directionToEnd = anchorForward;
+        Vector3 startForward = directionToEnd.normalized;
+        Vector3 startRight = Vector3.Cross(Vector3.up, startForward).normalized;
+        if (startRight.sqrMagnitude < epsilon)
+            startRight = Vector3.Cross(startForward, Vector3.forward).normalized;
+        if (startRight.sqrMagnitude < epsilon)
+            startRight = Vector3.right;
+
+        introRailStartPos = startPos;
+        introRailEndPos = introRailAnchor.position;
+        introRailControlPointA = startPos
+                                 + startForward * Mathf.Max(1f, introRailDepartureDistance * 0.5f)
+                                 + Vector3.up * (introRailHeightOffset * 0.5f)
+                                 + startRight * (introRailLateralOffset * 0.35f);
+        introRailControlPointB = introRailAnchor.position
+                                 - anchorForward * introRailApproachOffset
+                                 + anchorRight * introRailLateralOffset
+                                 + Vector3.up * (introRailHeightOffset * 0.8f);
+
+        introRailFocusStart = Vector3.Lerp(
+            focusBase + anchorRight * (introRailLateralOffset * 0.5f),
+            focusBase,
+            0.25f);
+        introRailFocusEnd = focusBase;
+
+        Vector3 startLook = introRailFocusStart - startPos;
+        if (startLook.sqrMagnitude < epsilon)
+            startLook = startForward;
+        Vector3 endLook = introRailFocusEnd - introRailEndPos;
+        if (endLook.sqrMagnitude < epsilon)
+            endLook = anchorForward;
+
+        introRailStartRot = Quaternion.LookRotation(startLook.normalized, Vector3.up);
+        introRailEndRot = Quaternion.LookRotation(endLook.normalized, Vector3.up);
+
+        cam.transform.SetPositionAndRotation(introRailStartPos, introRailStartRot);
+        ResetCameraSmoothing(cam);
+
+        introRailTimer = 0f;
+        introRailActive = introRailDuration > 0.0001f;
+
+        if (!introRailActive)
+        {
+            // Durée quasi nulle : on place immédiatement la caméra sur l'ancre finale.
+            cam.transform.SetPositionAndRotation(introRailEndPos, introRailEndRot);
+            ResetCameraSmoothing(cam);
+            introRailAnchor = null;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Réinitialise toutes les données liées au travelling introductif (utile lors d'un reset de combat).
+    /// </summary>
+    public void ResetIntroRail()
+    {
+        introRailActive = false;
+        introRailTimer = 0f;
+        introRailAnchor = null;
+    }
+
     private void ClearTargetGroupMembers()
     {
         if (!targetGroup)
@@ -347,9 +504,22 @@ public class BattleCameraRig : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Détermine le point d'ancrage à utiliser pour le travelling introductif.
+    /// </summary>
+    private Transform ResolveIntroAnchor(CharacterUnit focusUnit)
+    {
+        if (!focusUnit)
+            return null;
+
+        Transform anchor = FindChildRecursive(focusUnit.transform, "Camera_MainMenu");
+        return anchor;
+    }
+
     private void LateUpdate()
     {
         float dt = Time.deltaTime;
+        UpdateIntroRail(dt);
         UpdateIdleCamera(dt);
         UpdateOverShoulderCamera(dt);
         UpdateClosePushCamera(dt);
@@ -411,6 +581,54 @@ public class BattleCameraRig : MonoBehaviour
         }
 
         return hasCaster ? casterPos : targetPos;
+    }
+
+    /// <summary>
+    /// Anime la caméra dédiée au travelling introductif pendant la phase d'introduction.
+    /// </summary>
+    private void UpdateIntroRail(float dt)
+    {
+        if (!introRailActive)
+            return;
+
+        if (!TryGetCamera(BattleCameraRole.IntroCinematicRail, out var cam))
+        {
+            introRailActive = false;
+            introRailAnchor = null;
+            return;
+        }
+
+        if (introRailDuration <= 0.0001f)
+        {
+            cam.transform.SetPositionAndRotation(introRailEndPos, introRailEndRot);
+            ResetCameraSmoothing(cam);
+            introRailActive = false;
+            introRailAnchor = null;
+            return;
+        }
+
+        introRailTimer += dt;
+        float normalizedTime = Mathf.Clamp01(introRailTimer / Mathf.Max(0.0001f, introRailDuration));
+        float easedT = introRailEase != null ? introRailEase.Evaluate(normalizedTime) : normalizedTime;
+
+        Vector3 newPos = EvaluateCubicBezier(introRailStartPos, introRailControlPointA, introRailControlPointB, introRailEndPos, easedT);
+        cam.transform.position = newPos;
+
+        Vector3 focus = Vector3.Lerp(introRailFocusStart, introRailFocusEnd, easedT);
+        Vector3 forward = focus - newPos;
+        if (forward.sqrMagnitude < epsilon)
+            forward = introRailEndRot * Vector3.forward;
+
+        Quaternion targetRot = Quaternion.LookRotation(forward.normalized, Vector3.up);
+        cam.transform.rotation = Quaternion.Slerp(introRailStartRot, targetRot, easedT);
+
+        if (normalizedTime >= 0.999f)
+        {
+            cam.transform.SetPositionAndRotation(introRailEndPos, introRailEndRot);
+            ResetCameraSmoothing(cam);
+            introRailActive = false;
+            introRailAnchor = null;
+        }
     }
 
     private void UpdateIdleCamera(float dt)
@@ -698,5 +916,42 @@ public class BattleCameraRig : MonoBehaviour
         // Même logique que pour la position : un simple Remove garantit la suppression des inerties obsolètes
         // sans créer d'allocation supplémentaire.
         rotationVelocities.Remove(cam);
+    }
+
+    /// <summary>
+    /// Évalue une courbe de Bézier cubique pour générer un mouvement fluide.
+    /// </summary>
+    private static Vector3 EvaluateCubicBezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
+    {
+        t = Mathf.Clamp01(t);
+        float u = 1f - t;
+        float uu = u * u;
+        float uuu = uu * u;
+        float tt = t * t;
+        float ttt = tt * t;
+
+        return uuu * p0 + 3f * uu * t * p1 + 3f * u * tt * p2 + ttt * p3;
+    }
+
+    /// <summary>
+    /// Recherche récursive d'un enfant portant un nom précis.
+    /// </summary>
+    private static Transform FindChildRecursive(Transform parent, string targetName)
+    {
+        if (!parent || string.IsNullOrEmpty(targetName))
+            return null;
+
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            Transform child = parent.GetChild(i);
+            if (child.name == targetName)
+                return child;
+
+            Transform result = FindChildRecursive(child, targetName);
+            if (result)
+                return result;
+        }
+
+        return null;
     }
 }

@@ -110,6 +110,39 @@ public class BattleCameraManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Indique si le travelling introductif est actuellement en cours.
+    /// </summary>
+    public bool IsIntroRailRunning => cameraRig != null && cameraRig.IsIntroRailRunning;
+
+    /// <summary>
+    /// Demande au rig de lancer le travelling introductif centré sur le premier joueur.
+    /// </summary>
+    /// <param name="focusUnit">Unité mise en avant au début du combat.</param>
+    /// <param name="blendTime">Durée optionnelle du fondu pour activer la caméra dédiée.</param>
+    /// <returns><c>true</c> si la préparation s'est déroulée correctement.</returns>
+    public bool TryPlayIntroRail(CharacterUnit focusUnit, float blendTime = 0f)
+    {
+        if (cameraRig == null)
+            return false;
+
+        if (!cameraRig.BeginIntroRail(focusUnit))
+            return false;
+
+        // On force un cut immédiat (ou la durée fournie) afin que le travelling débute dès que possible.
+        float usedBlend = blendTime >= 0f ? blendTime : 0f;
+        SwitchToCamera(BattleCameraRole.IntroCinematicRail, usedBlend, CinemachineBlendDefinition.Styles.Cut);
+        return true;
+    }
+
+    /// <summary>
+    /// Réinitialise explicitement l'état du travelling introductif (utile lors d'une remise à zéro du combat).
+    /// </summary>
+    public void ResetIntroRail()
+    {
+        cameraRig?.ResetIntroRail();
+    }
+
+    /// <summary>
     /// Active une caméra en s'appuyant sur un rôle cinématique.
     /// </summary>
     public void SwitchToCamera(BattleCameraRole role, float blendTime = -1f, CinemachineBlendDefinition.Styles? overrideStyle = null)

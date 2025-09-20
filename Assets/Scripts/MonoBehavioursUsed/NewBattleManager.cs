@@ -476,14 +476,40 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private IEnumerator PlayIntroCameraSequence()
     {
-        // 🎥 Donne immédiatement la priorité à la caméra orbitale pour présenter le champ de bataille.
-        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.WideEstablish, 0f);
+        var cameraManager = BattleCameraManager.Instance;
+
+        // On s'assure que l'état du travelling est vierge au lancement d'un nouveau combat.
+        cameraManager?.ResetIntroRail();
+
+        // Sélectionne l'unité joueur supposée agir en premier pour préparer le travelling.
+        CharacterUnit firstPlayerToAct = ReturnFirstStrikeCharacter();
+        bool introRailLaunched = false;
+
+        if (cameraManager != null && firstPlayerToAct != null)
+        {
+            // Le rig récupère les bonnes hauteurs/ancres du joueur pour la mise en scène.
+            cameraManager.ConfigureActionTargets(firstPlayerToAct, null);
+            introRailLaunched = cameraManager.TryPlayIntroRail(firstPlayerToAct);
+        }
+
+        if (!introRailLaunched)
+        {
+            // Fallback : plan large classique si la caméra dédiée n'est pas disponible.
+            cameraManager?.SwitchToCamera(BattleCameraRole.WideEstablish, 0f);
+        }
 
         // 🎬 Lance les timelines d'introduction en mode ralenti et attend leur terminaison.
         yield return PlayIntroTimelinesWithSlowTime();
 
+        if (introRailLaunched)
+        {
+            // On attend la fin du travelling avant de redonner la main à la caméra standard.
+            while (cameraManager != null && cameraManager.IsIntroRailRunning)
+                yield return null;
+        }
+
         // 📷 Retourne ensuite sur la caméra de combat standard avec un léger fondu.
-        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None, 0.5f);
+        cameraManager?.SwitchToCamera(BattleCameraRole.None, 0.5f);
     }
     #endregion
 
@@ -2989,6 +3015,9 @@ public class NewBattleManager : MonoBehaviour
         maxTurnDamage = 0;
         currentTurnDamage = 0;
         mvpUnit = null;
+
+        // Réinitialise les informations liées au travelling d'introduction pour la prochaine confrontation.
+        BattleCameraManager.Instance?.ResetIntroRail();
 
         // Réinitialisation de l'interface de timeline via le gestionnaire dédié
         BattleTimelineUIManager.Instance?.Clear();
