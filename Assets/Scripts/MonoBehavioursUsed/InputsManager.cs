@@ -24,9 +24,10 @@ public class InputsManager : MonoBehaviour
 
     /// <summary>
     /// Indique si les validations doivent être temporairement ignorées.
-    /// Cette variable passe à <c>true</c> lorsqu'une compétence ou un objet est
-    /// sélectionné avec la même touche que la confirmation. Toutes les tentatives
-    /// de validation sont alors ignorées jusqu'au relâchement de la touche.
+    /// Cette variable ne passe à <c>true</c> que lorsqu'une sélection (compétence ou
+    /// objet) est déclenchée par un contrôle également lié à l'action "Confirm".
+    /// Dans ce cas précis, toutes les tentatives de validation sont bloquées jusqu'au
+    /// relâchement de la touche afin d'empêcher un lancement immédiat du mouvement.
     /// </summary>
     private bool ignorerProchaineValidation = false;
 
@@ -294,6 +295,64 @@ public class InputsManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Analyse le contrôle ayant déclenché une sélection pour déterminer si la prochaine
+    /// validation doit être temporairement bloquée.
+    /// </summary>
+    /// <param name="selectionContext">Contexte d'entrée fourni par l'Input System.</param>
+    private void MettreAJourIgnorerValidationApresSelection(InputAction.CallbackContext selectionContext)
+    {
+        bool boutonPartageAvecConfirm = false;
+
+        // L'Input System peut ne pas fournir de contrôle (cas très rare). On vérifie donc que
+        // l'information est bien disponible avant toute comparaison.
+        var selectionControl = selectionContext.control;
+        if (selectionControl != null && playerInputs != null)
+        {
+            var confirmAction = playerInputs.Battle.Confirm;
+
+            if (confirmAction != null)
+            {
+                var confirmControls = confirmAction.controls;
+
+                // On recherche un contrôle strictement identique entre la sélection et l'action Confirm.
+                // Tant que le joueur n'utilise pas la même touche, la validation doit rester possible.
+                for (int i = 0; i < confirmControls.Count; i++)
+                {
+                    if (confirmControls[i] == selectionControl)
+                    {
+                        boutonPartageAvecConfirm = true;
+                        break;
+                    }
+                }
+
+                // Si aucun contrôle actif ne correspond, on vérifie également les liaisons déclarées afin de
+                // couvrir les cas où l'action Confirm est configurée sur la même touche mais n'a pas encore été
+                // évaluée comme "performed" dans ce même frame.
+                if (!boutonPartageAvecConfirm)
+                {
+                    var bindings = confirmAction.bindings;
+                    for (int i = 0; i < bindings.Count; i++)
+                    {
+                        var effectivePath = bindings[i].effectivePath;
+                        if (string.IsNullOrEmpty(effectivePath))
+                            continue;
+
+                        if (InputControlPath.Matches(effectivePath, selectionControl))
+                        {
+                            boutonPartageAvecConfirm = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // L'indicateur est activé uniquement lorsque le même bouton assure à la fois la sélection et la confirmation.
+        // Ainsi, on continue de bloquer les validations indésirables sans imposer de double pression inutile.
+        ignorerProchaineValidation = boutonPartageAvecConfirm;
+    }
+
+    /// <summary>
     /// Sélectionne l'option 1 dans les menus.
     /// </summary>
     private void OnSelect1(InputAction.CallbackContext ctx)
@@ -322,9 +381,9 @@ public class InputsManager : MonoBehaviour
                     return;
                 }
                 bm.ToggleMenuContainers(false, false, false);
-                // La touche utilisée pour cette compétence est aussi celle de confirmation :
-                // on ignore donc toute validation tant qu'elle reste enfoncée.
-                ignorerProchaineValidation = true;
+                // On contrôle ici si la même touche sert à confirmer : seule cette situation impose
+                // de différer la validation pour éviter un lancement immédiat.
+                MettreAJourIgnorerValidationApresSelection(ctx);
                 bm.HandleTargetSelection(bm.currentMove);
                 // Les animations de visée sont désormais intégrées dans la Timeline de préparation
             }
@@ -339,8 +398,9 @@ public class InputsManager : MonoBehaviour
             {
                 bm.currentItem = bm.itemChoices[0];
                 bm.ToggleMenuContainers(false, false, false);
-                // Empêche une utilisation immédiate de l'objet si la touche est maintenue.
-                ignorerProchaineValidation = true;
+                // Application de la même règle que pour les compétences : si la touche diffère, la validation
+                // reste possible immédiatement afin de ne pas ralentir inutilement le joueur.
+                MettreAJourIgnorerValidationApresSelection(ctx);
                 bm.HandleTargetSelection(bm.currentItem);
                 // La Timeline de préparation gère maintenant les animations liées à l'objet
             }
@@ -380,8 +440,8 @@ public class InputsManager : MonoBehaviour
                     return;
                 }
                 bm.ToggleMenuContainers(false, false, false);
-                // La touche peut rester enfoncée : éviter un lancement automatique.
-                ignorerProchaineValidation = true;
+                // On évalue également cette sélection pour ne bloquer la validation que si nécessaire.
+                MettreAJourIgnorerValidationApresSelection(ctx);
                 bm.HandleTargetSelection(bm.currentMove);
             }
             else
@@ -395,9 +455,8 @@ public class InputsManager : MonoBehaviour
             {
                 bm.currentItem = bm.itemChoices[1];
                 bm.ToggleMenuContainers(false, false, false);
-
-// Ignore la validation tant que le bouton est pressé.
-                ignorerProchaineValidation = true;
+                // Mise à jour de l'indicateur : seule une touche commune avec Confirm impose une temporisation.
+                MettreAJourIgnorerValidationApresSelection(ctx);
                 bm.HandleTargetSelection(bm.currentItem);
             }
             else
@@ -432,9 +491,8 @@ public class InputsManager : MonoBehaviour
                     return;
                 }
                 bm.ToggleMenuContainers(false, false, false);
-
-// Sans cette ligne, le mouvement serait lancé aussitôt la compétence choisie.
-                ignorerProchaineValidation = true;
+                // Protection spécifique : seules les sélections partageant le bouton Confirm sont bloquées.
+                MettreAJourIgnorerValidationApresSelection(ctx);
                 bm.HandleTargetSelection(bm.currentMove);
             }
             else
@@ -448,8 +506,8 @@ public class InputsManager : MonoBehaviour
             {
                 bm.currentItem = bm.itemChoices[2];
                 bm.ToggleMenuContainers(false, false, false);
-                // Empêche l'utilisation automatique de l'objet.
-                ignorerProchaineValidation = true;
+                // On réutilise la même logique conditionnelle pour la sélection d'objets.
+                MettreAJourIgnorerValidationApresSelection(ctx);
                 bm.HandleTargetSelection(bm.currentItem);
             }
             else
