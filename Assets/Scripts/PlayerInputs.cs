@@ -446,7 +446,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                 {
                     ""name"": """",
                     ""id"": ""d96a4bb3-9d09-4d71-893d-08fbe47e63c9"",
-                    ""path"": ""<Keyboard>/v"",
+                    ""path"": ""<Keyboard>/m"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
@@ -1170,6 +1170,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_World_Dash = m_World.FindAction("Dash", throwIfNotFound: true);
         m_World_ForceCam = m_World.FindAction("ForceCam", throwIfNotFound: true);
         m_World_ForcedCamMove = m_World.FindAction("ForcedCamMove", throwIfNotFound: true);
+        m_World_SwitchLucianToCamera = m_World.FindAction("SwitchLucianToCamera", throwIfNotFound: true);
         // Battle
         m_Battle = asset.FindActionMap("Battle", throwIfNotFound: true);
         m_Battle_Back = m_Battle.FindAction("Back", throwIfNotFound: true);
@@ -1292,6 +1293,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_World_Dash;
     private readonly InputAction m_World_ForceCam;
     private readonly InputAction m_World_ForcedCamMove;
+    private readonly InputAction m_World_SwitchLucianToCamera;
     /// <summary>
     /// Provides access to input actions defined in input action map "World".
     /// </summary>
@@ -1347,6 +1349,10 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "World/ForcedCamMove".
         /// </summary>
         public InputAction @ForcedCamMove => m_Wrapper.m_World_ForcedCamMove;
+        /// <summary>
+        /// Provides access to the underlying input action "World/SwitchLucianToCamera".
+        /// </summary>
+        public InputAction @SwitchLucianToCamera => m_Wrapper.m_World_SwitchLucianToCamera;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1406,6 +1412,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @ForcedCamMove.started += instance.OnForcedCamMove;
             @ForcedCamMove.performed += instance.OnForcedCamMove;
             @ForcedCamMove.canceled += instance.OnForcedCamMove;
+            @SwitchLucianToCamera.started += instance.OnSwitchLucianToCamera;
+            @SwitchLucianToCamera.performed += instance.OnSwitchLucianToCamera;
+            @SwitchLucianToCamera.canceled += instance.OnSwitchLucianToCamera;
         }
 
         /// <summary>
@@ -1450,6 +1459,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @ForcedCamMove.started -= instance.OnForcedCamMove;
             @ForcedCamMove.performed -= instance.OnForcedCamMove;
             @ForcedCamMove.canceled -= instance.OnForcedCamMove;
+            @SwitchLucianToCamera.started -= instance.OnSwitchLucianToCamera;
+            @SwitchLucianToCamera.performed -= instance.OnSwitchLucianToCamera;
+            @SwitchLucianToCamera.canceled -= instance.OnSwitchLucianToCamera;
         }
 
         /// <summary>
@@ -2116,6 +2128,13 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnForcedCamMove(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SwitchLucianToCamera" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSwitchLucianToCamera(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Battle" which allows adding and removing callbacks.
