@@ -1575,6 +1575,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3949434785713621470}
+  - component: {fileID: 5669650185372213586}
   m_Layer: 0
   m_Name: BattleCamera_Origin
   m_TagString: Untagged
@@ -1590,15 +1591,27 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 742718014156528111}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.19232568, y: 0.35512945, z: -0.08182373, w: 0.9111524}
-  m_LocalPosition: {x: 2.1, y: 8.5, z: 0.7}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2211083621015039421}
   - {fileID: 1318187734422061808}
   m_Father: {fileID: 5849700187293665785}
-  m_LocalEulerAnglesHint: {x: -16.999, y: 45.205, z: -17.383}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &5669650185372213586
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 742718014156528111}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eed6bf1e63d61014ea00806b6f3ae1cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &779619903858596497
 GameObject:
   m_ObjectHideFlags: 0
@@ -2240,13 +2253,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1194177414235156598}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.27781588, y: -0.36497167, z: 0.1150751, w: 0.8811196}
-  m_LocalPosition: {x: 10, y: 8, z: -12}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1318187734422061808}
-  m_LocalEulerAnglesHint: {x: 35, y: -45, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &2167005796374108094
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2274,7 +2287,7 @@ MonoBehaviour:
     FieldOfView: 60.000004
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 100
+    FarClipPlane: 1500
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -2687,7 +2700,7 @@ MonoBehaviour:
     FieldOfView: 60.000004
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 100
+    FarClipPlane: 1500
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -2799,7 +2812,7 @@ MonoBehaviour:
     FieldOfView: 60.000004
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 100
+    FarClipPlane: 1500
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -3855,7 +3868,7 @@ MonoBehaviour:
     FieldOfView: 35
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 100
+    FarClipPlane: 1500
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -10011,7 +10024,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4551284211275759610
 Transform:
   m_ObjectHideFlags: 0
@@ -17200,7 +17213,7 @@ MonoBehaviour:
     FieldOfView: 60.000004
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 100
+    FarClipPlane: 1500
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -18177,7 +18190,7 @@ MonoBehaviour:
     FieldOfView: 35
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 100
+    FarClipPlane: 1500
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -19603,7 +19616,7 @@ MonoBehaviour:
     FieldOfView: 60.000004
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 100
+    FarClipPlane: 1500
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -22528,7 +22541,7 @@ MonoBehaviour:
     FieldOfView: 35
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 100
+    FarClipPlane: 1500
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -23147,7 +23160,7 @@ MonoBehaviour:
     FieldOfView: 60.000004
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 100
+    FarClipPlane: 1500
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -23754,7 +23767,7 @@ MonoBehaviour:
     FieldOfView: 35
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 100
+    FarClipPlane: 1500
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
@@ -25092,14 +25105,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7666186497415931499}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.27781588, y: -0.3649717, z: 0.1150751, w: 0.8811196}
-  m_LocalPosition: {x: 9.999997, y: 7.999999, z: -11.999999}
+  m_LocalRotation: {x: 0.08282786, y: 0.9019799, z: -0.19996412, w: 0.3736123}
+  m_LocalPosition: {x: -6.5700397, y: 8, z: 12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4390614218115549448}
   m_Father: {fileID: 3949434785713621470}
-  m_LocalEulerAnglesHint: {x: 29.652, y: -9.391, z: 19.51}
+  m_LocalEulerAnglesHint: {x: 35, y: 0, z: 0}
 --- !u!20 &6052484475872995002
 Camera:
   m_ObjectHideFlags: 0
@@ -25132,8 +25145,8 @@ Camera:
     width: 1
     height: 1
   near clip plane: 0.3
-  far clip plane: 100
-  field of view: 60.000004
+  far clip plane: 1500
+  field of view: 35
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
@@ -26606,7 +26619,7 @@ MonoBehaviour:
     FieldOfView: 60
     OrthographicSize: 5
     NearClipPlane: 0.3
-    FarClipPlane: 100
+    FarClipPlane: 1500
     Dutch: 0
     ModeOverride: 0
     PhysicalProperties:
