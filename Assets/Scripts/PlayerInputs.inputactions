@@ -103,15 +103,6 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": true
-                },
-                {
-                    "name": "SwitchLucianToCamera",
-                    "type": "Button",
-                    "id": "5f73b0b2-1c02-4d18-8f1f-88b8bcbac2ff",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -354,17 +345,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "ForceCam",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "d96a4bb3-9d09-4d71-893d-08fbe47e63c9",
-                    "path": "<Keyboard>/m",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "SwitchLucianToCamera",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
