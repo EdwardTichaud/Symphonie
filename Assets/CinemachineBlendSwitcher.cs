@@ -79,6 +79,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         // Active immediatement la camera d'indice 0 si elle existe afin
         // d'avoir une vue de combat par defaut pour les menus et le ciblage.
         ActivateDefaultCameraPriorities();
+        UpdateActiveCameraStates(_current);
     }
 
     /// <summary>
@@ -148,6 +149,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
             c.Priority = (c == cameras[0]) ? activePriority : inactivePriority;
 
         _current = cameras[0];
+        UpdateActiveCameraStates(_current);
     }
 
     /// <summary>
@@ -191,6 +193,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
                 c.Priority = inactivePriority;
 
             _current = null;
+            UpdateActiveCameraStates(null);
             return;
         }
 
@@ -215,6 +218,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
             c.Priority = (c == next) ? activePriority : inactivePriority;
 
         _current = next;
+        UpdateActiveCameraStates(next);
     }
 
     /// <summary>
@@ -470,6 +474,27 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     }
 
     /// <summary>
+    /// Active uniquement la camera souhaitee et coupe toutes les autres afin d'eviter
+    /// qu'elles continuent a consommer des calculs alors qu'elles ne sont pas visibles.
+    /// </summary>
+    /// <param name="activeCamera">Camera qui doit rester active (ou <c>null</c> pour les desactiver toutes).</param>
+    private void UpdateActiveCameraStates(CinemachineCamera activeCamera)
+    {
+        if (cameras == null)
+            return;
+
+        foreach (var cam in cameras)
+        {
+            if (!cam)
+                continue;
+
+            bool shouldBeActive = cam == activeCamera;
+            if (cam.gameObject.activeSelf != shouldBeActive)
+                cam.gameObject.SetActive(shouldBeActive);
+        }
+    }
+
+    /// <summary>
     /// Nettoie les ressources utilisees par le fondu (texture temporaire et overlay).
     /// </summary>
     private void CleanupCrossFadeResources()
@@ -501,4 +526,19 @@ public class CinemachineBlendSwitcher : MonoBehaviour
 
         CleanupCrossFadeResources();
     }
+
+    /// <summary>
+    /// Retourne le nom de la camera actuellement prioritaire (<c>null</c> si aucune n'est active).
+    /// </summary>
+    public string CurrentCameraName => _current ? _current.gameObject.name : null;
+
+    /// <summary>
+    /// Indique si une camera Cinemachine dispose actuellement de la priorite.
+    /// </summary>
+    public bool HasActiveCamera => _current != null;
+
+    /// <summary>
+    /// Fournit l'instance de la <see cref="CinemachineCamera"/> actuellement prioritaire.
+    /// </summary>
+    public CinemachineCamera CurrentCamera => _current;
 }

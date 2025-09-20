@@ -454,9 +454,17 @@ public class BattleTransitionManager : MonoBehaviour
         {
             battleCamera.SetActive(true); // S'assure que la camera de combat est active
 
-            // Au lieu de jouer une timeline d'introduction, on affiche directement
-            // la camera orbitale autour du champ de bataille avec une transition instantanée.
-            BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.WideEstablish, 0f);
+            // Au lieu de jouer une timeline d'introduction, on priorise la Cinemachine dédiée
+            // à l'intro de combat. Si elle est indisponible, on conserve l'ancien plan large.
+            if (BattleCameraManager.Instance != null &&
+                BattleCameraManager.Instance.TryGetCameraByName("CMV_BattleIntro", out _))
+            {
+                BattleCameraManager.Instance.SwitchToCamera("CMV_BattleIntro", 0f);
+            }
+            else
+            {
+                BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.WideEstablish, 0f);
+            }
         }
         else
         {
