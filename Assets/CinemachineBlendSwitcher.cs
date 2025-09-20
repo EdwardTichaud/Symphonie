@@ -142,13 +142,36 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     /// </summary>
     private void ActivateDefaultCameraPriorities()
     {
-        if (cameras == null || cameras.Count == 0)
-            return; // aucune camera a activer
+        if (cameras == null)
+            return; // aucune liste a traiter
+
+        // Supprime de la liste toutes les references deja detruites afin d'eviter
+        // les NullReferenceException lors de l'acces a leurs priorites.
+        cameras.RemoveAll(cam => cam == null);
+
+        if (cameras.Count == 0)
+        {
+            // Plus aucune camera valide : on nettoie l'etat courant pour laisser
+            // la camera classique de Unity reprendre la main.
+            _current = null;
+            UpdateActiveCameraStates(null);
+            return;
+        }
+
+        // Memo de la camera par defaut (premiere valide) pour simplifier les comparaisons.
+        var defaultCamera = cameras[0];
 
         foreach (var c in cameras)
-            c.Priority = (c == cameras[0]) ? activePriority : inactivePriority;
+        {
+            if (!c)
+                continue; // securite supplementaire en cas de modification asynchrone
 
-        _current = cameras[0];
+            c.Priority = (c == defaultCamera) ? activePriority : inactivePriority;
+        }
+
+        // Selectionne explicitement la premiere camera valide, ce qui fonctionne meme si
+        // la liste est reordonnee ailleurs.
+        _current = cameras.FirstOrDefault();
         UpdateActiveCameraStates(_current);
     }
 
