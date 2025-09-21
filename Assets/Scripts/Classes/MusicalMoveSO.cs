@@ -140,7 +140,7 @@ public class MusicalMoveSO : ScriptableObject
     public TimelineAsset retreatTimeline;
 
     [Header("Caméras par phase")]
-    [Tooltip("Plan cinématique utilisé durant la préparation (None = conserver la caméra courante).")]
+    [Tooltip("Plan cinématique utilisé durant la préparation (None = conserver la caméra courante, OverShoulderCasterLookTarget = ancre Camera_Shoulder_Stay, OverShoulderCasterToTarget = ancre Camera_Shoulder_Moving).")]
     public BattleCameraRole preparingCameraRole = BattleCameraRole.WideEstablish;
     [Tooltip("Plan cinématique utilisé durant l'exécution (None = conserver la caméra précédente).")]
     public BattleCameraRole performingCameraRole = BattleCameraRole.OverShoulderCasterToTarget;
