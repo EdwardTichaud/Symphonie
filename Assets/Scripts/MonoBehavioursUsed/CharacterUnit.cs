@@ -857,7 +857,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (allies.Count == 0)
             return;
 
-        CharacterUnit randomAlly = allies[Random.Range(0, allies.Count)];
+        CharacterUnit randomAlly = allies[UnityEngine.Random.Range(0, allies.Count)];
         AudioClip clip = GetWeepClip(randomAlly.Data, Data.characterName);
         if (clip != null)
             AudioManager.Instance?.PlayVoice(clip);
@@ -973,8 +973,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         while (elapsed < duration)
         {
-            float x = Random.Range(-magnitude, magnitude);
-            float y = Random.Range(-magnitude, magnitude);
+            float x = UnityEngine.Random.Range(-magnitude, magnitude);
+            float y = UnityEngine.Random.Range(-magnitude, magnitude);
             transform.localPosition = originalPos + new Vector3(x, y, 0f);
             elapsed += Time.deltaTime;
             yield return null;
@@ -1104,7 +1104,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             return null;
         }
 
-        int index = Random.Range(0, availableAttacks.Length);
+        int index = UnityEngine.Random.Range(0, availableAttacks.Length);
         return availableAttacks[index];
     }
 
@@ -1131,7 +1131,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             return lowestHPUnit;
 
         // Fallback aléatoire
-        return squad[Random.Range(0, squad.Count)];
+        return squad[UnityEngine.Random.Range(0, squad.Count)];
     }
 
     public void AddHarmonic(HarmonicType type, int amount = 1)

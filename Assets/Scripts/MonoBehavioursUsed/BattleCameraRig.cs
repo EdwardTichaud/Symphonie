@@ -67,10 +67,6 @@ public class BattleCameraRig : MonoBehaviour
     [SerializeField, Tooltip("Champ de vision utilisé lorsque l'on se cale sur l'ancre fixe Camera_Shoulder_Stay.")]
     private float shoulderStayFov = 50f;
 
-    [Header("Over Shoulder (Stay)")]
-    [SerializeField, Tooltip("Champ de vision utilisé lorsque l'on se cale sur l'ancre fixe Camera_Shoulder_Stay.")]
-    private float shoulderStayFov = 50f;
-
     [Header("Close Push Caster")]
     [SerializeField] private float pushFov = 42f;
 
