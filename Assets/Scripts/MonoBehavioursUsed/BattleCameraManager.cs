@@ -160,6 +160,33 @@ public class BattleCameraManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Aligne une Cinemachine sur un point de référence sans modifier ses priorités.
+    /// Cette méthode est utilisée par les menus, le ciblage et les actions pour
+    /// réutiliser les ancres placées sur chaque <see cref="CharacterUnit"/>.
+    /// </summary>
+    /// <param name="cameraName">Nom de la Cinemachine à repositionner.</param>
+    /// <param name="anchor">Ancre (souvent un enfant du personnage) servant de repère.</param>
+    /// <returns><c>true</c> si l'alignement a réussi, <c>false</c> sinon.</returns>
+    public bool AlignCameraToAnchor(string cameraName, Transform anchor)
+    {
+        if (anchor == null)
+        {
+            Debug.LogWarning("[BattleCameraManager] Impossible d'aligner la caméra : ancre absente.");
+            return false;
+        }
+
+        if (!TryGetCameraByName(cameraName, out var camera))
+        {
+            Debug.LogWarning($"[BattleCameraManager] Caméra inconnue : {cameraName}.");
+            return false;
+        }
+
+        // Le positionnement immédiat garantit que le prochain blend partira du bon endroit.
+        camera.transform.SetPositionAndRotation(anchor.position, anchor.rotation);
+        return true;
+    }
+
+    /// <summary>
     /// Replace une caméra statique sur une ancre donnée puis lui donne la priorité.
     /// Utile pour les menus qui disposent d'un point de vue par personnage.
     /// </summary>
@@ -169,20 +196,8 @@ public class BattleCameraManager : MonoBehaviour
         float blendTime = 0f,
         CinemachineBlendDefinition.Styles? overrideStyle = null)
     {
-        if (anchor == null)
-        {
-            Debug.LogWarning("[BattleCameraManager] Impossible d'aligner la caméra : ancre absente.");
+        if (!AlignCameraToAnchor(cameraName, anchor))
             return;
-        }
-
-        if (!TryGetCameraByName(cameraName, out var camera))
-        {
-            Debug.LogWarning($"[BattleCameraManager] Caméra inconnue : {cameraName}.");
-            return;
-        }
-
-        // Positionne immédiatement la caméra sur l'ancre du personnage pour garantir un cadrage cohérent.
-        camera.transform.SetPositionAndRotation(anchor.position, anchor.rotation);
 
         // Puis donne la priorité à cette caméra en privilégiant un cut (blendTime = 0 par défaut).
         SwitchToCamera(cameraName, blendTime, overrideStyle);
