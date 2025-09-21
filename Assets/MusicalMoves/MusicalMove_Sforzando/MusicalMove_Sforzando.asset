@@ -16,7 +16,8 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Charge fulgurante qui téléporte Lucian devant sa cible avant de libérer une onde de choc sonore."
+  description: "Charge fulgurante qui t\xE9l\xE9porte Lucian devant sa cible avant
+    de lib\xE9rer une onde de choc sonore."
   stayFaceToTarget: 1
   notes: []
   fatigueCost: 1
@@ -42,7 +43,7 @@ MonoBehaviour:
   castDistance: 2
   requiresMovement: 1
   teleportDelay: 0.2
-  stayInPlace: 1
+  stayInPlace: 0
   interceptable: 1
   relativePosition: 0
   tpVfx_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
@@ -52,9 +53,9 @@ MonoBehaviour:
   warningClip: {fileID: 0}
   startDelay: 0
   enterAwake: 0
-  preparingTimeline: {fileID: 0}
+  preparingTimeline: {fileID: 11400000, guid: e369e34d45f3da848b3c59c52443a3bb, type: 2}
   performingTimeline: {fileID: 11400000, guid: bc1a72aa23e36b84d8d545619e3b5f19, type: 2}
-  retreatTimeline: {fileID: 0}
-  preparingCameraRole: 3
-  performingCameraRole: 3
-  retreatCameraRole: 3
+  retreatTimeline: {fileID: 11400000, guid: 4fa946d42fae10b48bc20bf37f9fc9eb, type: 2}
+  preparingCameraRole: 8
+  performingCameraRole: 2
+  retreatCameraRole: 4
