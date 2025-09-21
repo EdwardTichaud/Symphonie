@@ -134,12 +134,12 @@ public class NewBattleManager : MonoBehaviour
     private const BattleCameraRole ItemPreparingCameraRole = BattleCameraRole.MainMenuIdle;
     /// <summary>Nom de la Cinemachine dédiée au menu principal et aux variations associées.</summary>
     private const string MainMenuCameraName = "CMV_MainMenu";
+    /// <summary>Nom de la Cinemachine utilisée pour le menu des compétences.</summary>
+    private const string SkillsMenuCameraName = "CMV_SkillsMenu";
     /// <summary>Nom de la Cinemachine dédiée au menu des objets.</summary>
     private const string ItemsMenuCameraName = "CMV_ItemsMenu";
-    /// <summary>Nom de la Cinemachine utilisée pour suivre le curseur de ciblage.</summary>
-    private const string TargetCursorCameraName = "CMV_TargetCursor";
-    /// <summary>Nom de la Cinemachine utilisée lors de l'exécution d'une action (MusicalMove ou Item).</summary>
-    private const string MoveCameraName = "CMV_Move";
+    /// <summary>Nom de la Cinemachine utilisée durant les phases de sélection de cible.</summary>
+    private const string TargetSelectionCameraName = "CMV_OverShoulder_CasterLookTarget";
     /// <summary>
     /// Style de transition privilégié pour les menus. Il est directement récupéré auprès du
     /// <see cref="BattleCameraManager"/> pour rester parfaitement aligné avec la configuration globale du
@@ -250,22 +250,7 @@ public class NewBattleManager : MonoBehaviour
     // On mémorise l'objet caméra pour éviter de le rechercher à chaque frame
     private GameObject battleCamera;
     public float cameraSmoothSpeed = 5f;
-    [HideInInspector] public Transform desiredTransform;
-    private Vector3 desiredPosition;
-    private Quaternion desiredRotation;
-    public bool isFollowingCurrentTarget = false;
-    // Indique si la caméra doit regarder le lanceur lors de la sélection de cible
-    private bool lookAtCasterDuringTargetSelection = false;
-    // Indique si la caméra doit se placer sur la cible et regarder le lanceur (tour ennemi)
-    private bool lookAtCasterFromTargetPoint = false;
-    // Indique si une Cinemachine de menu est actuellement prioritaire (afin de ne pas déplacer la caméra Unity).
-    private bool isMenuCinemachineActive = false;
-    // Mémorise le nom de la Cinemachine actuellement utilisée pour le menu afin de pouvoir la libérer proprement.
-    private string activeMenuCameraName;
-    // Indique si la Cinemachine dédiée au curseur de cible possède actuellement la priorité.
-    private bool isTargetCursorCinemachineActive = false;
-    // Indique si la Cinemachine d'action (moves/items) contrôle actuellement la vue.
-    private bool isMoveCinemachineActive = false;
+    private BattleState lastCameraEvaluatedState = BattleState.None;
 
     [Header("Cinématique de début de tour joueur")]
     [SerializeField, Tooltip("Durée du travelling inspiré de l'introduction de combat (en secondes).")]
@@ -680,16 +665,13 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        Transform mainMenuAnchor = candidate.GetCameraAnchor("Camera_MainMenu");
-        if (mainMenuAnchor == null)
-        {
-            Debug.LogWarning(
-                $"[BattleTurnManager] Impossible de trouver l'ancre 'Camera_MainMenu' sur {candidate.name} pour anticiper le zoom.");
+        var manager = BattleCameraManager.Instance;
+        if (manager == null)
             return;
-        }
 
-        // 🗺️ On replace immédiatement la Cinemachine afin que le fondu post-intro démarre déjà sur la bonne pose.
-        BattleCameraManager.Instance?.AlignCameraToAnchor(MainMenuCameraName, mainMenuAnchor);
+        manager.SetTurnOwner(candidate);
+        manager.SetCurrentTarget(null);
+        manager.SwitchToCamera(MainMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
     }
 
     //7 Démarre la boucle de tours
@@ -1000,11 +982,7 @@ public class NewBattleManager : MonoBehaviour
         // Laisse un délai pour que le joueur prenne connaissance de l'action
         // On utilise ici un temps réel pour éviter tout blocage si le jeu est en pause
         yield return new WaitForSecondsRealtime(delay);
-        // On arrête de forcer la caméra sur la cible avant d'exécuter l'attaque
-        lookAtCasterFromTargetPoint = false;
-        ActivateMoveCinemachine(enemy);
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
-        DeactivateMoveCinemachine();
 
         // Ajoute le move au codex et affiche sa découverte si nécessaire
         if (!alreadyKnown && MusicalCodexManager.Instance != null && MusicalCodexManager.Instance.TryAddNewMelody(move))
@@ -1066,7 +1044,6 @@ public class NewBattleManager : MonoBehaviour
             }
         }
         // Lecture d'un avertissement sonore si le mouvement en possède un
-        ActivateMoveCinemachine(caster);
         if (move.warningClip != null)
         {
             RhythmQTEManager.Instance?.PrepareQTEBar(move.notes);
@@ -1077,7 +1054,6 @@ public class NewBattleManager : MonoBehaviour
         }
 
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
-        DeactivateMoveCinemachine();
 
         // Ajout du système de rage manuellement
         var rage = caster.GetComponent<RageSystem>();
@@ -1125,9 +1101,7 @@ public class NewBattleManager : MonoBehaviour
         OrientUnitTowardTarget(caster, target);
 
         // Animation ou Timeline d'utilisation
-        ActivateMoveCinemachine(caster);
         yield return RhythmQTEManager.Instance.ItemRoutine(item, caster, target);
-        DeactivateMoveCinemachine();
 
         bool crit = RhythmQTEManager.Instance.LastItemSuccess;
         if (crit)
@@ -2710,313 +2684,135 @@ public class NewBattleManager : MonoBehaviour
 
     #region Gestion des mouvements de la caméra de combat
     /// <summary>
-    /// Donne la priorité à une Cinemachine de menu et l'aligne sur l'ancre fournie.
-    /// Retourne <c>true</c> si l'opération s'est déroulée correctement.
+    /// Met à jour le contexte courant pour que <see cref="BattleCameraManager"/> repositionne correctement
+    /// les Cinemachine.
     /// </summary>
-    private bool ActivateMenuCinemachineCamera(string cameraName, Transform anchor)
+    private void UpdateCameraContext(CharacterUnit caster, CharacterUnit target)
     {
-        if (string.IsNullOrEmpty(cameraName) || anchor == null)
-            return false;
-
-        var manager = BattleCameraManager.Instance;
-        if (manager == null)
-            return false;
-
-        manager.SwitchToCameraAndAlign(cameraName, anchor, MenuCameraBlendDuration, MenuCameraBlendStyle);
-        isMenuCinemachineActive = true;
-        activeMenuCameraName = cameraName;
-        return true;
-    }
-
-    /// <summary>
-    /// Libère la Cinemachine dédiée aux menus si elle possède encore la priorité.
-    /// </summary>
-    private void DeactivateMenuCinemachineCamera()
-    {
-        if (!isMenuCinemachineActive)
-            return;
-
-        var manager = BattleCameraManager.Instance;
-        if (manager != null && manager.CurrentCinemachineCameraName == activeMenuCameraName)
-            manager.SwitchToCamera(null, MenuCameraBlendDuration, MenuCameraBlendStyle);
-
-        isMenuCinemachineActive = false;
-        activeMenuCameraName = null;
-    }
-
-    /// <summary>
-    /// Met à jour la Cinemachine dédiée au curseur de cible pour qu'elle se cale sur l'ancre de la cible courante.
-    /// </summary>
-    /// <param name="target">Unité actuellement visée par le joueur (ou l'ennemi).</param>
-    private void UpdateTargetCursorCinemachine(CharacterUnit target)
-    {
-        if (targetCursor == null || !targetCursor.activeInHierarchy || target == null)
-        {
-            DeactivateTargetCursorCinemachine();
-            return;
-        }
-
-        Transform anchor = GetTargetedAnchorOrFallback(target);
-        if (anchor == null)
-        {
-            DeactivateTargetCursorCinemachine();
-            return;
-        }
-
-        var manager = BattleCameraManager.Instance;
-        if (manager == null)
-            return; // Aucun gestionnaire de caméra disponible : on laisse la caméra par défaut.
-
-        // Aligne systématiquement la caméra sur l'ancre pour suivre les éventuels déplacements du modèle.
-        manager.AlignCameraToAnchor(TargetCursorCameraName, anchor);
-
-        if (!isTargetCursorCinemachineActive)
-        {
-            manager.SwitchToCamera(TargetCursorCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
-            isTargetCursorCinemachineActive = true;
-        }
-    }
-
-    /// <summary>
-    /// Coupe la Cinemachine dédiée au curseur de cible lorsque le joueur quitte une phase de ciblage.
-    /// </summary>
-    private void DeactivateTargetCursorCinemachine()
-    {
-        if (!isTargetCursorCinemachineActive)
-            return;
-
-        var manager = BattleCameraManager.Instance;
-        if (manager != null && !isMenuCinemachineActive && !isMoveCinemachineActive)
-            manager.SwitchToCamera(null, ContextCameraBlendDuration, ContextCameraBlendStyle);
-
-        isTargetCursorCinemachineActive = false;
-    }
-
-    /// <summary>
-    /// Active (ou réactualise) la Cinemachine utilisée pendant l'exécution d'un MusicalMove ou d'un Item.
-    /// </summary>
-    /// <param name="caster">Unité qui réalise l'action en cours.</param>
-    private void ActivateMoveCinemachine(CharacterUnit caster)
-    {
-        if (caster == null)
-        {
-            DeactivateMoveCinemachine();
-            return;
-        }
-
-        Transform anchor = ResolveCameraAnchor(
-            caster.transform,
-            "Camera_MoveReference",
-            "[BattleCameraManager] Aucun point 'Camera_MoveReference' trouvé pour aligner la caméra d'action."
-        );
-
         var manager = BattleCameraManager.Instance;
         if (manager == null)
             return;
 
-        // On désactive immédiatement la caméra de ciblage pour éviter un conflit de priorité.
-        DeactivateTargetCursorCinemachine();
+        if (caster != null)
+            manager.SetTurnOwner(caster);
 
-        manager.AlignCameraToAnchor(MoveCameraName, anchor);
-
-        if (!isMoveCinemachineActive)
-        {
-            manager.SwitchToCamera(MoveCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
-            isMoveCinemachineActive = true;
-        }
+        manager.SetCurrentTarget(target);
     }
 
     /// <summary>
-    /// Libère la Cinemachine d'action afin de rendre la main à la caméra par défaut ou au menu.
+    /// Active une caméra nommée uniquement si elle n'est pas déjà prioritaire.
     /// </summary>
-    private void DeactivateMoveCinemachine()
+    private void RequestCamera(string cameraName, float blendDuration, CinemachineBlendDefinition.Styles blendStyle)
     {
-        if (!isMoveCinemachineActive)
+        var manager = BattleCameraManager.Instance;
+        if (manager == null)
             return;
 
-        var manager = BattleCameraManager.Instance;
-        if (manager != null && !isMenuCinemachineActive && !isTargetCursorCinemachineActive)
-            manager.SwitchToCamera(null, ContextCameraBlendDuration, ContextCameraBlendStyle);
+        if (manager.CurrentCinemachineCameraName == cameraName)
+            return;
 
-        isMoveCinemachineActive = false;
+        manager.SwitchToCamera(cameraName, blendDuration, blendStyle);
+    }
+
+    /// <summary>
+    /// Demande un rôle caméra tout en évitant les transitions redondantes.
+    /// </summary>
+    private void RequestCamera(BattleCameraRole role, float blendDuration, CinemachineBlendDefinition.Styles blendStyle)
+    {
+        var manager = BattleCameraManager.Instance;
+        if (manager == null)
+            return;
+
+        if (role == BattleCameraRole.None && manager.CurrentCinemachineCameraName == null)
+            return;
+
+        manager.SwitchToCamera(role, blendDuration, blendStyle);
     }
 
     public void UpdateCameraBehaviour(BattleState newState)
     {
-        // On vérifie ponctuellement que la caméra de combat est bien référencée
-        EnsureBattleCamera();
-        if (battleCamera == null)
-        {
-            // Impossible de poursuivre sans caméra
+        var manager = BattleCameraManager.Instance;
+        if (manager == null)
             return;
-        }
 
-        // Vérifie que l'unité courante est bien définie. Sans elle,
-        // certaines positions de caméra ne peuvent pas être calculées.
-        if (currentCharacterUnit == null)
-        {
-            Debug.LogWarning("[BattleCameraManager] currentCharacterUnit est nul lors de la mise à jour de la caméra.");
-            return;
-        }
+        bool stateChanged = newState != lastCameraEvaluatedState;
+        lastCameraEvaluatedState = newState;
 
-        // Par défaut, on ne regarde pas le lanceur
-        lookAtCasterDuringTargetSelection = false;
-        // Désactive le focus spécial utilisé pendant le tour ennemi
-        lookAtCasterFromTargetPoint = false;
+        CharacterUnit caster = currentCharacterUnit;
+        CharacterUnit target = currentTargetCharacter;
 
-        bool handledByMenuCamera = false;
+        UpdateCameraContext(caster, target);
 
-        switch (currentBattleState)
+        switch (newState)
         {
             case BattleState.SquadUnit_MainMenu:
-                isFollowingCurrentTarget = false;
-                // On récupère l'ancre dédiée au plan d'attente du menu principal.
-                // L'objectif est de garantir un cadrage cohérent, propre à chaque personnage.
-                desiredTransform = ResolveCameraAnchor(
-                    currentCharacterUnit.transform,
-                    "Camera_MainMenu",
-                    "[BattleCameraManager] Aucun point 'Camera_MainMenu' trouvé."
-                );
-                // Lorsque l'ancre existe, on la fait pivoter en douceur vers les ennemis pour
-                // conserver la grammaire cinématographique prévue par l'équipe artistique.
-                if (desiredTransform != null && desiredTransform != currentCharacterUnit.transform)
+                if (stateChanged)
                 {
-                    OrientTransformTowardEnemyGroupSmoothXY(desiredTransform, 180f);
+                    manager.SetCurrentTarget(null);
+                    RequestCamera(MainMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
                 }
-                handledByMenuCamera = ActivateMenuCinemachineCamera(MainMenuCameraName, desiredTransform);
                 break;
 
             case BattleState.SquadUnit_SkillsMenu:
-                isFollowingCurrentTarget = false;
-                // Même logique que pour le menu principal : chaque unité possède un point de vue
-                // spécifique lorsqu'elle consulte ses compétences.
-                desiredTransform = ResolveCameraAnchor(
-                    currentCharacterUnit.transform,
-                    "Camera_SkillsMenu",
-                    "[BattleCameraManager] Aucun point 'Camera_SkillsMenu' trouvé."
-                );
-                // La Cinemachine de menu principale est réutilisée pour garantir un cut cohérent entre
-                // le menu principal et la consultation des compétences.
-                handledByMenuCamera = ActivateMenuCinemachineCamera(MainMenuCameraName, desiredTransform);
+                if (stateChanged)
+                {
+                    manager.SetCurrentTarget(null);
+                    RequestCamera(SkillsMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
+                }
                 break;
 
             case BattleState.SquadUnit_ItemsMenu:
-                isFollowingCurrentTarget = false;
-                // Les objets utilisent le même plan d'attente que le menu principal pour conserver
-                // la familiarité du cadrage.
-                desiredTransform = ResolveCameraAnchor(
-                    currentCharacterUnit.transform,
-                    "Camera_MainMenu",
-                    "[BattleCameraManager] Aucun point 'Camera_MainMenu' trouvé pour le menu des objets."
-                );
-                handledByMenuCamera = ActivateMenuCinemachineCamera(ItemsMenuCameraName, desiredTransform);
+            case BattleState.SquadUnit_Item_Prepare:
+                if (stateChanged)
+                {
+                    manager.SetCurrentTarget(null);
+                    RequestCamera(ItemsMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
+                }
                 break;
 
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad:
-                if (currentItem != null)
-                {
-                    desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
-                    isFollowingCurrentTarget = true;
-                }
-                else
-                {
-                    desiredTransform = GameObject.Find("Camera_FocusSquad").transform;
-                    isFollowingCurrentTarget = false;
-                }
-                break;
-
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies:
-                if (currentItem != null)
-                {
-                    desiredTransform = FindChildRecursive(currentCharacterUnit.transform, "Camera_UseItem_Prepare");
-                    isFollowingCurrentTarget = true;
-                }
-                else
-                {
-                    desiredTransform = GameObject.Find("Camera_FocusEnemies").transform;
-                    isFollowingCurrentTarget = false;
-                }
-                break;
-
             case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
-                // Caméra sur la cible sélectionnée, regardant le lanceur
-                isFollowingCurrentTarget = false;
-                lookAtCasterDuringTargetSelection = true;
-                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
-                break;
-
             case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
-                // Même comportement que pour une compétence
-                isFollowingCurrentTarget = false;
-                lookAtCasterDuringTargetSelection = true;
-                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
-                break;
-
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
-                // Caméra sur l'ennemi sélectionné, regardant le lanceur
-                isFollowingCurrentTarget = false;
-                lookAtCasterDuringTargetSelection = true;
-                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
-                break;
-
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
-                // Identique pour un objet visant un ennemi
-                isFollowingCurrentTarget = false;
-                lookAtCasterDuringTargetSelection = true;
-                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
+                if (stateChanged)
+                    RequestCamera(TargetSelectionCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
                 break;
 
             case BattleState.SquadUnit_PerformingMusicalMove:
             case BattleState.SquadUnit_Item_Use:
-                // Pendant l'exécution d'une action joueur, on reste calé sur l'ancre dédiée pour
-                // assurer une cohérence avec la Cinemachine "CMV_Move".
-                isFollowingCurrentTarget = false;
-                lookAtCasterDuringTargetSelection = false;
-                desiredTransform = ResolveCameraAnchor(
-                    currentCharacterUnit.transform,
-                    "Camera_MoveReference",
-                    "[BattleCameraManager] Aucun point 'Camera_MoveReference' trouvé pour le lanceur."
-                );
+            case BattleState.EnemyUnit_PerformingMusicalMove:
+            case BattleState.EnemyUnit_Item_Use:
+                manager.ConfigureActionTargets(caster, target);
                 break;
 
             case BattleState.EnemyUnit_Reflexion:
-                isFollowingCurrentTarget = false;
-                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
+                if (stateChanged)
+                {
+                    manager.SetCurrentTarget(target);
+                    RequestCamera(MainMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
+                }
                 break;
-            case BattleState.EnemyUnit_PerformingMusicalMove:
-                // Place la caméra sur la cible et oriente-la vers l'ennemi
-                isFollowingCurrentTarget = false;
-                lookAtCasterFromTargetPoint = true;
-                desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
-                break;
+
             case BattleState.EnemyUnit_Item_Prepare:
-            case BattleState.EnemyUnit_Item_Use:
-                isFollowingCurrentTarget = false;
-                desiredTransform = null;
+                if (stateChanged)
+                {
+                    manager.SetCurrentTarget(null);
+                    RequestCamera(ItemsMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
+                }
                 break;
 
             case BattleState.VictoryScreen_Await:
-                isFollowingCurrentTarget = false;
-                desiredTransform = GameObject.Find("Camera_Victory").transform;
+                if (stateChanged)
+                    RequestCamera(BattleCameraRole.Victory, MenuCameraBlendDuration, MenuCameraBlendStyle);
                 break;
 
             default:
-                isFollowingCurrentTarget = false;
-                desiredTransform = null;
+                if (stateChanged)
+                    RequestCamera(BattleCameraRole.None, ContextCameraBlendDuration, ContextCameraBlendStyle);
                 break;
         }
-
-        bool isActionState =
-            currentBattleState == BattleState.SquadUnit_PerformingMusicalMove ||
-            currentBattleState == BattleState.SquadUnit_Item_Use ||
-            currentBattleState == BattleState.EnemyUnit_PerformingMusicalMove ||
-            currentBattleState == BattleState.EnemyUnit_Item_Use;
-
-        if (!isActionState)
-            DeactivateMoveCinemachine();
-
-        if (!handledByMenuCamera)
-            DeactivateMenuCinemachineCamera();
     }
 
     /// <summary>
@@ -3036,10 +2832,10 @@ public class NewBattleManager : MonoBehaviour
         if (battleCamera == null)
             return; // Impossible d'animer une caméra inexistante.
 
-        Transform anchor = FindChildRecursive(unit.transform, "Camera_MainMenu");
+        Transform anchor = unit.GetCameraAnchor("CMVPoint_MainMenu");
         if (anchor == null)
         {
-            Debug.LogWarning("[BattleCameraManager] Aucun point 'Camera_MainMenu' trouvé pour lancer le travelling introductif.");
+            Debug.LogWarning("[BattleCameraManager] Aucun point 'CMVPoint_MainMenu' trouvé pour lancer le travelling introductif.");
             hasPlayedFirstTurnCameraRail = true; // On évite de répéter l'avertissement si la configuration est manquante.
             return;
         }
@@ -3102,12 +2898,6 @@ public class NewBattleManager : MonoBehaviour
         firstTurnRailEndRot = Quaternion.LookRotation(endLook.normalized, Vector3.up);
 
         camTransform.SetPositionAndRotation(firstTurnRailStartPos, firstTurnRailStartRot);
-
-        // On force le comportement standard de la caméra sur l'ancre finale pour assurer la transition post-travelling.
-        desiredTransform = anchor;
-        isFollowingCurrentTarget = false;
-        lookAtCasterDuringTargetSelection = false;
-        lookAtCasterFromTargetPoint = false;
 
         firstTurnRailTimer = 0f;
         isFirstTurnRailActive = firstTurnRailDuration > 0.0001f;
@@ -3174,84 +2964,30 @@ public class NewBattleManager : MonoBehaviour
 
     private void LateUpdate()
     {
-        // Si la caméra de combat n'est pas disponible, on ne poursuit pas
         if (battleCamera == null)
         {
             return;
         }
 
-        // Lorsque les menus affichent une Cinemachine dédiée, on laisse cette dernière piloter le rendu.
-        if (isMenuCinemachineActive)
-            return;
+        var manager = BattleCameraManager.Instance;
+        if (manager != null && manager.HasActiveCinemachineCamera)
+            return; // Cinemachine contrôle actuellement la vue.
 
-        // Accès direct au transform de la caméra pour limiter les appels
-        Transform camTransform = battleCamera.transform;
-        // Si une Timeline globale contrôle la caméra (cutscene ou attaque),
-        // on laisse entièrement la main au TimelineManager.
+        // Si une Timeline globale ou une cinématique pilote la caméra, on ne la perturbe pas.
         if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
             return;
 
+        Transform camTransform = battleCamera.transform;
+
         if (isFirstTurnRailActive)
         {
-            // Tant que le travelling d'introduction est en cours, on laisse la cinématique piloter entièrement la caméra.
             UpdateFirstTurnCameraRail(camTransform);
             return;
         }
 
         if (itemMenuTimelineActive)
-        {
-            // La timeline contrôle la caméra tant que l'objet n'est pas choisi
             return;
 
-        }
-
-        if (lookAtCasterDuringTargetSelection && desiredTransform != null && currentCharacterUnit != null && currentTargetCharacter != null)
-        {
-            // Nouveau positionnement dynamique pour garder lanceur et cible dans le champ de vision
-            ComputeTargetSelectionCamera(out Vector3 camPos, out Quaternion camRot,
-                currentCharacterUnit.transform, currentTargetCharacter.transform);
-
-            camTransform.position = Vector3.Lerp(camTransform.position, camPos, Time.deltaTime * cameraSmoothSpeed);
-            camTransform.rotation = Quaternion.Slerp(camTransform.rotation, camRot, Time.deltaTime * cameraSmoothSpeed);
-        }
-        else if (lookAtCasterFromTargetPoint && desiredTransform != null && currentCharacterUnit != null)
-        {
-            // Positionne la caméra sur le point de la cible en regardant le lanceur
-            camTransform.position = Vector3.Lerp(camTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
-            Quaternion targetRotation = Quaternion.LookRotation(currentCharacterUnit.transform.position - camTransform.position);
-            camTransform.rotation = Quaternion.Slerp(camTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
-        }
-        else if (isFollowingCurrentTarget && currentCharacterUnit != null && currentTargetCharacter != null)
-        {
-            if (desiredTransform != null)
-            {
-                // Reste sur l'ancre mais suit la cible du regard
-                camTransform.position = Vector3.Lerp(camTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
-                Quaternion targetRotation = Quaternion.LookRotation(currentTargetCharacter.transform.position - camTransform.position);
-                camTransform.rotation = Quaternion.Slerp(camTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
-            }
-            else
-            {
-                Vector3 midPoint = (currentCharacterUnit.transform.position + currentTargetCharacter.transform.position) / 2f;
-                Vector3 offset = Vector3.up * 3f - currentCharacterUnit.transform.forward * 5f;
-
-                Vector3 targetPosition = midPoint + offset;
-                Quaternion targetRotation = Quaternion.LookRotation(midPoint - camTransform.position);
-
-                camTransform.position = Vector3.Lerp(camTransform.position, targetPosition, Time.deltaTime * cameraSmoothSpeed);
-                camTransform.rotation = Quaternion.Slerp(camTransform.rotation, targetRotation, Time.deltaTime * cameraSmoothSpeed);
-            }
-        }
-        else if (desiredTransform != null)
-        {
-            camTransform.position = Vector3.Lerp(camTransform.position, desiredTransform.position, Time.deltaTime * cameraSmoothSpeed);
-            camTransform.rotation = Quaternion.Slerp(camTransform.rotation, desiredTransform.rotation, Time.deltaTime * cameraSmoothSpeed);
-        }
-
-        // Si un curseur de cible est affiché (sélection d'une unité, d'un objet, etc.),
-        // on force la caméra à orienter son regard vers ce repère visuel. Cela garantit que
-        // le joueur garde toujours le contexte de sa sélection, même lorsque la position de
-        // la caméra est pilotée par une ancre prédéfinie.
         bool targetCursorVisible = targetCursor != null && targetCursor.activeInHierarchy;
         if (targetCursorVisible)
         {
@@ -3267,6 +3003,7 @@ public class NewBattleManager : MonoBehaviour
             }
         }
     }
+
     #endregion
 
     #region Méthodes utilitaires
@@ -3283,35 +3020,6 @@ public class NewBattleManager : MonoBehaviour
                 return result;
         }
         return null;
-    }
-
-    /// <summary>
-    /// Sécurise la récupération d'un point caméra propre à l'unité active.
-    /// En cas d'oubli dans un prefab, on renvoie la racine de l'unité afin de conserver
-    /// un focus cohérent et d'éviter les null references côté caméra.
-    /// </summary>
-    /// <param name="unitRoot">Transform racine de l'unité courante.</param>
-    /// <param name="anchorName">Nom de l'ancre recherchée dans la hiérarchie.</param>
-    /// <param name="errorMessage">Message détaillé affiché si l'ancre manque.</param>
-    /// <returns>L'ancre trouvée ou, en dernier recours, la racine de l'unité.</returns>
-    private Transform ResolveCameraAnchor(Transform unitRoot, string anchorName, string errorMessage)
-    {
-        if (unitRoot == null)
-        {
-            Debug.LogWarning("[BattleCameraManager] Impossible de résoudre l'ancre caméra : unité courante absente.");
-            return null;
-        }
-
-        Transform anchor = FindChildRecursive(unitRoot, anchorName);
-        if (anchor != null)
-        {
-            return anchor;
-        }
-
-        Debug.LogError(errorMessage);
-        // On renvoie la racine pour garder une position valide et permettre au designer
-        // d'identifier rapidement l'oubli via la log d'erreur.
-        return unitRoot;
     }
 
     /// <summary>
@@ -3332,7 +3040,9 @@ public class NewBattleManager : MonoBehaviour
         }
 
         // Recherche prioritaire de l'ancre spécifique prévue par les artistes.
-        Transform targetedAnchor = FindChildRecursive(unit.transform, "Camera_TargetedPoint");
+        Transform targetedAnchor = unit.GetCameraAnchor("CMVPoint_TargetReaction");
+        if (targetedAnchor == null)
+            targetedAnchor = FindChildRecursive(unit.transform, "Camera_TargetedPoint");
         if (targetedAnchor != null)
         {
             return targetedAnchor;

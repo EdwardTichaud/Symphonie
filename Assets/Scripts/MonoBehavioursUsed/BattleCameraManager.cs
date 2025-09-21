@@ -1,79 +1,134 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Cinemachine;
 
 /// <summary>
-/// Gere l'activation des CinemachineCamera durant les combats.
-/// Les transitions s'effectuent via <see cref="CinemachineBlendSwitcher"/>.
+/// Gère l'activation et le placement des caméras Cinemachine pendant les combats.
+/// Le système associe chaque "CMV_" à un point "CMVPoint_" exposé sur les <see cref="CharacterUnit"/>.
 /// </summary>
 public class BattleCameraManager : MonoBehaviour
 {
     /// <summary>Nom de la caméra d'introduction explicitement référencé dans les scripts.</summary>
     private const string IntroCameraName = "CMV_BattleIntro";
 
-    /// <summary>Temps minimal pour considérer qu'une direction est valide.</summary>
+    /// <summary>Seuil évitant un LookRotation instable lorsque le point visé est trop proche.</summary>
     private const float IntroLookDirectionThreshold = 0.0001f;
 
-    /// <summary>Acces global au gestionnaire de camera de combat.</summary>
+    /// <summary>Accès global au gestionnaire de caméras de combat.</summary>
     public static BattleCameraManager Instance { get; private set; }
 
-    // Composant responsable du changement de camera via les priorites.
+    /// <summary>BlendSwitcher responsable des transitions (0,5 s smooth imposé).</summary>
     private CinemachineBlendSwitcher blendSwitcher;
 
-    // Rig dédié qui anime les caméras selon des rôles précis.
-    private BattleCameraRig cameraRig;
+    /// <summary>Accès direct aux CinemachineCamera par leur nom.</summary>
+    private readonly Dictionary<string, CinemachineCamera> cameraByName = new(StringComparer.OrdinalIgnoreCase);
 
-    // Ensemble des cameras Cinemachine disponibles pour les moves.
+    /// <summary>Liste des CinemachineCamera découvertes afin de proposer un fallback aléatoire.</summary>
     private readonly List<CinemachineCamera> availableCameras = new();
 
-    // Accès direct aux caméras via leur nom pour faciliter les repositionnements ponctuels.
-    private readonly Dictionary<string, CinemachineCamera> cameraByName = new();
+    /// <summary>Référence de la caméra d'introduction pour gérer son travelling manuel.</summary>
+    private Transform introCameraTransform;
 
-    // Mapping role -> nom de caméra utilisé par le blend switcher.
-    private readonly Dictionary<BattleCameraRole, string> roleToCameraName = new();
-    private readonly Dictionary<string, BattleCameraRole> nameToRole = new();
+    /// <summary>Position locale de base de la caméra d'introduction.</summary>
+    private Vector3 introCameraInitialLocalPosition;
 
-    // Permet de connaître le plan actuellement prioritaire.
+    /// <summary>Rotation locale de base de la caméra d'introduction.</summary>
+    private Quaternion introCameraInitialLocalRotation;
+
+    /// <summary>Routine de déplacement en cours pour la caméra d'introduction.</summary>
+    private Coroutine introCameraMoveRoutine;
+
+    /// <summary>Routine différée pour la remise en place de la caméra d'introduction.</summary>
+    private Coroutine introCameraResetRoutine;
+
+    /// <summary>Unité actuellement en train de jouer son tour.</summary>
+    private CharacterUnit currentTurnOwner;
+
+    /// <summary>Unité considérée comme lanceur pour les caméras d'action.</summary>
+    private CharacterUnit currentCaster;
+
+    /// <summary>Unité ciblée par l'action en cours ou par la sélection.</summary>
+    private CharacterUnit currentTarget;
+
+    /// <summary>Ancre explicite fournie lors d'une configuration de cibles (caster).</summary>
+    private Transform casterAnchorOverride;
+
+    /// <summary>Ancre explicite fournie lors d'une configuration de cibles (target).</summary>
+    private Transform targetAnchorOverride;
+
+    /// <summary>Ensemble des points manquants déjà signalés pour ne pas inonder la console.</summary>
+    private readonly HashSet<string> missingAnchorWarnings = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Nom de la caméra actuellement prioritaire.</summary>
+    private string currentCameraName;
+
+    /// <summary>Rôle logique actuellement prioritaire.</summary>
     private BattleCameraRole currentRole = BattleCameraRole.None;
 
-    /// <summary>
-    /// Style de blend lissé imposé par le <see cref="CinemachineBlendSwitcher"/>. Si le composant n'est
-    /// pas encore disponible (phase de bootstrap), on retombe sur la résolution statique du switcher afin
-    /// d'assurer la cohérence des transitions.
-    /// </summary>
+    /// <summary>Modes d'association entre une caméra Cinemachine et un CharacterUnit.</summary>
+    private enum CameraAnchorOwner
+    {
+        Manual,
+        TurnOwner,
+        Caster,
+        Target
+    }
+
+    /// <summary>Description complète de l'association entre une Cinemachine et un point "CMVPoint_".</summary>
+    private struct CameraBindingConfig
+    {
+        public CameraAnchorOwner Owner;
+        public string Suffix;
+        public bool LooksAtTarget;
+
+        public CameraBindingConfig(CameraAnchorOwner owner, string suffix, bool looksAtTarget)
+        {
+            Owner = owner;
+            Suffix = suffix;
+            LooksAtTarget = looksAtTarget;
+        }
+    }
+
+    /// <summary>Configuration déclarative de toutes les caméras "CMV_" présentes dans la scène.</summary>
+    private static readonly Dictionary<string, CameraBindingConfig> CameraBindings = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["CMV_MainMenu"] = new(CameraAnchorOwner.TurnOwner, "MainMenu", false),
+        ["CMV_SkillsMenu"] = new(CameraAnchorOwner.TurnOwner, "SkillsMenu", false),
+        ["CMV_ItemsMenu"] = new(CameraAnchorOwner.TurnOwner, "ItemsMenu", false),
+        ["CMV_TargetReaction"] = new(CameraAnchorOwner.Target, "TargetReaction", false),
+        ["CMV_Projectile_Flyby"] = new(CameraAnchorOwner.Caster, "Projectile_Flyby", false),
+        ["CMV_OverShoulder_CasterLookTarget"] = new(CameraAnchorOwner.Caster, "OverShoulder_CasterLookTarget", true),
+        ["CMV_OverShoulder_CasterToTarget"] = new(CameraAnchorOwner.Caster, "OverShoulder_CasterToTarget", true),
+        ["CMV_OverHead_CasterLookTarget"] = new(CameraAnchorOwner.Caster, "OverHead_CasterLookTarget", true),
+        ["CMV_BattleIntro"] = new(CameraAnchorOwner.Manual, "BattleIntro", false),
+        ["CMV_Victory"] = new(CameraAnchorOwner.Manual, "Victory", false)
+    };
+
+    /// <summary>Association par défaut entre les rôles historiques et les nouvelles caméras "CMV_".</summary>
+    private static readonly Dictionary<BattleCameraRole, string> DefaultRoleToCameraName = new()
+    {
+        { BattleCameraRole.MainMenuIdle, "CMV_MainMenu" },
+        { BattleCameraRole.OverShoulderCasterToTarget, "CMV_OverShoulder_CasterToTarget" },
+        { BattleCameraRole.OverShoulderCasterLookTarget, "CMV_OverShoulder_CasterLookTarget" },
+        { BattleCameraRole.ClosePushCaster, "CMV_OverShoulder_CasterLookTarget" },
+        { BattleCameraRole.TargetReaction, "CMV_TargetReaction" },
+        { BattleCameraRole.WideEstablish, "CMV_OverHead_CasterLookTarget" },
+        { BattleCameraRole.ProjectileFlyby, "CMV_Projectile_Flyby" },
+        { BattleCameraRole.Victory, "CMV_Victory" }
+    };
+
+    /// <summary>Style de blend homogène imposé par le <see cref="CinemachineBlendSwitcher"/>.</summary>
     public CinemachineBlendDefinition.Styles SmoothBlendStyle =>
         blendSwitcher ? blendSwitcher.SmoothBlendStyle : CinemachineBlendSwitcher.ResolveSmoothBlendStyle();
 
-    /// <summary>
-    /// Durée unique (0,5 s) appliquée à toutes les transitions caméra. Cette propriété est exposée pour
-    /// faciliter sa réutilisation dans les différents gestionnaires de menus et de cutscenes.
-    /// </summary>
+    /// <summary>Durée (0,5 s) imposée à toutes les transitions caméra.</summary>
     public float SmoothBlendDuration =>
         blendSwitcher ? blendSwitcher.SmoothBlendDuration : CinemachineBlendSwitcher.GlobalSmoothBlendDurationSeconds;
 
-    // ------------------------------------------------------------------------------
-    // Gestion dédiée à la Cinemachine d'introduction
-    // ------------------------------------------------------------------------------
-
-    /// <summary>Transform de la caméra d'introduction pour manipuler directement sa position.</summary>
-    private Transform introCameraTransform;
-
-    /// <summary>Position locale de référence de la caméra d'introduction.</summary>
-    private Vector3 introCameraInitialLocalPosition;
-
-    /// <summary>Rotation locale de référence de la caméra d'introduction.</summary>
-    private Quaternion introCameraInitialLocalRotation;
-
-    /// <summary>Coroutine en charge du déplacement continu de la caméra d'intro.</summary>
-    private Coroutine introCameraMoveRoutine;
-
-    /// <summary>Coroutine utilisée pour différer la remise à zéro après un fondu.</summary>
-    private Coroutine introCameraResetRoutine;
-
     void Awake()
     {
-        // Mise en place du singleton classique.
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
@@ -81,83 +136,172 @@ public class BattleCameraManager : MonoBehaviour
         }
         Instance = this;
 
-        // Recherche du CinemachineBlendSwitcher present dans la scene.
         blendSwitcher = FindFirstObjectByType<CinemachineBlendSwitcher>();
         if (!blendSwitcher)
-            Debug.LogWarning("[BattleCameraManager] Aucun CinemachineBlendSwitcher trouve dans la scene.");
-
-        // Recense toutes les CinemachineCamera presentes (angles speciaux).
-        foreach (var cam in FindObjectsOfType<CinemachineCamera>())
-        {
-            if (cam != null)
-                availableCameras.Add(cam);
-        }
+            Debug.LogWarning("[BattleCameraManager] Aucun CinemachineBlendSwitcher trouvé dans la scène.");
 
         RefreshCameraCache();
 
-        // On mémorise la position initiale de la caméra d'introduction dès que possible pour faciliter ses resets.
-        CacheIntroCameraReference();
+        // Par défaut, les rôles pointent sur l'association statique décrite plus haut.
+        foreach (var kvp in DefaultRoleToCameraName)
+        {
+            if (!cameraByName.ContainsKey(kvp.Value))
+                Debug.LogWarning($"[BattleCameraManager] La caméra '{kvp.Value}' est introuvable pour le rôle {kvp.Key}.");
+        }
 
-        cameraRig = FindFirstObjectByType<BattleCameraRig>();
-        if (!cameraRig)
-            Debug.LogWarning("[BattleCameraManager] Aucun BattleCameraRig détecté : les rôles caméra ne seront pas configurés.");
-        else
-            BuildRoleMappings();
-
-        // Au démarrage du combat on revient sur la camera principale taggée "BattleCamera". Toutes les
-        // transitions doivent désormais respecter le blend smooth de 0.5 s : on s'appuie donc sur la durée
-        // globale imposée par le switcher plutôt que de forcer un cut instantané.
+        // Retour immédiat sur la caméra Unity de base au lancement.
         if (blendSwitcher)
             blendSwitcher.DisplayCamera(null, SmoothBlendDuration);
     }
 
-    /// <summary>
-    /// Reconstitue le dictionnaire nom -> caméra afin de toujours disposer d'une référence valide.
-    /// </summary>
+    void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
+    void LateUpdate()
+    {
+        // Les caméras doivent coller en permanence aux points "CMVPoint_".
+        RefreshAllCameraPlacements();
+    }
+
+    /// <summary>Réactualise le cache des CinemachineCamera disponibles.</summary>
     private void RefreshCameraCache()
     {
         cameraByName.Clear();
+        availableCameras.Clear();
 
-        // Nettoie les entrées nulles pouvant apparaître après un changement de scène.
-        availableCameras.RemoveAll(cam => cam == null);
+        foreach (var cam in FindObjectsOfType<CinemachineCamera>())
+        {
+            if (cam == null)
+                continue;
 
-        foreach (var cam in availableCameras)
-            cameraByName[cam.gameObject.name] = cam;
+            string name = cam.gameObject.name;
+            if (!cameraByName.ContainsKey(name))
+                cameraByName.Add(name, cam);
 
-        // Si la caméra d'intro vient d'être (re)trouvée, on actualise ses informations de base immédiatement.
+            availableCameras.Add(cam);
+        }
+
         CacheIntroCameraReference();
     }
 
-    /// <summary>
-    /// Met à jour les correspondances rôle &lt;-&gt; nom de caméra à partir du rig présent dans la scène.
-    /// </summary>
-    private void BuildRoleMappings()
+    /// <summary>Replace toutes les caméras "CMV_" sur leurs points d'ancrage respectifs.</summary>
+    private void RefreshAllCameraPlacements()
     {
-        roleToCameraName.Clear();
-        nameToRole.Clear();
+        foreach (var kvp in CameraBindings)
+            RefreshCameraPlacement(kvp.Key, kvp.Value);
+    }
 
-        foreach (BattleCameraRole role in System.Enum.GetValues(typeof(BattleCameraRole)))
+    /// <summary>Replace une caméra donnée sur son point d'ancrage.</summary>
+    private void RefreshCameraPlacement(string cameraName, CameraBindingConfig config)
+    {
+        if (!TryGetCameraByName(cameraName, out var camera) || camera == null)
+            return;
+
+        if (config.Owner == CameraAnchorOwner.Manual)
+            return; // Caméras positionnées manuellement via l'inspecteur.
+
+        CharacterUnit ownerUnit = ResolveAnchorOwner(config.Owner);
+        if (ownerUnit == null)
+            return;
+
+        Transform anchor = ResolveAnchorTransform(ownerUnit, config);
+        if (anchor == null)
+            return;
+
+        camera.transform.position = anchor.position;
+
+        if (config.LooksAtTarget)
         {
-            if (role == BattleCameraRole.None)
-                continue;
-
-            if (cameraRig.TryGetCameraName(role, out var cameraName))
+            Transform lookTarget = ResolveLookAtTarget();
+            if (lookTarget != null)
             {
-                roleToCameraName[role] = cameraName;
-                if (!nameToRole.ContainsKey(cameraName))
-                    nameToRole.Add(cameraName, role);
+                Vector3 forward = lookTarget.position - anchor.position;
+                if (forward.sqrMagnitude > 0.0001f)
+                    camera.transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
             }
+            else
+            {
+                camera.transform.rotation = anchor.rotation;
+            }
+        }
+        else
+        {
+            camera.transform.rotation = anchor.rotation;
         }
     }
 
-    /// <summary>
-    /// Fournit les cibles au rig pour positionner correctement les plans.
-    /// </summary>
-    /// <param name="caster">Unité qui initie l'action.</param>
-    /// <param name="target">Unité subissant l'action (peut être <c>null</c> pour les selfs casts).</param>
-    /// <param name="midpoint">Point manuel optionnel utilisé par certains moves.</param>
-    /// <param name="casterAnchor">Ancre précise à suivre pour le lanceur (poitrine, tête...).</param>
-    /// <param name="targetAnchor">Ancre précise pour la cible.</param>
+    /// <summary>Identifie l'unité responsable d'une caméra donnée.</summary>
+    private CharacterUnit ResolveAnchorOwner(CameraAnchorOwner owner)
+    {
+        return owner switch
+        {
+            CameraAnchorOwner.TurnOwner => currentTurnOwner,
+            CameraAnchorOwner.Caster => currentCaster ?? currentTurnOwner,
+            CameraAnchorOwner.Target => currentTarget,
+            _ => null
+        };
+    }
+
+    /// <summary>Récupère l'ancre "CMVPoint_" appropriée sur l'unité fournie.</summary>
+    private Transform ResolveAnchorTransform(CharacterUnit unit, CameraBindingConfig config)
+    {
+        if (unit == null || string.IsNullOrEmpty(config.Suffix))
+            return null;
+
+        Transform anchorOverride = null;
+        if (config.Owner == CameraAnchorOwner.Caster)
+            anchorOverride = casterAnchorOverride;
+        else if (config.Owner == CameraAnchorOwner.Target)
+            anchorOverride = targetAnchorOverride;
+
+        if (anchorOverride != null)
+            return anchorOverride;
+
+        string pointName = $"CMVPoint_{config.Suffix}";
+        Transform anchor = unit.GetCameraAnchor(pointName);
+        if (anchor == null && missingAnchorWarnings.Add(pointName))
+            Debug.LogWarning($"[BattleCameraManager] Point '{pointName}' introuvable sur '{unit.name}'.");
+
+        return anchor;
+    }
+
+    /// <summary>Détermine le Transform à regarder lorsque la caméra doit suivre la cible.</summary>
+    private Transform ResolveLookAtTarget()
+    {
+        if (targetAnchorOverride != null)
+            return targetAnchorOverride;
+
+        if (currentTarget != null)
+        {
+            Transform reactionPoint = currentTarget.GetCameraAnchor("CMVPoint_TargetReaction");
+            return reactionPoint != null ? reactionPoint : currentTarget.transform;
+        }
+
+        return null;
+    }
+
+    /// <summary>Enregistre l'unité actuellement active (tour en cours).</summary>
+    public void SetTurnOwner(CharacterUnit unit, bool alsoSetAsCaster = true)
+    {
+        currentTurnOwner = unit;
+        if (alsoSetAsCaster && unit != null)
+            currentCaster = unit;
+
+        RefreshAllCameraPlacements();
+    }
+
+    /// <summary>Définit l'unité ciblée lors de la sélection ou de l'exécution d'une action.</summary>
+    public void SetCurrentTarget(CharacterUnit target)
+    {
+        currentTarget = target;
+
+        RefreshAllCameraPlacements();
+    }
+
+    /// <summary>Configure le contexte complet d'un move ou d'un item.</summary>
     public void ConfigureActionTargets(
         CharacterUnit caster,
         CharacterUnit target,
@@ -165,55 +309,135 @@ public class BattleCameraManager : MonoBehaviour
         Transform casterAnchor = null,
         Transform targetAnchor = null)
     {
-        cameraRig?.ConfigureTargets(caster, target, midpoint, casterAnchor, targetAnchor);
+        currentCaster = caster ?? currentCaster;
+        currentTarget = target;
+        casterAnchorOverride = casterAnchor;
+        targetAnchorOverride = targetAnchor;
+
+        RefreshAllCameraPlacements();
     }
 
-    /// <summary>
-    /// Efface les cibles connues du rig (fin de move ou retour au neutre).
-    /// </summary>
+    /// <summary>Efface les informations associées au move en cours.</summary>
     public void ClearRigTargets()
     {
-        cameraRig?.ClearTargets();
+        casterAnchorOverride = null;
+        targetAnchorOverride = null;
+        currentCaster = null;
+        currentTarget = null;
+
+        RefreshAllCameraPlacements();
     }
 
-    /// <summary>
-    /// Mémorise (ou met à jour) la référence vers la caméra d'introduction et sa transform initiale.
-    /// </summary>
-    private void CacheIntroCameraReference()
+    /// <summary>Active une caméra via son rôle cinématique.</summary>
+    public void SwitchToCamera(
+        BattleCameraRole role,
+        float blendTime = -1f,
+        CinemachineBlendDefinition.Styles? overrideStyle = null)
     {
-        // Si aucune caméra d'intro n'est actuellement référencée, on purge les données obsolètes pour repartir proprement.
-        if (!cameraByName.TryGetValue(IntroCameraName, out var camera) || camera == null)
+        if (role == BattleCameraRole.None)
         {
-            introCameraTransform = null; // La caméra a peut-être été détruite : on oublie toute référence précédente.
+            currentRole = BattleCameraRole.None;
+            currentCameraName = null;
+            DisplayCameraWithBlend(null, blendTime, overrideStyle);
             return;
         }
 
-        Transform candidate = camera.transform;
-
-        // Si nous pointons déjà sur cette transform, il est inutile de recalculer la position initiale.
-        if (introCameraTransform == candidate)
+        if (!DefaultRoleToCameraName.TryGetValue(role, out string cameraName))
+        {
+            Debug.LogWarning($"[BattleCameraManager] Aucun GameObject associé au rôle caméra {role}.");
             return;
+        }
 
-        introCameraTransform = candidate;
-        introCameraInitialLocalPosition = introCameraTransform.localPosition;
-        introCameraInitialLocalRotation = introCameraTransform.localRotation;
+        currentRole = role;
+        SwitchToCamera(cameraName, blendTime, overrideStyle);
     }
 
-    /// <summary>
-    /// Vérifie que la caméra d'introduction est accessible et mémorise sa position de base si nécessaire.
-    /// </summary>
-    /// <returns><c>true</c> si la caméra est disponible, <c>false</c> sinon.</returns>
+    /// <summary>Active la caméra correspondant au nom fourni.</summary>
+    public void SwitchToCamera(
+        string cameraName,
+        float blendTime = -1f,
+        CinemachineBlendDefinition.Styles? overrideStyle = null)
+    {
+        if (!blendSwitcher)
+            return;
+
+        if (string.IsNullOrEmpty(cameraName))
+        {
+            currentCameraName = null;
+            DisplayCameraWithBlend(null, blendTime, overrideStyle);
+            return;
+        }
+
+        RefreshCameraPlacement(cameraName, CameraBindings.TryGetValue(cameraName, out var config)
+            ? config
+            : new CameraBindingConfig(CameraAnchorOwner.Caster, cameraName.Replace("CMV_", string.Empty), false));
+
+        currentCameraName = cameraName;
+        DisplayCameraWithBlend(cameraName, blendTime, overrideStyle);
+    }
+
+    /// <summary>Replace la caméra ciblée avant de lui donner la priorité.</summary>
+    public void SwitchToCameraAndAlign(
+        string cameraName,
+        Transform anchor,
+        float blendTime = -1f,
+        CinemachineBlendDefinition.Styles? overrideStyle = null)
+    {
+        // Les ancres manuelles appartiennent à l'ancien système : on déclenche simplement un rafraîchissement automatique.
+        if (!string.IsNullOrEmpty(cameraName) && CameraBindings.TryGetValue(cameraName, out var config))
+            RefreshCameraPlacement(cameraName, config);
+        else if (anchor != null && TryGetCameraByName(cameraName, out var manualCamera))
+            manualCamera.transform.SetPositionAndRotation(anchor.position, anchor.rotation);
+
+        SwitchToCamera(cameraName, blendTime, overrideStyle);
+    }
+
+    /// <summary>Active la caméra indiquée en respectant la durée/ le style de blend global.</summary>
+    private void DisplayCameraWithBlend(
+        string cameraName,
+        float blendTime,
+        CinemachineBlendDefinition.Styles? overrideStyle)
+    {
+        if (!blendSwitcher)
+            return;
+
+        float duration = blendTime >= 0f ? blendTime : SmoothBlendDuration;
+        var style = overrideStyle ?? SmoothBlendStyle;
+        blendSwitcher.DisplayCamera(cameraName, duration, style);
+    }
+
+    /// <summary>Tente de récupérer une <see cref="CinemachineCamera"/> via son nom de GameObject.</summary>
+    public bool TryGetCameraByName(string cameraName, out CinemachineCamera camera)
+    {
+        if (string.IsNullOrEmpty(cameraName))
+        {
+            camera = null;
+            return false;
+        }
+
+        if (!cameraByName.TryGetValue(cameraName, out camera) || camera == null)
+        {
+            RefreshCameraCache();
+            cameraByName.TryGetValue(cameraName, out camera);
+        }
+
+        return camera != null;
+    }
+
+    /// <summary>Renvoie le nom de la Cinemachine actuellement prioritaire (ou <c>null</c>).</summary>
+    public string CurrentCinemachineCameraName => blendSwitcher ? blendSwitcher.CurrentCameraName : null;
+
+    /// <summary>Indique si une Cinemachine possède la priorité dans le <see cref="CinemachineBrain"/>.</summary>
+    public bool HasActiveCinemachineCamera => blendSwitcher && blendSwitcher.HasActiveCamera;
+
+    /// <summary>Garantit que la caméra d'introduction est bien référencée.</summary>
     private bool EnsureIntroCameraReference()
     {
         if (introCameraTransform != null)
-            return true; // Référence déjà valide.
+            return true;
 
         if (!TryGetCameraByName(IntroCameraName, out var camera) || camera == null)
-        {
-            Debug.LogWarning($"[BattleCameraManager] Impossible de localiser la caméra '{IntroCameraName}'.");
-            introCameraTransform = null;
             return false;
-        }
 
         introCameraTransform = camera.transform;
         introCameraInitialLocalPosition = introCameraTransform.localPosition;
@@ -221,37 +445,42 @@ public class BattleCameraManager : MonoBehaviour
         return true;
     }
 
-    /// <summary>
-    /// Démarre le travelling linéaire de la caméra d'introduction pour dynamiser l'entrée en combat.
-    /// </summary>
-    /// <param name="moveSpeed">Vitesse de déplacement exprimée en unités monde/seconde.</param>
-    /// <param name="lookAtPoint">Point vers lequel la caméra doit rester orientée (coordonnées monde).</param>
+    /// <summary>Mémorise la position de base de la caméra d'introduction dès que possible.</summary>
+    private void CacheIntroCameraReference()
+    {
+        if (!TryGetCameraByName(IntroCameraName, out var camera) || camera == null)
+        {
+            introCameraTransform = null;
+            return;
+        }
+
+        introCameraTransform = camera.transform;
+        introCameraInitialLocalPosition = introCameraTransform.localPosition;
+        introCameraInitialLocalRotation = introCameraTransform.localRotation;
+    }
+
+    /// <summary>Démarre le travelling linéaire de la caméra d'introduction.</summary>
     public void StartBattleIntroCameraTravel(float moveSpeed = 1f, Vector3? lookAtPoint = null)
     {
         if (!EnsureIntroCameraReference())
-            return; // Aucun traitement possible si la caméra n'existe pas.
+            return;
 
-        // Interrompt un éventuel déplacement encore actif afin d'éviter les doublons.
         if (introCameraMoveRoutine != null)
         {
             StopCoroutine(introCameraMoveRoutine);
             introCameraMoveRoutine = null;
         }
 
-        // Si une remise à zéro était planifiée, on l'annule : un nouveau combat démarre, la caméra repart de zéro.
         if (introCameraResetRoutine != null)
         {
             StopCoroutine(introCameraResetRoutine);
             introCameraResetRoutine = null;
         }
 
-        // Replace explicitement la caméra sur ses coordonnées d'origine pour garantir un démarrage cohérent.
         introCameraTransform.localPosition = introCameraInitialLocalPosition;
         introCameraTransform.localRotation = introCameraInitialLocalRotation;
 
         Vector3 targetPoint = lookAtPoint ?? Vector3.zero;
-
-        // Oriente immédiatement la caméra vers le point désiré afin d'éviter un frame "hors cible".
         Vector3 lookDirection = targetPoint - introCameraTransform.position;
         if (lookDirection.sqrMagnitude > IntroLookDirectionThreshold)
             introCameraTransform.rotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
@@ -259,10 +488,7 @@ public class BattleCameraManager : MonoBehaviour
         introCameraMoveRoutine = StartCoroutine(IntroCameraTravelRoutine(moveSpeed, targetPoint));
     }
 
-    /// <summary>
-    /// Stoppe le travelling de la caméra d'intro et programme sa remise en place après le fondu.
-    /// </summary>
-    /// <param name="delayBeforeReset">Temps (en secondes réelles) à attendre avant de restaurer la position initiale.</param>
+    /// <summary>Stoppe le travelling de la caméra d'introduction et programme sa remise en place.</summary>
     public void StopBattleIntroCameraTravel(float delayBeforeReset = 0f)
     {
         if (introCameraMoveRoutine != null)
@@ -272,7 +498,7 @@ public class BattleCameraManager : MonoBehaviour
         }
 
         if (introCameraTransform == null)
-            return; // Rien à restaurer si la caméra n'est pas disponible.
+            return;
 
         if (introCameraResetRoutine != null)
         {
@@ -282,7 +508,6 @@ public class BattleCameraManager : MonoBehaviour
 
         if (delayBeforeReset <= 0f)
         {
-            // Remise immédiate pour les transitions instantanées.
             introCameraTransform.localPosition = introCameraInitialLocalPosition;
             introCameraTransform.localRotation = introCameraInitialLocalRotation;
         }
@@ -292,35 +517,28 @@ public class BattleCameraManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Coroutine appliquant le déplacement linéaire le long de l'axe Z monde tout en gardant un point de mire fixe.
-    /// </summary>
+    /// <summary>Coroutine appliquant le déplacement linéaire tout en gardant un point de mire fixe.</summary>
     private IEnumerator IntroCameraTravelRoutine(float moveSpeed, Vector3 lookAtPoint)
     {
         while (true)
         {
             if (introCameraTransform == null)
-                yield break; // Sécurité : la caméra peut être détruite lors d'un changement de scène.
+                yield break;
 
-            float delta = Time.unscaledDeltaTime; // Utilisation du temps réel pour conserver une vitesse constante malgré les slow-mo.
-
-            // Translation le long de l'axe Z monde.
+            float delta = Time.unscaledDeltaTime;
             Vector3 worldPosition = introCameraTransform.position;
             worldPosition += Vector3.forward * moveSpeed * delta;
             introCameraTransform.position = worldPosition;
 
-            // Maintien du regard vers le point spécifié.
             Vector3 lookDirection = lookAtPoint - worldPosition;
             if (lookDirection.sqrMagnitude > IntroLookDirectionThreshold)
                 introCameraTransform.rotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
 
-            yield return null; // Attente d'une frame avant de poursuivre le mouvement.
+            yield return null;
         }
     }
 
-    /// <summary>
-    /// Ramène la caméra d'introduction sur ses coordonnées d'origine après un fondu vers un autre plan.
-    /// </summary>
+    /// <summary>Ramène la caméra d'introduction sur ses coordonnées d'origine après un fondu.</summary>
     private IEnumerator ResetIntroCameraAfterDelay(float delay)
     {
         yield return new WaitForSecondsRealtime(Mathf.Max(0f, delay));
@@ -333,215 +551,4 @@ public class BattleCameraManager : MonoBehaviour
 
         introCameraResetRoutine = null;
     }
-
-    /// <summary>
-    /// Tente de récupérer une <see cref="CinemachineCamera"/> via son nom de GameObject.
-    /// </summary>
-    public bool TryGetCameraByName(string cameraName, out CinemachineCamera camera)
-    {
-        if (string.IsNullOrEmpty(cameraName))
-        {
-            camera = null;
-            return false;
-        }
-
-        if (!cameraByName.TryGetValue(cameraName, out camera) || camera == null)
-        {
-            RefreshCameraCache();
-            if (!cameraByName.TryGetValue(cameraName, out camera) || camera == null)
-            {
-                availableCameras.Clear();
-                foreach (var cam in FindObjectsOfType<CinemachineCamera>())
-                {
-                    if (cam != null)
-                        availableCameras.Add(cam);
-                }
-
-                RefreshCameraCache();
-                cameraByName.TryGetValue(cameraName, out camera);
-            }
-        }
-
-        return camera != null;
-    }
-
-    /// <summary>
-    /// Aligne une Cinemachine sur un point de référence sans modifier ses priorités.
-    /// Cette méthode est utilisée par les menus, le ciblage et les actions pour
-    /// réutiliser les ancres placées sur chaque <see cref="CharacterUnit"/>.
-    /// </summary>
-    /// <param name="cameraName">Nom de la Cinemachine à repositionner.</param>
-    /// <param name="anchor">Ancre (souvent un enfant du personnage) servant de repère.</param>
-    /// <returns><c>true</c> si l'alignement a réussi, <c>false</c> sinon.</returns>
-    public bool AlignCameraToAnchor(string cameraName, Transform anchor)
-    {
-        if (anchor == null)
-        {
-            Debug.LogWarning("[BattleCameraManager] Impossible d'aligner la caméra : ancre absente.");
-            return false;
-        }
-
-        if (!TryGetCameraByName(cameraName, out var camera))
-        {
-            Debug.LogWarning($"[BattleCameraManager] Caméra inconnue : {cameraName}.");
-            return false;
-        }
-
-        // Le positionnement immédiat garantit que le prochain blend partira du bon endroit.
-        camera.transform.SetPositionAndRotation(anchor.position, anchor.rotation);
-        return true;
-    }
-
-    /// <summary>
-    /// Replace une caméra statique sur une ancre donnée puis lui donne la priorité.
-    /// Utile pour les menus qui disposent d'un point de vue par personnage.
-    /// </summary>
-    public void SwitchToCameraAndAlign(
-        string cameraName,
-        Transform anchor,
-        float blendTime = -1f,
-        CinemachineBlendDefinition.Styles? overrideStyle = null)
-    {
-        if (!AlignCameraToAnchor(cameraName, anchor))
-            return;
-
-        // Puis donne la priorité à cette caméra en conservant la durée par défaut (0,5 s) imposée par
-        // le BlendSwitcher, sauf indication contraire.
-        SwitchToCamera(cameraName, blendTime, overrideStyle);
-    }
-
-    /// <summary>
-    /// Active une caméra en s'appuyant sur un rôle cinématique.
-    /// </summary>
-    public void SwitchToCamera(BattleCameraRole role, float blendTime = -1f, CinemachineBlendDefinition.Styles? overrideStyle = null)
-    {
-        if (role == BattleCameraRole.None)
-        {
-            // Retour explicite sur la caméra de base : on ne passe surtout pas par la surcharge string
-            // pour éviter tout aller-retour inutile.
-            currentRole = BattleCameraRole.None;
-            cameraRig?.NotifyActiveRole(BattleCameraRole.None);
-            DisplayCameraWithBlend(null, blendTime, overrideStyle);
-            return;
-        }
-
-        if (!roleToCameraName.TryGetValue(role, out var cameraName))
-        {
-            Debug.LogWarning($"[BattleCameraManager] Aucun GameObject associé au rôle caméra {role}.");
-            return;
-        }
-
-        float duration = blendTime >= 0f ? blendTime : ComputeBlendDuration(currentRole, role);
-        var style = overrideStyle ?? ComputeBlendStyle(currentRole, role);
-
-        currentRole = role;
-        cameraRig?.NotifyActiveRole(role);
-        // On replace immédiatement la caméra ciblée sur son ancre pour amorcer le blend depuis
-        // une pose cohérente. Sans cela, la caméra peut parcourir une grande distance lors de
-        // la première frame, donnant la sensation d'un cut brutal.
-        cameraRig?.SnapToRolePose(role);
-        DisplayCameraWithBlend(cameraName, duration, style);
-    }
-
-    /// <summary>
-    /// Active la camera correspondant au nom fourni.
-    /// - <c>null</c>  : retour a la camera de combat par defaut (tag "BattleCamera").
-    /// - chaine vide : selection d'une camera aleatoire.
-    /// </summary>
-    /// <param name="cameraName">Nom de la camera souhaitee.</param>
-    /// <param name="blendTime">
-    /// Duree du fondu en secondes. Utiliser une valeur negative pour conserver
-    /// la duree definie dans le <see cref="CinemachineBlendSwitcher"/>.
-    /// </param>
-    public void SwitchToCamera(string cameraName, float blendTime = -1f, CinemachineBlendDefinition.Styles? overrideStyle = null)
-    {
-        if (!blendSwitcher)
-            return; // Impossible de switcher sans blendSwitcher
-
-        // Cas 1 : aucun move/item en cours -> on revient sur la camera par defaut.
-        if (cameraName == null)
-        {
-            currentRole = BattleCameraRole.None;
-            cameraRig?.NotifyActiveRole(BattleCameraRole.None);
-            DisplayCameraWithBlend(null, blendTime, overrideStyle);
-            return;
-        }
-
-        if (nameToRole.TryGetValue(cameraName, out var resolvedRole))
-        {
-            // Compatibilité avec les anciennes séquences qui adressaient les cams par nom :
-            // on profite quand même des durées/styles personnalisés.
-            float duration = blendTime >= 0f ? blendTime : ComputeBlendDuration(currentRole, resolvedRole);
-            var style = overrideStyle ?? ComputeBlendStyle(currentRole, resolvedRole);
-
-            currentRole = resolvedRole;
-            cameraRig?.NotifyActiveRole(resolvedRole);
-            cameraRig?.SnapToRolePose(resolvedRole);
-            DisplayCameraWithBlend(cameraName, duration, style);
-            return;
-        }
-
-        // Cas 2 : nom vide -> choix d'une camera aleatoire.
-        if (string.IsNullOrWhiteSpace(cameraName))
-        {
-            if (availableCameras.Count > 0)
-            {
-                var randomCam = availableCameras[Random.Range(0, availableCameras.Count)];
-                cameraName = randomCam.gameObject.name;
-            }
-            else
-            {
-                currentRole = BattleCameraRole.None;
-                cameraRig?.NotifyActiveRole(BattleCameraRole.None);
-                // Si aucune camera speciale n'est disponible, on retourne sur la camera
-                // principale avec la duree de blend souhaitee ou celle par defaut.
-                DisplayCameraWithBlend(null, blendTime, overrideStyle);
-                return;
-            }
-        }
-
-        currentRole = BattleCameraRole.None;
-        cameraRig?.NotifyActiveRole(BattleCameraRole.None);
-        // Affiche la camera demandee avec la duree de blend appropriee.
-        DisplayCameraWithBlend(cameraName, blendTime, overrideStyle);
-    }
-
-    /// <summary>
-    /// Envoie la requête de blend au <see cref="CinemachineBlendSwitcher"/> en gérant le cas « durée par défaut ».
-    /// </summary>
-    /// <param name="cameraName">Nom de la caméra ciblée (ou <c>null</c> pour la caméra principale).</param>
-    /// <param name="blendTime">Durée imposée, ou valeur négative pour conserver la configuration du blend switcher.</param>
-    /// <param name="overrideStyle">Style de blend optionnel.</param>
-    private void DisplayCameraWithBlend(string cameraName, float blendTime, CinemachineBlendDefinition.Styles? overrideStyle)
-    {
-        if (!blendSwitcher)
-            return;
-
-        // CinemachineBlendSwitcher gère déjà le cas d'une durée négative en retombant sur sa valeur par défaut.
-        blendSwitcher.DisplayCamera(cameraName, blendTime, overrideStyle);
-    }
-
-    private float ComputeBlendDuration(BattleCameraRole from, BattleCameraRole to)
-    {
-        // 🎞️ Toutes les combinaisons utilisent désormais la même durée lissée afin de garantir une lecture
-        // cohérente des enchaînements caméra (plus aucun cut brutal).
-        return SmoothBlendDuration;
-    }
-
-    private CinemachineBlendDefinition.Styles? ComputeBlendStyle(BattleCameraRole from, BattleCameraRole to)
-    {
-        // 🎯 Même logique que pour la durée : on impose le style smooth unique afin d'éviter tout cut ou
-        // easing divergent suivant les rôles caméra.
-        return SmoothBlendStyle;
-    }
-
-    /// <summary>
-    /// Nom de la caméra actuellement prioritaire (ou <c>null</c> si aucune Cinemachine n'est active).
-    /// </summary>
-    public string CurrentCinemachineCameraName => blendSwitcher ? blendSwitcher.CurrentCameraName : null;
-
-    /// <summary>
-    /// Indique si une Cinemachine est actuellement prioritaire dans le <see cref="CinemachineBrain"/>.
-    /// </summary>
-    public bool HasActiveCinemachineCamera => blendSwitcher && blendSwitcher.HasActiveCamera;
 }
