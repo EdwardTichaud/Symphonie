@@ -607,6 +607,10 @@ public class NewBattleManager : MonoBehaviour
         //4 Réinitialise les ATB
         ResetAllATB();
 
+        // ⚡ Identifie au plus tôt l'unité qui ouvrira le bal afin d'orienter le menu sur le bon personnage.
+        CharacterUnit upcomingFirstPlayer = ReturnFirstStrikeCharacter();
+        PrimeMainMenuCameraForFirstUnit(upcomingFirstPlayer);
+
         //6 Intro Camera
         // Lance la séquence d'introduction des caméras avant de débuter les tours.
         yield return PlayIntroCameraSequence();
@@ -656,6 +660,30 @@ public class NewBattleManager : MonoBehaviour
             .FirstOrDefault();
 
         return firstPlayer;
+    }
+
+    /// <summary>
+    /// Pré-positionne la caméra de menu sur l'ancre de l'unité qui agira en premier.
+    /// </summary>
+    /// <param name="candidate">Unité pressentie pour jouer en ouverture.</param>
+    private void PrimeMainMenuCameraForFirstUnit(CharacterUnit candidate)
+    {
+        if (candidate == null)
+        {
+            Debug.LogWarning("[BattleTurnManager] Aucun combattant joueur n'est disponible pour préparer la caméra du menu.");
+            return;
+        }
+
+        Transform mainMenuAnchor = candidate.GetCameraAnchor("Camera_MainMenu");
+        if (mainMenuAnchor == null)
+        {
+            Debug.LogWarning(
+                $"[BattleTurnManager] Impossible de trouver l'ancre 'Camera_MainMenu' sur {candidate.name} pour anticiper le zoom.");
+            return;
+        }
+
+        // 🗺️ On replace immédiatement la Cinemachine afin que le fondu post-intro démarre déjà sur la bonne pose.
+        BattleCameraManager.Instance?.AlignCameraToAnchor(MainMenuCameraName, mainMenuAnchor);
     }
 
     //7 Démarre la boucle de tours

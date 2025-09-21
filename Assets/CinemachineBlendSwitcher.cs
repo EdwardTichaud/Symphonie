@@ -51,6 +51,10 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     private Coroutine crossFadeRoutine; // coroutine de fondu en cours
     private Texture2D lastCapturedFrame; // reference du screenshot utilise pendant le fondu
 
+    // 📝 Mémorise la dernière configuration « lissée » demandée au brain afin de la restaurer après un cut forcé.
+    private CinemachineBlendDefinition lastSmoothBlendDefinition;
+    private bool hasLastSmoothBlend;
+
     void Awake()
     {
         // Recuperation du CinemachineBrain sur la camera de rendu.
@@ -65,6 +69,12 @@ public class CinemachineBlendSwitcher : MonoBehaviour
 
         // Prepare l'overlay de fondu si necessaire (creation automatique si references vides).
         if (useVisualCrossFade) EnsureCrossFadeOverlay();
+
+        // 💾 Initialise le profil de blend à restaurer après les coupes instantanées.
+        lastSmoothBlendDefinition = new CinemachineBlendDefinition(
+            blendStyle,
+            Mathf.Max(defaultBlendDuration, 0.0001f));
+        hasLastSmoothBlend = true;
 
         // Construction du dictionnaire d'acces rapide par nom.
         _byName.Clear();
@@ -253,6 +263,17 @@ public class CinemachineBlendSwitcher : MonoBehaviour
 
         _current = next;
         UpdateActiveCameraStates(next);
+
+        // 🔁 Après un cut forcé (principalement lors des fondus visuels), on restaure un blend doux pour les prochains plans.
+        if (forceCut && brain)
+        {
+            var fallbackBlend = hasLastSmoothBlend
+                ? lastSmoothBlendDefinition
+                : new CinemachineBlendDefinition(blendStyle, Mathf.Max(defaultBlendDuration, 0.0001f));
+            brain.DefaultBlend = fallbackBlend;
+            lastSmoothBlendDefinition = fallbackBlend;
+            hasLastSmoothBlend = true;
+        }
     }
 
     /// <summary>
@@ -267,7 +288,15 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         // Lors d'un fondu visuel, on force un cut afin d'eviter le mouvement.
         var style = forceCut ? CinemachineBlendDefinition.Styles.Cut : (overrideStyle ?? blendStyle);
         var duration = forceCut ? 0f : Mathf.Max(0f, blendDuration);
-        brain.DefaultBlend = new CinemachineBlendDefinition(style, duration);
+        var definition = new CinemachineBlendDefinition(style, duration);
+        brain.DefaultBlend = definition;
+
+        // 📚 On conserve uniquement les configurations réellement lissées pour servir de référence.
+        if (!forceCut && duration > 0.0001f)
+        {
+            lastSmoothBlendDefinition = definition;
+            hasLastSmoothBlend = true;
+        }
     }
 
     /// <summary>
