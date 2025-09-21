@@ -140,14 +140,26 @@ public class NewBattleManager : MonoBehaviour
     private const string TargetCursorCameraName = "CMV_TargetCursor";
     /// <summary>Nom de la Cinemachine utilisée lors de l'exécution d'une action (MusicalMove ou Item).</summary>
     private const string MoveCameraName = "CMV_Move";
-    /// <summary>Style de transition privilégié pour les menus (cut instantané).</summary>
-    private const CinemachineBlendDefinition.Styles MenuCameraBlendStyle = CinemachineBlendDefinition.Styles.Cut;
-    /// <summary>Durée par défaut des transitions de menu (0 = cut immédiat).</summary>
-    private const float MenuCameraBlendDuration = 0f;
-    /// <summary>Durée appliquée aux caméras contextuelles (ciblage, actions).</summary>
-    private const float ContextCameraBlendDuration = 0f;
-    /// <summary>Style de transition privilégié pour les caméras contextuelles.</summary>
-    private const CinemachineBlendDefinition.Styles ContextCameraBlendStyle = CinemachineBlendDefinition.Styles.Cut;
+    /// <summary>
+    /// Style de transition privilégié pour les menus : on adopte désormais un fondu doux pour guider le
+    /// regard du joueur sans rupture visuelle.
+    /// </summary>
+    private const CinemachineBlendDefinition.Styles MenuCameraBlendStyle = CinemachineBlendDefinition.Styles.EaseInOut;
+    /// <summary>
+    /// Durée par défaut des transitions de menu. Réglée sur une seconde pour offrir une interpolation
+    /// claire et lisible lors du passage d'un panneau à l'autre.
+    /// </summary>
+    private const float MenuCameraBlendDuration = 1f;
+    /// <summary>
+    /// Durée appliquée aux caméras contextuelles (ciblage, actions). Harmonisée sur une seconde afin de
+    /// conserver la cohérence avec les transitions de menus.
+    /// </summary>
+    private const float ContextCameraBlendDuration = 1f;
+    /// <summary>
+    /// Style de transition privilégié pour les caméras contextuelles. On privilégie un lissage progressif
+    /// pour mettre en valeur les animations sans cut brutal.
+    /// </summary>
+    private const CinemachineBlendDefinition.Styles ContextCameraBlendStyle = CinemachineBlendDefinition.Styles.EaseInOut;
     /// <summary>Hash du state Animator "Item_Prepare" pour lancer rapidement l'animation correspondante.</summary>
     private static readonly int AnimatorStateItemPrepare = Animator.StringToHash("Item_Prepare");
     /// <summary>Hash du state Animator "Idle_Battle" afin de revenir proprement à la pose neutre.</summary>

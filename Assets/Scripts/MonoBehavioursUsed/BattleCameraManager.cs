@@ -383,13 +383,14 @@ public class BattleCameraManager : MonoBehaviour
     public void SwitchToCameraAndAlign(
         string cameraName,
         Transform anchor,
-        float blendTime = 0f,
+        float blendTime = -1f,
         CinemachineBlendDefinition.Styles? overrideStyle = null)
     {
         if (!AlignCameraToAnchor(cameraName, anchor))
             return;
 
-        // Puis donne la priorité à cette caméra en privilégiant un cut (blendTime = 0 par défaut).
+        // Puis donne la priorité à cette caméra en conservant la durée par défaut (désormais lissée sur
+        // une seconde via le BlendSwitcher) sauf indication contraire.
         SwitchToCamera(cameraName, blendTime, overrideStyle);
     }
 
