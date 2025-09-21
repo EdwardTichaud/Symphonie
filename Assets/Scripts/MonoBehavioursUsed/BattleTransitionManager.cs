@@ -463,7 +463,9 @@ public class BattleTransitionManager : MonoBehaviour
 
                 // Dès l'apparition du plan d'introduction, on déclenche son travelling le long de l'axe Z.
                 // Le point de mire est volontairement fixé à l'origine mondiale pour cadrer la scène de combat.
-                BattleCameraManager.Instance.StartBattleIntroCameraTravel(5f, Vector3.zero);
+                Vector3 middleEnemyPos = GameObject.Find("EnemyPosition_01").transform.position + new Vector3(0f, 1f, 0f);
+                BattleCameraManager.Instance.StartBattleIntroCameraTravel(1f, middleEnemyPos);
+
             }
             else
             {

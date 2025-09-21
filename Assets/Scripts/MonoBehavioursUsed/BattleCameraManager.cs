@@ -210,7 +210,7 @@ public class BattleCameraManager : MonoBehaviour
     /// </summary>
     /// <param name="moveSpeed">Vitesse de déplacement exprimée en unités monde/seconde.</param>
     /// <param name="lookAtPoint">Point vers lequel la caméra doit rester orientée (coordonnées monde).</param>
-    public void StartBattleIntroCameraTravel(float moveSpeed = 5f, Vector3? lookAtPoint = null)
+    public void StartBattleIntroCameraTravel(float moveSpeed = 1f, Vector3? lookAtPoint = null)
     {
         if (!EnsureIntroCameraReference())
             return; // Aucun traitement possible si la caméra n'existe pas.
