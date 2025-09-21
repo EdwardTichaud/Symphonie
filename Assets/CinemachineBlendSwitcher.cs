@@ -20,6 +20,13 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     public const float GlobalSmoothBlendDurationSeconds = 0.5f;
 
     /// <summary>
+    /// Nom explicitement choisi pour représenter la caméra « hub » utilisée quand aucun plan spécifique
+    /// n'est demandé pendant les combats. Le level design a validé que CMV_MainMenu correspond à la vue
+    /// souhaitée par défaut pour les phases de sélection.
+    /// </summary>
+    private const string CombatDefaultCameraName = "CMV_MainMenu";
+
+    /// <summary>
     /// Cache statique du style « Smooth ». Cela évite de lancer un <see cref="Enum.TryParse"/> à chaque
     /// requête tout en gérant proprement les versions de Cinemachine qui n'exposeraient pas explicitement
     /// ce style (on retombe alors sur un <see cref="CinemachineBlendDefinition.Styles.EaseInOut"/>).</summary>
@@ -207,8 +214,36 @@ public class CinemachineBlendSwitcher : MonoBehaviour
             return;
         }
 
-        // Memo de la camera par defaut (premiere valide) pour simplifier les comparaisons.
-        var defaultCamera = cameras[0];
+        // Mémo de la caméra par défaut (première valide) pour simplifier les comparaisons.
+        // On part d'une valeur nulle pour pouvoir tester proprement s'il reste des références actives.
+        CinemachineCamera defaultCamera = null;
+
+        // 🧭 Parmi toutes les cameras trouvées, on tente de privilégier la CMV_MainMenu pour répondre à la
+        // demande de game design : il s'agit de la vue la plus lisible pour le joueur lorsque le combat se
+        // met en pause (par exemple pendant les menus). Si elle n'est pas disponible, on retombe sur la
+        // première caméra valide afin de conserver un fallback sûr.
+        foreach (var candidate in cameras)
+        {
+            if (!candidate)
+                continue; // sécurité supplémentaire en cas de modification asynchrone
+
+            // Mémorise une référence dès que possible afin d'avoir un fallback.
+            defaultCamera ??= candidate;
+
+            if (string.Equals(candidate.name, CombatDefaultCameraName, StringComparison.OrdinalIgnoreCase))
+            {
+                defaultCamera = candidate;
+                break; // priorité absolue : on peut s'arrêter dès qu'on l'a trouvée.
+            }
+        }
+
+        // Aucune caméra valide n'est disponible : on nettoie l'état courant et on laisse la caméra Unity.
+        if (!defaultCamera)
+        {
+            _current = null;
+            UpdateActiveCameraStates(null);
+            return;
+        }
 
         foreach (var c in cameras)
         {
@@ -218,12 +253,12 @@ public class CinemachineBlendSwitcher : MonoBehaviour
             // Conserve aussi l'état initial lors des relectures de la liste.
             RememberInitialActivationState(c);
 
-            c.Priority = (c == defaultCamera) ? activePriority : inactivePriority;
+            c.Priority = ReferenceEquals(c, defaultCamera) ? activePriority : inactivePriority;
         }
 
         // Selectionne explicitement la premiere camera valide, ce qui fonctionne meme si
-        // la liste est reordonnee ailleurs.
-        _current = cameras.FirstOrDefault();
+        // la liste est reordonnee ailleurs. Nous posons ici la CMV_MainMenu si elle a ete trouvee.
+        _current = defaultCamera;
         UpdateActiveCameraStates(_current);
     }
 
