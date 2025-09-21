@@ -515,6 +515,14 @@ public class BattleCameraManager : MonoBehaviour
             (from == BattleCameraRole.OverShoulderCasterToTarget && to == BattleCameraRole.WideEstablish))
             return 0.4f; // Transition douce entre plan large et épaule.
 
+        if ((from == BattleCameraRole.WideEstablish && to == BattleCameraRole.OverShoulderCasterLookTarget) ||
+            (from == BattleCameraRole.OverShoulderCasterLookTarget && to == BattleCameraRole.WideEstablish))
+            return 0.4f; // Même lisibilité que l'épaule classique pour présenter l'action.
+
+        if ((from == BattleCameraRole.OverShoulderCasterToTarget && to == BattleCameraRole.OverShoulderCasterLookTarget) ||
+            (from == BattleCameraRole.OverShoulderCasterLookTarget && to == BattleCameraRole.OverShoulderCasterToTarget))
+            return 0.25f; // Cut plus nerveux entre les deux variantes de plan épaule.
+
         if (from == BattleCameraRole.Victory || to == BattleCameraRole.Victory)
             return 1f; // Plan final plus ample.
 
@@ -533,6 +541,14 @@ public class BattleCameraManager : MonoBehaviour
         if ((from == BattleCameraRole.WideEstablish && to == BattleCameraRole.OverShoulderCasterToTarget) ||
             (from == BattleCameraRole.OverShoulderCasterToTarget && to == BattleCameraRole.WideEstablish))
             return CinemachineBlendDefinition.Styles.EaseInOut;
+
+        if ((from == BattleCameraRole.WideEstablish && to == BattleCameraRole.OverShoulderCasterLookTarget) ||
+            (from == BattleCameraRole.OverShoulderCasterLookTarget && to == BattleCameraRole.WideEstablish))
+            return CinemachineBlendDefinition.Styles.EaseInOut;
+
+        if ((from == BattleCameraRole.OverShoulderCasterToTarget && to == BattleCameraRole.OverShoulderCasterLookTarget) ||
+            (from == BattleCameraRole.OverShoulderCasterLookTarget && to == BattleCameraRole.OverShoulderCasterToTarget))
+            return CinemachineBlendDefinition.Styles.Cut;
 
         return null;
     }
