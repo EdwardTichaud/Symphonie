@@ -460,6 +460,10 @@ public class BattleTransitionManager : MonoBehaviour
                 BattleCameraManager.Instance.TryGetCameraByName("CMV_BattleIntro", out _))
             {
                 BattleCameraManager.Instance.SwitchToCamera("CMV_BattleIntro", 0f);
+
+                // Dès l'apparition du plan d'introduction, on déclenche son travelling le long de l'axe Z.
+                // Le point de mire est volontairement fixé à l'origine mondiale pour cadrer la scène de combat.
+                BattleCameraManager.Instance.StartBattleIntroCameraTravel(5f, Vector3.zero);
             }
             else
             {

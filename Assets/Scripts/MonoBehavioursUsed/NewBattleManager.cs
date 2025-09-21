@@ -529,14 +529,15 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private IEnumerator PlayIntroCameraSequence()
     {
-        // 🎥 Donne immédiatement la priorité à la caméra orbitale pour présenter le champ de bataille.
-        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.WideEstablish, 0f);
-
         // 🎬 Lance les timelines d'introduction en mode ralenti et attend leur terminaison.
         yield return PlayIntroTimelinesWithSlowTime();
 
-        // 📷 Retourne ensuite sur la caméra de combat standard avec un léger fondu.
-        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None, 0.5f);
+        // 📷 Dès que les mises en scène sont terminées, on bascule vers la caméra dédiée au menu principal.
+        const float introToMenuBlendDuration = 0.5f;
+        BattleCameraManager.Instance?.SwitchToCamera(MainMenuCameraName, introToMenuBlendDuration);
+
+        // 🎞️ On laisse le travelling d'intro se terminer proprement, puis on replace la caméra à son point d'origine.
+        BattleCameraManager.Instance?.StopBattleIntroCameraTravel(introToMenuBlendDuration);
     }
     #endregion
 

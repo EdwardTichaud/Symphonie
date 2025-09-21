@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Cinemachine;
@@ -8,6 +9,12 @@ using Unity.Cinemachine;
 /// </summary>
 public class BattleCameraManager : MonoBehaviour
 {
+    /// <summary>Nom de la caméra d'introduction explicitement référencé dans les scripts.</summary>
+    private const string IntroCameraName = "CMV_BattleIntro";
+
+    /// <summary>Temps minimal pour considérer qu'une direction est valide.</summary>
+    private const float IntroLookDirectionThreshold = 0.0001f;
+
     /// <summary>Acces global au gestionnaire de camera de combat.</summary>
     public static BattleCameraManager Instance { get; private set; }
 
@@ -29,6 +36,25 @@ public class BattleCameraManager : MonoBehaviour
 
     // Permet de connaître le plan actuellement prioritaire.
     private BattleCameraRole currentRole = BattleCameraRole.None;
+
+    // ------------------------------------------------------------------------------
+    // Gestion dédiée à la Cinemachine d'introduction
+    // ------------------------------------------------------------------------------
+
+    /// <summary>Transform de la caméra d'introduction pour manipuler directement sa position.</summary>
+    private Transform introCameraTransform;
+
+    /// <summary>Position locale de référence de la caméra d'introduction.</summary>
+    private Vector3 introCameraInitialLocalPosition;
+
+    /// <summary>Rotation locale de référence de la caméra d'introduction.</summary>
+    private Quaternion introCameraInitialLocalRotation;
+
+    /// <summary>Coroutine en charge du déplacement continu de la caméra d'intro.</summary>
+    private Coroutine introCameraMoveRoutine;
+
+    /// <summary>Coroutine utilisée pour différer la remise à zéro après un fondu.</summary>
+    private Coroutine introCameraResetRoutine;
 
     void Awake()
     {
@@ -54,6 +80,9 @@ public class BattleCameraManager : MonoBehaviour
 
         RefreshCameraCache();
 
+        // On mémorise la position initiale de la caméra d'introduction dès que possible pour faciliter ses resets.
+        CacheIntroCameraReference();
+
         cameraRig = FindFirstObjectByType<BattleCameraRig>();
         if (!cameraRig)
             Debug.LogWarning("[BattleCameraManager] Aucun BattleCameraRig détecté : les rôles caméra ne seront pas configurés.");
@@ -78,6 +107,9 @@ public class BattleCameraManager : MonoBehaviour
 
         foreach (var cam in availableCameras)
             cameraByName[cam.gameObject.name] = cam;
+
+        // Si la caméra d'intro vient d'être (re)trouvée, on actualise ses informations de base immédiatement.
+        CacheIntroCameraReference();
     }
 
     /// <summary>
@@ -126,6 +158,164 @@ public class BattleCameraManager : MonoBehaviour
     public void ClearRigTargets()
     {
         cameraRig?.ClearTargets();
+    }
+
+    /// <summary>
+    /// Mémorise (ou met à jour) la référence vers la caméra d'introduction et sa transform initiale.
+    /// </summary>
+    private void CacheIntroCameraReference()
+    {
+        // Si aucune caméra d'intro n'est actuellement référencée, on purge les données obsolètes pour repartir proprement.
+        if (!cameraByName.TryGetValue(IntroCameraName, out var camera) || camera == null)
+        {
+            introCameraTransform = null; // La caméra a peut-être été détruite : on oublie toute référence précédente.
+            return;
+        }
+
+        Transform candidate = camera.transform;
+
+        // Si nous pointons déjà sur cette transform, il est inutile de recalculer la position initiale.
+        if (introCameraTransform == candidate)
+            return;
+
+        introCameraTransform = candidate;
+        introCameraInitialLocalPosition = introCameraTransform.localPosition;
+        introCameraInitialLocalRotation = introCameraTransform.localRotation;
+    }
+
+    /// <summary>
+    /// Vérifie que la caméra d'introduction est accessible et mémorise sa position de base si nécessaire.
+    /// </summary>
+    /// <returns><c>true</c> si la caméra est disponible, <c>false</c> sinon.</returns>
+    private bool EnsureIntroCameraReference()
+    {
+        if (introCameraTransform != null)
+            return true; // Référence déjà valide.
+
+        if (!TryGetCameraByName(IntroCameraName, out var camera) || camera == null)
+        {
+            Debug.LogWarning($"[BattleCameraManager] Impossible de localiser la caméra '{IntroCameraName}'.");
+            introCameraTransform = null;
+            return false;
+        }
+
+        introCameraTransform = camera.transform;
+        introCameraInitialLocalPosition = introCameraTransform.localPosition;
+        introCameraInitialLocalRotation = introCameraTransform.localRotation;
+        return true;
+    }
+
+    /// <summary>
+    /// Démarre le travelling linéaire de la caméra d'introduction pour dynamiser l'entrée en combat.
+    /// </summary>
+    /// <param name="moveSpeed">Vitesse de déplacement exprimée en unités monde/seconde.</param>
+    /// <param name="lookAtPoint">Point vers lequel la caméra doit rester orientée (coordonnées monde).</param>
+    public void StartBattleIntroCameraTravel(float moveSpeed = 5f, Vector3? lookAtPoint = null)
+    {
+        if (!EnsureIntroCameraReference())
+            return; // Aucun traitement possible si la caméra n'existe pas.
+
+        // Interrompt un éventuel déplacement encore actif afin d'éviter les doublons.
+        if (introCameraMoveRoutine != null)
+        {
+            StopCoroutine(introCameraMoveRoutine);
+            introCameraMoveRoutine = null;
+        }
+
+        // Si une remise à zéro était planifiée, on l'annule : un nouveau combat démarre, la caméra repart de zéro.
+        if (introCameraResetRoutine != null)
+        {
+            StopCoroutine(introCameraResetRoutine);
+            introCameraResetRoutine = null;
+        }
+
+        // Replace explicitement la caméra sur ses coordonnées d'origine pour garantir un démarrage cohérent.
+        introCameraTransform.localPosition = introCameraInitialLocalPosition;
+        introCameraTransform.localRotation = introCameraInitialLocalRotation;
+
+        Vector3 targetPoint = lookAtPoint ?? Vector3.zero;
+
+        // Oriente immédiatement la caméra vers le point désiré afin d'éviter un frame "hors cible".
+        Vector3 lookDirection = targetPoint - introCameraTransform.position;
+        if (lookDirection.sqrMagnitude > IntroLookDirectionThreshold)
+            introCameraTransform.rotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
+
+        introCameraMoveRoutine = StartCoroutine(IntroCameraTravelRoutine(moveSpeed, targetPoint));
+    }
+
+    /// <summary>
+    /// Stoppe le travelling de la caméra d'intro et programme sa remise en place après le fondu.
+    /// </summary>
+    /// <param name="delayBeforeReset">Temps (en secondes réelles) à attendre avant de restaurer la position initiale.</param>
+    public void StopBattleIntroCameraTravel(float delayBeforeReset = 0f)
+    {
+        if (introCameraMoveRoutine != null)
+        {
+            StopCoroutine(introCameraMoveRoutine);
+            introCameraMoveRoutine = null;
+        }
+
+        if (introCameraTransform == null)
+            return; // Rien à restaurer si la caméra n'est pas disponible.
+
+        if (introCameraResetRoutine != null)
+        {
+            StopCoroutine(introCameraResetRoutine);
+            introCameraResetRoutine = null;
+        }
+
+        if (delayBeforeReset <= 0f)
+        {
+            // Remise immédiate pour les transitions instantanées.
+            introCameraTransform.localPosition = introCameraInitialLocalPosition;
+            introCameraTransform.localRotation = introCameraInitialLocalRotation;
+        }
+        else
+        {
+            introCameraResetRoutine = StartCoroutine(ResetIntroCameraAfterDelay(delayBeforeReset));
+        }
+    }
+
+    /// <summary>
+    /// Coroutine appliquant le déplacement linéaire le long de l'axe Z monde tout en gardant un point de mire fixe.
+    /// </summary>
+    private IEnumerator IntroCameraTravelRoutine(float moveSpeed, Vector3 lookAtPoint)
+    {
+        while (true)
+        {
+            if (introCameraTransform == null)
+                yield break; // Sécurité : la caméra peut être détruite lors d'un changement de scène.
+
+            float delta = Time.unscaledDeltaTime; // Utilisation du temps réel pour conserver une vitesse constante malgré les slow-mo.
+
+            // Translation le long de l'axe Z monde.
+            Vector3 worldPosition = introCameraTransform.position;
+            worldPosition += Vector3.forward * moveSpeed * delta;
+            introCameraTransform.position = worldPosition;
+
+            // Maintien du regard vers le point spécifié.
+            Vector3 lookDirection = lookAtPoint - worldPosition;
+            if (lookDirection.sqrMagnitude > IntroLookDirectionThreshold)
+                introCameraTransform.rotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
+
+            yield return null; // Attente d'une frame avant de poursuivre le mouvement.
+        }
+    }
+
+    /// <summary>
+    /// Ramène la caméra d'introduction sur ses coordonnées d'origine après un fondu vers un autre plan.
+    /// </summary>
+    private IEnumerator ResetIntroCameraAfterDelay(float delay)
+    {
+        yield return new WaitForSecondsRealtime(Mathf.Max(0f, delay));
+
+        if (introCameraTransform != null)
+        {
+            introCameraTransform.localPosition = introCameraInitialLocalPosition;
+            introCameraTransform.localRotation = introCameraInitialLocalRotation;
+        }
+
+        introCameraResetRoutine = null;
     }
 
     /// <summary>
