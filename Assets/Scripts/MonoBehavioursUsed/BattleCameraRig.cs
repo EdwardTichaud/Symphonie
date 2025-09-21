@@ -146,6 +146,9 @@ public class BattleCameraRig : MonoBehaviour
     };
     private static readonly string[] TargetReactionAnchorCandidates =
     {
+        // 🩸 Priorité absolue : les moves doivent cadrer précisément l'impact reçu.
+        "Camera_HitPoint",
+        // 🎯 Retombée classique pour les scènes qui n'exposent pas encore le point d'impact.
         "Camera_TargetReaction",
         "Camera_TargetedPoint"
     };
