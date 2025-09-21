@@ -19,6 +19,14 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Accès global au gestionnaire de caméras de combat.</summary>
     public static BattleCameraManager Instance { get; private set; }
 
+    /// <summary>
+    /// Fournit un accès en lecture à l'unité actuellement propriétaire du tour.
+    /// Ce getter est principalement utilisé par le <see cref="NewBattleManager"/>
+    /// lorsque celui-ci doit reconstruire le contexte d'affichage des menus sans
+    /// perdre l'alignement des Cinemachine sur leurs ancres « CMVPoint_ ».
+    /// </summary>
+    public CharacterUnit CurrentTurnOwner => currentTurnOwner;
+
     /// <summary>BlendSwitcher responsable des transitions (0,5 s smooth imposé).</summary>
     private CinemachineBlendSwitcher blendSwitcher;
 

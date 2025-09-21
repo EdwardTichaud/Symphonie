@@ -2009,8 +2009,68 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Vérifie qu'une unité est bien renseignée pour les menus et essaie de la récupérer sinon.
+    /// Cette méthode est indispensable pour garantir que les caméras Cinemachine (et notamment
+    /// « CMV_ItemsMenu ») disposent toujours d'une ancre valide lorsque l'on ouvre un menu.
+    /// </summary>
+    /// <param name="callerContext">Nom de la méthode appelante (utilisé dans les logs).</param>
+    private bool EnsureCurrentCharacterUnitForMenus(string callerContext)
+    {
+        if (currentCharacterUnit != null)
+            return true; // Cas nominal : rien à corriger.
+
+        CharacterUnit resolvedUnit = null;
+
+        // 1) Premier réflexe : demander au gestionnaire de caméras quelle unité il suit encore.
+        BattleCameraManager cameraManager = BattleCameraManager.Instance;
+        if (cameraManager != null)
+            resolvedUnit = cameraManager.CurrentTurnOwner;
+
+        // 2) Si la caméra n'a plus l'information, on tente de détecter l'unité dont la jauge ATB
+        //    a atteint le seuil. C'est normalement la seule à pouvoir ouvrir les menus de tour.
+        if (resolvedUnit == null)
+        {
+            resolvedUnit = activeCharacterUnits.FirstOrDefault(u =>
+                u != null &&
+                u.Data != null &&
+                u.Data.isPlayerControlled &&
+                u.currentHP > 0 &&
+                u.currentATB >= ATB_THRESHOLD);
+        }
+
+        // 3) Fallback supplémentaire : choisir la première unité jouable côté joueur encore en vie.
+        if (resolvedUnit == null)
+        {
+            resolvedUnit = activeCharacterUnits.FirstOrDefault(u =>
+                u != null &&
+                u.Data != null &&
+                u.Data.isPlayerControlled &&
+                u.currentHP > 0);
+        }
+
+        if (resolvedUnit == null)
+        {
+            Debug.LogError($"[{callerContext}] Impossible d'identifier l'unité active avant l'ouverture d'un menu. " +
+                           "La caméra ne peut donc pas se caler sur le CMVPoint approprié.");
+            return false;
+        }
+
+        // On mémorise la nouvelle unité pour que tout le pipeline (menus, caméra, timelines) reste cohérent.
+        ChangeCurrentCharacterUnit(resolvedUnit);
+
+        // Le gestionnaire caméra doit également être synchronisé afin de replacer immédiatement les rigs.
+        if (cameraManager != null && cameraManager.CurrentTurnOwner != resolvedUnit)
+            cameraManager.SetTurnOwner(resolvedUnit);
+
+        return true;
+    }
+
     public void ShowMainMenu()
     {
+        if (!EnsureCurrentCharacterUnitForMenus(nameof(ShowMainMenu)))
+            return;
+
         // Réaffiche la jauge de passage de tour si elle existe.
         PassTurnUI.Instance?.Show();
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectItemSkillOrPass();
@@ -2046,6 +2106,9 @@ public class NewBattleManager : MonoBehaviour
 
     public void OpenSkillsMenu()
     {
+        if (!EnsureCurrentCharacterUnitForMenus(nameof(OpenSkillsMenu)))
+            return;
+
         // Masque la jauge lorsque l'on ouvre le menu des compétences.
         PassTurnUI.Instance?.Hide();
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectSkill();
@@ -2182,6 +2245,9 @@ public class NewBattleManager : MonoBehaviour
 
     public void OpenItemMenu()
     {
+        if (!EnsureCurrentCharacterUnitForMenus(nameof(OpenItemMenu)))
+            return;
+
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectItem();
         ChangeBattleState(BattleState.SquadUnit_ItemsMenu);
         // S'assure qu'aucune compétence n'est en cours de sélection
