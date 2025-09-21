@@ -130,8 +130,6 @@ public class NewBattleManager : MonoBehaviour
     public TimelineAsset itemPreparingTimeline;
     private bool itemMenuTimelineActive = false;
 
-    /// <summary>Rôle caméra utilisé lors de l'attente de sélection d'objet.</summary>
-    private const BattleCameraRole ItemPreparingCameraRole = BattleCameraRole.MainMenuIdle;
     /// <summary>Nom de la Cinemachine dédiée au menu principal et aux variations associées.</summary>
     private const string MainMenuCameraName = "CMV_MainMenu";
     /// <summary>Nom de la Cinemachine utilisée pour le menu des compétences.</summary>
@@ -2381,7 +2379,12 @@ public class NewBattleManager : MonoBehaviour
             null,
             casterCameraAnchor,
             null);
-        BattleCameraManager.Instance?.SwitchToCamera(ItemPreparingCameraRole);
+        // 🛠️ Important : on force explicitement la Cinemachine du menu d'objets. Auparavant, la timeline
+        // d'attente rappelait la caméra "MainMenu" via un rôle générique (MainMenuIdle), ce qui volait la
+        // priorité à « CMV_ItemsMenu » juste après le changement d'état. En réutilisant le même pipeline
+        // que le système de menus (RequestCamera), on garantit que l'angle spécialisé des objets reste actif
+        // tant que le joueur consulte l'inventaire.
+        RequestCamera(ItemsMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
 
         // L'objet d'animation sert de point d'ancrage pour la timeline et l'alignement caméra.
         GameObject animGO = casterAnimator != null ? casterAnimator.gameObject : currentCharacterUnit.GetCasterBindingTarget();
