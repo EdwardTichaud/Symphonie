@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Cinemachine;
@@ -242,6 +243,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         {
             _current = null;
             UpdateActiveCameraStates(null);
+            LogCameraPriorities("Aucune camera Cinemachine valide disponible pour la priorite par defaut");
             return;
         }
 
@@ -260,6 +262,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         // la liste est reordonnee ailleurs. Nous posons ici la CMV_MainMenu si elle a ete trouvee.
         _current = defaultCamera;
         UpdateActiveCameraStates(_current);
+        LogCameraPriorities("Activation de la priorite par defaut");
     }
 
     /// <summary>
@@ -305,6 +308,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
 
             _current = null;
             UpdateActiveCameraStates(null);
+            LogCameraPriorities("Toutes les CMV sont desactivees");
             return;
         }
 
@@ -330,6 +334,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
 
         _current = next;
         UpdateActiveCameraStates(next);
+        LogCameraPriorities($"Activation de \"{cameraName}\"");
 
         // 🔁 Après un cut forcé (principalement lors des fondus visuels), on restaure un blend doux pour les prochains plans.
         if (forceCut && brain)
@@ -645,6 +650,59 @@ public class CinemachineBlendSwitcher : MonoBehaviour
             return; // État déjà mémorisé : aucune action supplémentaire nécessaire.
 
         initialCameraActivationStates.Add(camera, camera.gameObject.activeSelf);
+    }
+
+    /// <summary>
+    /// Journalise l'etat courant des priorites Cinemachine pour offrir une visibilite instantanee
+    /// sur la camera qui domine le rendu. Les messages consolident toutes les informations utiles
+    /// (noms des CMV, priorites et camera active) sur une seule ligne afin de faciliter le debug.
+    /// </summary>
+    /// <param name="reason">Texte optionnel de contexte de declenchement (nom de la camera activee, etc.).</param>
+    private void LogCameraPriorities(string reason)
+    {
+        // 🔊 Cette methode est volontairement bavarde : la demande equipe requiert un retour console
+        // immediat pour identifier la CMV prioritaire. Nous construisons donc un message synthetique
+        // mais detaille afin de suivre les changements en temps reel sans devoir consulter l'inspecteur.
+        if (cameras == null || cameras.Count == 0)
+        {
+            Debug.Log($"[BlendSwitcher] {reason} -> aucune CinemachineCamera enregistree.");
+            return;
+        }
+
+        var builder = new StringBuilder();
+        builder.Append("[BlendSwitcher] Priorites Cinemachine");
+        if (!string.IsNullOrEmpty(reason))
+        {
+            builder.Append(" (").Append(reason).Append(')');
+        }
+        builder.Append(": ");
+
+        bool hasEntry = false;
+        foreach (var cam in cameras)
+        {
+            if (!cam)
+                continue; // securite : la liste peut contenir des references liberees pendant le runtime.
+
+            if (hasEntry)
+                builder.Append(" | ");
+
+            // L'asterisque identifie immediatement la camera actuellement prioritaire.
+            string prefix = ReferenceEquals(cam, _current) ? "*" : "-";
+            builder.Append(prefix).Append(cam.name).Append(':').Append(cam.Priority);
+            hasEntry = true;
+        }
+
+        if (!hasEntry)
+        {
+            builder.Append("aucune camera valide detectee");
+        }
+        else
+        {
+            builder.Append(" => active=");
+            builder.Append(_current ? _current.name : "aucune");
+        }
+
+        Debug.Log(builder.ToString());
     }
 
     /// <summary>
