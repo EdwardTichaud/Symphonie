@@ -16612,7 +16612,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1076.0006, y: -178.7998}
+  m_AnchoredPosition: {x: -1076.0004, y: -178.7998}
   m_SizeDelta: {x: -2766.6, y: -1139.6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8198485471137816153
@@ -18473,7 +18473,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -1076.0006, y: 778.6}
+  m_AnchoredPosition: {x: -1076.0004, y: 778.6}
   m_SizeDelta: {x: -2766.6, y: -1976.8}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3204166260224044258
@@ -20080,18 +20080,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   brain: {fileID: 1108275434897552830}
   cameras:
-  - {fileID: 8293381464646350377}
-  - {fileID: 0}
-  - {fileID: 5639254888972820362}
-  - {fileID: 7905315835598155209}
-  - {fileID: 7579079771466216716}
+  - {fileID: 3383382751276640699}
   - {fileID: 647156252857778881}
   - {fileID: 2912327424694186787}
   - {fileID: 2629468665671920723}
-  - {fileID: 0}
-  - {fileID: 3383382751276640699}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 4952693851922537234}
+  - {fileID: 8293381464646350377}
+  - {fileID: 7279195046704657904}
+  - {fileID: 5639254888972820362}
+  - {fileID: 7579079771466216716}
+  - {fileID: 7905315835598155209}
   activePriority: 100
   inactivePriority: 10
   blendStyle: 1
@@ -21597,7 +21595,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1318187734422061808}
-  - component: {fileID: 3823861060166874}
   m_Layer: 0
   m_Name: BattleCinemachineCameras
   m_TagString: Untagged
@@ -21630,44 +21627,6 @@ Transform:
   - {fileID: 1861995296882804291}
   m_Father: {fileID: 3949434785713621470}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3823861060166874
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6266393350085746885}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 917f9cea1dea49739bd0d736665aebf8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  baseLerpSpeed: 6
-  rotationLerpSpeed: 8
-  epsilon: 0.0001
-  defaultCasterFocusHeight: 1.6
-  defaultTargetFocusHeight: 1.5
-  attackNoiseAmplitude: 0.12
-  attackNoiseVerticalMultiplier: 0.45
-  attackNoiseFrequency: 2.2
-  attackNoiseRotationAmplitude: 0.9
-  idleOrbitRadius: 5
-  idleOrbitSpeed: 0.35
-  idleFocusHeight: 2
-  idleFovAmplitude: 2.5
-  idleFovSpeed: 0.75
-  idleBaseDistance: 2.25
-  shoulderStayFov: 50
-  pushFov: 42
-  reactionFov: 48
-  wideFov: 55
-  wideCasterWeight: 0.6
-  wideTargetWeight: 0.4
-  projectileSpeed: 1.35
-  projectileSideAmplitude: 0.65
-  projectileSideFrequency: 1.2
-  victoryFov: 38
-  victoryTilt: 12
 --- !u!1 &6269623845448164628
 GameObject:
   m_ObjectHideFlags: 0
