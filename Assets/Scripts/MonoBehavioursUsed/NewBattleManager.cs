@@ -141,25 +141,31 @@ public class NewBattleManager : MonoBehaviour
     /// <summary>Nom de la Cinemachine utilisée lors de l'exécution d'une action (MusicalMove ou Item).</summary>
     private const string MoveCameraName = "CMV_Move";
     /// <summary>
-    /// Style de transition privilégié pour les menus : on adopte désormais un fondu doux pour guider le
-    /// regard du joueur sans rupture visuelle.
+    /// Style de transition privilégié pour les menus. Il est directement récupéré auprès du
+    /// <see cref="BattleCameraManager"/> pour rester parfaitement aligné avec la configuration globale du
+    /// <see cref="CinemachineBlendSwitcher"/> (smooth obligatoire).
     /// </summary>
-    private const CinemachineBlendDefinition.Styles MenuCameraBlendStyle = CinemachineBlendDefinition.Styles.EaseInOut;
+    private CinemachineBlendDefinition.Styles MenuCameraBlendStyle =>
+        BattleCameraManager.Instance ? BattleCameraManager.Instance.SmoothBlendStyle : CinemachineBlendSwitcher.ResolveSmoothBlendStyle();
+
     /// <summary>
-    /// Durée par défaut des transitions de menu. Réglée sur une seconde pour offrir une interpolation
-    /// claire et lisible lors du passage d'un panneau à l'autre.
+    /// Durée par défaut des transitions de menu. Toutes les transitions du jeu étant désormais figées à
+    /// 0,5 seconde, on utilise la propriété exposée par le gestionnaire caméra pour éviter toute divergence.
     /// </summary>
-    private const float MenuCameraBlendDuration = 1f;
+    private float MenuCameraBlendDuration =>
+        BattleCameraManager.Instance ? BattleCameraManager.Instance.SmoothBlendDuration : CinemachineBlendSwitcher.GlobalSmoothBlendDurationSeconds;
+
     /// <summary>
-    /// Durée appliquée aux caméras contextuelles (ciblage, actions). Harmonisée sur une seconde afin de
-    /// conserver la cohérence avec les transitions de menus.
+    /// Durée appliquée aux caméras contextuelles (ciblage, actions). Identique à celle des menus afin de
+    /// conserver une expérience fluide et prévisible pour le joueur.
     /// </summary>
-    private const float ContextCameraBlendDuration = 1f;
+    private float ContextCameraBlendDuration => MenuCameraBlendDuration;
+
     /// <summary>
-    /// Style de transition privilégié pour les caméras contextuelles. On privilégie un lissage progressif
-    /// pour mettre en valeur les animations sans cut brutal.
+    /// Style de transition privilégié pour les caméras contextuelles. Même valeur que pour les menus : un
+    /// unique réglage smooth garantit la cohérence visuelle quel que soit le rôle de la caméra active.
     /// </summary>
-    private const CinemachineBlendDefinition.Styles ContextCameraBlendStyle = CinemachineBlendDefinition.Styles.EaseInOut;
+    private CinemachineBlendDefinition.Styles ContextCameraBlendStyle => MenuCameraBlendStyle;
     /// <summary>Hash du state Animator "Item_Prepare" pour lancer rapidement l'animation correspondante.</summary>
     private static readonly int AnimatorStateItemPrepare = Animator.StringToHash("Item_Prepare");
     /// <summary>Hash du state Animator "Idle_Battle" afin de revenir proprement à la pose neutre.</summary>

@@ -37,6 +37,21 @@ public class BattleCameraManager : MonoBehaviour
     // Permet de connaître le plan actuellement prioritaire.
     private BattleCameraRole currentRole = BattleCameraRole.None;
 
+    /// <summary>
+    /// Style de blend lissé imposé par le <see cref="CinemachineBlendSwitcher"/>. Si le composant n'est
+    /// pas encore disponible (phase de bootstrap), on retombe sur la résolution statique du switcher afin
+    /// d'assurer la cohérence des transitions.
+    /// </summary>
+    public CinemachineBlendDefinition.Styles SmoothBlendStyle =>
+        blendSwitcher ? blendSwitcher.SmoothBlendStyle : CinemachineBlendSwitcher.ResolveSmoothBlendStyle();
+
+    /// <summary>
+    /// Durée unique (0,5 s) appliquée à toutes les transitions caméra. Cette propriété est exposée pour
+    /// faciliter sa réutilisation dans les différents gestionnaires de menus et de cutscenes.
+    /// </summary>
+    public float SmoothBlendDuration =>
+        blendSwitcher ? blendSwitcher.SmoothBlendDuration : CinemachineBlendSwitcher.GlobalSmoothBlendDurationSeconds;
+
     // ------------------------------------------------------------------------------
     // Gestion dédiée à la Cinemachine d'introduction
     // ------------------------------------------------------------------------------
@@ -89,10 +104,11 @@ public class BattleCameraManager : MonoBehaviour
         else
             BuildRoleMappings();
 
-        // Au demarrage du combat on revient sur la camera principale taggee "BattleCamera".
-        // On force une transition immediate (duree 0) pour eviter un fondu au lancement.
+        // Au démarrage du combat on revient sur la camera principale taggée "BattleCamera". Toutes les
+        // transitions doivent désormais respecter le blend smooth de 0.5 s : on s'appuie donc sur la durée
+        // globale imposée par le switcher plutôt que de forcer un cut instantané.
         if (blendSwitcher)
-            blendSwitcher.DisplayCamera(null, 0f);
+            blendSwitcher.DisplayCamera(null, SmoothBlendDuration);
     }
 
     /// <summary>
@@ -389,8 +405,8 @@ public class BattleCameraManager : MonoBehaviour
         if (!AlignCameraToAnchor(cameraName, anchor))
             return;
 
-        // Puis donne la priorité à cette caméra en conservant la durée par défaut (désormais lissée sur
-        // une seconde via le BlendSwitcher) sauf indication contraire.
+        // Puis donne la priorité à cette caméra en conservant la durée par défaut (0,5 s) imposée par
+        // le BlendSwitcher, sauf indication contraire.
         SwitchToCamera(cameraName, blendTime, overrideStyle);
     }
 
@@ -507,50 +523,16 @@ public class BattleCameraManager : MonoBehaviour
 
     private float ComputeBlendDuration(BattleCameraRole from, BattleCameraRole to)
     {
-        if ((from == BattleCameraRole.ClosePushCaster && to == BattleCameraRole.TargetReaction) ||
-            (from == BattleCameraRole.TargetReaction && to == BattleCameraRole.ClosePushCaster))
-            return 0.08f; // Cut nerveux pour les contres.
-
-        if ((from == BattleCameraRole.WideEstablish && to == BattleCameraRole.OverShoulderCasterToTarget) ||
-            (from == BattleCameraRole.OverShoulderCasterToTarget && to == BattleCameraRole.WideEstablish))
-            return 0.4f; // Transition douce entre plan large et épaule.
-
-        if ((from == BattleCameraRole.WideEstablish && to == BattleCameraRole.OverShoulderCasterLookTarget) ||
-            (from == BattleCameraRole.OverShoulderCasterLookTarget && to == BattleCameraRole.WideEstablish))
-            return 0.4f; // Même lisibilité que l'épaule classique pour présenter l'action.
-
-        if ((from == BattleCameraRole.OverShoulderCasterToTarget && to == BattleCameraRole.OverShoulderCasterLookTarget) ||
-            (from == BattleCameraRole.OverShoulderCasterLookTarget && to == BattleCameraRole.OverShoulderCasterToTarget))
-            return 0.25f; // Cut plus nerveux entre les deux variantes de plan épaule.
-
-        if (from == BattleCameraRole.Victory || to == BattleCameraRole.Victory)
-            return 1f; // Plan final plus ample.
-
-        return -1f; // Conserve la durée par défaut du BlendSwitcher.
+        // 🎞️ Toutes les combinaisons utilisent désormais la même durée lissée afin de garantir une lecture
+        // cohérente des enchaînements caméra (plus aucun cut brutal).
+        return SmoothBlendDuration;
     }
 
     private CinemachineBlendDefinition.Styles? ComputeBlendStyle(BattleCameraRole from, BattleCameraRole to)
     {
-        if ((from == BattleCameraRole.ClosePushCaster && to == BattleCameraRole.TargetReaction) ||
-            (from == BattleCameraRole.TargetReaction && to == BattleCameraRole.ClosePushCaster))
-            return CinemachineBlendDefinition.Styles.Cut;
-
-        if (from == BattleCameraRole.Victory || to == BattleCameraRole.Victory)
-            return CinemachineBlendDefinition.Styles.EaseOut;
-
-        if ((from == BattleCameraRole.WideEstablish && to == BattleCameraRole.OverShoulderCasterToTarget) ||
-            (from == BattleCameraRole.OverShoulderCasterToTarget && to == BattleCameraRole.WideEstablish))
-            return CinemachineBlendDefinition.Styles.EaseInOut;
-
-        if ((from == BattleCameraRole.WideEstablish && to == BattleCameraRole.OverShoulderCasterLookTarget) ||
-            (from == BattleCameraRole.OverShoulderCasterLookTarget && to == BattleCameraRole.WideEstablish))
-            return CinemachineBlendDefinition.Styles.EaseInOut;
-
-        if ((from == BattleCameraRole.OverShoulderCasterToTarget && to == BattleCameraRole.OverShoulderCasterLookTarget) ||
-            (from == BattleCameraRole.OverShoulderCasterLookTarget && to == BattleCameraRole.OverShoulderCasterToTarget))
-            return CinemachineBlendDefinition.Styles.Cut;
-
-        return null;
+        // 🎯 Même logique que pour la durée : on impose le style smooth unique afin d'éviter tout cut ou
+        // easing divergent suivant les rôles caméra.
+        return SmoothBlendStyle;
     }
 
     /// <summary>
