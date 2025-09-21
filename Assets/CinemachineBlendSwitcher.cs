@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,19 @@ using Unity.Cinemachine;
 [DisallowMultipleComponent]
 public class CinemachineBlendSwitcher : MonoBehaviour
 {
+    /// <summary>
+    /// Durée homogène imposée à tous les blends Cinemachine. Nous la rendons publique afin que l'ensemble
+    /// du code gameplay puisse y accéder sans avoir à dupliquer la valeur magique de 0.5 seconde dans
+    /// chaque script.
+    /// </summary>
+    public const float GlobalSmoothBlendDurationSeconds = 0.5f;
+
+    /// <summary>
+    /// Cache statique du style « Smooth ». Cela évite de lancer un <see cref="Enum.TryParse"/> à chaque
+    /// requête tout en gérant proprement les versions de Cinemachine qui n'exposeraient pas explicitement
+    /// ce style (on retombe alors sur un <see cref="CinemachineBlendDefinition.Styles.EaseInOut"/>).</summary>
+    private static CinemachineBlendDefinition.Styles? cachedSmoothStyle;
+
     [Header("Brain (auto si vide)")]
     [SerializeField] private CinemachineBrain brain;
 
@@ -24,14 +38,14 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     [Header("Style de blend par defaut")]
     [SerializeField]
     private CinemachineBlendDefinition.Styles blendStyle =
-        CinemachineBlendDefinition.Styles.EaseInOut;
+        CinemachineBlendDefinition.Styles.EaseInOut; // valeur par défaut réécrite dans Awake pour imposer le mode Smooth.
 
     [Tooltip("Duree par defaut du blend ou du fondu entre deux cameras (en secondes).")]
-    [SerializeField] private float defaultBlendDuration = 1f;
+    [SerializeField] private float defaultBlendDuration = GlobalSmoothBlendDurationSeconds;
 
     [Header("Fondu visuel")] // Permet de remplacer le mouvement par un fondu
     [Tooltip("Active la possibilite de realiser un fondu visuel entre deux plans.")]
-    [SerializeField] private bool useVisualCrossFade = true;
+    [SerializeField] private bool useVisualCrossFade = false;
 
     [Tooltip("Courbe d'evolution de l'opacite durant le fondu (0 = transparent, 1 = opaque).")]
     [SerializeField] private AnimationCurve crossFadeCurve = AnimationCurve.Linear(0f, 1f, 1f, 0f);
@@ -57,6 +71,17 @@ public class CinemachineBlendSwitcher : MonoBehaviour
 
     void Awake()
     {
+        // 🎯 Toutes les transitions doivent maintenant employer un mouvement lissé identique : on force donc
+        // dès l'initialisation un style Smooth et une durée fixe de 0.5 seconde. En cas d'indisponibilité
+        // du style "Smooth" (ancienne version de Cinemachine), on se replie automatiquement sur EaseInOut.
+        blendStyle = ResolveSmoothBlendStyle();
+        defaultBlendDuration = GlobalSmoothBlendDurationSeconds;
+
+        // 🪄 Les fondus visuels reposent sur des cuts forcés côté Cinemachine. Afin de garantir des mouvements
+        // réellement smooth, on les désactive systématiquement. Les anciennes données de scène qui auraient
+        // coché l'option sont ainsi neutralisées dès que le composant s'initialise.
+        useVisualCrossFade = false;
+
         // Recuperation du CinemachineBrain sur la camera de rendu.
         if (!brain && Camera.main) brain = Camera.main.GetComponent<CinemachineBrain>();
         if (!brain) Debug.LogWarning("[BlendSwitcher] Aucun CinemachineBrain trouve sur la camera de rendu.");
@@ -121,7 +146,14 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     /// <param name="overrideStyle">Style de blend à forcer (null = style par défaut).</param>
     public void DisplayCamera(string cameraName, float blendDuration, CinemachineBlendDefinition.Styles? overrideStyle = null)
     {
-        float resolvedDuration = blendDuration >= 0f ? blendDuration : defaultBlendDuration;
+        // 📴 Les fondus visuels étant interdits, on neutralise à nouveau le flag au cas où un autre composant
+        // aurait tenté de le réactiver avant cet appel (par exemple via une ancienne valeur sérialisée).
+        useVisualCrossFade = false;
+
+        // 🎯 Les paramètres externes peuvent encore tenter de fournir une durée personnalisée, mais la
+        // direction artistique impose désormais un unique blend smooth de 0,5 seconde. On ignore donc la
+        // valeur entrante et on applique systématiquement la durée globale homogène.
+        float resolvedDuration = SmoothBlendDuration;
 
         // Si la camera cible exige un fondu visuel, on lance une coroutine dediee qui
         // capture l'image actuelle avant de basculer sur la nouvelle camera.
@@ -627,4 +659,35 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     /// Fournit l'instance de la <see cref="CinemachineCamera"/> actuellement prioritaire.
     /// </summary>
     public CinemachineCamera CurrentCamera => _current;
+
+    /// <summary>
+    /// Style de blend lissé utilisé par l'ensemble du projet. En accédant à cette propriété, les autres
+    /// composants (menus, transitions...) s'alignent automatiquement sur le réglage global sans avoir
+    /// besoin de dupliquer la logique de résolution du style.
+    /// </summary>
+    public CinemachineBlendDefinition.Styles SmoothBlendStyle => ResolveSmoothBlendStyle();
+
+    /// <summary>
+    /// Durée lissée appliquée à toutes les transitions Cinemachine. La constante centrale évite toute
+    /// dérive liée à d'anciennes valeurs sérialisées : chaque blend dure strictement 0,5 seconde.
+    /// </summary>
+    public float SmoothBlendDuration => GlobalSmoothBlendDurationSeconds;
+
+    /// <summary>
+    /// Résout dynamiquement le style « Smooth » en conservant un fallback compatible avec les anciennes
+    /// versions de Cinemachine. Cette méthode centralise la logique afin que toute évolution future se
+    /// propage automatiquement.
+    /// </summary>
+    public static CinemachineBlendDefinition.Styles ResolveSmoothBlendStyle()
+    {
+        if (cachedSmoothStyle.HasValue)
+            return cachedSmoothStyle.Value;
+
+        if (Enum.TryParse("Smooth", true, out CinemachineBlendDefinition.Styles parsedStyle))
+            cachedSmoothStyle = parsedStyle;
+        else
+            cachedSmoothStyle = CinemachineBlendDefinition.Styles.EaseInOut;
+
+        return cachedSmoothStyle.Value;
+    }
 }

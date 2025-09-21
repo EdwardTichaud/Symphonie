@@ -459,7 +459,9 @@ public class BattleTransitionManager : MonoBehaviour
             if (BattleCameraManager.Instance != null &&
                 BattleCameraManager.Instance.TryGetCameraByName("CMV_BattleIntro", out _))
             {
-                BattleCameraManager.Instance.SwitchToCamera("CMV_BattleIntro", 0f);
+                // Toutes les transitions caméra étant désormais lissées, on s'appuie sur la durée par défaut
+                // fournie par le BlendSwitcher plutôt que d'imposer un cut immédiat.
+                BattleCameraManager.Instance.SwitchToCamera("CMV_BattleIntro");
 
                 // Dès l'apparition du plan d'introduction, on déclenche son travelling le long de l'axe Z.
                 // Le point de mire est volontairement fixé à l'origine mondiale pour cadrer la scène de combat.
@@ -469,7 +471,7 @@ public class BattleTransitionManager : MonoBehaviour
             }
             else
             {
-                BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.WideEstablish, 0f);
+                BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.WideEstablish);
             }
         }
         else
