@@ -132,16 +132,22 @@ public class NewBattleManager : MonoBehaviour
 
     /// <summary>Rôle caméra utilisé lors de l'attente de sélection d'objet.</summary>
     private const BattleCameraRole ItemPreparingCameraRole = BattleCameraRole.MainMenuIdle;
-    /// <summary>Nom de la Cinemachine dédiée au menu principal.</summary>
+    /// <summary>Nom de la Cinemachine dédiée au menu principal et aux variations associées.</summary>
     private const string MainMenuCameraName = "CMV_MainMenu";
-    /// <summary>Nom de la Cinemachine dédiée au menu des compétences.</summary>
-    private const string SkillsMenuCameraName = "CMV_SkillsMenu";
     /// <summary>Nom de la Cinemachine dédiée au menu des objets.</summary>
     private const string ItemsMenuCameraName = "CMV_ItemsMenu";
+    /// <summary>Nom de la Cinemachine utilisée pour suivre le curseur de ciblage.</summary>
+    private const string TargetCursorCameraName = "CMV_TargetCursor";
+    /// <summary>Nom de la Cinemachine utilisée lors de l'exécution d'une action (MusicalMove ou Item).</summary>
+    private const string MoveCameraName = "CMV_Move";
     /// <summary>Style de transition privilégié pour les menus (cut instantané).</summary>
     private const CinemachineBlendDefinition.Styles MenuCameraBlendStyle = CinemachineBlendDefinition.Styles.Cut;
     /// <summary>Durée par défaut des transitions de menu (0 = cut immédiat).</summary>
     private const float MenuCameraBlendDuration = 0f;
+    /// <summary>Durée appliquée aux caméras contextuelles (ciblage, actions).</summary>
+    private const float ContextCameraBlendDuration = 0f;
+    /// <summary>Style de transition privilégié pour les caméras contextuelles.</summary>
+    private const CinemachineBlendDefinition.Styles ContextCameraBlendStyle = CinemachineBlendDefinition.Styles.Cut;
     /// <summary>Hash du state Animator "Item_Prepare" pour lancer rapidement l'animation correspondante.</summary>
     private static readonly int AnimatorStateItemPrepare = Animator.StringToHash("Item_Prepare");
     /// <summary>Hash du state Animator "Idle_Battle" afin de revenir proprement à la pose neutre.</summary>
@@ -238,6 +244,10 @@ public class NewBattleManager : MonoBehaviour
     private bool isMenuCinemachineActive = false;
     // Mémorise le nom de la Cinemachine actuellement utilisée pour le menu afin de pouvoir la libérer proprement.
     private string activeMenuCameraName;
+    // Indique si la Cinemachine dédiée au curseur de cible possède actuellement la priorité.
+    private bool isTargetCursorCinemachineActive = false;
+    // Indique si la Cinemachine d'action (moves/items) contrôle actuellement la vue.
+    private bool isMoveCinemachineActive = false;
 
     [Header("Cinématique de début de tour joueur")]
     [SerializeField, Tooltip("Durée du travelling inspiré de l'introduction de combat (en secondes).")]
@@ -945,7 +955,9 @@ public class NewBattleManager : MonoBehaviour
         yield return new WaitForSecondsRealtime(delay);
         // On arrête de forcer la caméra sur la cible avant d'exécuter l'attaque
         lookAtCasterFromTargetPoint = false;
+        ActivateMoveCinemachine(enemy);
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
+        DeactivateMoveCinemachine();
 
         // Ajoute le move au codex et affiche sa découverte si nécessaire
         if (!alreadyKnown && MusicalCodexManager.Instance != null && MusicalCodexManager.Instance.TryAddNewMelody(move))
@@ -1007,6 +1019,7 @@ public class NewBattleManager : MonoBehaviour
             }
         }
         // Lecture d'un avertissement sonore si le mouvement en possède un
+        ActivateMoveCinemachine(caster);
         if (move.warningClip != null)
         {
             RhythmQTEManager.Instance?.PrepareQTEBar(move.notes);
@@ -1017,6 +1030,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
+        DeactivateMoveCinemachine();
 
         // Ajout du système de rage manuellement
         var rage = caster.GetComponent<RageSystem>();
@@ -1064,7 +1078,9 @@ public class NewBattleManager : MonoBehaviour
         OrientUnitTowardTarget(caster, target);
 
         // Animation ou Timeline d'utilisation
+        ActivateMoveCinemachine(caster);
         yield return RhythmQTEManager.Instance.ItemRoutine(item, caster, target);
+        DeactivateMoveCinemachine();
 
         bool crit = RhythmQTEManager.Instance.LastItemSuccess;
         if (crit)
@@ -2404,6 +2420,7 @@ public class NewBattleManager : MonoBehaviour
             }
             HideMultiTargetCursors();
             UpdateTargetCursorColor(true);
+            DeactivateTargetCursorCinemachine();
             return;
         }
 
@@ -2444,6 +2461,8 @@ public class NewBattleManager : MonoBehaviour
                     multiTargetCursors[i].SetActive(false);
                 }
             }
+
+            DeactivateTargetCursorCinemachine();
         }
         else
         {
@@ -2503,6 +2522,8 @@ public class NewBattleManager : MonoBehaviour
                     targetCursor.transform.position = currentTargetCharacter.transform.position;
                     UpdateTargetCursorColor(true);
                 }
+
+                UpdateTargetCursorCinemachine(currentTargetCharacter);
             }
         }
     }
@@ -2676,6 +2697,103 @@ public class NewBattleManager : MonoBehaviour
         activeMenuCameraName = null;
     }
 
+    /// <summary>
+    /// Met à jour la Cinemachine dédiée au curseur de cible pour qu'elle se cale sur l'ancre de la cible courante.
+    /// </summary>
+    /// <param name="target">Unité actuellement visée par le joueur (ou l'ennemi).</param>
+    private void UpdateTargetCursorCinemachine(CharacterUnit target)
+    {
+        if (targetCursor == null || !targetCursor.activeInHierarchy || target == null)
+        {
+            DeactivateTargetCursorCinemachine();
+            return;
+        }
+
+        Transform anchor = GetTargetedAnchorOrFallback(target);
+        if (anchor == null)
+        {
+            DeactivateTargetCursorCinemachine();
+            return;
+        }
+
+        var manager = BattleCameraManager.Instance;
+        if (manager == null)
+            return; // Aucun gestionnaire de caméra disponible : on laisse la caméra par défaut.
+
+        // Aligne systématiquement la caméra sur l'ancre pour suivre les éventuels déplacements du modèle.
+        manager.AlignCameraToAnchor(TargetCursorCameraName, anchor);
+
+        if (!isTargetCursorCinemachineActive)
+        {
+            manager.SwitchToCamera(TargetCursorCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
+            isTargetCursorCinemachineActive = true;
+        }
+    }
+
+    /// <summary>
+    /// Coupe la Cinemachine dédiée au curseur de cible lorsque le joueur quitte une phase de ciblage.
+    /// </summary>
+    private void DeactivateTargetCursorCinemachine()
+    {
+        if (!isTargetCursorCinemachineActive)
+            return;
+
+        var manager = BattleCameraManager.Instance;
+        if (manager != null && !isMenuCinemachineActive && !isMoveCinemachineActive)
+            manager.SwitchToCamera(null, ContextCameraBlendDuration, ContextCameraBlendStyle);
+
+        isTargetCursorCinemachineActive = false;
+    }
+
+    /// <summary>
+    /// Active (ou réactualise) la Cinemachine utilisée pendant l'exécution d'un MusicalMove ou d'un Item.
+    /// </summary>
+    /// <param name="caster">Unité qui réalise l'action en cours.</param>
+    private void ActivateMoveCinemachine(CharacterUnit caster)
+    {
+        if (caster == null)
+        {
+            DeactivateMoveCinemachine();
+            return;
+        }
+
+        Transform anchor = ResolveCameraAnchor(
+            caster.transform,
+            "Camera_MoveReference",
+            "[BattleCameraManager] Aucun point 'Camera_MoveReference' trouvé pour aligner la caméra d'action."
+        );
+
+        var manager = BattleCameraManager.Instance;
+        if (manager == null)
+            return;
+
+        // On désactive immédiatement la caméra de ciblage pour éviter un conflit de priorité.
+        DeactivateTargetCursorCinemachine();
+
+        manager.AlignCameraToAnchor(MoveCameraName, anchor);
+
+        if (!isMoveCinemachineActive)
+        {
+            manager.SwitchToCamera(MoveCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
+            isMoveCinemachineActive = true;
+        }
+    }
+
+    /// <summary>
+    /// Libère la Cinemachine d'action afin de rendre la main à la caméra par défaut ou au menu.
+    /// </summary>
+    private void DeactivateMoveCinemachine()
+    {
+        if (!isMoveCinemachineActive)
+            return;
+
+        var manager = BattleCameraManager.Instance;
+        if (manager != null && !isMenuCinemachineActive && !isTargetCursorCinemachineActive)
+            manager.SwitchToCamera(null, ContextCameraBlendDuration, ContextCameraBlendStyle);
+
+        isMoveCinemachineActive = false;
+    }
+
     public void UpdateCameraBehaviour(BattleState newState)
     {
         // On vérifie ponctuellement que la caméra de combat est bien référencée
@@ -2730,16 +2848,19 @@ public class NewBattleManager : MonoBehaviour
                     "Camera_SkillsMenu",
                     "[BattleCameraManager] Aucun point 'Camera_SkillsMenu' trouvé."
                 );
-                handledByMenuCamera = ActivateMenuCinemachineCamera(SkillsMenuCameraName, desiredTransform);
+                // La Cinemachine de menu principale est réutilisée pour garantir un cut cohérent entre
+                // le menu principal et la consultation des compétences.
+                handledByMenuCamera = ActivateMenuCinemachineCamera(MainMenuCameraName, desiredTransform);
                 break;
 
             case BattleState.SquadUnit_ItemsMenu:
                 isFollowingCurrentTarget = false;
-                // Point de vue spécialisé pour l'utilisation ou la préparation des objets.
+                // Les objets utilisent le même plan d'attente que le menu principal pour conserver
+                // la familiarité du cadrage.
                 desiredTransform = ResolveCameraAnchor(
                     currentCharacterUnit.transform,
-                    "Camera_ItemsMenu",
-                    "[BattleCameraManager] Aucun point 'Camera_ItemsMenu' trouvé."
+                    "Camera_MainMenu",
+                    "[BattleCameraManager] Aucun point 'Camera_MainMenu' trouvé pour le menu des objets."
                 );
                 handledByMenuCamera = ActivateMenuCinemachineCamera(ItemsMenuCameraName, desiredTransform);
                 break;
@@ -2798,6 +2919,19 @@ public class NewBattleManager : MonoBehaviour
                 desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
                 break;
 
+            case BattleState.SquadUnit_PerformingMusicalMove:
+            case BattleState.SquadUnit_Item_Use:
+                // Pendant l'exécution d'une action joueur, on reste calé sur l'ancre dédiée pour
+                // assurer une cohérence avec la Cinemachine "CMV_Move".
+                isFollowingCurrentTarget = false;
+                lookAtCasterDuringTargetSelection = false;
+                desiredTransform = ResolveCameraAnchor(
+                    currentCharacterUnit.transform,
+                    "Camera_MoveReference",
+                    "[BattleCameraManager] Aucun point 'Camera_MoveReference' trouvé pour le lanceur."
+                );
+                break;
+
             case BattleState.EnemyUnit_Reflexion:
                 isFollowingCurrentTarget = false;
                 desiredTransform = GetTargetedAnchorOrFallback(currentTargetCharacter);
@@ -2824,6 +2958,15 @@ public class NewBattleManager : MonoBehaviour
                 desiredTransform = null;
                 break;
         }
+
+        bool isActionState =
+            currentBattleState == BattleState.SquadUnit_PerformingMusicalMove ||
+            currentBattleState == BattleState.SquadUnit_Item_Use ||
+            currentBattleState == BattleState.EnemyUnit_PerformingMusicalMove ||
+            currentBattleState == BattleState.EnemyUnit_Item_Use;
+
+        if (!isActionState)
+            DeactivateMoveCinemachine();
 
         if (!handledByMenuCamera)
             DeactivateMenuCinemachineCamera();
