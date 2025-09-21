@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Playables; // 📽️ Gestion des timelines propres à l'unité
 using UnityEngine.Timeline;  // 🎼 Lecture des TimelineAsset assignés au PlayableDirector local
@@ -33,6 +34,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     // Indicateur évitant les multiples avertissements lorsque l'Animator enfant est introuvable.
     private bool hasLoggedMissingChildAnimator;
     private AwakeState awakeState;
+
+    // Mise en cache des ancres caméra pour éviter de reparcourir toute la hiérarchie à chaque requête.
+    private readonly Dictionary<string, Transform> cachedCameraAnchors = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// PlayableDirector individuel utilisé pour jouer les timelines de combat
@@ -172,6 +176,55 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         Animator casterAnimator = GetCasterAnimator();
         return casterAnimator != null ? casterAnimator.gameObject : gameObject;
+    }
+
+    /// <summary>
+    /// Recherche (et met en cache) une ancre caméra particulière sur le CharacterUnit.
+    /// </summary>
+    /// <param name="anchorName">Nom exact du point de caméra recherché.</param>
+    /// <param name="includeInactive">
+    /// Vrai pour parcourir également les objets désactivés (utile lorsque certains repères sont masqués dans l'éditeur).
+    /// </param>
+    /// <returns>La transform correspondant à l'ancre ou <c>null</c> si elle est introuvable.</returns>
+    public Transform GetCameraAnchor(string anchorName, bool includeInactive = true)
+    {
+        if (string.IsNullOrEmpty(anchorName))
+            return null;
+
+        if (cachedCameraAnchors.TryGetValue(anchorName, out var cached))
+        {
+            // Si l'ancre existe encore, on la renvoie directement.
+            if (cached != null)
+                return cached;
+
+            // Une valeur nulle indique que l'ancre est introuvable : on évite un nouveau parcours coûteux.
+            return null;
+        }
+
+        Transform located = LocateCameraAnchor(anchorName, includeInactive);
+        cachedCameraAnchors[anchorName] = located;
+
+        if (located == null)
+        {
+            Debug.LogWarning($"[CharacterUnit] Ancre caméra '{anchorName}' introuvable sur '{name}'.");
+        }
+
+        return located;
+    }
+
+    /// <summary>
+    /// Parcourt récursivement la hiérarchie pour trouver une ancre caméra.
+    /// </summary>
+    private Transform LocateCameraAnchor(string anchorName, bool includeInactive)
+    {
+        Transform[] children = GetComponentsInChildren<Transform>(includeInactive);
+        foreach (var child in children)
+        {
+            if (string.Equals(child.name, anchorName, StringComparison.OrdinalIgnoreCase))
+                return child;
+        }
+
+        return null;
     }
 
     /// <summary>

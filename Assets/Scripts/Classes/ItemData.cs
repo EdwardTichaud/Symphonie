@@ -93,7 +93,7 @@ public class ItemData : ScriptableObject
     public TimelineAsset retreatTimeline;
 
     [Header("Caméras par phase")]
-    [Tooltip("Plan cinématique utilisé lors de la préparation (None = conserver la vue actuelle).")]
+    [Tooltip("Plan cinématique utilisé lors de la préparation (None = conserver la vue actuelle, OverShoulderCasterLookTarget = ancre Camera_Shoulder_Stay).")]
     public BattleCameraRole preparingCameraRole = BattleCameraRole.MainMenuIdle;
     [Tooltip("Plan cinématique utilisé pendant l'utilisation (None = conserver la caméra précédente).")]
     public BattleCameraRole performingCameraRole = BattleCameraRole.OverShoulderCasterToTarget;

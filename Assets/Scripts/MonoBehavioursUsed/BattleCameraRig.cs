@@ -69,6 +69,10 @@ public class BattleCameraRig : MonoBehaviour
     [SerializeField] private float shoulderSideOffset = 0.65f;
     [SerializeField] private float shoulderLookHeight = 1.45f;
 
+    [Header("Over Shoulder (Stay)")]
+    [SerializeField, Tooltip("Champ de vision utilisé lorsque l'on se cale sur l'ancre fixe Camera_Shoulder_Stay.")]
+    private float shoulderStayFov = 50f;
+
     [Header("Close Push Caster")]
     [SerializeField] private float pushHeight = 1.7f;
     [SerializeField] private float pushDistance = 1.1f;
@@ -120,6 +124,7 @@ public class BattleCameraRig : MonoBehaviour
     private Transform target;
     private Transform casterFocusAnchor;
     private Transform targetFocusAnchor;
+    private CharacterUnit casterUnit;
     private Vector3? manualMidpoint;
 
     // Références mémorisées pour retirer proprement les membres du CinemachineTargetGroup.
@@ -131,10 +136,17 @@ public class BattleCameraRig : MonoBehaviour
     private float projectileTimer;
     private Vector3 attackNoiseSeed;
 
+    // Mémoire dédiée au plan "Over Shoulder Look Target" qui ne doit se calculer qu'une fois par action.
+    private Vector3 shoulderStayPosition;
+    private bool shoulderStayInitialized;
+
+    private const string ShoulderStayAnchorName = "Camera_Shoulder_Stay";
+
     private static readonly Dictionary<string, BattleCameraRole> NameToRole = new()
     {
         {"CMV_MainMenuIdle", BattleCameraRole.MainMenuIdle},
         {"CMV_OverShoulder_CasterToTarget", BattleCameraRole.OverShoulderCasterToTarget},
+        {"CMV_OverShoulder_CasterLookTarget", BattleCameraRole.OverShoulderCasterLookTarget},
         {"CMV_ClosePush_Caster", BattleCameraRole.ClosePushCaster},
         {"CMV_TargetReaction", BattleCameraRole.TargetReaction},
         {"CMV_WideEstablish", BattleCameraRole.WideEstablish},
@@ -243,17 +255,20 @@ public class BattleCameraRig : MonoBehaviour
     /// Configure les cibles suivies par le rig.
     /// </summary>
     public void ConfigureTargets(
-        CharacterUnit casterUnit,
-        CharacterUnit targetUnit,
+        CharacterUnit casterUnitParam,
+        CharacterUnit targetUnitParam,
         Vector3? midpointOverride = null,
         Transform casterAnchor = null,
         Transform targetAnchor = null)
     {
-        caster = casterUnit ? casterUnit.transform : null;
-        target = targetUnit ? targetUnit.transform : null;
+        casterUnit = casterUnitParam;
+        caster = casterUnitParam ? casterUnitParam.transform : null;
+        target = targetUnitParam ? targetUnitParam.transform : null;
         casterFocusAnchor = casterAnchor;
         targetFocusAnchor = targetAnchor;
         manualMidpoint = midpointOverride;
+
+        ResetShoulderStayAnchor();
 
         UpdateTargetGroupMembers();
     }
@@ -268,7 +283,18 @@ public class BattleCameraRig : MonoBehaviour
         manualMidpoint = null;
         casterFocusAnchor = null;
         targetFocusAnchor = null;
+        casterUnit = null;
+        ResetShoulderStayAnchor();
         UpdateTargetGroupMembers();
+    }
+
+    /// <summary>
+    /// Réinitialise la mémoire du plan épaule figé afin de recalculer la position lors du prochain déclenchement.
+    /// </summary>
+    private void ResetShoulderStayAnchor()
+    {
+        shoulderStayInitialized = false;
+        shoulderStayPosition = Vector3.zero;
     }
 
     private void UpdateTargetGroupMembers()
@@ -320,6 +346,9 @@ public class BattleCameraRig : MonoBehaviour
         currentActiveRole = role;
         if (role == BattleCameraRole.ProjectileFlyby)
             projectileTimer = 0f; // Ré-initialise le travelling à chaque activation.
+
+        if (role != BattleCameraRole.OverShoulderCasterLookTarget)
+            shoulderStayInitialized = false;
     }
 
     /// <summary>
@@ -342,6 +371,9 @@ public class BattleCameraRig : MonoBehaviour
                 break;
             case BattleCameraRole.OverShoulderCasterToTarget:
                 UpdateOverShoulderCamera(0f, true);
+                break;
+            case BattleCameraRole.OverShoulderCasterLookTarget:
+                UpdateOverShoulderStayCamera(0f, true);
                 break;
             case BattleCameraRole.ClosePushCaster:
                 UpdateClosePushCamera(0f, true);
@@ -391,6 +423,7 @@ public class BattleCameraRig : MonoBehaviour
         float dt = Time.deltaTime;
         UpdateIdleCamera(dt);
         UpdateOverShoulderCamera(dt);
+        UpdateOverShoulderStayCamera(dt);
         UpdateClosePushCamera(dt);
         UpdateTargetReactionCamera(dt);
         UpdateWideCamera(dt);
@@ -505,6 +538,75 @@ public class BattleCameraRig : MonoBehaviour
         cam.Lens.FieldOfView = forceSnap
             ? 52f
             : Mathf.Lerp(cam.Lens.FieldOfView, 52f, dt * 0.8f);
+    }
+
+    private void UpdateOverShoulderStayCamera(float dt, bool forceSnap = false)
+    {
+        if (!TryGetCamera(BattleCameraRole.OverShoulderCasterLookTarget, out var cam) || !caster)
+            return;
+
+        if (forceSnap || !shoulderStayInitialized)
+        {
+            // Capture une fois la position de l'ancre pour rester figé tout au long de la préparation.
+            shoulderStayPosition = ResolveShoulderStayPosition();
+            shoulderStayInitialized = true;
+        }
+
+        Vector3 desiredPos = shoulderStayPosition;
+        Vector3 lookPos = GetTargetFocusPosition(shoulderLookHeight);
+
+        // Vitesse nulle : la caméra reste collée à la position mémorisée sans suivre l'ancre si elle bouge ensuite.
+        SmoothPosition(cam, desiredPos, dt, 0f, forceSnap);
+        SmoothLookAt(
+            cam,
+            lookPos,
+            dt,
+            rotationLerpSpeed,
+            GetAttackRotationNoise(BattleCameraRole.OverShoulderCasterLookTarget),
+            forceSnap);
+
+        cam.Lens.FieldOfView = forceSnap
+            ? shoulderStayFov
+            : Mathf.Lerp(cam.Lens.FieldOfView, shoulderStayFov, dt * 0.8f);
+    }
+
+    private Vector3 ResolveShoulderStayPosition()
+    {
+        Transform anchor = null;
+
+        if (casterFocusAnchor && string.Equals(casterFocusAnchor.name, ShoulderStayAnchorName, StringComparison.OrdinalIgnoreCase))
+        {
+            anchor = casterFocusAnchor;
+        }
+        else if (casterUnit != null)
+        {
+            anchor = casterUnit.GetCameraAnchor(ShoulderStayAnchorName);
+        }
+
+        if (!anchor && caster)
+        {
+            anchor = FindAnchorTransform(caster, ShoulderStayAnchorName);
+        }
+
+        if (anchor)
+            return anchor.position;
+
+        Debug.LogWarning($"[BattleCameraRig] Point '{ShoulderStayAnchorName}' introuvable sur {caster?.name ?? "(caster nul)"}. Retombée sur un focus épaule générique.");
+        return GetCasterFocusPosition(shoulderHeight);
+    }
+
+    private Transform FindAnchorTransform(Transform root, string anchorName)
+    {
+        if (!root || string.IsNullOrEmpty(anchorName))
+            return null;
+
+        foreach (Transform child in root.GetComponentsInChildren<Transform>(true))
+        {
+            if (string.Equals(child.name, anchorName, StringComparison.OrdinalIgnoreCase))
+                return child;
+        }
+
+        return null;
     }
 
     private void UpdateClosePushCamera(float dt, bool forceSnap = false)

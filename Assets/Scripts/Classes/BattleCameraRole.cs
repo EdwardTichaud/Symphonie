@@ -46,5 +46,10 @@ public enum BattleCameraRole
     /// <summary>
     /// Plan final héroïque utilisé lors des victoires ou fin d'affrontement.
     /// </summary>
-    Victory = 7
+    Victory = 7,
+
+    /// <summary>
+    /// Plan épaule figé qui se cale sur l'ancre "Camera_Shoulder_Stay" du lanceur et garde la cible en mire.
+    /// </summary>
+    OverShoulderCasterLookTarget = 8
 }
