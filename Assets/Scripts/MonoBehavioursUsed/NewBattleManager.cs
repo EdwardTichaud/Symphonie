@@ -222,6 +222,23 @@ public class NewBattleManager : MonoBehaviour
     private List<CharacterUnit> filteredUnits = new();
     // Liste temporaire réutilisée pour éviter des allocations lors du ciblage multiple
     private readonly List<CharacterUnit> multiTargetUnits = new();
+    /// <summary>
+    /// Mémorise la dernière unité suivie par la Cinemachine de ciblage afin
+    /// d'éviter les rafraîchissements inutiles à chaque frame.
+    /// </summary>
+    private CharacterUnit lastTargetCursorCameraTarget;
+    /// <summary>
+    /// Conserve l'ancre utilisée pour guider le regard de la Cinemachine sur
+    /// la cible sélectionnée. Cette information est essentielle pour savoir si
+    /// l'on doit redemander une mise à jour du rig caméra.
+    /// </summary>
+    private Transform lastTargetCursorAnchor;
+    /// <summary>
+    /// Indique si la Cinemachine dédiée au suivi du curseur est actuellement
+    /// configurée. Cela permet de libérer proprement les overrides lorsque
+    /// l'on quitte une phase de ciblage.
+    /// </summary>
+    private bool isTargetCursorCinemachineActive;
     private int currentTargetIndex = 0;
     private float navigationCooldown = 0.3f;
     private float lastNavTime = 0f;
@@ -3187,6 +3204,95 @@ public class NewBattleManager : MonoBehaviour
             // Blanc lorsque la cible est valide, bleu lorsqu'elle ne peut être touchée
             // (hors de portée, mauvaise altitude, etc.).
             main.startColor = inRange ? Color.white : Color.blue;
+        }
+    }
+
+    /// <summary>
+    /// Libère les informations caméra dédiées au suivi du curseur de cible.
+    /// On remet ainsi la main au gestionnaire général pour éviter que la
+    /// Cinemachine ne reste verrouillée sur une cible périmée.
+    /// </summary>
+    private void DeactivateTargetCursorCinemachine()
+    {
+        var manager = BattleCameraManager.Instance;
+        if (manager == null)
+            return; // Aucun gestionnaire actif : aucune action requise.
+
+        // Si aucune Cinemachine de ciblage n'était configurée, on évite un
+        // rafraîchissement coûteux et on sort immédiatement.
+        if (!isTargetCursorCinemachineActive && lastTargetCursorCameraTarget == null && lastTargetCursorAnchor == null)
+            return;
+
+        isTargetCursorCinemachineActive = false;
+        lastTargetCursorCameraTarget = null;
+        lastTargetCursorAnchor = null;
+
+        // ConfigureActionTargets remettra la cible à null tout en conservant
+        // le lanceur actuel comme référence. Cela garantit que les caméras de
+        // menu continuent d'utiliser l'ancre du joueur actif.
+        if (currentCharacterUnit != null)
+            manager.ConfigureActionTargets(currentCharacterUnit, null);
+        else
+            manager.ClearRigTargets();
+
+        // On notifie également explicitement que plus aucune cible n'est suivie
+        // afin que les caméras dépendantes du LookAt puissent relâcher leur focus.
+        manager.SetCurrentTarget(null);
+    }
+
+    /// <summary>
+    /// Informe la <see cref="BattleCameraManager"/> de la cible suivie par le
+    /// curseur afin que la Cinemachine adaptée prenne le relais et encadre la
+    /// scène. Les multiples garde-fous évitent les appels redondants coûteux.
+    /// </summary>
+    /// <param name="target">Unité actuellement survolée par le curseur.</param>
+    private void UpdateTargetCursorCinemachine(CharacterUnit target)
+    {
+        var manager = BattleCameraManager.Instance;
+        if (manager == null)
+            return; // Sans gestionnaire, on ne tente aucune synchronisation caméra.
+
+        if (target == null)
+        {
+            // En absence de cible (ciblage multiple ou sortie du mode de sélection),
+            // on relâche immédiatement la caméra de ciblage.
+            DeactivateTargetCursorCinemachine();
+            return;
+        }
+
+        Transform targetAnchor = GetTargetedAnchorOrFallback(target);
+
+        // Si la Cinemachine suit déjà cette cible et que l'ancre n'a pas changé,
+        // il est inutile de déclencher un nouveau rafraîchissement.
+        bool alreadyTracking = isTargetCursorCinemachineActive
+                               && lastTargetCursorCameraTarget == target
+                               && lastTargetCursorAnchor == targetAnchor
+                               && string.Equals(manager.CurrentCinemachineCameraName, TargetSelectionCameraName, System.StringComparison.OrdinalIgnoreCase);
+        if (alreadyTracking)
+            return;
+
+        lastTargetCursorCameraTarget = target;
+        lastTargetCursorAnchor = targetAnchor;
+        isTargetCursorCinemachineActive = true;
+
+        // On délègue la configuration détaillée (caster, cible, éventuels overrides)
+        // au gestionnaire central pour que toutes les Cinemachine restent cohérentes.
+        manager.ConfigureActionTargets(
+            currentCharacterUnit,
+            target,
+            null,
+            null,
+            targetAnchor);
+
+        // Mise à jour de la cible suivie pour les caméras qui n'utilisent pas
+        // les overrides directs mais se basent sur le contexte courant.
+        manager.SetCurrentTarget(target);
+
+        // On s'assure enfin que la Cinemachine dédiée à la sélection est prioritaire
+        // durant les phases de ciblage afin d'offrir un retour visuel clair.
+        if (IsTargetSelectionState(currentBattleState))
+        {
+            RequestCamera(TargetSelectionCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
         }
     }
 
