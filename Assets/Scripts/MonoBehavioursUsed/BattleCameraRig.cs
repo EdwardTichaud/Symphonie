@@ -63,46 +63,31 @@ public class BattleCameraRig : MonoBehaviour
     [SerializeField, Tooltip("Distance radiale de base avant application de l'orbite.")]
     private float idleBaseDistance = 2.25f;
 
-    [Header("Over Shoulder")]
-    [SerializeField] private float shoulderHeight = 1.55f;
-    [SerializeField] private float shoulderDistance = 2.6f;
-    [SerializeField] private float shoulderSideOffset = 0.65f;
-    [SerializeField] private float shoulderLookHeight = 1.45f;
+    [Header("Over Shoulder (Stay)")]
+    [SerializeField, Tooltip("Champ de vision utilisé lorsque l'on se cale sur l'ancre fixe Camera_Shoulder_Stay.")]
+    private float shoulderStayFov = 50f;
 
     [Header("Over Shoulder (Stay)")]
     [SerializeField, Tooltip("Champ de vision utilisé lorsque l'on se cale sur l'ancre fixe Camera_Shoulder_Stay.")]
     private float shoulderStayFov = 50f;
 
     [Header("Close Push Caster")]
-    [SerializeField] private float pushHeight = 1.7f;
-    [SerializeField] private float pushDistance = 1.1f;
-    [SerializeField] private float pushSideSwing = 0.35f;
     [SerializeField] private float pushFov = 42f;
 
     [Header("Target Reaction")]
-    [SerializeField] private float reactionHeight = 1.4f;
-    [SerializeField] private float reactionDistance = 2.2f;
     [SerializeField] private float reactionFov = 48f;
 
-    [Header("Wide Establish")] 
-    [SerializeField] private float wideHeight = 4f;
-    [SerializeField] private float wideDepth = 9f;
-    [SerializeField] private float wideSide = 1.25f;
+    [Header("Wide Establish")]
     [SerializeField] private float wideFov = 55f;
     [SerializeField] private float wideCasterWeight = 0.6f;
     [SerializeField] private float wideTargetWeight = 0.4f;
 
     [Header("Projectile Flyby")]
-    [SerializeField] private float projectileHeight = 1.8f;
-    [SerializeField] private float projectileOffset = 4f;
     [SerializeField] private float projectileSpeed = 1.35f;
     [SerializeField] private float projectileSideAmplitude = 0.65f;
     [SerializeField] private float projectileSideFrequency = 1.2f;
-    [SerializeField] private float projectileFocusHeight = 1.5f;
 
-    [Header("Victory")] 
-    [SerializeField] private float victoryHeight = 2.4f;
-    [SerializeField] private float victoryDistance = 3.5f;
+    [Header("Victory")]
     [SerializeField] private float victoryFov = 38f;
     [SerializeField] private float victoryTilt = 12f;
 
@@ -125,6 +110,8 @@ public class BattleCameraRig : MonoBehaviour
     private Transform casterFocusAnchor;
     private Transform targetFocusAnchor;
     private CharacterUnit casterUnit;
+    // Cache direct de la cible afin d'accéder rapidement à ses points caméra sans GetComponent redondant.
+    private CharacterUnit targetUnit;
     private Vector3? manualMidpoint;
 
     // Références mémorisées pour retirer proprement les membres du CinemachineTargetGroup.
@@ -141,6 +128,67 @@ public class BattleCameraRig : MonoBehaviour
     private bool shoulderStayInitialized;
 
     private const string ShoulderStayAnchorName = "Camera_Shoulder_Stay";
+    private static readonly string[] ShoulderMovingAnchorCandidates =
+    {
+        "Camera_Shoulder_Moving",
+        "Camera_Shoulder_Right_Near",
+        "Camera_Shoulder_Left_Near"
+    };
+    private static readonly string[] IdleAnchorCandidates =
+    {
+        "Camera_MainMenu",
+        "Camera_Default",
+        "Camera_Idle"
+    };
+    private static readonly string[] ClosePushAnchorCandidates =
+    {
+        "Camera_ClosePush",
+        "Camera_Move",
+        "Camera_Move_1",
+        "Camera_Move_2",
+        "Camera_Move_3"
+    };
+    private static readonly string[] TargetReactionAnchorCandidates =
+    {
+        "Camera_TargetReaction",
+        "Camera_TargetedPoint"
+    };
+    private static readonly string[] WideAnchorCandidates =
+    {
+        "Camera_WideEstablish",
+        "Camera_OrbitalPoint"
+    };
+    private static readonly string[] ProjectileAnchorCandidates =
+    {
+        "Camera_Projectile",
+        "Camera_Move_3",
+        "Camera_Move"
+    };
+    private static readonly string[] VictoryAnchorCandidates =
+    {
+        "Camera_Victory"
+    };
+
+    // Valeurs historiques conservées en constante pour offrir un repli gracieux lorsque les points d'ancrage
+    // sont absents (scènes non mises à jour, prototypes, etc.). L'objectif est de garantir un comportement
+    // fonctionnel sans encourager la configuration par sliders désormais obsolète.
+    private const float LegacyShoulderHeight = 1.55f;
+    private const float LegacyShoulderDistance = 2.6f;
+    private const float LegacyShoulderSideOffset = 0.65f;
+    private const float LegacyShoulderLookHeight = 1.45f;
+    private const float LegacyPushHeight = 1.7f;
+    private const float LegacyPushDistance = 1.1f;
+    private const float LegacyPushSideSwing = 0.35f;
+    private const float LegacyReactionHeight = 1.4f;
+    private const float LegacyReactionDistance = 2.2f;
+    private const float LegacyWideHeight = 4f;
+    private const float LegacyWideDepth = 9f;
+    private const float LegacyWideSide = 1.25f;
+    private const float LegacyProjectileHeight = 1.8f;
+    private const float LegacyProjectileOffset = 4f;
+    private const float LegacyProjectileFocusHeight = 1.5f;
+    private const float LegacyVictoryHeight = 2.4f;
+    private const float LegacyVictoryDistance = 3.5f;
 
     private static readonly Dictionary<string, BattleCameraRole> NameToRole = new()
     {
@@ -153,6 +201,9 @@ public class BattleCameraRig : MonoBehaviour
         {"CMV_Projectile_Flyby", BattleCameraRole.ProjectileFlyby},
         {"CMV_Victory", BattleCameraRole.Victory}
     };
+
+    // Mémorise les avertissements déjà envoyés pour ne pas saturer la console lorsque certains points manquent.
+    private readonly HashSet<string> missingAnchorWarnings = new();
 
     /// <summary>
     /// Permet d'accéder au groupe de cibles utilisé par le plan large.
@@ -262,6 +313,7 @@ public class BattleCameraRig : MonoBehaviour
         Transform targetAnchor = null)
     {
         casterUnit = casterUnitParam;
+        targetUnit = targetUnitParam;
         caster = casterUnitParam ? casterUnitParam.transform : null;
         target = targetUnitParam ? targetUnitParam.transform : null;
         casterFocusAnchor = casterAnchor;
@@ -269,6 +321,7 @@ public class BattleCameraRig : MonoBehaviour
         manualMidpoint = midpointOverride;
 
         ResetShoulderStayAnchor();
+        missingAnchorWarnings.Clear();
 
         UpdateTargetGroupMembers();
     }
@@ -284,7 +337,9 @@ public class BattleCameraRig : MonoBehaviour
         casterFocusAnchor = null;
         targetFocusAnchor = null;
         casterUnit = null;
+        targetUnit = null;
         ResetShoulderStayAnchor();
+        missingAnchorWarnings.Clear();
         UpdateTargetGroupMembers();
     }
 
@@ -490,25 +545,36 @@ public class BattleCameraRig : MonoBehaviour
         if (!TryGetCamera(BattleCameraRole.MainMenuIdle, out var cam))
             return;
 
-        Vector3 anchorPos = GetCasterFocusPosition(idleFocusHeight);
-        float orbitAngle = Time.time * idleOrbitSpeed;
+        Vector3 focus = GetCasterFocusPosition(idleFocusHeight);
+        Transform idleAnchor = ResolveCasterAnchor(IdleAnchorCandidates, "MainMenuIdle", logWarning: caster != null);
 
-        Vector3 orbitOffset = new(
-            Mathf.Cos(orbitAngle) * idleOrbitRadius,
-            0f,
-            Mathf.Sin(orbitAngle) * idleOrbitRadius);
+        Vector3 desiredPos;
+        if (idleAnchor)
+        {
+            // Mode privilégié : la Cinemachine adopte strictement la position du point d'ancrage configuré sur le modèle.
+            desiredPos = idleAnchor.position;
+        }
+        else
+        {
+            // Repli : conservation de l'ancien comportement orbital pour ne pas dégrader les scènes non mises à jour.
+            float orbitAngle = Time.time * idleOrbitSpeed;
+            Vector3 orbitOffset = new(
+                Mathf.Cos(orbitAngle) * idleOrbitRadius,
+                0f,
+                Mathf.Sin(orbitAngle) * idleOrbitRadius);
 
-        Vector3 direction = (anchorPos - cam.transform.position).normalized;
-        if (direction.sqrMagnitude < epsilon)
-            direction = Vector3.forward;
+            Vector3 direction = focus - cam.transform.position;
+            if (forceSnap || direction.sqrMagnitude < epsilon)
+                direction = Vector3.forward;
+            else
+                direction = direction.normalized;
 
-        Vector3 baseOffset = -direction * idleBaseDistance;
-        Vector3 desiredPos = anchorPos + orbitOffset + baseOffset;
+            Vector3 baseOffset = -direction * idleBaseDistance;
+            desiredPos = focus + orbitOffset + baseOffset;
+        }
 
-        // Lorsque forceSnap est actif, on positionne immédiatement la caméra sur son orbite
-        // idéale pour éviter un premier frame brutal avant que le blend ne démarre réellement.
         SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.5f, forceSnap);
-        SmoothLookAt(cam, anchorPos, dt, rotationLerpSpeed * 0.5f, forceSnap: forceSnap);
+        SmoothLookAt(cam, focus, dt, rotationLerpSpeed * 0.5f, forceSnap: forceSnap);
 
         float targetFov = 50f + Mathf.Sin(Time.time * idleFovSpeed) * idleFovAmplitude;
         cam.Lens.FieldOfView = forceSnap
@@ -521,16 +587,28 @@ public class BattleCameraRig : MonoBehaviour
         if (!TryGetCamera(BattleCameraRole.OverShoulderCasterToTarget, out var cam) || !caster)
             return;
 
-        Vector3 casterFocus = GetCasterFocusPosition(shoulderHeight);
-        Vector3 targetFocus = GetTargetFocusPosition(shoulderLookHeight);
+        Vector3 casterFocus = GetCasterFocusPosition(LegacyShoulderHeight);
+        Vector3 targetFocus = GetTargetFocusPosition(LegacyShoulderLookHeight);
+        Transform movingAnchor = ResolveCasterAnchor(ShoulderMovingAnchorCandidates, "OverShoulder (Moving)");
 
-        Vector3 focusDir = targetFocus - casterFocus;
-        if (focusDir.sqrMagnitude < epsilon)
-            focusDir = caster.forward;
-        Vector3 normalizedDir = focusDir.normalized;
+        Vector3 desiredPos;
+        if (movingAnchor)
+        {
+            // Le plan suit directement le point Camera_Shoulder_Moving pour coller aux réglages artistiques.
+            desiredPos = movingAnchor.position;
+        }
+        else
+        {
+            // Repli hérité : on reconstruit la pose épaule à partir des directions calculées.
+            Vector3 focusDir = targetFocus - casterFocus;
+            if (focusDir.sqrMagnitude < epsilon)
+                focusDir = caster.forward;
+            Vector3 normalizedDir = focusDir.normalized;
 
-        Vector3 side = Vector3.Cross(Vector3.up, normalizedDir).normalized;
-        Vector3 desiredPos = casterFocus - normalizedDir * shoulderDistance + side * shoulderSideOffset;
+            Vector3 side = Vector3.Cross(Vector3.up, normalizedDir).normalized;
+            desiredPos = casterFocus - normalizedDir * LegacyShoulderDistance + side * LegacyShoulderSideOffset;
+        }
+
         Vector3 lookPos = targetFocus;
 
         SmoothPosition(cam, desiredPos, dt, baseLerpSpeed, forceSnap);
@@ -553,7 +631,7 @@ public class BattleCameraRig : MonoBehaviour
         }
 
         Vector3 desiredPos = shoulderStayPosition;
-        Vector3 lookPos = GetTargetFocusPosition(shoulderLookHeight);
+        Vector3 lookPos = GetTargetFocusPosition(LegacyShoulderLookHeight);
 
         // Vitesse nulle : la caméra reste collée à la position mémorisée sans suivre l'ancre si elle bouge ensuite.
         SmoothPosition(cam, desiredPos, dt, 0f, forceSnap);
@@ -572,27 +650,12 @@ public class BattleCameraRig : MonoBehaviour
 
     private Vector3 ResolveShoulderStayPosition()
     {
-        Transform anchor = null;
-
-        if (casterFocusAnchor && string.Equals(casterFocusAnchor.name, ShoulderStayAnchorName, StringComparison.OrdinalIgnoreCase))
-        {
-            anchor = casterFocusAnchor;
-        }
-        else if (casterUnit != null)
-        {
-            anchor = casterUnit.GetCameraAnchor(ShoulderStayAnchorName);
-        }
-
-        if (!anchor && caster)
-        {
-            anchor = FindAnchorTransform(caster, ShoulderStayAnchorName);
-        }
-
+        Transform anchor = ResolveCasterAnchor(new[] { ShoulderStayAnchorName }, "OverShoulder Stay", logWarning: false);
         if (anchor)
             return anchor.position;
 
         Debug.LogWarning($"[BattleCameraRig] Point '{ShoulderStayAnchorName}' introuvable sur {caster?.name ?? "(caster nul)"}. Retombée sur un focus épaule générique.");
-        return GetCasterFocusPosition(shoulderHeight);
+        return GetCasterFocusPosition(LegacyShoulderHeight);
     }
 
     private Transform FindAnchorTransform(Transform root, string anchorName)
@@ -609,31 +672,122 @@ public class BattleCameraRig : MonoBehaviour
         return null;
     }
 
+    /// <summary>
+    /// Retrouve une ancre portée par le lanceur parmi une liste de candidats, en prenant en compte
+    /// les éventuelles surcharges passées par le BattleCameraManager (casterFocusAnchor).
+    /// </summary>
+    private Transform ResolveCasterAnchor(string[] candidates, string context, bool logWarning = true)
+    {
+        return ResolveAnchorInternal(candidates, context, logWarning, casterFocusAnchor, casterUnit, caster, allowGlobalSearch: false);
+    }
+
+    /// <summary>
+    /// Identique à <see cref="ResolveCasterAnchor"/> mais appliqué à la cible.
+    /// </summary>
+    private Transform ResolveTargetAnchor(string[] candidates, string context, bool logWarning = true)
+    {
+        return ResolveAnchorInternal(candidates, context, logWarning, targetFocusAnchor, targetUnit, target, allowGlobalSearch: false);
+    }
+
+    /// <summary>
+    /// Recherche un point d'ancrage indépendant des unités (environnement, décor) avec, si nécessaire,
+    /// une recherche globale dans la scène.
+    /// </summary>
+    private Transform ResolveWorldAnchor(string[] candidates, string context, bool logWarning = true, bool allowGlobalSearch = true)
+    {
+        return ResolveAnchorInternal(candidates, context, logWarning, null, null, transform, allowGlobalSearch);
+    }
+
+    /// <summary>
+    /// Implémentation factorisée de la résolution d'ancre. Les paramètres permettent de couvrir les
+    /// différents cas (caster, cible, décor) tout en conservant un point unique de journalisation.
+    /// </summary>
+    private Transform ResolveAnchorInternal(
+        string[] candidates,
+        string context,
+        bool logWarning,
+        Transform manualOverride,
+        CharacterUnit unit,
+        Transform root,
+        bool allowGlobalSearch)
+    {
+        if (candidates == null || candidates.Length == 0)
+            return null;
+
+        foreach (string candidate in candidates)
+        {
+            if (string.IsNullOrEmpty(candidate))
+                continue;
+
+            if (manualOverride && string.Equals(manualOverride.name, candidate, StringComparison.OrdinalIgnoreCase))
+                return manualOverride;
+
+            Transform anchor = null;
+            if (unit != null)
+                anchor = unit.GetCameraAnchor(candidate);
+
+            if (!anchor && root)
+                anchor = FindAnchorTransform(root, candidate);
+
+            if (!anchor && allowGlobalSearch)
+            {
+                // Recherche globale ponctuelle : exécutée uniquement lorsque les hiérarchies locales n'exposent pas le point.
+                GameObject worldAnchor = GameObject.Find(candidate);
+                if (worldAnchor)
+                    anchor = worldAnchor.transform;
+            }
+
+            if (anchor)
+                return anchor;
+        }
+
+        if (logWarning)
+        {
+            string key = $"{context}:{string.Join("|", candidates)}";
+            if (missingAnchorWarnings.Add(key))
+            {
+                Debug.LogWarning($"[BattleCameraRig] Aucun point caméra correspondant ({string.Join(", ", candidates)}) n'a été trouvé pour {context}. Utilisation d'un placement procédural en repli.");
+            }
+        }
+
+        return null;
+    }
+
     private void UpdateClosePushCamera(float dt, bool forceSnap = false)
     {
         if (!TryGetCamera(BattleCameraRole.ClosePushCaster, out var cam) || !caster)
             return;
 
-        Vector3 casterFocus = GetCasterFocusPosition(pushHeight);
+        Vector3 casterFocus = GetCasterFocusPosition(LegacyPushHeight);
         Vector3 targetFocus = GetTargetFocusPosition();
         Vector3 toTarget = targetFocus - casterFocus;
         if (toTarget.sqrMagnitude < epsilon)
             toTarget = caster.forward;
         Vector3 direction = toTarget.normalized;
 
-        Vector3 side = Vector3.Cross(Vector3.up, direction).normalized;
-        Vector3 desiredPos = casterFocus - direction * pushDistance + side * pushSideSwing;
-        desiredPos = ApplyAttackPositionNoise(desiredPos, BattleCameraRole.ClosePushCaster);
+        Transform pushAnchor = ResolveCasterAnchor(ClosePushAnchorCandidates, "Close Push", logWarning: caster != null);
+        Vector3 desiredPos;
+        if (pushAnchor)
+        {
+            desiredPos = pushAnchor.position;
+        }
+        else
+        {
+            Vector3 side = Vector3.Cross(Vector3.up, direction).normalized;
+            desiredPos = casterFocus - direction * LegacyPushDistance + side * LegacyPushSideSwing;
+            desiredPos = ApplyAttackPositionNoise(desiredPos, BattleCameraRole.ClosePushCaster);
+        }
 
         SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 1.1f, forceSnap);
 
-        Vector3 lookPos = GetCasterFocusPosition(pushHeight + 0.2f) + direction * 0.15f;
+        Vector3 lookPos = GetCasterFocusPosition(LegacyPushHeight + 0.2f) + direction * 0.15f;
+        Vector3 rotationNoise = pushAnchor ? Vector3.zero : GetAttackRotationNoise(BattleCameraRole.ClosePushCaster);
         SmoothLookAt(
             cam,
             lookPos,
             dt,
             rotationLerpSpeed * 1.2f,
-            GetAttackRotationNoise(BattleCameraRole.ClosePushCaster),
+            rotationNoise,
             forceSnap);
         cam.Lens.FieldOfView = forceSnap
             ? pushFov
@@ -645,23 +799,33 @@ public class BattleCameraRig : MonoBehaviour
         if (!TryGetCamera(BattleCameraRole.TargetReaction, out var cam) || !target)
             return;
 
-        Vector3 targetFocus = GetTargetFocusPosition(reactionHeight);
+        Vector3 targetFocus = GetTargetFocusPosition(LegacyReactionHeight);
         Vector3 fromCaster = targetFocus - GetCasterFocusPosition();
         if (fromCaster.sqrMagnitude < epsilon)
             fromCaster = target.forward.sqrMagnitude > epsilon ? -target.forward : Vector3.back;
         Vector3 direction = fromCaster.normalized;
 
-        Vector3 desiredPos = targetFocus + direction * reactionDistance;
-        desiredPos = ApplyAttackPositionNoise(desiredPos, BattleCameraRole.TargetReaction);
+        Transform reactionAnchor = ResolveTargetAnchor(TargetReactionAnchorCandidates, "Target Reaction", logWarning: target != null);
+        Vector3 desiredPos;
+        if (reactionAnchor)
+        {
+            desiredPos = reactionAnchor.position;
+        }
+        else
+        {
+            desiredPos = targetFocus + direction * LegacyReactionDistance;
+            desiredPos = ApplyAttackPositionNoise(desiredPos, BattleCameraRole.TargetReaction);
+        }
 
         SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.9f, forceSnap);
-        Vector3 lookPos = GetTargetFocusPosition(reactionHeight + 0.1f);
+        Vector3 lookPos = GetTargetFocusPosition(LegacyReactionHeight + 0.1f);
+        Vector3 rotationNoise = reactionAnchor ? Vector3.zero : GetAttackRotationNoise(BattleCameraRole.TargetReaction);
         SmoothLookAt(
             cam,
             lookPos,
             dt,
             rotationLerpSpeed,
-            GetAttackRotationNoise(BattleCameraRole.TargetReaction),
+            rotationNoise,
             forceSnap);
         cam.Lens.FieldOfView = forceSnap
             ? reactionFov
@@ -674,14 +838,27 @@ public class BattleCameraRig : MonoBehaviour
             return;
 
         Vector3 center = GetWeightedCenter();
-        Vector3 separation = GetTargetFocusPosition() - GetCasterFocusPosition();
-        if (separation.sqrMagnitude < epsilon)
-            separation = caster ? caster.forward : Vector3.forward;
+        Transform wideAnchor = ResolveCasterAnchor(WideAnchorCandidates, "Wide Establish", logWarning: false)
+            ?? ResolveTargetAnchor(WideAnchorCandidates, "Wide Establish", logWarning: false)
+            ?? ResolveWorldAnchor(WideAnchorCandidates, "Wide Establish");
 
-        Vector3 forward = separation.normalized;
-        Vector3 side = Vector3.Cross(Vector3.up, forward).normalized;
+        Vector3 desiredPos;
+        if (wideAnchor)
+        {
+            desiredPos = wideAnchor.position;
+        }
+        else
+        {
+            Vector3 separation = GetTargetFocusPosition() - GetCasterFocusPosition();
+            if (separation.sqrMagnitude < epsilon)
+                separation = caster ? caster.forward : Vector3.forward;
 
-        Vector3 desiredPos = center - forward * wideDepth + side * wideSide + Vector3.up * wideHeight;
+            Vector3 forward = separation.normalized;
+            Vector3 side = Vector3.Cross(Vector3.up, forward).normalized;
+
+            desiredPos = center - forward * LegacyWideDepth + side * LegacyWideSide + Vector3.up * LegacyWideHeight;
+        }
+
         SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.6f, forceSnap);
         SmoothLookAt(
             cam,
@@ -699,41 +876,56 @@ public class BattleCameraRig : MonoBehaviour
         if (!TryGetCamera(BattleCameraRole.ProjectileFlyby, out var cam) || !caster || !target)
             return;
 
-        if (forceSnap)
+        Transform projectileAnchor = ResolveCasterAnchor(ProjectileAnchorCandidates, "Projectile Flyby", logWarning: false)
+            ?? ResolveTargetAnchor(ProjectileAnchorCandidates, "Projectile Flyby", logWarning: false)
+            ?? ResolveWorldAnchor(ProjectileAnchorCandidates, "Projectile Flyby");
+
+        float t = 0.5f;
+        Vector3 midFocus;
+
+        if (projectileAnchor)
         {
-            // Lors d'un snap on repart systématiquement du début du travelling pour garantir
-            // que la transition démarre dans une pose cohérente.
-            projectileTimer = 0f;
+            // Si un point dédié est disponible (timeline spécifique, travelling enregistré), on le suit strictement.
+            cam.transform.position = projectileAnchor.position;
+            ResetPositionSmoothing(cam);
+            midFocus = GetTargetFocusPosition(LegacyProjectileFocusHeight);
         }
-        else if (currentActiveRole == BattleCameraRole.ProjectileFlyby)
-            projectileTimer += dt * projectileSpeed;
         else
-            projectileTimer = Mathf.Max(0f, projectileTimer - dt * projectileSpeed);
+        {
+            if (forceSnap)
+            {
+                // Lors d'un snap on repart systématiquement du début du travelling pour garantir
+                // que la transition démarre dans une pose cohérente.
+                projectileTimer = 0f;
+            }
+            else if (currentActiveRole == BattleCameraRole.ProjectileFlyby)
+                projectileTimer += dt * projectileSpeed;
+            else
+                projectileTimer = Mathf.Max(0f, projectileTimer - dt * projectileSpeed);
 
-        float t = Mathf.Clamp01(projectileTimer);
-        Vector3 casterPos = GetCasterFocusPosition(projectileHeight);
-        Vector3 targetPos = GetTargetFocusPosition(projectileHeight);
-        Vector3 direction = (targetPos - casterPos);
-        if (direction.sqrMagnitude < epsilon)
-            direction = caster.forward;
-        Vector3 forward = direction.normalized;
-        Vector3 side = Vector3.Cross(Vector3.up, forward).normalized;
+            t = Mathf.Clamp01(projectileTimer);
+            Vector3 casterPos = GetCasterFocusPosition(LegacyProjectileHeight);
+            Vector3 targetPos = GetTargetFocusPosition(LegacyProjectileHeight);
+            Vector3 direction = targetPos - casterPos;
+            if (direction.sqrMagnitude < epsilon)
+                direction = caster.forward;
+            Vector3 forward = direction.normalized;
+            Vector3 side = Vector3.Cross(Vector3.up, forward).normalized;
 
-        Vector3 start = casterPos - forward * projectileOffset;
-        Vector3 end = targetPos + forward * projectileOffset;
-        Vector3 lerp = Vector3.Lerp(start, end, t);
-        float sine = Mathf.Sin(projectileTimer * projectileSideFrequency) * projectileSideAmplitude;
-        Vector3 desiredPos = lerp + side * sine;
+            Vector3 start = casterPos - forward * LegacyProjectileOffset;
+            Vector3 end = targetPos + forward * LegacyProjectileOffset;
+            Vector3 lerp = Vector3.Lerp(start, end, t);
+            float sine = Mathf.Sin(projectileTimer * projectileSideFrequency) * projectileSideAmplitude;
+            Vector3 desiredPos = lerp + side * sine;
 
-        // Le plan travelling doit conserver un contrôle direct sur la trajectoire pour respecter la vitesse
-        // du projectile. On impose donc la position immédiatement tout en purgeant les vitesses mémorisées
-        // afin que les prochains appels SmoothDamp repartent d'un état propre.
-        cam.transform.position = desiredPos;
-        ResetPositionSmoothing(cam);
-        Vector3 midFocus = Vector3.Lerp(
-            GetCasterFocusPosition(projectileFocusHeight),
-            GetTargetFocusPosition(projectileFocusHeight),
-            t);
+            cam.transform.position = desiredPos;
+            ResetPositionSmoothing(cam);
+            midFocus = Vector3.Lerp(
+                GetCasterFocusPosition(LegacyProjectileFocusHeight),
+                GetTargetFocusPosition(LegacyProjectileFocusHeight),
+                t);
+        }
+
         SmoothLookAt(
             cam,
             midFocus,
@@ -750,9 +942,20 @@ public class BattleCameraRig : MonoBehaviour
         if (!TryGetCamera(BattleCameraRole.Victory, out var cam) || !caster)
             return;
 
-        Vector3 focus = GetCasterFocusPosition(victoryHeight);
-        Vector3 backward = caster.forward.sqrMagnitude > epsilon ? -caster.forward.normalized : Vector3.back;
-        Vector3 desiredPos = focus + backward * victoryDistance;
+        Vector3 focus = GetCasterFocusPosition(LegacyVictoryHeight);
+        Transform victoryAnchor = ResolveCasterAnchor(VictoryAnchorCandidates, "Victory", logWarning: caster != null)
+            ?? ResolveWorldAnchor(VictoryAnchorCandidates, "Victory");
+
+        Vector3 desiredPos;
+        if (victoryAnchor)
+        {
+            desiredPos = victoryAnchor.position;
+        }
+        else
+        {
+            Vector3 backward = caster.forward.sqrMagnitude > epsilon ? -caster.forward.normalized : Vector3.back;
+            desiredPos = focus + backward * LegacyVictoryDistance;
+        }
 
         SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.4f, forceSnap);
         Quaternion targetRot = Quaternion.LookRotation((focus - desiredPos).normalized, Vector3.up)
