@@ -419,6 +419,10 @@ public class BattleCameraManager : MonoBehaviour
 
         currentRole = role;
         cameraRig?.NotifyActiveRole(role);
+        // On replace immédiatement la caméra ciblée sur son ancre pour amorcer le blend depuis
+        // une pose cohérente. Sans cela, la caméra peut parcourir une grande distance lors de
+        // la première frame, donnant la sensation d'un cut brutal.
+        cameraRig?.SnapToRolePose(role);
         DisplayCameraWithBlend(cameraName, duration, style);
     }
 
@@ -455,6 +459,7 @@ public class BattleCameraManager : MonoBehaviour
 
             currentRole = resolvedRole;
             cameraRig?.NotifyActiveRole(resolvedRole);
+            cameraRig?.SnapToRolePose(resolvedRole);
             DisplayCameraWithBlend(cameraName, duration, style);
             return;
         }

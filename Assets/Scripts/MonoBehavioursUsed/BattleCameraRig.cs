@@ -322,6 +322,45 @@ public class BattleCameraRig : MonoBehaviour
             projectileTimer = 0f; // Ré-initialise le travelling à chaque activation.
     }
 
+    /// <summary>
+    /// Replace instantanément la caméra associée au rôle donné sur sa pose idéale.
+    /// <para>
+    /// Cette étape est déclenchée juste avant un changement de priorité afin que la Cinemachine
+    /// choisie démarre son blend depuis une position cohérente (aucun "pop" visuel la frame suivante).
+    /// </para>
+    /// </summary>
+    /// <param name="role">Rôle dont la caméra doit être repositionnée.</param>
+    public void SnapToRolePose(BattleCameraRole role)
+    {
+        if (role == BattleCameraRole.None)
+            return; // Pas de caméra spécifique à réaligner.
+
+        switch (role)
+        {
+            case BattleCameraRole.MainMenuIdle:
+                UpdateIdleCamera(0f, true);
+                break;
+            case BattleCameraRole.OverShoulderCasterToTarget:
+                UpdateOverShoulderCamera(0f, true);
+                break;
+            case BattleCameraRole.ClosePushCaster:
+                UpdateClosePushCamera(0f, true);
+                break;
+            case BattleCameraRole.TargetReaction:
+                UpdateTargetReactionCamera(0f, true);
+                break;
+            case BattleCameraRole.WideEstablish:
+                UpdateWideCamera(0f, true);
+                break;
+            case BattleCameraRole.ProjectileFlyby:
+                UpdateProjectileCamera(0f, true);
+                break;
+            case BattleCameraRole.Victory:
+                UpdateVictoryCamera(0f, true);
+                break;
+        }
+    }
+
     private void ClearTargetGroupMembers()
     {
         if (!targetGroup)
@@ -413,7 +452,7 @@ public class BattleCameraRig : MonoBehaviour
         return hasCaster ? casterPos : targetPos;
     }
 
-    private void UpdateIdleCamera(float dt)
+    private void UpdateIdleCamera(float dt, bool forceSnap = false)
     {
         if (!TryGetCamera(BattleCameraRole.MainMenuIdle, out var cam))
             return;
@@ -433,14 +472,18 @@ public class BattleCameraRig : MonoBehaviour
         Vector3 baseOffset = -direction * idleBaseDistance;
         Vector3 desiredPos = anchorPos + orbitOffset + baseOffset;
 
-        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.5f);
-        SmoothLookAt(cam, anchorPos, dt, rotationLerpSpeed * 0.5f);
+        // Lorsque forceSnap est actif, on positionne immédiatement la caméra sur son orbite
+        // idéale pour éviter un premier frame brutal avant que le blend ne démarre réellement.
+        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.5f, forceSnap);
+        SmoothLookAt(cam, anchorPos, dt, rotationLerpSpeed * 0.5f, forceSnap: forceSnap);
 
         float targetFov = 50f + Mathf.Sin(Time.time * idleFovSpeed) * idleFovAmplitude;
-        cam.Lens.FieldOfView = Mathf.Lerp(cam.Lens.FieldOfView, targetFov, dt * 0.5f);
+        cam.Lens.FieldOfView = forceSnap
+            ? targetFov
+            : Mathf.Lerp(cam.Lens.FieldOfView, targetFov, dt * 0.5f);
     }
 
-    private void UpdateOverShoulderCamera(float dt)
+    private void UpdateOverShoulderCamera(float dt, bool forceSnap = false)
     {
         if (!TryGetCamera(BattleCameraRole.OverShoulderCasterToTarget, out var cam) || !caster)
             return;
@@ -457,12 +500,14 @@ public class BattleCameraRig : MonoBehaviour
         Vector3 desiredPos = casterFocus - normalizedDir * shoulderDistance + side * shoulderSideOffset;
         Vector3 lookPos = targetFocus;
 
-        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed);
-        SmoothLookAt(cam, lookPos, dt, rotationLerpSpeed);
-        cam.Lens.FieldOfView = Mathf.Lerp(cam.Lens.FieldOfView, 52f, dt * 0.8f);
+        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed, forceSnap);
+        SmoothLookAt(cam, lookPos, dt, rotationLerpSpeed, forceSnap: forceSnap);
+        cam.Lens.FieldOfView = forceSnap
+            ? 52f
+            : Mathf.Lerp(cam.Lens.FieldOfView, 52f, dt * 0.8f);
     }
 
-    private void UpdateClosePushCamera(float dt)
+    private void UpdateClosePushCamera(float dt, bool forceSnap = false)
     {
         if (!TryGetCamera(BattleCameraRole.ClosePushCaster, out var cam) || !caster)
             return;
@@ -478,14 +523,22 @@ public class BattleCameraRig : MonoBehaviour
         Vector3 desiredPos = casterFocus - direction * pushDistance + side * pushSideSwing;
         desiredPos = ApplyAttackPositionNoise(desiredPos, BattleCameraRole.ClosePushCaster);
 
-        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 1.1f);
+        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 1.1f, forceSnap);
 
         Vector3 lookPos = GetCasterFocusPosition(pushHeight + 0.2f) + direction * 0.15f;
-        SmoothLookAt(cam, lookPos, dt, rotationLerpSpeed * 1.2f, GetAttackRotationNoise(BattleCameraRole.ClosePushCaster));
-        cam.Lens.FieldOfView = Mathf.Lerp(cam.Lens.FieldOfView, pushFov, dt * 1.5f);
+        SmoothLookAt(
+            cam,
+            lookPos,
+            dt,
+            rotationLerpSpeed * 1.2f,
+            GetAttackRotationNoise(BattleCameraRole.ClosePushCaster),
+            forceSnap);
+        cam.Lens.FieldOfView = forceSnap
+            ? pushFov
+            : Mathf.Lerp(cam.Lens.FieldOfView, pushFov, dt * 1.5f);
     }
 
-    private void UpdateTargetReactionCamera(float dt)
+    private void UpdateTargetReactionCamera(float dt, bool forceSnap = false)
     {
         if (!TryGetCamera(BattleCameraRole.TargetReaction, out var cam) || !target)
             return;
@@ -499,13 +552,21 @@ public class BattleCameraRig : MonoBehaviour
         Vector3 desiredPos = targetFocus + direction * reactionDistance;
         desiredPos = ApplyAttackPositionNoise(desiredPos, BattleCameraRole.TargetReaction);
 
-        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.9f);
+        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.9f, forceSnap);
         Vector3 lookPos = GetTargetFocusPosition(reactionHeight + 0.1f);
-        SmoothLookAt(cam, lookPos, dt, rotationLerpSpeed, GetAttackRotationNoise(BattleCameraRole.TargetReaction));
-        cam.Lens.FieldOfView = Mathf.Lerp(cam.Lens.FieldOfView, reactionFov, dt * 0.9f);
+        SmoothLookAt(
+            cam,
+            lookPos,
+            dt,
+            rotationLerpSpeed,
+            GetAttackRotationNoise(BattleCameraRole.TargetReaction),
+            forceSnap);
+        cam.Lens.FieldOfView = forceSnap
+            ? reactionFov
+            : Mathf.Lerp(cam.Lens.FieldOfView, reactionFov, dt * 0.9f);
     }
 
-    private void UpdateWideCamera(float dt)
+    private void UpdateWideCamera(float dt, bool forceSnap = false)
     {
         if (!TryGetCamera(BattleCameraRole.WideEstablish, out var cam))
             return;
@@ -519,17 +580,30 @@ public class BattleCameraRig : MonoBehaviour
         Vector3 side = Vector3.Cross(Vector3.up, forward).normalized;
 
         Vector3 desiredPos = center - forward * wideDepth + side * wideSide + Vector3.up * wideHeight;
-        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.6f);
-        SmoothLookAt(cam, center + Vector3.up * 1.2f, dt, rotationLerpSpeed * 0.6f);
-        cam.Lens.FieldOfView = Mathf.Lerp(cam.Lens.FieldOfView, wideFov, dt * 0.5f);
+        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.6f, forceSnap);
+        SmoothLookAt(
+            cam,
+            center + Vector3.up * 1.2f,
+            dt,
+            rotationLerpSpeed * 0.6f,
+            forceSnap: forceSnap);
+        cam.Lens.FieldOfView = forceSnap
+            ? wideFov
+            : Mathf.Lerp(cam.Lens.FieldOfView, wideFov, dt * 0.5f);
     }
 
-    private void UpdateProjectileCamera(float dt)
+    private void UpdateProjectileCamera(float dt, bool forceSnap = false)
     {
         if (!TryGetCamera(BattleCameraRole.ProjectileFlyby, out var cam) || !caster || !target)
             return;
 
-        if (currentActiveRole == BattleCameraRole.ProjectileFlyby)
+        if (forceSnap)
+        {
+            // Lors d'un snap on repart systématiquement du début du travelling pour garantir
+            // que la transition démarre dans une pose cohérente.
+            projectileTimer = 0f;
+        }
+        else if (currentActiveRole == BattleCameraRole.ProjectileFlyby)
             projectileTimer += dt * projectileSpeed;
         else
             projectileTimer = Mathf.Max(0f, projectileTimer - dt * projectileSpeed);
@@ -558,11 +632,18 @@ public class BattleCameraRig : MonoBehaviour
             GetCasterFocusPosition(projectileFocusHeight),
             GetTargetFocusPosition(projectileFocusHeight),
             t);
-        SmoothLookAt(cam, midFocus, dt, rotationLerpSpeed * 1.4f);
-        cam.Lens.FieldOfView = Mathf.Lerp(cam.Lens.FieldOfView, 60f, dt);
+        SmoothLookAt(
+            cam,
+            midFocus,
+            dt,
+            rotationLerpSpeed * 1.4f,
+            forceSnap: forceSnap);
+        cam.Lens.FieldOfView = forceSnap
+            ? 60f
+            : Mathf.Lerp(cam.Lens.FieldOfView, 60f, dt);
     }
 
-    private void UpdateVictoryCamera(float dt)
+    private void UpdateVictoryCamera(float dt, bool forceSnap = false)
     {
         if (!TryGetCamera(BattleCameraRole.Victory, out var cam) || !caster)
             return;
@@ -571,10 +652,13 @@ public class BattleCameraRig : MonoBehaviour
         Vector3 backward = caster.forward.sqrMagnitude > epsilon ? -caster.forward.normalized : Vector3.back;
         Vector3 desiredPos = focus + backward * victoryDistance;
 
-        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.4f);
-        Quaternion targetRot = Quaternion.LookRotation((focus - desiredPos).normalized, Vector3.up) * Quaternion.Euler(victoryTilt, 0f, 0f);
-        SmoothRotation(cam, targetRot, dt, rotationLerpSpeed * 0.5f);
-        cam.Lens.FieldOfView = Mathf.Lerp(cam.Lens.FieldOfView, victoryFov, dt * 0.6f);
+        SmoothPosition(cam, desiredPos, dt, baseLerpSpeed * 0.4f, forceSnap);
+        Quaternion targetRot = Quaternion.LookRotation((focus - desiredPos).normalized, Vector3.up)
+            * Quaternion.Euler(victoryTilt, 0f, 0f);
+        SmoothRotation(cam, targetRot, dt, rotationLerpSpeed * 0.5f, forceSnap);
+        cam.Lens.FieldOfView = forceSnap
+            ? victoryFov
+            : Mathf.Lerp(cam.Lens.FieldOfView, victoryFov, dt * 0.6f);
     }
 
     private bool IsAttackNoiseActive(BattleCameraRole role)
@@ -608,8 +692,15 @@ public class BattleCameraRig : MonoBehaviour
         return new Vector3(pitch, yaw, 0f);
     }
 
-    private void SmoothPosition(CinemachineCamera cam, Vector3 desiredPos, float dt, float speed)
+    private void SmoothPosition(CinemachineCamera cam, Vector3 desiredPos, float dt, float speed, bool forceSnap = false)
     {
+        if (forceSnap)
+        {
+            cam.transform.position = desiredPos;
+            ResetPositionSmoothing(cam);
+            return;
+        }
+
         if (speed <= 0f)
         {
             // Vitesse nulle : on applique directement la cible et on réinitialise les vitesses mémorisées.
@@ -629,7 +720,13 @@ public class BattleCameraRig : MonoBehaviour
         cam.transform.position = next;
     }
 
-    private void SmoothLookAt(CinemachineCamera cam, Vector3 targetPos, float dt, float speed, Vector3 noiseEuler = default)
+    private void SmoothLookAt(
+        CinemachineCamera cam,
+        Vector3 targetPos,
+        float dt,
+        float speed,
+        Vector3 noiseEuler = default,
+        bool forceSnap = false)
     {
         Vector3 direction = targetPos - cam.transform.position;
         if (direction.sqrMagnitude < epsilon)
@@ -639,15 +736,23 @@ public class BattleCameraRig : MonoBehaviour
         if (noiseEuler != Vector3.zero)
             targetRot *= Quaternion.Euler(noiseEuler);
 
-        SmoothRotation(cam, targetRot, dt, speed);
+        SmoothRotation(cam, targetRot, dt, speed, forceSnap);
     }
 
     private void SmoothRotation(
         CinemachineCamera cam,
         Quaternion targetRot,
         float dt,
-        float speed)
+        float speed,
+        bool forceSnap = false)
     {
+        if (forceSnap)
+        {
+            cam.transform.rotation = targetRot;
+            ResetRotationSmoothing(cam);
+            return;
+        }
+
         if (speed <= 0f)
         {
             cam.transform.rotation = targetRot;
