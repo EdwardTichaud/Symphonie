@@ -142,7 +142,7 @@ public class CameraController : MonoBehaviour
 
             // Vérifie si l'objet tagué "BattleCamera" est une caméra Unity classique ou une entité Cinemachine
             // (caméra virtuelle ou caméra physique contrôlée par un CinemachineBrain).
-            // Les entités Cinemachine sont déjà animées par BattleCameraRig : appliquer ici l'effet de respiration
+            // Les entités Cinemachine sont désormais pilotées par BattleCameraManager : appliquer ici l'effet de respiration
             // provoquerait une lutte de positions (saccades observées en jeu).
             // On ne conserve donc l'effet que pour les caméras physiques libres.
             bool hasUnityCameraComponent = battleCamera.TryGetComponent(out Camera _);
@@ -245,7 +245,7 @@ public class CameraController : MonoBehaviour
         // (leurs parents restent libres pour recevoir les déplacements forcés)
         ApplyBreathing(worldCamera != null ? worldCamera.transform : null, ref worldBreathOffset);
         // Si la BattleCamera est contrôlée par Cinemachine, on évite tout déplacement manuel
-        // pour ne pas contrarier BattleCameraRig.
+        // pour ne pas contrarier BattleCameraManager.
         Transform battleBreathingTarget = battleCameraSupportsBreathing && battleCamera != null
             ? battleCamera.transform
             : null;
