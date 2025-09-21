@@ -43,6 +43,10 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     [SerializeField] private RawImage crossFadeImage;
 
     private readonly Dictionary<string, CinemachineCamera> _byName = new();
+    // Mémorise l'état d'activation initial des GameObjects afin de ne plus les
+    // éteindre lors des transitions. Les CinemachineCamera conservent ainsi
+    // leurs données internes (positions lissées, historique de blend, etc.).
+    private readonly Dictionary<CinemachineCamera, bool> initialCameraActivationStates = new();
     private CinemachineCamera _current; // camera actuellement active
     private Coroutine crossFadeRoutine; // coroutine de fondu en cours
     private Texture2D lastCapturedFrame; // reference du screenshot utilise pendant le fondu
@@ -66,6 +70,9 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         _byName.Clear();
         foreach (var c in cameras)
         {
+            // Enregistre l'état d'activation tel qu'il est défini dans la scène.
+            RememberInitialActivationState(c);
+
             // S'assure que chaque camera dispose du composant definissant son type de transition.
             EnsureFadeConfiguration(c);
 
@@ -166,6 +173,9 @@ public class CinemachineBlendSwitcher : MonoBehaviour
             if (!c)
                 continue; // securite supplementaire en cas de modification asynchrone
 
+            // Conserve aussi l'état initial lors des relectures de la liste.
+            RememberInitialActivationState(c);
+
             c.Priority = (c == defaultCamera) ? activePriority : inactivePriority;
         }
 
@@ -186,6 +196,7 @@ public class CinemachineBlendSwitcher : MonoBehaviour
         foreach (var c in cameras)
         {
             EnsureFadeConfiguration(c);
+            RememberInitialActivationState(c);
             _byName[c.gameObject.name] = c;
         }
     }
@@ -497,10 +508,10 @@ public class CinemachineBlendSwitcher : MonoBehaviour
     }
 
     /// <summary>
-    /// Active uniquement la camera souhaitee et coupe toutes les autres afin d'eviter
-    /// qu'elles continuent a consommer des calculs alors qu'elles ne sont pas visibles.
+    /// Réactive les caméras qui étaient déjà actives au démarrage sans couper celles qui ne sont
+    /// pas prioritaires. Les smoothings Cinemachine restent ainsi continus d'une transition à l'autre.
     /// </summary>
-    /// <param name="activeCamera">Camera qui doit rester active (ou <c>null</c> pour les desactiver toutes).</param>
+    /// <param name="activeCamera">Conservé pour compatibilité ; aucune désactivation n'est appliquée.</param>
     private void UpdateActiveCameraStates(CinemachineCamera activeCamera)
     {
         if (cameras == null)
@@ -511,10 +522,33 @@ public class CinemachineBlendSwitcher : MonoBehaviour
             if (!cam)
                 continue;
 
-            bool shouldBeActive = cam == activeCamera;
-            if (cam.gameObject.activeSelf != shouldBeActive)
-                cam.gameObject.SetActive(shouldBeActive);
+            // Enregistre l'état initial si la caméra est nouvelle dans la liste.
+            RememberInitialActivationState(cam);
+
+            // On ne désactive plus les GameObjects : on s'assure simplement que ceux qui
+            // étaient actifs le restent afin d'éviter toute réinitialisation du smoothing.
+            if (initialCameraActivationStates.TryGetValue(cam, out bool wasInitiallyActive)
+                && wasInitiallyActive
+                && !cam.gameObject.activeSelf)
+            {
+                cam.gameObject.SetActive(true);
+            }
         }
+    }
+
+    /// <summary>
+    /// Stocke l'état d'activation d'une CinemachineCamera lors de son premier enregistrement.
+    /// </summary>
+    /// <param name="camera">Camera concernée par la mémorisation.</param>
+    private void RememberInitialActivationState(CinemachineCamera camera)
+    {
+        if (!camera)
+            return; // Sécurité supplémentaire si la caméra a été détruite entre-temps.
+
+        if (initialCameraActivationStates.ContainsKey(camera))
+            return; // État déjà mémorisé : aucune action supplémentaire nécessaire.
+
+        initialCameraActivationStates.Add(camera, camera.gameObject.activeSelf);
     }
 
     /// <summary>
