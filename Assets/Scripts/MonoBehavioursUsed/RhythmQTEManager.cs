@@ -676,7 +676,7 @@ public class RhythmQTEManager : MonoBehaviour
                 Instantiate(item.tpVfx_Start, caster.transform.position, Quaternion.identity);
 
             if (!caster.IsDead)
-                animator?.Play("Dash_Battle");
+                animator?.Play("Retreat_Battle");
 
             // Cache le GameObject visuel pendant l'attente
             if (visualRoot != null)
@@ -700,7 +700,7 @@ public class RhythmQTEManager : MonoBehaviour
         else if (!isTeleport)
         {
             if (!caster.IsDead)
-                animator?.Play("Dash_Battle");
+                animator?.Play("Retreat_Battle");
 
             Vector3 startPos = caster.transform.position;
             float distance = Vector3.Distance(startPos, origin);
