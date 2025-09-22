@@ -138,6 +138,8 @@ public class NewBattleManager : MonoBehaviour
     private const string ItemsMenuCameraName = "CMV_ItemsMenu";
     /// <summary>Nom de la Cinemachine utilisée durant les phases de sélection de cible.</summary>
     private const string TargetSelectionCameraName = "CMV_OverShoulder_CasterLookTarget";
+    /// <summary>Nom de la Cinemachine prioritaire lors du ciblage d'un objet.</summary>
+    private const string ItemTargetSelectionCameraName = "CMV_OrbitAroundUnit";
     /// <summary>
     /// Style de transition privilégié pour les menus. Il est directement récupéré auprès du
     /// <see cref="BattleCameraManager"/> pour rester parfaitement aligné avec la configuration globale du
@@ -2863,7 +2865,12 @@ public class NewBattleManager : MonoBehaviour
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
                 if (stateChanged)
-                    RequestCamera(TargetSelectionCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
+                {
+                    // On active la Cinemachine appropriée en distinguant les cibles d'objet
+                    // (vue orbitale) des attaques classiques (vue épaule existante).
+                    string cameraName = ResolveTargetSelectionCameraName(newState);
+                    RequestCamera(cameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
+                }
                 break;
 
             case BattleState.SquadUnit_PerformingMusicalMove:
@@ -3126,6 +3133,15 @@ public class NewBattleManager : MonoBehaviour
         }
 
         // Recherche prioritaire de l'ancre spécifique prévue par les artistes.
+        // Lors d'un ciblage d'objet, on tente d'abord de récupérer le point orbital dédié
+        // afin que la Cinemachine se cale exactement sur "CMVPoint_OrbitAroundUnit".
+        if (IsItemTargetSelectionState(currentBattleState))
+        {
+            Transform orbitAnchor = unit.GetCameraAnchor("CMVPoint_OrbitAroundUnit");
+            if (orbitAnchor != null)
+                return orbitAnchor;
+        }
+
         Transform targetedAnchor = unit.GetCameraAnchor("CMVPoint_TargetReaction");
         if (targetedAnchor == null)
             targetedAnchor = FindChildRecursive(unit.transform, "Camera_TargetedPoint");
@@ -3333,10 +3349,13 @@ public class NewBattleManager : MonoBehaviour
 
         // Si la Cinemachine suit déjà cette cible et que l'ancre n'a pas changé,
         // il est inutile de déclencher un nouveau rafraîchissement.
+        // On identifie la caméra de ciblage qui devrait être active (item ou compétence).
+        string expectedCameraName = ResolveTargetSelectionCameraName(currentBattleState);
+
         bool alreadyTracking = isTargetCursorCinemachineActive
                                && lastTargetCursorCameraTarget == target
                                && lastTargetCursorAnchor == targetAnchor
-                               && string.Equals(manager.CurrentCinemachineCameraName, TargetSelectionCameraName, System.StringComparison.OrdinalIgnoreCase);
+                               && string.Equals(manager.CurrentCinemachineCameraName, expectedCameraName, System.StringComparison.OrdinalIgnoreCase);
         if (alreadyTracking)
             return;
 
@@ -3361,7 +3380,7 @@ public class NewBattleManager : MonoBehaviour
         // durant les phases de ciblage afin d'offrir un retour visuel clair.
         if (IsTargetSelectionState(currentBattleState))
         {
-            RequestCamera(TargetSelectionCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
+            RequestCamera(expectedCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
         }
     }
 
@@ -3377,6 +3396,30 @@ public class NewBattleManager : MonoBehaviour
                || state == BattleState.SquadUnit_TargetSelectionAmongSquadForItem
                || state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
                || state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies;
+    }
+
+    /// <summary>
+    /// Détermine si la sélection de cible actuelle est déclenchée par un objet.
+    /// Cette information permet de prioriser la Cinemachine orbitale adaptée.
+    /// </summary>
+    private bool IsItemTargetSelectionState(BattleState state)
+    {
+        return state == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem
+               || state == BattleState.SquadUnit_TargetSelectionAmongSquadForItem
+               || ((state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
+                    || state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
+                   && currentItem != null
+                   && currentMove == null);
+    }
+
+    /// <summary>
+    /// Choisit dynamiquement la Cinemachine de ciblage à activer en fonction du contexte.
+    /// </summary>
+    private string ResolveTargetSelectionCameraName(BattleState state)
+    {
+        return IsItemTargetSelectionState(state)
+            ? ItemTargetSelectionCameraName
+            : TargetSelectionCameraName;
     }
 
     public void SetCurrentTargetToFirst(CharacterType type)
