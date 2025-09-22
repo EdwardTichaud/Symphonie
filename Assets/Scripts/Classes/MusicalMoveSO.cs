@@ -1,5 +1,6 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.Timeline;
+using UnityEngine.Serialization;
 using System.Collections.Generic;
 // Les directives UnityEditor sont réservées à l'éditeur et ne doivent pas
 // être incluses dans le build du joueur. Elles ont été retirées pour éviter
@@ -87,8 +88,12 @@ public class MusicalMoveSO : ScriptableObject
     [Header("Déplacement")]
     // La gestion des effets visuels est désormais confiée à la timeline,
     // seul le déplacement reste paramétrable dans ce ScriptableObject.
-    [Tooltip("Vitesse de déplacement du lanceur lors de l'exécution du move")]
-    public float moveSpeed = 20f;
+    [Tooltip("Temps total (en secondes) pour atteindre la position cible. Mettre 0 pour une téléportation instantanée.")]
+    public float travelTime = 0f;
+    [FormerlySerializedAs("moveSpeed"), SerializeField, HideInInspector]
+    private float legacyMoveSpeed = 0f;
+    [SerializeField, HideInInspector]
+    private bool legacyMoveSpeedConverted = false;
     [Tooltip("Distance maximale de lancement lorsque le move le nécessite")]
     public float castDistance;
     [Tooltip("Si vrai, le lanceur doit se déplacer ou se téléporter pour exécuter ce move")]
@@ -161,6 +166,23 @@ public class MusicalMoveSO : ScriptableObject
 
     private void OnValidate()
     {
+        // Conversion automatique des anciens assets qui utilisaient une vitesse de déplacement.
+        // Cette opération ne s'effectue qu'une seule fois pour préserver les réglages manuels.
+        if (!legacyMoveSpeedConverted)
+        {
+            if (travelTime <= 0f && legacyMoveSpeed > 0f)
+            {
+                const float defaultReferenceDistance = 1.5f;
+                float referenceDistance = castDistance > 0f ? castDistance : defaultReferenceDistance;
+
+                const float minimumTravelTime = 0.05f;
+                travelTime = Mathf.Max(referenceDistance / legacyMoveSpeed, minimumTravelTime);
+                EditorUtility.SetDirty(this);
+            }
+
+            legacyMoveSpeedConverted = true;
+        }
+
         // Charge le ScriptableObject de référence. Si le fichier est déplacé
         // ou supprimé, aucune action n'est effectuée pour ne pas provoquer
         // d'erreur dans l'éditeur.
@@ -180,6 +202,42 @@ public class MusicalMoveSO : ScriptableObject
             retreatCameraRole = reference.retreatCameraRole;
     }
 #endif
+
+    /// <summary>
+    ///     Indique si le move doit utiliser une téléportation instantanée pour atteindre sa cible.
+    ///     Tient compte du nouveau paramètre de durée et des anciennes données de vitesse.
+    /// </summary>
+    public bool ShouldTeleportToTarget()
+    {
+        if (!requiresMovement)
+            return false;
+
+        if (Mathf.Approximately(travelTime, 0f))
+            return true;
+
+        if (travelTime > 0f)
+            return false;
+
+        return legacyMoveSpeed <= 0f;
+    }
+
+    /// <summary>
+    ///     Retourne la durée du déplacement vers la cible en secondes.
+    ///     Si un temps explicite est défini, il est utilisé directement, sinon on retombe sur l'ancienne vitesse.
+    /// </summary>
+    public float GetTravelDuration(float distance)
+    {
+        if (!requiresMovement)
+            return 0f;
+
+        if (travelTime > 0f)
+            return travelTime;
+
+        if (legacyMoveSpeed > 0f && distance > 0f)
+            return distance / legacyMoveSpeed;
+
+        return 0f;
+    }
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {

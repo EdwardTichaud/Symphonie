@@ -763,7 +763,7 @@ public class RhythmQTEManager : MonoBehaviour
         Animator animator = caster.GetCasterAnimator();
         // Stocke le GameObject visuel pour pouvoir le désactiver durant la téléportation
         GameObject visualRoot = animator != null ? animator.gameObject : null;
-        bool isTeleport = move.moveSpeed <= 0f; // Téléportation si vitesse nulle
+        bool isTeleport = move.ShouldTeleportToTarget(); // Téléportation si le temps demandé est nul ou si l'ancien move utilisait une vitesse nulle
         float distanceToTarget = Vector3.Distance(caster.transform.position, targetPos); // Distance à la cible
 
         // Téléportation uniquement si la cible est différente de la position actuelle
@@ -803,7 +803,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             Vector3 startPos = caster.transform.position;
             float distance = Vector3.Distance(startPos, targetPos);
-            float duration = distance / move.moveSpeed;
+            float duration = move.GetTravelDuration(distance);
             float t = 0f;
             while (t < 1f)
             {
@@ -858,7 +858,7 @@ public class RhythmQTEManager : MonoBehaviour
         Animator animator = caster.GetCasterAnimator();
         // GameObject contenant l'Animator à désactiver durant la téléportation
         GameObject visualRoot = animator != null ? animator.gameObject : null;
-        bool isTeleport = move.moveSpeed <= 0f; // Téléportation si vitesse nulle
+        bool isTeleport = move.ShouldTeleportToTarget(); // Téléportation si le temps demandé est nul ou si l'ancien move utilisait une vitesse nulle
         float distanceToInitial = Vector3.Distance(caster.transform.position, initialPosition); // Distance à parcourir
 
         // Téléportation uniquement si nécessaire
@@ -903,7 +903,7 @@ public class RhythmQTEManager : MonoBehaviour
                 animator?.Play("Dash_Battle");
 
             float distance = Vector3.Distance(startPos, initialPosition);
-            float duration = distance / move.moveSpeed;
+            float duration = move.GetTravelDuration(distance);
             float t = 0f;
             while (t < 1f)
             {
