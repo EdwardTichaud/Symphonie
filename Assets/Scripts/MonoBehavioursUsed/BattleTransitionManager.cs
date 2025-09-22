@@ -448,8 +448,6 @@ public class BattleTransitionManager : MonoBehaviour
         // Les unités apparaissent après l'explosion
         NewBattleManager.Instance.SpawnAll();
 
-        SetRenderingLayer.Instance.ApplyToAll();
-
         if (battleCamera != null)
         {
             battleCamera.SetActive(true); // S'assure que la camera de combat est active

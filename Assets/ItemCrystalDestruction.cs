@@ -1,27 +1,27 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-public class ConditionalSequenceManager : MonoBehaviour
+public class ItemCrystalDestruction : MonoBehaviour
 {
     [System.Serializable]
     public class ManagedObject
     {
-        [Header("Référence")]
+        [Header("RÃ©fÃ©rence")]
         public GameObject target;
 
         [Header("Ordre")]
-        public int priority = 0;                 // plus petit = plus tôt
+        public int priority = 0;                 // plus petit = plus tÃ´t
 
         [Header("Particles")]
-        public bool triggerParticles = false;    // déclencher les PS ?
-        public float particleDelay = 0f;         // délai avant de jouer les PS
+        public bool triggerParticles = false;    // dÃ©clencher les PS ?
+        public float particleDelay = 0f;         // dÃ©lai avant de jouer les PS
 
         [Header("Destruction")]
-        public bool destroy = false;             // détruire l’objet ?
-        public float destroyDelay = 1f;          // délai avant destruction (après particles)
+        public bool destroy = false;             // dÃ©truire lâ€™objet ?
+        public float destroyDelay = 1f;          // dÃ©lai avant destruction (aprÃ¨s particles)
 
-        [Header("Mise à l’échelle (appel manuel)")]
+        [Header("Mise Ã  lâ€™Ã©chelle (appel manuel)")]
         public bool scaleOnCommand = false;      // inclure cet objet dans ScaleAll()
         public Vector3 targetScale = Vector3.one;
         public float scaleDuration = 0.5f;
@@ -29,12 +29,19 @@ public class ConditionalSequenceManager : MonoBehaviour
         public bool scaleRelative = false;       // si true: targetScale est un multiplicateur
     }
 
-    [Header("Liste d’objets gérés")]
+    [Header("Liste dâ€™objets gÃ©rÃ©s")]
     public List<ManagedObject> entries = new List<ManagedObject>();
 
     [Header("Condition globale (facultative)")]
     public bool useBattleStateCondition = true;
-    public BattleState waitState = BattleState.SquadUnit_ItemsMenu; // on attend tant que currentBattleState == waitState
+
+    // On attend tant que currentBattleState âˆˆ waitStates.
+    // DÃ¨s qu'il n'est plus dans cette liste, on lance la sÃ©quence.
+    public List<BattleState> waitStates = new List<BattleState>
+    {
+        BattleState.SquadUnit_ItemsMenu
+    };
+
     private bool sequenceStarted = false;
 
     void Update()
@@ -42,16 +49,20 @@ public class ConditionalSequenceManager : MonoBehaviour
         if (!useBattleStateCondition || sequenceStarted)
             return;
 
-        if (NewBattleManager.Instance.currentBattleState != waitState)
+        // Si la liste est vide, on considÃ¨re qu'on ne "bloque" sur aucun Ã©tat et on lance immÃ©diatement.
+        var current = NewBattleManager.Instance.currentBattleState;
+        bool isWaiting = (waitStates != null && waitStates.Count > 0) && waitStates.Contains(current);
+
+        if (!isWaiting)
         {
             sequenceStarted = true;
-            // Lance la séquence complète : Particles -> Destructions selon les réglages par entrée
+            // Lance la sÃ©quence complÃ¨te : Particles -> Destructions selon les rÃ©glages par entrÃ©e
             StartCoroutine(RunSequenceInOrder());
         }
     }
 
     /// <summary>
-    /// Lance uniquement les ParticleSystems pour toutes les entrées (dans l'ordre).
+    /// Lance uniquement les ParticleSystems pour toutes les entrÃ©es (dans l'ordre).
     /// </summary>
     public void TriggerParticlesInOrder()
     {
@@ -67,7 +78,7 @@ public class ConditionalSequenceManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à l’échelle tous les objets marqués "scaleOnCommand" avec leurs paramètres locaux.
+    /// Met Ã  lâ€™Ã©chelle tous les objets marquÃ©s "scaleOnCommand" avec leurs paramÃ¨tres locaux.
     /// </summary>
     public void ScaleAll()
     {
@@ -79,7 +90,7 @@ public class ConditionalSequenceManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Variante : applique la même cible/durée/courbe à tous les objets marqués "scaleOnCommand".
+    /// Variante : applique la mÃªme cible/durÃ©e/courbe Ã  tous les objets marquÃ©s "scaleOnCommand".
     /// </summary>
     public void ScaleAllUnified(Vector3 targetScale, float duration, AnimationCurve ease, bool relative = false)
     {
@@ -87,7 +98,7 @@ public class ConditionalSequenceManager : MonoBehaviour
         {
             if (e.target == null || !e.scaleOnCommand) continue;
 
-            // on clone temporairement les paramètres de scale
+            // on clone temporairement les paramÃ¨tres de scale
             var temp = new ManagedObject
             {
                 target = e.target,
@@ -100,11 +111,11 @@ public class ConditionalSequenceManager : MonoBehaviour
         }
     }
 
-    // --------- Séquences ---------
+    // --------- SÃ©quences ---------
 
     private IEnumerator RunSequenceInOrder()
     {
-        // Tri par priorité croissante
+        // Tri par prioritÃ© croissante
         entries.Sort((a, b) => a.priority.CompareTo(b.priority));
 
         foreach (var e in entries)
@@ -144,6 +155,7 @@ public class ConditionalSequenceManager : MonoBehaviour
 
             PlayAllParticles(e.target);
         }
+        yield break;
     }
 
     private IEnumerator DestroyOnlyInOrder()
@@ -166,12 +178,12 @@ public class ConditionalSequenceManager : MonoBehaviour
 
     private void PlayAllParticles(GameObject go)
     {
-        // Inclut les enfants (même inactifs si besoin)
+        // Inclut les enfants (mÃªme inactifs si besoin)
         ParticleSystem[] particles = go.GetComponentsInChildren<ParticleSystem>(true);
 
         foreach (var ps in particles)
         {
-            // Si le GameObject du PS est inactif, le Play ne fera rien -> on peut l’activer si nécessaire
+            // Si le GameObject du PS est inactif, le Play ne fera rien -> on peut lâ€™activer si nÃ©cessaire
             if (!ps.gameObject.activeInHierarchy)
                 ps.gameObject.SetActive(true);
 
