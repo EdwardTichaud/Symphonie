@@ -2701,8 +2701,10 @@ public class NewBattleManager : MonoBehaviour
 
     public void HandleTargetSelection(ItemData item)
     {
-        // Lorsque l'objet est choisi, on coupe la Timeline d'attente
-        StopItemPreparingTimeline();
+        // Contrairement à l'ancien comportement nous ne coupons plus la timeline de préparation ici :
+        // cela permet de conserver l'animation « Item_Prepare » (et les éventuels effets annexes)
+        // pendant toute la phase de sélection de cible. La timeline sera arrêtée uniquement lorsque
+        // le joueur quittera le contexte de l'objet (validation, retour au menu, etc.).
         currentItem = item;
         currentMove = null; // on annule la sélection de compétence précédente
         currentItemTargetType = item.defaultTargetType;
@@ -2767,6 +2769,13 @@ public class NewBattleManager : MonoBehaviour
             ActionUIDisplayManager.Instance.DisplayInstruction_SelectGroup();
         else
             ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
+
+        // Force immédiatement la synchronisation de la Cinemachine orbitale avec la cible présélectionnée.
+        // Sans ce rappel explicite, la priorité de « CMV_OrbitAroundUnit » n'était effective qu'après la
+        // prochaine Update, ce qui pouvait laisser la caméra précédente active une frame de trop. En
+        // centralisant le rafraîchissement ici, on garantit que la caméra se cale instantanément sur
+        // « CMVPoint_OrbitAroundUnit » tout en laissant la timeline de préparation continuer à se jouer.
+        UpdateTargetCursorCinemachine(currentTargetCharacter);
     }
     #endregion
 
