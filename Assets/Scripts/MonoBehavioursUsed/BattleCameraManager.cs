@@ -105,6 +105,8 @@ public class BattleCameraManager : MonoBehaviour
         ["CMV_MainMenu"] = new(CameraAnchorOwner.TurnOwner, "MainMenu", false),
         ["CMV_SkillsMenu"] = new(CameraAnchorOwner.TurnOwner, "SkillsMenu", false),
         ["CMV_ItemsMenu"] = new(CameraAnchorOwner.TurnOwner, "ItemsMenu", false),
+        // Caméra orbitale utilisée pour mettre en valeur la cible durant le choix d'un objet.
+        ["CMV_OrbitAroundUnit"] = new(CameraAnchorOwner.Target, "OrbitAroundUnit", false),
         ["CMV_TargetReaction"] = new(CameraAnchorOwner.Target, "TargetReaction", false),
         ["CMV_Projectile_Flyby"] = new(CameraAnchorOwner.Caster, "Projectile_Flyby", false),
         ["CMV_OverShoulder_CasterLookTarget"] = new(CameraAnchorOwner.Caster, "OverShoulder_CasterLookTarget", true),
