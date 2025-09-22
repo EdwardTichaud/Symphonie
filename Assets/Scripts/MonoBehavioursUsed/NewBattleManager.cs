@@ -3251,8 +3251,20 @@ public class NewBattleManager : MonoBehaviour
 
     void EnsureTargetCursor()
     {
+        // Si un curseur existe déjà et n'a pas été détruit par ResetBattleInfos(),
+        // on évite d'en instancier un doublon. Sans cette vérification, un clone
+        // supplémentaire apparaissait au lancement du jeu puis du combat, car
+        // EnsureTargetCursor() est appelé dans Start() puis à nouveau dans StartBattle().
+        if (targetCursor != null)
+        {
+            return;
+        }
+
         if (targetCursorPrefab != null)
         {
+            // Instanciation « lazy » : on ne crée le visuel que lorsque c'est nécessaire.
+            // L'objet est immédiatement désactivé car il ne sera affiché qu'une fois
+            // la sélection de cible active.
             targetCursor = Instantiate(targetCursorPrefab, transform.position, Quaternion.identity);
             targetCursor.SetActive(false);
         }
