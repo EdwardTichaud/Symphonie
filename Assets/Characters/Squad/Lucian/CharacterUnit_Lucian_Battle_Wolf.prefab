@@ -668,6 +668,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8930234395183566953}
+  - component: {fileID: 6969796553418727314}
   m_Layer: 17
   m_Name: CMVPoint_OrbitAroundUnit
   m_TagString: Untagged
@@ -683,13 +684,35 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8605008541094229471}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.16405344, y: 0.19916725, z: 0.04056374, w: 0.96528417}
-  m_LocalPosition: {x: -0.967, y: 2.099, z: -1.377}
+  m_LocalRotation: {x: -0.058555745, y: 0.6868944, z: -0.15852529, w: -0.7068359}
+  m_LocalPosition: {x: 4.86385, y: 1.006, z: -1.1588624}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6663266566158337264}
   m_LocalEulerAnglesHint: {x: 17.491, y: 24.652, z: 8.663}
+--- !u!114 &6969796553418727314
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8605008541094229471}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb89e75d5c8d9854f89dfa1b40810b9a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isActive: 1
+  objectToOrbit: {fileID: 8930234395183566953}
+  target: {fileID: 2649778793866136298}
+  distance: 5
+  speed: -30
+  useHeight: 0
+  heightOffset: 2
+  orbitX: 0
+  orbitY: 1
+  orbitZ: 0
 --- !u!1 &8759608793680759045
 GameObject:
   m_ObjectHideFlags: 0
