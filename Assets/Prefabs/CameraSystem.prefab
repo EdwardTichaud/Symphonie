@@ -10018,6 +10018,7 @@ GameObject:
   - component: {fileID: 996290659501554177}
   - component: {fileID: 8736768795602210097}
   - component: {fileID: 4339250097332910047}
+  - component: {fileID: 1044808995526423992}
   m_Layer: 0
   m_Name: WorldCam_Origin
   m_TagString: Untagged
@@ -10099,6 +10100,14 @@ MonoBehaviour:
   positionOffset: {x: 3.27, y: 0.87, z: 1.57}
   eulerRotationOffset: {x: 0, y: 0, z: 0}
   editorDamping: 0
+--- !u!81 &1044808995526423992
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2336858465054511473}
+  m_Enabled: 1
 --- !u!1 &2348081758690992776
 GameObject:
   m_ObjectHideFlags: 0
@@ -20048,7 +20057,6 @@ GameObject:
   - component: {fileID: 5849700187293665785}
   - component: {fileID: 1486481466831601880}
   - component: {fileID: 1172225813807625690}
-  - component: {fileID: 467049148245789427}
   - component: {fileID: 7907233818777064594}
   - component: {fileID: 5863328437811166610}
   m_Layer: 0
@@ -20133,14 +20141,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9f603fe7a12d4defbb4f2a7c57415962, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!81 &467049148245789427
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5625567887718751476}
-  m_Enabled: 1
 --- !u!114 &7907233818777064594
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24890,7 +24890,7 @@ Transform:
   m_GameObject: {fileID: 7666186497415931499}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.6, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -24930,7 +24930,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1500
-  field of view: 60.000004
+  field of view: 35
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
