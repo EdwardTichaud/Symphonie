@@ -95,7 +95,7 @@ public class CharacterData : ScriptableObject, ITargetable
 
     [Header("Effets de déplacement")]
     [Tooltip("Système de particules utilisé pendant les déplacements rapides de cette unité.")]
-    public ParticleSystem dashParticlesPrefab;
+    public GameObject dashParticlesPrefab;
 
     [Header("Animations spéciales")]
     // Animation générique de dégâts

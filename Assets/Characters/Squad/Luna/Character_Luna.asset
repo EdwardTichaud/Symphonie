@@ -14,12 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Luna
   portrait: {fileID: 0}
+  versusSprites: []
   characterType: 0
   gameplayType: 2
   harmonicType: 2
   characterWorldModel: {fileID: 0}
   characterBattleModel: {fileID: 901204007372340786, guid: 48bc122d024634b4789a14a245e83484, type: 3}
   battlefieldIndex: 0
+  isAirUnit: 0
+  interceptable: 1
+  avoidable: 1
   baseReflex: 0
   baseMobility: 0
   baseVitality: 0
@@ -38,11 +42,11 @@ MonoBehaviour:
   rageDamageMultiplier: 0
   baseFatigue: 0
   maxFatigue: 0
-  battleIdleAnimation: {fileID: 0}
   musicalAttacks: []
+  specialMusicalMove: {fileID: 0}
   currentInitiative: 1
   currentRange: 5
-  currentHP: 70
+  currentHP: 50
   currentStrength: 1
   currentDefense: 1
   currentPower: 0
@@ -61,8 +65,23 @@ MonoBehaviour:
   criticalHitSound: {fileID: 0}
   interceptedSound: {fileID: 0}
   interceptionSound: {fileID: 0}
+  prematureDeathTaunt: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
-  owner: {fileID: 0}
+  dashParticlesPrefab: {fileID: 6843868886689424030, guid: 39cd3db8310d9e045ad6b122b69635a7, type: 3}
+  hitAnimation: {fileID: 0}
+  deathAnimation: {fileID: 0}
+  TPAnimation_Start: {fileID: 0}
+  TPAnimation_Destination: {fileID: 0}
+  prepareToUndergoAnimation: {fileID: 0}
+  introTimeline: {fileID: 0}
+  moveStartClip: {fileID: 0}
+  moveEndClip: {fileID: 0}
+  weepForLucianDeath: {fileID: 0}
+  weepForThaliaDeath: {fileID: 0}
+  weepForKaelDeath: {fileID: 0}
+  weepForLinkDeath: {fileID: 0}
+  weepForLunaDeath: {fileID: 0}
   resonancePoint: 1
   dissonancePoint: 0
+  owner: {fileID: 0}

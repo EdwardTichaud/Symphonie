@@ -594,7 +594,7 @@ public class RhythmQTEManager : MonoBehaviour
         // Chaque personnage peut disposer de son propre effet de dash défini dans son CharacterData.
         // On récupère donc la référence à chaud pour respecter la personnalisation visuelle demandée.
         CharacterData casterData = caster.Data;
-        ParticleSystem dashParticlesPrefab = casterData != null ? casterData.dashParticlesPrefab : null;
+        ParticleSystem dashParticlesPrefab = casterData != null ? casterData.dashParticlesPrefab.GetComponentInChildren<ParticleSystem>() : null;
 
         if (dashParticlesPrefab == null)
             return null; // Aucun effet configuré pour cette unité : aucun système n'est créé.
