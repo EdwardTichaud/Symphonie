@@ -575,6 +575,106 @@ public class RhythmQTEManager : MonoBehaviour
         BattleCameraManager.Instance?.ClearRigTargets();
     }
 
+    /// <summary>
+    /// Instancie (si disponible) le système de particules de dash et l'attache à l'unité.
+    /// Cette méthode centralise l'initialisation pour s'assurer que le même comportement
+    /// est appliqué lors des déplacements d'objets comme des MusicalMoves.
+    /// </summary>
+    /// <param name="caster">L'unité qui se déplace actuellement.</param>
+    /// <returns>Une instance de particules prête à être suivie ou <c>null</c> si aucun prefab n'est configuré.</returns>
+    private ParticleSystem SpawnDashParticles(CharacterUnit caster)
+    {
+        if (caster == null)
+            return null; // Sécurité minimale : la méthode n'a pas vocation à gérer un déplacement sans unité.
+
+        // Chaque personnage peut disposer de son propre effet de dash défini dans son CharacterData.
+        // On récupère donc la référence à chaud pour respecter la personnalisation visuelle demandée.
+        CharacterData casterData = caster.Data;
+        ParticleSystem dashParticlesPrefab = casterData != null ? casterData.dashParticlesPrefab : null;
+
+        if (dashParticlesPrefab == null)
+            return null; // Aucun effet configuré pour cette unité : aucun système n'est créé.
+
+        // Instancie le prefab directement à la position du lanceur pour éviter tout décalage visuel.
+        ParticleSystem instance = Instantiate(dashParticlesPrefab, caster.transform.position, caster.transform.rotation);
+
+        // Parentage temporaire : le système suit automatiquement l'unité pendant le déplacement.
+        Transform instanceTransform = instance.transform;
+        instanceTransform.SetParent(caster.transform, worldPositionStays: false);
+        instanceTransform.localPosition = Vector3.zero; // Positionne l'effet au centre du personnage.
+        instanceTransform.localRotation = Quaternion.identity; // Conserve l'orientation naturelle du prefab.
+        instanceTransform.localScale = Vector3.one; // Évite tout effet d'échelle hérité inattendu.
+
+        instance.Play(true); // Sécurise le lancement de l'effet (utile si le prefab est configuré sur "Stop").
+        return instance;
+    }
+
+    /// <summary>
+    /// Détache le système de particules du lanceur et lance une extinction progressive
+    /// suivie de sa destruction pour éviter toute fuite de GameObject dans la scène.
+    /// </summary>
+    /// <param name="instance">Instance des particules précédemment créées.</param>
+    private void ReleaseDashParticles(ParticleSystem instance)
+    {
+        if (instance == null)
+            return; // Rien à relâcher : le déplacement s'est effectué sans effet visuel.
+
+        Transform instanceTransform = instance.transform;
+        if (instanceTransform != null)
+        {
+            // Le détachement permet de laisser l'effet se dissiper sur place même si l'unité repart immédiatement.
+            instanceTransform.SetParent(null, worldPositionStays: true);
+        }
+
+        // La coroutine gère la réduction de l'émission sur 0,5 s puis la destruction après 2 s.
+        StartCoroutine(FadeOutAndDestroyDashParticles(instance));
+    }
+
+    /// <summary>
+    /// Réduit progressivement l'émission d'un système de particules puis le détruit
+    /// afin de respecter les consignes de lisibilité en combat sans générer de déchets.
+    /// </summary>
+    /// <param name="instance">Système de particules à éteindre.</param>
+    private IEnumerator FadeOutAndDestroyDashParticles(ParticleSystem instance)
+    {
+        if (instance == null)
+            yield break; // Sécurité supplémentaire : l'effet peut déjà avoir été détruit ailleurs.
+
+        // Multiplieurs de départ : ils sont utilisés pour conserver la configuration du prefab
+        // (courbes, bursts, etc.) tout en la faisant décroître progressivement.
+        var emission = instance.emission;
+        float baseRateTimeMultiplier = emission.rateOverTimeMultiplier;
+        float baseRateDistanceMultiplier = emission.rateOverDistanceMultiplier;
+
+        const float fadeDuration = 0.5f; // Durée souhaitée pour atteindre une émission nulle.
+        float timer = 0f;
+
+        while (instance != null && timer < fadeDuration)
+        {
+            float factor = 1f - (timer / fadeDuration); // Interpolation linéaire de 1 vers 0.
+
+            emission = instance.emission; // Récupération à chaque itération car il s'agit d'une struct.
+            emission.rateOverTimeMultiplier = baseRateTimeMultiplier * factor;
+            emission.rateOverDistanceMultiplier = baseRateDistanceMultiplier * factor;
+
+            timer += Time.deltaTime;
+            yield return null; // Attente d'une frame pour conserver une animation fluide.
+        }
+
+        if (instance == null)
+            yield break; // L'effet a pu être détruit durant l'attente (ex : changement de scène).
+
+        emission = instance.emission;
+        emission.rateOverTimeMultiplier = 0f;
+        emission.rateOverDistanceMultiplier = 0f;
+        instance.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmitting); // Stoppe proprement l'émission.
+
+        yield return new WaitForSeconds(2f); // Laisse le temps aux particules déjà générées de disparaître naturellement.
+
+        if (instance != null)
+            Destroy(instance.gameObject); // Suppression finale pour éviter toute accumulation en scène.
+    }
+
     private IEnumerator SimpleMoveTo(CharacterUnit caster, CharacterUnit target, ItemData item)
     {
         if (caster == null || caster.IsDead)
@@ -630,6 +730,8 @@ public class RhythmQTEManager : MonoBehaviour
 
             Vector3 startPos = caster.transform.position;
             float distance = Vector3.Distance(startPos, destination);
+            // Instancie les particules uniquement si un déplacement réel est nécessaire.
+            ParticleSystem dashParticles = distance > 0.01f ? SpawnDashParticles(caster) : null;
             float duration = distance / item.moveSpeed;
             float t = 0f;
             // Mouvement progressif vers la destination
@@ -640,6 +742,9 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
             }
             caster.transform.position = destination;
+
+            // Laisse l'effet se dissiper en douceur maintenant que l'unité est arrivée.
+            ReleaseDashParticles(dashParticles);
         }
         // Si isTeleport mais distance nulle, on ne fait rien : aucune téléportation nécessaire
 
@@ -704,6 +809,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             Vector3 startPos = caster.transform.position;
             float distance = Vector3.Distance(startPos, origin);
+            ParticleSystem dashParticles = distance > 0.01f ? SpawnDashParticles(caster) : null;
             float duration = distance / item.moveSpeed;
             float t = 0f;
             while (t < 1f)
@@ -713,6 +819,8 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
             }
             caster.transform.position = origin;
+
+            ReleaseDashParticles(dashParticles);
         }
         // Si isTeleport mais distance nulle, aucune action n'est nécessaire
 
@@ -803,6 +911,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             Vector3 startPos = caster.transform.position;
             float distance = Vector3.Distance(startPos, targetPos);
+            ParticleSystem dashParticles = distance > 0.01f ? SpawnDashParticles(caster) : null;
             float duration = move.GetTravelDuration(distance);
             float t = 0f;
             while (t < 1f)
@@ -812,6 +921,8 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
             }
             caster.transform.position = targetPos;
+
+            ReleaseDashParticles(dashParticles);
         }
         // Si isTeleport mais aucune distance à parcourir, on ignore le déplacement
 
@@ -903,6 +1014,7 @@ public class RhythmQTEManager : MonoBehaviour
                 animator?.Play("Dash_Battle");
 
             float distance = Vector3.Distance(startPos, initialPosition);
+            ParticleSystem dashParticles = distance > 0.01f ? SpawnDashParticles(caster) : null;
             float duration = move.GetTravelDuration(distance);
             float t = 0f;
             while (t < 1f)
@@ -912,6 +1024,8 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
             }
             caster.transform.position = initialPosition;
+
+            ReleaseDashParticles(dashParticles);
         }
         // Si isTeleport mais distance nulle, pas de retour nécessaire
 

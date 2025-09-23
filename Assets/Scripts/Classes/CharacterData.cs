@@ -93,6 +93,10 @@ public class CharacterData : ScriptableObject, ITargetable
     public GameObject hitEffect;
     public GameObject deathEffect;
 
+    [Header("Effets de déplacement")]
+    [Tooltip("Système de particules utilisé pendant les déplacements rapides de cette unité.")]
+    public ParticleSystem dashParticlesPrefab;
+
     [Header("Animations spéciales")]
     // Animation générique de dégâts
     public AnimationClip hitAnimation;                // Jouée quand l'unité subit des dégâts
