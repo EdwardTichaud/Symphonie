@@ -848,12 +848,17 @@ public class NewBattleManager : MonoBehaviour
         {
             if (unit.TryGetComponent<SleepStatus>(out var sleep) && sleep.IsAsleep && unit.Data.gameplayType != GameplayType.Fatigue)
             {
-                EndTurn();
+                // En cas de sommeil, on clôt immédiatement le tour de l'unité concernée sans relancer son animation idle
+                // afin qu'elle conserve sa pose assoupie. On précise l'unité au gestionnaire pour vider correctement son ATB
+                // et éviter que la boucle de tours reste bloquée sur un même combattant.
+                EndTurn(unit, skipIdleAnimation: true);
                 yield break;
             }
             if (unit.TryGetComponent<FatigueSystem>(out var fatigue) && fatigue.IsAsleep && unit.Data.gameplayType != GameplayType.Fatigue)
             {
-                EndTurn();
+                // Même logique que pour le sommeil standard : on force la remise à zéro de l'ATB sans toucher à l'animation,
+                // ce qui garantit une transition propre lorsque le système de fatigue impose un repos forcé.
+                EndTurn(unit, skipIdleAnimation: true);
                 yield break;
             }
 
@@ -1363,26 +1368,38 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
-    public void EndTurn()
+    public void EndTurn(CharacterUnit forcedUnit = null, bool skipIdleAnimation = false)
     {
-        if (currentCharacterUnit != null)
-        {
-            Debug.Log($"[BattleTurnManager] Fin du tour de {currentCharacterUnit.name}");
-            currentCharacterUnit.currentATB = 0f;
+        // Détermine l'unité qui termine effectivement son tour :
+        //  * par défaut, on conserve l'unité actuellement enregistrée ;
+        //  * certains raccourcis (sommeil, fatigue...) fournissent explicitement l'unité à traiter
+        //    pour remettre son ATB à zéro et éviter tout blocage de la boucle de tours.
+        CharacterUnit endingUnit = forcedUnit ?? currentCharacterUnit;
 
-            if (currentCharacterUnit.interceptionImmunityTurns > 0)
+        // Actualise la référence interne pour garder une trace cohérente du dernier combattant résolu.
+        currentCharacterUnit = endingUnit;
+
+        if (endingUnit != null)
+        {
+            Debug.Log($"[BattleTurnManager] Fin du tour de {endingUnit.name}");
+            endingUnit.currentATB = 0f;
+
+            if (endingUnit.interceptionImmunityTurns > 0)
             {
-                currentCharacterUnit.interceptionImmunityTurns--;
-                if (currentCharacterUnit.interceptionImmunityTurns <= 0)
-                    currentCharacterUnit.isInterceptionImmune = false;
+                endingUnit.interceptionImmunityTurns--;
+                if (endingUnit.interceptionImmunityTurns <= 0)
+                    endingUnit.isInterceptionImmune = false;
             }
 
-            if (currentCharacterUnit.Data.characterType == CharacterType.SquadUnit && currentTurnDamage > maxTurnDamage)
+            if (endingUnit.Data.characterType == CharacterType.SquadUnit && currentTurnDamage > maxTurnDamage)
             {
                 maxTurnDamage = currentTurnDamage;
-                mvpUnit = currentCharacterUnit;
+                mvpUnit = endingUnit;
             }
-            currentCharacterUnit.animator.Play("Idle_Battle");
+
+            // On évite de forcer l'animation d'attente lorsque l'unité est censée dormir ou rester figée.
+            if (!skipIdleAnimation)
+                endingUnit.animator.Play("Idle_Battle");
         }
 
         ChangeBattleState(BattleState.EndTurn);
