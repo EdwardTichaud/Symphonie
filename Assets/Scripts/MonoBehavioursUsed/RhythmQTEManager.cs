@@ -588,8 +588,16 @@ public class RhythmQTEManager : MonoBehaviour
     /// <returns>Une instance de particules prête à être suivie ou <c>null</c> si aucun prefab n'est configuré.</returns>
     private ParticleSystem SpawnDashParticles(CharacterUnit caster)
     {
-        if (dashParticlesPrefab == null || caster == null)
-            return null; // Aucun effet configuré : on sort immédiatement.
+        if (caster == null)
+            return null; // Sécurité minimale : la méthode n'a pas vocation à gérer un déplacement sans unité.
+
+        // Chaque personnage peut disposer de son propre effet de dash défini dans son CharacterData.
+        // On récupère donc la référence à chaud pour respecter la personnalisation visuelle demandée.
+        CharacterData casterData = caster.Data;
+        ParticleSystem dashParticlesPrefab = casterData != null ? casterData.dashParticlesPrefab : null;
+
+        if (dashParticlesPrefab == null)
+            return null; // Aucun effet configuré pour cette unité : aucun système n'est créé.
 
         // Instancie le prefab directement à la position du lanceur pour éviter tout décalage visuel.
         ParticleSystem instance = Instantiate(dashParticlesPrefab, caster.transform.position, caster.transform.rotation);
