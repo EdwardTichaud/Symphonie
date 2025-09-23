@@ -493,8 +493,29 @@ public class AudioManager : MonoBehaviour
     public void PlaySfx(int index)
     {
         AudioClip clip = soundEffects[index];
-        float factor = GetNormalizationFactor(clip);
+        PlaySfx(clip);
+    }
+
+    /// <summary>
+    /// Joue un effet sonore arbitraire en réutilisant les paramètres globaux du gestionnaire.
+    /// Cette surcharge simplifie l'utilisation d'effets dédiés (menus, dash, etc.) sans
+    /// imposer de réserver un slot dans <see cref="soundEffects"/>.
+    /// </summary>
+    /// <param name="clip">Clip à jouer immédiatement.</param>
+    /// <param name="volume">Facteur multiplicatif optionnel (1 = volume par défaut).</param>
+    public void PlaySfx(AudioClip clip, float volume = 1f)
+    {
+        if (clip == null)
+            return; // Rien à jouer : on quitte proprement.
+
+        // Recherche d'une source libre parmi les canaux SFX existants. La méthode utilitaire
+        // conserve l'ancien comportement : réutilisation du premier canal si tous sont occupés.
         AudioSource src = GetAvailableSource(sfxSources);
+
+        // Normalisation optionnelle du volume pour conserver une cohérence entre les clips très
+        // différents. On applique également le facteur fourni en paramètre, clampé entre 0 et 1.
+        float factor = GetNormalizationFactor(clip) * Mathf.Clamp01(volume);
+
         src.PlayOneShot(clip, factor);
     }
 

@@ -326,6 +326,22 @@ public class NewBattleManager : MonoBehaviour
     public GameObject currentItemsMenuContainer;
     public List<Transform> currentItemsMenuSlots;
 
+    [Header("Effets sonores de navigation en combat")]
+    [SerializeField, Tooltip("Clip joué lorsque le menu principal s'affiche ou lorsque l'on y retourne.")]
+    private AudioClip mainMenuOpenClip;
+    [SerializeField, Tooltip("Clip joué dès que le joueur ouvre le menu des compétences.")]
+    private AudioClip skillsMenuOpenClip;
+    [SerializeField, Tooltip("Clip joué lors de l'accès au menu des objets.")]
+    private AudioClip itemsMenuOpenClip;
+    [SerializeField, Tooltip("Clip déclenché lorsque l'on passe en mode sélection de cible (compétence ou objet).")]
+    private AudioClip targetSelectionClip;
+    [SerializeField, Tooltip("Clip joué à chaque changement de cible pendant la navigation.")]
+    private AudioClip targetChangeClip;
+    [SerializeField, Tooltip("Clip joué lorsqu'une nouvelle page de compétences est affichée.")]
+    private AudioClip skillPageChangeClip;
+    [SerializeField, Tooltip("Effet utilisé lorsque l'unité active ne possède pas de clip personnalisé pour signaler sa sélection.")]
+    private AudioClip defaultCharacterSelectionClip;
+
     // -----------------------------------------------------------------------------------
 
     #region Awake/Start/Update()
@@ -2093,6 +2109,8 @@ public class NewBattleManager : MonoBehaviour
         ActionUIDisplayManager.Instance.DisplayInstruction_SelectItemSkillOrPass();
         ChangeBattleState(BattleState.SquadUnit_MainMenu);
         ToggleMenuContainers(true, false, false);
+        // Feedback audio systématique lorsque le menu principal devient visible.
+        PlayMenuClip(mainMenuOpenClip);
 
         // S'assure que l'action "Confirm" est bien active.
         // Elle peut avoir été désactivée à la fin d'un QTE.
@@ -2133,6 +2151,8 @@ public class NewBattleManager : MonoBehaviour
         // S'assure qu'aucun item n'est en cours de sélection
         currentItem = null;
         ToggleMenuContainers(false, true, false);
+        // Son distinct pour signaler l'entrée dans le menu des compétences.
+        PlayMenuClip(skillsMenuOpenClip);
         currentMenuIndex = 0;
 
         // Réinitialise la page affichée
@@ -2243,6 +2263,8 @@ public class NewBattleManager : MonoBehaviour
         if (currentSkillPageIndex < maxPage)
         {
             currentSkillPageIndex++;
+            // Retour audio pour confirmer le changement de page.
+            PlayMenuClip(skillPageChangeClip);
             RefreshSkillsMenuDisplay();
         }
     }
@@ -2256,6 +2278,8 @@ public class NewBattleManager : MonoBehaviour
         if (currentSkillPageIndex > 0)
         {
             currentSkillPageIndex--;
+            // Même feedback lors d'un retour vers une page précédente.
+            PlayMenuClip(skillPageChangeClip);
             RefreshSkillsMenuDisplay();
         }
     }
@@ -2270,6 +2294,8 @@ public class NewBattleManager : MonoBehaviour
         // S'assure qu'aucune compétence n'est en cours de sélection
         currentMove = null;
         ToggleMenuContainers(false, false, true);
+        // Clip spécifique pour différencier l'accès à l'inventaire.
+        PlayMenuClip(itemsMenuOpenClip);
         currentMenuIndex = 0;
 
         // Démarre la Timeline d'attente de sélection d'objet
@@ -2516,8 +2542,14 @@ public class NewBattleManager : MonoBehaviour
 
         int count = filteredUnits.Count;
         currentTargetIndex = (currentTargetIndex + direction + count) % count;
-
+        CharacterUnit previousTarget = currentTargetCharacter;
         currentTargetCharacter = filteredUnits[currentTargetIndex];
+
+        if (currentTargetCharacter != previousTarget)
+        {
+            // Joué à chaque bascule de cible pour informer le joueur du changement de focus.
+            PlayMenuClip(targetChangeClip);
+        }
     }
     #endregion
 
@@ -2667,6 +2699,8 @@ public class NewBattleManager : MonoBehaviour
                               || move.targetTypes.Contains(TargetType.AllAllies)
                               || move.targetTypes.Contains(TargetType.All);
         bool allowGroupSwitch = canTargetEnemies && canTargetAllies;
+        // Feedback audio unique pour signifier le passage en mode ciblage.
+        PlayMenuClip(targetSelectionClip);
         switch (move.defaultTargetType)
         {
             case TargetType.Self:
@@ -2733,6 +2767,8 @@ public class NewBattleManager : MonoBehaviour
                               item.targetTypes.Contains(TargetType.AllAllies) ||
                               item.targetTypes.Contains(TargetType.All);
         bool allowGroupSwitch = canTargetEnemies && canTargetAllies;
+        // Même signal sonore que pour les compétences afin de rester cohérent.
+        PlayMenuClip(targetSelectionClip);
 
         switch (item.defaultTargetType)
         {
@@ -3246,6 +3282,43 @@ public class NewBattleManager : MonoBehaviour
         rotation = Quaternion.LookRotation(mid - position, Vector3.up);
     }
 
+    /// <summary>
+    /// Joue un clip lié aux menus de combat via l'AudioManager.
+    /// Les garde-fous évitent toute exception lorsque l'audio n'est pas encore initialisé
+    /// (ex : scènes de test sans gestionnaire global).
+    /// </summary>
+    /// <param name="clip">Clip à jouer immédiatement.</param>
+    private void PlayMenuClip(AudioClip clip)
+    {
+        if (clip == null)
+            return; // Aucun son configuré pour cet évènement.
+
+        AudioManager audioManager = AudioManager.Instance;
+        if (audioManager == null)
+            return; // Le gestionnaire peut être absent dans certaines scènes d'édition.
+
+        audioManager.PlaySfx(clip);
+    }
+
+    /// <summary>
+    /// Déclenche l'éventuel clip personnalisé associé au personnage actuellement sélectionné.
+    /// Chaque unité peut fournir son propre son via <see cref="CharacterData.menuSelectionClip"/> ;
+    /// un fallback global est utilisé si aucun clip n'est défini pour garantir un feedback sonore.
+    /// </summary>
+    /// <param name="unit">Unité qui vient d'être mise en avant dans les menus.</param>
+    private void PlayCharacterSelectionClip(CharacterUnit unit)
+    {
+        if (unit == null)
+            return; // Sécurité : aucun personnage actif, donc aucun son à jouer.
+
+        CharacterData data = unit.Data;
+        AudioClip clipToPlay = data != null && data.menuSelectionClip != null
+            ? data.menuSelectionClip
+            : defaultCharacterSelectionClip;
+
+        PlayMenuClip(clipToPlay);
+    }
+
     public void ChangeBattleState(BattleState newState)
     {
         currentBattleState = newState;
@@ -3255,7 +3328,15 @@ public class NewBattleManager : MonoBehaviour
 
     private void ChangeCurrentCharacterUnit(CharacterUnit newCurrentCharacterUnit)
     {
+        if (currentCharacterUnit == newCurrentCharacterUnit)
+            return; // Aucun changement : on évite les répétitions sonores.
+
         currentCharacterUnit = newCurrentCharacterUnit;
+
+        if (currentCharacterUnit == null)
+            return; // Parfois utilisé lors des resets de combat : aucune unité active.
+
+        PlayCharacterSelectionClip(currentCharacterUnit);
     }
 
     private void EnsureBattleCamera()
