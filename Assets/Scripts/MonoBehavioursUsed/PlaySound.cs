@@ -15,7 +15,7 @@ public class PlaySound : MonoBehaviour
     [Tooltip("Active la lecture automatique de 'soundClip' au Start.")]
     public bool playAtStart = false; // Contrôle la lecture au Start
 
-    private AudioSource _audioSource; // Référence éventuelle à l'AudioSource locale
+    public AudioSource _audioSource; // Référence éventuelle à l'AudioSource locale
 
     private void Awake()
     {
@@ -45,14 +45,7 @@ public class PlaySound : MonoBehaviour
             Debug.LogWarning("[PlaySound] Aucun clip fourni pour la lecture.");
             return;
         }
-
-        // Priorité à l'AudioManager pour respecter les volumes globaux
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.PlaySound(clip);
-        }
-        // Repli sur une AudioSource locale si disponible
-        else if (_audioSource != null)
+        if (_audioSource != null)
         {
             _audioSource.PlayOneShot(clip);
         }
