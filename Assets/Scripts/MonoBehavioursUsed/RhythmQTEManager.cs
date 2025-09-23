@@ -51,6 +51,8 @@ public class RhythmQTEManager : MonoBehaviour
     [Header("Déplacements")]
     [Tooltip("Particules instanciées lors d'un déplacement classique afin d'accentuer la sensation de dash.")]
     [SerializeField] private ParticleSystem dashParticlesPrefab;
+    [Tooltip("Clip joué lorsqu'aucun son spécifique n'est défini sur le personnage pour l'effet de dash.")]
+    [SerializeField] private AudioClip defaultDashSound;
 
     // Tag de la caméra de combat à utiliser pour toutes les timelines
     private const string battleCameraTag = "BattleCamera";
@@ -66,30 +68,6 @@ public class RhythmQTEManager : MonoBehaviour
     // Gestion des effets sonores
     // ------------------------------------------------------------------------------
     /// <summary>
-    /// Récupère une source audio SFX disponible parmi AudioSource_Sfx_1 à 3.
-    /// On privilégie la première source qui ne joue aucun son afin d'éviter les
-    /// coupures lorsque plusieurs effets doivent être joués simultanément.
-    /// </summary>
-    /// <returns>Une source libre ou la première du tableau si toutes sont occupées</returns>
-    private AudioSource GetAvailableSfxSource()
-    {
-        // Sécurise l'accès au gestionnaire audio
-        var manager = AudioManager.Instance;
-        if (manager == null || manager.sfxSources == null || manager.sfxSources.Length == 0)
-            return null;
-
-        // Recherche de la première source inactive
-        foreach (var src in manager.sfxSources)
-        {
-            if (src != null && !src.isPlaying)
-                return src; // Source libre trouvée
-        }
-
-        // Toutes les sources sont en cours de lecture : on réutilise la première
-        return manager.sfxSources[0];
-    }
-
-    /// <summary>
     /// Joue un effet sonore à l'aide d'une source SFX disponible.
     /// </summary>
     /// <param name="clip">Clip audio à jouer</param>
@@ -98,9 +76,9 @@ public class RhythmQTEManager : MonoBehaviour
         if (clip == null)
             return;
 
-        // On récupère une source libre et on lance la lecture
-        var source = GetAvailableSfxSource();
-        source?.PlayOneShot(clip);
+        // Centralise la lecture via l'AudioManager afin de profiter de la normalisation et
+        // des volumes globaux configurés dans le projet.
+        AudioManager.Instance?.PlaySfx(clip);
     }
 
     private CharacterUnit currentCaster;
@@ -601,6 +579,13 @@ public class RhythmQTEManager : MonoBehaviour
 
         // Instancie le prefab directement à la position du lanceur pour éviter tout décalage visuel.
         ParticleSystem instance = Instantiate(dashParticlesPrefab, caster.transform.position, caster.transform.rotation);
+
+        // Lecture optionnelle du son associé : priorité au clip personnalisé du personnage,
+        // sinon utilisation d'un son par défaut défini dans le manager.
+        AudioClip dashClip = casterData != null && casterData.dashSoundClip != null
+            ? casterData.dashSoundClip
+            : defaultDashSound;
+        PlaySfx(dashClip);
 
         // Parentage temporaire : le système suit automatiquement l'unité pendant le déplacement.
         Transform instanceTransform = instance.transform;

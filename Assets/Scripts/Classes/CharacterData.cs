@@ -96,6 +96,8 @@ public class CharacterData : ScriptableObject, ITargetable
     [Header("Effets de déplacement")]
     [Tooltip("Système de particules utilisé pendant les déplacements rapides de cette unité.")]
     public GameObject dashParticlesPrefab;
+    [Tooltip("Effet sonore joué lorsque les particules de dash sont générées pour cette unité.")]
+    public AudioClip dashSoundClip;
 
     [Header("Animations spéciales")]
     // Animation générique de dégâts
@@ -115,6 +117,10 @@ public class CharacterData : ScriptableObject, ITargetable
     [Header("Sons de déplacement")]
     public AudioClip moveStartClip;
     public AudioClip moveEndClip;
+
+    [Header("Effets sonores d'interface")]
+    [Tooltip("Clip joué lorsque cette unité devient active dans les menus de combat.")]
+    public AudioClip menuSelectionClip;
 
     [Header("Voix de deuil")]
     [Tooltip("Lamentation jouée par ce personnage quand Lucian meurt")]
