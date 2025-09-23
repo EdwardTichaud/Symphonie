@@ -48,6 +48,10 @@ public class RhythmQTEManager : MonoBehaviour
     // Conserve l'ancien comportement en cas d'oubli de paramétrage
     private const float defaultTeleportDelay = 0.2f;
 
+    [Header("Déplacements")]
+    [Tooltip("Particules instanciées lors d'un déplacement classique afin d'accentuer la sensation de dash.")]
+    [SerializeField] private ParticleSystem dashParticlesPrefab;
+
     // Tag de la caméra de combat à utiliser pour toutes les timelines
     private const string battleCameraTag = "BattleCamera";
 
