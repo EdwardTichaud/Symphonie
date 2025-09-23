@@ -51,7 +51,7 @@ AudioSource:
   Mute: 0
   Spatialize: 0
   SpatializePostEffects: 0
-  Priority: 128
+  Priority: 180
   DopplerLevel: 1
   MinDistance: 1
   MaxDistance: 10
@@ -238,7 +238,7 @@ GameObject:
   - component: {fileID: 69086662785442413}
   - component: {fileID: 1513680149869317454}
   - component: {fileID: 4563541682586362166}
-  m_Layer: 13
+  m_Layer: 12
   m_Name: PoI_TP_Maison_Melodine
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -282,7 +282,7 @@ MonoBehaviour:
   uniqueId: b33c9e5a6505413793fb6e79e5453545
   autoDisableAfterConsumed: 0
   consumed: 0
-  blackFade: 1
+  blackFade: 0
   whiteFade: 0
   orbitAround: 0
   dialogue: {fileID: 0}
@@ -568,7 +568,7 @@ GameObject:
   - component: {fileID: 8249723673061871248}
   - component: {fileID: 2319970861540267026}
   - component: {fileID: 7389050906196173737}
-  m_Layer: 13
+  m_Layer: 12
   m_Name: Timeline_TP_Fix
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -1747,6 +1747,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 69086662785442413}
     m_Modifications:
+    - target: {fileID: 67232461256184279, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: 87397730313621418, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1787,9 +1791,53 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 415559331297678690, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 542841787820195299, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
     - target: {fileID: 1381757297829409995, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
       propertyPath: m_Name
       value: FX_TP_Maison_Melodine
+      objectReference: {fileID: 0}
+    - target: {fileID: 1381757297829409995, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 1496216005112673841, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 1820432499609023635, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 2635240589719323792, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 2851156378502913148, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 4083809991737396308, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 4824180771154626827, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 7164524516925189060, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
+      objectReference: {fileID: 0}
+    - target: {fileID: 7602134434781783176, guid: 2dda36f144a4c414ab0b280bb70f2648, type: 3}
+      propertyPath: m_Layer
+      value: 12
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1849,6 +1897,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2699573559904081564, guid: 6a7f9f6bacae501459937aecca0e59dc, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 7608ca2922dd1444093926b14fccd69f, type: 2}
     - target: {fileID: 5907278871587271720, guid: 6a7f9f6bacae501459937aecca0e59dc, type: 3}
       propertyPath: m_Name
       value: FX_Snow
@@ -1876,6 +1928,18 @@ PrefabInstance:
     - target: {fileID: 6994773567824037374, guid: 6a7f9f6bacae501459937aecca0e59dc, type: 3}
       propertyPath: VelocityModule.x.minScalar
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6994773567824037374, guid: 6a7f9f6bacae501459937aecca0e59dc, type: 3}
+      propertyPath: InitialModule.startSize.scalar
+      value: 0.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 6994773567824037374, guid: 6a7f9f6bacae501459937aecca0e59dc, type: 3}
+      propertyPath: InitialModule.startSize.minScalar
+      value: 0.02
+      objectReference: {fileID: 0}
+    - target: {fileID: 6994773567824037374, guid: 6a7f9f6bacae501459937aecca0e59dc, type: 3}
+      propertyPath: EmissionModule.rateOverTime.scalar
+      value: 100
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

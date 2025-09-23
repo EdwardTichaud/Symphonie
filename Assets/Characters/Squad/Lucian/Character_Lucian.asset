@@ -54,7 +54,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ffffffff000000000000000000000001, type: 2}
   specialMusicalMove: {fileID: 11400000, guid: 857c2cb2a8614382b75615f4f5a589f6, type: 2}
   currentInitiative: 1
-  currentRange: 6
+  currentRange: 26
   currentHP: 50
   currentStrength: 1
   currentDefense: 1
@@ -78,6 +78,7 @@ MonoBehaviour:
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   dashParticlesPrefab: {fileID: 6843868886689424030, guid: 39cd3db8310d9e045ad6b122b69635a7, type: 3}
+  dashSoundClip: {fileID: 8300000, guid: 888110618ab90bd47b2835044d68f9c0, type: 3}
   hitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
   deathAnimation: {fileID: 7400000, guid: 7f67a9c1949f03342bd793ce58156a74, type: 2}
   TPAnimation_Start: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
@@ -86,6 +87,7 @@ MonoBehaviour:
   introTimeline: {fileID: 11400000, guid: 5f0dceeed3fcd914ebde5933df0b5223, type: 2}
   moveStartClip: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
   moveEndClip: {fileID: 0}
+  menuSelectionClip: {fileID: 0}
   weepForLucianDeath: {fileID: 0}
   weepForThaliaDeath: {fileID: 0}
   weepForKaelDeath: {fileID: 0}
