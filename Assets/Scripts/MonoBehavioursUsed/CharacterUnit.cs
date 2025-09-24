@@ -33,6 +33,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     [HideInInspector] public Animator animator;
     // Indicateur évitant les multiples avertissements lorsque l'Animator enfant est introuvable.
     private bool hasLoggedMissingChildAnimator;
+    // Indicateur évitant de répéter les avertissements lorsqu'on détecte plusieurs Animator valides chez les enfants.
+    private bool hasLoggedMultipleChildAnimatorsWithController;
     private AwakeState awakeState;
 
     // Mise en cache des ancres caméra pour éviter de reparcourir toute la hiérarchie à chaque requête.
@@ -107,18 +109,41 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private Animator FindChildAnimatorForBindings()
     {
         var childAnimators = GetComponentsInChildren<Animator>(includeInactive: true);
+        Animator animatorWithController = null;
+        bool multipleControllersDetected = false; // Permet de réinitialiser l'avertissement si la hiérarchie redevient saine.
+
         foreach (var candidate in childAnimators)
         {
             if (candidate == null)
-                continue;
+                continue; // Sécurité défensive : on ignore les références manquantes dans la hiérarchie.
 
             if (candidate.gameObject == gameObject)
                 continue; // On passe l'objet racine pour se concentrer sur les véritables modèles.
 
-            return candidate;
+            if (candidate.runtimeAnimatorController == null)
+                continue; // L'Animator ne possède pas de controller : il ne peut pas piloter les animations requises.
+
+            if (animatorWithController == null)
+            {
+                animatorWithController = candidate; // Premier candidat valide trouvé : on le met en mémoire.
+                continue;
+            }
+
+            multipleControllersDetected = true; // Au moins deux Animator possèdent un controller dans la hiérarchie.
+
+            if (!hasLoggedMultipleChildAnimatorsWithController)
+            {
+                Debug.LogWarning(
+                    $"[CharacterUnit] Plusieurs Animator enfants avec un controller trouvés sur '{name}'. " +
+                    $"Utilisation du premier détecté : '{animatorWithController.name}'.");
+                hasLoggedMultipleChildAnimatorsWithController = true; // On évite de spammer la console si la situation persiste.
+            }
         }
 
-        return null;
+        if (!multipleControllersDetected)
+            hasLoggedMultipleChildAnimatorsWithController = false; // Aucun doublon détecté : on autorise un futur avertissement si nécessaire.
+
+        return animatorWithController;
     }
 
     /// <summary>
