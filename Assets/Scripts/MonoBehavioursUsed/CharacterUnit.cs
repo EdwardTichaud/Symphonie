@@ -249,6 +249,26 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
                 return child;
         }
 
+        // 🔁 Aucun point n'est présent directement sur l'unité : on vérifie le parent immédiat
+        // (PlayerPosition_X / EnemyPosition_X) qui peut désormais générer dynamiquement ces ancres.
+        Transform parent = transform.parent;
+        if (parent != null)
+        {
+            // Recherche d'abord l'enfant direct pour éviter une exploration trop large.
+            Transform parentAnchor = parent.Find(anchorName);
+            if (parentAnchor != null)
+                return parentAnchor;
+
+            foreach (Transform sibling in parent.GetComponentsInChildren<Transform>(includeInactive))
+            {
+                if (sibling == null || sibling == transform)
+                    continue;
+
+                if (string.Equals(sibling.name, anchorName, StringComparison.OrdinalIgnoreCase))
+                    return sibling;
+            }
+        }
+
         return null;
     }
 
