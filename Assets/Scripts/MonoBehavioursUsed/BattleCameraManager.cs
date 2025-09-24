@@ -36,6 +36,13 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Liste des CinemachineCamera découvertes afin de proposer un fallback aléatoire.</summary>
     private readonly List<CinemachineCamera> availableCameras = new();
 
+    /// <summary>
+    /// Registre des caméras configurées pour ne pas suivre continuellement leur point d'ancrage.
+    /// Lorsqu'un nom figure dans ce set, son placement a déjà été évalué pour le contexte courant
+    /// (caster, target, overrides) et ne doit plus être recalculé tant que ce contexte ne change pas.
+    /// </summary>
+    private readonly HashSet<string> lockedCameraPlacements = new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Référence de la caméra d'introduction pour gérer son travelling manuel.</summary>
     private Transform introCameraTransform;
 
@@ -90,12 +97,18 @@ public class BattleCameraManager : MonoBehaviour
         public CameraAnchorOwner Owner;
         public string Suffix;
         public bool LooksAtTarget;
+        public bool FollowAnchorContinuously;
 
-        public CameraBindingConfig(CameraAnchorOwner owner, string suffix, bool looksAtTarget)
+        public CameraBindingConfig(
+            CameraAnchorOwner owner,
+            string suffix,
+            bool looksAtTarget,
+            bool followAnchorContinuously = true)
         {
             Owner = owner;
             Suffix = suffix;
             LooksAtTarget = looksAtTarget;
+            FollowAnchorContinuously = followAnchorContinuously;
         }
     }
 
@@ -109,7 +122,7 @@ public class BattleCameraManager : MonoBehaviour
         ["CMV_OrbitAroundUnit"] = new(CameraAnchorOwner.Target, "OrbitAroundUnit", false),
         ["CMV_TargetReaction"] = new(CameraAnchorOwner.Target, "TargetReaction", false),
         ["CMV_Projectile_Flyby"] = new(CameraAnchorOwner.Caster, "Projectile_Flyby", false),
-        ["CMV_OverShoulder_CasterLookTarget"] = new(CameraAnchorOwner.Caster, "OverShoulder_CasterLookTarget", true),
+        ["CMV_OverShoulder_CasterLookTarget"] = new(CameraAnchorOwner.Caster, "OverShoulder_CasterLookTarget", true, false),
         ["CMV_OverShoulder_CasterToTarget"] = new(CameraAnchorOwner.Caster, "OverShoulder_CasterToTarget", true),
         ["CMV_OverHead_CasterLookTarget"] = new(CameraAnchorOwner.Caster, "OverHead_CasterLookTarget", true),
         ["CMV_BattleIntro"] = new(CameraAnchorOwner.Manual, "BattleIntro", false),
@@ -213,6 +226,11 @@ public class BattleCameraManager : MonoBehaviour
         if (config.Owner == CameraAnchorOwner.Manual)
             return; // Caméras positionnées manuellement via l'inspecteur.
 
+        // Les caméras marquées comme figées ne doivent pas recalculer leur position tant que
+        // le contexte n'a pas été réinitialisé (changement de caster/target, override, etc.).
+        if (!config.FollowAnchorContinuously && lockedCameraPlacements.Contains(cameraName))
+            return;
+
         CharacterUnit ownerUnit = ResolveAnchorOwner(config.Owner);
         if (ownerUnit == null)
             return;
@@ -241,6 +259,33 @@ public class BattleCameraManager : MonoBehaviour
         {
             camera.transform.rotation = anchor.rotation;
         }
+
+        // Après ce placement initial, on mémorise que cette caméra doit rester figée.
+        if (!config.FollowAnchorContinuously)
+            lockedCameraPlacements.Add(cameraName);
+    }
+
+    /// <summary>
+    /// Oublie toutes les caméras marquées comme « figées » afin qu'elles puissent se recaler
+    /// sur leur point d'ancrage lors du prochain rafraîchissement. À utiliser dès qu'un changement
+    /// de contexte peut influencer la position attendue (nouveau caster, cible différente, etc.).
+    /// </summary>
+    private void ResetAllCameraPlacementLocks()
+    {
+        lockedCameraPlacements.Clear();
+    }
+
+    /// <summary>
+    /// Autorise une caméra isolée à recalculer sa position même si elle était précédemment figée.
+    /// Cela est notamment requis lorsque l'on donne manuellement la priorité à une Cinemachine
+    /// spécifique et que l'on souhaite rééchantillonner son point « CMVPoint_ » avant le blend.
+    /// </summary>
+    private void UnlockCameraPlacement(string cameraName)
+    {
+        if (string.IsNullOrEmpty(cameraName))
+            return;
+
+        lockedCameraPlacements.Remove(cameraName);
     }
 
     /// <summary>Identifie l'unité responsable d'une caméra donnée.</summary>
@@ -300,6 +345,8 @@ public class BattleCameraManager : MonoBehaviour
         if (alsoSetAsCaster && unit != null)
             currentCaster = unit;
 
+        // Nouveau propriétaire de tour : on libère les caméras figées pour qu'elles se recalent.
+        ResetAllCameraPlacementLocks();
         RefreshAllCameraPlacements();
     }
 
@@ -308,6 +355,8 @@ public class BattleCameraManager : MonoBehaviour
     {
         currentTarget = target;
 
+        // Le suivi visuel peut changer de point d'intérêt : on invalide les placements figés.
+        ResetAllCameraPlacementLocks();
         RefreshAllCameraPlacements();
     }
 
@@ -324,6 +373,8 @@ public class BattleCameraManager : MonoBehaviour
         casterAnchorOverride = casterAnchor;
         targetAnchorOverride = targetAnchor;
 
+        // De nouveaux overrides peuvent déplacer l'ancre : on débloque les caméras figées.
+        ResetAllCameraPlacementLocks();
         RefreshAllCameraPlacements();
     }
 
@@ -335,6 +386,8 @@ public class BattleCameraManager : MonoBehaviour
         currentCaster = null;
         currentTarget = null;
 
+        // En revenant au contexte neutre, toutes les caméras doivent pouvoir se recaler.
+        ResetAllCameraPlacementLocks();
         RefreshAllCameraPlacements();
     }
 
@@ -378,6 +431,9 @@ public class BattleCameraManager : MonoBehaviour
             return;
         }
 
+        // On autorise explicitement cette caméra à se recaler : indispensable pour les vues figées.
+        UnlockCameraPlacement(cameraName);
+
         RefreshCameraPlacement(cameraName, CameraBindings.TryGetValue(cameraName, out var config)
             ? config
             : new CameraBindingConfig(CameraAnchorOwner.Caster, cameraName.Replace("CMV_", string.Empty), false));
@@ -395,7 +451,10 @@ public class BattleCameraManager : MonoBehaviour
     {
         // Les ancres manuelles appartiennent à l'ancien système : on déclenche simplement un rafraîchissement automatique.
         if (!string.IsNullOrEmpty(cameraName) && CameraBindings.TryGetValue(cameraName, out var config))
+        {
+            UnlockCameraPlacement(cameraName);
             RefreshCameraPlacement(cameraName, config);
+        }
         else if (anchor != null && TryGetCameraByName(cameraName, out var manualCamera))
             manualCamera.transform.SetPositionAndRotation(anchor.position, anchor.rotation);
 
