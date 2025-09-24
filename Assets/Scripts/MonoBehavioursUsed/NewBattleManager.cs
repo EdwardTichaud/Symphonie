@@ -1334,7 +1334,7 @@ public class NewBattleManager : MonoBehaviour
                     return unit;
 
                 float chance = unit.currentReflex / (unit.currentReflex + caster.currentReflex + 1f);
-                if (Random.value < chance)
+                if (UnityEngine.Random.value < chance)
                     return unit;
             }
         }
