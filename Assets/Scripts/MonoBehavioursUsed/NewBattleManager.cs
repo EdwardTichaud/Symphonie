@@ -90,7 +90,7 @@ public class NewBattleManager : MonoBehaviour
     [Header("Points de visée pour les caméras contextuelles")]
     [Tooltip("Offset appliqué aux ancres CMVPoint_OverShoulder_CasterLookTarget générées pour chaque position de combat.")]
     [SerializeField] private Vector3 overShoulderCasterLookPointPosition = new(-1f, 1.4f, -2f);
-    [SerializeField] private Vector3 overShoulderCasterLookOffset = new(0f, 0f, 0f);
+    private Vector3 overShoulderCasterLookOffset = new(0f, 0f, 0f);
 
     [Header("Listes des unités en combat en fonction de leur état")]
     public List<CharacterUnit> unitsInBattle = new(); // Toutes les unités du combat quelque soit leur état
