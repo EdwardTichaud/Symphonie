@@ -152,6 +152,11 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Plan cinématique utilisé durant le repli (None = conserver la caméra précédente).")]
     public BattleCameraRole retreatCameraRole = BattleCameraRole.ClosePushCaster;
 
+    [Header("Transitions de caméra")]
+    [Min(0f)]
+    [Tooltip("Temps (en secondes) durant lequel la caméra conserve le cadrage de préparation avant de basculer sur celui d'exécution.")]
+    public float preparingToPerformingCameraDelay = 0f;
+
 #if UNITY_EDITOR
     // ------------------------------------------------------------------
     // Références par défaut
