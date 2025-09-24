@@ -284,6 +284,16 @@ public class BattleCameraManager : MonoBehaviour
         if (targetAnchorOverride != null)
             return targetAnchorOverride;
 
+        // Tentative 1 : exploiter les nouveaux points globaux "CMVPoint_OverShoulderLookTarget_*".
+        // Ces points ne sont pas portés par l'unité directement, mais regroupés sous le parent
+        // contenant toute l'escouade (alliée ou ennemie). On commence par interroger la cible,
+        // puis on retente avec le lanceur (utile durant la préparation d'une action sans cible).
+        Transform sharedLookAnchor = ResolveSharedLookTargetAnchor(currentTarget);
+        if (sharedLookAnchor == null)
+            sharedLookAnchor = ResolveSharedLookTargetAnchor(currentCaster);
+        if (sharedLookAnchor != null)
+            return sharedLookAnchor;
+
         if (currentTarget != null)
         {
             Transform reactionPoint = currentTarget.GetCameraAnchor("CMVPoint_TargetReaction");
@@ -291,6 +301,81 @@ public class BattleCameraManager : MonoBehaviour
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Recherche les ancres communes "CMVPoint_OverShoulderLookTarget_*".
+    /// </summary>
+    /// <remarks>
+    /// Ces points sont placés sur le parent contenant l'ensemble des combattants d'un camp.
+    /// Ils permettent d'orienter la caméra épaulière vers un repère stable même lorsque la
+    /// cible se déplace ou disparaît momentanément. Chaque point est suffixé par un indice
+    /// (01 à 03) correspondant à la position de l'unité dans la hiérarchie.
+    /// </remarks>
+    private Transform ResolveSharedLookTargetAnchor(CharacterUnit referenceUnit)
+    {
+        if (referenceUnit == null)
+            return null;
+
+        Transform parent = referenceUnit.transform != null ? referenceUnit.transform.parent : null;
+        if (parent == null)
+            return null;
+
+        bool isPlayer = referenceUnit.Data != null && referenceUnit.Data.isPlayerControlled;
+
+        // On détermine l'indice de l'unité à l'intérieur de son groupe (1..N) afin de sélectionner
+        // l'ancre dédiée. L'ordre est simplement basé sur la hiérarchie des enfants du parent commun.
+        int slotIndex = ResolveUnitSlotIndex(referenceUnit, parent, isPlayer);
+        if (slotIndex <= 0)
+            return null;
+
+        string prefix = isPlayer
+            ? "CMVPoint_OverShoulderLookTarget_Player_"
+            : "CMVPoint_OverShoulderLookTarget_Enemy_";
+        string anchorName = prefix + slotIndex.ToString("00");
+
+        // Les ancres peuvent être nichées à n'importe quel niveau sous le parent : on parcourt
+        // récursivement la hiérarchie en incluant les objets désactivés pour couvrir tous les cas.
+        foreach (var child in parent.GetComponentsInChildren<Transform>(includeInactive: true))
+        {
+            if (child == null)
+                continue;
+
+            if (string.Equals(child.name, anchorName, StringComparison.OrdinalIgnoreCase))
+                return child;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Calcule la position (1..N) de l'unité au sein de son groupe afin de choisir l'ancre adaptée.
+    /// </summary>
+    private static int ResolveUnitSlotIndex(CharacterUnit referenceUnit, Transform groupParent, bool isPlayer)
+    {
+        if (referenceUnit == null || groupParent == null)
+            return -1;
+
+        int index = 0;
+        foreach (Transform child in groupParent)
+        {
+            if (child == null)
+                continue;
+
+            CharacterUnit childUnit = child.GetComponent<CharacterUnit>();
+            if (childUnit == null || childUnit.Data == null)
+                continue;
+
+            if (childUnit.Data.isPlayerControlled != isPlayer)
+                continue; // On ignore les unités appartenant au camp opposé.
+
+            index++;
+
+            if (childUnit == referenceUnit)
+                return index;
+        }
+
+        return -1;
     }
 
     /// <summary>Enregistre l'unité actuellement active (tour en cours).</summary>

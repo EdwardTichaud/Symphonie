@@ -93,10 +93,15 @@ public class ItemData : ScriptableObject
     public TimelineAsset retreatTimeline;
 
     [Header("Caméras par phase")]
-    [Tooltip("Plan cinématique utilisé lors de la préparation (None = conserver la vue actuelle, OverShoulderCasterLookTarget = ancre Camera_Shoulder_Stay, OverShoulderCasterToTarget = ancre Camera_Shoulder_Moving).")]
+    [Tooltip(
+        "Plan cinématique utilisé lors de la préparation (None = conserver la vue actuelle, " +
+        "OverShoulderCasterLookTarget = ancre partagée CMVPoint_OverShoulderLookTarget_*, " +
+        "OverShoulderCasterToTarget = ancre portée par l'utilisateur).")]
     public BattleCameraRole preparingCameraRole = BattleCameraRole.MainMenuIdle;
-    [Tooltip("Plan cinématique utilisé pendant l'utilisation (None = conserver la caméra précédente).")]
-    public BattleCameraRole performingCameraRole = BattleCameraRole.OverShoulderCasterToTarget;
+    [Tooltip(
+        "Plan cinématique utilisé pendant l'utilisation (None = conserver la caméra précédente). " +
+        "Préférez OverShoulderCasterLookTarget pour bénéficier du suivi partagé CMVPoint_OverShoulderLookTarget_*.")]
+    public BattleCameraRole performingCameraRole = BattleCameraRole.OverShoulderCasterLookTarget;
     [Tooltip("Plan cinématique utilisé lors du repli (None = conserver la caméra précédente).")]
     public BattleCameraRole retreatCameraRole = BattleCameraRole.TargetReaction;
 
@@ -124,12 +129,37 @@ public class ItemData : ScriptableObject
             return;
 
         // Applique les valeurs par défaut uniquement si les champs sont vides.
+        bool cameraSettingsUpdated = false;
+
         if (preparingCameraRole == BattleCameraRole.None)
+        {
             preparingCameraRole = reference.preparingCameraRole;
+            cameraSettingsUpdated = true;
+        }
+
         if (performingCameraRole == BattleCameraRole.None)
+        {
             performingCameraRole = reference.performingCameraRole;
+            cameraSettingsUpdated = true;
+        }
+        else if (performingCameraRole == BattleCameraRole.OverShoulderCasterToTarget &&
+                 reference.performingCameraRole == BattleCameraRole.OverShoulderCasterLookTarget)
+        {
+            // Migration automatique des anciens items qui utilisaient la caméra mobile.
+            // On privilégie désormais OverShoulderCasterLookTarget pour aligner les plans
+            // avec les nouvelles ancres partagées.
+            performingCameraRole = BattleCameraRole.OverShoulderCasterLookTarget;
+            cameraSettingsUpdated = true;
+        }
+
         if (retreatCameraRole == BattleCameraRole.None)
+        {
             retreatCameraRole = reference.retreatCameraRole;
+            cameraSettingsUpdated = true;
+        }
+
+        if (cameraSettingsUpdated)
+            EditorUtility.SetDirty(this);
     }
 #endif
 

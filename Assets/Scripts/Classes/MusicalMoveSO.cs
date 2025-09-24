@@ -145,12 +145,18 @@ public class MusicalMoveSO : ScriptableObject
     public TimelineAsset retreatTimeline;
 
     [Header("Caméras par phase")]
-    [Tooltip("Plan cinématique utilisé durant la préparation (None = conserver la caméra courante, OverShoulderCasterLookTarget = ancre Camera_Shoulder_Stay, OverShoulderCasterToTarget = ancre Camera_Shoulder_Moving).")]
+    [Tooltip(
+        "Plan cinématique utilisé durant la préparation (None = conserver la caméra courante, " +
+        "OverShoulderCasterLookTarget = ancre CMVPoint_OverShoulderLookTarget_* partagée avec le groupe, " +
+        "OverShoulderCasterToTarget = ancre CMVPoint_OverShoulder_CasterToTarget portée par l'unité).")]
     public BattleCameraRole preparingCameraRole = BattleCameraRole.WideEstablish;
     [Tooltip("Temps (en secondes) durant lequel la caméra conserve le cadrage de préparation avant de basculer sur celui d'exécution.")]
     public float preparingToPerformingCameraDelay = 0f;
-    [Tooltip("Plan cinématique utilisé durant l'exécution (None = conserver la caméra précédente).")]
-    public BattleCameraRole performingCameraRole = BattleCameraRole.OverShoulderCasterToTarget;
+    [Tooltip(
+        "Plan cinématique utilisé durant l'exécution (None = conserver la caméra précédente). " +
+        "OverShoulderCasterLookTarget exploite désormais les points partagés CMVPoint_OverShoulderLookTarget_* pour " +
+        "garantir une mise en joue stable vers la cible.")]
+    public BattleCameraRole performingCameraRole = BattleCameraRole.OverShoulderCasterLookTarget;
     [Tooltip("Plan cinématique utilisé durant le repli (None = conserver la caméra précédente).")]
     public BattleCameraRole retreatCameraRole = BattleCameraRole.ClosePushCaster;
 
@@ -197,12 +203,37 @@ public class MusicalMoveSO : ScriptableObject
         // celle de "MusicalMove_Rhapsodie". Les concepteurs peuvent ensuite
         // remplacer ces valeurs manuellement selon les besoins spécifiques
         // du nouveau move.
+        bool cameraSettingsUpdated = false;
+
         if (preparingCameraRole == BattleCameraRole.None)
+        {
             preparingCameraRole = reference.preparingCameraRole;
+            cameraSettingsUpdated = true;
+        }
+
         if (performingCameraRole == BattleCameraRole.None)
+        {
             performingCameraRole = reference.performingCameraRole;
+            cameraSettingsUpdated = true;
+        }
+        else if (performingCameraRole == BattleCameraRole.OverShoulderCasterToTarget &&
+                 reference.performingCameraRole == BattleCameraRole.OverShoulderCasterLookTarget)
+        {
+            // Migration automatique : les anciens assets utilisaient le plan "CasterToTarget".
+            // On les fait désormais pointer vers "OverShoulderCasterLookTarget" qui s'aligne
+            // sur les nouvelles ancres partagées "CMVPoint_OverShoulderLookTarget_*".
+            performingCameraRole = BattleCameraRole.OverShoulderCasterLookTarget;
+            cameraSettingsUpdated = true;
+        }
+
         if (retreatCameraRole == BattleCameraRole.None)
+        {
             retreatCameraRole = reference.retreatCameraRole;
+            cameraSettingsUpdated = true;
+        }
+
+        if (cameraSettingsUpdated)
+            EditorUtility.SetDirty(this);
     }
 #endif
 
