@@ -100,6 +100,11 @@ public class ItemData : ScriptableObject
     [Tooltip("Plan cinématique utilisé lors du repli (None = conserver la caméra précédente).")]
     public BattleCameraRole retreatCameraRole = BattleCameraRole.TargetReaction;
 
+    [Header("Transitions de caméra")]
+    [Min(0f)]
+    [Tooltip("Durée (en secondes) durant laquelle la caméra reste sur le cadrage de préparation avant de se déplacer vers celui d'utilisation.")]
+    public float preparingToPerformingCameraDelay = 0f;
+
 #if UNITY_EDITOR
     // ------------------------------------------------------------------
     // Références par défaut

@@ -335,6 +335,15 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = dir; // Applique uniquement la rotation horizontale
         }
 
+        if (move.preparingToPerformingCameraDelay > 0f)
+        {
+            // ⏱️ Option de mise en scène : laisse le temps à la caméra de rester sur la préparation
+            //     même si la timeline d'exécution n'a pas encore démarré. Cela permet par exemple
+            //     d'afficher un effet visuel ou un dialogue juste après la préparation tout en
+            //     conservant le cadrage choisi pour cette phase.
+            yield return new WaitForSeconds(move.preparingToPerformingCameraDelay);
+        }
+
         // --- Phase d'exécution ---
         StartTimelinePhase(
             move.performingTimeline,
@@ -499,6 +508,14 @@ public class RhythmQTEManager : MonoBehaviour
             dir = dir.normalized; // Normalisation après suppression de la composante verticale
             if (dir != Vector3.zero)
                 caster.transform.forward = dir; // Applique la rotation uniquement sur le plan horizontal
+        }
+
+        if (item.preparingToPerformingCameraDelay > 0f)
+        {
+            // 🎬 Offre un léger battement entre la fin de la préparation et l'utilisation de l'objet.
+            //     Utile pour créer des respirations ou synchroniser des effets spéciaux sans que
+            //     la caméra ne change immédiatement d'angle.
+            yield return new WaitForSeconds(item.preparingToPerformingCameraDelay);
         }
 
         // --- Phase d'utilisation ---
