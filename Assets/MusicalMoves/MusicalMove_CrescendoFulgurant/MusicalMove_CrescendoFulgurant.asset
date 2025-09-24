@@ -39,7 +39,9 @@ MonoBehaviour:
   targetType: 1
   defaultTargetType: 1
   targetTypes: 01000000
-  moveSpeed: 0
+  travelTime: 0
+  legacyMoveSpeed: 0
+  legacyMoveSpeedConverted: 1
   castDistance: 2
   requiresMovement: 1
   teleportDelay: 0.2
@@ -56,3 +58,7 @@ MonoBehaviour:
   preparingTimeline: {fileID: 11400000, guid: 8b121268222063b4989da9ded3770c89, type: 2}
   performingTimeline: {fileID: 11400000, guid: b83f5d61e438b814f9280da6cf30b677, type: 2}
   retreatTimeline: {fileID: 11400000, guid: 6437c7bb2b604fa4988c0e1be04bf1a1, type: 2}
+  preparingCameraRole: 5
+  preparingToPerformingCameraDelay: 0
+  performingCameraRole: 8
+  retreatCameraRole: 3
