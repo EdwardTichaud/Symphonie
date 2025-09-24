@@ -16,8 +16,8 @@ GameObject:
   - component: {fileID: 3738432878993232295}
   - component: {fileID: 117573975168748393}
   - component: {fileID: 2534741389204307267}
-  - component: {fileID: 8211509223971570505}
   - component: {fileID: 8451842496839274301}
+  - component: {fileID: 8211509223971570505}
   m_Layer: 17
   m_Name: CharacterUnit_Lucian_Battle_Wolf
   m_TagString: Player
@@ -187,6 +187,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   instantiateAtStart: 0
   gameObjectToInstantiate: {fileID: 0}
+--- !u!114 &8451842496839274301
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b222f6150c8cb44ca62917abcfc0ec5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  audioManager: {fileID: 0}
+  defaultChannel: 1
+  overrideVolume: 0
+  volumeOverride: 0.8
+  loopRawClips: 0
+  allowPreviewInEditor: 0
 --- !u!114 &8211509223971570505
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -212,7 +230,7 @@ MonoBehaviour:
     m_Events:
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 0}
+        - m_Target: {fileID: 2534741389204307267}
           m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
           m_MethodName: InstantiateFromTimeline
           m_Mode: 2
@@ -226,7 +244,7 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 0}
+        - m_Target: {fileID: 2534741389204307267}
           m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
           m_MethodName: InstantiateFromTimeline
           m_Mode: 2
@@ -240,7 +258,7 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 0}
+        - m_Target: {fileID: 2534741389204307267}
           m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
           m_MethodName: InstantiateFromTimeline
           m_Mode: 2
@@ -254,7 +272,7 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 0}
+        - m_Target: {fileID: 2534741389204307267}
           m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
           m_MethodName: InstantiateFromTimeline
           m_Mode: 2
@@ -268,7 +286,7 @@ MonoBehaviour:
           m_CallState: 2
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 0}
+        - m_Target: {fileID: 2534741389204307267}
           m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
           m_MethodName: InstantiateFromTimeline
           m_Mode: 2
@@ -282,7 +300,7 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 0}
+        - m_Target: {fileID: 2534741389204307267}
           m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
           m_MethodName: InstantiateFromTimeline
           m_Mode: 2
@@ -296,13 +314,13 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 901204007372340786}
+        - m_Target: {fileID: 2534741389204307267}
           m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
-          m_MethodName: 
-          m_Mode: 1
+          m_MethodName: InstantiateFromTimeline
+          m_Mode: 2
           m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: 
+            m_ObjectArgument: {fileID: 2984989662271074563, guid: f8b6675d38206924e8ae7bab16c87c00, type: 3}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
             m_IntArgument: 0
             m_FloatArgument: 0
             m_StringArgument: 
@@ -310,30 +328,18 @@ MonoBehaviour:
           m_CallState: 2
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 901204007372340786}
-          m_TargetAssemblyTypeName: 
-          m_MethodName: 
-          m_Mode: 1
+        - m_Target: {fileID: 8451842496839274301}
+          m_TargetAssemblyTypeName: PlayAudioClip, Assembly-CSharp
+          m_MethodName: PlayClipAsset
+          m_Mode: 2
           m_Arguments:
-            m_ObjectArgument: {fileID: 0}
-            m_ObjectArgumentAssemblyTypeName: 
+            m_ObjectArgument: {fileID: 11400000, guid: d91159fae3a07d74e9a47ee4acf7a6d7, type: 2}
+            m_ObjectArgumentAssemblyTypeName: AudioClipSO, Assembly-CSharp
             m_IntArgument: 0
             m_FloatArgument: 0
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 1
---- !u!114 &8451842496839274301
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 901204007372340786}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4b222f6150c8cb44ca62917abcfc0ec5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &907725316657672803
 GameObject:
   m_ObjectHideFlags: 0
