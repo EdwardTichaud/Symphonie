@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System;
 using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
@@ -85,6 +86,10 @@ public class NewBattleManager : MonoBehaviour
     public GameObject enemyUnitRay;
     private List<Transform> enemySpawnPoints = new List<Transform>();
     public List<CharacterData> enemyTemplates = new List<CharacterData>();
+
+    [Header("Points de visée pour les caméras contextuelles")]
+    [Tooltip("Offset appliqué aux ancres CMVPoint_OverShoulder_CasterLookTarget générées pour chaque position de combat.")]
+    [SerializeField] private Vector3 overShoulderCasterLookOffset = new(0f, 1.6f, 0f);
 
     [Header("Listes des unités en combat en fonction de leur état")]
     public List<CharacterUnit> unitsInBattle = new(); // Toutes les unités du combat quelque soit leur état
@@ -409,7 +414,12 @@ public class NewBattleManager : MonoBehaviour
         {
             var child = playerSpawnRoot.GetChild(i);
             if (child != null)
+            {
                 playerSpawnPoints.Add(child);
+
+                // Crée (ou recycle) le point de visée utilisé par la caméra épaulière.
+                EnsureCasterLookTargetAnchor(child);
+            }
         }
 
         // Seuls les trois premiers membres de la squad peuvent participer au combat
@@ -450,7 +460,13 @@ public class NewBattleManager : MonoBehaviour
         {
             var child = enemySpawnRoot.GetChild(i);
             if (child != null)
+            {
                 enemySpawnPoints.Add(child);
+
+                // Génère également le point de visée pour les ennemis afin que les items/moves
+                // puissent demander une caméra épaulière même si la position est vide au départ.
+                EnsureCasterLookTargetAnchor(child);
+            }
         }
 
         for (int i = 0; i < enemyTemplates.Count && i < enemySpawnPoints.Count; i++)
@@ -479,6 +495,55 @@ public class NewBattleManager : MonoBehaviour
         }
     }
     #endregion
+
+    /// <summary>
+    /// S'assure qu'un point "CMVPoint_OverShoulder_CasterLookTarget" existe sur un emplacement donné
+    /// afin que les caméras contextuelles puissent viser automatiquement la cible active.
+    /// </summary>
+    /// <param name="spawnPoint">Transform représentant PlayerPosition_X ou EnemyPosition_X.</param>
+    /// <returns>Le transform correspondant au point de visée.</returns>
+    private Transform EnsureCasterLookTargetAnchor(Transform spawnPoint)
+    {
+        if (spawnPoint == null)
+            return null;
+
+        const string anchorName = "CMVPoint_OverShoulder_CasterLookTarget";
+
+        // Vérifie si un point existe déjà (scène, prefab ou précédent spawn) pour éviter les doublons.
+        Transform existingAnchor = null;
+        foreach (Transform child in spawnPoint.GetComponentsInChildren<Transform>(includeInactive: true))
+        {
+            if (child == null)
+                continue;
+
+            if (string.Equals(child.name, anchorName, StringComparison.OrdinalIgnoreCase))
+            {
+                existingAnchor = child;
+                break;
+            }
+        }
+
+        if (existingAnchor != null)
+        {
+            // Met à jour l'offset du script si le point a été préparé à la main dans la scène.
+            LookAtBattleTarget existingLookAt = existingAnchor.GetComponent<LookAtBattleTarget>();
+            if (existingLookAt != null)
+                existingLookAt.offset = overShoulderCasterLookOffset;
+
+            return existingAnchor;
+        }
+
+        // Aucun point n'existait : on instancie un nouvel objet utilitaire dédié au guidage caméra.
+        GameObject anchorGO = new(anchorName);
+        anchorGO.transform.SetParent(spawnPoint, worldPositionStays: false);
+        anchorGO.transform.localPosition = Vector3.zero;
+        anchorGO.transform.localRotation = Quaternion.identity;
+
+        LookAtBattleTarget lookAt = anchorGO.AddComponent<LookAtBattleTarget>();
+        lookAt.offset = overShoulderCasterLookOffset;
+
+        return anchorGO.transform;
+    }
 
     #region Mise en scène de la scène de bataille
     /// <summary>
