@@ -21,6 +21,10 @@ public class RhythmQTEManager : MonoBehaviour
 
     // QTE
     private Coroutine beatRoutine;
+    // Coroutine responsable d'un éventuel changement différé de caméra.
+    // Permet de conserver le cadrage de préparation pendant un court instant
+    // lorsque l'on enchaîne avec la phase de performing.
+    private Coroutine pendingCameraSwitch;
 
     private float defaultFixedDeltaTime;
 
@@ -177,14 +181,39 @@ public class RhythmQTEManager : MonoBehaviour
     /// <param name="cameraTarget">Objet servant d'ancre pour la caméra.</param>
     /// <param name="autoRestore">Indique si la caméra doit être restaurée automatiquement.</param>
     /// <param name="initialRotation">Rotation de référence à conserver.</param>
-    private void StartTimelinePhase(TimelineAsset timeline, bool overlay, CharacterUnit caster, GameObject animatorGO, GameObject cameraTarget, bool autoRestore, Quaternion initialRotation, BattleCameraRole cameraRole = BattleCameraRole.None)
+    private void StartTimelinePhase(
+        TimelineAsset timeline,
+        bool overlay,
+        CharacterUnit caster,
+        GameObject animatorGO,
+        GameObject cameraTarget,
+        bool autoRestore,
+        Quaternion initialRotation,
+        BattleCameraRole cameraRole = BattleCameraRole.None,
+        float cameraSwitchDelay = 0f)
     {
         if (timeline == null || BattleTimelineManager.Instance == null || caster == null)
             return;
 
         // 🎥 Active la caméra dédiée à cette phase si elle est renseignée.
         if (cameraRole != BattleCameraRole.None)
-            BattleCameraManager.Instance?.SwitchToCamera(cameraRole);
+        {
+            // 🧹 Annule toute requête précédente afin d'éviter qu'un délai résiduel
+            //     ne vienne écraser un nouveau cadrage.
+            CancelPendingCameraSwitch();
+
+            if (cameraSwitchDelay <= 0f)
+            {
+                // ⏱️ Pas de délai demandé : on applique immédiatement le cadrage.
+                BattleCameraManager.Instance?.SwitchToCamera(cameraRole);
+            }
+            else
+            {
+                // ⏳ Délai personnalisé : la caméra reste sur le rôle précédent
+                //     pendant la durée souhaitée avant de basculer.
+                pendingCameraSwitch = StartCoroutine(SwitchCameraAfterDelay(cameraRole, cameraSwitchDelay));
+            }
+        }
 
         // 📽️ La caméra n'étant plus pilotée par les timelines des moves/items,
         // nous ré-alignons simplement l'origine avant de lancer la timeline du lanceur.
@@ -197,6 +226,37 @@ public class RhythmQTEManager : MonoBehaviour
         // Lecture de la timeline via le PlayableDirector de l'unité concernée.
         GameObject binding = animatorGO ?? defaultCasterTarget;
         BattleTimelineManager.Instance.PlayCasterTimeline(timeline, caster, binding);
+    }
+
+    /// <summary>
+    /// Interrompt la coroutine responsable d'un changement de caméra différé.
+    /// </summary>
+    private void CancelPendingCameraSwitch()
+    {
+        if (pendingCameraSwitch == null)
+            return;
+
+        StopCoroutine(pendingCameraSwitch);
+        pendingCameraSwitch = null;
+    }
+
+    /// <summary>
+    /// Active un rôle de caméra après un délai personnalisé.
+    /// </summary>
+    /// <param name="role">Rôle de caméra à activer.</param>
+    /// <param name="delay">Durée à attendre avant le basculement.</param>
+    private IEnumerator SwitchCameraAfterDelay(BattleCameraRole role, float delay)
+    {
+        // On attend patiemment la durée configurée afin que la phase en cours
+        // puisse démarrer tout en conservant le cadrage précédent.
+        yield return new WaitForSeconds(delay);
+
+        // Si un autre StartTimelinePhase a été appelé durant l'attente, la coroutine
+        // aura été stoppée et n'atteindra jamais ce point, évitant ainsi tout conflit.
+        BattleCameraManager.Instance?.SwitchToCamera(role);
+
+        // Le champ est libéré pour accepter un nouveau délai si nécessaire.
+        pendingCameraSwitch = null;
     }
 
     /// <summary>
@@ -335,16 +395,9 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = dir; // Applique uniquement la rotation horizontale
         }
 
-        if (move.preparingToPerformingCameraDelay > 0f)
-        {
-            // ⏱️ Option de mise en scène : laisse le temps à la caméra de rester sur la préparation
-            //     même si la timeline d'exécution n'a pas encore démarré. Cela permet par exemple
-            //     d'afficher un effet visuel ou un dialogue juste après la préparation tout en
-            //     conservant le cadrage choisi pour cette phase.
-            yield return new WaitForSeconds(move.preparingToPerformingCameraDelay);
-        }
-
         // --- Phase d'exécution ---
+        // Le délai passé en paramètre différera uniquement la bascule de caméra,
+        // laissant la timeline de performing démarrer immédiatement.
         StartTimelinePhase(
             move.performingTimeline,
             useOverlay,
@@ -353,7 +406,8 @@ public class RhythmQTEManager : MonoBehaviour
             performingCameraTarget,
             move.retreatTimeline == null,
             initialRotation,
-            move.performingCameraRole);
+            move.performingCameraRole,
+            move.preparingToPerformingCameraDelay);
 
         if (pendingNotes == 0)
         {
@@ -410,6 +464,9 @@ public class RhythmQTEManager : MonoBehaviour
         currentTarget = null;
 
         // Restaure la caméra par défaut en fin de move.
+        // Avant de restaurer la caméra par défaut, on s'assure qu'aucun délai
+        // en attente ne viendra réactiver un rôle précédent inopinément.
+        CancelPendingCameraSwitch();
         BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
         BattleCameraManager.Instance?.ClearRigTargets();
 
@@ -510,15 +567,9 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = dir; // Applique la rotation uniquement sur le plan horizontal
         }
 
-        if (item.preparingToPerformingCameraDelay > 0f)
-        {
-            // 🎬 Offre un léger battement entre la fin de la préparation et l'utilisation de l'objet.
-            //     Utile pour créer des respirations ou synchroniser des effets spéciaux sans que
-            //     la caméra ne change immédiatement d'angle.
-            yield return new WaitForSeconds(item.preparingToPerformingCameraDelay);
-        }
-
         // --- Phase d'utilisation ---
+        // Comme pour les MusicalMoves, le délai fourni retarde uniquement le changement
+        // de caméra sans bloquer l'exécution de la timeline principale.
         StartTimelinePhase(
             item.performingTimeline,
             useOverlay,
@@ -527,7 +578,8 @@ public class RhythmQTEManager : MonoBehaviour
             performingCameraTarget,
             item.retreatTimeline == null,
             initialRotation,
-            item.performingCameraRole);
+            item.performingCameraRole,
+            item.preparingToPerformingCameraDelay);
 
         // QTE associé à l'objet durant l'utilisation.
         LastItemSuccess = true;
@@ -570,6 +622,9 @@ public class RhythmQTEManager : MonoBehaviour
         ClearQTEBar();
 
         // Retour à la caméra par défaut.
+        // Comme pour les MusicalMoves, on neutralise toute attente résiduelle avant
+        // de rendre la main à la caméra principale.
+        CancelPendingCameraSwitch();
         BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
         BattleCameraManager.Instance?.ClearRigTargets();
     }
