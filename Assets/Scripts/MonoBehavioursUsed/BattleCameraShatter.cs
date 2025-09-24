@@ -9,7 +9,7 @@ using UnityEngine.Rendering.HighDefinition;
 public class BattleCameraShatter : MonoBehaviour
 {
     [Tooltip("Son joué lors du bris de la caméra")]
-    public AudioClip shatterSound;
+    public AudioClipSO shatterSound;
     [Tooltip("Volume contenant les effets de post-processing")]
     public Volume volume;
     [Tooltip("Texture utilisée pour la salissure de l'objectif")]

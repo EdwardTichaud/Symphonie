@@ -36,7 +36,7 @@ public class PlayerDetection : MonoBehaviour
 
     [Header("Effets sonores")]
     [Tooltip("Clips vocaux joués lors de la première détection d'un ennemi")]
-    public List<AudioClip> firstDetectionVoices = new List<AudioClip>();
+    public List<AudioClipSO> firstDetectionVoices = new List<AudioClipSO>();
 
     [Tooltip("Volume appliqué au clip de première détection")]
     [Range(0f, 1f)]
@@ -92,7 +92,7 @@ public class PlayerDetection : MonoBehaviour
         if (!firstEnemyDetected && firstDetectionVoices.Count > 0)
         {
             // Sélection aléatoire d'un clip parmi la liste disponible
-            AudioClip clip = firstDetectionVoices[UnityEngine.Random.Range(0, firstDetectionVoices.Count)];
+            AudioClipSO clip = firstDetectionVoices[UnityEngine.Random.Range(0, firstDetectionVoices.Count)];
 
             // Lecture du clip avec le volume choisi dans l'inspecteur
             AudioManager.Instance?.PlayVoice(clip, firstDetectionVoiceVolume);

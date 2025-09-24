@@ -858,12 +858,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             return;
 
         CharacterUnit randomAlly = allies[UnityEngine.Random.Range(0, allies.Count)];
-        AudioClip clip = GetWeepClip(randomAlly.Data, Data.characterName);
+        AudioClipSO clip = GetWeepClip(randomAlly.Data, Data.characterName);
         if (clip != null)
             AudioManager.Instance?.PlayVoice(clip);
     }
 
-    AudioClip GetWeepClip(CharacterData allyData, string deadName)
+    AudioClipSO GetWeepClip(CharacterData allyData, string deadName)
     {
         return deadName switch
         {
@@ -914,12 +914,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             return;
 
         // Sélection du clip approprié
-        AudioClip clip = (isDevastating && Data.criticalHitSound != null)
+        AudioClipSO clip = (isDevastating && Data.criticalHitSound != null)
             ? Data.criticalHitSound
             : Data.hitSound;
 
-        if (clip != null)
-            audioSource.PlayOneShot(clip);
+        if (clip != null && clip.Clip != null)
+            audioSource.PlayOneShot(clip.Clip, clip.Volume);
     }
 
     /// <summary>
@@ -927,8 +927,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void PlayInterceptedSound()
     {
-        if (Data.interceptedSound != null && audioSource != null)
-            audioSource.PlayOneShot(Data.interceptedSound);
+        if (Data.interceptedSound != null && Data.interceptedSound.Clip != null && audioSource != null)
+            audioSource.PlayOneShot(Data.interceptedSound.Clip, Data.interceptedSound.Volume);
     }
 
     /// <summary>
@@ -937,8 +937,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void PlayInterceptionSound()
     {
-        if (Data.interceptionSound != null && audioSource != null)
-            audioSource.PlayOneShot(Data.interceptionSound);
+        if (Data.interceptionSound != null && Data.interceptionSound.Clip != null && audioSource != null)
+            audioSource.PlayOneShot(Data.interceptionSound.Clip, Data.interceptionSound.Volume);
     }
 
     public void PlayMoveStartSound()

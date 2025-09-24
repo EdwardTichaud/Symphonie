@@ -52,14 +52,14 @@ public class RhythmQTEManager : MonoBehaviour
     [Tooltip("Particules instanciées lors d'un déplacement classique afin d'accentuer la sensation de dash.")]
     [SerializeField] private ParticleSystem dashParticlesPrefab;
     [Tooltip("Clip joué lorsqu'aucun son spécifique n'est défini sur le personnage pour l'effet de dash.")]
-    [SerializeField] private AudioClip defaultDashSound;
+    [SerializeField] private AudioClipSO defaultDashSound;
 
     // Tag de la caméra de combat à utiliser pour toutes les timelines
     private const string battleCameraTag = "BattleCamera";
 
     // QTE Effect
-    public AudioClip successSFX;
-    public AudioClip failSFX;
+    public AudioClipSO successSFX;
+    public AudioClipSO failSFX;
     // Effets visuels pour indiquer le résultat du QTE
     public GameObject successEffectPrefab;
     public GameObject failEffectPrefab;
@@ -71,7 +71,7 @@ public class RhythmQTEManager : MonoBehaviour
     /// Joue un effet sonore à l'aide d'une source SFX disponible.
     /// </summary>
     /// <param name="clip">Clip audio à jouer</param>
-    private void PlaySfx(AudioClip clip)
+    private void PlaySfx(AudioClipSO clip)
     {
         if (clip == null)
             return;
@@ -582,7 +582,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         // Lecture optionnelle du son associé : priorité au clip personnalisé du personnage,
         // sinon utilisation d'un son par défaut défini dans le manager.
-        AudioClip dashClip = casterData != null && casterData.dashSoundClip != null
+        AudioClipSO dashClip = casterData != null && casterData.dashSoundClip != null
             ? casterData.dashSoundClip
             : defaultDashSound;
         PlaySfx(dashClip);
@@ -1465,7 +1465,7 @@ public class RhythmQTEManager : MonoBehaviour
         return first != null ? first.transform : null;
     }
 
-    private IEnumerator PlayTauntWithDelay(AudioClip clip, float delay)
+    private IEnumerator PlayTauntWithDelay(AudioClipSO clip, float delay)
     {
         yield return new WaitForSeconds(delay);
         AudioManager.Instance?.PlayVoice(clip);

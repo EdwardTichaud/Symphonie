@@ -104,7 +104,7 @@ public class TimelineManager : MonoBehaviour
 
     [Header("Audio")]
     [Tooltip("Musique de fond à jouer pendant les timelines.")]
-    [SerializeField] private AudioClip timelineMusicClip;
+    [SerializeField] private AudioClipSO timelineMusicClip;
 
     /// <summary>
     /// Active ou désactive l'ensemble des entrées de la map <c>World</c> pendant

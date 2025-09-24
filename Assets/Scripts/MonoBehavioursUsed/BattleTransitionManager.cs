@@ -18,10 +18,10 @@ public class BattleTransitionManager : MonoBehaviour
     [SerializeField] private ParticleSystem maskRingParticles;
 
     [Header("SFX")]
-    [SerializeField] private List<AudioClip> transitionSFXClips = new();
+    [SerializeField] private List<AudioClipSO> transitionSFXClips = new();
     [SerializeField] private AudioSource sfxSource;
-    [SerializeField] private AudioClip brokenGlassSound;
-    [SerializeField] private AudioClip versusThunder;
+    [SerializeField] private AudioClipSO brokenGlassSound;
+    [SerializeField] private AudioClipSO versusThunder;
 
     [Header("Music")]
     [SerializeField] private AudioSource musicSource;
@@ -318,7 +318,7 @@ public class BattleTransitionManager : MonoBehaviour
         // Active uniquement les caméras nécessaires au lancement du combat
         CameraActivationManager.Instance?.ActivateBattleAndVersusCameras();
 
-        AudioClip randomClip = null;
+        AudioClipSO randomClip = null;
         ZoneSO currentZone = ZoneManager.Instance != null ? ZoneManager.Instance.currentZone : null;
         if (currentZone != null && currentZone.battleMusic != null && currentZone.battleMusic.Length > 0)
         {
@@ -395,7 +395,8 @@ public class BattleTransitionManager : MonoBehaviour
         if (PostProcessManager.Instance != null)
             StartCoroutine(PostProcessManager.Instance.PulseLensDistortion(-1f, 0.5f));
 
-        AudioManager.Instance.PlaySound(versusThunder);
+        if (versusThunder != null)
+            AudioManager.Instance.PlaySound(versusThunder);
         StartCoroutine(VersusThunderFlash()); // Déclenche un flash blanc synchronisé avec le son
 
         battleCamera.SetActive(true);
@@ -443,7 +444,8 @@ public class BattleTransitionManager : MonoBehaviour
         if (CameraActivationManager.Instance != null)
             StartCoroutine(CameraActivationManager.Instance.DisableVersusAfterAnimation(glass));
 
-        AudioManager.Instance.PlaySound(brokenGlassSound);
+        if (brokenGlassSound != null)
+            AudioManager.Instance.PlaySound(brokenGlassSound);
 
         // Les unités apparaissent après l'explosion
         NewBattleManager.Instance.SpawnAll();
@@ -686,11 +688,23 @@ public class BattleTransitionManager : MonoBehaviour
             yield break;
         }
 
-        foreach (var clip in transitionSFXClips)
+        foreach (var clipAsset in transitionSFXClips)
         {
-            sfxSource.clip = clip;
+            if (clipAsset == null || clipAsset.Clip == null)
+                continue;
+
+            // Respecte la configuration du ScriptableObject (volume/loop) tout en conservant
+            // les réglages de mixage de la source renseignés dans l'inspecteur.
+            sfxSource.loop = clipAsset.Loop;
+            sfxSource.clip = clipAsset.Clip;
+            sfxSource.volume = clipAsset.Volume;
             sfxSource.Play();
-            yield return new WaitForSeconds(clip.length);
+
+            float waitDuration = clipAsset.Clip.length > 0f ? clipAsset.Clip.length : 0f;
+            if (waitDuration > 0f)
+                yield return new WaitForSeconds(waitDuration);
+            else
+                yield return null;
         }
     }
 

@@ -82,14 +82,14 @@ public class CharacterData : ScriptableObject, ITargetable
     public float currentInterceptionChance;
 
     [Header("Effets visuels et sonores")]
-    public AudioClip hitSound;
+    public AudioClipSO hitSound;
     // Voix jouée lors d'un coup dévastateur
-    public AudioClip criticalHitSound;
+    public AudioClipSO criticalHitSound;
     // Voix jouée lorsque l'unité est interceptée
-    public AudioClip interceptedSound;
+    public AudioClipSO interceptedSound;
     // Voix jouée lorsque l'unité intercepte une autre unité
-    public AudioClip interceptionSound;
-    [Tooltip("Joué si la cible meurt avant la fin d'une attaque")] public AudioClip prematureDeathTaunt;
+    public AudioClipSO interceptionSound;
+    [Tooltip("Joué si la cible meurt avant la fin d'une attaque")] public AudioClipSO prematureDeathTaunt;
     public GameObject hitEffect;
     public GameObject deathEffect;
 
@@ -97,7 +97,7 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Système de particules utilisé pendant les déplacements rapides de cette unité.")]
     public GameObject dashParticlesPrefab;
     [Tooltip("Effet sonore joué lorsque les particules de dash sont générées pour cette unité.")]
-    public AudioClip dashSoundClip;
+    public AudioClipSO dashSoundClip;
 
     [Header("Animations spéciales")]
     // Animation générique de dégâts
@@ -115,24 +115,24 @@ public class CharacterData : ScriptableObject, ITargetable
     public TimelineAsset introTimeline;
 
     [Header("Sons de déplacement")]
-    public AudioClip moveStartClip;
-    public AudioClip moveEndClip;
+    public AudioClipSO moveStartClip;
+    public AudioClipSO moveEndClip;
 
     [Header("Effets sonores d'interface")]
     [Tooltip("Clip joué lorsque cette unité devient active dans les menus de combat.")]
-    public AudioClip menuSelectionClip;
+    public AudioClipSO menuSelectionClip;
 
     [Header("Voix de deuil")]
     [Tooltip("Lamentation jouée par ce personnage quand Lucian meurt")]
-    public AudioClip weepForLucianDeath;
+    public AudioClipSO weepForLucianDeath;
     [Tooltip("Lamentation jouée par ce personnage quand Thalia meurt")]
-    public AudioClip weepForThaliaDeath;
+    public AudioClipSO weepForThaliaDeath;
     [Tooltip("Lamentation jouée par ce personnage quand Kael meurt")]
-    public AudioClip weepForKaelDeath;
+    public AudioClipSO weepForKaelDeath;
     [Tooltip("Lamentation jouée par ce personnage quand Link meurt")]
-    public AudioClip weepForLinkDeath;
+    public AudioClipSO weepForLinkDeath;
     [Tooltip("Lamentation jouée par ce personnage quand Luna meurt")]
-    public AudioClip weepForLunaDeath;
+    public AudioClipSO weepForLunaDeath;
 
     [Header("Awake Mechanics")]
     [Tooltip("Nombre d'harmoniques requis pour entrer en Awake")] public int resonancePoint = 1;

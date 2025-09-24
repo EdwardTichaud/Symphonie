@@ -12,8 +12,8 @@ public class ZoneSO : ScriptableObject
     public List<GameObject> battlefields = new List<GameObject>();
 
     [Header("Musics")]
-    public AudioClip zoneMusic;
-    public AudioClip[] battleMusic;
+    public AudioClipSO zoneMusic;
+    public AudioClipSO[] battleMusic;
 
     [Header("Harmonique prédominante")]
     [Tooltip("Harmonique mise en avant lorsque les musiques de cette zone sont jouées.")]

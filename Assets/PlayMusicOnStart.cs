@@ -3,12 +3,18 @@ using UnityEngine;
 [RequireComponent(typeof(AudioSource))]
 public class PlayMusicOnStart : MonoBehaviour
 {
-    public AudioClip clipToPlay;
+    [Tooltip("ScriptableObject contenant le clip et ses paramètres par défaut.")]
+    public AudioClipSO clipToPlay;
 
     void Start()
     {
         AudioSource audioSource = GetComponent<AudioSource>();
-        audioSource.clip = clipToPlay;
+        if (clipToPlay == null || clipToPlay.Clip == null)
+            return;
+
+        audioSource.loop = clipToPlay.Loop;
+        audioSource.clip = clipToPlay.Clip;
+        audioSource.volume = clipToPlay.Volume;
         audioSource.Play();
     }
 }

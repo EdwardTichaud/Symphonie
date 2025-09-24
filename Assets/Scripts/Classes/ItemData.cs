@@ -80,9 +80,9 @@ public class ItemData : ScriptableObject
     // Effet visuel déclenché à l'arrivée du téléport
     public GameObject tpVfx_End;
     // Son joué au départ du téléport
-    public AudioClip tpSFx_Start;
+    public AudioClipSO tpSFx_Start;
     // Son joué à l'arrivée du téléport
-    public AudioClip tpSFx_End;
+    public AudioClipSO tpSFx_End;
 
     [Header("Timeline")]
     [Tooltip("Timeline jouée lors de la préparation de l'item")]
@@ -135,10 +135,10 @@ public class ItemData : ScriptableObject
     public class NoteVariant
     {
         public string label = "Frappe 1";
-        public AudioClip baseNote;
-        public AudioClip onParry;
-        public AudioClip onEvade;
-        public AudioClip onHit;
+        public AudioClipSO baseNote;
+        public AudioClipSO onParry;
+        public AudioClipSO onEvade;
+        public AudioClipSO onHit;
     }
 
     [Header("Notes avec Variantes Sonores")]
