@@ -177,26 +177,82 @@ public class RhythmQTEManager : MonoBehaviour
     /// <param name="cameraTarget">Objet servant d'ancre pour la caméra.</param>
     /// <param name="autoRestore">Indique si la caméra doit être restaurée automatiquement.</param>
     /// <param name="initialRotation">Rotation de référence à conserver.</param>
-    private void StartTimelinePhase(TimelineAsset timeline, bool overlay, CharacterUnit caster, GameObject animatorGO, GameObject cameraTarget, bool autoRestore, Quaternion initialRotation, BattleCameraRole cameraRole = BattleCameraRole.None)
+    private void StartTimelinePhase(
+        TimelineAsset timeline,
+        bool overlay,
+        CharacterUnit caster,
+        GameObject animatorGO,
+        GameObject cameraTarget,
+        bool autoRestore,
+        Quaternion initialRotation,
+        BattleCameraRole cameraRole = BattleCameraRole.None,
+        bool delayCameraActivation = false)
     {
         if (timeline == null || BattleTimelineManager.Instance == null || caster == null)
             return;
 
-        // 🎥 Active la caméra dédiée à cette phase si elle est renseignée.
+        if (!delayCameraActivation)
+        {
+            // 🎥 Active immédiatement la caméra cible pour conserver le comportement historique.
+            ActivateCameraForPhase(caster, animatorGO, cameraTarget, initialRotation, cameraRole);
+        }
+
+        // Lecture de la timeline via le PlayableDirector de l'unité concernée.
+        GameObject defaultCasterTarget = caster.GetCasterBindingTarget();
+        GameObject binding = animatorGO ?? defaultCasterTarget;
+        BattleTimelineManager.Instance.PlayCasterTimeline(timeline, caster, binding);
+    }
+
+    /// <summary>
+    /// Active et aligne la caméra cinématique utilisée pour une phase donnée.
+    /// Séparée dans une méthode dédiée afin de pouvoir différer son exécution
+    /// (par exemple pour conserver temporairement le cadrage de préparation).
+    /// </summary>
+    private void ActivateCameraForPhase(
+        CharacterUnit caster,
+        GameObject animatorGO,
+        GameObject cameraTarget,
+        Quaternion initialRotation,
+        BattleCameraRole cameraRole)
+    {
+        if (BattleTimelineManager.Instance == null || caster == null)
+            return; // Sécurité minimale : sans caster ou manager, aucune action caméra n'est possible.
+
         if (cameraRole != BattleCameraRole.None)
             BattleCameraManager.Instance?.SwitchToCamera(cameraRole);
 
-        // 📽️ La caméra n'étant plus pilotée par les timelines des moves/items,
-        // nous ré-alignons simplement l'origine avant de lancer la timeline du lanceur.
         GameObject defaultCasterTarget = caster.GetCasterBindingTarget();
         BattleTimelineManager.Instance.AlignCameraToTarget(
-            cameraTarget ?? animatorGO ?? defaultCasterTarget, // Fallback sur l'Animator enfant du lanceur
+            cameraTarget ?? animatorGO ?? defaultCasterTarget,
             battleCameraTag,
             initialRotation);
+    }
 
-        // Lecture de la timeline via le PlayableDirector de l'unité concernée.
-        GameObject binding = animatorGO ?? defaultCasterTarget;
-        BattleTimelineManager.Instance.PlayCasterTimeline(timeline, caster, binding);
+    /// <summary>
+    /// Attend un délai personnalisé avant de déclencher le changement de caméra.
+    /// Utilisé pour laisser respirer la mise en scène entre les phases "preparing"
+    /// et "performing" lorsque le designer souhaite conserver l'ancien cadrage
+    /// quelques instants après le début de l'action.
+    /// </summary>
+    private IEnumerator ActivateCameraForPhaseAfterDelay(
+        float delay,
+        CharacterUnit caster,
+        GameObject animatorGO,
+        GameObject cameraTarget,
+        Quaternion initialRotation,
+        BattleCameraRole cameraRole)
+    {
+        if (delay > 0f)
+        {
+            float timer = 0f;
+            while (timer < delay)
+            {
+                timer += Time.deltaTime;
+                yield return null; // Avance image par image pour ne pas bloquer les autres actions en cours.
+            }
+        }
+
+        ActivateCameraForPhase(caster, animatorGO, cameraTarget, initialRotation, cameraRole);
     }
 
     /// <summary>
@@ -335,6 +391,8 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = dir; // Applique uniquement la rotation horizontale
         }
 
+        bool delayPerformingCamera = move.preparingToPerformingCameraDelay > 0f && move.performingTimeline != null;
+
         // --- Phase d'exécution ---
         StartTimelinePhase(
             move.performingTimeline,
@@ -344,7 +402,22 @@ public class RhythmQTEManager : MonoBehaviour
             performingCameraTarget,
             move.retreatTimeline == null,
             initialRotation,
-            move.performingCameraRole);
+            move.performingCameraRole,
+            delayPerformingCamera);
+
+        if (delayPerformingCamera)
+        {
+            // ⏱️ Lancement immédiat de la timeline d'exécution tout en conservant
+            //     la caméra de préparation pendant le délai configuré. Cela offre
+            //     un battement visuel sans bloquer la suite de la séquence.
+            StartCoroutine(ActivateCameraForPhaseAfterDelay(
+                move.preparingToPerformingCameraDelay,
+                caster,
+                casterAnimatorGO,
+                performingCameraTarget,
+                initialRotation,
+                move.performingCameraRole));
+        }
 
         if (pendingNotes == 0)
         {
@@ -501,6 +574,8 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = dir; // Applique la rotation uniquement sur le plan horizontal
         }
 
+        bool delayItemCamera = item.preparingToPerformingCameraDelay > 0f && item.performingTimeline != null;
+
         // --- Phase d'utilisation ---
         StartTimelinePhase(
             item.performingTimeline,
@@ -510,7 +585,21 @@ public class RhythmQTEManager : MonoBehaviour
             performingCameraTarget,
             item.retreatTimeline == null,
             initialRotation,
-            item.performingCameraRole);
+            item.performingCameraRole,
+            delayItemCamera);
+
+        if (delayItemCamera)
+        {
+            // 🎬 La timeline d'utilisation démarre instantanément mais la caméra
+            //     conserve l'angle de préparation le temps souhaité par le designer.
+            StartCoroutine(ActivateCameraForPhaseAfterDelay(
+                item.preparingToPerformingCameraDelay,
+                caster,
+                casterAnimatorGO,
+                performingCameraTarget,
+                initialRotation,
+                item.performingCameraRole));
+        }
 
         // QTE associé à l'objet durant l'utilisation.
         LastItemSuccess = true;
