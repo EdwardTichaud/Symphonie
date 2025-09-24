@@ -1113,11 +1113,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // Pas d'animation si l'unité est morte
         if (IsDead)
             return;
-
-        if (animator != null && Data.prepareToUndergoAnimation != null)
+        Animator anim = GetComponentInChildren<Animator>(false);
+        Debug.Log("Animator trouvé sur : " + anim.gameObject.name);
+        if (anim != null && Data.prepareToUndergoAnimation != null)
         {
             // Utilise CrossFade pour garantir la bonne transition
-            animator.CrossFade(Data.prepareToUndergoAnimation.name, 0.05f);
+            anim.CrossFade(Data.prepareToUndergoAnimation.name, 0.05f);
         }
     }
 

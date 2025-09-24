@@ -254,9 +254,6 @@ public class NewBattleManager : MonoBehaviour
         get => _currentTargetCharacter;
         set
         {
-            // On mémorise l'ancienne cible pour détecter les changements effectifs
-            CharacterUnit previousTarget = _currentTargetCharacter;
-
             _currentTargetCharacter = value;
             // On met à jour immédiatement le comportement caméra
             UpdateCameraBehaviour(currentBattleState);
@@ -268,10 +265,12 @@ public class NewBattleManager : MonoBehaviour
                 OrientUnitTowardTarget(currentCharacterUnit, _currentTargetCharacter);
             }
 
-            // Dès qu'une nouvelle cible est verrouillée, on lui fait jouer son animation de
-            // préparation pour renforcer la lisibilité du combat. On évite les répétitions
-            // inutiles lorsque la même unité reste sélectionnée d'une mise à jour à l'autre.
-            if (_currentTargetCharacter != null && _currentTargetCharacter != previousTarget)
+            // A chaque mise à jour du ciblage, on relance systématiquement l'animation de
+            // préparation pour souligner visuellement que l'unité est sous la menace d'une
+            // attaque imminente. Même si la cible reste identique, relancer l'animation
+            // permet de redonner du dynamisme à la scène et d'améliorer la lisibilité pour
+            // le joueur, notamment lorsque plusieurs actions consécutives visent la même cible.
+            if (_currentTargetCharacter != null)
             {
                 _currentTargetCharacter.PlayPrepareToUndergoAnimation();
             }
