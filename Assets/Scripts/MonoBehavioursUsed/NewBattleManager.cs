@@ -1014,7 +1014,9 @@ public class NewBattleManager : MonoBehaviour
             // Les indices sonores sont joués via la nouvelle source dédiée
             AudioManager.Instance?.PlayWarningClip(move.warningClip);
             // On attend au moins la durée du clip pour conserver la cohérence musicale
-            delay = Mathf.Max(delay, move.warningClip.length);
+            // Utilise la propriété Length du ScriptableObject afin d'éviter les accès
+            // directs au composant AudioClip et de centraliser la gestion des durées.
+            delay = Mathf.Max(delay, move.warningClip.Length);
         }
 
         // Laisse un délai pour que le joueur prenne connaissance de l'action
@@ -1088,7 +1090,8 @@ public class NewBattleManager : MonoBehaviour
             // Les indices sonores sont joués via la nouvelle source dédiée
             AudioManager.Instance?.PlayWarningClip(move.warningClip);
             // On attend la fin du clip pour conserver la cohérence musicale
-            yield return new WaitForSecondsRealtime(move.warningClip.length);
+            // La propriété Length garantit un retour de durée valide même si aucun clip n'est assigné.
+            yield return new WaitForSecondsRealtime(move.warningClip.Length);
         }
 
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);

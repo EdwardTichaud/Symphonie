@@ -33,4 +33,11 @@ public class AudioClipSO : ScriptableObject
     /// Indique si le clip doit boucler par défaut.
     /// </summary>
     public bool Loop => loop;
+
+    /// <summary>
+    /// Durée du clip en secondes (0 si aucun clip n'est assigné).
+    /// Cette propriété est utilisée pour synchroniser les temps d'attente
+    /// avec les indices sonores dans les différents systèmes de combat.
+    /// </summary>
+    public float Length => audioClip != null ? audioClip.length : 0f;
 }
