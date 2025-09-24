@@ -19,12 +19,22 @@ public class BattleTransitionManager : MonoBehaviour
 
     [Header("SFX")]
     [SerializeField] private List<AudioClipSO> transitionSFXClips = new();
-    [SerializeField] private AudioSource sfxSource;
     [SerializeField] private AudioClipSO brokenGlassSound;
     [SerializeField] private AudioClipSO versusThunder;
 
     [Header("Music")]
     [SerializeField] private AudioSource musicSource;
+    /// <summary>
+    /// Instances créées à la volée pour les effets sonores/voix joués pendant la transition.
+    /// Chaque son dispose désormais de sa propre AudioSource temporaire afin de respecter
+    /// la nouvelle architecture audio (seules les deux AudioSource musicales persistent).
+    /// </summary>
+    private readonly List<AudioSource> transitionAudioInstances = new();
+    /// <summary>
+    /// Référence de la coroutine jouant les sons de transition. Permet de l'interrompre
+    /// proprement lors d'un nouveau combat ou d'une annulation.
+    /// </summary>
+    private Coroutine transitionAudioCoroutine;
 
     private GameObject battleCamera;
 
@@ -188,6 +198,16 @@ public class BattleTransitionManager : MonoBehaviour
         // Tente de récupérer automatiquement le GameObject "WorldScene" si l'on n'a rien assigné dans l'inspecteur
         worldScene ??= GameObject.Find("WorldScene");
 
+        if (musicSource != null)
+        {
+            // 🎧 La source assignée dans l'inspecteur sert désormais uniquement de gabarit.
+            //     On s'assure qu'elle reste silencieuse pour éviter toute lecture involontaire
+            //     au démarrage de la scène.
+            musicSource.playOnAwake = false;
+            musicSource.loop = false;
+            musicSource.Stop();
+        }
+
         // Recherche automatique des éléments "Continuer" si aucun n'est assigné
         if (continuePrompts == null || continuePrompts.Count == 0)
         {
@@ -329,7 +349,14 @@ public class BattleTransitionManager : MonoBehaviour
             AudioManager.Instance.TransitionToCombat(randomClip);
         else
             Debug.LogWarning("[BattleTransitionManager] Aucune musique de combat trouvée pour la zone actuelle.");
-        StartCoroutine(PlayTransitionSoundsSequentially());
+
+        // 👉 Lancement sécurisé de la séquence audio de transition.
+        //    On interrompt d'abord toute lecture précédente (par exemple si un
+        //    autre combat démarre pendant que les sons se jouent encore) afin
+        //    d'éviter la superposition de plusieurs voix/VFX.
+        StopTransitionAudioRoutine();
+        transitionAudioCoroutine = StartCoroutine(PlayTransitionSoundsSequentially());
+
         StartCoroutine(TransitionRoutine());
 
         Debug.Log("[BattleTransitionManager] Transition de combat démarrée.");
@@ -598,9 +625,13 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     private void ResetTransitionObjects()
     {
-       versusTransition.SetActive(false); // Bouclage pour être sûr
-       brokenGlass.SetActive(false);
-       versusCameraCanvas.SetActive(false);
+        // 🧹 Nettoyage audio : coupe toutes les sources temporaires encore actives
+        //    (par exemple si le joueur quitte prématurément l'écran Versus).
+        StopTransitionAudioRoutine();
+
+        versusTransition.SetActive(false); // Bouclage pour être sûr
+        brokenGlass.SetActive(false);
+        versusCameraCanvas.SetActive(false);
 
         // Le canvas de transition est désactivé pour éviter tout résidu visuel
         GameObject.Find("BattleScene_TransitionCanvas")?.transform.GetChild(0).gameObject.SetActive(false);
@@ -680,32 +711,130 @@ public class BattleTransitionManager : MonoBehaviour
         Time.fixedDeltaTime = 0.02f;
     }
 
+    /// <summary>
+    /// Stoppe immédiatement la séquence audio de transition et détruit toutes les AudioSource temporaires.
+    /// </summary>
+    private void StopTransitionAudioRoutine()
+    {
+        if (transitionAudioCoroutine != null)
+        {
+            StopCoroutine(transitionAudioCoroutine);
+            transitionAudioCoroutine = null;
+        }
+
+        CleanupAllTransitionAudioSources();
+    }
+
+    /// <summary>
+    /// Crée une AudioSource temporaire calquée sur <see cref="musicSource"/> pour jouer un clip de transition.
+    /// </summary>
+    private AudioSource CreateTransitionAudioSource(AudioClipSO clipAsset)
+    {
+        if (clipAsset == null || clipAsset.Clip == null)
+            return null; // Rien à jouer.
+
+        AudioSource instance;
+
+        if (musicSource != null)
+        {
+            // Duplique la source de référence afin de conserver son routing (mixer group, spatialisation, etc.).
+            instance = Instantiate(musicSource, transform);
+        }
+        else
+        {
+            // Cas dégradé : on crée une nouvelle source neutre tout en conservant une hiérarchie propre.
+            GameObject go = new GameObject($"BattleTransition_Audio_{transitionAudioInstances.Count + 1}");
+            go.transform.SetParent(transform, false);
+            instance = go.AddComponent<AudioSource>();
+        }
+
+        instance.playOnAwake = false;
+        instance.loop = clipAsset.Loop;
+        instance.clip = clipAsset.Clip;
+        instance.volume = clipAsset.Volume;
+        instance.name = $"BattleTransition_Audio_{clipAsset.name}_{transitionAudioInstances.Count + 1}";
+
+        // On ajoute la nouvelle source à notre registre pour pouvoir la détruire facilement ultérieurement.
+        transitionAudioInstances.Add(instance);
+
+        return instance;
+    }
+
+    /// <summary>
+    /// Détruit une AudioSource temporaire spécifique et la retire du registre interne.
+    /// </summary>
+    private void CleanupTransitionAudioSource(AudioSource source)
+    {
+        if (source == null)
+            return;
+
+        transitionAudioInstances.Remove(source);
+        Destroy(source.gameObject);
+    }
+
+    /// <summary>
+    /// Détruit toutes les AudioSource temporaires restantes (utile en cas d'annulation de transition).
+    /// </summary>
+    private void CleanupAllTransitionAudioSources()
+    {
+        for (int i = transitionAudioInstances.Count - 1; i >= 0; i--)
+        {
+            AudioSource instance = transitionAudioInstances[i];
+            if (instance != null)
+                Destroy(instance.gameObject);
+        }
+
+        transitionAudioInstances.Clear();
+    }
+
     private IEnumerator PlayTransitionSoundsSequentially()
     {
-        if (sfxSource == null || transitionSFXClips.Count == 0)
+        if (transitionSFXClips == null || transitionSFXClips.Count == 0)
         {
-            Debug.LogWarning("[TransitionAudio] AudioSource ou clips manquants.");
+            Debug.LogWarning("[TransitionAudio] Aucun clip configuré pour la transition de combat.");
+            transitionAudioCoroutine = null;
             yield break;
         }
 
         foreach (var clipAsset in transitionSFXClips)
         {
             if (clipAsset == null || clipAsset.Clip == null)
+                continue; // Clip absent : on ignore l'entrée mais on poursuit la séquence.
+
+            AudioSource instance = CreateTransitionAudioSource(clipAsset);
+            if (instance == null)
+            {
+                Debug.LogWarning("[TransitionAudio] Impossible de créer une AudioSource temporaire pour la transition.");
                 continue;
+            }
 
-            // Respecte la configuration du ScriptableObject (volume/loop) tout en conservant
-            // les réglages de mixage de la source renseignés dans l'inspecteur.
-            sfxSource.loop = clipAsset.Loop;
-            sfxSource.clip = clipAsset.Clip;
-            sfxSource.volume = clipAsset.Volume;
-            sfxSource.Play();
+            if (clipAsset.Loop)
+            {
+                // Les boucles n'ont pas de sens pendant l'intro de combat : on loggue et force un passage unique.
+                Debug.LogWarning($"[TransitionAudio] Le clip '{clipAsset.name}' est configuré en boucle. " +
+                                 "La lecture sera forcée sur une seule itération pour éviter un blocage de la transition.");
+                instance.loop = false;
+            }
 
-            float waitDuration = clipAsset.Clip.length > 0f ? clipAsset.Clip.length : 0f;
+            instance.Play();
+
+            float waitDuration = clipAsset.Length;
             if (waitDuration > 0f)
+            {
                 yield return new WaitForSeconds(waitDuration);
+            }
             else
-                yield return null;
+            {
+                // Longueur inconnue : on attend la fin effective de la lecture afin de préserver l'ordre souhaité.
+                yield return null; // Laisse une frame pour que la lecture démarre correctement.
+                while (instance != null && instance.isPlaying)
+                    yield return null;
+            }
+
+            CleanupTransitionAudioSource(instance);
         }
+
+        transitionAudioCoroutine = null;
     }
 
     /// <summary>

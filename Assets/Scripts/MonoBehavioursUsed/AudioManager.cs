@@ -38,8 +38,11 @@ public class AudioManager : MonoBehaviour
     public AudioSource[] musicSources = new AudioSource[3];
     public AudioSource[] sfxSources = new AudioSource[3];
     public AudioSource[] voiceSources = new AudioSource[3];
-    // Source dédiée aux sons d'avertissement
-    public AudioSource warningClipSource;
+    // Source modèle facultative dédiée aux sons d'avertissement.
+    // ⚠️ Aucun son ne doit être joué directement via cette référence :
+    // elle sert uniquement de gabarit pour copier les réglages (mixer group,
+    // spatialisation, etc.) vers une AudioSource éphémère créée à la volée.
+    public AudioSource warningClipTemplate;
 
     [Header("Warning Clip Settings")]
     [Tooltip("Pourcentage d'atténuation appliqué aux autres sources lors de la lecture d'un warning clip")]
@@ -130,13 +133,8 @@ public class AudioManager : MonoBehaviour
     private void UpdateWarningVolume()
     {
         // Volume deux fois plus élevé que celui des sources de musique
+        // → utilisé au moment de générer la prochaine source d'avertissement éphémère.
         warningBaseVolume = musicVolume * 2f;
-        if (warningClipSource != null)
-        {
-            // La source de référence ne joue plus directement de son :
-            // elle sert uniquement de gabarit pour les nouvelles AudioSource.
-            warningClipSource.volume = warningBaseVolume;
-        }
     }
 
     private void Awake()
@@ -195,7 +193,12 @@ public class AudioManager : MonoBehaviour
         }
 
         // Source dédiée aux avertissements
-        warningClipSource.playOnAwake = false;
+        if (warningClipTemplate != null)
+        {
+            // Sécurise l'éventuel gabarit renseigné dans l'inspecteur pour éviter
+            // toute lecture intempestive lors de l'initialisation.
+            warningClipTemplate.playOnAwake = false;
+        }
 
         SetMusicVolume(musicVolume);
         SetSfxVolume(sfxVolume);
@@ -602,6 +605,8 @@ public class AudioManager : MonoBehaviour
 
     /// <summary>
     /// Crée une nouvelle AudioSource enfant de l'AudioManager, entièrement gérée par ce dernier.
+    /// Note : cette méthode sert de colonne vertébrale à toutes les sources éphémères
+    /// (warnings, SFX/voix temporaires, etc.).
     /// </summary>
     private AudioSource CreateManagedSource(string category, AudioSource template, bool loop = false)
     {
@@ -660,6 +665,8 @@ public class AudioManager : MonoBehaviour
         // Attente minimale d'une frame pour s'assurer que la lecture a bien démarré.
         yield return null;
 
+        // Patiente jusqu'à la fin effective du clip afin de respecter la durée
+        // complète avant destruction de l'AudioSource temporaire.
         while (source != null && source.isPlaying)
         {
             yield return null;
@@ -679,6 +686,11 @@ public class AudioManager : MonoBehaviour
     {
         if (currentWarningSource == null)
             return;
+
+        // Sécurise la destruction même si le clip est toujours en cours de lecture
+        // (cas d'un nouvel avertissement qui arrive avant la fin du précédent).
+        if (currentWarningSource.isPlaying)
+            currentWarningSource.Stop();
 
         Destroy(currentWarningSource.gameObject);
         currentWarningSource = null;
@@ -834,6 +846,8 @@ public class AudioManager : MonoBehaviour
         {
             StopCoroutine(warningRoutine);
             RestoreWarningVolumes();
+            // Comme la source d'avertissement est désormais éphémère, on la supprime
+            // immédiatement pour éviter qu'elle ne persiste en parallèle du nouveau clip.
             CleanupWarningSource();
             warningRoutine = null;
         }
@@ -873,14 +887,22 @@ public class AudioManager : MonoBehaviour
         RefreshDynamicVolumes(activeVoiceHandles, voiceVolume);
 
         // Lecture du warning clip via une AudioSource dédiée créée pour l'occasion.
-        AudioSource warningTemplate = warningClipSource != null ? warningClipSource : GetTemplateSource(sfxSources);
-        AudioSource warningSource = CreateManagedSource("Warning", warningTemplate, ResolveLoop(clipAsset));
+        // On privilégie le gabarit dédié s'il a été assigné, sinon on recycle
+        // les réglages d'un effet sonore classique pour rester cohérent.
+        AudioSource warningTemplate = warningClipTemplate != null ? warningClipTemplate : GetTemplateSource(sfxSources);
+
+        // Conformément aux directives de production, la source servant réellement à la
+        // lecture du warning est créée dynamiquement et ne vit que le temps du clip.
+        // Les warnings étant par nature ponctuels, on force l'absence de boucle pour
+        // garantir la destruction automatique de la source éphémère.
+        AudioSource warningSource = CreateManagedSource("Warning", warningTemplate, false);
         warningSource.clip = clip;
         warningSource.volume = Mathf.Clamp01(warningBaseVolume * normalizationFactor * volumeFactor);
         warningSource.Play();
         currentWarningSource = warningSource;
 
-        // Attente de la fin du clip puis destruction automatique de la source.
+        // Attente de la fin du clip puis destruction automatique de la source,
+        // garantissant que la source n'existe que pendant la lecture du warning.
         yield return DestroySourceWhenFinished(warningSource);
         currentWarningSource = null;
 
