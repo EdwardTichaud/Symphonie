@@ -199,7 +199,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b222f6150c8cb44ca62917abcfc0ec5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  audioManager: {fileID: 0}
   defaultChannel: 1
   overrideVolume: 0
   volumeOverride: 0.8
@@ -340,37 +339,6 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 1
---- !u!1 &907725316657672803
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8704551987780969356}
-  m_Layer: 17
-  m_Name: CMVPoint_OverShoulder_CasterLookTarget
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8704551987780969356
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 907725316657672803}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.12532035, y: 0.22555695, z: -0.13471308, w: 0.9566982}
-  m_LocalPosition: {x: -1.42, y: 1.81, z: -1.27}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6663266566158337264}
-  m_LocalEulerAnglesHint: {x: 17.491, y: 24.652, z: -12.18}
 --- !u!1 &4015147607227891262
 GameObject:
   m_ObjectHideFlags: 0
@@ -591,7 +559,6 @@ Transform:
   - {fileID: 7465658804556108300}
   - {fileID: 5190415773890863745}
   - {fileID: 1873858695380798230}
-  - {fileID: 8704551987780969356}
   - {fileID: 8398458443021532679}
   - {fileID: 4124239410729090622}
   - {fileID: 8930234395183566953}
@@ -719,8 +686,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8605008541094229471}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.5652795, z: -0, w: 0.82489944}
-  m_LocalPosition: {x: -4.662987, y: 1.006, z: -1.804591}
+  m_LocalRotation: {x: -0, y: 0.9473521, z: -0, w: 0.3201938}
+  m_LocalPosition: {x: -3.033362, y: 1.006, z: 3.9747598}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
