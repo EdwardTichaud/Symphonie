@@ -32,6 +32,16 @@ public class ItemCrystalDestruction : MonoBehaviour
     [Header("Liste d’objets gérés")]
     public List<ManagedObject> entries = new List<ManagedObject>();
 
+    [Header("Audio")]
+    [Tooltip("Son joué automatiquement lors de l'apparition du GameObject portant ce script.")]
+    [SerializeField] private AudioClipSO spawnSound;
+
+    [Tooltip("Son joué automatiquement lorsque le GameObject portant ce script est détruit.")]
+    [SerializeField] private AudioClipSO destructionSound;
+
+    [Tooltip("Source audio locale utilisée si aucun AudioManager n'est disponible.")]
+    [SerializeField] private AudioSource localAudioSource;
+
     [Header("Condition globale (facultative)")]
     public bool useBattleStateCondition = true;
 
@@ -43,6 +53,39 @@ public class ItemCrystalDestruction : MonoBehaviour
     };
 
     private bool sequenceStarted = false;
+    private static bool applicationIsQuitting = false;
+
+    private void Awake()
+    {
+        // Mise en cache immédiate d'une AudioSource locale (si elle existe) pour éviter des recherches répétées.
+        CacheLocalAudioSource();
+    }
+
+    private void OnEnable()
+    {
+        // Ne rien faire en mode Éditeur pour éviter des lectures indésirables lorsqu'on sélectionne l'objet.
+        if (!Application.isPlaying)
+            return;
+
+        // Lecture du son d'instanciation dès que l'objet devient actif.
+        PlayManagedClip(spawnSound, "instanciation", forceWorldPlayback: false);
+    }
+
+    private void OnDestroy()
+    {
+        // Si l'application est en train de se fermer ou si l'on n'est pas en mode Play, on n'essaie pas de jouer de son.
+        if (applicationIsQuitting || !Application.isPlaying)
+            return;
+
+        // On privilégie une lecture spatialisée (forceWorldPlayback) pour garantir que le son survive à la destruction.
+        PlayManagedClip(destructionSound, "destruction", forceWorldPlayback: true);
+    }
+
+    private void OnApplicationQuit()
+    {
+        // Flag global pour éviter de tenter de jouer des sons alors que le mixeur global est déjà détruit.
+        applicationIsQuitting = true;
+    }
 
     void Update()
     {
@@ -219,5 +262,62 @@ public class ItemCrystalDestruction : MonoBehaviour
         }
 
         t.localScale = end;
+    }
+
+    /// <summary>
+    /// Lecture sécurisée d'un <see cref="AudioClipSO"/> en privilégiant l'AudioManager.
+    /// </summary>
+    /// <param name="clipAsset">Le clip à jouer.</param>
+    /// <param name="context">Contexte utilisé uniquement pour faciliter le débogage.</param>
+    /// <param name="forceWorldPlayback">
+    /// Lorsque vrai, on ignore la source locale pour créer un son dans le monde (utile lors de la destruction).
+    /// </param>
+    private void PlayManagedClip(AudioClipSO clipAsset, string context, bool forceWorldPlayback)
+    {
+        // Aucune donnée valide ? On sort immédiatement pour éviter les NullReference.
+        if (clipAsset == null || clipAsset.Clip == null)
+            return;
+
+        // Passage prioritaire par l'AudioManager pour respecter le mixage et les volumes globaux.
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySfx(clipAsset);
+            return;
+        }
+
+        // Si l'on peut utiliser une source locale (ex : scènes de test), on la privilégie pour éviter la création d'objets temporaires.
+        if (!forceWorldPlayback && TryEnsureLocalAudioSource())
+        {
+            localAudioSource.PlayOneShot(clipAsset.Clip, clipAsset.Volume);
+            return;
+        }
+
+        // Dernier recours : on crée un son ponctuel dans la scène pour garantir l'audibilité, même si l'objet est détruit.
+        AudioSource.PlayClipAtPoint(clipAsset.Clip, transform.position, clipAsset.Volume);
+    }
+
+    /// <summary>
+    /// Garantit la présence d'une AudioSource locale réutilisable.
+    /// </summary>
+    /// <returns>True si une AudioSource valide est disponible.</returns>
+    private bool TryEnsureLocalAudioSource()
+    {
+        if (localAudioSource == null)
+        {
+            CacheLocalAudioSource();
+        }
+
+        return localAudioSource != null;
+    }
+
+    /// <summary>
+    /// Mise en cache de l'AudioSource locale afin de mutualiser son usage.
+    /// </summary>
+    private void CacheLocalAudioSource()
+    {
+        if (localAudioSource == null)
+        {
+            localAudioSource = GetComponent<AudioSource>();
+        }
     }
 }
