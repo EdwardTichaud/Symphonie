@@ -15,8 +15,9 @@ GameObject:
   - component: {fileID: 185497254711946776}
   - component: {fileID: 3738432878993232295}
   - component: {fileID: 117573975168748393}
-  - component: {fileID: 8211509223971570505}
   - component: {fileID: 2534741389204307267}
+  - component: {fileID: 8211509223971570505}
+  - component: {fileID: 8451842496839274301}
   m_Layer: 17
   m_Name: CharacterUnit_Lucian_Battle_Wolf
   m_TagString: Player
@@ -172,6 +173,20 @@ MonoBehaviour:
   effectOffset: {x: 0, y: 2, z: 0}
   sleepClip: {fileID: 0}
   wakeUpClip: {fileID: 0}
+--- !u!114 &2534741389204307267
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45e8f8d752ab38949b355d871d013619, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  instantiateAtStart: 0
+  gameObjectToInstantiate: {fileID: 0}
 --- !u!114 &8211509223971570505
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -193,6 +208,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: d2a3c95ec1d914e4b93b460a997e16bc, type: 2}
     - {fileID: 11400000, guid: d08033fa8c2f6494c883a2e7a12961fb, type: 2}
     - {fileID: 11400000, guid: 22eab91728a8fe24ab0e7922abae23bb, type: 2}
+    - {fileID: 11400000, guid: 09247396915d5b8479289843955297a3, type: 2}
     m_Events:
     - m_PersistentCalls:
         m_Calls:
@@ -280,19 +296,33 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 2534741389204307267}
+        - m_Target: {fileID: 901204007372340786}
           m_TargetAssemblyTypeName: InstantiateGameObject, Assembly-CSharp
-          m_MethodName: InstantiateFromTimeline
-          m_Mode: 2
+          m_MethodName: 
+          m_Mode: 1
           m_Arguments:
-            m_ObjectArgument: {fileID: 2984989662271074563, guid: f8b6675d38206924e8ae7bab16c87c00, type: 3}
-            m_ObjectArgumentAssemblyTypeName: UnityEngine.GameObject, UnityEngine
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: 
             m_IntArgument: 0
             m_FloatArgument: 0
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
---- !u!114 &2534741389204307267
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 901204007372340786}
+          m_TargetAssemblyTypeName: 
+          m_MethodName: 
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: 
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+--- !u!114 &8451842496839274301
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -301,11 +331,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 901204007372340786}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 45e8f8d752ab38949b355d871d013619, type: 3}
+  m_Script: {fileID: 11500000, guid: 4b222f6150c8cb44ca62917abcfc0ec5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  instantiateAtStart: 0
-  gameObjectToInstantiate: {fileID: 0}
 --- !u!1 &907725316657672803
 GameObject:
   m_ObjectHideFlags: 0
@@ -685,8 +713,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8605008541094229471}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.8389442, z: -0, w: 0.5442175}
-  m_LocalPosition: {x: 4.5656815, y: 1.006, z: 2.0382726}
+  m_LocalRotation: {x: -0, y: 0.5652795, z: -0, w: 0.82489944}
+  m_LocalPosition: {x: -4.662987, y: 1.006, z: -1.804591}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
