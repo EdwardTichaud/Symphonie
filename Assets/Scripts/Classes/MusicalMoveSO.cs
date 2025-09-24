@@ -147,15 +147,13 @@ public class MusicalMoveSO : ScriptableObject
     [Header("Caméras par phase")]
     [Tooltip("Plan cinématique utilisé durant la préparation (None = conserver la caméra courante, OverShoulderCasterLookTarget = ancre Camera_Shoulder_Stay, OverShoulderCasterToTarget = ancre Camera_Shoulder_Moving).")]
     public BattleCameraRole preparingCameraRole = BattleCameraRole.WideEstablish;
+    [Tooltip("Temps (en secondes) durant lequel la caméra conserve le cadrage de préparation avant de basculer sur celui d'exécution.")]
+    public float preparingToPerformingCameraDelay = 0f;
     [Tooltip("Plan cinématique utilisé durant l'exécution (None = conserver la caméra précédente).")]
     public BattleCameraRole performingCameraRole = BattleCameraRole.OverShoulderCasterToTarget;
     [Tooltip("Plan cinématique utilisé durant le repli (None = conserver la caméra précédente).")]
     public BattleCameraRole retreatCameraRole = BattleCameraRole.ClosePushCaster;
 
-    [Header("Transitions de caméra")]
-    [Min(0f)]
-    [Tooltip("Temps (en secondes) durant lequel la caméra conserve le cadrage de préparation avant de basculer sur celui d'exécution.")]
-    public float preparingToPerformingCameraDelay = 0f;
 
 #if UNITY_EDITOR
     // ------------------------------------------------------------------
