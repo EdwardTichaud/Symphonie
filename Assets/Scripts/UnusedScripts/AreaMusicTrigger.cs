@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class AreaMusicTrigger : MonoBehaviour
 {
-    [Tooltip("Musique jouée dans cette zone d'exploration")]
-    public AudioClip zoneMusic;
+    [Tooltip("Musique jouÃ©e dans cette zone d'exploration")]
+    public AudioClipSO zoneMusic;
 
     private void OnTriggerEnter(Collider other)
     {

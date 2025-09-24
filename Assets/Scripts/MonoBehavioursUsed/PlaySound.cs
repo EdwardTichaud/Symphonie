@@ -10,7 +10,7 @@ using UnityEngine;
 public class PlaySound : MonoBehaviour
 {
     [Tooltip("Clip joué automatiquement au démarrage si playAtStart est activé.")]
-    public AudioClip soundClip; // Clip par défaut
+    public AudioClipSO soundClip; // Clip par défaut
 
     [Tooltip("Active la lecture automatique de 'soundClip' au Start.")]
     public bool playAtStart = false; // Contrôle la lecture au Start
@@ -37,31 +37,38 @@ public class PlaySound : MonoBehaviour
     /// sinon via l'AudioSource locale. Cette méthode est privée pour
     /// centraliser la logique de lecture.
     /// </summary>
-    /// <param name="clip">Le clip audio à jouer.</param>
-    private void PlaySoundClip(AudioClip clip)
+    /// <param name="clipAsset">Le clip audio à jouer.</param>
+    private void PlaySoundClip(AudioClipSO clipAsset)
     {
-        if (clip == null)
+        if (clipAsset == null || clipAsset.Clip == null)
         {
             Debug.LogWarning("[PlaySound] Aucun clip fourni pour la lecture.");
             return;
         }
+        if (AudioManager.Instance != null)
+        {
+            // Passage par le gestionnaire global afin de respecter les volumes et priorités du mixage.
+            AudioManager.Instance.PlaySfx(clipAsset);
+            return;
+        }
+
         if (_audioSource != null)
         {
-            _audioSource.PlayOneShot(clip);
+            // Fallback local (scènes de test) : on applique malgré tout le volume conseillé par le designer.
+            _audioSource.PlayOneShot(clipAsset.Clip, clipAsset.Volume);
+            return;
         }
-        else
-        {
-            Debug.LogWarning("[PlaySound] AudioManager absent et aucune AudioSource trouvée sur l'objet.");
-        }
+
+        Debug.LogWarning("[PlaySound] AudioManager absent et aucune AudioSource trouvée sur l'objet.");
     }
 
     /// <summary>
     /// Méthode publique destinée à être appelée depuis une Timeline
     /// (via un Signal, Activation Track, etc.).
     /// </summary>
-    /// <param name="clip">Le clip audio à jouer.</param>
-    public void PlaySoundFromTimeline(AudioClip clip)
+    /// <param name="clipAsset">Le clip audio à jouer.</param>
+    public void PlaySoundFromTimeline(AudioClipSO clipAsset)
     {
-        PlaySoundClip(clip);
+        PlaySoundClip(clipAsset);
     }
 }

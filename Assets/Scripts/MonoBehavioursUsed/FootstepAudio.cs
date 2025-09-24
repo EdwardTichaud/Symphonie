@@ -21,9 +21,9 @@ public class FootstepAudio : MonoBehaviour
         [Tooltip("Tag du sol, par ex. 'Concrete', 'Sand', 'Wood'.")]
         public string groundTag;
         [Tooltip("Clips joués lorsque le joueur marche sur cette surface.")]
-        public AudioClip[] walkClips;
+        public AudioClipSO[] walkClips;
         [Tooltip("Clips joués lorsque le joueur court sur cette surface.")]
-        public AudioClip[] runClips;
+        public AudioClipSO[] runClips;
     }
 
     [Header("Références")]
@@ -35,8 +35,8 @@ public class FootstepAudio : MonoBehaviour
     [SerializeField] private SurfaceClips[] surfaceClips;
 
     [Header("Sons par défaut (si aucun tag n'est reconnu)")]
-    [SerializeField] private AudioClip[] defaultWalkClips;
-    [SerializeField] private AudioClip[] defaultRunClips;
+    [SerializeField] private AudioClipSO[] defaultWalkClips;
+    [SerializeField] private AudioClipSO[] defaultRunClips;
 
     // Référence au contrôleur pour connaître l'état de course.
     private ThirdPersonPlayerController movement;
@@ -124,13 +124,14 @@ public class FootstepAudio : MonoBehaviour
     private void StartLoop(string groundTag, bool running)
     {
         // Choisir un clip (aléatoire) correspondant à la surface.
-        AudioClip clip = GetRandomClip(groundTag, running);
-        if (clip == null || fallbackSource == null)
+        AudioClipSO clipAsset = GetRandomClip(groundTag, running);
+        if (clipAsset == null || clipAsset.Clip == null || fallbackSource == null)
             return;
 
-        // Préparation de la source pour la lecture en boucle.
-        fallbackSource.loop = true;
-        fallbackSource.clip = clip;
+        // Préparation de la source pour la lecture en tenant compte des paramètres designers.
+        fallbackSource.loop = clipAsset.Loop;
+        fallbackSource.clip = clipAsset.Clip;
+        fallbackSource.volume = clipAsset.Volume;
         fallbackSource.Play();
 
         _isLoopPlaying = true;
@@ -154,10 +155,10 @@ public class FootstepAudio : MonoBehaviour
     /// <summary>
     /// Sélectionne un clip aléatoire en fonction du type de sol et de l'état (marche/course).
     /// </summary>
-    private AudioClip GetRandomClip(string groundTag, bool running)
+    private AudioClipSO GetRandomClip(string groundTag, bool running)
     {
         string key = NormalizeTag(groundTag);
-        AudioClip[] clips = GetClipsFor(key, running);
+        AudioClipSO[] clips = GetClipsFor(key, running);
 
         if (clips == null || clips.Length == 0)
             return null;
@@ -170,7 +171,7 @@ public class FootstepAudio : MonoBehaviour
     /// <summary>
     /// Retourne le tableau de clips correspondant à la surface (ou défaut) et à l'état (walk/run).
     /// </summary>
-    private AudioClip[] GetClipsFor(string normalizedKey, bool running)
+    private AudioClipSO[] GetClipsFor(string normalizedKey, bool running)
     {
         // Si la surface est connue, utiliser ses clips.
         if (_surfaceMap.TryGetValue(normalizedKey, out var surface))

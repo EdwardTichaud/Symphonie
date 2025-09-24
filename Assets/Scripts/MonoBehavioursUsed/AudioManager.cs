@@ -4,9 +4,34 @@ using System.Collections.Generic;
 
 public class AudioManager : MonoBehaviour
 {
-    public AudioClip[] musicTracks;
-    public AudioClip[] soundEffects;
-    public AudioClip[] voiceEffects;
+    public AudioClipSO[] musicTracks;
+    public AudioClipSO[] soundEffects;
+    public AudioClipSO[] voiceEffects;
+
+    // Règles sonores par défaut imposées par la documentation de production.
+    private const float DefaultVolume = 0.8f;
+    private const bool DefaultLoop = false;
+
+    /// <summary>
+    /// Récupère le clip Unity encapsulé dans le ScriptableObject.
+    /// </summary>
+    private static AudioClip ResolveClip(AudioClipSO clipAsset) => clipAsset != null ? clipAsset.Clip : null;
+
+    /// <summary>
+    /// Calcule un volume effectif en combinant la valeur du ScriptableObject et un éventuel fallback.
+    /// </summary>
+    private static float ResolveVolume(AudioClipSO clipAsset, float fallback = DefaultVolume)
+    {
+        return clipAsset != null ? clipAsset.Volume : Mathf.Clamp01(fallback);
+    }
+
+    /// <summary>
+    /// Indique si le clip doit être lu en boucle selon les données configurées.
+    /// </summary>
+    private static bool ResolveLoop(AudioClipSO clipAsset, bool fallback = DefaultLoop)
+    {
+        return clipAsset != null ? clipAsset.Loop : fallback;
+    }
 
     [Header("Audio Sources")]
     // Tableaux de sources permettant de jouer plusieurs pistes simultanément
@@ -49,7 +74,7 @@ public class AudioManager : MonoBehaviour
     private Coroutine timelineFadeRoutine;
     // Coroutine gérant l'atténuation temporaire lors de la lecture d'un warning
     private Coroutine warningRoutine;
-    private AudioClip lastExplorationClip;
+    private AudioClipSO lastExplorationClip;
     private float lastExplorationTime;
 
     private bool isInCombat = false;
@@ -60,10 +85,11 @@ public class AudioManager : MonoBehaviour
 
     // 📊 Sauvegarde l'état avant l'entrée en timeline.
     private bool wasInCombatBeforeTimeline = false; // → vrai si l'on était en combat avant la cinématique
-    private AudioClip clipBeforeTimeline;           // → musique en cours avant la timeline
+    private AudioClipSO clipBeforeTimeline;         // → musique en cours avant la timeline
     private float timeBeforeTimeline;               // → position de lecture de cette musique
 
-    private Dictionary<AudioClip, float> explorationPlaybackPositions = new Dictionary<AudioClip, float>();
+    private readonly Dictionary<AudioClipSO, float> explorationPlaybackPositions = new Dictionary<AudioClipSO, float>();
+    private AudioClipSO currentMusicAsset;
     private Dictionary<AudioClip, float> normalizationCache = new Dictionary<AudioClip, float>();
 
     /// <summary>
@@ -237,11 +263,13 @@ public class AudioManager : MonoBehaviour
 
     #region 🎵 Musique : Transitions
 
-    public void PlayExplorationMusic(AudioClip newExplorationClip)
+    public void PlayExplorationMusic(AudioClipSO newExplorationClip)
     {
-        // Empêche tout changement si une timeline ou un combat est en cours
-        // Utilise la propriété "CurrentMusicSource" pour récupérer la source active
-        if (isInCombat || isInTimeline || newExplorationClip == CurrentMusicSource.clip)
+        AudioClip clip = ResolveClip(newExplorationClip);
+        if (clip == null)
+            return;
+
+        if (isInCombat || isInTimeline || currentMusicAsset == newExplorationClip)
             return;
 
         lastExplorationClip = newExplorationClip;
@@ -254,22 +282,22 @@ public class AudioManager : MonoBehaviour
         isInCombat = false;
     }
 
-    public void TransitionToNewExplorationZone(AudioClip newExplorationClip)
+    public void TransitionToNewExplorationZone(AudioClipSO newExplorationClip)
     {
-        // Aucun fondu si une timeline ou un combat est actif, ou si le clip est identique
-        // On compare avec "CurrentMusicSource" afin d'éviter les erreurs de variable inexistante
-        if (isInCombat || isInTimeline || newExplorationClip == CurrentMusicSource.clip)
+        AudioClip clip = ResolveClip(newExplorationClip);
+        if (clip == null)
             return;
 
-        // Sauvegarde la position de la musique actuelle (si c'était une musique d'exploration)
-        if (!isInCombat && CurrentMusicSource.clip != null)
+        if (isInCombat || isInTimeline || currentMusicAsset == newExplorationClip)
+            return;
+
+        if (!isInCombat && currentMusicAsset != null && CurrentMusicSource.clip != null)
         {
-            explorationPlaybackPositions[CurrentMusicSource.clip] = CurrentMusicSource.time;
+            explorationPlaybackPositions[currentMusicAsset] = CurrentMusicSource.time;
         }
 
         lastExplorationClip = newExplorationClip;
 
-        // Si on a déjà une position sauvegardée, on la reprend
         float resumeTime = explorationPlaybackPositions.TryGetValue(newExplorationClip, out float savedTime)
             ? savedTime
             : 0f;
@@ -277,43 +305,39 @@ public class AudioManager : MonoBehaviour
         StartCrossfade(newExplorationClip, resumeTime);
     }
 
-    public void TransitionToCombat(AudioClip combatClip)
+    public void TransitionToCombat(AudioClipSO combatClip)
     {
-        // 🚫 Ignore si l'on est déjà en combat
+        AudioClip clip = ResolveClip(combatClip);
+        if (clip == null)
+            return;
+
         if (isInCombat)
             return;
 
         if (isInTimeline)
         {
-            // ✅ Un combat est lancé depuis une timeline
-            //    → on met fin à la timeline sans relancer l'exploration
             isInTimeline = false;
 
-            // Si la timeline provenait de l'exploration, on mémorise la musique à reprendre
             if (!wasInCombatBeforeTimeline)
             {
                 lastExplorationClip = clipBeforeTimeline;
                 lastExplorationTime = timeBeforeTimeline;
             }
 
-            // Stoppe tout fondu éventuel lancé par la timeline
             if (timelineFadeRoutine != null)
             {
                 StopCoroutine(timelineFadeRoutine);
                 timelineFadeRoutine = null;
             }
 
-            // La source active peut avoir été mise en pause : on la remet en lecture
             CurrentMusicSource.UnPause();
         }
-        else
+        else if (currentMusicAsset != null)
         {
-            // Combat lancé hors timeline : on sauvegarde la musique d'exploration actuelle
-            lastExplorationClip = CurrentMusicSource.clip;
+            lastExplorationClip = currentMusicAsset;
             lastExplorationTime = CurrentMusicSource.time;
         }
 
-        // On passe en mode combat puis on bascule immédiatement sur le thème approprié
         isInCombat = true;
         SwitchImmediately(combatClip);
     }
@@ -332,31 +356,24 @@ public class AudioManager : MonoBehaviour
     /// (exploration ou combat).
     /// </summary>
     /// <param name="timelineClip">Musique à jouer durant la cinématique.</param>
-    public void TransitionToTimeline(AudioClip timelineClip)
+    public void TransitionToTimeline(AudioClipSO timelineClip)
     {
-        // Évite toute action si une timeline est déjà en cours
         if (isInTimeline)
             return;
 
-        // Sauvegarde le contexte musical actuel avant d'entrer en timeline
-        // "CurrentMusicSource" renvoie la source de musique active
         wasInCombatBeforeTimeline = isInCombat;
-        clipBeforeTimeline = CurrentMusicSource.clip;
+        clipBeforeTimeline = currentMusicAsset;
         timeBeforeTimeline = CurrentMusicSource.time;
 
-        // Les timelines ne sont ni exploration ni combat
         isInTimeline = true;
         isInCombat = false;
 
-        // Si un clip de timeline est fourni, on réalise un crossfade classique
-        if (timelineClip != null)
+        if (ResolveClip(timelineClip) != null)
         {
             StartCrossfade(timelineClip, 0f);
         }
         else
         {
-            // Sinon, on coupe progressivement la musique actuelle pour laisser place
-            // aux sons propres de la timeline (voix, bruitages...).
             if (timelineFadeRoutine != null)
                 StopCoroutine(timelineFadeRoutine);
             timelineFadeRoutine = StartCoroutine(FadeOutCurrentMusic());
@@ -371,23 +388,18 @@ public class AudioManager : MonoBehaviour
         if (!isInTimeline)
             return;
 
-        // Rétablit l'état initial (combat ou exploration)
         isInCombat = wasInCombatBeforeTimeline;
         isInTimeline = false;
 
         if (clipBeforeTimeline == null)
             return;
 
-        // Si un clip spécifique était joué pendant la timeline, on le remplace
-        // par la musique précédente via un crossfade.
-        if (CurrentMusicSource.clip != clipBeforeTimeline)
+        if (currentMusicAsset != clipBeforeTimeline)
         {
             StartCrossfade(clipBeforeTimeline, timeBeforeTimeline);
         }
         else
         {
-            // Aucun clip de timeline : la musique avait été simplement mise en pause.
-            // On la relance et on remonte le volume progressivement.
             if (timelineFadeRoutine != null)
                 StopCoroutine(timelineFadeRoutine);
             CurrentMusicSource.UnPause();
@@ -438,66 +450,107 @@ public class AudioManager : MonoBehaviour
         timelineFadeRoutine = null;
     }
 
-    private void StartCrossfade(AudioClip newClip, float startTime)
+    private void StartCrossfade(AudioClipSO newClip, float startTime)
     {
+        currentMusicAsset = newClip;
+
         if (crossfadeRoutine != null)
             StopCoroutine(crossfadeRoutine);
 
         crossfadeRoutine = StartCoroutine(CrossfadeMusic(newClip, startTime));
     }
 
-    private void SwitchImmediately(AudioClip newClip)
+    private void SwitchImmediately(AudioClipSO newClip)
     {
+        currentMusicAsset = newClip;
+
         if (crossfadeRoutine != null)
             StopCoroutine(crossfadeRoutine);
 
         CurrentMusicSource.Stop();
 
-        // Échange des indices des sources musicales
         int temp = currentMusicIndex;
         currentMusicIndex = nextMusicIndex;
         nextMusicIndex = temp;
 
         AudioSource source = CurrentMusicSource;
-        source.clip = newClip;
+        AudioClip clip = ResolveClip(newClip);
+
+        if (clip == null)
+        {
+            source.clip = null;
+            source.loop = ResolveLoop(newClip);
+            source.volume = 0f;
+            return;
+        }
+
+        source.clip = clip;
+        source.loop = ResolveLoop(newClip);
         source.time = 0f;
-        source.volume = musicVolume * GetNormalizationFactor(newClip);
+
+        float normalization = GetNormalizationFactor(clip);
+        float volumeFactor = ResolveVolume(newClip, DefaultVolume);
+        source.volume = musicVolume * normalization * volumeFactor;
         source.Play();
     }
 
-    private IEnumerator CrossfadeMusic(AudioClip newClip, float startTime)
+    private IEnumerator CrossfadeMusic(AudioClipSO newClip, float startTime)
     {
         AudioSource fromSource = CurrentMusicSource;
+        float fromInitialVolume = fromSource.volume;
         float fromFactor = GetNormalizationFactor(fromSource.clip);
+        float baseVolume = Mathf.Max(0.0001f, musicVolume * fromFactor);
+        float previousVolumeFactor = baseVolume > 0f ? Mathf.Clamp01(fromInitialVolume / baseVolume) : 1f;
 
-        // Choix de la prochaine source pour le crossfade
         int toIndex = (currentMusicIndex + 1) % musicSources.Length;
         AudioSource toSource = musicSources[toIndex];
 
-        toSource.clip = newClip;
-        toSource.time = startTime;
-        float toFactor = GetNormalizationFactor(newClip);
+        AudioClip clip = ResolveClip(newClip);
+        if (clip == null)
+        {
+            float t = 0f;
+            while (t < fadeDuration)
+            {
+                t += Time.deltaTime;
+                float progress = t / fadeDuration;
+                fromSource.volume = Mathf.Lerp(fromInitialVolume, 0f, progress);
+                yield return null;
+            }
+
+            fromSource.Stop();
+            fromSource.volume = musicVolume * fromFactor * previousVolumeFactor;
+            crossfadeRoutine = null;
+            yield break;
+        }
+
+        toSource.clip = clip;
+        toSource.loop = ResolveLoop(newClip);
+        float clampedStart = Mathf.Clamp(startTime, 0f, clip.length > 0f ? clip.length : 0f);
+        toSource.time = clampedStart;
+        float toFactor = GetNormalizationFactor(clip);
+        float toVolumeFactor = ResolveVolume(newClip, DefaultVolume);
+        float targetVolume = musicVolume * toFactor * toVolumeFactor;
         toSource.volume = 0f;
         toSource.Play();
 
         currentMusicIndex = toIndex;
         nextMusicIndex = (toIndex + 1) % musicSources.Length;
 
-        float t = 0f;
+        float tCrossfade = 0f;
 
-        while (t < fadeDuration)
+        while (tCrossfade < fadeDuration)
         {
-            t += Time.deltaTime;
-            float progress = t / fadeDuration;
+            tCrossfade += Time.deltaTime;
+            float progress = tCrossfade / fadeDuration;
 
-            toSource.volume = Mathf.Lerp(0f, musicVolume * toFactor, progress);
-            fromSource.volume = Mathf.Lerp(musicVolume * fromFactor, 0f, progress);
+            toSource.volume = Mathf.Lerp(0f, targetVolume, progress);
+            fromSource.volume = Mathf.Lerp(fromInitialVolume, 0f, progress);
             yield return null;
         }
 
         fromSource.Stop();
-        fromSource.volume = musicVolume * GetNormalizationFactor(fromSource.clip);
-        toSource.volume = musicVolume * toFactor;
+        fromSource.volume = musicVolume * fromFactor * previousVolumeFactor;
+        toSource.volume = targetVolume;
 
         crossfadeRoutine = null;
     }
@@ -675,8 +728,21 @@ public class AudioManager : MonoBehaviour
 
     public void PlaySfx(int index)
     {
-        AudioClip clip = soundEffects[index];
-        PlaySfx(clip);
+        if (soundEffects == null || index < 0 || index >= soundEffects.Length)
+            return;
+
+        PlaySfx(soundEffects[index]);
+    }
+
+    /// <summary>
+    /// Lecture simplifiée d'un effet sonore configuré via un <see cref="AudioClipSO"/>.
+    /// </summary>
+    public void PlaySfx(AudioClipSO clipAsset)
+    {
+        if (clipAsset == null)
+            return;
+
+        PlaySfx(ResolveClip(clipAsset), ResolveVolume(clipAsset), ResolveLoop(clipAsset));
     }
 
     /// <summary>
@@ -686,16 +752,15 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     /// <param name="clip">Clip à jouer immédiatement.</param>
     /// <param name="volume">Facteur multiplicatif optionnel (1 = volume par défaut).</param>
-    public void PlaySfx(AudioClip clip, float volume = 1f)
+    /// <param name="loop">Lecture en boucle ?</param>
+    public void PlaySfx(AudioClip clip, float volume = DefaultVolume, bool loop = DefaultLoop)
     {
         if (clip == null)
             return; // Rien à jouer : on quitte proprement.
 
         AudioSource template = GetTemplateSource(sfxSources);
-        AudioSource src = CreateManagedSource("SFX", template);
+        AudioSource src = CreateManagedSource("SFX", template, loop);
 
-        // Stockage du facteur de volume permettant de recalculer la valeur lorsque
-        // le volume global change ou lorsqu'un warning est actif.
         DynamicAudioHandle handle = new DynamicAudioHandle
         {
             Source = src,
@@ -707,17 +772,37 @@ public class AudioManager : MonoBehaviour
         ApplyVolume(handle, sfxVolume);
         src.Play();
 
-        StartCoroutine(DestroySourceWhenFinished(src, activeSfxHandles, handle));
+        if (!loop)
+            StartCoroutine(DestroySourceWhenFinished(src, activeSfxHandles, handle));
     }
 
-    public void PlayVoice(int index, float volume = 1f) => PlayVoice(voiceEffects[index], volume);
+    public void PlayVoice(int index, float volume = DefaultVolume)
+    {
+        if (voiceEffects == null || index < 0 || index >= voiceEffects.Length)
+            return;
 
-    public void PlayVoice(AudioClip clip, float volume = 1f)
+        PlayVoice(voiceEffects[index], volume);
+    }
+
+    /// <summary>
+    /// Lecture d'une voix via un <see cref="AudioClipSO"/>.
+    /// </summary>
+    public void PlayVoice(AudioClipSO clipAsset, float volumeMultiplier = 1f)
+    {
+        if (clipAsset == null)
+            return;
+
+        float baseVolume = ResolveVolume(clipAsset);
+        float finalVolume = Mathf.Clamp01(baseVolume * Mathf.Clamp01(volumeMultiplier));
+        PlayVoice(ResolveClip(clipAsset), finalVolume, ResolveLoop(clipAsset));
+    }
+
+    public void PlayVoice(AudioClip clip, float volume = DefaultVolume, bool loop = DefaultLoop)
     {
         if (clip == null) return;
 
         AudioSource template = GetTemplateSource(voiceSources);
-        AudioSource src = CreateManagedSource("Voice", template);
+        AudioSource src = CreateManagedSource("Voice", template, loop);
 
         DynamicAudioHandle handle = new DynamicAudioHandle
         {
@@ -730,19 +815,21 @@ public class AudioManager : MonoBehaviour
         ApplyVolume(handle, voiceVolume);
         src.Play();
 
-        StartCoroutine(DestroySourceWhenFinished(src, activeVoiceHandles, handle));
+        if (!loop)
+            StartCoroutine(DestroySourceWhenFinished(src, activeVoiceHandles, handle));
     }
 
     /// <summary>
     /// Joue un clip d'avertissement en utilisant la source dédiée.
     /// </summary>
-    public void PlayWarningClip(AudioClip clip)
+    public void PlayWarningClip(AudioClipSO clipAsset)
     {
+        AudioClip clip = ResolveClip(clipAsset);
         if (clip == null) return;
 
-        float factor = GetNormalizationFactor(clip);
+        float normalization = GetNormalizationFactor(clip);
+        float clipVolume = ResolveVolume(clipAsset, DefaultVolume);
 
-        // Arrête toute atténuation précédente
         if (warningRoutine != null)
         {
             StopCoroutine(warningRoutine);
@@ -751,15 +838,14 @@ public class AudioManager : MonoBehaviour
             warningRoutine = null;
         }
 
-        // Lance la coroutine gérant l'atténuation temporaire
-        warningRoutine = StartCoroutine(WarningCoroutine(clip, factor));
+        warningRoutine = StartCoroutine(WarningCoroutine(clipAsset, clip, normalization, clipVolume));
     }
 
     /// <summary>
     /// Coroutine qui réduit temporairement le volume des autres sources pendant
     /// la lecture d'un warning clip, puis restaure les volumes initiaux.
     /// </summary>
-    private IEnumerator WarningCoroutine(AudioClip clip, float factor)
+    private IEnumerator WarningCoroutine(AudioClipSO clipAsset, AudioClip clip, float normalizationFactor, float volumeFactor)
     {
         // Sauvegarde des volumes actuels
         float[] musicVols = new float[musicSources.Length];
@@ -788,9 +874,9 @@ public class AudioManager : MonoBehaviour
 
         // Lecture du warning clip via une AudioSource dédiée créée pour l'occasion.
         AudioSource warningTemplate = warningClipSource != null ? warningClipSource : GetTemplateSource(sfxSources);
-        AudioSource warningSource = CreateManagedSource("Warning", warningTemplate);
+        AudioSource warningSource = CreateManagedSource("Warning", warningTemplate, ResolveLoop(clipAsset));
         warningSource.clip = clip;
-        warningSource.volume = Mathf.Clamp01(warningBaseVolume * factor);
+        warningSource.volume = Mathf.Clamp01(warningBaseVolume * normalizationFactor * volumeFactor);
         warningSource.Play();
         currentWarningSource = warningSource;
 
@@ -807,9 +893,19 @@ public class AudioManager : MonoBehaviour
         PlaySfx(clip);
     }
 
+    public void PlaySound(AudioClipSO clipAsset)
+    {
+        PlaySfx(clipAsset);
+    }
+
     public void PlayTempSfx(AudioClip clip)
     {
         PlaySfx(clip);
+    }
+
+    public void PlayTempSfx(AudioClipSO clipAsset)
+    {
+        PlaySfx(clipAsset);
     }
 
     #endregion

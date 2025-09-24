@@ -116,13 +116,13 @@ public class MusicalMoveSO : ScriptableObject
     // Effet visuel déclenché à l'arrivée du téléport
     public GameObject tpVfx_End;
     // Son joué au départ du téléport
-    public AudioClip tpSFx_Start;
+    public AudioClipSO tpSFx_Start;
     // Son joué à l'arrivée du téléport
-    public AudioClip tpSFx_End;
+    public AudioClipSO tpSFx_End;
 
     [Header("Effets sonores")]
     [Tooltip("Son d'avertissement joué avant l'attaque pour prévenir le joueur")]
-    public AudioClip warningClip;
+    public AudioClipSO warningClip;
 
     [Header("Timing")]
     // ⏱️ Délai ajouté avant toute timeline de préparation.

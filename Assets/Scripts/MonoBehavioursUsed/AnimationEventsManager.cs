@@ -71,7 +71,7 @@ public class AnimationEventsManager : MonoBehaviour
         Time.timeScale = 1;
     }
 
-    public void PlayVoice(AudioClip audioClip)
+    public void PlayVoice(AudioClipSO audioClip)
     {
         if (audioClip != null)
         {

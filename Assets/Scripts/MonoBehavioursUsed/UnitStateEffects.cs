@@ -14,8 +14,8 @@ public class UnitStateEffects : MonoBehaviour
     public AnimationClip exitAnimation;
 
     [Header("Effets sonores")]
-    public AudioClip enterClip;
-    public AudioClip exitClip;
+    public AudioClipSO enterClip;
+    public AudioClipSO exitClip;
 
     [Header("Camera")]
     public OrbitAroundTriggerSO cameraPath;
@@ -32,8 +32,8 @@ public class UnitStateEffects : MonoBehaviour
 
     public void EnterState()
     {
-        if (enterClip != null)
-            audioSource?.PlayOneShot(enterClip);
+        if (enterClip != null && enterClip.Clip != null)
+            audioSource?.PlayOneShot(enterClip.Clip, enterClip.Volume);
         if (enterAnimation != null)
             animator?.Play(enterAnimation.name);
         cameraPath?.StartOrbit();
@@ -43,8 +43,8 @@ public class UnitStateEffects : MonoBehaviour
 
     public void ExitState()
     {
-        if (exitClip != null)
-            audioSource?.PlayOneShot(exitClip);
+        if (exitClip != null && exitClip.Clip != null)
+            audioSource?.PlayOneShot(exitClip.Clip, exitClip.Volume);
         if (exitAnimation != null)
             animator?.Play(exitAnimation.name);
         cameraPath?.StopOrbit();

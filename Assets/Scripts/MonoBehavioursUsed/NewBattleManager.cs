@@ -328,19 +328,19 @@ public class NewBattleManager : MonoBehaviour
 
     [Header("Effets sonores de navigation en combat")]
     [SerializeField, Tooltip("Clip joué lorsque le menu principal s'affiche ou lorsque l'on y retourne.")]
-    private AudioClip mainMenuOpenClip;
+    private AudioClipSO mainMenuOpenClip;
     [SerializeField, Tooltip("Clip joué dès que le joueur ouvre le menu des compétences.")]
-    private AudioClip skillsMenuOpenClip;
+    private AudioClipSO skillsMenuOpenClip;
     [SerializeField, Tooltip("Clip joué lors de l'accès au menu des objets.")]
-    private AudioClip itemsMenuOpenClip;
+    private AudioClipSO itemsMenuOpenClip;
     [SerializeField, Tooltip("Clip déclenché lorsque l'on passe en mode sélection de cible (compétence ou objet).")]
-    private AudioClip targetSelectionClip;
+    private AudioClipSO targetSelectionClip;
     [SerializeField, Tooltip("Clip joué à chaque changement de cible pendant la navigation.")]
-    private AudioClip targetChangeClip;
+    private AudioClipSO targetChangeClip;
     [SerializeField, Tooltip("Clip joué lorsqu'une nouvelle page de compétences est affichée.")]
-    private AudioClip skillPageChangeClip;
+    private AudioClipSO skillPageChangeClip;
     [SerializeField, Tooltip("Effet utilisé lorsque l'unité active ne possède pas de clip personnalisé pour signaler sa sélection.")]
-    private AudioClip defaultCharacterSelectionClip;
+    private AudioClipSO defaultCharacterSelectionClip;
 
     // -----------------------------------------------------------------------------------
 
@@ -3288,7 +3288,7 @@ public class NewBattleManager : MonoBehaviour
     /// (ex : scènes de test sans gestionnaire global).
     /// </summary>
     /// <param name="clip">Clip à jouer immédiatement.</param>
-    private void PlayMenuClip(AudioClip clip)
+    private void PlayMenuClip(AudioClipSO clip)
     {
         if (clip == null)
             return; // Aucun son configuré pour cet évènement.
@@ -3312,7 +3312,7 @@ public class NewBattleManager : MonoBehaviour
             return; // Sécurité : aucun personnage actif, donc aucun son à jouer.
 
         CharacterData data = unit.Data;
-        AudioClip clipToPlay = data != null && data.menuSelectionClip != null
+        AudioClipSO clipToPlay = data != null && data.menuSelectionClip != null
             ? data.menuSelectionClip
             : defaultCharacterSelectionClip;
 
