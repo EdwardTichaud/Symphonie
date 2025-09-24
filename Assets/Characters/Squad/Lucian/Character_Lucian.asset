@@ -20,7 +20,7 @@ MonoBehaviour:
   characterType: 0
   gameplayType: 0
   harmonicType: 0
-  characterWorldModel: {fileID: 6728702309075295974, guid: 4a8ff4af479db614d9a0895f199ebc22, type: 3}
+  characterWorldModel: {fileID: 0}
   characterBattleModel: {fileID: 901204007372340786, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
   battlefieldIndex: 0
   isAirUnit: 0
@@ -70,22 +70,22 @@ MonoBehaviour:
   currentSpeed: 0
   currentInterceptionRange: 0
   currentInterceptionChance: 0
-  hitSound: {fileID: 8300000, guid: 495e81bd8d7f10b46a1a310b84a331be, type: 3}
+  hitSound: {fileID: 0}
   criticalHitSound: {fileID: 0}
   interceptedSound: {fileID: 0}
   interceptionSound: {fileID: 0}
-  prematureDeathTaunt: {fileID: 8300000, guid: 16a49b678baf55746aeaa953585418ce, type: 3}
+  prematureDeathTaunt: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   dashParticlesPrefab: {fileID: 6843868886689424030, guid: 39cd3db8310d9e045ad6b122b69635a7, type: 3}
-  dashSoundClip: {fileID: 8300000, guid: 888110618ab90bd47b2835044d68f9c0, type: 3}
+  dashSoundClip: {fileID: 11400000, guid: 490fcbd9581321b4ebf1a1439be6b128, type: 2}
   hitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
   deathAnimation: {fileID: 7400000, guid: 7f67a9c1949f03342bd793ce58156a74, type: 2}
   TPAnimation_Start: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
   TPAnimation_Destination: {fileID: 0}
   prepareToUndergoAnimation: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
   introTimeline: {fileID: 11400000, guid: 5f0dceeed3fcd914ebde5933df0b5223, type: 2}
-  moveStartClip: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
+  moveStartClip: {fileID: 0}
   moveEndClip: {fileID: 0}
   menuSelectionClip: {fileID: 0}
   weepForLucianDeath: {fileID: 0}

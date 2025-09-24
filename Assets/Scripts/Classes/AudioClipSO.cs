@@ -4,7 +4,7 @@ using UnityEngine;
 /// ScriptableObject générique encapsulant un AudioClip et ses paramètres par défaut.
 /// Utilisé pour harmoniser la configuration des sons dans tout le projet.
 /// </summary>
-[CreateAssetMenu(fileName = "AudioClipSO", menuName = "Audio/Audio Clip", order = 0)]
+[CreateAssetMenu(fileName = "AudioClipSO", menuName = "Symphonie/Audio Clip", order = 0)]
 public class AudioClipSO : ScriptableObject
 {
     [Header("Clip de référence")]
