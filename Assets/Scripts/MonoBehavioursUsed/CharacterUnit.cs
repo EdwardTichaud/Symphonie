@@ -1113,11 +1113,31 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // Pas d'animation si l'unité est morte
         if (IsDead)
             return;
-        // On réutilise l'Animator mis en cache via GetCasterAnimator afin de respecter
-        // la hiérarchie des modèles (certains restent inactifs tant qu'ils n'ont pas
-        // été réveillés). L'ancien appel à GetComponentInChildren(false) ignorait ces
-        // objets désactivés, empêchant Lucian de déclencher son animation de garde.
-        Animator anim = GetCasterAnimator();
+        // On force l'actualisation du cache pour récupérer l'Animator enfant même si
+        // l'objet racine avait été retenu auparavant (par exemple lorsque le modèle
+        // n'était pas encore actif). L'objectif est de jouer l'animation sur le rig
+        // enfant qui porte réellement les poses défensives.
+        Animator anim = GetCasterAnimator(forceRefresh: true);
+
+        // Si le cache renvoie toujours l'Animator du GameObject racine, on tente une
+        // récupération directe de l'Animator enfant. Cela évite de lancer l'animation
+        // sur le mauvais Animator, ce qui bloquerait la pose de garde.
+        if (anim != null && anim.gameObject == gameObject)
+        {
+            Animator childAnimator = FindChildAnimatorForBindings();
+            if (childAnimator != null && childAnimator.gameObject != gameObject)
+            {
+                animator = childAnimator; // Maintien du cache synchronisé.
+                anim = childAnimator;
+            }
+            else
+            {
+                // Sans Animator enfant il est inutile d'aller plus loin : on préserve
+                // l'état actuel plutôt que de déclencher un CrossFade sur un mauvais
+                // contrôleur.
+                return;
+            }
+        }
 
         // Même si le cache renvoie null (absence d'Animator valide) on évite toute
         // NullReferenceException en contrôlant Data et le clip demandé.
