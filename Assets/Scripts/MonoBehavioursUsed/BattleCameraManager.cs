@@ -99,6 +99,39 @@ public class BattleCameraManager : MonoBehaviour
         }
     }
 
+    /// <summary>Nom de la Cinemachine orbitale utilisée lors du ciblage d'objet.</summary>
+    private const string OrbitAroundCameraName = "CMV_OrbitAroundUnit";
+
+    /// <summary>
+    /// Durée souhaitée (en secondes) pour le retour en douceur de la caméra orbitale
+    /// vers la position par défaut du lanceur. La valeur est volontairement exposée
+    /// comme constante afin de conserver un comportement homogène sur l'ensemble du
+    /// projet et d'éviter les ajustements manuels au cas par cas.
+    /// </summary>
+    private const float OrbitReturnDurationSeconds = 2f;
+
+    /// <summary>
+    /// Indique si une interpolation de retour est en cours pour « CMV_OrbitAroundUnit ».
+    /// Ce flag évite de réinitialiser les valeurs de départ à chaque LateUpdate alors que
+    /// la transition est déjà lancée.
+    /// </summary>
+    private bool orbitReturnInProgress;
+
+    /// <summary>Temps écoulé depuis le lancement de l'interpolation de retour.</summary>
+    private float orbitReturnElapsed;
+
+    /// <summary>Position d'origine mémorisée afin de produire une interpolation fluide.</summary>
+    private Vector3 orbitReturnStartPosition;
+
+    /// <summary>Rotation d'origine mémorisée pour un retour sans à-coups.</summary>
+    private Quaternion orbitReturnStartRotation;
+
+    /// <summary>
+    /// Transform cible utilisé durant l'interpolation. On le mémorise afin de redéclencher
+    /// correctement la transition si la référence venait à changer (nouveau caster, cinématique...).
+    /// </summary>
+    private Transform orbitReturnTarget;
+
     /// <summary>Configuration déclarative de toutes les caméras "CMV_" présentes dans la scène.</summary>
     private static readonly Dictionary<string, CameraBindingConfig> CameraBindings = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -216,7 +249,20 @@ public class BattleCameraManager : MonoBehaviour
 
         CharacterUnit ownerUnit = ResolveAnchorOwner(config.Owner);
         if (ownerUnit == null)
+        {
+            // 🌀 Cas particulier : lorsque la caméra orbitale perd sa cible (sortie du mode
+            // de sélection d'objet, interruption d'une action…), elle se raccroche par défaut
+            // au Transform du lanceur avec une translation instantanée. Pour éviter ce retour
+            // trop brusque, on déclenche une interpolation contrôlée sur deux secondes.
+            if (string.Equals(cameraName, OrbitAroundCameraName, StringComparison.OrdinalIgnoreCase))
+                UpdateOrbitReturn(camera);
+
             return;
+        }
+
+        // Dès qu'une cible légitime est retrouvée, on annule l'éventuelle interpolation en cours
+        // afin que la caméra recolle immédiatement à l'ancre prévue par les artistes.
+        ResetOrbitReturnStateIfNeeded(cameraName);
 
         Transform anchor = ResolveAnchorTransform(ownerUnit, config);
         if (anchor == null)
@@ -302,6 +348,94 @@ public class BattleCameraManager : MonoBehaviour
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Met à jour l'interpolation de retour douce pour « CMV_OrbitAroundUnit » lorsque la caméra
+    /// n'a plus de cible explicite. L'objectif est d'éviter un snap immédiat vers la position locale
+    /// (0,0,0) du lanceur et de conserver une transition lisible pour le joueur.
+    /// </summary>
+    private void UpdateOrbitReturn(CinemachineCamera camera)
+    {
+        if (camera == null)
+            return;
+
+        Transform fallbackAnchor = ResolveOrbitReturnAnchor();
+        if (fallbackAnchor == null)
+        {
+            // Sans ancre de secours, on annule purement et simplement le lissage afin de ne pas
+            // laisser l'état actif indéfiniment. La caméra reste alors sur sa dernière position connue.
+            orbitReturnInProgress = false;
+            orbitReturnTarget = null;
+            return;
+        }
+
+        // Si la référence change (nouveau caster, Timeline spécifique, etc.), on relance l'interpolation
+        // avec la nouvelle destination afin d'éviter un saut visuel.
+        bool targetChanged = orbitReturnTarget != fallbackAnchor;
+        if (!orbitReturnInProgress || targetChanged)
+        {
+            orbitReturnInProgress = true;
+            orbitReturnElapsed = 0f;
+            orbitReturnTarget = fallbackAnchor;
+            orbitReturnStartPosition = camera.transform.position;
+            orbitReturnStartRotation = camera.transform.rotation;
+        }
+
+        orbitReturnElapsed += Time.deltaTime;
+
+        float duration = Mathf.Max(OrbitReturnDurationSeconds, 0.0001f);
+        float t = Mathf.Clamp01(orbitReturnElapsed / duration);
+
+        // Interpolation de type Lerp/Slerp pour une transition douce et déterministe.
+        camera.transform.position = Vector3.Lerp(orbitReturnStartPosition, fallbackAnchor.position, t);
+        camera.transform.rotation = Quaternion.Slerp(orbitReturnStartRotation, fallbackAnchor.rotation, t);
+
+        if (orbitReturnElapsed >= duration)
+        {
+            // Une fois la transition terminée, on s'aligne définitivement sur l'ancre cible et on
+            // libère l'état afin de permettre une future interpolation si nécessaire.
+            camera.transform.SetPositionAndRotation(fallbackAnchor.position, fallbackAnchor.rotation);
+            orbitReturnInProgress = false;
+        }
+    }
+
+    /// <summary>
+    /// Réinitialise les informations de retour orbital lorsque la caméra retrouve une cible classique.
+    /// Sans cette étape, la prochaine perte de cible ne déclencherait pas correctement l'interpolation.
+    /// </summary>
+    private void ResetOrbitReturnStateIfNeeded(string cameraName)
+    {
+        if (!string.Equals(cameraName, OrbitAroundCameraName, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        orbitReturnInProgress = false;
+        orbitReturnTarget = null;
+        orbitReturnElapsed = 0f;
+    }
+
+    /// <summary>
+    /// Détermine l'ancre vers laquelle la caméra orbitale doit revenir lorsque aucune cible n'est suivie.
+    /// On privilégie les overrides explicites configurés par le gameplay (casterAnchorOverride) avant de
+    /// retomber sur l'ancre standard « CMVPoint_OrbitAroundUnit » du lanceur, puis sur son transform racine.
+    /// </summary>
+    private Transform ResolveOrbitReturnAnchor()
+    {
+        if (targetAnchorOverride != null)
+            return targetAnchorOverride;
+
+        if (casterAnchorOverride != null)
+            return casterAnchorOverride;
+
+        CharacterUnit fallbackUnit = currentCaster ?? currentTurnOwner;
+        if (fallbackUnit == null)
+            return null;
+
+        Transform casterOrbitAnchor = fallbackUnit.GetCameraAnchor("CMVPoint_OrbitAroundUnit");
+        if (casterOrbitAnchor != null)
+            return casterOrbitAnchor;
+
+        return fallbackUnit.transform;
     }
 
     /// <summary>
