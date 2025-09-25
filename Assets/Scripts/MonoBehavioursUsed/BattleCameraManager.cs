@@ -108,7 +108,7 @@ public class BattleCameraManager : MonoBehaviour
     /// comme constante afin de conserver un comportement homogène sur l'ensemble du
     /// projet et d'éviter les ajustements manuels au cas par cas.
     /// </summary>
-    private const float OrbitReturnDurationSeconds = 2f;
+    private const float OrbitReturnDurationSeconds = 5f;
 
     /// <summary>
     /// Indique si une interpolation de retour est en cours pour « CMV_OrbitAroundUnit ».
