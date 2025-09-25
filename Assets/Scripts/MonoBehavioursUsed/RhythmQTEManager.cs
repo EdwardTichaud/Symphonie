@@ -321,11 +321,20 @@ public class RhythmQTEManager : MonoBehaviour
                 tauntPlayed = true;
             }
         };
+        bool delayTargetPreparationAnimation = move != null && move.preparingTimeline != null;
         if (target != null)
         {
             target.OnDeath += deathHandler;
-            target.PlayPrepareToUndergoAnimation();
-        }       
+
+            // 🛡️ Lorsque le lanceur ne dispose pas de timeline de préparation, on affiche
+            // immédiatement la posture défensive de la cible pour conserver un feedback
+            // réactif. Dans le cas contraire, l'animation sera déclenchée une fois la
+            // timeline terminée afin d'éviter un chevauchement visuel avec la mise en scène.
+            if (!delayTargetPreparationAnimation)
+            {
+                target.PlayPrepareToUndergoAnimation();
+            }
+        }
         GameObject casterAnimatorGO = caster.GetCasterBindingTarget();
         // 🎯 La caméra se centre désormais directement sur l'unité ciblée du mouvement.
         // Si aucune cible n'est définie (attaque de zone, soin personnel, etc.),
@@ -380,6 +389,15 @@ public class RhythmQTEManager : MonoBehaviour
             initialRotation,
             move.preparingCameraRole);
         yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay, caster);
+
+        // 🎬 Si une timeline de préparation vient de s'achever, on enchaîne maintenant
+        // avec la posture « PrepareToUndergo » de la cible. Cela garantit que la
+        // mise en scène du lanceur reste prioritaire, tout en conservant un retour
+        // visuel clair pour l'unité qui s'apprête à subir l'attaque.
+        if (delayTargetPreparationAnimation && target != null)
+        {
+            target.PlayPrepareToUndergoAnimation();
+        }
 
         // Déplacement ou téléportation vers la cible si nécessaire.
         if (move.requiresMovement && caster != null && target != null)
