@@ -1032,6 +1032,7 @@ public class NewBattleManager : MonoBehaviour
 
             Debug.Log($"[BattleTurnManager] Tour de {unit.name} (ATB: {unit.currentATB})");
             OrientAllUnitsTowardClosestOpponent();
+
             // On tente d'abord une transition douce via CrossFade afin d'éviter tout accroc visuel lors du retour à l'idle.
             // Le CharacterUnit encapsule désormais la logique (HasState + fallback Play) pour uniformiser les transitions.
             unit.PlayIdleAnimation();
