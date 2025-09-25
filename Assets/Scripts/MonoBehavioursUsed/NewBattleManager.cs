@@ -1040,18 +1040,36 @@ public class NewBattleManager : MonoBehaviour
             // Petite pause avant l'exécution du tour, indépendante du timeScale
             yield return new WaitForSecondsRealtime(0.5f);
 
-            if (unit.Data.isPlayerControlled)
+        if (unit.Data.isPlayerControlled)
+        {
+            StartSquadUnitTurn(unit);
+            yield return new WaitUntil(() => !isTurnResolving);
+        }
+        else
+        {
+            // 🛰️ Sans cette synchronisation préalable, l'ennemi hérite encore du contexte caméra
+            // du joueur précédent. Les Cinemachine "CMV_OverShoulder_*" restent alors ancrées sur
+            // les CMVPoint du héros actif au lieu d'utiliser ceux de l'ennemi. En répercutant
+            // immédiatement l'unité en cours dans toute la pile (données locales + gestionnaire
+            // global), on garantit que les caméras se recalent sur les repères dédiés des ennemis
+            // avant même que leur IA ne déclenche la moindre action.
+            ChangeCurrentCharacterUnit(unit);
+
+            var cameraManager = BattleCameraManager.Instance;
+            if (cameraManager != null)
             {
-                StartSquadUnitTurn(unit);
-                yield return new WaitUntil(() => !isTurnResolving);
-            }
-            else
-            {
-                yield return EnemyTurnWithQTE(unit);
-                EndTurn();
+                // Met à jour l'accès direct "CurrentTurnOwner" et, par extension, "currentCaster".
+                cameraManager.SetTurnOwner(unit);
+                // Aucune cible n'est encore connue : on efface le focus pour laisser les rigs
+                // épaulière/orbitale choisir la bonne orientation lorsqu'elle sera définie.
+                cameraManager.SetCurrentTarget(null);
             }
 
-            // 8) On mémorise unit comme précédente pour le prochain tour
+            yield return EnemyTurnWithQTE(unit);
+            EndTurn();
+        }
+
+        // 8) On mémorise unit comme précédente pour le prochain tour
             previousUnit = unit;
         }
         else
