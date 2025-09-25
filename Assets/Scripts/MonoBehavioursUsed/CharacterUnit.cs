@@ -37,6 +37,11 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private bool hasLoggedMultipleChildAnimatorsWithController;
     private AwakeState awakeState;
 
+    /// <summary>Hash du state Animator "Idle_Battle" pour accélérer les vérifications de disponibilité.</summary>
+    private static readonly int AnimatorStateIdleBattle = Animator.StringToHash("Idle_Battle");
+    /// <summary>Durée standard (en secondes) appliquée aux fondus d'animations idle.</summary>
+    private const float IdleCrossFadeDurationSeconds = 0.1f;
+
     // Mise en cache des ancres caméra pour éviter de reparcourir toute la hiérarchie à chaque requête.
     private readonly Dictionary<string, Transform> cachedCameraAnchors = new(StringComparer.OrdinalIgnoreCase);
 
@@ -1366,7 +1371,18 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         if (animator != null)
         {
-            animator.Play("Idle_Battle");
+            const int baseLayerIndex = 0;
+
+            // Afin d'éviter tout changement brutal d'animation, on favorise un CrossFade lorsque l'état existe.
+            if (animator.HasState(baseLayerIndex, AnimatorStateIdleBattle))
+            {
+                animator.CrossFade(AnimatorStateIdleBattle, IdleCrossFadeDurationSeconds, baseLayerIndex, 0f);
+            }
+            else
+            {
+                // En dernier recours, on conserve Play pour les rigs spéciaux n'ayant pas l'état Idle_Battle déclaré.
+                animator.Play("Idle_Battle");
+            }
         }
     }
 
