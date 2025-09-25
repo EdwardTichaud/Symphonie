@@ -293,6 +293,22 @@ public class RhythmQTEManager : MonoBehaviour
     public bool ShouldDelayTargetPreparationAnimation => delayTargetPreparationAnimationForCurrentMove;
 
     /// <summary>
+    /// Prépare le comportement d'animation défensive de la cible avant même
+    /// que la routine principale du <see cref="MusicalMoveSO"/> ne débute.
+    /// </summary>
+    /// <param name="upcomingMove">Move qui va être exécuté (peut être nul).</param>
+    public void PrimeTargetPreparationAnimation(MusicalMoveSO upcomingMove)
+    {
+        // On mémorise si l'animation « PrepareToUndergo » doit patienter
+        // jusqu'à la fin de la timeline de préparation du lanceur. Sans
+        // cette anticipation, la cible jouerait sa posture défensive dès
+        // l'assignation par le BattleManager, puis une seconde fois à la fin
+        // de ladite timeline, créant un doublon visuel.
+        bool shouldDelay = upcomingMove != null && upcomingMove.preparingTimeline != null;
+        delayTargetPreparationAnimationForCurrentMove = shouldDelay;
+    }
+
+    /// <summary>
     /// Drapeau interne mémorisant l'état du retard à appliquer à l'animation
     /// de préparation de la cible. En évitant une variable locale, on rend
     /// l'information consultable par d'autres systèmes durant toute la routine.

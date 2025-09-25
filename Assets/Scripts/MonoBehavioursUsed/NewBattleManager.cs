@@ -1138,10 +1138,18 @@ public class NewBattleManager : MonoBehaviour
         currentMove = move;
         var target = enemy.SelectTargetFromSquad();
 
+        // Anticipe le comportement d'animation de la cible : si le move
+        // dispose d'une timeline de préparation, on retarde sa posture
+        // défensive jusqu'à la fin de ladite timeline pour éviter un doublon.
+        RhythmQTEManager.Instance?.PrimeTargetPreparationAnimation(move);
+
         currentTargetCharacter = target;
 
         if (move == null || target == null)
         {
+            // Sans move ou cible valide on réinitialise immédiatement le drapeau
+            // pour ne pas bloquer les prochaines animations défensives.
+            RhythmQTEManager.Instance?.PrimeTargetPreparationAnimation(null);
             Debug.LogWarning("[EnemyTurn] Aucune attaque ou cible valide !");
             yield break;
         }
