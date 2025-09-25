@@ -1847,8 +1847,54 @@ public class NewBattleManager : MonoBehaviour
 
     public void OrientAllUnitsTowardClosestOpponent(float rotationSpeed = 360f)
     {
+        // Angle minimum exprimé en pourcentage de 180° (écart maximal utile entre deux orientations).
+        // 15 % correspond ici à ~27° : en dessous de ce seuil, on considère que la rotation est
+        // imperceptible et qu'il vaut mieux éviter de lancer l'animation « Turn_90 » pour ne pas
+        // perturber la lisibilité.
+        const float minimalAngleRatio = 0.15f;
+
         foreach (var unit in activeCharacterUnits)
         {
+            if (unit == null || unit.Data == null || unit.currentHP <= 0)
+                continue;
+
+            // Recherche de l'adversaire le plus proche en réutilisant la logique de ciblage.
+            CharacterUnit targetUnit = null;
+
+            if (unit == currentCharacterUnit && currentTargetCharacter != null && currentTargetCharacter.currentHP > 0)
+            {
+                targetUnit = currentTargetCharacter;
+            }
+            else
+            {
+                targetUnit = unitsInBattle
+                    .Where(u => u != null && u.currentHP > 0 && u.Data.isPlayerControlled != unit.Data.isPlayerControlled)
+                    .OrderBy(u => Vector3.Distance(unit.transform.position, u.transform.position))
+                    .FirstOrDefault();
+            }
+
+            if (targetUnit == null)
+                continue;
+
+            // Calcul de l'angle entre l'orientation actuelle (filtrée sur Y) et la direction vers l'adversaire.
+            Vector3 direction = targetUnit.transform.position - unit.transform.position;
+            direction.y = 0f;
+
+            if (direction == Vector3.zero)
+                continue;
+
+            direction = direction.normalized;
+            Quaternion currentRotation = Quaternion.Euler(0f, unit.transform.eulerAngles.y, 0f);
+            Quaternion targetRotation = Quaternion.LookRotation(direction);
+            targetRotation = Quaternion.Euler(0f, targetRotation.eulerAngles.y, 0f);
+
+            float angleToTarget = Quaternion.Angle(currentRotation, targetRotation);
+
+            // Si l'écart est inférieur à 15 % de 180°, on évite toute réorientation pour ne pas
+            // déclencher une animation inutile.
+            if (angleToTarget < minimalAngleRatio * 180f)
+                continue;
+
             OrientUnitTowardClosestOpponent(unit, rotationSpeed);
         }
     }
