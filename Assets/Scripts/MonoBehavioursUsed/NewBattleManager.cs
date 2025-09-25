@@ -89,7 +89,8 @@ public class NewBattleManager : MonoBehaviour
 
     [Header("Points de visée pour les caméras contextuelles")]
     [Tooltip("Offset appliqué aux ancres CMVPoint_OverShoulder_CasterLookTarget générées pour chaque position de combat.")]
-    [SerializeField] private Vector3 overShoulderCasterLookPointPosition = new(-1f, 1.4f, -2f);
+    [SerializeField] private Vector3 overShoulderCasterLookPointPosition_SquadUnit = new(-1f, 1.4f, -2f);
+    [SerializeField] private Vector3 overShoulderCasterLookPointPosition_EnemyUnit = new(1f, 1.4f, 2f);
     private Vector3 overShoulderCasterLookOffset = new(0f, 0f, 0f);
 
     [Header("Listes des unités en combat en fonction de leur état")]
@@ -429,7 +430,7 @@ public class NewBattleManager : MonoBehaviour
                 playerSpawnPoints.Add(child);
 
                 // Crée (ou recycle) le point de visée utilisé par la caméra épaulière.
-                EnsureCasterLookTargetAnchor(child);
+                EnsureCasterLookTargetAnchor_SquadUnit(child);
             }
         }
 
@@ -476,7 +477,7 @@ public class NewBattleManager : MonoBehaviour
 
                 // Génère également le point de visée pour les ennemis afin que les items/moves
                 // puissent demander une caméra épaulière même si la position est vide au départ.
-                EnsureCasterLookTargetAnchor(child);
+                EnsureCasterLookTargetAnchor_EnemyUnit(child);
             }
         }
 
@@ -513,7 +514,7 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     /// <param name="spawnPoint">Transform représentant PlayerPosition_X ou EnemyPosition_X.</param>
     /// <returns>Le transform correspondant au point de visée.</returns>
-    private Transform EnsureCasterLookTargetAnchor(Transform spawnPoint)
+    private Transform EnsureCasterLookTargetAnchor_SquadUnit(Transform spawnPoint)
     {
         if (spawnPoint == null)
             return null;
@@ -547,7 +548,49 @@ public class NewBattleManager : MonoBehaviour
         // Aucun point n'existait : on instancie un nouvel objet utilitaire dédié au guidage caméra.
         GameObject anchorGO = new(anchorName);
         anchorGO.transform.SetParent(spawnPoint, worldPositionStays: false);
-        anchorGO.transform.localPosition = overShoulderCasterLookPointPosition;
+        anchorGO.transform.localPosition = overShoulderCasterLookPointPosition_SquadUnit;
+        anchorGO.transform.localRotation = Quaternion.identity;
+
+        LookAtBattleTarget lookAt = anchorGO.AddComponent<LookAtBattleTarget>();
+        lookAt.offset = overShoulderCasterLookOffset;
+
+        return anchorGO.transform;
+    }
+    private Transform EnsureCasterLookTargetAnchor_EnemyUnit(Transform spawnPoint)
+    {
+        if (spawnPoint == null)
+            return null;
+
+        const string anchorName = "CMVPoint_OverShoulder_CasterLookTarget";
+
+        // Vérifie si un point existe déjà (scène, prefab ou précédent spawn) pour éviter les doublons.
+        Transform existingAnchor = null;
+        foreach (Transform child in spawnPoint.GetComponentsInChildren<Transform>(includeInactive: true))
+        {
+            if (child == null)
+                continue;
+
+            if (string.Equals(child.name, anchorName, StringComparison.OrdinalIgnoreCase))
+            {
+                existingAnchor = child;
+                break;
+            }
+        }
+
+        if (existingAnchor != null)
+        {
+            // Met à jour l'offset du script si le point a été préparé à la main dans la scène.
+            LookAtBattleTarget existingLookAt = existingAnchor.GetComponent<LookAtBattleTarget>();
+            if (existingLookAt != null)
+                existingLookAt.offset = overShoulderCasterLookOffset;
+
+            return existingAnchor;
+        }
+
+        // Aucun point n'existait : on instancie un nouvel objet utilitaire dédié au guidage caméra.
+        GameObject anchorGO = new(anchorName);
+        anchorGO.transform.SetParent(spawnPoint, worldPositionStays: false);
+        anchorGO.transform.localPosition = overShoulderCasterLookPointPosition_EnemyUnit;
         anchorGO.transform.localRotation = Quaternion.identity;
 
         LookAtBattleTarget lookAt = anchorGO.AddComponent<LookAtBattleTarget>();
