@@ -1032,7 +1032,9 @@ public class NewBattleManager : MonoBehaviour
 
             Debug.Log($"[BattleTurnManager] Tour de {unit.name} (ATB: {unit.currentATB})");
             OrientAllUnitsTowardClosestOpponent();
-            unit.animator.Play("Idle_Battle");
+            // On tente d'abord une transition douce via CrossFade afin d'éviter tout accroc visuel lors du retour à l'idle.
+            // Le CharacterUnit encapsule désormais la logique (HasState + fallback Play) pour uniformiser les transitions.
+            unit.PlayIdleAnimation();
 
             // Petite pause avant l'exécution du tour, indépendante du timeScale
             yield return new WaitForSecondsRealtime(0.5f);
@@ -1551,7 +1553,10 @@ public class NewBattleManager : MonoBehaviour
 
             // On évite de forcer l'animation d'attente lorsque l'unité est censée dormir ou rester figée.
             if (!skipIdleAnimation)
-                endingUnit.animator.Play("Idle_Battle");
+            {
+                // Idem que pour le début de tour : on délègue au CharacterUnit pour garantir un fondu systématique.
+                endingUnit.PlayIdleAnimation();
+            }
         }
 
         ChangeBattleState(BattleState.EndTurn);
