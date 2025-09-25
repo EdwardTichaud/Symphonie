@@ -189,12 +189,6 @@ public class BattleCameraManager : MonoBehaviour
 
             string name = cam.gameObject.name;
 
-            // 🚨 Configuration spécifique : certaines caméras comme « CMV_OrbitAroundUnit »
-            // doivent rester actives même en veille afin que leurs scripts d'orbite
-            // continuent de mettre à jour la position. Sans ce réglage explicite, Unity
-            // remet la Cinemachine à l'origine (0,0,0) lorsqu'elle redevient prioritaire,
-            // ce qui produit un flash très visible pendant la sélection des objets.
-            ApplyCameraSpecificSettings(cam);
             if (!cameraByName.ContainsKey(name))
                 cameraByName.Add(name, cam);
 
@@ -202,26 +196,6 @@ public class BattleCameraManager : MonoBehaviour
         }
 
         CacheIntroCameraReference();
-    }
-
-    /// <summary>
-    /// Applique des correctifs ciblés sur certaines Cinemachine détectées dans la scène.
-    /// </summary>
-    /// <remarks>
-    /// L'objectif est d'éviter les retours brutaux de la caméra orbitale lorsque Unity
-    /// stoppe ses mises à jour parce qu'elle n'est plus prioritaire. En forçant le mode
-    /// Standby en "Always", on garantit que la rotation continue en arrière-plan.
-    /// </remarks>
-    private static void ApplyCameraSpecificSettings(CinemachineCamera camera)
-    {
-        if (camera == null)
-            return;
-
-        if (!string.Equals(camera.gameObject.name, "CMV_OrbitAroundUnit", StringComparison.OrdinalIgnoreCase))
-            return;
-
-        // Maintient la Cinemachine à jour même lorsqu'elle n'est pas en tête de file.
-        camera.StandbyUpdate = CinemachineVirtualCameraBase.StandbyUpdateModes.Always;
     }
 
     /// <summary>Replace toutes les caméras "CMV_" sur leurs points d'ancrage respectifs.</summary>
