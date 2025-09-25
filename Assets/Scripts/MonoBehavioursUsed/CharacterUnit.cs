@@ -1113,9 +1113,15 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // Pas d'animation si l'unité est morte
         if (IsDead)
             return;
-        Animator anim = GetComponentInChildren<Animator>(false);
-        Debug.Log("Animator trouvé sur : " + anim.gameObject.name);
-        if (anim != null && Data.prepareToUndergoAnimation != null)
+        // On réutilise l'Animator mis en cache via GetCasterAnimator afin de respecter
+        // la hiérarchie des modèles (certains restent inactifs tant qu'ils n'ont pas
+        // été réveillés). L'ancien appel à GetComponentInChildren(false) ignorait ces
+        // objets désactivés, empêchant Lucian de déclencher son animation de garde.
+        Animator anim = GetCasterAnimator();
+
+        // Même si le cache renvoie null (absence d'Animator valide) on évite toute
+        // NullReferenceException en contrôlant Data et le clip demandé.
+        if (anim != null && Data != null && Data.prepareToUndergoAnimation != null)
         {
             // Utilise CrossFade pour garantir la bonne transition
             anim.CrossFade(Data.prepareToUndergoAnimation.name, 0.05f);
