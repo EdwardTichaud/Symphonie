@@ -285,6 +285,21 @@ public class RhythmQTEManager : MonoBehaviour
 
     // Séquence du Musicalmove - Ajouter autant de méthodes que d'effets durant le move
     /// <summary>
+    /// Indique si l'animation « PrepareToUndergo » doit être retardée pour la cible
+    /// tant que la timeline de préparation du lanceur n'est pas terminée.
+    /// Cette information est exposée afin que les autres gestionnaires (comme
+    /// le NewBattleManager) puissent synchroniser leurs propres feedbacks visuels.
+    /// </summary>
+    public bool ShouldDelayTargetPreparationAnimation => delayTargetPreparationAnimationForCurrentMove;
+
+    /// <summary>
+    /// Drapeau interne mémorisant l'état du retard à appliquer à l'animation
+    /// de préparation de la cible. En évitant une variable locale, on rend
+    /// l'information consultable par d'autres systèmes durant toute la routine.
+    /// </summary>
+    private bool delayTargetPreparationAnimationForCurrentMove = false;
+
+    /// <summary>
     /// Orchestration complète d'un MusicalMove du déplacement à la résolution.
     /// </summary>
     public IEnumerator MusicalMoveRoutine(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
@@ -321,7 +336,10 @@ public class RhythmQTEManager : MonoBehaviour
                 tauntPlayed = true;
             }
         };
+        // Lorsque l'on dispose d'une timeline de préparation, on retarde la posture
+        // défensive de la cible afin de ne pas parasiter la mise en scène du lanceur.
         bool delayTargetPreparationAnimation = move != null && move.preparingTimeline != null;
+        delayTargetPreparationAnimationForCurrentMove = delayTargetPreparationAnimation;
         if (target != null)
         {
             target.OnDeath += deathHandler;
@@ -480,6 +498,7 @@ public class RhythmQTEManager : MonoBehaviour
         currentMove = null;
         currentCaster = null;
         currentTarget = null;
+        delayTargetPreparationAnimationForCurrentMove = false; // ✅ Réinitialisation du drapeau de report
 
         // Restaure la caméra par défaut en fin de move.
         // Avant de restaurer la caméra par défaut, on s'assure qu'aucun délai

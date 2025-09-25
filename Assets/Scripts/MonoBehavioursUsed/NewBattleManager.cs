@@ -273,7 +273,21 @@ public class NewBattleManager : MonoBehaviour
             // le joueur, notamment lorsque plusieurs actions consécutives visent la même cible.
             if (_currentTargetCharacter != null)
             {
-                _currentTargetCharacter.PlayPrepareToUndergoAnimation();
+                // 🎯 Pendant les phases de sélection on relance toujours l'animation
+                // de préparation pour souligner la menace immédiate. En revanche,
+                // lorsque la séquence du MusicalMove est en cours et que la
+                // timeline de préparation du lanceur doit garder la priorité,
+                // on s'abstient de relancer l'animation pour éviter un doublon
+                // avant que RhythmQTEManager ne le fasse lui-même à la fin de
+                // ladite timeline.
+                bool isSelectionState = IsTargetSelectionState(currentBattleState);
+                bool shouldDelayDueToMove = RhythmQTEManager.Instance != null
+                    && RhythmQTEManager.Instance.ShouldDelayTargetPreparationAnimation;
+
+                if (isSelectionState || !shouldDelayDueToMove)
+                {
+                    _currentTargetCharacter.PlayPrepareToUndergoAnimation();
+                }
             }
         }
     }
