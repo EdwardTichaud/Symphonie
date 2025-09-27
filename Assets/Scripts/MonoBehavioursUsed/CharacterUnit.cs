@@ -20,6 +20,11 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public CharacterData Data;
 
     [Header("UI Components")]
+    /// <summary>
+    /// Barre de vie principale de l'unité (souvent affichée en monde ou via des widgets dédiés).
+    /// Les TimelineUnits s'y abonnent désormais via <see cref="OnHealthChanged"/> pour éviter
+    /// les manipulations directes de cette référence.
+    /// </summary>
     public HPBar hpBar;
     public CustomBar customBar;
 
@@ -402,9 +407,18 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         set
         {
             bool wasDead = _currentHP <= 0f;
-            _currentHP = value;
+
+            // On s'assure que la valeur stockée reste positive et ne dépasse pas le maximum connu.
+            float maxHP = MaxHP;
+            float clampedValue = maxHP > 0f ? Mathf.Clamp(value, 0f, maxHP) : Mathf.Max(0f, value);
+
+            _currentHP = clampedValue;
+
             if (Data != null)
-                Data.currentHP = value;
+                Data.currentHP = clampedValue;
+
+            // Préviens immédiatement toutes les interfaces (dont la timeline) que les PV ont changé.
+            NotifyHealthChanged();
 
             if (wasDead && _currentHP > 0f && Data != null && Data.characterName == "Lucian")
             {
@@ -422,7 +436,16 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public float currentMobility { get => Data.currentMobility; set => Data.currentMobility = value; }
     public float currentPower { get => Data.currentPower; set => Data.currentPower = value; }
     public float currentStability { get => Data.currentStability; set => Data.currentStability = value; }
-    public float currentVitality { get => Data.currentVitality; set => Data.currentVitality = value; }
+    public float currentVitality
+    {
+        get => Data.currentVitality;
+        set
+        {
+            Data.currentVitality = value;
+            // La vitalité influence directement les PV max : on rafraîchit l'affichage et l'événement.
+            NotifyHealthChanged(refreshMax: true);
+        }
+    }
     public float currentSagacity { get => Data.currentSagacity; set => Data.currentSagacity = value; }
 
     public float currentMusicalGauge;
@@ -440,6 +463,45 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public float currentATB = 0f;
     public float ATBMax = 100f;
     public bool IsReady => currentATB >= ATBMax && currentHP > 0;
+
+    /// <summary>
+    /// Evénement déclenché à chaque modification des points de vie de l'unité.
+    /// Les deux valeurs flottantes correspondent respectivement aux PV actuels et aux PV max
+    /// afin de simplifier le binding côté UI.
+    /// </summary>
+    public event Action<CharacterUnit, float, float> OnHealthChanged;
+
+    /// <summary>
+    /// Renvoie les points de vie maximums actuels en tenant compte des bonus/malus de vitalité.
+    /// </summary>
+    public float MaxHP => Data != null ? Data.baseHP + Data.currentVitality : Mathf.Max(_currentHP, 0f);
+
+    /// <summary>
+    /// Force un rafraîchissement manuel de la barre de vie ainsi que des abonnés à <see cref="OnHealthChanged"/>.
+    /// Utile si un autre système manipule directement les statistiques sans passer par les propriétés publiques.
+    /// </summary>
+    /// <param name="refreshMax">Indique si la valeur max doit être réappliquée à la barre.</param>
+    public void RefreshHealthDisplay(bool refreshMax = false) => NotifyHealthChanged(refreshMax);
+
+    /// <summary>
+    /// Centralise la notification des variations de PV afin de tenir à jour la barre monde et les UI associées.
+    /// </summary>
+    /// <param name="refreshMax">Forcer la réapplication de la valeur maximale sur la barre.</param>
+    private void NotifyHealthChanged(bool refreshMax = false)
+    {
+        float maxHP = MaxHP;
+        float clampedValue = maxHP > 0f ? Mathf.Clamp(_currentHP, 0f, maxHP) : Mathf.Max(_currentHP, 0f);
+
+        if (hpBar != null)
+        {
+            if (refreshMax)
+                hpBar.SetMaxValue(maxHP);
+
+            hpBar.SetValue(clampedValue);
+        }
+
+        OnHealthChanged?.Invoke(this, clampedValue, maxHP);
+    }
 
     private bool deathTriggered;
     /// <summary>
@@ -498,12 +560,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (spriteRenderer != null && Data.portrait != null)
             spriteRenderer.sprite = Data.portrait;
 
-        // UI HP
-        if (hpBar != null)
-        {
-            hpBar.SetMaxValue(Data.baseHP + currentVitality);
-            hpBar.SetValue(currentHP);
-        }
+        // UI HP : un rafraîchissement explicite garantit que les valeurs max et courantes
+        // sont cohérentes sur toutes les interfaces (monde + timeline) immédiatement après l'init.
+        NotifyHealthChanged(refreshMax: true);
 
         if (customBar != null)
         {
@@ -871,7 +930,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         }
 
         currentHP = Mathf.Max(currentHP - amount, 0);
-        if (hpBar != null) hpBar.SetValue(currentHP);
 
         // Calcul de la gravité du coup pour déterminer le son et le message
         float maxHP = Data.baseHP + currentVitality;
@@ -1010,7 +1068,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void Heal(float amount)
     {
         currentHP = Mathf.Min(currentHP + amount, Data.baseHP + currentVitality);
-        if (hpBar != null) hpBar.SetValue(currentHP);
     }
 
     public void ApplyBuff(float value)
