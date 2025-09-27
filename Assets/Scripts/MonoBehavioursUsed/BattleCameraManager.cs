@@ -36,6 +36,25 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Liste des CinemachineCamera découvertes afin de proposer un fallback aléatoire.</summary>
     private readonly List<CinemachineCamera> availableCameras = new();
 
+    [Header("Effet de respiration")] // 👉 regroupe les paramètres d'oscillation douce
+    [Tooltip("Active ou non le léger flottement des caméras de combat pour éviter une image totalement fixe.")]
+    [SerializeField] private bool enableBreathingMotion = true;
+
+    [Tooltip("Nombre d'oscillations complètes par seconde appliqué au mouvement de respiration.")]
+    [SerializeField] private float breathingFrequency = 0.33f;
+
+    [Tooltip("Amplitude verticale (en mètres) ajoutée par l'effet de respiration.")]
+    [SerializeField] private float breathingVerticalAmplitude = 0.05f;
+
+    [Tooltip("Amplitude latérale (en mètres) ajoutée par l'effet de respiration.")]
+    [SerializeField] private float breathingHorizontalAmplitude = 0.025f;
+
+    [Tooltip("Amplitude de tangage (en degrés) appliquée à la caméra pendant l'oscillation.")]
+    [SerializeField] private float breathingPitchAmplitude = 0.8f;
+
+    [Tooltip("Amplitude de lacet (en degrés) appliquée à la caméra pendant l'oscillation.")]
+    [SerializeField] private float breathingYawAmplitude = 0.4f;
+
     /// <summary>Référence de la caméra d'introduction pour gérer son travelling manuel.</summary>
     private Transform introCameraTransform;
 
@@ -71,6 +90,13 @@ public class BattleCameraManager : MonoBehaviour
 
     /// <summary>Nom de la caméra actuellement prioritaire.</summary>
     private string currentCameraName;
+
+    /// <summary>
+    /// Décalages de phase uniques par caméra afin que les oscillations ne soient pas synchronisées.
+    /// Cela garantit un rendu plus naturel : chaque Cinemachine vibre légèrement mais avec un décalage
+    /// propre, ce qui évite un mouvement collectif artificiel.
+    /// </summary>
+    private readonly Dictionary<string, float> breathingPhaseOffsets = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Rôle logique actuellement prioritaire.</summary>
     private BattleCameraRole currentRole = BattleCameraRole.None;
@@ -288,6 +314,9 @@ public class BattleCameraManager : MonoBehaviour
         {
             camera.transform.rotation = anchor.rotation;
         }
+
+        // 🎥 Finalise la pose en ajoutant un très léger flottement « respirant » pour bannir les plans figés.
+        ApplyBreathingMotion(camera, cameraName);
     }
 
     /// <summary>Identifie l'unité responsable d'une caméra donnée.</summary>
@@ -412,6 +441,75 @@ public class BattleCameraManager : MonoBehaviour
         orbitReturnInProgress = false;
         orbitReturnTarget = null;
         orbitReturnElapsed = 0f;
+    }
+
+    /// <summary>
+    /// Applique un léger mouvement sinusoïdal à la caméra sélectionnée afin de simuler une respiration.
+    /// L'effet agit à la fois sur la position (verticale + latérale) et sur une micro-rotation
+    /// (tangage + lacet). Les paramètres sont volontairement faibles pour conserver un cadrage lisible
+    /// tout en ajoutant de la vie au plan.
+    /// </summary>
+    private void ApplyBreathingMotion(CinemachineCamera camera, string cameraName)
+    {
+        if (!enableBreathingMotion || camera == null)
+            return; // 🛑 On ne modifie rien si l'effet est désactivé ou si la caméra n'existe pas.
+
+        // 🕒 On convertit la fréquence (en oscillations par seconde) vers un angle en radians.
+        float frequency = Mathf.Max(breathingFrequency, 0.0001f);
+        float baseAngle = (Time.time * frequency * Mathf.PI * 2f) + ResolveBreathingPhase(cameraName);
+
+        float sin = Mathf.Sin(baseAngle); // Valeur principale pour le mouvement vertical + tangage.
+        float cos = Mathf.Cos(baseAngle); // Décalage en quadrature pour le mouvement latéral + lacet.
+
+        // 🚶‍♀️ Translation douce selon les axes locaux (up/right) pour simuler le thorax qui se soulève.
+        if (Mathf.Abs(breathingVerticalAmplitude) > 0.0001f || Mathf.Abs(breathingHorizontalAmplitude) > 0.0001f)
+        {
+            Vector3 offset = Vector3.zero;
+
+            if (Mathf.Abs(breathingVerticalAmplitude) > 0.0001f)
+                offset += camera.transform.up * (sin * breathingVerticalAmplitude);
+
+            if (Mathf.Abs(breathingHorizontalAmplitude) > 0.0001f)
+                offset += camera.transform.right * (cos * breathingHorizontalAmplitude);
+
+            camera.transform.position += offset;
+        }
+
+        // 🔄 Micro-rotation pour accompagner la translation et éviter un mouvement purement rigide.
+        if (Mathf.Abs(breathingPitchAmplitude) > 0.0001f || Mathf.Abs(breathingYawAmplitude) > 0.0001f)
+        {
+            Quaternion rotationOffset = Quaternion.identity;
+
+            if (Mathf.Abs(breathingPitchAmplitude) > 0.0001f)
+                rotationOffset = Quaternion.AngleAxis(sin * breathingPitchAmplitude, camera.transform.right) * rotationOffset;
+
+            if (Mathf.Abs(breathingYawAmplitude) > 0.0001f)
+                rotationOffset = Quaternion.AngleAxis(cos * breathingYawAmplitude, camera.transform.up) * rotationOffset;
+
+            camera.transform.rotation = rotationOffset * camera.transform.rotation;
+        }
+    }
+
+    /// <summary>
+    /// Calcule et mémorise un décalage de phase propre à chaque caméra pour l'effet de respiration.
+    /// On se base sur le hash Unity du nom afin d'obtenir une valeur déterministe entre les sessions.
+    /// </summary>
+    private float ResolveBreathingPhase(string cameraName)
+    {
+        if (string.IsNullOrEmpty(cameraName))
+            return 0f; // 🧭 Sans nom, on se replie sur une phase neutre.
+
+        if (breathingPhaseOffsets.TryGetValue(cameraName, out float cachedPhase))
+            return cachedPhase; // ✅ Valeur déjà connue : on la réutilise immédiatement.
+
+        // 🔢 On réutilise Animator.StringToHash (rapide et déterministe) pour produire une graine.
+        int hash = Animator.StringToHash(cameraName);
+
+        // Le hash est converti en angle [0 ; 2π] afin d'introduire un décalage de phase stable.
+        float phase = (hash & 0xFFFF) / 65535f * Mathf.PI * 2f;
+
+        breathingPhaseOffsets[cameraName] = phase;
+        return phase;
     }
 
     /// <summary>
