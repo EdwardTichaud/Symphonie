@@ -42,8 +42,22 @@ public class HPBar : MonoBehaviour
     /// <param name="current">Valeur actuelle (vie restante).</param>
     public virtual void SetValue(float current)
     {
+        // Certains objets appellent SetValue avant d'avoir défini la vie maximale
+        // (par exemple juste après une instantiation dynamique). Dans ce cas, la
+        // valeur transmise correspond en général à la vie actuelle qui sert aussi
+        // de référence maximale implicite. Sans cette correction, le Slider Unity
+        // garde sa valeur maximale par défaut (1f) et ne reflète jamais les pertes
+        // de PV puisque l'attribut "value" est systématiquement clampé à 1.
+        if (current > maxValue)
+        {
+            // On promeut la valeur courante comme nouvelle borne supérieure afin de
+            // conserver un ratio cohérent même lorsque SetMaxValue n'a pas encore
+            // été appelé. Cela évite un slider bloqué au maximum.
+            maxValue = current;
+        }
+
         // Empêche de dépasser les bornes connues afin de garder un ratio sain.
-        currentValue = Mathf.Clamp(current, 0f, maxValue > 0f ? maxValue : current);
+        currentValue = Mathf.Clamp(current, 0f, maxValue > 0f ? maxValue : Mathf.Abs(current));
 
         UpdateSlider(currentValue);
         UpdateDynamicFill();
@@ -64,8 +78,11 @@ public class HPBar : MonoBehaviour
         // On fige la valeur minimale à zéro pour éviter que le handle ne remonte si la maxValue change.
         slider.minValue = 0f;
 
-        if (forceRefresh)
+        if (forceRefresh || slider.maxValue < maxValue)
         {
+            // L'assignation est répétée si nécessaire car certains sliders
+            // conservent la valeur par défaut (1f) lorsqu'on saute SetMaxValue.
+            // On garantit ainsi que la jauge peut réellement descendre.
             slider.maxValue = maxValue;
         }
 
