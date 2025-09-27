@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 2228482764609775607}
   - component: {fileID: 383545319331558424}
   - component: {fileID: 7337991163511607687}
-  m_Layer: 12
+  m_Layer: 18
   m_Name: Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -65,7 +65,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 100
+  m_text: 200
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -149,7 +149,7 @@ GameObject:
   - component: {fileID: 6598327468184510225}
   - component: {fileID: 1861811054284305880}
   - component: {fileID: 8501055813192410881}
-  m_Layer: 12
+  m_Layer: 18
   m_Name: DamagePopup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -235,18 +235,3 @@ MonoBehaviour:
   duration: 1
   offset: {x: 0, y: 2, z: 0}
   textMesh: {fileID: 7337991163511607687}
---- !u!114 &3333333333333333333
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2485583884748655888}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3fcc8e39cbee22946bb25ccabddc8c81, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  cameraToSetup: BattleCamera_Cam
-  sortingLayerName: UI
-  sortingLayerIndex: 0
