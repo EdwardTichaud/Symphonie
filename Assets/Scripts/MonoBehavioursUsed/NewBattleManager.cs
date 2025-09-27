@@ -250,6 +250,14 @@ public class NewBattleManager : MonoBehaviour
     private GameObject rangeIndicatorInstance;
     private SpriteRenderer rangeIndicatorRenderer;
     private Material rangeIndicatorMaterialInstance;
+    // --- Indicateur secondaire : cercle blanc illustrant la portée minimale requise ---
+    private GameObject requiredRangeIndicatorInstance;
+    private SpriteRenderer requiredRangeIndicatorRenderer;
+    private Material requiredRangeIndicatorMaterialInstance;
+    // Rayon de référence du sprite utilisé par les indicateurs (mesuré à l'échelle 1,0).
+    // Cette valeur nous évite des suppositions hasardeuses sur la taille du sprite fournie par l'équipe artistique.
+    private float rangeIndicatorBaseRadius = 0f;
+    private float requiredRangeIndicatorBaseRadius = 0f;
     private CharacterUnit rangeIndicatorOwner;
 
     /// <summary>
@@ -3657,9 +3665,12 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private void EnsureRangeIndicatorInstance()
     {
-        if (rangeIndicatorInstance != null)
+        // On évite les instanciations inutiles lorsque les deux indicateurs sont déjà prêts.
+        bool mainIndicatorReady = rangeIndicatorInstance != null && rangeIndicatorRenderer != null;
+        bool requiredIndicatorReady = requiredRangeIndicatorInstance != null && requiredRangeIndicatorRenderer != null;
+        if (mainIndicatorReady && requiredIndicatorReady)
         {
-            return; // L'indicateur a déjà été instancié dans cette scène.
+            return;
         }
 
         if (rangeIndicatorPrefab == null)
@@ -3669,47 +3680,94 @@ public class NewBattleManager : MonoBehaviour
         }
 
         // On conserve la recherche du canvas caméra pour des raisons de compatibilité : certains systèmes
-        // (post-traitements, effets spéciaux) peuvent toujours s'appuyer dessus, même si l'indicateur ne
-        // lui est plus parenté.
+        // (post-traitements, effets spéciaux) peuvent toujours s'appuyer dessus, même si les indicateurs ne
+        // lui sont plus parentés directement.
         EnsureBattleCameraCanvas();
 
-        // Instancie le prefab prêt par l'équipe artistique plutôt que de reconstruire l'objet manuellement.
-        rangeIndicatorInstance = Instantiate(rangeIndicatorPrefab);
-        rangeIndicatorInstance.name = "RangeIndicator"; // Uniformise le nom dans la hiérarchie pour faciliter le debug.
-        rangeIndicatorInstance.layer = LayerMask.NameToLayer("Battle_VFX");
-        rangeIndicatorInstance.SetActive(false);
-
-        Transform indicatorTransform = rangeIndicatorInstance.transform;
-        indicatorTransform.SetParent(null, true); // L'indicateur doit rester en racine afin de conserver une échelle monde fiable.
-        indicatorTransform.localScale = Vector3.one;
-        indicatorTransform.localRotation = Quaternion.identity;
-
-        // Récupère le SpriteRenderer déjà configuré sur le prefab.
-        rangeIndicatorRenderer = rangeIndicatorInstance.GetComponentInChildren<SpriteRenderer>(true);
-        if (rangeIndicatorRenderer == null)
+        if (!mainIndicatorReady)
         {
-            Debug.LogWarning("[NewBattleManager] Le prefab 'RangeIndicator' ne contient pas de SpriteRenderer.");
-            Destroy(rangeIndicatorInstance);
-            rangeIndicatorInstance = null;
+            // Instancie le prefab préparé par l'équipe artistique.
+            rangeIndicatorInstance = Instantiate(rangeIndicatorPrefab);
+            rangeIndicatorInstance.name = "RangeIndicator"; // Uniformise le nom dans la hiérarchie pour faciliter le debug.
+            rangeIndicatorInstance.layer = LayerMask.NameToLayer("Battle_VFX");
+            rangeIndicatorInstance.SetActive(false);
+
+            Transform indicatorTransform = rangeIndicatorInstance.transform;
+            indicatorTransform.SetParent(null, true); // L'indicateur doit rester en racine afin de conserver une échelle monde fiable.
+            indicatorTransform.localScale = Vector3.one;
+            indicatorTransform.localRotation = Quaternion.identity;
+
+            // Récupère le SpriteRenderer déjà configuré sur le prefab.
+            rangeIndicatorRenderer = rangeIndicatorInstance.GetComponentInChildren<SpriteRenderer>(true);
+            if (rangeIndicatorRenderer == null)
+            {
+                Debug.LogWarning("[NewBattleManager] Le prefab 'RangeIndicator' ne contient pas de SpriteRenderer.");
+                Destroy(rangeIndicatorInstance);
+                rangeIndicatorInstance = null;
+                return; // Sans sprite principal valide, il est inutile de poursuivre.
+            }
+
+            if (rangeIndicatorMaterial != null)
+            {
+                // Autorise l'équipe artistique à fournir un matériau personnalisé (effet additif, glow...).
+                rangeIndicatorRenderer.material = rangeIndicatorMaterial;
+            }
+
+            // Mémorise le matériau instancié afin d'éviter de créer une nouvelle instance à chaque changement de couleur.
+            rangeIndicatorMaterialInstance = rangeIndicatorRenderer.material;
+
+            // On calcule immédiatement le rayon « brut » du sprite pour faciliter les futurs redimensionnements.
+            rangeIndicatorBaseRadius = ComputeSpriteWorldRadius(rangeIndicatorRenderer);
+
+            // Couleur de base : portée suffisante et toutes les conditions réunies.
+            ApplyRangeIndicatorColor(RangeIndicatorFeedbackState.InRange);
+
+            // On force des paramètres adaptés à un indicateur 2D posé au sol (valeurs redéfinies au cas où le prefab serait modifié).
+            rangeIndicatorRenderer.sortingOrder = 500; // Suffisamment élevé pour rester lisible.
+            rangeIndicatorRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            rangeIndicatorRenderer.receiveShadows = false;
+        }
+
+        if (requiredIndicatorReady)
+        {
+            return; // Le second indicateur avait déjà été configuré précédemment.
+        }
+
+        // Instancie le second indicateur dédié à la portée minimale requise.
+        requiredRangeIndicatorInstance = Instantiate(rangeIndicatorPrefab);
+        requiredRangeIndicatorInstance.name = "RangeIndicator_Required"; // Nom explicite pour faciliter le profilage dans la hiérarchie.
+        requiredRangeIndicatorInstance.layer = LayerMask.NameToLayer("Battle_VFX");
+        requiredRangeIndicatorInstance.SetActive(false);
+
+        Transform requiredTransform = requiredRangeIndicatorInstance.transform;
+        requiredTransform.SetParent(null, true);
+        requiredTransform.localScale = Vector3.one;
+        requiredTransform.localRotation = Quaternion.identity;
+
+        requiredRangeIndicatorRenderer = requiredRangeIndicatorInstance.GetComponentInChildren<SpriteRenderer>(true);
+        if (requiredRangeIndicatorRenderer == null)
+        {
+            Debug.LogWarning("[NewBattleManager] Le prefab 'RangeIndicator' utilisé pour la portée requise ne contient pas de SpriteRenderer.");
+            Destroy(requiredRangeIndicatorInstance);
+            requiredRangeIndicatorInstance = null;
+            requiredRangeIndicatorRenderer = null;
+            requiredRangeIndicatorMaterialInstance = null;
             return;
         }
 
         if (rangeIndicatorMaterial != null)
         {
-            // Autorise l'équipe artistique à fournir un matériau personnalisé (effet additif, glow...).
-            rangeIndicatorRenderer.material = rangeIndicatorMaterial;
+            requiredRangeIndicatorRenderer.material = rangeIndicatorMaterial;
         }
 
-        // Mémorise le matériau instancié afin d'éviter de créer une nouvelle instance à chaque changement de couleur.
-        rangeIndicatorMaterialInstance = rangeIndicatorRenderer.material;
+        requiredRangeIndicatorMaterialInstance = requiredRangeIndicatorRenderer.material;
+        requiredRangeIndicatorBaseRadius = ComputeSpriteWorldRadius(requiredRangeIndicatorRenderer);
+        ApplyRequiredRangeIndicatorColor();
 
-        // Couleur de base : portée suffisante et toutes les conditions réunies.
-        ApplyRangeIndicatorColor(RangeIndicatorFeedbackState.InRange);
-
-        // On force des paramètres adaptés à un indicateur 2D posé au sol (valeurs redéfinies au cas où le prefab serait modifié).
-        rangeIndicatorRenderer.sortingOrder = 500; // Suffisamment élevé pour rester lisible.
-        rangeIndicatorRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        rangeIndicatorRenderer.receiveShadows = false;
+        // Identique au cercle principal : priorité de rendu élevée mais discrète.
+        requiredRangeIndicatorRenderer.sortingOrder = 499; // Léger différentiel pour éviter tout z-fighting.
+        requiredRangeIndicatorRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        requiredRangeIndicatorRenderer.receiveShadows = false;
     }
 
     /// <summary>
@@ -3761,20 +3819,80 @@ public class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Ajuste l'échelle de l'indicateur afin qu'elle corresponde toujours au diamètre réel désiré,
-    /// même si le parent du GameObject (typiquement le canvas de la caméra de combat) possède une
-    /// échelle personnalisée. Sans ce recalcul, la taille du visuel serait étirée ou réduite de
-    /// manière imprévisible lorsque la hiérarchie change.
+    /// Applique une teinte blanche translucide au cercle illustrant la portée minimale requise.
+    /// Ce rendu constant permet de différencier clairement l'exigence de placement du bonus octroyé par le move/item.
     /// </summary>
-    /// <param name="diameter">Diamètre en unités monde que l'indicateur doit couvrir.</param>
-    private void ApplyRangeIndicatorScale(float diameter)
+    private void ApplyRequiredRangeIndicatorColor()
     {
-        if (rangeIndicatorInstance == null)
+        if (requiredRangeIndicatorRenderer == null)
+        {
+            return; // Sécurité : l'objet peut ne pas avoir été correctement initialisé (scène de test incomplète par exemple).
+        }
+
+        if (requiredRangeIndicatorMaterialInstance == null)
+        {
+            requiredRangeIndicatorMaterialInstance = requiredRangeIndicatorRenderer.material;
+        }
+
+        Color targetColor = new Color(1f, 1f, 1f, Mathf.Clamp01(rangeIndicatorAlpha));
+
+        if (requiredRangeIndicatorMaterialInstance != null)
+        {
+            if (requiredRangeIndicatorMaterialInstance.HasProperty("_Color"))
+            {
+                requiredRangeIndicatorMaterialInstance.SetColor("_Color", targetColor);
+            }
+            else
+            {
+                requiredRangeIndicatorMaterialInstance.color = targetColor;
+            }
+        }
+
+        requiredRangeIndicatorRenderer.color = targetColor;
+    }
+
+    /// <summary>
+    /// Mesure le rayon du sprite associé à un SpriteRenderer donné, en tenant compte de son échelle monde actuelle.
+    /// </summary>
+    /// <param name="renderer">SpriteRenderer dont on souhaite connaître le rayon réel.</param>
+    private float ComputeSpriteWorldRadius(SpriteRenderer renderer)
+    {
+        if (renderer == null || renderer.sprite == null)
+        {
+            return 0.5f; // Valeur de secours : on évite toute division par zéro plus tard dans les calculs.
+        }
+
+        Bounds spriteBounds = renderer.sprite.bounds;
+        Vector3 lossyScale = renderer.transform.lossyScale;
+
+        float radiusX = spriteBounds.extents.x * Mathf.Abs(lossyScale.x);
+        float radiusY = spriteBounds.extents.y * Mathf.Abs(lossyScale.y);
+        float computedRadius = Mathf.Max(radiusX, radiusY);
+
+        if (computedRadius <= 0f)
+        {
+            computedRadius = 0.5f; // Filet de sécurité supplémentaire en cas de sprite très fin ou mal configuré.
+        }
+
+        return computedRadius;
+    }
+
+    /// <summary>
+    /// Ajuste l'échelle d'un indicateur donné afin que son rayon corresponde exactement à la distance désirée.
+    /// Cette version généralisée fonctionne pour le cercle principal (portée totale) comme pour celui illustrant
+    /// la portée minimale requise.
+    /// </summary>
+    /// <param name="indicator">Instance à redimensionner.</param>
+    /// <param name="desiredRadius">Rayon final souhaité en unités monde.</param>
+    /// <param name="baseRadius">Rayon de référence mesuré à l'échelle 1,0.</param>
+    private void ApplyRangeIndicatorScale(GameObject indicator, float desiredRadius, float baseRadius)
+    {
+        if (indicator == null)
         {
             return; // Sécurité : rien à ajuster si l'objet n'a pas encore été instancié.
         }
 
-        Transform indicatorTransform = rangeIndicatorInstance.transform;
+        Transform indicatorTransform = indicator.transform;
 
         // On récupère l'échelle du parent pour pouvoir la neutraliser. Même si l'indicateur est désormais
         // instancié à la racine, on garde une approche robuste capable de compenser un éventuel re-parentage
@@ -3788,11 +3906,16 @@ public class NewBattleManager : MonoBehaviour
         float safeParentScaleY = Mathf.Approximately(parentLossyScale.y, 0f) ? 1f : parentLossyScale.y;
         float safeParentScaleZ = Mathf.Approximately(parentLossyScale.z, 0f) ? 1f : parentLossyScale.z;
 
+        float safeBaseRadius = Mathf.Approximately(baseRadius, 0f) ? 0.5f : baseRadius;
+
+        // Pour conserver un rayon fidèle, on calcule le facteur d'échelle nécessaire par rapport au rayon « brut » du sprite.
+        float scaleFactor = desiredRadius / safeBaseRadius;
+
         // On applique enfin l'échelle locale corrigée : en divisant par l'échelle du parent, on obtient une
         // taille en unités monde qui reste fidèle aux attentes de game design (rayon exact autour de l'unité).
         Vector3 compensatedScale = new Vector3(
-            diameter / safeParentScaleX,
-            diameter / safeParentScaleY,
+            scaleFactor / safeParentScaleX,
+            scaleFactor / safeParentScaleY,
             1f / safeParentScaleZ);
 
         indicatorTransform.localScale = compensatedScale;
@@ -3836,7 +3959,14 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private void RefreshRangeIndicatorScale()
     {
-        if (rangeIndicatorInstance == null || rangeIndicatorOwner == null)
+        if (rangeIndicatorOwner == null)
+        {
+            return;
+        }
+
+        EnsureRangeIndicatorInstance();
+
+        if (rangeIndicatorInstance == null || rangeIndicatorRenderer == null)
         {
             return;
         }
@@ -3844,6 +3974,25 @@ public class NewBattleManager : MonoBehaviour
         CharacterData ownerData = rangeIndicatorOwner.Data;
         if (ownerData == null)
         {
+            return;
+        }
+
+        bool isSelectionState = IsTargetSelectionState(currentBattleState);
+
+        if (!isSelectionState)
+        {
+            // Les cercles de portée ne doivent apparaître que pendant la sélection de cible.
+            if (rangeIndicatorInstance.activeSelf)
+            {
+                rangeIndicatorInstance.SetActive(false);
+            }
+
+            if (requiredRangeIndicatorInstance != null && requiredRangeIndicatorInstance.activeSelf)
+            {
+                requiredRangeIndicatorInstance.SetActive(false);
+            }
+
+            ApplyRangeIndicatorColor(RangeIndicatorFeedbackState.InRange); // On réinitialise la couleur pour la prochaine utilisation.
             return;
         }
 
@@ -3855,6 +4004,12 @@ public class NewBattleManager : MonoBehaviour
             Vector3 worldPosition = ownerTransform.position + new Vector3(0f, rangeIndicatorHeightOffset, 0f);
             rangeIndicatorInstance.transform.position = worldPosition;
             rangeIndicatorInstance.transform.rotation = Quaternion.Euler(90f, 0f, 0f); // Toujours à plat sur le sol.
+
+            if (requiredRangeIndicatorInstance != null)
+            {
+                requiredRangeIndicatorInstance.transform.position = worldPosition;
+                requiredRangeIndicatorInstance.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            }
         }
 
         // Portée de base offerte par la statistique de l'unité.
@@ -3872,14 +4027,44 @@ public class NewBattleManager : MonoBehaviour
         }
 
         float totalReach = baseRange + bonusRange;
+        bool hasTotalReach = totalReach > 0f;
 
-        if (totalReach <= 0f)
+        // La portée "requise" correspond à la distance effective séparant le lanceur de la cible
+        // suivie par le curseur. Elle permet au joueur de visualiser immédiatement la distance à
+        // franchir pour que l'action soit réalisable, indépendamment de sa portée actuelle.
+        float requiredDistance = 0f;
+        if (targetCursor != null && targetCursor.activeInHierarchy)
+        {
+            // On calcule la distance dans l'espace du monde afin de refléter fidèlement le coût réel.
+            // L'offset vertical de l'indicateur (rangeIndicatorHeightOffset) ne modifie pas la mesure :
+            // seule la projection au sol importe pour la stratégie du joueur.
+            Vector3 ownerPosition = ownerTransform != null ? ownerTransform.position : rangeIndicatorInstance.transform.position;
+            Vector3 cursorPosition = targetCursor.transform.position;
+            requiredDistance = Vector3.Distance(ownerPosition, cursorPosition);
+        }
+        else if (currentTargetCharacter != null)
+        {
+            // Si le curseur est momentanément indisponible (par exemple lors d'une transition), on se
+            // rabat sur la cible actuellement suivie pour conserver une approximation utile.
+            Vector3 ownerPosition = ownerTransform != null ? ownerTransform.position : rangeIndicatorInstance.transform.position;
+            Vector3 targetPosition = currentTargetCharacter.transform.position;
+            requiredDistance = Vector3.Distance(ownerPosition, targetPosition);
+        }
+
+        bool hasRequiredReach = requiredDistance > 0f;
+
+        if (!hasTotalReach)
         {
             // Dans certains cas (étourdissement, pénalité temporaire) une unité peut perdre toute portée.
             // On masque alors le visuel tout en conservant la hiérarchie pour réactiver rapidement l'effet.
             if (rangeIndicatorInstance.activeSelf)
             {
                 rangeIndicatorInstance.SetActive(false);
+            }
+
+            if (requiredRangeIndicatorInstance != null && requiredRangeIndicatorInstance.activeSelf)
+            {
+                requiredRangeIndicatorInstance.SetActive(false);
             }
 
             ApplyRangeIndicatorColor(RangeIndicatorFeedbackState.InRange); // On conserve la couleur neutre pour éviter tout signal contradictoire.
@@ -3891,8 +4076,32 @@ public class NewBattleManager : MonoBehaviour
             rangeIndicatorInstance.SetActive(true);
         }
 
-        float diameter = totalReach * 2f;
-        ApplyRangeIndicatorScale(diameter); // Le diamètre affiché reste fidèle même si le parent possède une échelle personnalisée.
+        if (requiredRangeIndicatorInstance != null)
+        {
+            if (requiredRangeIndicatorInstance.activeSelf != hasRequiredReach)
+            {
+                requiredRangeIndicatorInstance.SetActive(hasRequiredReach);
+            }
+
+            if (hasRequiredReach && requiredRangeIndicatorBaseRadius <= 0f)
+            {
+                requiredRangeIndicatorBaseRadius = ComputeSpriteWorldRadius(requiredRangeIndicatorRenderer);
+            }
+
+            ApplyRequiredRangeIndicatorColor(); // Synchronise l'opacité si le designer l'ajuste à chaud dans l'inspecteur.
+        }
+
+        if (rangeIndicatorBaseRadius <= 0f)
+        {
+            rangeIndicatorBaseRadius = ComputeSpriteWorldRadius(rangeIndicatorRenderer);
+        }
+
+        ApplyRangeIndicatorScale(rangeIndicatorInstance, totalReach, rangeIndicatorBaseRadius); // Le rayon affiché correspond exactement à la portée cumulée.
+
+        if (requiredRangeIndicatorInstance != null && hasRequiredReach)
+        {
+            ApplyRangeIndicatorScale(requiredRangeIndicatorInstance, requiredDistance, requiredRangeIndicatorBaseRadius);
+        }
 
         // Détermine si la cible suivie est réellement accessible afin d'ajuster la couleur du feedback.
         bool isInRange = true;
@@ -3935,6 +4144,12 @@ public class NewBattleManager : MonoBehaviour
         {
             rangeIndicatorInstance.SetActive(false);
             ApplyRangeIndicatorColor(RangeIndicatorFeedbackState.InRange); // On revient à l'état neutre en attendant la prochaine sélection.
+        }
+
+        if (requiredRangeIndicatorInstance != null)
+        {
+            requiredRangeIndicatorInstance.SetActive(false);
+            ApplyRequiredRangeIndicatorColor(); // On garantit une teinte blanche intacte pour le prochain tour.
         }
     }
 
@@ -4190,6 +4405,21 @@ public class NewBattleManager : MonoBehaviour
             Destroy(rangeIndicatorInstance);
             rangeIndicatorInstance = null;
             rangeIndicatorRenderer = null;
+            rangeIndicatorBaseRadius = 0f;
+        }
+
+        if (requiredRangeIndicatorInstance != null)
+        {
+            if (requiredRangeIndicatorMaterialInstance != null)
+            {
+                Destroy(requiredRangeIndicatorMaterialInstance);
+                requiredRangeIndicatorMaterialInstance = null;
+            }
+
+            Destroy(requiredRangeIndicatorInstance);
+            requiredRangeIndicatorInstance = null;
+            requiredRangeIndicatorRenderer = null;
+            requiredRangeIndicatorBaseRadius = 0f;
         }
     }
     #endregion
