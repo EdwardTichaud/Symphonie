@@ -226,6 +226,19 @@ public class NewBattleManager : MonoBehaviour
     [Tooltip("Prefab affichant la fenêtre d'interception")] public GameObject interceptionSignalPrefab;
     [HideInInspector] public GameObject targetCursor;
     [HideInInspector] public List<GameObject> multiTargetCursors = new List<GameObject>();
+
+    [Header("Indicateur de portée")]
+    [Tooltip("Sprite utilisé pour matérialiser la portée actuelle de l'unité active.")]
+    [SerializeField] private Sprite rangeIndicatorSprite;
+    [Tooltip("Matériau facultatif appliqué au SpriteRenderer de l'indicateur de portée.")]
+    [SerializeField] private Material rangeIndicatorMaterial;
+    [Tooltip("Décalage vertical pour éviter tout chevauchement visuel avec le sol.")]
+    [SerializeField] private float rangeIndicatorHeightOffset = 0.05f;
+    [Tooltip("Opacité appliquée au sprite de portée pour conserver un retour visuel discret.")]
+    [SerializeField, Range(0f, 1f)] private float rangeIndicatorAlpha = 0.6f;
+    private GameObject rangeIndicatorInstance;
+    private SpriteRenderer rangeIndicatorRenderer;
+    private CharacterUnit rangeIndicatorOwner;
     private List<CharacterUnit> filteredUnits = new();
     // Liste temporaire réutilisée pour éviter des allocations lors du ciblage multiple
     private readonly List<CharacterUnit> multiTargetUnits = new();
@@ -3333,6 +3346,9 @@ public class NewBattleManager : MonoBehaviour
 
     private void LateUpdate()
     {
+        // Ajuste l'indicateur de portée après le calcul des mouvements afin de coller à la valeur la plus récente.
+        RefreshRangeIndicatorScale();
+
         if (battleCamera == null)
         {
             return;
@@ -3542,8 +3558,14 @@ public class NewBattleManager : MonoBehaviour
 
     private void ChangeCurrentCharacterUnit(CharacterUnit newCurrentCharacterUnit)
     {
-        if (currentCharacterUnit == newCurrentCharacterUnit)
-            return; // Aucun changement : on évite les répétitions sonores.
+        bool unitChanged = currentCharacterUnit != newCurrentCharacterUnit;
+
+        // Met à jour systématiquement l'indicateur de portée, même lorsque l'unité reste la même
+        // (ex : bonus de portée appliqué via un objet pendant son tour).
+        UpdateRangeIndicator(newCurrentCharacterUnit);
+
+        if (!unitChanged)
+            return; // Aucun changement : on évite les répétitions sonores inutiles.
 
         currentCharacterUnit = newCurrentCharacterUnit;
 
@@ -3558,6 +3580,134 @@ public class NewBattleManager : MonoBehaviour
         if (battleCamera == null)
         {
             battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+        }
+    }
+
+    /// <summary>
+    /// S'assure qu'un indicateur de portée existe dans la scène et configure son SpriteRenderer.
+    /// L'instanciation est différée afin d'éviter tout coût inutile lorsque la fonctionnalité n'est
+    /// pas utilisée (ex : scènes de test sans combat).
+    /// </summary>
+    private void EnsureRangeIndicatorInstance()
+    {
+        if (rangeIndicatorInstance != null || rangeIndicatorSprite == null)
+        {
+            return; // Soit l'indicateur est déjà prêt, soit aucun sprite n'a été assigné dans l'inspecteur.
+        }
+
+        rangeIndicatorInstance = new GameObject("RangeIndicator");
+        rangeIndicatorInstance.SetActive(false);
+
+        rangeIndicatorRenderer = rangeIndicatorInstance.AddComponent<SpriteRenderer>();
+        rangeIndicatorRenderer.sprite = rangeIndicatorSprite;
+        rangeIndicatorRenderer.color = new Color(1f, 1f, 1f, rangeIndicatorAlpha);
+
+        if (rangeIndicatorMaterial != null)
+        {
+            // Autorise l'équipe artistique à fournir un matériau personnalisé (effet additif, glow...).
+            rangeIndicatorRenderer.material = rangeIndicatorMaterial;
+        }
+
+        // On force des paramètres adaptés à un indicateur 2D posé au sol.
+        rangeIndicatorRenderer.sortingOrder = 500; // Suffisamment élevé pour rester lisible.
+        rangeIndicatorRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        rangeIndicatorRenderer.receiveShadows = false;
+    }
+
+    /// <summary>
+    /// Met à jour l'indicateur de portée afin qu'il suive l'unité active et reflète son rayon actuel.
+    /// </summary>
+    /// <param name="unit">Unité actuellement aux commandes dans la timeline de combat.</param>
+    private void UpdateRangeIndicator(CharacterUnit unit)
+    {
+        if (unit == null)
+        {
+            HideRangeIndicator();
+            return;
+        }
+
+        EnsureRangeIndicatorInstance();
+
+        if (rangeIndicatorInstance == null || rangeIndicatorRenderer == null)
+        {
+            return; // Sécurité : aucun sprite assigné ou instanciation avortée.
+        }
+
+        rangeIndicatorOwner = unit;
+
+        Transform ownerTransform = unit.transform;
+        rangeIndicatorInstance.transform.SetParent(ownerTransform, false);
+        rangeIndicatorInstance.transform.localPosition = new Vector3(0f, rangeIndicatorHeightOffset, 0f);
+        rangeIndicatorInstance.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+
+        RefreshRangeIndicatorScale();
+    }
+
+    /// <summary>
+    /// Met à l'échelle l'indicateur en fonction de la portée de l'unité suivie.
+    /// Cette méthode est appelée lors du changement d'unité et à chaque frame pour suivre
+    /// les éventuelles modifications de portée (objets, compétences, états temporaires...).
+    /// </summary>
+    private void RefreshRangeIndicatorScale()
+    {
+        if (rangeIndicatorInstance == null || rangeIndicatorOwner == null)
+        {
+            return;
+        }
+
+        CharacterData ownerData = rangeIndicatorOwner.Data;
+        if (ownerData == null)
+        {
+            return;
+        }
+
+        if (rangeIndicatorRenderer != null)
+        {
+            Color currentColor = rangeIndicatorRenderer.color;
+            float clampedAlpha = Mathf.Clamp01(rangeIndicatorAlpha);
+
+            if (!Mathf.Approximately(currentColor.a, clampedAlpha))
+            {
+                currentColor.a = clampedAlpha;
+                rangeIndicatorRenderer.color = currentColor;
+            }
+        }
+
+        float range = Mathf.Max(0f, ownerData.currentRange);
+
+        if (range <= 0f)
+        {
+            // Dans certains cas (étourdissement, pénalité temporaire) une unité peut perdre sa portée.
+            // On masque alors le visuel tout en conservant la hiérarchie pour réactiver rapidement l'effet.
+            if (rangeIndicatorInstance.activeSelf)
+            {
+                rangeIndicatorInstance.SetActive(false);
+            }
+
+            return;
+        }
+
+        float diameter = range * 2f;
+
+        if (!rangeIndicatorInstance.activeSelf)
+        {
+            rangeIndicatorInstance.SetActive(true);
+        }
+
+        rangeIndicatorInstance.transform.localScale = new Vector3(diameter, diameter, 1f);
+    }
+
+    /// <summary>
+    /// Masque l'indicateur de portée et libère la référence sur l'unité suivie.
+    /// </summary>
+    private void HideRangeIndicator()
+    {
+        rangeIndicatorOwner = null;
+
+        if (rangeIndicatorInstance != null)
+        {
+            rangeIndicatorInstance.SetActive(false);
+            rangeIndicatorInstance.transform.SetParent(null);
         }
     }
 
@@ -3798,6 +3948,15 @@ public class NewBattleManager : MonoBehaviour
         {
             Destroy(targetCursor);
             targetCursor = null;
+        }
+
+        // Supprime l'indicateur de portée éventuel pour repartir sur une scène propre.
+        HideRangeIndicator();
+        if (rangeIndicatorInstance != null)
+        {
+            Destroy(rangeIndicatorInstance);
+            rangeIndicatorInstance = null;
+            rangeIndicatorRenderer = null;
         }
     }
     #endregion
