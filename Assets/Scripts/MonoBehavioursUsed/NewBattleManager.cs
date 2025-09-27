@@ -103,6 +103,19 @@ public class NewBattleManager : MonoBehaviour
     [Tooltip("Durée maximale pendant laquelle l'introduction de combat bloque le démarrage des tours.")]
     [SerializeField] private float battleIntroLockDuration = 2f;
 
+    /// <summary>
+    /// Indique si la mise en scène d'introduction verrouille temporairement les menus.
+    /// Ce drapeau est consulté par l'InputsManager pour ignorer toute interaction
+    /// tant que les animations d'arrivée ne sont pas complètement terminées.
+    /// </summary>
+    private bool battleIntroMenusLocked = false;
+
+    /// <summary>
+    /// Expose l'état du verrou d'introduction afin que les autres systèmes puissent
+    /// savoir s'il est pertinent d'accepter ou d'ignorer les entrées de menu.
+    /// </summary>
+    public bool AreMenusLockedByBattleIntro => battleIntroMenusLocked;
+
     // Paramètres du ralentissement appliqué lors de l'introduction.
     [Tooltip("Facteur de ralentissement au tout début du combat.")]
     public float equipSlowMotionScale = 1f;
@@ -771,7 +784,12 @@ public class NewBattleManager : MonoBehaviour
 
         //6 Intro Camera
         // Lance la séquence d'introduction des caméras avant de débuter les tours.
+        // On verrouille explicitement les menus pendant toute la durée de la cinématique
+        // afin d'éviter que le joueur ne sélectionne une action avant la fin des animations.
+        battleIntroMenusLocked = true;
         yield return PlayIntroCameraSequence();
+        // Les introductions sont terminées : les menus peuvent à présent accepter les entrées.
+        battleIntroMenusLocked = false;
 
         //7 Démarre la boucle de tours
         StartCoroutine(TurnLoop());
@@ -2696,6 +2714,10 @@ public class NewBattleManager : MonoBehaviour
     #region Gestion de la navigation dans les menus
     private void HandleTargetNavigation()
     {
+        // Si les menus sont verrouillés par la BattleIntro, aucune navigation ne doit être traitée.
+        if (battleIntroMenusLocked)
+            return;
+
         bool isSkillTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
                                 currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
                                 (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentMove != null) ||
@@ -2769,6 +2791,11 @@ public class NewBattleManager : MonoBehaviour
 
     private void HandleTargetCursor()
     {
+        // Protection identique pour le curseur de cible : tant que l'introduction se déroule,
+        // les éléments d'interface restent complètement inactifs.
+        if (battleIntroMenusLocked)
+            return;
+
         bool isSkillTargeting =
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
@@ -3808,6 +3835,9 @@ public class NewBattleManager : MonoBehaviour
     {
         // Réinitialise l’état du combat
         ChangeBattleState(BattleState.None);
+
+        // Supprime toute trace d'un éventuel verrou d'introduction pour la prochaine rencontre.
+        battleIntroMenusLocked = false;
 
         // Nettoie les références
         currentCharacterUnit = null;
