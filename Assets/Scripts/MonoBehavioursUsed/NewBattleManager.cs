@@ -100,6 +100,9 @@ public class NewBattleManager : MonoBehaviour
     [Header("Début de combat")]
     [SerializeField] private GameObject firstStrikeEffect;
 
+    [Tooltip("Durée maximale pendant laquelle l'introduction de combat bloque le démarrage des tours.")]
+    [SerializeField] private float battleIntroLockDuration = 2f;
+
     // Paramètres du ralentissement appliqué lors de l'introduction.
     [Tooltip("Facteur de ralentissement au tout début du combat.")]
     public float equipSlowMotionScale = 1f;
@@ -682,33 +685,27 @@ public class NewBattleManager : MonoBehaviour
             activeDirectors.Add(director);
         }
 
-        // Attend que toutes les timelines soient terminées sans imposer une frame
-        // supplémentaire après la fin de la dernière animation.
-        bool timelinesStillPlaying = true;
-        while (timelinesStillPlaying)
+        // ⏱️ Calcule la durée d'attente maximale en temps réel. L'utilisation de l'unscaled delta
+        //     permet de respecter la durée configurée même si le timeScale a été réduit.
+        float waitDuration = Mathf.Max(0f, battleIntroLockDuration);
+        float elapsedIntroTime = 0f;
+
+        // ⛔ On attend exactement la durée configurée, même si les timelines se terminent plus tôt.
+        //    Ainsi, les mises en scène longues n'empêchent plus le combat de démarrer : passé ce délai
+        //    les tours commencent, tandis que les introductions continuent leur lecture en arrière-plan.
+        while (elapsedIntroTime < waitDuration)
         {
-            timelinesStillPlaying = false;
-
-            foreach (var director in activeDirectors)
-            {
-                if (director != null && director.state == PlayState.Playing)
-                {
-                    timelinesStillPlaying = true;
-                    break; // Au moins une timeline est encore en cours, on attend la prochaine frame.
-                }
-            }
-
-            if (timelinesStillPlaying)
-                yield return null; // Patiente une frame avant de re-vérifier.
+            yield return null;
+            elapsedIntroTime += Time.unscaledDeltaTime;
         }
 
-        // Restaure les valeurs temporelles initiales une fois les timelines terminées
+        // Restaure les valeurs temporelles initiales une fois le délai écoulé pour que le gameplay
+        // retrouve immédiatement sa vitesse normale lorsque le premier tour débute.
         Time.timeScale = initialTimeScale;
         Time.fixedDeltaTime = initialFixedDelta;
 
-        // Patiente encore une seconde en temps réel après la fin des timelines
-        // d'introduction pour laisser le temps au joueur d'apprécier la mise en scène.
-        yield return new WaitForSecondsRealtime(0f);
+        // 📌 Aucun yield supplémentaire n'est nécessaire : la boucle de tours peut démarrer dès
+        //     maintenant, les PlayableDirector poursuivent leur animation sans bloquer le gameplay.
 
         // La gestion du changement de caméra est réalisée en dehors de cette
         // coroutine afin de laisser la main à l'appelant sur la transition.
