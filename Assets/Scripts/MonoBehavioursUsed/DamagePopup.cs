@@ -11,21 +11,21 @@ public class DamagePopup : MonoBehaviour
     [Header("Références")]
     public TextMeshProUGUI textMesh; // Référence au texte affichant le montant
 
-    private float elapsed = 0f;      // Temps écoulé depuis l'initialisation
-    private float floatOffset = 0f;   // Décalage vertical cumulé
-    private Camera mainCam;           // Caméra principale utilisée pour la conversion
-    private CanvasGroup canvasGroup;  // Permet de faire disparaître progressivement le popup
-    private Transform target;         // Unité suivie
+    private float elapsed = 0f;        // Temps écoulé depuis l'initialisation pour piloter le fondu
+    private float floatOffset = 0f;    // Décalage vertical cumulé appliqué au centre de l'écran
+    private CanvasGroup canvasGroup;   // Permet de faire disparaître progressivement le popup
+    private RectTransform rectTransform; // Accès rapide au RectTransform pour manipuler l'overlay
+    private Vector2 baseAnchoredPosition; // Position de référence (en pixels) par rapport au centre du Canvas
+    private Vector3 baseWorldPosition;    // Fallback si le popup est utilisé hors Canvas (World Space par exemple)
 
     /// <summary>
     /// Initialise le popup avec un montant et la cible à suivre.
     /// </summary>
     /// <param name="amount">Montant de dégâts à afficher.</param>
-    /// <param name="followTarget">Transform de l'unité concernée.</param>
+    /// <param name="followTarget">Transform de l'unité concernée (désormais ignoré car l'affichage est centré).</param>
     public void Initialize(int amount, Transform followTarget)
     {
         textMesh.text = amount.ToString();
-        mainCam = Camera.main;
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null)
         {
@@ -34,8 +34,25 @@ public class DamagePopup : MonoBehaviour
             Debug.LogWarning("[DamagePopup] Aucun CanvasGroup détecté, le fondu sera désactivé.");
         }
 
-        target = followTarget;
-        // Position initiale dans le monde avant la première mise à jour
+        rectTransform = GetComponent<RectTransform>();
+        if (rectTransform != null)
+        {
+            // Mémorise la position initiale afin de pouvoir y revenir si l'on souhaite modifier
+            // dynamiquement la mise en page depuis l'éditeur. En pratique, nous centrons le popup
+            // sur l'écran pour obtenir un vrai overlay.
+            baseAnchoredPosition = Vector2.zero;
+            rectTransform.anchoredPosition = baseAnchoredPosition + new Vector2(offset.x, offset.y);
+            rectTransform.localScale = Vector3.one; // Garantit l'absence de distorsion héritée du parent.
+        }
+        else
+        {
+            // Cas de secours si le prefab est encore utilisé dans un contexte "World Space".
+            // On se base alors sur la position locale de l'objet pour assurer un centrage relatif.
+            baseWorldPosition = Vector3.zero;
+            transform.localPosition = baseWorldPosition + new Vector3(offset.x, offset.y, offset.z);
+        }
+
+        // Position initiale avant la première mise à jour (indispensable pour appliquer l'offset).
         UpdatePosition();
     }
 
@@ -64,32 +81,24 @@ public class DamagePopup : MonoBehaviour
     }
 
     /// <summary>
-    /// Calcule la position et l'orientation en fonction de la cible suivie et de la caméra.
+    /// Calcule la position et l'orientation du popup d'écran.
     /// </summary>
     private void UpdatePosition()
     {
-        if (mainCam == null || target == null)
-            return;
-
-        // Position dans le monde avec l'offset animé. On conserve un léger décalage vertical
-        // pour rendre le popup lisible, tout en permettant au texte de flotter.
-        Vector3 worldPos = target.position + offset + Vector3.up * floatOffset;
-
-        // Positionne l'objet directement dans l'espace monde (utile si le Canvas est en World Space
-        // ou si l'on utilise un TextMeshPro autonome). Cela nous permet ensuite d'appliquer une
-        // rotation orientée vers la caméra pour un effet billboard.
-        transform.position = worldPos;
-
-        // Oriente le popup vers la caméra active. Le "billboard" est obtenu en regardant la caméra
-        // puis en alignant l'axe "up" sur celui du monde pour éviter les rotations inversées.
-        Vector3 toCamera = mainCam.transform.position - transform.position;
-        Vector3 cameraUp = mainCam.transform.up;
-        if (toCamera.sqrMagnitude > 0.0001f)
+        if (rectTransform != null)
         {
-            // Quaternion.LookRotation nécessite une direction non nulle ; on vérifie donc la distance
-            // caméra → popup pour éviter les NaN. L'axe "up" de la caméra est conservé pour limiter
-            // les rotations parasites lorsque la caméra effectue des roulis.
-            transform.rotation = Quaternion.LookRotation(toCamera.normalized, cameraUp);
+            // En mode Overlay (Canvas en Screen Space), on applique un décalage vertical progressif
+            // afin de donner une impression de mouvement vers le haut tout en restant au centre.
+            Vector2 verticalDisplacement = new Vector2(0f, floatOffset);
+            Vector2 staticOffset = new Vector2(offset.x, offset.y);
+            rectTransform.anchoredPosition = baseAnchoredPosition + staticOffset + verticalDisplacement;
+        }
+        else
+        {
+            // Fallback pour les anciens prefabs en World Space : on reproduit un comportement
+            // similaire en manipulant la position locale sans dépendre d'une caméra.
+            Vector3 worldOffset = new Vector3(offset.x, offset.y + floatOffset, offset.z);
+            transform.localPosition = baseWorldPosition + worldOffset;
         }
     }
 }
