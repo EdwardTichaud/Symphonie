@@ -3698,6 +3698,43 @@ public class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Ajuste l'échelle de l'indicateur afin qu'elle corresponde toujours au diamètre réel désiré,
+    /// même si le parent du GameObject (typiquement le canvas de la caméra de combat) possède une
+    /// échelle personnalisée. Sans ce recalcul, la taille du visuel serait étirée ou réduite de
+    /// manière imprévisible lorsque la hiérarchie change.
+    /// </summary>
+    /// <param name="diameter">Diamètre en unités monde que l'indicateur doit couvrir.</param>
+    private void ApplyRangeIndicatorScale(float diameter)
+    {
+        if (rangeIndicatorInstance == null)
+        {
+            return; // Sécurité : rien à ajuster si l'objet n'a pas encore été instancié.
+        }
+
+        Transform indicatorTransform = rangeIndicatorInstance.transform;
+
+        // On récupère l'échelle du parent pour pouvoir la neutraliser. Les indicateurs sont parentés au
+        // canvas de la caméra, dont l'échelle peut varier selon les scènes ou les expériences UI.
+        Transform parentTransform = indicatorTransform.parent;
+        Vector3 parentLossyScale = parentTransform != null ? parentTransform.lossyScale : Vector3.one;
+
+        // Afin d'éviter toute division par zéro (même si elle ne devrait jamais se produire dans l'usage normal),
+        // on prépare des valeurs sûres. Cela évite aussi des NaN qui perturberaient l'affichage des sprites.
+        float safeParentScaleX = Mathf.Approximately(parentLossyScale.x, 0f) ? 1f : parentLossyScale.x;
+        float safeParentScaleY = Mathf.Approximately(parentLossyScale.y, 0f) ? 1f : parentLossyScale.y;
+        float safeParentScaleZ = Mathf.Approximately(parentLossyScale.z, 0f) ? 1f : parentLossyScale.z;
+
+        // On applique enfin l'échelle locale corrigée : en divisant par l'échelle du parent, on obtient une
+        // taille en unités monde qui reste fidèle aux attentes de game design (rayon exact autour de l'unité).
+        Vector3 compensatedScale = new Vector3(
+            diameter / safeParentScaleX,
+            diameter / safeParentScaleY,
+            1f / safeParentScaleZ);
+
+        indicatorTransform.localScale = compensatedScale;
+    }
+
+    /// <summary>
     /// Met à jour l'indicateur de portée afin qu'il suive l'unité active et reflète son rayon actuel.
     /// </summary>
     /// <param name="unit">Unité actuellement aux commandes dans la timeline de combat.</param>
@@ -3791,7 +3828,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         float diameter = totalReach * 2f;
-        rangeIndicatorInstance.transform.localScale = new Vector3(diameter, diameter, 1f);
+        ApplyRangeIndicatorScale(diameter); // Le diamètre affiché reste fidèle même si le parent possède une échelle personnalisée.
 
         // Détermine si la cible suivie est réellement accessible afin d'ajuster la couleur du feedback.
         bool isInRange = true;
