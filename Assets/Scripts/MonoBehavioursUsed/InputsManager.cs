@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
+using System.Collections.Generic;
 
 #if UNITY_EDITOR
 // Directives réservées à l'éditeur pour l'inspecteur personnalisé.
@@ -20,6 +21,20 @@ public class InputsManager : MonoBehaviour
     private Coroutine passRoutine;
 
     private InputActionMap[] allMaps;
+
+    /// <summary>
+    /// Liste temporaire des actions du mapping Battle mises en pause pendant
+    /// l'introduction du combat. Elle permet de restaurer précisément l'état
+    /// des contrôles une fois la cinématique terminée.
+    /// </summary>
+    private readonly List<InputAction> battleActionsDisabledDuringIntro = new();
+
+    /// <summary>
+    /// Indique si la restriction "Confirm uniquement" est active. Ce drapeau
+    /// évite d'empiler plusieurs appels successifs et garantit une remise à
+    /// zéro propre lorsque les menus sont à nouveau disponibles.
+    /// </summary>
+    private bool battleIntroRestrictionActive = false;
 
 
     /// <summary>
@@ -156,6 +171,92 @@ public class InputsManager : MonoBehaviour
         // 2) on ré-active le sous-ensemble voulu
         foreach (var m in mapsToEnable)
             m.Enable();
+    }
+
+    /// <summary>
+    /// Restreint temporairement les contrôles au seul bouton "Confirm" du mapping Battle.
+    /// Cette méthode est invoquée au début d'un combat pour éviter toute interaction
+    /// prématurée avec les menus tant que les unités terminent leurs animations
+    /// d'introduction.
+    /// </summary>
+    public void RestrictInputsToBattleConfirm()
+    {
+        if (playerInputs == null)
+            return;
+
+        if (battleIntroRestrictionActive)
+            return;
+
+        battleIntroRestrictionActive = true;
+
+        // On s'assure que seul le mapping Battle est actif afin de bloquer immédiatement
+        // les contrôles d'exploration ou des menus annexes.
+        ActivateOnly(playerInputs.Battle.Get());
+
+        var confirmAction = playerInputs.Battle.Confirm;
+        var battleMap = playerInputs.Battle.Get();
+
+        if (battleMap == null)
+        {
+            battleIntroRestrictionActive = false;
+            return;
+        }
+
+        // Dans le doute, on garantit que Confirm est bien opérationnel pour permettre
+        // au joueur de valider les messages affichés pendant la transition (ex : écran Versus).
+        if (confirmAction != null && !confirmAction.enabled)
+            confirmAction.Enable();
+
+        battleActionsDisabledDuringIntro.Clear();
+
+        // Chaque action du mapping, à l'exception de Confirm, est désactivée jusqu'à la fin
+        // de l'introduction. On mémorise la liste pour pouvoir la restaurer fidèlement.
+        foreach (var action in battleMap.actions)
+        {
+            if (action == null || action == confirmAction)
+                continue;
+
+            if (action.enabled)
+            {
+                action.Disable();
+                battleActionsDisabledDuringIntro.Add(action);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Restaure l'intégralité du mapping Battle après la cinématique d'introduction.
+    /// Les actions précédemment suspendues sont réactivées une par une pour retrouver
+    /// un contrôle complet des menus de combat.
+    /// </summary>
+    public void RestoreBattleInputsAfterIntro()
+    {
+        if (playerInputs == null)
+            return;
+
+        if (!battleIntroRestrictionActive)
+            return;
+
+        var battleMap = playerInputs.Battle.Get();
+        if (battleMap == null)
+        {
+            battleIntroRestrictionActive = false;
+            battleActionsDisabledDuringIntro.Clear();
+            return;
+        }
+
+        // On conserve l'exclusivité du mapping Battle afin de respecter le cahier des charges.
+        ActivateOnly(battleMap);
+
+        // Réactive chaque action mise en pause pendant la cinématique.
+        foreach (var action in battleActionsDisabledDuringIntro)
+        {
+            if (action != null && !action.enabled)
+                action.Enable();
+        }
+
+        battleActionsDisabledDuringIntro.Clear();
+        battleIntroRestrictionActive = false;
     }
 
     #endregion

@@ -729,6 +729,11 @@ public class NewBattleManager : MonoBehaviour
     {
         Debug.Log("[BattleTurnManager] Démarrage du combat");
 
+        // 🎮 Au lancement du combat, on limite les entrées au seul bouton de validation.
+        //     Les menus resteront donc parfaitement figés pendant les animations
+        //     d'introduction des unités, conformément à la demande de game design.
+        InputsManager.Instance?.RestrictInputsToBattleConfirm();
+
         // 🛡️ Assure que les filtres d'écran sont totalement invisibles au lancement du combat.
         //    Sans cette étape, un résidu de fondu noir ou blanc pourrait persister d'une timeline précédente.
         var fader = FadeChildrenOpacity.Instance;
@@ -790,6 +795,10 @@ public class NewBattleManager : MonoBehaviour
         yield return PlayIntroCameraSequence();
         // Les introductions sont terminées : les menus peuvent à présent accepter les entrées.
         battleIntroMenusLocked = false;
+
+        // ✅ Les actions de combat redeviennent disponibles une fois la cinématique bouclée.
+        //    Cette remise à zéro intervient immédiatement après le déverrouillage logique des menus.
+        InputsManager.Instance?.RestoreBattleInputsAfterIntro();
 
         //7 Démarre la boucle de tours
         StartCoroutine(TurnLoop());
@@ -3838,6 +3847,10 @@ public class NewBattleManager : MonoBehaviour
 
         // Supprime toute trace d'un éventuel verrou d'introduction pour la prochaine rencontre.
         battleIntroMenusLocked = false;
+
+        // 🧹 Si la restriction d'entrées est encore active (ex : interruption prématurée),
+        //     on s'assure de rétablir le mapping complet avant de quitter le combat.
+        InputsManager.Instance?.RestoreBattleInputsAfterIntro();
 
         // Nettoie les références
         currentCharacterUnit = null;
