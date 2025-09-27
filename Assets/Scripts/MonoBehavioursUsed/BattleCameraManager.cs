@@ -431,9 +431,8 @@ public class BattleCameraManager : MonoBehaviour
             }
             else
             {
-                camera.transform.rotation = anchor.rotation;
-
-                // 🧭 Aucun point de regard valable : on désactive la redirection forcée pour éviter un résidu d'état.
+                // 🧭 Aucun point de regard valable : on laisse la Cinemachine conserver sa rotation actuelle.
+                // Les scripts spécialisés (LookAtBattleTarget, etc.) se chargeront d'orienter la caméra.
                 var targetSettings = camera.Target;
                 targetSettings.CustomLookAtTarget = false;
                 targetSettings.LookAtTarget = null;
@@ -442,10 +441,9 @@ public class BattleCameraManager : MonoBehaviour
         }
         else
         {
-            camera.transform.rotation = anchor.rotation;
-
-            // 🔁 Les caméras qui ne suivent pas une cible doivent s'appuyer uniquement sur leur rotation locale.
-            // On nettoie donc toute instruction précédente d'orientation transmise au CinemachineCamera.
+            // 📸 Les caméras libres ne doivent plus recopier la rotation de leur ancre pour éviter les conflits
+            //     lorsqu'elles sont associées à des scripts additionnels. On met simplement à jour la position
+            //     et on laisse la Cinemachine (ou les scripts dédiés) gérer l'orientation.
             var targetSettings = camera.Target;
             targetSettings.CustomLookAtTarget = false;
             targetSettings.LookAtTarget = null;
@@ -874,7 +872,11 @@ public class BattleCameraManager : MonoBehaviour
         if (!string.IsNullOrEmpty(cameraName) && CameraBindings.TryGetValue(cameraName, out var config))
             RefreshCameraPlacement(cameraName, config);
         else if (anchor != null && TryGetCameraByName(cameraName, out var manualCamera))
-            manualCamera.transform.SetPositionAndRotation(anchor.position, anchor.rotation);
+        {
+            // 🧭 Les caméras manuelles n'héritent plus de la rotation de leur ancre : seule la position est
+            //     synchronisée pour éviter les conflits avec les scripts d'orientation dédiés.
+            manualCamera.transform.position = anchor.position;
+        }
 
         SwitchToCamera(cameraName, blendTime, overrideStyle);
     }
