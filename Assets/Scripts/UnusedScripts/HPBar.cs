@@ -26,6 +26,11 @@ public class HPBar : MonoBehaviour
     /// <param name="max">Valeur maximale (vie max).</param>
     public virtual void SetMaxValue(float max)
     {
+        // Avant toute modification, on sécurise l'accès au composant Slider Unity.
+        // Certains prefabs historiques omettaient de renseigner le champ dans l'inspecteur,
+        // empêchant l'évolution visuelle de la jauge malgré les mises à jour de points de vie.
+        AcquireSliderReferenceIfNeeded();
+
         maxValue = Mathf.Max(0f, max); // Sécurise la valeur afin d'éviter toute division par zéro plus tard.
 
         // S'assure que la valeur courante reste cohérente avec la nouvelle limite.
@@ -42,6 +47,9 @@ public class HPBar : MonoBehaviour
     /// <param name="current">Valeur actuelle (vie restante).</param>
     public virtual void SetValue(float current)
     {
+        // Même sécurité que dans SetMaxValue : on récupère le slider si la référence manque.
+        AcquireSliderReferenceIfNeeded();
+
         // Certains objets appellent SetValue avant d'avoir défini la vie maximale
         // (par exemple juste après une instantiation dynamique). Dans ce cas, la
         // valeur transmise correspond en général à la vie actuelle qui sert aussi
@@ -105,5 +113,22 @@ public class HPBar : MonoBehaviour
         Vector3 scale = dynamicFillRect.localScale;
         scale.x = ratio;
         dynamicFillRect.localScale = scale;
+    }
+
+    /// <summary>
+    /// Recherche paresseusement un <see cref="Slider"/> si aucun n'est assigné pour synchroniser la jauge.
+    /// </summary>
+    private void AcquireSliderReferenceIfNeeded()
+    {
+        if (slider != null)
+            return; // Référence déjà disponible : rien à faire.
+
+        // Priorité au Slider placé directement sur le même GameObject que la HPBar.
+        slider = GetComponent<Slider>();
+        if (slider != null)
+            return;
+
+        // En dernier recours, on explore les enfants (même inactifs) afin de couvrir les variantes de prefabs.
+        slider = GetComponentInChildren<Slider>(includeInactive: true);
     }
 }
