@@ -319,23 +319,32 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
                 return child;
         }
 
-        // 🔁 Aucun point n'est présent directement sur l'unité : on vérifie le parent immédiat
-        // (PlayerPosition_X / EnemyPosition_X) qui peut désormais générer dynamiquement ces ancres.
-        Transform parent = transform.parent;
-        if (parent != null)
+        // 🧭 Les points générés sur le parent (PlayerPosition_X / EnemyPosition_X) ne doivent
+        // être considérés que pour l'ancre "OverShoulder_CasterLookTarget". Contrairement
+        // aux autres points, celui-ci est fixé relativement au point de spawn et non au
+        // CharacterUnit lui-même ; il faut donc explicitement interroger le parent.
+        const string spawnRelativeAnchor = "CMVPoint_OverShoulder_CasterLookTarget";
+        if (string.Equals(anchorName, spawnRelativeAnchor, StringComparison.OrdinalIgnoreCase))
         {
-            // Recherche d'abord l'enfant direct pour éviter une exploration trop large.
-            Transform parentAnchor = parent.Find(anchorName);
-            if (parentAnchor != null)
-                return parentAnchor;
-
-            foreach (Transform sibling in parent.GetComponentsInChildren<Transform>(includeInactive))
+            Transform parent = transform.parent;
+            if (parent != null)
             {
-                if (sibling == null || sibling == transform)
-                    continue;
+                // 🧿 On vérifie d'abord la présence d'un enfant direct sur le parent, ce qui
+                // correspond au cas nominal généré par le NewBattleManager.
+                Transform parentAnchor = parent.Find(anchorName);
+                if (parentAnchor != null)
+                    return parentAnchor;
 
-                if (string.Equals(sibling.name, anchorName, StringComparison.OrdinalIgnoreCase))
-                    return sibling;
+                // 🔍 En dernier recours, on balaye les autres enfants du parent pour capturer
+                // d'éventuelles variantes ajoutées manuellement dans l'éditeur.
+                foreach (Transform sibling in parent.GetComponentsInChildren<Transform>(includeInactive))
+                {
+                    if (sibling == null || sibling == transform)
+                        continue;
+
+                    if (string.Equals(sibling.name, anchorName, StringComparison.OrdinalIgnoreCase))
+                        return sibling;
+                }
             }
         }
 
