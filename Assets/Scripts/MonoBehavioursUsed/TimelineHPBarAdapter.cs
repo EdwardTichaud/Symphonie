@@ -47,6 +47,28 @@ public class TimelineHPBarAdapter : HPBar
         aliveColor = alive;
         deadColor = dead;
 
+        // --- Référence Slider ---------------------------------------------------------------
+        // Certains prefabs n'assignent pas explicitement le Slider Unity utilisé par la barre de vie.
+        // Lorsque ce champ reste à "null", la classe parente <see cref="HPBar"/> n'a aucun
+        // composant à synchroniser : le slider visible en jeu reste bloqué à sa valeur maximale
+        // (ex : 1f) même si les points de vie diminuent correctement.  Afin de fiabiliser la
+        // configuration, on tente automatiquement de retrouver le slider correspondant dans la
+        // hiérarchie de l'objet timeline.
+        if (slider == null)
+        {
+            // On privilégie d'abord la recherche via l'image de remplissage car elle est en
+            // général un enfant direct du slider, puis on élargit au besoin à tous les enfants.
+            if (timelineFillImage != null)
+            {
+                slider = timelineFillImage.GetComponentInParent<Slider>();
+            }
+
+            if (slider == null)
+            {
+                slider = GetComponentInChildren<Slider>(includeInactive: true);
+            }
+        }
+
         if (owner == null)
             return;
 
