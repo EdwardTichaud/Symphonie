@@ -70,11 +70,11 @@ MonoBehaviour:
   currentSpeed: 0
   currentInterceptionRange: 0
   currentInterceptionChance: 0
-  hitSound: {fileID: 0}
-  criticalHitSound: {fileID: 0}
-  interceptedSound: {fileID: 0}
-  interceptionSound: {fileID: 0}
-  prematureDeathTaunt: {fileID: 0}
+  hitSound: {fileID: 11400000, guid: e62c453f0c6e71b4d8a256bae33452d0, type: 2}
+  criticalHitSound: {fileID: 11400000, guid: bd24b3bf43a46ab4fbd9d997c10c3134, type: 2}
+  interceptedSound: {fileID: 11400000, guid: f98414021b3ac1b43a114401376cea1d, type: 2}
+  interceptionSound: {fileID: 11400000, guid: 211d90b0af76e0c4198c31a6908013d2, type: 2}
+  prematureDeathTaunt: {fileID: 11400000, guid: f98414021b3ac1b43a114401376cea1d, type: 2}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   dashParticlesPrefab: {fileID: 3551257785712818506, guid: 7f9985d13c4572a42a87dda564860b9f, type: 3}
@@ -87,7 +87,7 @@ MonoBehaviour:
   introTimeline: {fileID: 11400000, guid: 5f0dceeed3fcd914ebde5933df0b5223, type: 2}
   moveStartClip: {fileID: 0}
   moveEndClip: {fileID: 0}
-  menuSelectionClip: {fileID: 0}
+  menuSelectionClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
   weepForLucianDeath: {fileID: 11400000, guid: c554f0b9eb5bfea43b056abf24347ef0, type: 2}
   weepForThaliaDeath: {fileID: 0}
   weepForKaelDeath: {fileID: 0}
