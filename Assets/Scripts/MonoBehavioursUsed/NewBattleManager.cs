@@ -3596,6 +3596,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         rangeIndicatorInstance = new GameObject("RangeIndicator");
+        rangeIndicatorInstance.layer = LayerMask.NameToLayer("Battle_VFX");
         rangeIndicatorInstance.SetActive(false);
 
         rangeIndicatorRenderer = rangeIndicatorInstance.AddComponent<SpriteRenderer>();
