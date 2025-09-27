@@ -19,8 +19,6 @@ public class BattleTimelineUnit : MonoBehaviour
     [SerializeField] private Color highlightColor = Color.yellow;
     [SerializeField] private Color deadColor = Color.red;
 
-    [HideInInspector] public CharacterData characterData;
-
     [SerializeField] private CanvasGroup canvasGroup;
 
     /// <summary>Référence directe vers l'unité affichée pour faciliter l'accès aux stats dynamiques.</summary>
@@ -49,12 +47,11 @@ public class BattleTimelineUnit : MonoBehaviour
             return;
         }
 
-        characterData = unit.Data;
         boundUnit = unit;
 
         // Portrait et nom
-        if (portraitImage) portraitImage.sprite = characterData.portrait;
-        if (nameText) nameText.text = characterData.characterName;
+        if (portraitImage) portraitImage.sprite = boundUnit.Data.portrait;
+        if (nameText) nameText.text = boundUnit.Data.characterName;
 
         // HP : on crée/initialise l'adaptateur qui mettra à jour la jauge timeline
         if (timelineHPBarAdapter == null)
@@ -64,25 +61,21 @@ public class BattleTimelineUnit : MonoBehaviour
             timelineHPBarAdapter = gameObject.AddComponent<TimelineHPBarAdapter>();
 
         Color aliveColor = hpBarImage != null ? hpBarImage.color : Color.white;
-        timelineHPBarAdapter.Setup(unit, hpBarImage, hpText, aliveColor, deadColor);
-
-        float maxHP = unit != null
-            ? unit.Data.baseHP + unit.currentVitality
-            : characterData.baseHP + characterData.currentVitality;
-        timelineHPBarAdapter.SetMaxValue(maxHP);
-        timelineHPBarAdapter.SetValue(unit != null ? unit.currentHP : characterData.currentHP);
+        timelineHPBarAdapter.Setup(boundUnit, hpBarImage, hpText, aliveColor, deadColor);
+        // Appel explicite pour synchroniser immédiatement l'affichage avant le prochain événement de PV.
+        timelineHPBarAdapter.SyncWithOwner();
 
         // Custom bar (Rage/Fatigue/Concentration)
         if (customBar != null)
         {
-            if (characterData.gameplayType == GameplayType.Rage)
+            if (boundUnit.Data.gameplayType == GameplayType.Rage)
             {
-                customBar.SetMaxValue(characterData.maxRage);
+                customBar.SetMaxValue(boundUnit.Data.maxRage);
                 customBar.SetValue(unit.currentRage);
             }
-            else if (characterData.gameplayType == GameplayType.Fatigue)
+            else if (boundUnit.Data.gameplayType == GameplayType.Fatigue)
             {
-                customBar.SetMaxValue(characterData.maxFatigue);
+                customBar.SetMaxValue(boundUnit.Data.maxFatigue);
                 customBar.SetValue(unit.currentFatigue);
             }
             else if (unit.TryGetComponent<ConcentrationSystem>(out var c))
@@ -111,32 +104,29 @@ public class BattleTimelineUnit : MonoBehaviour
 
     public void UpdateATBGauge()
     {
-        var unit = NewBattleManager.Instance.activeCharacterUnits
-            .Find(u => u.Data == characterData);
+        if (boundUnit == null || atbSlider == null)
+            return;
 
-        if (unit != null && atbSlider != null)
-        {
-            atbSlider.value = unit.currentATB;
-        }
+        // Plus besoin de rechercher l'unité dans le NewBattleManager : on lit directement la valeur courante.
+        atbSlider.value = boundUnit.currentATB;
     }
 
     public void UpdateCustomBar()
     {
-        var unit = NewBattleManager.Instance.activeCharacterUnits
-            .Find(u => u.Data == characterData);
-
-        if (unit == null || customBar == null)
+        if (boundUnit == null || customBar == null)
             return;
 
-        if (characterData.gameplayType == GameplayType.Rage)
+        // La barre personnalisée dépend du gameplayType de la fiche personnage : on récupère donc
+        // l'information directement depuis les données de l'unité liée.
+        if (boundUnit.Data.gameplayType == GameplayType.Rage)
         {
-            customBar.SetValue(unit.currentRage);
+            customBar.SetValue(boundUnit.currentRage);
         }
-        else if (characterData.gameplayType == GameplayType.Fatigue)
+        else if (boundUnit.Data.gameplayType == GameplayType.Fatigue)
         {
-            customBar.SetValue(unit.currentFatigue);
+            customBar.SetValue(boundUnit.currentFatigue);
         }
-        else if (unit.TryGetComponent<ConcentrationSystem>(out var c))
+        else if (boundUnit.TryGetComponent<ConcentrationSystem>(out var c))
         {
             customBar.SetValue(c.currentConcentration);
         }
@@ -144,31 +134,17 @@ public class BattleTimelineUnit : MonoBehaviour
 
     public void UpdateHarmonicsDisplay()
     {
-        var unit = NewBattleManager.Instance.activeCharacterUnits
-            .Find(u => u.Data == characterData);
-
-        if (unit == null || harmonicsText == null)
+        if (boundUnit == null || harmonicsText == null)
             return;
 
-        int count = unit.GetHarmonicCount(unit.Data.harmonicType);
+        // Affiche en permanence la réserve d'harmoniques du type principal du personnage.
+        int count = boundUnit.GetHarmonicCount(boundUnit.Data.harmonicType);
         harmonicsText.text = count.ToString();
     }
 
     public void UpdateHPBar()
     {
-        if (timelineHPBarAdapter == null)
-            return;
-
-        if (boundUnit != null && boundUnit.Data != null)
-        {
-            float maxHP = boundUnit.Data.baseHP + boundUnit.currentVitality;
-            timelineHPBarAdapter.UpdateInstant(boundUnit.currentHP, maxHP);
-        }
-        else if (characterData != null)
-        {
-            float maxHP = characterData.baseHP + characterData.currentVitality;
-            timelineHPBarAdapter.UpdateInstant(characterData.currentHP, maxHP);
-        }
+        timelineHPBarAdapter?.SyncWithOwner();
     }
 
     public void SetHighlight(bool active)

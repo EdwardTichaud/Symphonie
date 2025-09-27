@@ -4,8 +4,9 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Adapte l'affichage de la timeline de combat au système standard de <see cref="HPBar"/>.
-/// Cette passerelle permet d'affecter dynamiquement la barre de vie timeline à un
-/// <see cref="CharacterUnit"/> sans perdre l'éventuelle barre déjà configurée sur l'unité.
+/// Cette passerelle écoute les événements d'un <see cref="CharacterUnit"/> pour refléter
+/// instantanément l'état de ses points de vie dans la timeline sans perturber les barres
+/// monde éventuellement associées à l'unité.
 /// </summary>
 [RequireComponent(typeof(BattleTimelineUnit))]
 public class TimelineHPBarAdapter : HPBar
@@ -20,12 +21,8 @@ public class TimelineHPBarAdapter : HPBar
     [SerializeField] private Color midHealthColor = Color.yellow; // Couleur d'avertissement pour une santé moyenne.
     [SerializeField] private Color lowHealthColor = new Color(0.75f, 0f, 0f); // Rouge légèrement assombri pour distinguer l'état critique.
 
-    /// <summary>Barre éventuellement déjà assignée sur l'unité (ex : interface 3D).</summary>
-    private HPBar fallbackBar;
     /// <summary>Référence vers l'unité dont on suit les points de vie.</summary>
     private CharacterUnit owner;
-    /// <summary>Indique si la barre de secours a déjà été mémorisée.</summary>
-    private bool fallbackCaptured;
     /// <summary>Valeur maximale actuelle utilisée pour le calcul du ratio.</summary>
     private float cachedMaxValue = 1f;
     /// <summary>Valeur courante retenue pour l'affichage.</summary>
@@ -41,6 +38,9 @@ public class TimelineHPBarAdapter : HPBar
     /// <param name="dead">Couleur utilisée lorsque l'unité est vaincue.</param>
     public void Setup(CharacterUnit target, Image fill, TextMeshProUGUI hpLabel, Color alive, Color dead)
     {
+        if (owner != null)
+            owner.OnHealthChanged -= HandleOwnerHealthChanged;
+
         owner = target;
         timelineFillImage = fill != null ? fill : timelineFillImage;
         timelineHPText = hpLabel != null ? hpLabel : timelineHPText;
@@ -72,23 +72,14 @@ public class TimelineHPBarAdapter : HPBar
         if (owner == null)
             return;
 
-        // Mémorise la barre existante avant de prendre la main afin de la restaurer plus tard.
-        if (!fallbackCaptured && owner.hpBar != null && owner.hpBar != this)
-        {
-            fallbackBar = owner.hpBar;
-            fallbackCaptured = true;
-        }
-
-        // Affecte cette barre comme référence principale pour les prochains dégâts/soins.
-        owner.hpBar = this;
+        owner.OnHealthChanged += HandleOwnerHealthChanged;
     }
 
     /// <inheritdoc />
     public override void SetMaxValue(float max)
     {
         cachedMaxValue = Mathf.Max(0f, max);
-        // Propage la nouvelle limite vers l'ancienne barre si elle existe encore.
-        fallbackBar?.SetMaxValue(max);
+        base.SetMaxValue(cachedMaxValue);
 
         // Utilise la valeur courante connue de l'unité pour maintenir la cohérence visuelle.
         float current = owner != null ? owner.currentHP : cachedCurrentValue;
@@ -99,21 +90,36 @@ public class TimelineHPBarAdapter : HPBar
     public override void SetValue(float current)
     {
         cachedCurrentValue = Mathf.Clamp(current, 0f, cachedMaxValue > 0f ? cachedMaxValue : current);
-        fallbackBar?.SetValue(cachedCurrentValue);
+        base.SetValue(cachedCurrentValue);
         UpdateVisuals(cachedCurrentValue);
     }
 
     /// <summary>
-    /// Met à jour l'affichage immédiatement sans toucher aux barres fallback.
-    /// Utile lors de la phase d'initialisation de la timeline.
+    /// Synchronise immédiatement la jauge avec l'unité liée sans attendre un nouvel événement.
     /// </summary>
-    /// <param name="current">Valeur actuelle des PV.</param>
-    /// <param name="max">Valeur maximale des PV.</param>
-    public void UpdateInstant(float current, float max)
+    public void SyncWithOwner()
     {
-        cachedMaxValue = Mathf.Max(0f, max);
-        cachedCurrentValue = Mathf.Clamp(current, 0f, cachedMaxValue > 0f ? cachedMaxValue : current);
-        UpdateVisuals(cachedCurrentValue);
+        if (owner == null)
+            return;
+
+        HandleOwnerHealthChanged(owner, owner.currentHP, owner.MaxHP);
+    }
+
+    private void OnEnable()
+    {
+        if (owner == null)
+            return;
+
+        // Sécurise la souscription lors d'un ré-activation (ex : pool UI) et force un rafraîchissement instantané.
+        owner.OnHealthChanged -= HandleOwnerHealthChanged;
+        owner.OnHealthChanged += HandleOwnerHealthChanged;
+        SyncWithOwner();
+    }
+
+    private void OnDisable()
+    {
+        if (owner != null)
+            owner.OnHealthChanged -= HandleOwnerHealthChanged;
     }
 
     /// <summary>
@@ -173,18 +179,23 @@ public class TimelineHPBarAdapter : HPBar
 
     private void OnDestroy()
     {
-        // Lorsque la timeline est détruite, on restitue la barre précédente pour éviter
-        // de laisser l'unité sans référence valide (cas d'une nouvelle scène de combat).
-        if (owner != null && owner.hpBar == this)
-        {
-            owner.hpBar = fallbackBar;
+        if (owner != null)
+            owner.OnHealthChanged -= HandleOwnerHealthChanged;
+    }
 
-            if (fallbackBar != null)
-            {
-                // Synchronise la barre restaurée avec les valeurs les plus récentes.
-                fallbackBar.SetMaxValue(cachedMaxValue);
-                fallbackBar.SetValue(cachedCurrentValue);
-            }
-        }
+    /// <summary>
+    /// Réagit aux variations de PV signalées par le <see cref="CharacterUnit"/> pour mettre à jour la jauge timeline.
+    /// </summary>
+    private void HandleOwnerHealthChanged(CharacterUnit unit, float current, float max)
+    {
+        if (owner == null || unit != owner)
+            return;
+
+        cachedMaxValue = Mathf.Max(0f, max);
+        cachedCurrentValue = Mathf.Clamp(current, 0f, cachedMaxValue > 0f ? cachedMaxValue : current);
+
+        base.SetMaxValue(cachedMaxValue);
+        base.SetValue(cachedCurrentValue);
+        UpdateVisuals(cachedCurrentValue);
     }
 }
