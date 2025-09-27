@@ -2,18 +2,18 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-    public virtual void SetMaxValue(float max)
-    public virtual void SetValue(float current)
+/// Composant UI pour afficher la barre de vie d'une unit.
+/// </summary>
 public class HPBar : MonoBehaviour
 {
-    [Header("Référence Slider")]
+    [Header("Rfrence Slider")]
     public Slider slider;
 
     /// <summary>
-    /// Définit la valeur et la limite maximale de la barre.
+    /// Dfinit la valeur et la limite maximale de la barre.
     /// </summary>
     /// <param name="max">Valeur maximale (vie max)</param>
-    public void SetMaxValue(float max)
+    public virtual void SetMaxValue(float max)
     {
         if (slider != null)
         {
@@ -23,10 +23,10 @@ public class HPBar : MonoBehaviour
     }
 
     /// <summary>
-    /// Met à jour la valeur courante de la barre.
+    /// Met  jour la valeur courante de la barre.
     /// </summary>
     /// <param name="current">Valeur actuelle (vie restante)</param>
-    public void SetValue(float current)
+    public virtual void SetValue(float current)
     {
         if (slider != null)
         {
