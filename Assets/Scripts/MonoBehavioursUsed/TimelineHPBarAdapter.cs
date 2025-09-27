@@ -15,6 +15,10 @@ public class TimelineHPBarAdapter : HPBar
     [SerializeField] private TextMeshProUGUI timelineHPText;
     [SerializeField] private Color aliveColor = Color.white;
     [SerializeField] private Color deadColor = Color.red;
+    [Header("Couleurs dynamiques de PV")]
+    [SerializeField] private Color highHealthColor = Color.green; // Couleur utilisée lorsque la jauge est presque pleine.
+    [SerializeField] private Color midHealthColor = Color.yellow; // Couleur d'avertissement pour une santé moyenne.
+    [SerializeField] private Color lowHealthColor = new Color(0.75f, 0f, 0f); // Rouge légèrement assombri pour distinguer l'état critique.
 
     /// <summary>Barre éventuellement déjà assignée sur l'unité (ex : interface 3D).</summary>
     private HPBar fallbackBar;
@@ -99,10 +103,13 @@ public class TimelineHPBarAdapter : HPBar
         float ratio = cachedMaxValue > 0f ? current / cachedMaxValue : 0f;
         ratio = Mathf.Clamp01(ratio);
 
+        // Détermine la couleur adaptée avant d'appliquer les nouveaux ratios sur les éléments visuels.
+        Color displayColor = DetermineHealthColor(ratio, current);
+
         if (timelineFillImage != null)
         {
             timelineFillImage.fillAmount = ratio;
-            timelineFillImage.color = current <= 0f ? deadColor : aliveColor;
+            timelineFillImage.color = displayColor;
         }
 
         if (timelineHPText != null)
@@ -110,8 +117,36 @@ public class TimelineHPBarAdapter : HPBar
             int currentInt = Mathf.RoundToInt(current);
             int maxInt = Mathf.RoundToInt(cachedMaxValue);
             timelineHPText.text = $"{currentInt}/{maxInt}";
-            timelineHPText.color = current <= 0f ? deadColor : aliveColor;
+            timelineHPText.color = displayColor;
         }
+    }
+
+    /// <summary>
+    /// Calcule la couleur à afficher selon le ratio de PV actuel.
+    /// Garantit un dégradé rouge → jaune → vert pour informer visuellement du danger.
+    /// </summary>
+    /// <param name="ratio">Ratio de points de vie entre 0 et 1.</param>
+    /// <param name="current">Valeur actuelle brute des PV pour détecter l'état KO.</param>
+    /// <returns>Couleur à utiliser pour la jauge et le texte.</returns>
+    private Color DetermineHealthColor(float ratio, float current)
+    {
+        // Dès que les PV tombent à zéro ou moins on force l'utilisation de la couleur « mort ».
+        if (current <= 0f)
+            return deadColor;
+
+        // Ratio très faible : mélange entre le rouge foncé et le jaune afin de souligner le danger.
+        if (ratio <= 0.5f)
+        {
+            float t = Mathf.InverseLerp(0f, 0.5f, ratio);
+            return Color.Lerp(lowHealthColor, midHealthColor, t);
+        }
+
+        // Ratio supérieur à la moitié : transition douce du jaune vers le vert au fur et à mesure que l'on se rapproche du maximum.
+        float highT = Mathf.InverseLerp(0.5f, 1f, ratio);
+        Color progressive = Color.Lerp(midHealthColor, highHealthColor, highT);
+
+        // On laisse la possibilité de conserver une teinte personnalisée définie via aliveColor pour les cas non critiques.
+        return Color.Lerp(progressive, aliveColor, 0.15f);
     }
 
     private void OnDestroy()
