@@ -750,6 +750,10 @@ public class BattleCameraManager : MonoBehaviour
         if (alsoSetAsCaster && unit != null)
             currentCaster = unit;
 
+        // 🎨 Synchronise immédiatement le filtre d'urgence pour refléter l'état de santé
+        // de la SquadUnit active. L'appel est sécurisé si aucun filtre n'est présent.
+        BattleCameraDamageFilter.Instance?.SetActiveUnit(unit);
+
         RefreshAllCameraPlacements();
     }
 
