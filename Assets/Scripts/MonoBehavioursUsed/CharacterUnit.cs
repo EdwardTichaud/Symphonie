@@ -216,7 +216,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// Vrai pour parcourir également les objets désactivés (utile lorsque certains repères sont masqués dans l'éditeur).
     /// </param>
     /// <returns>La transform correspondant à l'ancre ou <c>null</c> si elle est introuvable.</returns>
-    public Transform GetCameraAnchor(string anchorName, bool includeInactive = true)
+    public Transform GetCameraAnchor(string anchorName, bool includeInactive = true, bool logWarning = true)
     {
         if (string.IsNullOrEmpty(anchorName))
             return null;
@@ -234,12 +234,77 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         Transform located = LocateCameraAnchor(anchorName, includeInactive);
         cachedCameraAnchors[anchorName] = located;
 
-        if (located == null)
+        if (located == null && logWarning)
         {
             Debug.LogWarning($"[CharacterUnit] Ancre caméra '{anchorName}' introuvable sur '{name}'.");
         }
 
         return located;
+    }
+
+    /// <summary>
+    /// Rôle principal associé au point caméra recherché lorsqu'on souhaite
+    /// fournir un override explicite au <see cref="BattleCameraManager"/>.
+    /// </summary>
+    public enum CameraAnchorPurpose
+    {
+        /// <summary>L'ancre doit suivre le lanceur de l'action.</summary>
+        Caster,
+        /// <summary>L'ancre doit suivre la cible de l'action.</summary>
+        Target
+    }
+
+    /// <summary>
+    /// Détermine un point caméra pertinent pour l'unité selon le rôle
+    /// souhaité (lanceur ou cible). Les ancres déclarées via les GameObjects
+    /// « CMVPoint_… » sont privilégiées afin de reproduire les cadrages
+    /// définis par les artistes, puis un repli progressif est appliqué vers
+    /// l'Animator de binding et, en dernier recours, vers le transform racine.
+    /// </summary>
+    /// <param name="purpose">Indique si l'on cherche un point côté lanceur ou côté cible.</param>
+    /// <param name="includeInactive">
+    /// Vrai pour considérer également les ancres désactivées dans la hiérarchie.
+    /// </param>
+    /// <returns>
+    /// Le transform de l'ancre dédiée, celui de l'Animator utilisé pour les bindings,
+    /// ou, à défaut, le transform racine de l'unité.
+    /// </returns>
+    public Transform GetDefaultCameraAnchor(CameraAnchorPurpose purpose, bool includeInactive = true)
+    {
+        // ⚖️ Liste de priorité différente selon le rôle recherché :
+        //     * côté lanceur -> on privilégie les points « OverShoulder » pour cadrer l'action.
+        //     * côté cible   -> on vise d'abord la réaction puis les autres plans utiles.
+        string[] preferredAnchors = purpose == CameraAnchorPurpose.Caster
+            ? new[]
+            {
+                "CMVPoint_OverShoulder_CasterToTarget",
+                "CMVPoint_OverShoulder_CasterLookTarget",
+                "CMVPoint_TargetReaction",
+                "CMVPoint_OrbitAroundUnit"
+            }
+            : new[]
+            {
+                "CMVPoint_TargetReaction",
+                "CMVPoint_OverShoulder_CasterLookTarget",
+                "CMVPoint_OverShoulder_CasterToTarget",
+                "CMVPoint_OrbitAroundUnit"
+            };
+
+        foreach (string anchorName in preferredAnchors)
+        {
+            Transform anchor = GetCameraAnchor(anchorName, includeInactive, logWarning: false);
+            if (anchor != null)
+                return anchor;
+        }
+
+        // 🎭 Aucun point spécifique n'est présent : on retombe sur l'Animator qui
+        // sert déjà aux timelines, garantissant un pivot cohérent pour la caméra.
+        Animator bindingAnimator = GetCasterAnimator();
+        if (bindingAnimator != null)
+            return bindingAnimator.transform;
+
+        // 🔚 Dernier recours : le transform racine pour ne jamais renvoyer null.
+        return transform;
     }
 
     /// <summary>
