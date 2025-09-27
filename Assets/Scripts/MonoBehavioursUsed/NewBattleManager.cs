@@ -3643,6 +3643,8 @@ public class NewBattleManager : MonoBehaviour
     /// S'assure qu'un indicateur de portée existe dans la scène et configure son SpriteRenderer.
     /// L'instanciation est différée afin d'éviter tout coût inutile lorsque la fonctionnalité n'est
     /// pas utilisée (ex : scènes de test sans combat).
+    /// Depuis la refonte demandée par l'équipe de level design, l'objet est créé à la racine de la scène
+    /// pour qu'aucun parent ne puisse altérer sa transform (échelle, rotation ou position).
     /// </summary>
     private void EnsureRangeIndicatorInstance()
     {
@@ -3651,19 +3653,19 @@ public class NewBattleManager : MonoBehaviour
             return; // Soit l'indicateur est déjà prêt, soit aucun sprite n'a été assigné dans l'inspecteur.
         }
 
+        // On conserve la recherche du canvas caméra pour des raisons de compatibilité : certains systèmes
+        // (post-traitements, effets spéciaux) peuvent toujours s'appuyer dessus, même si l'indicateur ne
+        // lui est plus parenté.
         EnsureBattleCameraCanvas();
-
-        if (battleCameraCanvasTransform == null)
-        {
-            return; // Sans canvas, impossible de respecter la nouvelle hiérarchie imposée par le système d'affichage.
-        }
 
         rangeIndicatorInstance = new GameObject("RangeIndicator");
         rangeIndicatorInstance.layer = LayerMask.NameToLayer("Battle_VFX");
         rangeIndicatorInstance.SetActive(false);
-        rangeIndicatorInstance.transform.SetParent(battleCameraCanvasTransform, false);
         rangeIndicatorInstance.transform.localScale = Vector3.one;
         rangeIndicatorInstance.transform.localRotation = Quaternion.identity;
+
+        // Pas d'appel à SetParent ici : l'objet doit rester en racine pour conserver une échelle monde
+        // fiable, indépendamment des ajustements effectués sur les canvases ou autres parents temporaires.
 
         rangeIndicatorRenderer = rangeIndicatorInstance.AddComponent<SpriteRenderer>();
         rangeIndicatorRenderer.sprite = rangeIndicatorSprite;
@@ -3713,8 +3715,9 @@ public class NewBattleManager : MonoBehaviour
 
         Transform indicatorTransform = rangeIndicatorInstance.transform;
 
-        // On récupère l'échelle du parent pour pouvoir la neutraliser. Les indicateurs sont parentés au
-        // canvas de la caméra, dont l'échelle peut varier selon les scènes ou les expériences UI.
+        // On récupère l'échelle du parent pour pouvoir la neutraliser. Même si l'indicateur est désormais
+        // instancié à la racine, on garde une approche robuste capable de compenser un éventuel re-parentage
+        // temporaire (outils de debug, effets spéciaux dynamiques, etc.).
         Transform parentTransform = indicatorTransform.parent;
         Vector3 parentLossyScale = parentTransform != null ? parentTransform.lossyScale : Vector3.one;
 
@@ -3755,11 +3758,11 @@ public class NewBattleManager : MonoBehaviour
 
         rangeIndicatorOwner = unit;
 
-        // Même si d'autres systèmes modifient temporairement la hiérarchie, on s'assure que
-        // l'indicateur reste bien enfant du canvas caméra pour conserver le tri et les effets.
-        if (rangeIndicatorInstance.transform.parent != battleCameraCanvasTransform)
+        // Afin de respecter la demande de l'équipe technique, on force l'indicateur à rester en racine.
+        // Cela évite qu'un autre système ne le ré-attache à un parent et n'introduise une échelle indésirable.
+        if (rangeIndicatorInstance.transform.parent != null)
         {
-            rangeIndicatorInstance.transform.SetParent(battleCameraCanvasTransform, false);
+            rangeIndicatorInstance.transform.SetParent(null, true);
         }
 
         RefreshRangeIndicatorScale();
