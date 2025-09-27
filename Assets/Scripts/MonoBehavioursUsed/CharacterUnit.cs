@@ -807,6 +807,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         DamagePopupManager.Instance?.ShowDamage(transform, Mathf.RoundToInt(amount));
         PlayDamageFeedback(devastating);
 
+        // 🎥 Déclenche un tremblement de caméra court lorsque l'unité touchée appartient à l'escouade.
+        if (Data != null && Data.characterType == CharacterType.SquadUnit)
+            BattleCameraManager.Instance?.TriggerDamageShake(this, devastating, attacker);
+
         // Message indiquant la gravité des dégâts subis
         if (ActionUIDisplayManager.Instance != null)
         {
