@@ -236,6 +236,12 @@ public class NewBattleManager : MonoBehaviour
     [SerializeField] private float rangeIndicatorHeightOffset = 0.05f;
     [Tooltip("Opacité appliquée au sprite de portée pour conserver un retour visuel discret.")]
     [SerializeField, Range(0f, 1f)] private float rangeIndicatorAlpha = 0.6f;
+    [Tooltip("Canvas monde piloté par la caméra de combat. L'indicateur y est instancié pour bénéficier des mêmes réglages de rendu.")]
+    [SerializeField] private Transform battleCameraCanvasTransform;
+    [Tooltip("Couleur affichée lorsque l'action sélectionnée est réalisable à la portée actuelle.")]
+    [SerializeField] private Color rangeIndicatorInRangeColor = Color.white;
+    [Tooltip("Couleur affichée lorsque la cible potentielle se trouve hors de portée.")]
+    [SerializeField] private Color rangeIndicatorOutOfRangeColor = new Color(1f, 0.35f, 0.35f, 1f);
     private GameObject rangeIndicatorInstance;
     private SpriteRenderer rangeIndicatorRenderer;
     private CharacterUnit rangeIndicatorOwner;
@@ -302,6 +308,9 @@ public class NewBattleManager : MonoBehaviour
                     _currentTargetCharacter.PlayPrepareToUndergoAnimation();
                 }
             }
+
+            // Toute modification de cible peut impacter la portée perçue (changement de distance ou d'action).
+            RefreshRangeIndicatorScale();
         }
     }
     //-------------------------------------------------------------------------------------
@@ -2349,6 +2358,7 @@ public class NewBattleManager : MonoBehaviour
         // Réinitialise les actions sélectionnées afin d'éviter des conflits
         currentMove = null;
         currentItem = null;
+        RefreshRangeIndicatorScale(); // On revient immédiatement à la portée de base du personnage actif.
 
         Debug.Log($"[ShowMainMenu] Nombre de slots = {currentMainMenuSlots.Count}");
         for (int i = 0; i < currentMainMenuSlots.Count; i++)
@@ -2377,6 +2387,7 @@ public class NewBattleManager : MonoBehaviour
         ChangeBattleState(BattleState.SquadUnit_SkillsMenu);
         // S'assure qu'aucun item n'est en cours de sélection
         currentItem = null;
+        RefreshRangeIndicatorScale(); // L'anneau de portée reflète désormais uniquement les compétences.
         ToggleMenuContainers(false, true, false);
         // Son distinct pour signaler l'entrée dans le menu des compétences.
         PlayMenuClip(skillsMenuOpenClip);
@@ -2520,6 +2531,7 @@ public class NewBattleManager : MonoBehaviour
         ChangeBattleState(BattleState.SquadUnit_ItemsMenu);
         // S'assure qu'aucune compétence n'est en cours de sélection
         currentMove = null;
+        RefreshRangeIndicatorScale(); // L'anneau affiche la portée maximale des objets disponibles.
         ToggleMenuContainers(false, false, true);
         // Clip spécifique pour différencier l'accès à l'inventaire.
         PlayMenuClip(itemsMenuOpenClip);
@@ -2918,6 +2930,7 @@ public class NewBattleManager : MonoBehaviour
         currentMove = move;
         currentItem = null; // on annule la sélection d'item précédente
         move.targetType = move.defaultTargetType;
+        RefreshRangeIndicatorScale(); // On applique immédiatement la portée spécifique du move sélectionné.
         // Détermine s'il est possible de changer de groupe de cibles
         bool canTargetEnemies = move.targetTypes.Contains(TargetType.SingleEnemy)
                                || move.targetTypes.Contains(TargetType.AllEnemies)
@@ -2986,6 +2999,7 @@ public class NewBattleManager : MonoBehaviour
         currentItem = item;
         currentMove = null; // on annule la sélection de compétence précédente
         currentItemTargetType = item.defaultTargetType;
+        RefreshRangeIndicatorScale(); // L'indicateur représente maintenant la portée maximale de cet objet.
 
         bool canTargetEnemies = item.targetTypes.Contains(TargetType.SingleEnemy) ||
                                item.targetTypes.Contains(TargetType.AllEnemies) ||
@@ -3584,6 +3598,48 @@ public class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Récupère le canvas utilisé par la caméra de combat afin d'y ancrer les éléments de feedback.
+    /// On privilégie une référence configurée dans l'inspecteur mais on prévoit un fallback automatique
+    /// pour préserver la compatibilité avec les scènes existantes.
+    /// </summary>
+    private void EnsureBattleCameraCanvas()
+    {
+        if (battleCameraCanvasTransform != null)
+        {
+            return; // Une référence manuelle a peut-être été fournie dans l'inspecteur.
+        }
+
+        // Première tentative : recherche directe par nom, adaptée aux scènes déjà configurées.
+        GameObject canvasGO = GameObject.Find("BattleCameraCanvas");
+        if (canvasGO != null)
+        {
+            battleCameraCanvasTransform = canvasGO.transform;
+            return;
+        }
+
+        // Deuxième tentative : on exploite la hiérarchie de la BattleCamera si elle est connue.
+        if (battleCamera == null)
+        {
+            EnsureBattleCamera();
+        }
+
+        if (battleCamera != null)
+        {
+            Canvas[] canvases = battleCamera.GetComponentsInChildren<Canvas>(true);
+            foreach (Canvas canvas in canvases)
+            {
+                if (canvas != null && canvas.name == "BattleCameraCanvas")
+                {
+                    battleCameraCanvasTransform = canvas.transform;
+                    return;
+                }
+            }
+        }
+
+        Debug.LogWarning("[NewBattleManager] Impossible de localiser 'BattleCameraCanvas'. L'indicateur de portée ne sera pas instancié.");
+    }
+
+    /// <summary>
     /// S'assure qu'un indicateur de portée existe dans la scène et configure son SpriteRenderer.
     /// L'instanciation est différée afin d'éviter tout coût inutile lorsque la fonctionnalité n'est
     /// pas utilisée (ex : scènes de test sans combat).
@@ -3595,13 +3651,23 @@ public class NewBattleManager : MonoBehaviour
             return; // Soit l'indicateur est déjà prêt, soit aucun sprite n'a été assigné dans l'inspecteur.
         }
 
+        EnsureBattleCameraCanvas();
+
+        if (battleCameraCanvasTransform == null)
+        {
+            return; // Sans canvas, impossible de respecter la nouvelle hiérarchie imposée par le système d'affichage.
+        }
+
         rangeIndicatorInstance = new GameObject("RangeIndicator");
         rangeIndicatorInstance.layer = LayerMask.NameToLayer("Battle_VFX");
         rangeIndicatorInstance.SetActive(false);
+        rangeIndicatorInstance.transform.SetParent(battleCameraCanvasTransform, false);
+        rangeIndicatorInstance.transform.localScale = Vector3.one;
+        rangeIndicatorInstance.transform.localRotation = Quaternion.identity;
 
         rangeIndicatorRenderer = rangeIndicatorInstance.AddComponent<SpriteRenderer>();
         rangeIndicatorRenderer.sprite = rangeIndicatorSprite;
-        rangeIndicatorRenderer.color = new Color(1f, 1f, 1f, rangeIndicatorAlpha);
+        ApplyRangeIndicatorColor(true); // Couleur de base : portée suffisante.
 
         if (rangeIndicatorMaterial != null)
         {
@@ -3613,6 +3679,22 @@ public class NewBattleManager : MonoBehaviour
         rangeIndicatorRenderer.sortingOrder = 500; // Suffisamment élevé pour rester lisible.
         rangeIndicatorRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         rangeIndicatorRenderer.receiveShadows = false;
+    }
+
+    /// <summary>
+    /// Ajuste la teinte de l'indicateur pour informer instantanément le joueur sur la validité de la portée.
+    /// </summary>
+    /// <param name="isInRange">True si l'action courante est réalisable à la portée actuelle.</param>
+    private void ApplyRangeIndicatorColor(bool isInRange)
+    {
+        if (rangeIndicatorRenderer == null)
+        {
+            return; // L'indicateur n'a pas encore été correctement initialisé.
+        }
+
+        Color targetColor = isInRange ? rangeIndicatorInRangeColor : rangeIndicatorOutOfRangeColor;
+        targetColor.a = Mathf.Clamp01(rangeIndicatorAlpha); // Alpha piloté par l'inspecteur pour conserver la discrétion visuelle.
+        rangeIndicatorRenderer.color = targetColor;
     }
 
     /// <summary>
@@ -3636,10 +3718,12 @@ public class NewBattleManager : MonoBehaviour
 
         rangeIndicatorOwner = unit;
 
-        Transform ownerTransform = unit.transform;
-        rangeIndicatorInstance.transform.SetParent(ownerTransform, false);
-        rangeIndicatorInstance.transform.localPosition = new Vector3(0f, rangeIndicatorHeightOffset, 0f);
-        rangeIndicatorInstance.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        // Même si d'autres systèmes modifient temporairement la hiérarchie, on s'assure que
+        // l'indicateur reste bien enfant du canvas caméra pour conserver le tri et les effets.
+        if (rangeIndicatorInstance.transform.parent != battleCameraCanvasTransform)
+        {
+            rangeIndicatorInstance.transform.SetParent(battleCameraCanvasTransform, false);
+        }
 
         RefreshRangeIndicatorScale();
     }
@@ -3662,40 +3746,68 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        if (rangeIndicatorRenderer != null)
+        // Positionne l'indicateur dans le monde pour qu'il suive fidèlement l'unité active, tout en restant
+        // enfant du canvas caméra. On applique le léger décalage vertical configuré par l'équipe artistique.
+        Transform ownerTransform = rangeIndicatorOwner.transform;
+        if (ownerTransform != null)
         {
-            Color currentColor = rangeIndicatorRenderer.color;
-            float clampedAlpha = Mathf.Clamp01(rangeIndicatorAlpha);
-
-            if (!Mathf.Approximately(currentColor.a, clampedAlpha))
-            {
-                currentColor.a = clampedAlpha;
-                rangeIndicatorRenderer.color = currentColor;
-            }
+            Vector3 worldPosition = ownerTransform.position + new Vector3(0f, rangeIndicatorHeightOffset, 0f);
+            rangeIndicatorInstance.transform.position = worldPosition;
+            rangeIndicatorInstance.transform.rotation = Quaternion.Euler(90f, 0f, 0f); // Toujours à plat sur le sol.
         }
 
-        float range = Mathf.Max(0f, ownerData.currentRange);
+        // Portée de base offerte par la statistique de l'unité.
+        float baseRange = Mathf.Max(0f, ownerData.currentRange);
+        // Bonus potentiel accordé par le move ou l'item actuellement surligné dans les menus.
+        float bonusRange = 0f;
 
-        if (range <= 0f)
+        if (currentMove != null)
         {
-            // Dans certains cas (étourdissement, pénalité temporaire) une unité peut perdre sa portée.
+            bonusRange = Mathf.Max(0f, currentMove.castDistance);
+        }
+        else if (currentItem != null)
+        {
+            bonusRange = Mathf.Max(0f, currentItem.castDistance);
+        }
+
+        float totalReach = baseRange + bonusRange;
+
+        if (totalReach <= 0f)
+        {
+            // Dans certains cas (étourdissement, pénalité temporaire) une unité peut perdre toute portée.
             // On masque alors le visuel tout en conservant la hiérarchie pour réactiver rapidement l'effet.
             if (rangeIndicatorInstance.activeSelf)
             {
                 rangeIndicatorInstance.SetActive(false);
             }
 
+            ApplyRangeIndicatorColor(true); // On conserve la couleur neutre pour éviter tout signal contradictoire.
             return;
         }
-
-        float diameter = range * 2f;
 
         if (!rangeIndicatorInstance.activeSelf)
         {
             rangeIndicatorInstance.SetActive(true);
         }
 
+        float diameter = totalReach * 2f;
         rangeIndicatorInstance.transform.localScale = new Vector3(diameter, diameter, 1f);
+
+        // Détermine si la cible suivie est réellement accessible afin d'ajuster la couleur du feedback.
+        bool isInRange = true;
+        if (currentTargetCharacter != null)
+        {
+            if (currentMove != null)
+            {
+                isInRange = IsTargetInRange(rangeIndicatorOwner, currentTargetCharacter, currentMove);
+            }
+            else if (currentItem != null)
+            {
+                isInRange = IsTargetInRange(rangeIndicatorOwner, currentTargetCharacter, currentItem);
+            }
+        }
+
+        ApplyRangeIndicatorColor(isInRange);
     }
 
     /// <summary>
@@ -3708,7 +3820,7 @@ public class NewBattleManager : MonoBehaviour
         if (rangeIndicatorInstance != null)
         {
             rangeIndicatorInstance.SetActive(false);
-            rangeIndicatorInstance.transform.SetParent(null);
+            ApplyRangeIndicatorColor(true); // On revient à l'état neutre en attendant la prochaine sélection.
         }
     }
 
