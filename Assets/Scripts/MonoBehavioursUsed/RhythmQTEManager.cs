@@ -370,26 +370,36 @@ public class RhythmQTEManager : MonoBehaviour
             }
         }
         GameObject casterAnimatorGO = caster.GetCasterBindingTarget();
-        // 🎯 La caméra se centre désormais directement sur l'unité ciblée du mouvement.
-        // Si aucune cible n'est définie (attaque de zone, soin personnel, etc.),
-        // on utilise l'Animator du lanceur pour conserver un ancrage valable.
-        // 🧭 Préparation des points d'ancrage pour la caméra de combat.
-        // - L'exécution doit suivre la cible directe du sort.
-        // - Les phases de préparation et de repli se recentrent sur le lanceur
-        //   pour garder une mise en scène cohérente.
+
+        // 🎯 Préparation des points d'ancrage caméra : on privilégie toujours
+        //     les « CMVPoint_… » dédiés pour éviter que la caméra ne retombe sur
+        //     les pieds de l'unité lorsque seul l'Animator racine est disponible
+        //     (cas fréquent sur certains ennemis comme CryingAngel).
+        Transform casterCameraAnchor = caster != null
+            ? caster.GetDefaultCameraAnchor(CharacterUnit.CameraAnchorPurpose.Caster)
+            : null;
+        GameObject casterCameraTarget = casterCameraAnchor != null
+            ? casterCameraAnchor.gameObject
+            : (casterAnimatorGO ?? (caster != null ? caster.gameObject : null));
+
+        Transform performingCameraAnchor = null;
         GameObject performingCameraTarget = null;
         if (target != null)
         {
-            // On privilégie l'ancre animée de la cible pour obtenir un cadrage stable.
-            performingCameraTarget = target.GetCasterBindingTarget();
-            if (performingCameraTarget == null)
-                performingCameraTarget = target.gameObject;
+            performingCameraAnchor = target.GetDefaultCameraAnchor(CharacterUnit.CameraAnchorPurpose.Target);
+            performingCameraTarget = performingCameraAnchor != null
+                ? performingCameraAnchor.gameObject
+                : (target.GetCasterBindingTarget() ?? target.gameObject);
+            if (performingCameraTarget != null && performingCameraAnchor == null)
+                performingCameraAnchor = performingCameraTarget.transform; // Garantit un transform valide pour l'override.
         }
         else
         {
-            performingCameraTarget = casterAnimatorGO; // 🔁 Retombe sur le lanceur si aucune cible
+            performingCameraAnchor = casterCameraAnchor ?? (casterAnimatorGO != null
+                ? casterAnimatorGO.transform
+                : (caster != null ? caster.transform : null));
+            performingCameraTarget = performingCameraAnchor != null ? performingCameraAnchor.gameObject : null;
         }
-        GameObject casterCameraTarget = casterAnimatorGO; // 📌 Ancre sur le lanceur pour préparation et repli
         // Détermine si une timeline caméra couvrant toute l'action est disponible.
         // Ce système est remplacé par l'utilisation de caméras Cinemachine dédiées.
         bool useOverlay = false;
@@ -399,8 +409,8 @@ public class RhythmQTEManager : MonoBehaviour
             caster,
             target,
             null,
-            casterCameraTarget != null ? casterCameraTarget.transform : null,
-            performingCameraTarget != null ? performingCameraTarget.transform : null);
+            casterCameraAnchor,
+            performingCameraAnchor);
 
         // Éventuel délai de pré-animation.
         // 🔄 Cette attente se produit désormais AVANT toute timeline
@@ -564,24 +574,32 @@ public class RhythmQTEManager : MonoBehaviour
         
         Animator animator = caster.GetCasterAnimator();
         GameObject casterAnimatorGO = animator != null ? animator.gameObject : null;
-        // 🎯 La caméra se positionne directement sur l'unité ciblée par l'objet.
-        // En l'absence de cible (consommable global, soin personnel...),
-        // on conserve le lanceur comme ancre pour éviter un décalage brusque.
-        // 🧭 Détermination des cibles de caméra pour les différentes phases :
-        //   * exécution -> focus sur la cible de l'objet si elle existe ;
-        //   * préparation et repli -> recentrage sur le lanceur.
+
+        // 🎯 Même logique que pour les MusicalMoves : on favorise les ancres
+        //     déclarées pour garantir un cadrage cohérent entre Squads et Ennemis.
+        Transform casterCameraAnchor = caster.GetDefaultCameraAnchor(CharacterUnit.CameraAnchorPurpose.Caster);
+        GameObject casterCameraTarget = casterCameraAnchor != null
+            ? casterCameraAnchor.gameObject
+            : (casterAnimatorGO ?? caster.gameObject);
+
+        Transform performingCameraAnchor = null;
         GameObject performingCameraTarget = null;
         if (target != null)
         {
-            performingCameraTarget = target.GetCasterBindingTarget();
-            if (performingCameraTarget == null)
-                performingCameraTarget = target.gameObject;
+            performingCameraAnchor = target.GetDefaultCameraAnchor(CharacterUnit.CameraAnchorPurpose.Target);
+            performingCameraTarget = performingCameraAnchor != null
+                ? performingCameraAnchor.gameObject
+                : (target.GetCasterBindingTarget() ?? target.gameObject);
+            if (performingCameraTarget != null && performingCameraAnchor == null)
+                performingCameraAnchor = performingCameraTarget.transform;
         }
         else
         {
-            performingCameraTarget = casterAnimatorGO; // 🔁 Retombe sur le lanceur en absence de cible
+            performingCameraAnchor = casterCameraAnchor ?? (casterAnimatorGO != null
+                ? casterAnimatorGO.transform
+                : caster.transform);
+            performingCameraTarget = performingCameraAnchor != null ? performingCameraAnchor.gameObject : null;
         }
-        GameObject casterCameraTarget = casterAnimatorGO; // 📌 Référence fixe sur le lanceur
 
         // L'ancien système de timeline caméra est remplacé par les caméras Cinemachine.
         bool useOverlay = false;
@@ -591,8 +609,8 @@ public class RhythmQTEManager : MonoBehaviour
             caster,
             target,
             null,
-            casterCameraTarget != null ? casterCameraTarget.transform : null,
-            performingCameraTarget != null ? performingCameraTarget.transform : null);
+            casterCameraAnchor,
+            performingCameraAnchor);
 
         // --- Phase de préparation ---
         StartTimelinePhase(

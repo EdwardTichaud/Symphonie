@@ -2647,12 +2647,9 @@ public class NewBattleManager : MonoBehaviour
         }
 
         // Confie la priorité caméra à la Cinemachine dédiée à l'attente d'objet.
-        Transform casterCameraAnchor = null;
-        if (currentCharacterUnit != null)
-        {
-            GameObject casterBinding = currentCharacterUnit.GetCasterBindingTarget();
-            casterCameraAnchor = casterBinding != null ? casterBinding.transform : null;
-        }
+        Transform casterCameraAnchor = currentCharacterUnit != null
+            ? currentCharacterUnit.GetDefaultCameraAnchor(CharacterUnit.CameraAnchorPurpose.Caster)
+            : null;
 
         BattleCameraManager.Instance?.ConfigureActionTargets(
             currentCharacterUnit,
