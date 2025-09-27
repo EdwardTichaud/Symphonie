@@ -277,14 +277,20 @@ public class MusicalMoveSO : ScriptableObject
         if (doubleValue)
             finalValue *= 2f;
 
-        if (typeToUse == MusicalEffectType.Damage && target.Data.characterType == CharacterType.EnemyUnit)
+        if (typeToUse == MusicalEffectType.Damage)
         {
-            // Transmission de la source pour déclencher l'animation directionnelle
+            // ⚠️ Correction : les dégâts doivent maintenant s'appliquer à toutes les cibles valides.
+            // Auparavant, une vérification restrictive empêchait les ennemis
+            // d'endommager l'escouade car seules les EnemyUnit recevaient des dégâts.
+            // En retirant ce filtre, on rétablit la logique attendue tout en conservant
+            // la transmission de la source pour les animations directionnelles.
             target.TakeDamage(finalValue, caster != null ? caster.transform : null);
             NewBattleManager.Instance?.RegisterDamage(caster, finalValue);
         }
-        else if (typeToUse == MusicalEffectType.Heal && target.Data.characterType == CharacterType.SquadUnit)
+        else if (typeToUse == MusicalEffectType.Heal)
         {
+            // Même logique que pour les dégâts : l'appelant gère déjà la sélection
+            // de cible, inutile de limiter la guérison aux seules unités alliées.
             target.Heal(finalValue);
         }
         else if (typeToUse == MusicalEffectType.Sleep)
