@@ -38,7 +38,7 @@ public class DamagePopupManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Crée un popup de dégâts au-dessus de la cible donnée.
+    /// Crée un popup de dégâts centré sur l'écran.
     /// </summary>
     /// <param name="target">Transform à suivre.</param>
     /// <param name="amount">Montant de dégâts.</param>
@@ -64,7 +64,9 @@ public class DamagePopupManager : MonoBehaviour
             return;
         }
 
-        // Initialisation avec la cible à suivre et le montant de dégâts
+        // Initialisation avec la cible initiale (paramètre conservé pour compatibilité)
+        // et le montant de dégâts à afficher. Le DamagePopup se chargera ensuite de se
+        // positionner en overlay au centre de l'écran.
         popupScript.Initialize(amount, target);
     }
 }
