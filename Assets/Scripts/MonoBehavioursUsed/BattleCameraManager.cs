@@ -55,6 +55,28 @@ public class BattleCameraManager : MonoBehaviour
     [Tooltip("Amplitude de lacet (en degrés) appliquée à la caméra pendant l'oscillation.")]
     [SerializeField] private float breathingYawAmplitude = 0.4f;
 
+    [Header("Réaction aux dégâts")] // 👉 paramètres dédiés au tremblement déclenché par un impact
+    [Tooltip("Active un tremblement court lorsque les membres de l'escouade subissent une attaque.")]
+    [SerializeField] private bool enableDamageShake = true;
+
+    [Tooltip("Durée en secondes de l'impulsion de caméra appliquée après un coup.")]
+    [SerializeField] private float damageShakeDuration = 0.35f;
+
+    [Tooltip("Fréquence des oscillations appliquées pendant le tremblement.")]
+    [SerializeField] private float damageShakeFrequency = 18f;
+
+    [Tooltip("Amplitude maximale (en mètres) du déplacement de caméra généré par l'impact.")]
+    [SerializeField] private float damageShakePositionAmplitude = 0.08f;
+
+    [Tooltip("Amplitude maximale (en degrés) de la rotation de caméra générée par l'impact.")]
+    [SerializeField] private float damageShakeRotationAmplitude = 1.25f;
+
+    [Tooltip("Multiplicateur appliqué lorsque le coup est considéré comme dévastateur.")]
+    [SerializeField] private float damageShakeDevastatingMultiplier = 1.75f;
+
+    [Tooltip("Courbe définissant l'atténuation du tremblement (1 = départ fort, 0 = repos).")]
+    [SerializeField] private AnimationCurve damageShakeEnvelope = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
+
     /// <summary>Référence de la caméra d'introduction pour gérer son travelling manuel.</summary>
     private Transform introCameraTransform;
 
@@ -90,6 +112,36 @@ public class BattleCameraManager : MonoBehaviour
 
     /// <summary>Nom de la caméra actuellement prioritaire.</summary>
     private string currentCameraName;
+
+    /// <summary>Nom de la caméra actuellement secouée par un impact.</summary>
+    private string damageShakeCameraName;
+
+    /// <summary>Durée réellement utilisée pour la secousse en cours.</summary>
+    private float damageShakeDurationCurrent;
+
+    /// <summary>Temps écoulé depuis le début de la secousse en cours.</summary>
+    private float damageShakeElapsed;
+
+    /// <summary>Intensité globale de la secousse (1 par défaut, >1 pour un coup dévastateur).</summary>
+    private float damageShakeIntensity = 1f;
+
+    /// <summary>Décalage positionnel calculé pour la frame courante.</summary>
+    private Vector3 damageShakeOffset = Vector3.zero;
+
+    /// <summary>Rotation additive calculée pour la frame courante.</summary>
+    private Quaternion damageShakeRotationOffset = Quaternion.identity;
+
+    /// <summary>Direction latérale privilégiée pour l'oscillation de la caméra.</summary>
+    private Vector3 damageShakeRight = Vector3.right;
+
+    /// <summary>Direction verticale utilisée pour générer l'effet de secousse.</summary>
+    private Vector3 damageShakeUp = Vector3.up;
+
+    /// <summary>Phase initiale de l'onde principale du tremblement.</summary>
+    private float damageShakePrimaryPhase;
+
+    /// <summary>Phase initiale de l'onde secondaire (composante verticale).</summary>
+    private float damageShakeSecondaryPhase;
 
     /// <summary>
     /// Décalages de phase uniques par caméra afin que les oscillations ne soient pas synchronisées.
@@ -231,6 +283,9 @@ public class BattleCameraManager : MonoBehaviour
 
     void LateUpdate()
     {
+        // 🎢 Met à jour l'effet de secousse avant de replacer les caméras sur leurs ancres.
+        UpdateDamageShakeState();
+
         // Les caméras doivent coller en permanence aux points "CMVPoint_".
         RefreshAllCameraPlacements();
     }
@@ -262,6 +317,65 @@ public class BattleCameraManager : MonoBehaviour
     {
         foreach (var kvp in CameraBindings)
             RefreshCameraPlacement(kvp.Key, kvp.Value);
+    }
+
+    /// <summary>
+    /// Met à jour le tremblement déclenché lors d'un impact et prépare les offsets appliqués
+    /// au prochain rafraîchissement de caméra.
+    /// </summary>
+    private void UpdateDamageShakeState()
+    {
+        if (!enableDamageShake || damageShakeDurationCurrent <= 0f)
+        {
+            // Sans effet actif, on s'assure que la caméra reste strictement calée à son ancre.
+            damageShakeOffset = Vector3.zero;
+            damageShakeRotationOffset = Quaternion.identity;
+            damageShakeCameraName = null;
+            return;
+        }
+
+        damageShakeElapsed += Time.deltaTime;
+
+        // Normalisation du temps écoulé pour interroger la courbe d'atténuation.
+        float normalizedTime = Mathf.Clamp01(damageShakeElapsed / Mathf.Max(damageShakeDurationCurrent, 0.0001f));
+        float envelope = damageShakeEnvelope != null && damageShakeEnvelope.length > 0
+            ? Mathf.Max(0f, damageShakeEnvelope.Evaluate(normalizedTime))
+            : 1f - normalizedTime;
+
+        if (envelope <= 0f)
+        {
+            // L'enveloppe est retombée à zéro : on annule toute transformation résiduelle.
+            damageShakeDurationCurrent = 0f;
+            damageShakeOffset = Vector3.zero;
+            damageShakeRotationOffset = Quaternion.identity;
+            damageShakeCameraName = null;
+            return;
+        }
+
+        float angularFrequency = Mathf.Max(damageShakeFrequency, 0.0001f) * Mathf.PI * 2f;
+        float mainAngle = damageShakePrimaryPhase + (damageShakeElapsed * angularFrequency);
+        float secondaryAngle = damageShakeSecondaryPhase + (damageShakeElapsed * angularFrequency * 1.35f);
+
+        float intensity = damageShakeIntensity * envelope;
+        float positionAmplitude = damageShakePositionAmplitude * intensity;
+        float rotationAmplitude = damageShakeRotationAmplitude * intensity;
+
+        // Oscillation principale (latérale) + secondaire (verticale) pour un effet plus organique.
+        float horizontal = Mathf.Sin(mainAngle);
+        float vertical = Mathf.Sin(secondaryAngle);
+        damageShakeOffset = (damageShakeRight * horizontal + damageShakeUp * vertical) * positionAmplitude;
+
+        // On combine une légère rotation de lacet (autour de l'axe vertical) et de tangage.
+        Quaternion yawRotation = Quaternion.AngleAxis(Mathf.Sin(mainAngle * 0.5f) * rotationAmplitude, damageShakeUp);
+        Quaternion pitchRotation = Quaternion.AngleAxis(Mathf.Cos(secondaryAngle * 0.5f) * rotationAmplitude * 0.5f, damageShakeRight);
+        damageShakeRotationOffset = yawRotation * pitchRotation;
+
+        if (damageShakeElapsed >= damageShakeDurationCurrent)
+        {
+            // Arrive en fin de secousse : la prochaine frame remettra la caméra sur son ancre exacte.
+            damageShakeDurationCurrent = 0f;
+            damageShakeCameraName = null;
+        }
     }
 
     /// <summary>Replace une caméra donnée sur son point d'ancrage.</summary>
@@ -317,6 +431,9 @@ public class BattleCameraManager : MonoBehaviour
 
         // 🎥 Finalise la pose en ajoutant un très léger flottement « respirant » pour bannir les plans figés.
         ApplyBreathingMotion(camera, cameraName);
+
+        // 💥 Superpose éventuellement une secousse ponctuelle déclenchée lors d'un coup subi.
+        ApplyDamageShake(camera, cameraName);
     }
 
     /// <summary>Identifie l'unité responsable d'une caméra donnée.</summary>
@@ -488,6 +605,21 @@ public class BattleCameraManager : MonoBehaviour
 
             camera.transform.rotation = rotationOffset * camera.transform.rotation;
         }
+    }
+
+    /// <summary>
+    /// Applique le décalage de tremblement précédemment calculé si la caméra correspond à celle touchée.
+    /// </summary>
+    private void ApplyDamageShake(CinemachineCamera camera, string cameraName)
+    {
+        if (!enableDamageShake || damageShakeDurationCurrent <= 0f || camera == null)
+            return;
+
+        if (!string.Equals(cameraName, damageShakeCameraName, StringComparison.OrdinalIgnoreCase))
+            return; // ✅ Une autre caméra est active : on n'injecte aucune secousse ici.
+
+        camera.transform.position += damageShakeOffset;
+        camera.transform.rotation = damageShakeRotationOffset * camera.transform.rotation;
     }
 
     /// <summary>
@@ -757,6 +889,75 @@ public class BattleCameraManager : MonoBehaviour
 
     /// <summary>Indique si une Cinemachine possède la priorité dans le <see cref="CinemachineBrain"/>.</summary>
     public bool HasActiveCinemachineCamera => blendSwitcher && blendSwitcher.HasActiveCamera;
+
+    /// <summary>
+    /// Déclenche une secousse de caméra lorsque l'escouade reçoit un coup, afin de renforcer l'impact.
+    /// </summary>
+    /// <param name="damagedUnit">Unité blessée afin de déterminer l'orientation de l'effet.</param>
+    /// <param name="devastatingHit">Indique si le coup est considéré comme particulièrement violent.</param>
+    /// <param name="attacker">Transform de l'assaillant pour accentuer la direction de l'onde.</param>
+    public void TriggerDamageShake(CharacterUnit damagedUnit, bool devastatingHit, Transform attacker = null)
+    {
+        if (!enableDamageShake || damagedUnit == null || !blendSwitcher || !blendSwitcher.HasActiveCamera)
+            return;
+
+        string activeCameraName = blendSwitcher.CurrentCameraName;
+        if (string.IsNullOrEmpty(activeCameraName))
+            return;
+
+        damageShakeCameraName = activeCameraName;
+        damageShakeDurationCurrent = Mathf.Max(damageShakeDuration, 0.01f);
+        damageShakeElapsed = 0f;
+        damageShakeIntensity = devastatingHit ? damageShakeDevastatingMultiplier : 1f;
+        damageShakeOffset = Vector3.zero;
+        damageShakeRotationOffset = Quaternion.identity;
+        damageShakePrimaryPhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+        damageShakeSecondaryPhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+
+        damageShakeRight = ResolveDamageShakeLateralAxis(damagedUnit, attacker, activeCameraName);
+        damageShakeUp = Vector3.up;
+    }
+
+    /// <summary>
+    /// Détermine l'axe horizontal privilégié pour le tremblement en combinant direction d'attaque
+    /// et orientation de la caméra active.
+    /// </summary>
+    private Vector3 ResolveDamageShakeLateralAxis(CharacterUnit damagedUnit, Transform attacker, string cameraName)
+    {
+        if (damagedUnit == null)
+            return Vector3.right;
+
+        // 1️⃣ Tentative : utiliser la direction d'impact afin de retranscrire la poussée du coup.
+        if (attacker != null)
+        {
+            Vector3 attackDirection = damagedUnit.transform.position - attacker.position;
+            if (attackDirection.sqrMagnitude > 0.0001f)
+            {
+                Vector3 lateral = Vector3.Cross(Vector3.up, attackDirection.normalized);
+                if (lateral.sqrMagnitude > 0.0001f)
+                    return lateral.normalized;
+            }
+        }
+
+        // 2️⃣ Fallback : se baser sur la position de la caméra active pour conserver une lecture cohérente.
+        if (!string.IsNullOrEmpty(cameraName) && TryGetCameraByName(cameraName, out var camera) && camera != null)
+        {
+            Vector3 toCamera = camera.transform.position - damagedUnit.transform.position;
+            if (toCamera.sqrMagnitude > 0.0001f)
+            {
+                Vector3 lateral = Vector3.Cross(Vector3.up, toCamera.normalized);
+                if (lateral.sqrMagnitude > 0.0001f)
+                    return lateral.normalized;
+            }
+
+            Vector3 cameraRight = camera.transform.right;
+            if (cameraRight.sqrMagnitude > 0.0001f)
+                return cameraRight.normalized;
+        }
+
+        // 3️⃣ Dernier recours : axe monde fixe afin de garantir un comportement déterministe.
+        return Vector3.right;
+    }
 
     /// <summary>Garantit que la caméra d'introduction est bien référencée.</summary>
     private bool EnsureIntroCameraReference()
