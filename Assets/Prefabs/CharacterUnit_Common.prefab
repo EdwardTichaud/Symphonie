@@ -339,6 +339,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1232763177019194538}
+  - component: {fileID: -4546118859247870760}
+  - component: {fileID: 1581743794902048956}
+  - component: {fileID: -2097182836642588953}
   m_Layer: 17
   m_Name: CharacterUnit_Common
   m_TagString: Untagged
@@ -362,6 +365,80 @@ Transform:
   - {fileID: 14469888946115031}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!143 &-4546118859247870760
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7554664008785468851}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!320 &1581743794902048956
+PlayableDirector:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7554664008785468851}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_PlayableAsset: {fileID: 0}
+  m_InitialState: 1
+  m_WrapMode: 2
+  m_DirectorUpdateMode: 1
+  m_InitialTime: 0
+  m_SceneBindings: []
+  m_ExposedReferences:
+    m_References: []
+--- !u!114 &-2097182836642588953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7554664008785468851}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1a6243e99064a64aaf011821904e16f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Data: {fileID: 0}
+  hpBar: {fileID: 0}
+  customBar: {fileID: 0}
+  hurtAnimation: {fileID: 0}
+  interceptedAnimation: {fileID: 0}
+  interceptionAnimation: {fileID: 0}
+  animator: {fileID: 0}
+  groundCheckDistance: 2
+  battleGroundLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  currentMP: 0
+  currentMusicalGauge: 0
+  currentATB: 0
+  ATBMax: 100
+  isReadyToParry: 0
+  isInterceptionImmune: 0
+  interceptionImmunityTurns: 0
+  lootItems: []
+  experienceReward: 0
 --- !u!1 &7625576826594563441
 GameObject:
   m_ObjectHideFlags: 0
