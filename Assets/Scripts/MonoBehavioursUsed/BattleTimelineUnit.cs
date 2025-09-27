@@ -23,6 +23,11 @@ public class BattleTimelineUnit : MonoBehaviour
 
     [SerializeField] private CanvasGroup canvasGroup;
 
+    /// <summary>Référence directe vers l'unité affichée pour faciliter l'accès aux stats dynamiques.</summary>
+    private CharacterUnit boundUnit;
+    /// <summary>Adaptateur reliant la barre de vie de la timeline au CharacterUnit.</summary>
+    private TimelineHPBarAdapter timelineHPBarAdapter;
+
     private float baseScale = 1f;
     private float highlightMultiplier = 1f;
 
@@ -45,13 +50,27 @@ public class BattleTimelineUnit : MonoBehaviour
         }
 
         characterData = unit.Data;
+        boundUnit = unit;
 
         // Portrait et nom
         if (portraitImage) portraitImage.sprite = characterData.portrait;
         if (nameText) nameText.text = characterData.characterName;
 
-        // HP
-        UpdateHPBar();
+        // HP : on crée/initialise l'adaptateur qui mettra à jour la jauge timeline
+        if (timelineHPBarAdapter == null)
+            timelineHPBarAdapter = GetComponent<TimelineHPBarAdapter>();
+
+        if (timelineHPBarAdapter == null)
+            timelineHPBarAdapter = gameObject.AddComponent<TimelineHPBarAdapter>();
+
+        Color aliveColor = hpBarImage != null ? hpBarImage.color : Color.white;
+        timelineHPBarAdapter.Setup(unit, hpBarImage, hpText, aliveColor, deadColor);
+
+        float maxHP = unit != null
+            ? unit.Data.baseHP + unit.currentVitality
+            : characterData.baseHP + characterData.currentVitality;
+        timelineHPBarAdapter.SetMaxValue(maxHP);
+        timelineHPBarAdapter.SetValue(unit != null ? unit.currentHP : characterData.currentHP);
 
         // Custom bar (Rage/Fatigue/Concentration)
         if (customBar != null)
@@ -137,15 +156,19 @@ public class BattleTimelineUnit : MonoBehaviour
 
     public void UpdateHPBar()
     {
-        if (characterData == null || hpBarImage == null || hpText == null) return;
+        if (timelineHPBarAdapter == null)
+            return;
 
-        float ratio = Mathf.Clamp01((float)characterData.currentHP / characterData.baseHP);
-        hpBarImage.fillAmount = ratio;
-        hpText.text = $"{characterData.currentHP}/{characterData.baseHP}";
-
-        bool isDead = characterData.currentHP <= 0;
-        hpText.color = isDead ? deadColor : Color.white;
-        hpBarImage.color = isDead ? deadColor : Color.white;
+        if (boundUnit != null && boundUnit.Data != null)
+        {
+            float maxHP = boundUnit.Data.baseHP + boundUnit.currentVitality;
+            timelineHPBarAdapter.UpdateInstant(boundUnit.currentHP, maxHP);
+        }
+        else if (characterData != null)
+        {
+            float maxHP = characterData.baseHP + characterData.currentVitality;
+            timelineHPBarAdapter.UpdateInstant(characterData.currentHP, maxHP);
+        }
     }
 
     public void SetHighlight(bool active)
