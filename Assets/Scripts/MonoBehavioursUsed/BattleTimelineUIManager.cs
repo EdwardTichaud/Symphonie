@@ -111,18 +111,12 @@ public class BattleTimelineUIManager : MonoBehaviour
     /// </summary>
     private void SortTimelineByATB()
     {
-        if (NewBattleManager.Instance == null)
-            return;
-
         timelineUIObjects.Sort((a, b) =>
         {
-            var unitA = NewBattleManager.Instance.activeCharacterUnits
-                .Find(u => u.Data == a.characterData);
-            var unitB = NewBattleManager.Instance.activeCharacterUnits
-                .Find(u => u.Data == b.characterData);
-
-            float turnsA = EstimateTurnsToReady(unitA);
-            float turnsB = EstimateTurnsToReady(unitB);
+            // Accès direct aux CharacterUnit liés aux vignettes pour éviter
+            // tout couplage supplémentaire avec le NewBattleManager.
+            float turnsA = EstimateTurnsToReady(a.BoundUnit);
+            float turnsB = EstimateTurnsToReady(b.BoundUnit);
             return turnsA.CompareTo(turnsB);
         });
     }
@@ -134,7 +128,9 @@ public class BattleTimelineUIManager : MonoBehaviour
     {
         foreach (var ui in timelineUIObjects)
         {
-            bool isCurrent = activeUnit != null && ui.characterData == activeUnit.Data;
+            // Compare directement les CharacterUnit pour simplifier la logique
+            // et éviter les recherches inutiles dans les collections du manager.
+            bool isCurrent = activeUnit != null && ui.BoundUnit == activeUnit;
             ui.SetHighlight(isCurrent);
         }
     }
@@ -154,7 +150,7 @@ public class BattleTimelineUIManager : MonoBehaviour
         if (activeUnit != null)
         {
             // S'assure que l'unité actuellement active est bien en tête.
-            int index = timelineUIObjects.FindIndex(ui => ui.characterData == activeUnit.Data);
+            int index = timelineUIObjects.FindIndex(ui => ui.BoundUnit == activeUnit);
             if (index > 0)
             {
                 var ui = timelineUIObjects[index];
@@ -195,7 +191,9 @@ public class BattleTimelineUIManager : MonoBehaviour
     /// </summary>
     public void RemoveFromTimeline(CharacterUnit deadUnit)
     {
-        var ui = timelineUIObjects.FirstOrDefault(x => x.characterData == deadUnit.Data);
+        // Recherche directe sur l'unité liée : plus robuste si plusieurs
+        // personnages partagent des données communes.
+        var ui = timelineUIObjects.FirstOrDefault(x => x.BoundUnit == deadUnit);
         if (ui != null)
         {
             timelineUIObjects.Remove(ui);
