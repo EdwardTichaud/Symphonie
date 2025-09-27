@@ -571,11 +571,8 @@ public class NewBattleManager : MonoBehaviour
 
         if (existingAnchor != null)
         {
-            // Met à jour l'offset du script si le point a été préparé à la main dans la scène.
-            LookAtBattleTarget existingLookAt = existingAnchor.GetComponent<LookAtBattleTarget>();
-            if (existingLookAt != null)
-                existingLookAt.offset = overShoulderCasterLookOffset;
-
+            // Met à jour/ajoute le composant responsable d'orienter l'ancre vers la cible courante.
+            EnsureLookAtComponent(existingAnchor);
             return existingAnchor;
         }
 
@@ -585,8 +582,9 @@ public class NewBattleManager : MonoBehaviour
         anchorGO.transform.localPosition = overShoulderCasterLookPointPosition_SquadUnit;
         anchorGO.transform.localRotation = Quaternion.identity;
 
-        LookAtBattleTarget lookAt = anchorGO.AddComponent<LookAtBattleTarget>();
-        lookAt.offset = overShoulderCasterLookOffset;
+        // Lie systématiquement l'ancre à la cible actuelle afin que les caméras épaulières cadrent
+        // correctement la scène, quel que soit le modèle visuel du personnage.
+        EnsureLookAtComponent(anchorGO.transform);
 
         return anchorGO.transform;
     }
@@ -613,11 +611,9 @@ public class NewBattleManager : MonoBehaviour
 
         if (existingAnchor != null)
         {
-            // Met à jour l'offset du script si le point a été préparé à la main dans la scène.
-            LookAtBattleTarget existingLookAt = existingAnchor.GetComponent<LookAtBattleTarget>();
-            if (existingLookAt != null)
-                existingLookAt.offset = overShoulderCasterLookOffset;
-
+            // Garantit que le point continue d'orienter la caméra vers la cible active, même
+            // lorsqu'il a été placé manuellement dans la scène.
+            EnsureLookAtComponent(existingAnchor);
             return existingAnchor;
         }
 
@@ -627,10 +623,27 @@ public class NewBattleManager : MonoBehaviour
         anchorGO.transform.localPosition = overShoulderCasterLookPointPosition_EnemyUnit;
         anchorGO.transform.localRotation = Quaternion.identity;
 
-        LookAtBattleTarget lookAt = anchorGO.AddComponent<LookAtBattleTarget>();
-        lookAt.offset = overShoulderCasterLookOffset;
+        EnsureLookAtComponent(anchorGO.transform);
 
         return anchorGO.transform;
+    }
+
+    /// <summary>
+    /// S'assure qu'un composant <see cref="LookAtBattleTarget"/> est présent et configuré sur l'ancre donnée.
+    /// </summary>
+    /// <param name="anchor">Transform de l'ancre à valider.</param>
+    private void EnsureLookAtComponent(Transform anchor)
+    {
+        if (anchor == null)
+            return;
+
+        // 🔄 Réutilise le composant existant lorsqu'il est déjà en place pour préserver les réglages
+        // manuels éventuels, tout en rafraîchissant l'offset commun à toutes les ancres générées.
+        LookAtBattleTarget lookAt = anchor.GetComponent<LookAtBattleTarget>();
+        if (lookAt == null)
+            lookAt = anchor.gameObject.AddComponent<LookAtBattleTarget>();
+
+        lookAt.offset = overShoulderCasterLookOffset;
     }
 
     #region Mise en scène de la scène de bataille

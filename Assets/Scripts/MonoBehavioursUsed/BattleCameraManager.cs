@@ -487,11 +487,66 @@ public class BattleCameraManager : MonoBehaviour
             return anchorOverride;
 
         string pointName = $"CMVPoint_{config.Suffix}";
-        Transform anchor = unit.GetCameraAnchor(pointName);
+        Transform anchor = null;
+
+        // 🎯 Cas particulier : la caméra "CMV_OverShoulder_CasterLookTarget" doit se caler sur
+        // le point généré directement sous le parent du CharacterUnit (PlayerPosition_X / EnemyPosition_X).
+        // Les artistes ajustent ce repère pour garantir une composition identique quel que soit le
+        // modèle instancié ; on force donc cette recherche avant de retomber sur la logique standard.
+        if (ShouldUseParentCasterLookTarget(config))
+            anchor = ResolveParentCasterLookTargetAnchor(unit);
+
+        // 🧭 Si aucune ancre spécifique au parent n'a été trouvée, on revient au comportement par défaut
+        // en interrogeant les points « CMVPoint_… » directement disponibles sur l'unité.
+        anchor ??= unit.GetCameraAnchor(pointName);
         if (anchor == null && missingAnchorWarnings.Add(pointName))
             Debug.LogWarning($"[BattleCameraManager] Point '{pointName}' introuvable sur '{unit.name}'.");
 
         return anchor;
+    }
+
+    /// <summary>
+    /// Détermine si la configuration de caméra doit privilégier le point placé sur le parent
+    /// du CharacterUnit plutôt que sur l'unité elle-même.
+    /// </summary>
+    private static bool ShouldUseParentCasterLookTarget(CameraBindingConfig config)
+    {
+        return config.Owner == CameraAnchorOwner.Caster
+            && !string.IsNullOrEmpty(config.Suffix)
+            && string.Equals(config.Suffix, "OverShoulder_CasterLookTarget", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Recherche le point « CMVPoint_OverShoulder_CasterLookTarget » placé sur le parent du personnage.
+    /// </summary>
+    private static Transform ResolveParentCasterLookTargetAnchor(CharacterUnit unit)
+    {
+        if (unit == null)
+            return null;
+
+        const string anchorName = "CMVPoint_OverShoulder_CasterLookTarget";
+
+        Transform parent = unit.transform.parent;
+        if (parent == null)
+            return null;
+
+        // 🎬 Priorité au child direct : c'est la configuration privilégiée par le BattleManager.
+        Transform directChild = parent.Find(anchorName);
+        if (directChild != null)
+            return directChild;
+
+        // 🔄 Certains environnements peuvent regrouper le point dans une sous-hiérarchie.
+        // On balaie donc l'ensemble des enfants du parent (hors unité actuelle) pour couvrir ces variantes.
+        foreach (Transform sibling in parent.GetComponentsInChildren<Transform>(includeInactive: true))
+        {
+            if (sibling == null || sibling == unit.transform)
+                continue;
+
+            if (string.Equals(sibling.name, anchorName, StringComparison.OrdinalIgnoreCase))
+                return sibling;
+        }
+
+        return null;
     }
 
     /// <summary>Détermine le Transform à regarder lorsque la caméra doit suivre la cible.</summary>
