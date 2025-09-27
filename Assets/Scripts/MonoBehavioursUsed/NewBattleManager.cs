@@ -231,9 +231,9 @@ public class NewBattleManager : MonoBehaviour
     [HideInInspector] public List<GameObject> multiTargetCursors = new List<GameObject>();
 
     [Header("Indicateur de portée")]
-    [Tooltip("Sprite utilisé pour matérialiser la portée actuelle de l'unité active.")]
-    [SerializeField] private Sprite rangeIndicatorSprite;
-    [Tooltip("Matériau facultatif appliqué au SpriteRenderer de l'indicateur de portée.")]
+    [Tooltip("Prefab complet de l'indicateur de portée. Il contient déjà le SpriteRenderer configuré par l'équipe artistique.")]
+    [SerializeField] private GameObject rangeIndicatorPrefab;
+    [Tooltip("Matériau facultatif appliqué au SpriteRenderer de l'indicateur de portée (permet de surcharger celui du prefab).")]
     [SerializeField] private Material rangeIndicatorMaterial;
     [Tooltip("Décalage vertical pour éviter tout chevauchement visuel avec le sol.")]
     [SerializeField] private float rangeIndicatorHeightOffset = 0.05f;
@@ -242,12 +242,26 @@ public class NewBattleManager : MonoBehaviour
     [Tooltip("Canvas monde piloté par la caméra de combat. L'indicateur y est instancié pour bénéficier des mêmes réglages de rendu.")]
     [SerializeField] private Transform battleCameraCanvasTransform;
     [Tooltip("Couleur affichée lorsque l'action sélectionnée est réalisable à la portée actuelle.")]
-    [SerializeField] private Color rangeIndicatorInRangeColor = Color.white;
+    [SerializeField] private Color rangeIndicatorInRangeColor = new Color(0.55f, 0.78f, 1f, 1f);
     [Tooltip("Couleur affichée lorsque la cible potentielle se trouve hors de portée.")]
-    [SerializeField] private Color rangeIndicatorOutOfRangeColor = new Color(1f, 0.35f, 0.35f, 1f);
+    [SerializeField] private Color rangeIndicatorOutOfRangeColor = new Color(1f, 0.25f, 0.25f, 1f);
+    [Tooltip("Couleur affichée lorsque la portée est suffisante mais que la condition d'altitude du mouvement n'est pas respectée.")]
+    [SerializeField] private Color rangeIndicatorAltitudeMismatchColor = new Color(0.75f, 0.4f, 1f, 1f);
     private GameObject rangeIndicatorInstance;
     private SpriteRenderer rangeIndicatorRenderer;
+    private Material rangeIndicatorMaterialInstance;
     private CharacterUnit rangeIndicatorOwner;
+
+    /// <summary>
+    /// États possibles de feedback visuel pour l'indicateur de portée.
+    /// Ils permettent de choisir dynamiquement la couleur à appliquer.
+    /// </summary>
+    private enum RangeIndicatorFeedbackState
+    {
+        InRange,
+        OutOfRange,
+        AltitudeMismatch
+    }
     private List<CharacterUnit> filteredUnits = new();
     // Liste temporaire réutilisée pour éviter des allocations lors du ciblage multiple
     private readonly List<CharacterUnit> multiTargetUnits = new();
@@ -3638,13 +3652,20 @@ public class NewBattleManager : MonoBehaviour
     /// L'instanciation est différée afin d'éviter tout coût inutile lorsque la fonctionnalité n'est
     /// pas utilisée (ex : scènes de test sans combat).
     /// Depuis la refonte demandée par l'équipe de level design, l'objet est créé à la racine de la scène
-    /// pour qu'aucun parent ne puisse altérer sa transform (échelle, rotation ou position).
+    /// pour qu'aucun parent ne puisse altérer sa transform (échelle, rotation ou position) et s'appuie
+    /// désormais sur un prefab dédié pour respecter la direction artistique.
     /// </summary>
     private void EnsureRangeIndicatorInstance()
     {
-        if (rangeIndicatorInstance != null || rangeIndicatorSprite == null)
+        if (rangeIndicatorInstance != null)
         {
-            return; // Soit l'indicateur est déjà prêt, soit aucun sprite n'a été assigné dans l'inspecteur.
+            return; // L'indicateur a déjà été instancié dans cette scène.
+        }
+
+        if (rangeIndicatorPrefab == null)
+        {
+            Debug.LogWarning("[NewBattleManager] Aucun prefab 'RangeIndicator' assigné. Impossible d'afficher la portée.");
+            return;
         }
 
         // On conserve la recherche du canvas caméra pour des raisons de compatibilité : certains systèmes
@@ -3652,18 +3673,26 @@ public class NewBattleManager : MonoBehaviour
         // lui est plus parenté.
         EnsureBattleCameraCanvas();
 
-        rangeIndicatorInstance = new GameObject("RangeIndicator");
+        // Instancie le prefab prêt par l'équipe artistique plutôt que de reconstruire l'objet manuellement.
+        rangeIndicatorInstance = Instantiate(rangeIndicatorPrefab);
+        rangeIndicatorInstance.name = "RangeIndicator"; // Uniformise le nom dans la hiérarchie pour faciliter le debug.
         rangeIndicatorInstance.layer = LayerMask.NameToLayer("Battle_VFX");
         rangeIndicatorInstance.SetActive(false);
-        rangeIndicatorInstance.transform.localScale = Vector3.one;
-        rangeIndicatorInstance.transform.localRotation = Quaternion.identity;
 
-        // Pas d'appel à SetParent ici : l'objet doit rester en racine pour conserver une échelle monde
-        // fiable, indépendamment des ajustements effectués sur les canvases ou autres parents temporaires.
+        Transform indicatorTransform = rangeIndicatorInstance.transform;
+        indicatorTransform.SetParent(null, true); // L'indicateur doit rester en racine afin de conserver une échelle monde fiable.
+        indicatorTransform.localScale = Vector3.one;
+        indicatorTransform.localRotation = Quaternion.identity;
 
-        rangeIndicatorRenderer = rangeIndicatorInstance.AddComponent<SpriteRenderer>();
-        rangeIndicatorRenderer.sprite = rangeIndicatorSprite;
-        ApplyRangeIndicatorColor(true); // Couleur de base : portée suffisante.
+        // Récupère le SpriteRenderer déjà configuré sur le prefab.
+        rangeIndicatorRenderer = rangeIndicatorInstance.GetComponentInChildren<SpriteRenderer>(true);
+        if (rangeIndicatorRenderer == null)
+        {
+            Debug.LogWarning("[NewBattleManager] Le prefab 'RangeIndicator' ne contient pas de SpriteRenderer.");
+            Destroy(rangeIndicatorInstance);
+            rangeIndicatorInstance = null;
+            return;
+        }
 
         if (rangeIndicatorMaterial != null)
         {
@@ -3671,7 +3700,13 @@ public class NewBattleManager : MonoBehaviour
             rangeIndicatorRenderer.material = rangeIndicatorMaterial;
         }
 
-        // On force des paramètres adaptés à un indicateur 2D posé au sol.
+        // Mémorise le matériau instancié afin d'éviter de créer une nouvelle instance à chaque changement de couleur.
+        rangeIndicatorMaterialInstance = rangeIndicatorRenderer.material;
+
+        // Couleur de base : portée suffisante et toutes les conditions réunies.
+        ApplyRangeIndicatorColor(RangeIndicatorFeedbackState.InRange);
+
+        // On force des paramètres adaptés à un indicateur 2D posé au sol (valeurs redéfinies au cas où le prefab serait modifié).
         rangeIndicatorRenderer.sortingOrder = 500; // Suffisamment élevé pour rester lisible.
         rangeIndicatorRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         rangeIndicatorRenderer.receiveShadows = false;
@@ -3680,16 +3715,48 @@ public class NewBattleManager : MonoBehaviour
     /// <summary>
     /// Ajuste la teinte de l'indicateur pour informer instantanément le joueur sur la validité de la portée.
     /// </summary>
-    /// <param name="isInRange">True si l'action courante est réalisable à la portée actuelle.</param>
-    private void ApplyRangeIndicatorColor(bool isInRange)
+    /// <param name="state">État visuel à représenter (portée valide, hors de portée ou altitude incompatible).</param>
+    private void ApplyRangeIndicatorColor(RangeIndicatorFeedbackState state)
     {
         if (rangeIndicatorRenderer == null)
         {
             return; // L'indicateur n'a pas encore été correctement initialisé.
         }
 
-        Color targetColor = isInRange ? rangeIndicatorInRangeColor : rangeIndicatorOutOfRangeColor;
+        // Sécurise la référence du matériau instancié si jamais l'objet a été recréé à chaud.
+        if (rangeIndicatorMaterialInstance == null)
+        {
+            rangeIndicatorMaterialInstance = rangeIndicatorRenderer.material;
+        }
+
+        // Sélectionne la teinte cible selon l'état à représenter.
+        Color targetColor = rangeIndicatorInRangeColor;
+        switch (state)
+        {
+            case RangeIndicatorFeedbackState.OutOfRange:
+                targetColor = rangeIndicatorOutOfRangeColor;
+                break;
+            case RangeIndicatorFeedbackState.AltitudeMismatch:
+                targetColor = rangeIndicatorAltitudeMismatchColor;
+                break;
+        }
+
         targetColor.a = Mathf.Clamp01(rangeIndicatorAlpha); // Alpha piloté par l'inspecteur pour conserver la discrétion visuelle.
+
+        if (rangeIndicatorMaterialInstance != null)
+        {
+            // La majorité des shaders 2D exposent la propriété "_Color" ; on la cible lorsque disponible pour garantir le résultat.
+            if (rangeIndicatorMaterialInstance.HasProperty("_Color"))
+            {
+                rangeIndicatorMaterialInstance.SetColor("_Color", targetColor);
+            }
+            else
+            {
+                rangeIndicatorMaterialInstance.color = targetColor;
+            }
+        }
+
+        // On répercute également la couleur sur le SpriteRenderer pour conserver la compatibilité avec les shaders dérivés.
         rangeIndicatorRenderer.color = targetColor;
     }
 
@@ -3815,7 +3882,7 @@ public class NewBattleManager : MonoBehaviour
                 rangeIndicatorInstance.SetActive(false);
             }
 
-            ApplyRangeIndicatorColor(true); // On conserve la couleur neutre pour éviter tout signal contradictoire.
+            ApplyRangeIndicatorColor(RangeIndicatorFeedbackState.InRange); // On conserve la couleur neutre pour éviter tout signal contradictoire.
             return;
         }
 
@@ -3829,11 +3896,13 @@ public class NewBattleManager : MonoBehaviour
 
         // Détermine si la cible suivie est réellement accessible afin d'ajuster la couleur du feedback.
         bool isInRange = true;
+        bool altitudeValid = true;
         if (currentTargetCharacter != null)
         {
             if (currentMove != null)
             {
                 isInRange = IsTargetInRange(rangeIndicatorOwner, currentTargetCharacter, currentMove);
+                altitudeValid = IsTargetAltitudeValid(currentTargetCharacter, currentMove);
             }
             else if (currentItem != null)
             {
@@ -3841,7 +3910,18 @@ public class NewBattleManager : MonoBehaviour
             }
         }
 
-        ApplyRangeIndicatorColor(isInRange);
+        RangeIndicatorFeedbackState feedbackState = RangeIndicatorFeedbackState.InRange;
+        // La portée insuffisante a la priorité, sinon on indique la contrainte d'altitude si elle bloque l'action.
+        if (!isInRange)
+        {
+            feedbackState = RangeIndicatorFeedbackState.OutOfRange;
+        }
+        else if (!altitudeValid)
+        {
+            feedbackState = RangeIndicatorFeedbackState.AltitudeMismatch;
+        }
+
+        ApplyRangeIndicatorColor(feedbackState);
     }
 
     /// <summary>
@@ -3854,7 +3934,7 @@ public class NewBattleManager : MonoBehaviour
         if (rangeIndicatorInstance != null)
         {
             rangeIndicatorInstance.SetActive(false);
-            ApplyRangeIndicatorColor(true); // On revient à l'état neutre en attendant la prochaine sélection.
+            ApplyRangeIndicatorColor(RangeIndicatorFeedbackState.InRange); // On revient à l'état neutre en attendant la prochaine sélection.
         }
     }
 
@@ -4101,6 +4181,12 @@ public class NewBattleManager : MonoBehaviour
         HideRangeIndicator();
         if (rangeIndicatorInstance != null)
         {
+            if (rangeIndicatorMaterialInstance != null)
+            {
+                Destroy(rangeIndicatorMaterialInstance);
+                rangeIndicatorMaterialInstance = null;
+            }
+
             Destroy(rangeIndicatorInstance);
             rangeIndicatorInstance = null;
             rangeIndicatorRenderer = null;
