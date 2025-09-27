@@ -169,5 +169,22 @@ public class BattleTimelineUnit : MonoBehaviour
     {
         transform.localScale = Vector3.one * baseScale * highlightMultiplier;
     }
+
+    /// <summary>
+    /// Fournit l'unité actuellement liée à cette vignette de timeline.
+    /// Cette propriété permet d'éviter aux autres gestionnaires de devoir
+    /// maintenir leurs propres références ou de rechercher l'unité via
+    /// <see cref="NewBattleManager"/>.
+    /// </summary>
+    public CharacterUnit BoundUnit => boundUnit;
+
+    /// <summary>
+    /// Expose les données statiques du personnage associé à la vignette.
+    /// L'ancien champ <c>characterData</c> a été remplacé par cette
+    /// propriété afin de conserver la compatibilité avec les systèmes
+    /// existants tout en centralisant la logique d'accès dans
+    /// <see cref="BattleTimelineUnit"/>.
+    /// </summary>
+    public CharacterData characterData => boundUnit != null ? boundUnit.Data : null;
 }
 
