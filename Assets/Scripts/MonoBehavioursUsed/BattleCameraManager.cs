@@ -418,15 +418,38 @@ public class BattleCameraManager : MonoBehaviour
                 Vector3 forward = lookTarget.position - anchor.position;
                 if (forward.sqrMagnitude > 0.0001f)
                     camera.transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
+
+                // 🎯 En parallèle de la rotation manuelle, on informe explicitement Cinemachine de la cible à viser.
+                // Sans cela, l'activation de « CMV_OverShoulder_CasterToTarget » conservait la dernière orientation
+                // connue pendant un court instant, le temps que le pipeline interne recalcule le cadrage.
+                // En imposant immédiatement la cible via TargetSettings, on supprime ce délai et la caméra se
+                // verrouille sur le bon point dès qu'elle obtient la priorité d'affichage.
+                var targetSettings = camera.Target;
+                targetSettings.CustomLookAtTarget = true;
+                targetSettings.LookAtTarget = lookTarget;
+                camera.Target = targetSettings;
             }
             else
             {
                 camera.transform.rotation = anchor.rotation;
+
+                // 🧭 Aucun point de regard valable : on désactive la redirection forcée pour éviter un résidu d'état.
+                var targetSettings = camera.Target;
+                targetSettings.CustomLookAtTarget = false;
+                targetSettings.LookAtTarget = null;
+                camera.Target = targetSettings;
             }
         }
         else
         {
             camera.transform.rotation = anchor.rotation;
+
+            // 🔁 Les caméras qui ne suivent pas une cible doivent s'appuyer uniquement sur leur rotation locale.
+            // On nettoie donc toute instruction précédente d'orientation transmise au CinemachineCamera.
+            var targetSettings = camera.Target;
+            targetSettings.CustomLookAtTarget = false;
+            targetSettings.LookAtTarget = null;
+            camera.Target = targetSettings;
         }
 
         // 🎥 Finalise la pose en ajoutant un très léger flottement « respirant » pour bannir les plans figés.
