@@ -193,6 +193,24 @@ public class InputsManager : MonoBehaviour
 
     #region Inputs
     /// <summary>
+    /// Récupère le <see cref="NewBattleManager"/> uniquement si les menus ne sont pas verrouillés
+    /// par la cinématique d'introduction de combat. Centraliser la vérification permet
+    /// d'éviter la duplication de logique dans chaque callback d'entrée utilisateur.
+    /// </summary>
+    /// <param name="bm">Instance active du gestionnaire de combat lorsque disponible.</param>
+    /// <returns>Vrai si les menus sont accessibles et que l'instance est valide, faux sinon.</returns>
+    private bool TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm)
+    {
+        bm = NewBattleManager.Instance;
+
+        // Si aucune instance n'est disponible ou que la BattleIntro joue encore, on ignore l'entrée.
+        if (bm == null || bm.AreMenusLockedByBattleIntro)
+            return false;
+
+        return true;
+    }
+
+    /// <summary>
     /// Callback de validation des actions de combat.
     /// </summary>
     private void OnConfirm(InputAction.CallbackContext ctx)
@@ -207,7 +225,10 @@ public class InputsManager : MonoBehaviour
             return;
         }
 
-        NewBattleManager bm = NewBattleManager.Instance;
+        // Tant que la BattleIntro est active, on ne valide aucune action de menu pour éviter les chevauchements.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
+
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
@@ -357,7 +378,9 @@ public class InputsManager : MonoBehaviour
     /// </summary>
     private void OnSelect1(InputAction.CallbackContext ctx)
     {
-        NewBattleManager bm = NewBattleManager.Instance;
+        // On ignore immédiatement toute tentative si la cinématique empêche encore l'accès aux menus.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
 
         if (bm.currentBattleState == BattleState.SquadUnit_MainMenu)
         {
@@ -416,7 +439,9 @@ public class InputsManager : MonoBehaviour
     /// </summary>
     private void OnSelect2(InputAction.CallbackContext ctx)
     {
-        NewBattleManager bm = NewBattleManager.Instance;
+        // Tant que l'introduction verrouille les menus, aucune sélection ne doit être prise en compte.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
 
         if (bm.currentBattleState == BattleState.SquadUnit_MainMenu)
         {
@@ -471,7 +496,9 @@ public class InputsManager : MonoBehaviour
     /// </summary>
     private void OnSelect3(InputAction.CallbackContext ctx)
     {
-        NewBattleManager bm = NewBattleManager.Instance;
+        // Même règle pour le troisième bouton : l'entrée est ignorée si la BattleIntro n'est pas terminée.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
 
         if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
@@ -522,7 +549,9 @@ public class InputsManager : MonoBehaviour
     /// </summary>
     private void OnAwake(InputAction.CallbackContext ctx)
     {
-        NewBattleManager bm = NewBattleManager.Instance;
+        // Blocage de l'éveil tant que les introductions empêchent toute interaction.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
 
         if (bm.currentBattleState != BattleState.SquadUnit_SkillsMenu)
             return; // Ignore l'input si le menu des compétences n'est pas actif
@@ -549,7 +578,9 @@ public class InputsManager : MonoBehaviour
     /// </summary>
     private void OnNextSkillPage(InputAction.CallbackContext ctx)
     {
-        NewBattleManager bm = NewBattleManager.Instance;
+        // Ne bascule pas de page tant que la cinématique d'introduction verrouille les menus.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
 
         // On ne réagit que si le joueur se trouve bien dans le menu des compétences,
         // afin d'éviter tout comportement inattendu dans les autres états de combat.
@@ -574,7 +605,9 @@ public class InputsManager : MonoBehaviour
     /// </summary>
     private void OnPreviousSkillPage(InputAction.CallbackContext ctx)
     {
-        NewBattleManager bm = NewBattleManager.Instance;
+        // Même garde-fou pour la navigation arrière.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
 
         // De la même manière que pour l'épaule droite, on vérifie d'abord que le menu
         // des compétences est bien actif avant de traiter l'entrée.
@@ -595,7 +628,9 @@ public class InputsManager : MonoBehaviour
 
     private void OnBackInput(InputAction.CallbackContext ctx)
     {
-        NewBattleManager bm = NewBattleManager.Instance;
+        // Aucun retour arrière n'est traité durant la séquence d'introduction.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
 
         if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu ||
             bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
@@ -633,7 +668,9 @@ public class InputsManager : MonoBehaviour
 
     private void OnBackStarted(InputAction.CallbackContext ctx)
     {
-        NewBattleManager bm = NewBattleManager.Instance;
+        // Démarrer un passage de tour pendant l'intro pourrait couper des animations : on bloque donc la commande.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
         if (bm.currentBattleState == BattleState.SquadUnit_MainMenu && passRoutine == null)
         {
             if (passTurnPulse != null)
@@ -644,6 +681,10 @@ public class InputsManager : MonoBehaviour
 
     private void OnBackCanceled(InputAction.CallbackContext ctx)
     {
+        // Si le verrou est actif, aucune routine n'a dû démarrer : on peut sortir immédiatement.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out _))
+            return;
+
         if (passTurnPulse != null)
             passTurnPulse.pulseSpeed = 2f;
 
@@ -662,6 +703,13 @@ public class InputsManager : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < passHoldDuration)
         {
+            // Surveille en continu l'état du verrou afin d'éviter tout lancement forcé.
+            if (!TryGetBattleManagerWhileMenusUnlocked(out _))
+            {
+                passRoutine = null;
+                yield break;
+            }
+
             if (!playerInputs.Battle.Back.IsPressed())
             {
                 passRoutine = null;
@@ -682,7 +730,9 @@ public class InputsManager : MonoBehaviour
 
     private void OnEnemiesGroupSelection(InputAction.CallbackContext ctx)
     {
-        NewBattleManager bm = NewBattleManager.Instance;
+        // Aucune bascule de groupe pendant l'intro pour préserver la cohérence des caméras.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad)
         {
             TargetType desired = TargetType.SingleEnemy;
@@ -741,7 +791,9 @@ public class InputsManager : MonoBehaviour
 
     private void OnSquadGroupSelection(InputAction.CallbackContext ctx)
     {
-        NewBattleManager bm = NewBattleManager.Instance;
+        // Même logique côté alliés : les entrées sont ignorées tant que l'introduction est active.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
         {
             TargetType desired = TargetType.SingleAlly;
