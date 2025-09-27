@@ -694,6 +694,15 @@ public class NewBattleManager : MonoBehaviour
             elapsedIntroTime += Time.unscaledDeltaTime;
         }
 
+        // 🧷 Toutefois, si une timeline poursuit encore sa lecture une fois le délai minimal écoulé,
+        //    on maintient le verrouillage des menus jusqu'à ce que toutes les mises en scène soient
+        //    effectivement terminées. Sans cette sécurité supplémentaire, les joueurs pouvaient
+        //    sélectionner des compétences ou des objets pendant les dernières secondes des animations.
+        while (IsAnyIntroDirectorStillPlaying(activeDirectors))
+        {
+            yield return null;
+        }
+
         // Restaure les valeurs temporelles initiales une fois le délai écoulé pour que le gameplay
         // retrouve immédiatement sa vitesse normale lorsque le premier tour débute.
         Time.timeScale = initialTimeScale;
@@ -704,6 +713,32 @@ public class NewBattleManager : MonoBehaviour
 
         // La gestion du changement de caméra est réalisée en dehors de cette
         // coroutine afin de laisser la main à l'appelant sur la transition.
+    }
+
+    /// <summary>
+    /// Détermine si au moins une des timelines d'introduction suit encore sa lecture.
+    /// </summary>
+    /// <param name="directors">Liste des directeurs surveillés pendant l'introduction.</param>
+    /// <returns><c>true</c> tant qu'une timeline est en cours, <c>false</c> lorsque toutes sont stoppées.</returns>
+    private static bool IsAnyIntroDirectorStillPlaying(List<PlayableDirector> directors)
+    {
+        if (directors == null || directors.Count == 0)
+            return false;
+
+        // Parcours l'ensemble des directeurs actifs pour vérifier leur état de lecture.
+        foreach (var director in directors)
+        {
+            // Un directeur peut avoir été détruit en cours d'introduction (changement de scène, skip, etc.).
+            // On considère alors que cette timeline est naturellement terminée.
+            if (director == null)
+                continue;
+
+            // Tant que le PlayableDirector reste en lecture, la cinématique est toujours en cours.
+            if (director.state == PlayState.Playing)
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>
