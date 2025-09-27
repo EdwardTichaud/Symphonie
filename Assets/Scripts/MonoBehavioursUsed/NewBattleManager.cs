@@ -4028,7 +4028,30 @@ public class NewBattleManager : MonoBehaviour
 
         float totalReach = baseRange + bonusRange;
         bool hasTotalReach = totalReach > 0f;
-        bool hasRequiredReach = baseRange > 0f;
+
+        // La portée "requise" correspond à la distance effective séparant le lanceur de la cible
+        // suivie par le curseur. Elle permet au joueur de visualiser immédiatement la distance à
+        // franchir pour que l'action soit réalisable, indépendamment de sa portée actuelle.
+        float requiredDistance = 0f;
+        if (targetCursor != null && targetCursor.activeInHierarchy)
+        {
+            // On calcule la distance dans l'espace du monde afin de refléter fidèlement le coût réel.
+            // L'offset vertical de l'indicateur (rangeIndicatorHeightOffset) ne modifie pas la mesure :
+            // seule la projection au sol importe pour la stratégie du joueur.
+            Vector3 ownerPosition = ownerTransform != null ? ownerTransform.position : rangeIndicatorInstance.transform.position;
+            Vector3 cursorPosition = targetCursor.transform.position;
+            requiredDistance = Vector3.Distance(ownerPosition, cursorPosition);
+        }
+        else if (currentTargetCharacter != null)
+        {
+            // Si le curseur est momentanément indisponible (par exemple lors d'une transition), on se
+            // rabat sur la cible actuellement suivie pour conserver une approximation utile.
+            Vector3 ownerPosition = ownerTransform != null ? ownerTransform.position : rangeIndicatorInstance.transform.position;
+            Vector3 targetPosition = currentTargetCharacter.transform.position;
+            requiredDistance = Vector3.Distance(ownerPosition, targetPosition);
+        }
+
+        bool hasRequiredReach = requiredDistance > 0f;
 
         if (!hasTotalReach)
         {
@@ -4077,7 +4100,7 @@ public class NewBattleManager : MonoBehaviour
 
         if (requiredRangeIndicatorInstance != null && hasRequiredReach)
         {
-            ApplyRangeIndicatorScale(requiredRangeIndicatorInstance, baseRange, requiredRangeIndicatorBaseRadius);
+            ApplyRangeIndicatorScale(requiredRangeIndicatorInstance, requiredDistance, requiredRangeIndicatorBaseRadius);
         }
 
         // Détermine si la cible suivie est réellement accessible afin d'ajuster la couleur du feedback.
