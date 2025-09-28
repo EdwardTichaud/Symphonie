@@ -408,6 +408,10 @@ public class BattleCameraManager : MonoBehaviour
         if (anchor == null)
             return;
 
+        // 🧭 On conserve le placement manuel de la Cinemachine afin d'offrir une mise à jour
+        //     immédiate lors d'un changement de priorité. Cette écriture directe garantit que
+        //     la caméra se téléporte exactement sur le point « CMVPoint_… » visé pour la frame
+        //     en cours, avant même que le pipeline Cinemachine n'applique ses propres calculs.
         camera.transform.position = anchor.position;
 
         if (config.LooksAtTarget)
@@ -439,20 +443,14 @@ public class BattleCameraManager : MonoBehaviour
                 // connue pendant un court instant, le temps que le pipeline interne recalcule le cadrage.
                 // En imposant immédiatement la cible via TargetSettings, on supprime ce délai et la caméra se
                 // verrouille sur le bon point dès qu'elle obtient la priorité d'affichage.
-                var targetSettings = camera.Target;
-                targetSettings.CustomLookAtTarget = true;
-                targetSettings.LookAtTarget = lookTarget;
-                camera.Target = targetSettings;
+                ApplyTargetSettings(camera, anchor, lookTarget);
             }
             else
             {
                 camera.transform.rotation = anchor.rotation;
 
                 // 🧭 Aucun point de regard valable : on désactive la redirection forcée pour éviter un résidu d'état.
-                var targetSettings = camera.Target;
-                targetSettings.CustomLookAtTarget = false;
-                targetSettings.LookAtTarget = null;
-                camera.Target = targetSettings;
+                ApplyTargetSettings(camera, anchor, null);
             }
         }
         else
@@ -461,10 +459,7 @@ public class BattleCameraManager : MonoBehaviour
 
             // 🔁 Les caméras qui ne suivent pas une cible doivent s'appuyer uniquement sur leur rotation locale.
             // On nettoie donc toute instruction précédente d'orientation transmise au CinemachineCamera.
-            var targetSettings = camera.Target;
-            targetSettings.CustomLookAtTarget = false;
-            targetSettings.LookAtTarget = null;
-            camera.Target = targetSettings;
+            ApplyTargetSettings(camera, anchor, null);
         }
 
         // 🎥 Finalise la pose en ajoutant un très léger flottement « respirant » pour bannir les plans figés.
@@ -642,6 +637,42 @@ public class BattleCameraManager : MonoBehaviour
 
         Vector3 delta = candidate.position - anchor.position;
         return delta.sqrMagnitude > 0.0001f;
+    }
+
+    /// <summary>
+    /// Met à jour les <see cref="CinemachineCamera.Target"/> afin d'éviter que le pipeline interne
+    /// ne tente de suivre un autre objet que l'ancre calculée par le <see cref="BattleCameraManager"/>.
+    /// </summary>
+    /// <param name="camera">Caméra Cinemachine actuellement manipulée.</param>
+    /// <param name="anchor">Point « CMVPoint_… » servant de référence spatiale.</param>
+    /// <param name="lookTarget">
+    /// Transform éventuellement visé pour la rotation ; peut être <c>null</c> si la caméra ne regarde
+    /// pas une cible particulière (orientation figée sur l'ancre).
+    /// </param>
+    private static void ApplyTargetSettings(CinemachineCamera camera, Transform anchor, Transform lookTarget)
+    {
+        if (camera == null)
+            return;
+
+        var targetSettings = camera.Target;
+
+        // 🔐 On force systématiquement la Cinemachine à considérer l'ancre comme source de Follow pour
+        //     empêcher un autre système (Timeline, previous state, etc.) de déplacer la caméra après coup.
+        targetSettings.CustomFollowTarget = anchor != null;
+        targetSettings.FollowTarget = anchor;
+
+        if (lookTarget != null)
+        {
+            targetSettings.CustomLookAtTarget = true;
+            targetSettings.LookAtTarget = lookTarget;
+        }
+        else
+        {
+            targetSettings.CustomLookAtTarget = false;
+            targetSettings.LookAtTarget = null;
+        }
+
+        camera.Target = targetSettings;
     }
 
     /// <summary>
