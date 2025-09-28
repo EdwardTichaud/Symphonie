@@ -20565,7 +20565,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.2747583}
+  m_AnchoredPosition: {x: 0, y: 0.033852547}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &210359754
@@ -76764,6 +76764,7 @@ GameObject:
   - component: {fileID: 746907182}
   - component: {fileID: 746907181}
   - component: {fileID: 746907180}
+  - component: {fileID: 746907183}
   m_Layer: 11
   m_Name: Viewport
   m_TagString: Untagged
@@ -76842,6 +76843,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 746907178}
   m_CullTransparentMesh: 1
+--- !u!114 &746907183
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 746907178}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cbb20fb6d544f8b9f0a3e53285e0b89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scrollRect: {fileID: 0}
+  contentRoot: {fileID: 0}
+  slotPrefab: {fileID: 0}
+  navigationCooldown: 0.15
 --- !u!1001 &747104965
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -99184,7 +99201,7 @@ CanvasGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 969075273}
   m_Enabled: 1
-  m_Alpha: 1
+  m_Alpha: 0
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
@@ -102838,7 +102855,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.15916213}
+  m_AnchoredPosition: {x: 0, y: 0.0972023}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1005940662
@@ -104458,6 +104475,11 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 6386229745914439740, guid: 0e91bad9b8c41a84584d54b6450d1213, type: 3}
   m_PrefabInstance: {fileID: 1019575890}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1020200744 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5681103163886092337, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
+  m_PrefabInstance: {fileID: 1649092864964444001}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &1020446872
 GameObject:
@@ -129846,7 +129868,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 332824430}
   m_HandleRect: {fileID: 332824429}
   m_Direction: 2
-  m_Value: 0
+  m_Value: 1
   m_Size: 0.9999718
   m_NumberOfSteps: 0
   m_OnValueChanged:
@@ -202321,6 +202343,7 @@ GameObject:
   - component: {fileID: 1926829081}
   - component: {fileID: 1926829080}
   - component: {fileID: 1926829079}
+  - component: {fileID: 1926829082}
   m_Layer: 11
   m_Name: Viewport
   m_TagString: Untagged
@@ -202399,6 +202422,22 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1926829077}
   m_CullTransparentMesh: 1
+--- !u!114 &1926829082
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1926829077}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9cbb20fb6d544f8b9f0a3e53285e0b89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scrollRect: {fileID: 1877183270}
+  contentRoot: {fileID: 1005940661}
+  slotPrefab: {fileID: 0}
+  navigationCooldown: 0.15
 --- !u!1001 &1927210228
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -226242,13 +226281,53 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 5741152712251254874, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       insertIndex: -1
       addedObject: {fileID: 969075274}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5681103163886092337, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1649092864964444004}
   m_SourcePrefab: {fileID: 100100000, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
 --- !u!4 &1649092864964444002 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5741152712251254874, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
   m_PrefabInstance: {fileID: 1649092864964444001}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1649092864964444004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1020200744}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b6e7d30d8df4f6fb21e4159c1c4d6f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  panelRoot: {fileID: 619124547}
+  inventoryCanvasGroup: {fileID: 969075278}
+  inventoryFadeDuration: 2
+  musicalViewport: {fileID: 0}
+  itemViewport: {fileID: 0}
+  musicalSetsDropdown: {fileID: 0}
+  itemSetsDropdown: {fileID: 0}
+  saveMusicalSetButton: {fileID: 0}
+  deleteMusicalSetButton: {fileID: 0}
+  saveItemSetButton: {fileID: 0}
+  deleteItemSetButton: {fileID: 0}
+  closeButton: {fileID: 0}
+  headerLabel: {fileID: 0}
+  helperLabel: {fileID: 0}
+  feedbackLabel: {fileID: 0}
+  musicalViewportTitle: "R\xE9pertoire musical"
+  itemViewportTitle: Sac d'objets
+  helperNavigationText: "\U0001F579\uFE0F Joystick pour naviguer \u2014 \u2705 pour
+    ajouter/retirer \u2014 \u274C pour fermer."
+  panelCursor: {fileID: 0}
+  subPanelCursor: {fileID: 0}
+  slotCursor: {fileID: 0}
+  panelsRoot: {fileID: 0}
+  defaultPanelName: Inventory_Sets_Panel
+  defaultSubPanelName: Inventory_MusicalMovesSet_SubPanel
 --- !u!1001 &1786116741670406466
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -226511,23 +226590,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 785022425143674786, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_Color.a
-      value: 0.00010544857
+      value: 0.000087945235
       objectReference: {fileID: 0}
     - target: {fileID: 785022425143674786, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_Color.b
-      value: 0.00010544857
+      value: 0.000087945235
       objectReference: {fileID: 0}
     - target: {fileID: 785022425143674786, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_Color.g
-      value: 0.00010544857
+      value: 0.000087945235
       objectReference: {fileID: 0}
     - target: {fileID: 785022425143674786, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_Color.r
-      value: 0.00010544857
+      value: 0.000087945235
       objectReference: {fileID: 0}
     - target: {fileID: 785022425143674786, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_Intensity
-      value: 5.3263655
+      value: 3.799665
       objectReference: {fileID: 0}
     - target: {fileID: 3708800652035862243, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_LocalPosition.x
@@ -229367,23 +229446,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2464690655714508881, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_Color.a
-      value: 0.00014015083
+      value: 0.0001247972
       objectReference: {fileID: 0}
     - target: {fileID: 2464690655714508881, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_Color.b
-      value: 0.00014015083
+      value: 0.0001247972
       objectReference: {fileID: 0}
     - target: {fileID: 2464690655714508881, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_Color.g
-      value: 0.00014015083
+      value: 0.0001247972
       objectReference: {fileID: 0}
     - target: {fileID: 2464690655714508881, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_Color.r
-      value: 0.00014015083
+      value: 0.0001247972
       objectReference: {fileID: 0}
     - target: {fileID: 2464690655714508881, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_Intensity
-      value: 35.80272
+      value: 28.449274
       objectReference: {fileID: 0}
     - target: {fileID: 4267005945266872651, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_LocalPosition.x
