@@ -91,7 +91,7 @@ public class InventorySetSlot : MonoBehaviour
         BoundMove = move;
         BoundItem = null;
         RefreshTexts(move != null ? move.moveName : string.Empty);
-        UpdateIcon(move != null ? move.moveSprite : null);
+        UpdateIcon(move != null ? move.moveIcon : null);
     }
 
     /// <summary>
@@ -103,7 +103,7 @@ public class InventorySetSlot : MonoBehaviour
         BoundItem = item;
         BoundMove = null;
         RefreshTexts(item != null ? item.itemName : string.Empty);
-        UpdateIcon(item != null ? item.icon : null);
+        UpdateIcon(item != null ? item.itemIcon : null);
     }
 
     /// <summary>
