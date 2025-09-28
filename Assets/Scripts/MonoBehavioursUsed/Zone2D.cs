@@ -125,15 +125,19 @@ public class Zone2D : MonoBehaviour
     // Sauvegarde de l'état de la caméra avant d'entrer dans la zone
     private struct CameraBackup
     {
-        public Vector3 position;
-        public Quaternion rotation;
+        public Vector3 cameraPosition;
+        public Quaternion cameraRotation;
         public float fieldOfView;
+        public Vector3 rigPosition;
+        public Quaternion rigRotation;
+        public bool usedRig;
     }
 
     private CameraBackup previousState;
 
     // Références runtime
     private Camera runtimeCamera;
+    private Transform runtimeCameraMotionRoot;
     private Transform activeActor;
     private bool zoneActive;
     private Vector3 velocity;
@@ -246,6 +250,8 @@ public class Zone2D : MonoBehaviour
             return;
         }
 
+        runtimeCameraMotionRoot = DetermineCameraMotionRoot(runtimeCamera);
+
         activeActor = actor;
 
         // On suspend immédiatement le contrôleur World pour que la caméra physique ne soit plus
@@ -258,9 +264,18 @@ public class Zone2D : MonoBehaviour
             worldCameraControllerTemporarilyDisabled = true;
         }
 
-        previousState.position = runtimeCamera.transform.position;
-        previousState.rotation = runtimeCamera.transform.rotation;
+        Transform cameraTransform = runtimeCamera.transform;
+        previousState.cameraPosition = cameraTransform.position;
+        previousState.cameraRotation = cameraTransform.rotation;
         previousState.fieldOfView = runtimeCamera.fieldOfView;
+        previousState.usedRig = runtimeCameraMotionRoot != null && runtimeCameraMotionRoot != cameraTransform;
+        if (runtimeCameraMotionRoot != null)
+        {
+            // On mémorise systématiquement la position du pivot (WorldCam_Origin) afin de pouvoir
+            // restaurer précisément le setup de la WorldCamera une fois la zone quittée.
+            previousState.rigPosition = runtimeCameraMotionRoot.position;
+            previousState.rigRotation = runtimeCameraMotionRoot.rotation;
+        }
 
         velocity = Vector3.zero;
         fovVelocity = 0f;
@@ -282,9 +297,17 @@ public class Zone2D : MonoBehaviour
 
         if (runtimeCamera != null)
         {
-            runtimeCamera.transform.position = previousState.position;
-            runtimeCamera.transform.rotation = previousState.rotation;
+            runtimeCamera.transform.position = previousState.cameraPosition;
+            runtimeCamera.transform.rotation = previousState.cameraRotation;
             runtimeCamera.fieldOfView = previousState.fieldOfView;
+        }
+
+        if (runtimeCameraMotionRoot != null && previousState.usedRig)
+        {
+            // Lorsque la WorldCamera est montée sur un parent "WorldCam_Origin", on restaure aussi
+            // ce pivot afin de conserver les offsets et transitions définis ailleurs dans le projet.
+            runtimeCameraMotionRoot.position = previousState.rigPosition;
+            runtimeCameraMotionRoot.rotation = previousState.rigRotation;
         }
 
         // Restauration du contrôleur World uniquement si nous l'avons désactivé nous-même.
@@ -302,6 +325,7 @@ public class Zone2D : MonoBehaviour
         zoneActive = false;
         activeActor = null;
         runtimeCamera = null;
+        runtimeCameraMotionRoot = null;
         activeSubZones.Clear();
     }
 
@@ -316,6 +340,7 @@ public class Zone2D : MonoBehaviour
             return;
         }
 
+        Transform motionRoot = runtimeCameraMotionRoot != null ? runtimeCameraMotionRoot : runtimeCamera.transform;
         Transform followTarget = ResolveFollowTarget();
         ResolvedSettings settings = ResolveSettings(followTarget);
 
@@ -360,21 +385,47 @@ public class Zone2D : MonoBehaviour
 
         if (instant || !settings.smoothPosition)
         {
-            runtimeCamera.transform.position = desiredPosition;
+            motionRoot.position = desiredPosition;
         }
         else
         {
-            runtimeCamera.transform.position = Vector3.SmoothDamp(runtimeCamera.transform.position, desiredPosition, ref velocity, settings.positionSmoothTime);
+            motionRoot.position = Vector3.SmoothDamp(motionRoot.position, desiredPosition, ref velocity, settings.positionSmoothTime);
         }
 
         if (instant || !settings.smoothRotation)
         {
-            runtimeCamera.transform.rotation = desiredRotation;
+            motionRoot.rotation = desiredRotation;
         }
         else
         {
-            runtimeCamera.transform.rotation = Quaternion.Slerp(runtimeCamera.transform.rotation, desiredRotation, Time.deltaTime * settings.rotationSmoothSpeed);
+            motionRoot.rotation = Quaternion.Slerp(motionRoot.rotation, desiredRotation, Time.deltaTime * settings.rotationSmoothSpeed);
         }
+    }
+
+    /// <summary>
+    /// Identifie le transform à piloter pour la caméra. Dans le cas de la WorldCamera,
+    /// c'est son parent "WorldCam_Origin" qui doit être déplacé afin de préserver les rigs existants.
+    /// </summary>
+    private Transform DetermineCameraMotionRoot(Camera camera)
+    {
+        if (camera == null)
+        {
+            return null;
+        }
+
+        Transform cameraTransform = camera.transform;
+        Transform parent = cameraTransform.parent;
+
+        if (parent != null && parent.name == "WorldCam_Origin")
+        {
+            // On retourne explicitement le parent pour éviter de rompre le pipeline mis en place
+            // par le CameraSystem (transitions, animation curves, etc.).
+            return parent;
+        }
+
+        // Pour toutes les autres caméras (ex : caméras temporaires de cinématiques),
+        // on continue à déplacer directement le transform de la caméra.
+        return cameraTransform;
     }
 
     /// <summary>
