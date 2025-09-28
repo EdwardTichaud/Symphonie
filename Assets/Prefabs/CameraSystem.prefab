@@ -3744,7 +3744,6 @@ GameObject:
   m_Component:
   - component: {fileID: 853255619221889716}
   - component: {fileID: 8293381464646350377}
-  - component: {fileID: 5566858002830652305}
   m_Layer: 0
   m_Name: CMV_OverShoulder_CasterToTarget
   m_TagString: Untagged
@@ -3810,19 +3809,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &5566858002830652305
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1859316357072719661}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 277b7ecb732949b48277243c6502886e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 0, z: 0}
 --- !u!1 &1861780073550021084
 GameObject:
   m_ObjectHideFlags: 0
@@ -9607,7 +9593,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1896389122883980122}
   - component: {fileID: 7279195046704657904}
-  - component: {fileID: 2488736226051926661}
   m_Layer: 0
   m_Name: CMV_OverHead_CasterLookTarget
   m_TagString: Untagged
@@ -9673,19 +9658,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &2488736226051926661
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2084075760619096357}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 277b7ecb732949b48277243c6502886e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 0, z: 0}
 --- !u!1 &2101915839012853213
 GameObject:
   m_ObjectHideFlags: 0
@@ -17201,7 +17173,6 @@ GameObject:
   m_Component:
   - component: {fileID: 4708325580689597386}
   - component: {fileID: 5639254888972820362}
-  - component: {fileID: 2549550149563442140}
   m_Layer: 0
   m_Name: CMV_TargetReaction
   m_TagString: Untagged
@@ -17267,19 +17238,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &2549550149563442140
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3661682233202178330}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 277b7ecb732949b48277243c6502886e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 0, z: 0}
 --- !u!1 &3747592525053404212
 GameObject:
   m_ObjectHideFlags: 0
@@ -24540,7 +24498,6 @@ GameObject:
   m_Component:
   - component: {fileID: 7872755496954787973}
   - component: {fileID: 4952693851922537234}
-  - component: {fileID: 5869279857087992929}
   m_Layer: 0
   m_Name: CMV_OverShoulder_CasterLookTarget
   m_TagString: Untagged
@@ -24606,19 +24563,6 @@ MonoBehaviour:
       BarrelClipping: 0.25
       Anamorphism: 0
   BlendHint: 0
---- !u!114 &5869279857087992929
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7471898360159617903}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 277b7ecb732949b48277243c6502886e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  offset: {x: 0, y: 0, z: 0}
 --- !u!1 &7482911514499197347
 GameObject:
   m_ObjectHideFlags: 0
@@ -25099,7 +25043,7 @@ Transform:
   m_GameObject: {fileID: 7666186497415931499}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 2.0000014, y: 2.999998, z: -20.00001}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -25139,7 +25083,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1500
-  field of view: 35
+  field of view: 60.000004
   orthographic: 0
   orthographic size: 5
   m_Depth: 0
