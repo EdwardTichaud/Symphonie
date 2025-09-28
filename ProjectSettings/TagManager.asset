@@ -39,15 +39,15 @@ TagManager:
   - Battle_Ground
   - Battle_Void # Couche pour zones vides en bataille
   - Versus
-  -
-  -
-  -
-  -
-  - 
-  - 
-  - 
-  - 
-  - 
+  - "" # Entrée vide préservée explicitement pour conserver l'indexation Unity.
+  - "" # Idem : Unity crée des couches réservées vides que nous conservons.
+  - "" # Les couches vides doivent être définies comme chaînes vides pour éviter les erreurs YAML.
+  - "" # Les anciennes entrées vides sont maintenant valides pour l'analyseur YAML.
+  - "" # Garder la structure permet de ne pas décaler les couches utilisateur.
+  - "" # Couches placeholder utilisées par Unity pour de futures allocations.
+  - "" # Préservation des emplacements libres pour maintenir la compatibilité.
+  - "" # Entrée volontairement libre ; Unity attend une chaîne vide.
+  - "" # Dernière entrée vide maintenue pour la cohérence du projet.
   m_SortingLayers:
   - name: Default
     uniqueID: 0
