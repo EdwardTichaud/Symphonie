@@ -412,21 +412,29 @@ public class BattleCameraManager : MonoBehaviour
 
         if (config.LooksAtTarget)
         {
-            Transform lookTarget = ResolveLookAtTarget();
-            if (lookTarget != null)
+            // 🧭 On dissocie désormais l'orientation manuelle (rotation de la caméra)
+            //     de la cible fournie à Cinemachine. Cela nous permet de continuer à
+            //     exploiter les ancres de mise en scène définies par les artistes pour
+            //     calculer le vecteur "forward", tout en garantissant que Cinemachine
+            //     pointe explicitement vers l'unité (caster/target) suivie par le gameplay.
+            Transform orientationAnchor = ResolveLookAtOrientationAnchor();
+            Transform lookTarget = ResolveLookAtUnitTarget(orientationAnchor);
+
+            Transform rotationReference = orientationAnchor != null ? orientationAnchor : lookTarget;
+
+            if (rotationReference != null)
             {
-                Vector3 forward = lookTarget.position - anchor.position;
+                Vector3 forward = rotationReference.position - anchor.position;
                 if (forward.sqrMagnitude > 0.0001f)
                     camera.transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
 
                 // 🎯 En parallèle de la rotation manuelle, on informe explicitement Cinemachine de la cible à viser.
-                // Sans cela, l'activation de « CMV_OverShoulder_CasterToTarget » conservait la dernière orientation
-                // connue pendant un court instant, le temps que le pipeline interne recalcule le cadrage.
-                // En imposant immédiatement la cible via TargetSettings, on supprime ce délai et la caméra se
-                // verrouille sur le bon point dès qu'elle obtient la priorité d'affichage.
+                //     La cible est toujours une unité de gameplay (currentTarget ou currentCaster) lorsque disponible,
+                //     ce qui évite que Cinemachine ne se verrouille sur un point d'ancrage auxiliaire tel que
+                //     « CMVPoint_TargetReaction ».
                 var targetSettings = camera.Target;
                 targetSettings.CustomLookAtTarget = true;
-                targetSettings.LookAtTarget = lookTarget;
+                targetSettings.LookAtTarget = lookTarget != null ? lookTarget : rotationReference;
                 camera.Target = targetSettings;
             }
             else
@@ -550,25 +558,70 @@ public class BattleCameraManager : MonoBehaviour
     }
 
     /// <summary>Détermine le Transform à regarder lorsque la caméra doit suivre la cible.</summary>
-    private Transform ResolveLookAtTarget()
+    private Transform ResolveLookAtOrientationAnchor()
     {
         if (targetAnchorOverride != null)
             return targetAnchorOverride;
 
-        // Tentative 1 : exploiter les nouveaux points globaux "CMVPoint_OverShoulderLookTarget_*".
-        // Ces points ne sont pas portés par l'unité directement, mais regroupés sous le parent
-        // contenant toute l'escouade (alliée ou ennemie). On commence par interroger la cible,
-        // puis on retente avec le lanceur (utile durant la préparation d'une action sans cible).
+        // 🎥 Tentative 1 : exploiter les points globaux « CMVPoint_OverShoulderLookTarget_* » générés
+        //     sur le parent des unités. Ils offrent un repère stable lorsque la cible bouge rapidement
+        //     (ex : esquives, téléportations), évitant ainsi des oscillations brusques de la caméra.
         Transform sharedLookAnchor = ResolveSharedLookTargetAnchor(currentTarget);
         if (sharedLookAnchor == null)
             sharedLookAnchor = ResolveSharedLookTargetAnchor(currentCaster);
         if (sharedLookAnchor != null)
             return sharedLookAnchor;
 
+        // 🎬 Repli : on privilégie le point « TargetReaction » de la cible si disponible afin de conserver
+        //     un cadrage cohérent avec les animations prévues par l'équipe artistique.
         if (currentTarget != null)
         {
             Transform reactionPoint = currentTarget.GetCameraAnchor("CMVPoint_TargetReaction");
-            return reactionPoint != null ? reactionPoint : currentTarget.transform;
+            if (reactionPoint != null)
+                return reactionPoint;
+        }
+
+        // 🧍 Dernier recours : si la cible n'existe plus (multi-cible, AoE, etc.), on s'appuie sur le caster.
+        if (currentCaster != null)
+        {
+            Transform casterReaction = currentCaster.GetCameraAnchor("CMVPoint_TargetReaction");
+            if (casterReaction != null)
+                return casterReaction;
+
+            return currentCaster.transform;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Détermine quel transform fournir à Cinemachine comme cible de regard.
+    /// </summary>
+    private Transform ResolveLookAtUnitTarget(Transform orientationAnchor)
+    {
+        // 🎯 Priorité absolue : suivre la cible de gameplay lorsque celle-ci est définie.
+        if (currentTarget != null)
+            return currentTarget.transform;
+
+        // 🛡️ Aucun target explicite : on se rabat sur le lanceur de l'action.
+        if (currentCaster != null)
+            return currentCaster.transform;
+
+        // 🧩 Si l'override ou l'ancre d'orientation pointe vers un objet spécifique (timeline, FX…),
+        //     on tente d'en extraire l'unité parent pour conserver un regard cohérent.
+        if (orientationAnchor != null)
+        {
+            CharacterUnit owner = orientationAnchor.GetComponentInParent<CharacterUnit>();
+            if (owner != null)
+                return owner.transform;
+
+            return orientationAnchor; // Fallback : l'ancre peut être un proxy hors CharacterUnit (ex : décor animé).
+        }
+
+        if (targetAnchorOverride != null)
+        {
+            CharacterUnit owner = targetAnchorOverride.GetComponentInParent<CharacterUnit>();
+            return owner != null ? owner.transform : targetAnchorOverride;
         }
 
         return null;
