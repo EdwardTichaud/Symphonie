@@ -189,6 +189,15 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Inventory"",
+                    ""type"": ""Button"",
+                    ""id"": ""6d3de0c7-4d52-4182-89c2-b9fae2fd813f"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -442,6 +451,28 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""ForcedCamMove"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""68b2119f-6877-497f-932a-e50fff0467f3"",
+                    ""path"": ""<Gamepad>/select"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Inventory"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""05adbb29-c870-4584-8363-cdc0b9e58a6d"",
+                    ""path"": ""<Keyboard>/i"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Inventory"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1150,6 +1181,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_World_Dash = m_World.FindAction("Dash", throwIfNotFound: true);
         m_World_ForceCam = m_World.FindAction("ForceCam", throwIfNotFound: true);
         m_World_ForcedCamMove = m_World.FindAction("ForcedCamMove", throwIfNotFound: true);
+        m_World_Inventory = m_World.FindAction("Inventory", throwIfNotFound: true);
         // Battle
         m_Battle = asset.FindActionMap("Battle", throwIfNotFound: true);
         m_Battle_Back = m_Battle.FindAction("Back", throwIfNotFound: true);
@@ -1272,6 +1304,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_World_Dash;
     private readonly InputAction m_World_ForceCam;
     private readonly InputAction m_World_ForcedCamMove;
+    private readonly InputAction m_World_Inventory;
     /// <summary>
     /// Provides access to input actions defined in input action map "World".
     /// </summary>
@@ -1327,6 +1360,10 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "World/ForcedCamMove".
         /// </summary>
         public InputAction @ForcedCamMove => m_Wrapper.m_World_ForcedCamMove;
+        /// <summary>
+        /// Provides access to the underlying input action "World/Inventory".
+        /// </summary>
+        public InputAction @Inventory => m_Wrapper.m_World_Inventory;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1386,6 +1423,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @ForcedCamMove.started += instance.OnForcedCamMove;
             @ForcedCamMove.performed += instance.OnForcedCamMove;
             @ForcedCamMove.canceled += instance.OnForcedCamMove;
+            @Inventory.started += instance.OnInventory;
+            @Inventory.performed += instance.OnInventory;
+            @Inventory.canceled += instance.OnInventory;
         }
 
         /// <summary>
@@ -1430,6 +1470,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @ForcedCamMove.started -= instance.OnForcedCamMove;
             @ForcedCamMove.performed -= instance.OnForcedCamMove;
             @ForcedCamMove.canceled -= instance.OnForcedCamMove;
+            @Inventory.started -= instance.OnInventory;
+            @Inventory.performed -= instance.OnInventory;
+            @Inventory.canceled -= instance.OnInventory;
         }
 
         /// <summary>
@@ -2096,6 +2139,13 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnForcedCamMove(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Inventory" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnInventory(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Battle" which allows adding and removing callbacks.

@@ -53,9 +53,22 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f24e25ca8ff848a2a85b6f865e42c390, type: 2}
   - {fileID: 11400000, guid: ffffffff000000000000000000000001, type: 2}
   specialMusicalMove: {fileID: 11400000, guid: 857c2cb2a8614382b75615f4f5a589f6, type: 2}
+  musicalMoveSets:
+  - setName: CryingAngel
+    prioritizedMoves:
+    - {fileID: 11400000, guid: e5d7b6fc3f0d4cc095fd27160e6ef5e5, type: 2}
+    - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
+    - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
+  defaultMusicalMoveSetIndex: -1
+  itemSets:
+  - setName: CryingAngel
+    prioritizedItems:
+    - {fileID: 11400000, guid: 370617c19b664f29839d25a4955dacf9, type: 2}
+    - {fileID: 11400000, guid: fd8086605fb14e81a0e94c639309929f, type: 2}
+  defaultItemSetIndex: -1
   currentInitiative: 1
   currentRange: 9.55
-  currentHP: 50
+  currentHP: 10
   currentStrength: 1
   currentDefense: 1
   currentPower: 0
@@ -63,13 +76,15 @@ MonoBehaviour:
   currentVitality: 0
   currentSagacity: 0
   isPlayerControlled: 1
-  currentRage: 0
+  currentRage: 40
   currentFatigue: 0
   currentReflex: 0
   currentMobility: 0
   currentSpeed: 0
   currentInterceptionRange: 0
   currentInterceptionChance: 0
+  currentMusicalMoveSetIndex: -1
+  currentItemSetIndex: -1
   hitSound: {fileID: 11400000, guid: e62c453f0c6e71b4d8a256bae33452d0, type: 2}
   criticalHitSound: {fileID: 11400000, guid: bd24b3bf43a46ab4fbd9d997c10c3134, type: 2}
   interceptedSound: {fileID: 11400000, guid: f98414021b3ac1b43a114401376cea1d, type: 2}
