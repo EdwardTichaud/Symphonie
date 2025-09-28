@@ -1,18 +1,33 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class InventoryManager : MonoBehaviour
 {
     public static InventoryManager Instance { get; private set; }
 
-    [Header("Items actuellement en inventaire")]
-    [SerializeField] private List<ItemData> inventoryItems = new();
+    [Header("Configuration initiale")]
+    [FormerlySerializedAs("inventoryItems")]
+    [SerializeField, HideInInspector] private List<ItemData> legacySerializedItems = new();
 
-    // Suivi des limitations d'utilisation des items
-    private Dictionary<ItemData, int> itemUsesThisTurn = new();
-    private Dictionary<ItemData, int> itemUsesThisBattle = new();
+    [Tooltip("Piles d'objets disponibles au lancement. Chaque entrée référence un ScriptableObject ItemData.")]
+    [SerializeField] private List<InventoryItemStack> itemStacks = new();
+
+    /// <summary>
+    /// Dictionnaire interne pour accéder rapidement aux piles existantes.
+    /// </summary>
+    private readonly Dictionary<ItemData, InventoryItemStack> stackLookup = new();
+
+    /// <summary>
+    /// Liste réutilisée pour exposer un inventaire à plat (utilisée par l'UI).
+    /// </summary>
+    private readonly List<ItemData> flatInventoryCache = new();
+
+    /// <summary>
+    /// Permet d'interroger directement les piles (utile pour les interfaces avancées).
+    /// </summary>
+    public IReadOnlyList<InventoryItemStack> ItemStacks => itemStacks;
 
     // --- Suivi des effets temporaires appliqués aux personnages ---
     // Pour chaque personnage, on garde la liste des modificateurs actifs afin
@@ -39,14 +54,41 @@ public class InventoryManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Optionnel : charger dynamiquement depuis Resources/Items  
-        // allItems = Resources.LoadAll<ItemData>("Items").ToList();
+        // On reconstruit le dictionnaire runtime à partir des données sérialisées.
+        RebuildLookup();
+
+        // Conversion automatique des anciennes sauvegardes qui utilisaient une
+        // simple liste de ScriptableObjects pour représenter l'inventaire.
+        ImportLegacySerializedItems();
+
+        // Un tri systématique garantit un affichage cohérent dans tous les menus.
+        SortStacks();
     }
 
     /// <summary>
     /// Renvoie la liste des items que le joueur possède.
     /// </summary>
-    public IReadOnlyList<ItemData> GetInventoryItems() => inventoryItems;
+    public IReadOnlyList<ItemData> GetInventoryItems()
+    {
+        flatInventoryCache.Clear();
+
+        foreach (var stack in itemStacks)
+        {
+            if (stack?.item == null)
+                continue;
+
+            if (stack.item.consumeOnUse && stack.quantity <= 0)
+                continue; // Pile vide : on ne l'affiche plus dans l'UI.
+
+            int copies = stack.item.consumeOnUse
+                ? stack.quantity
+                : Mathf.Max(1, stack.quantity);
+            for (int i = 0; i < copies; i++)
+                flatInventoryCache.Add(stack.item);
+        }
+
+        return flatInventoryCache;
+    }
 
     /// <summary>
     /// Renvoie la liste des items possédés et utilisables en combat.
@@ -55,9 +97,19 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public List<ItemData> GetUsableItems(CharacterUnit prioritizedFor = null)
     {
-        var usable = inventoryItems
-            .Where(item => item != null && item.isUsableInBattle && CanUseItem(item))
-            .ToList();
+        List<ItemData> usable = new();
+
+        foreach (var stack in itemStacks)
+        {
+            if (!IsStackUsable(stack))
+                continue;
+
+            int copies = stack.item.consumeOnUse
+                ? stack.quantity
+                : Mathf.Max(1, stack.quantity);
+            for (int i = 0; i < copies; i++)
+                usable.Add(stack.item);
+        }
 
         if (prioritizedFor == null || prioritizedFor.Data == null)
             return usable;
@@ -68,12 +120,38 @@ public class InventoryManager : MonoBehaviour
     /// <summary>
     /// Ajoute un item à l'inventaire (uniquement si c'est un item valide du jeu).
     /// </summary>
+    public void AddItem(ItemData item, int quantity = 1)
+    {
+        AddItemInternal(item, quantity, true);
+    }
+
+    private void AddItemInternal(ItemData item, int quantity, bool logAddition)
+    {
+        if (item == null || quantity <= 0)
+            return;
+
+        if (!stackLookup.TryGetValue(item, out var stack))
+        {
+            stack = new InventoryItemStack(item, 0);
+            itemStacks.Add(stack);
+            stackLookup[item] = stack;
+        }
+
+        stack.AddQuantity(quantity);
+        SortStacks();
+
+        if (logAddition)
+            Debug.Log($"[Inventory] Ajout de l'objet : {item.itemName} (x{quantity}).");
+    }
+
+    /// <summary>
+    /// Ajoute une série d'items à l'inventaire (conserve la compatibilité avec l'ancien appel).
+    /// </summary>
     public void AddItem(List<ItemData> items)
     {
         foreach (ItemData item in items)
         {
-            inventoryItems.Add(item);
-            Debug.Log($"[Inventory] Ajout de l'objet : {item.itemName}");
+            AddItem(item);
         }        
     }
 
@@ -82,12 +160,6 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public void UseItem(ItemData item, CharacterUnit caster, CharacterUnit target, bool isCritical)
     {
-        if (!inventoryItems.Contains(item))
-        {
-            Debug.LogWarning($"Impossible d'utiliser {item.itemName} : non trouvé en inventaire.");
-            return;
-        }
-
         if (!CanUseItem(item))
         {
             Debug.LogWarning($"Limite d'utilisation atteinte pour {item.itemName}.");
@@ -98,7 +170,6 @@ public class InventoryManager : MonoBehaviour
 
         item.ApplyEffect(caster, target, isCritical);
         RegisterItemUse(item);
-        inventoryItems.Remove(item);
     }
 
     /// <summary>
@@ -265,21 +336,10 @@ public class InventoryManager : MonoBehaviour
         if (item == null)
             return false;
 
-        if (item.maxUsesPerTurn > 0)
-        {
-            itemUsesThisTurn.TryGetValue(item, out int usedTurn);
-            if (usedTurn >= item.maxUsesPerTurn)
-                return false;
-        }
+        if (!stackLookup.TryGetValue(item, out var stack))
+            return false;
 
-        if (item.maxUsesPerBattle > 0)
-        {
-            itemUsesThisBattle.TryGetValue(item, out int usedBattle);
-            if (usedBattle >= item.maxUsesPerBattle)
-                return false;
-        }
-
-        return true;
+        return IsStackUsable(stack);
     }
 
     /// <summary>
@@ -287,17 +347,18 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public void RegisterItemUse(ItemData item)
     {
-        if (item.maxUsesPerTurn > 0)
-        {
-            itemUsesThisTurn.TryGetValue(item, out int usedTurn);
-            itemUsesThisTurn[item] = usedTurn + 1;
-        }
+        if (!stackLookup.TryGetValue(item, out var stack))
+            return;
 
-        if (item.maxUsesPerBattle > 0)
-        {
-            itemUsesThisBattle.TryGetValue(item, out int usedBattle);
-            itemUsesThisBattle[item] = usedBattle + 1;
-        }
+        bool consumed = stack.RegisterUse(item.consumeOnUse);
+        if (!consumed && item.consumeOnUse)
+            return;
+
+            if (item.consumeOnUse && stack.quantity <= 0)
+            {
+                itemStacks.Remove(stack);
+                stackLookup.Remove(item);
+            }
     }
 
     /// <summary>
@@ -305,7 +366,8 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public void ResetTurnItemUsage()
     {
-        itemUsesThisTurn.Clear();
+        foreach (var stack in itemStacks)
+            stack?.ResetTurnUsage();
     }
 
     /// <summary>
@@ -313,7 +375,62 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public void ResetBattleItemUsage()
     {
-        itemUsesThisTurn.Clear();
-        itemUsesThisBattle.Clear();
+        foreach (var stack in itemStacks)
+            stack?.ResetBattleUsage();
+    }
+
+    /// <summary>
+    /// Vérifie si la pile peut être utilisée (stock suffisant + limites respectées).
+    /// </summary>
+    private bool IsStackUsable(InventoryItemStack stack)
+    {
+        if (stack == null || stack.item == null)
+            return false;
+
+        if (!stack.item.isUsableInBattle)
+            return false;
+
+        bool hasStock = stack.item.consumeOnUse ? stack.quantity > 0 : true;
+        if (!hasStock)
+            return false;
+
+        if (stack.item.maxUsesPerTurn > 0 && stack.usesThisTurn >= stack.item.maxUsesPerTurn)
+            return false;
+
+        if (stack.item.maxUsesPerBattle > 0 && stack.usesThisBattle >= stack.item.maxUsesPerBattle)
+            return false;
+
+        return true;
+    }
+
+    private void RebuildLookup()
+    {
+        stackLookup.Clear();
+        itemStacks ??= new List<InventoryItemStack>();
+        itemStacks.RemoveAll(stack => stack == null || stack.item == null);
+
+        foreach (var stack in itemStacks)
+            stackLookup[stack.item] = stack;
+    }
+
+    private void ImportLegacySerializedItems()
+    {
+        if (legacySerializedItems == null || legacySerializedItems.Count == 0)
+            return;
+
+        foreach (var item in legacySerializedItems)
+            AddItemInternal(item, 1, false);
+
+        legacySerializedItems.Clear();
+    }
+
+    private void SortStacks()
+    {
+        itemStacks.Sort((a, b) =>
+        {
+            string aName = a?.item != null ? a.item.itemName : string.Empty;
+            string bName = b?.item != null ? b.item.itemName : string.Empty;
+            return string.Compare(aName, bName, System.StringComparison.OrdinalIgnoreCase);
+        });
     }
 }

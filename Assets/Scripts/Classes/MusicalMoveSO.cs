@@ -23,6 +23,15 @@ public class MusicalMoveSO : ScriptableObject
     public Sprite moveIcon;
     [TextArea, Tooltip("Description textuelle détaillant l'effet et l'utilisation du move.")]
     public string description;
+    [Header("Inventaire & Accessibilité")]
+    [Tooltip("Catégorie affichée dans l'inventaire pour guider les nouveaux joueurs.")]
+    public string inventoryCategory = "Objet";
+    [TextArea, Tooltip("Résumé court utilisé dans l'inventaire et les aides contextuelles.")]
+    public string inventorySummary;
+    [Tooltip("Si désactivé, l'objet reste dans l'inventaire après utilisation.")]
+    public bool consumeOnUse = true;
+    [Tooltip("Moves conseillés pour créer des combos efficaces avec cet objet.")]
+    public List<MusicalMoveSO> recommendedMusicalMoves = new();
     // L'animation de ciblage est désormais pilotée par la Timeline de préparation
     [Tooltip("Si vrai, le lanceur garde constamment la cible en ligne de mire lors de la préparation.")]
     public bool stayFaceToTarget = true;
