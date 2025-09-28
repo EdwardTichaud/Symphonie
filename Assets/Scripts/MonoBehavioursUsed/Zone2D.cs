@@ -5,7 +5,7 @@ using UnityEngine;
 /// Zone de caméra dédiée aux séquences « en 2D » de Symphonie.
 /// Lorsqu'un joueur entre dans le volume de déclenchement, la caméra
 /// est repositionnée pour ne se déplacer que sur un plan 2D défini par la zone.
-/// Cette classe offre un ensemble complet d'options : choix du plan, distance,
+/// Cette classe offre un ensemble complet d'options : orientation définie par le prefab, distance,
 /// champ de vision, comportement fixe ou en suivi, offsets et lissage.
 /// 
 /// L'objectif est de faciliter les transitions entre phases 3D et phases plus
@@ -16,17 +16,6 @@ using UnityEngine;
 public class Zone2D : MonoBehaviour
 {
     /// <summary>
-    /// Plan dans lequel la caméra doit se déplacer.
-    /// </summary>
-    public enum CameraPlane
-    {
-        XY,        // Plan horizontal (vue de côté – normal = forward)
-        XZ,        // Plan classique « sol » (normal = up)
-        YZ,        // Plan vertical (normal = right)
-        Custom     // Plan défini par un vecteur personnalisé
-    }
-
-    /// <summary>
     /// Paramètres principaux de la zone. Cette classe est sérialisée pour
     /// faciliter la configuration dans l'inspecteur et permettre aux sous-zones
     /// de créer des overrides temporaires.
@@ -34,13 +23,6 @@ public class Zone2D : MonoBehaviour
     [System.Serializable]
     public class ZoneSettings
     {
-        [Header("Plan de déplacement")]
-        [Tooltip("Plan sur lequel la caméra pourra se déplacer.")]
-        public CameraPlane plane = CameraPlane.XZ;
-
-        [Tooltip("Normal personnalisée lorsque le plan est défini sur Custom.")]
-        public Vector3 customPlaneNormal = Vector3.up;
-
         [Header("Placement de la caméra")]
         [Tooltip("Distance de la caméra par rapport au point suivi, le long de la normale du plan.")]
         public float distance = 8f;
@@ -108,9 +90,10 @@ public class Zone2D : MonoBehaviour
         public float rotationSmoothSpeed;
         public float fovSmoothTime;
 
-        public ResolvedSettings(ZoneSettings source, Transform follow)
+        public ResolvedSettings(ZoneSettings source, Transform follow, Vector3 defaultPlaneNormal)
         {
-            planeNormal = ResolvePlaneNormal(source.plane, source.customPlaneNormal);
+            // La normale est dérivée de l'orientation du prefab ou d'une sous-zone éventuelle.
+            planeNormal = NormalizePlaneNormal(defaultPlaneNormal);
             distance = Mathf.Max(0f, source.distance);
             fieldOfView = Mathf.Clamp(source.fieldOfView, 1f, 179f);
             keepCameraFixed = source.keepCameraFixed;
@@ -388,7 +371,8 @@ public class Zone2D : MonoBehaviour
     /// </summary>
     private ResolvedSettings ResolveSettings(Transform followTarget)
     {
-        ResolvedSettings settings = new ResolvedSettings(baseSettings, followTarget);
+        // On initialise les réglages avec la normale issue du placement manuel du prefab.
+        ResolvedSettings settings = new ResolvedSettings(baseSettings, followTarget, GetDefaultPlaneNormal());
 
         // Les sous-zones s'appliquent dans l'ordre d'entrée, la dernière ayant la priorité.
         for (int i = 0; i < activeSubZones.Count; i++)
@@ -420,18 +404,21 @@ public class Zone2D : MonoBehaviour
     }
 
     /// <summary>
-    /// Calcule la normale du plan en fonction des réglages.
+    /// Détermine le plan par défaut de la zone en se basant sur l'orientation du prefab.
+    /// Les designers peuvent ainsi placer manuellement la zone pour définir la normale souhaitée.
     /// </summary>
-    internal static Vector3 ResolvePlaneNormal(CameraPlane plane, Vector3 customNormal)
+    private Vector3 GetDefaultPlaneNormal()
     {
-        return plane switch
-        {
-            CameraPlane.XY => Vector3.forward,
-            CameraPlane.XZ => Vector3.up,
-            CameraPlane.YZ => Vector3.right,
-            CameraPlane.Custom => customNormal.sqrMagnitude < 0.0001f ? Vector3.up : customNormal.normalized,
-            _ => Vector3.up
-        };
+        // L'axe "Up" du transform est utilisé afin d'offrir une lecture intuitive dans la scène.
+        return transform.up;
+    }
+
+    /// <summary>
+    /// Garantit que la normale du plan reste exploitable même si elle est quasi nulle.
+    /// </summary>
+    internal static Vector3 NormalizePlaneNormal(Vector3 normal)
+    {
+        return normal.sqrMagnitude < 0.0001f ? Vector3.up : normal.normalized;
     }
 
     /// <summary>
