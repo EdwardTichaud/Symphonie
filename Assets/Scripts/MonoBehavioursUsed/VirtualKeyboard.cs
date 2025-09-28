@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -38,6 +39,17 @@ public class VirtualKeyboard : MonoBehaviour
     private float _lastMoveTime;
     // Texte actuellement saisi via le clavier virtuel, accessible aux autres systèmes.
     public string currentVKWordText { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Évènement déclenché lorsque le joueur valide sa saisie via le bouton "OK".
+    /// </summary>
+    public event Action<string> WordValidated;
+
+    /// <summary>
+    /// Évènement déclenché à chaque fermeture du clavier, que ce soit après validation
+    /// ou annulation (utile pour réactiver certains panneaux).
+    /// </summary>
+    public event Action KeyboardClosed;
 
     // Référence vers le système d'inputs. On privilégie l'instance centrale fournie par InputsManager
     // afin de conserver une cohérence des contrôles dans tout le projet.
@@ -106,6 +118,9 @@ public class VirtualKeyboard : MonoBehaviour
         cursor.gameObject.SetActive(true);
 
         _currentIndex = 0;
+        currentVKWordText = string.Empty; // Réinitialise systématiquement la saisie.
+        if (currentVKWord != null)
+            currentVKWord.text = string.Empty;
         UpdateCursor();
 
         // On s'assure que le mapping World est actif pour recevoir les entrées.
@@ -147,6 +162,8 @@ public class VirtualKeyboard : MonoBehaviour
 
         if (keyboardRoot != null)
             keyboardRoot.SetActive(false);
+
+        KeyboardClosed?.Invoke();
     }
 
     /// <summary>
@@ -214,7 +231,7 @@ public class VirtualKeyboard : MonoBehaviour
         }
         else if (keyName == "OK")
         {
-            // Pour l'instant, la validation finale ferme simplement le clavier.
+            WordValidated?.Invoke(currentVKWordText);
             CloseVK();
         }
         else

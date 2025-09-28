@@ -40,11 +40,20 @@ public class CameraController : MonoBehaviour
     [Tooltip("Fréquence de l'oscillation de respiration.")]
     [SerializeField] private float breathingFrequency = 1f;
 
+    [Tooltip("Autorise l'effet de respiration sur la WorldCamera. Pratique à désactiver pour aligner WorldCam_Cam sur WorldCam_Origin lors du debug ou des Timeline.")]
+    [SerializeField] private bool enableWorldCameraBreathing = true;
+    [Tooltip("Autorise l'effet de respiration sur la BattleCamera. À couper si la caméra est gérée par Cinemachine.")]
+    [SerializeField] private bool enableBattleCameraBreathing = true;
+
     private GameObject battleCamera;               // Référence directe à la BattleCamera
     private Transform battleCameraParent;      // Parent direct de la BattleCamera (utilisé pour le forçage)
     private bool battleCameraSupportsBreathing; // Indique si l'effet de respiration peut être appliqué sans perturber Cinemachine.
     private float worldBreathOffset;           // Dernier décalage appliqué à la WorldCamera elle-même
     private float battleBreathOffset;          // Dernier décalage appliqué à la BattleCamera elle-même
+    private Vector3 worldCameraBaseLocalPosition;    // Position locale de référence (sans respiration)
+    private bool worldCameraBaseCaptured;             // Flag garantissant que la base a bien été lue une première fois
+    private Vector3 battleCameraBaseLocalPosition;   // Position locale de référence pour la BattleCamera
+    private bool battleCameraBaseCaptured;            // Flag pour éviter de relire la base à chaque LateUpdate
 
     [Header("---------- World Camera ----------")]
 
@@ -115,6 +124,14 @@ public class CameraController : MonoBehaviour
             ? worldCamera.transform.parent
             : worldCamera?.transform; // fallback si aucun parent
 
+        if (worldCamera != null)
+        {
+            // On capture dès maintenant la position locale de référence afin de pouvoir remettre
+            // WorldCam_Cam pile sur WorldCam_Origin quand l'effet de respiration est coupé.
+            worldCameraBaseLocalPosition = worldCamera.transform.localPosition;
+            worldCameraBaseCaptured = true;
+        }
+
         // Initialise les valeurs sauvegardées pour pouvoir restaurer la caméra plus tard
         if (worldCamera != null)
         {
@@ -139,6 +156,11 @@ public class CameraController : MonoBehaviour
             battleCameraParent = battleCamera.transform.parent != null
                 ? battleCamera.transform.parent
                 : battleCamera.transform;
+
+            // Idem que pour la WorldCamera : on mémorise la position locale de base pour
+            // pouvoir supprimer proprement le décalage de respiration en cas de besoin.
+            battleCameraBaseLocalPosition = battleCamera.transform.localPosition;
+            battleCameraBaseCaptured = true;
 
             // Vérifie si l'objet tagué "BattleCamera" est une caméra Unity classique ou une entité Cinemachine
             // (caméra virtuelle ou caméra physique contrôlée par un CinemachineBrain).
@@ -243,13 +265,25 @@ public class CameraController : MonoBehaviour
 
         // Applique le léger mouvement de respiration directement sur les GameObjects caméra
         // (leurs parents restent libres pour recevoir les déplacements forcés)
-        ApplyBreathing(worldCamera != null ? worldCamera.transform : null, ref worldBreathOffset);
+        ApplyBreathing(
+            worldCamera != null ? worldCamera.transform : null,
+            ref worldBreathOffset,
+            enableWorldCameraBreathing,
+            ref worldCameraBaseLocalPosition,
+            ref worldCameraBaseCaptured
+        );
         // Si la BattleCamera est contrôlée par Cinemachine, on évite tout déplacement manuel
         // pour ne pas contrarier BattleCameraManager.
         Transform battleBreathingTarget = battleCameraSupportsBreathing && battleCamera != null
             ? battleCamera.transform
             : null;
-        ApplyBreathing(battleBreathingTarget, ref battleBreathOffset);
+        ApplyBreathing(
+            battleBreathingTarget,
+            ref battleBreathOffset,
+            enableBattleCameraBreathing,
+            ref battleCameraBaseLocalPosition,
+            ref battleCameraBaseCaptured
+        );
     }
 
     /// <summary>
@@ -550,15 +584,44 @@ public class CameraController : MonoBehaviour
     /// Doit être appelé sur le GameObject possédant la caméra afin de laisser
     /// son parent libre pour les translations forcées.
     /// </summary>
-    void ApplyBreathing(Transform camHolder, ref float lastOffset)
+    void ApplyBreathing(Transform camHolder, ref float lastOffset, bool breathingEnabled, ref Vector3 baseLocalPosition, ref bool baseCaptured)
     {
         if (camHolder == null) return; // Sécurité si la caméra n'a pas été trouvée
+
+        if (!baseCaptured)
+        {
+            // La toute première fois, on mémorise la position actuelle pour en faire notre point zéro.
+            baseLocalPosition = camHolder.localPosition;
+            baseCaptured = true;
+        }
+        else
+        {
+            // Si un autre système a déplacé la caméra (ex : Timeline, script temporaire),
+            // on recalcule la base autour de la nouvelle position pour éviter un snap brutal.
+            Vector3 expectedPosition = baseLocalPosition + Vector3.up * lastOffset;
+            if ((camHolder.localPosition - expectedPosition).sqrMagnitude > 0.000001f)
+            {
+                baseLocalPosition = camHolder.localPosition - Vector3.up * lastOffset;
+            }
+        }
+
+        if (!breathingEnabled)
+        {
+            // Si la respiration est désactivée, on s'assure que la caméra revient exactement
+            // sur son point de base (indispensable pour que WorldCam_Cam recolle visuellement au pivot WorldCam_Origin).
+            if (!Mathf.Approximately(lastOffset, 0f) || (camHolder.localPosition - baseLocalPosition).sqrMagnitude > 0.000001f)
+            {
+                camHolder.localPosition = baseLocalPosition;
+                lastOffset = 0f;
+            }
+            return;
+        }
 
         // Calcul du nouvel offset basé sur une sinusoïde pour simuler la respiration
         float newOffset = Mathf.Sin(Time.time * breathingFrequency) * breathingAmplitude;
 
-        // Application différentielle pour ne pas perturber d'autres déplacements
-        camHolder.localPosition += Vector3.up * (newOffset - lastOffset);
+        // Application absolue à partir du point de base pour éviter tout drift et pour faciliter la compréhension dans l'inspecteur.
+        camHolder.localPosition = baseLocalPosition + Vector3.up * newOffset;
 
         // Mémorise l'offset pour le prochain frame
         lastOffset = newOffset;
