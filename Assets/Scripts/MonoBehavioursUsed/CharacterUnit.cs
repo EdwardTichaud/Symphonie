@@ -76,6 +76,60 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public PlayableDirector BattleDirector => battleDirector;
 
+    #region Gestion des sets personnalisés
+    /// <summary>
+    /// Renvoie le set d'attaques musicales actuellement actif pour cette unité.
+    /// </summary>
+    public CharacterMusicalMoveSet ActiveMusicalMoveSet => Data?.GetActiveMusicalMoveSet();
+
+    /// <summary>
+    /// Renvoie le set d'objets actuellement actif pour cette unité.
+    /// </summary>
+    public CharacterItemSet ActiveItemSet => Data?.GetActiveItemSet();
+
+    /// <summary>
+    /// Active un set d'attaques musicales spécifique en fonction de son nom.
+    /// </summary>
+    public void ActivateMusicalMoveSet(string setName)
+    {
+        Data?.SetActiveMusicalMoveSet(setName);
+    }
+
+    /// <summary>
+    /// Active un set d'objets spécifique en fonction de son nom.
+    /// </summary>
+    public void ActivateItemSet(string setName)
+    {
+        Data?.SetActiveItemSet(setName);
+    }
+
+    /// <summary>
+    /// Retourne une nouvelle liste d'attaques musicales en respectant l'ordre du set actif.
+    /// </summary>
+    public List<MusicalMoveSO> OrderMovesForCurrentSet(IList<MusicalMoveSO> baseMoves)
+    {
+        if (baseMoves == null)
+            return new List<MusicalMoveSO>();
+
+        return Data != null
+            ? Data.ApplyMusicalSetOrdering(baseMoves)
+            : new List<MusicalMoveSO>(baseMoves);
+    }
+
+    /// <summary>
+    /// Retourne une nouvelle liste d'items en respectant l'ordre du set actif.
+    /// </summary>
+    public List<ItemData> OrderItemsForCurrentSet(IList<ItemData> availableItems)
+    {
+        if (availableItems == null)
+            return new List<ItemData>();
+
+        return Data != null
+            ? Data.ApplyItemSetOrdering(availableItems)
+            : new List<ItemData>(availableItems);
+    }
+    #endregion
+
     /// <summary>
     /// Indique si l'unité est en état Awake (fusion avec l'ange gardien).
     /// </summary>
