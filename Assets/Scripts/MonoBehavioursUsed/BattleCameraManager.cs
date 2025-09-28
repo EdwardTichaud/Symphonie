@@ -77,6 +77,32 @@ public class BattleCameraManager : MonoBehaviour
     [Tooltip("Courbe définissant l'atténuation du tremblement (1 = départ fort, 0 = repos).")]
     [SerializeField] private AnimationCurve damageShakeEnvelope = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
 
+    [Header("Compensation de taille")] // ⚖️ Ajustements permettant d'englober correctement les géants
+    [Tooltip("Active l'adaptation automatique des plans lorsque l'unité en cours est nettement plus grande que la moyenne.")]
+    [SerializeField] private bool enableUnitSizeCompensation = true;
+
+    [Tooltip("Hauteur de référence (en mètres) correspondant à un humain standard. Utilisé pour normaliser les ratios de taille.")]
+    [SerializeField] private float referenceUnitHeight = 2f;
+
+    [Tooltip("Facteur minimal appliqué à la distance caméra→unité afin d'éviter de trop compresser les très petites créatures.")]
+    [SerializeField] private float minDistanceScale = 0.85f;
+
+    [Tooltip("Facteur maximal appliqué à la distance caméra→unité lorsque le combattant est gigantesque.")]
+    [SerializeField] private float maxDistanceScale = 2.5f;
+
+    [Tooltip("Interpolation (0..1) indiquant la proportion de l'écart de taille réellement répercutée sur la distance caméra.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float distanceScaleBlend = 0.75f;
+
+    [Tooltip("Fraction de la hauteur utilisée pour positionner le point de focus vertical.")]
+    [SerializeField] private float focusHeightRatio = 0.5f;
+
+    [Tooltip("Offset vertical minimal appliqué au point de focus (permet de viser légèrement au-dessus des pieds).")]
+    [SerializeField] private float minFocusHeight = 0.6f;
+
+    [Tooltip("Offset vertical maximal autorisé pour éviter de quitter la zone jouable.")]
+    [SerializeField] private float maxFocusHeight = 6f;
+
     /// <summary>Référence de la caméra d'introduction pour gérer son travelling manuel.</summary>
     private Transform introCameraTransform;
 
@@ -149,6 +175,22 @@ public class BattleCameraManager : MonoBehaviour
     /// propre, ce qui évite un mouvement collectif artificiel.
     /// </summary>
     private readonly Dictionary<string, float> breathingPhaseOffsets = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Transform parent masqué regroupant tous les points de focus synthétiques créés pour les unités.
+    /// </summary>
+    private Transform focusProxyRoot;
+
+    /// <summary>
+    /// Associe chaque unité à un point de focus dynamique afin que Cinemachine puisse viser le centre de
+    /// masse réel plutôt que la racine (souvent située aux pieds).
+    /// </summary>
+    private readonly Dictionary<CharacterUnit, Transform> focusPointByUnit = new();
+
+    /// <summary>
+    /// Buffer temporaire utilisé pour purger proprement les entrées invalides du cache de focus.
+    /// </summary>
+    private readonly List<CharacterUnit> focusPruneBuffer = new();
 
     /// <summary>Rôle logique actuellement prioritaire.</summary>
     private BattleCameraRole currentRole = BattleCameraRole.None;
@@ -283,12 +325,31 @@ public class BattleCameraManager : MonoBehaviour
     {
         if (Instance == this)
             Instance = null;
+
+        // 🧽 Lorsque le gestionnaire disparaît (changement de scène, arrêt du mode Play), on détruit
+        //     également les points de focus synthétiques générés à la volée pour éviter de laisser
+        //     des GameObjects orphelins dans la hiérarchie d'édition.
+        if (focusProxyRoot != null)
+        {
+            if (Application.isPlaying)
+                Destroy(focusProxyRoot.gameObject);
+            else
+                DestroyImmediate(focusProxyRoot.gameObject);
+
+            focusProxyRoot = null;
+        }
+
+        focusPointByUnit.Clear();
+        focusPruneBuffer.Clear();
     }
 
     void LateUpdate()
     {
         // 🎢 Met à jour l'effet de secousse avant de replacer les caméras sur leurs ancres.
         UpdateDamageShakeState();
+
+        // 🗑️ On nettoie au passage les points de focus dont l'unité a été détruite depuis la frame précédente.
+        PruneInvalidFocusProxies();
 
         // Les caméras doivent coller en permanence aux points "CMVPoint_".
         RefreshAllCameraPlacements();
@@ -412,7 +473,10 @@ public class BattleCameraManager : MonoBehaviour
         if (anchor == null)
             return;
 
-        camera.transform.position = anchor.position;
+        Vector3 desiredPosition = anchor.position;
+        desiredPosition = ApplyUnitSizeCompensation(ownerUnit, desiredPosition);
+        camera.transform.position = desiredPosition;
+        Vector3 cameraPosition = camera.transform.position;
 
         if (config.LooksAtTarget)
         {
@@ -426,9 +490,18 @@ public class BattleCameraManager : MonoBehaviour
 
             Transform rotationReference = orientationAnchor != null ? orientationAnchor : lookTarget;
 
+            // Lorsque la taille est compensée, on privilégie le point de focus corrigé pour déterminer
+            // la direction du regard si l'ancre d'orientation appartient à l'unité suivie.
+            if (enableUnitSizeCompensation && lookTarget != null && orientationAnchor != null)
+            {
+                CharacterUnit anchorOwner = orientationAnchor.GetComponentInParent<CharacterUnit>();
+                if (anchorOwner != null && (anchorOwner == currentTarget || anchorOwner == currentCaster))
+                    rotationReference = lookTarget;
+            }
+
             if (rotationReference != null)
             {
-                Vector3 forward = rotationReference.position - anchor.position;
+                Vector3 forward = rotationReference.position - cameraPosition;
                 if (forward.sqrMagnitude > 0.0001f)
                     camera.transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
 
@@ -606,11 +679,11 @@ public class BattleCameraManager : MonoBehaviour
     {
         // 🎯 Priorité absolue : suivre la cible de gameplay lorsque celle-ci est définie.
         if (currentTarget != null)
-            return currentTarget.transform;
+            return enableUnitSizeCompensation ? GetFocusPoint(currentTarget) : currentTarget.transform;
 
         // 🛡️ Aucun target explicite : on se rabat sur le lanceur de l'action.
         if (currentCaster != null)
-            return currentCaster.transform;
+            return enableUnitSizeCompensation ? GetFocusPoint(currentCaster) : currentCaster.transform;
 
         // 🧩 Si l'override ou l'ancre d'orientation pointe vers un objet spécifique (timeline, FX…),
         //     on tente d'en extraire l'unité parent pour conserver un regard cohérent.
@@ -618,7 +691,7 @@ public class BattleCameraManager : MonoBehaviour
         {
             CharacterUnit owner = orientationAnchor.GetComponentInParent<CharacterUnit>();
             if (owner != null)
-                return owner.transform;
+                return enableUnitSizeCompensation ? GetFocusPoint(owner) : owner.transform;
 
             return orientationAnchor; // Fallback : l'ancre peut être un proxy hors CharacterUnit (ex : décor animé).
         }
@@ -626,7 +699,10 @@ public class BattleCameraManager : MonoBehaviour
         if (targetAnchorOverride != null)
         {
             CharacterUnit owner = targetAnchorOverride.GetComponentInParent<CharacterUnit>();
-            return owner != null ? owner.transform : targetAnchorOverride;
+            if (owner != null)
+                return enableUnitSizeCompensation ? GetFocusPoint(owner) : owner.transform;
+
+            return targetAnchorOverride;
         }
 
         return null;
@@ -756,6 +832,156 @@ public class BattleCameraManager : MonoBehaviour
 
         camera.transform.position += damageShakeOffset;
         camera.transform.rotation = damageShakeRotationOffset * camera.transform.rotation;
+    }
+
+    /// <summary>
+    /// Calcule la position idéale de la caméra en tenant compte de la taille réelle de l'unité suivie.
+    /// L'objectif est de conserver le cadrage imaginé par les artistes tout en reculant légèrement le
+    /// plan lorsque le personnage dépasse largement la hauteur de référence.
+    /// </summary>
+    private Vector3 ApplyUnitSizeCompensation(CharacterUnit unit, Vector3 initialPosition)
+    {
+        if (!enableUnitSizeCompensation || unit == null)
+            return initialPosition;
+
+        Bounds bounds = unit.GetVisualBounds();
+        float height = Mathf.Max(bounds.size.y, 0.001f);
+        float reference = Mathf.Max(referenceUnitHeight, 0.001f);
+
+        // 📏 Ratio de taille comparé à un humain standard (ex : 1 = humain, 4 = géant colossal).
+        float rawScale = height / reference;
+        float blendedScale = Mathf.Lerp(1f, rawScale, Mathf.Clamp01(distanceScaleBlend));
+        blendedScale = Mathf.Clamp(blendedScale, Mathf.Min(minDistanceScale, maxDistanceScale), Mathf.Max(minDistanceScale, maxDistanceScale));
+
+        Vector3 unitOrigin = unit.transform.position;
+        Vector3 offsetFromUnit = initialPosition - unitOrigin;
+
+        if (offsetFromUnit.sqrMagnitude > 0.0001f)
+        {
+            float baseDistance = offsetFromUnit.magnitude;
+            Vector3 direction = offsetFromUnit / baseDistance;
+            float scaledDistance = baseDistance * blendedScale;
+            offsetFromUnit = direction * scaledDistance;
+            initialPosition = unitOrigin + offsetFromUnit;
+        }
+
+        // 🪜 On relève légèrement la caméra si le plan reste trop bas par rapport au centre du personnage.
+        float desiredHeight = EvaluateDesiredFocusHeight(bounds);
+        float currentHeight = initialPosition.y - unitOrigin.y;
+        float heightDelta = desiredHeight - currentHeight;
+        if (heightDelta > 0f)
+            initialPosition += Vector3.up * heightDelta;
+
+        return initialPosition;
+    }
+
+    /// <summary>
+    /// Convertit la hauteur d'un personnage en offset vertical souhaité pour le focus caméra.
+    /// </summary>
+    private float EvaluateDesiredFocusHeight(Bounds bounds)
+    {
+        float height = Mathf.Max(bounds.size.y, referenceUnitHeight);
+        float offset = height * Mathf.Clamp01(focusHeightRatio);
+        offset = Mathf.Max(offset, minFocusHeight);
+        offset = Mathf.Min(offset, maxFocusHeight);
+        return offset;
+    }
+
+    /// <summary>
+    /// Renvoie (et met à jour) le point de focus dynamique associé à une unité.
+    /// </summary>
+    private Transform GetFocusPoint(CharacterUnit unit)
+    {
+        if (!enableUnitSizeCompensation || unit == null)
+            return unit != null ? unit.transform : null;
+
+        if (focusPointByUnit.TryGetValue(unit, out Transform proxy) && proxy != null)
+        {
+            UpdateFocusProxy(proxy, unit);
+            return proxy;
+        }
+
+        Transform createdProxy = CreateFocusProxy(unit);
+        UpdateFocusProxy(createdProxy, unit);
+        focusPointByUnit[unit] = createdProxy;
+        return createdProxy;
+    }
+
+    /// <summary>
+    /// Repositionne le point de focus pour qu'il vise le centre visuel de l'unité.
+    /// </summary>
+    private void UpdateFocusProxy(Transform proxy, CharacterUnit unit)
+    {
+        if (proxy == null || unit == null)
+            return;
+
+        Bounds bounds = unit.GetVisualBounds();
+        float desiredHeight = EvaluateDesiredFocusHeight(bounds);
+
+        Vector3 focusPosition = bounds.center;
+        focusPosition.x = bounds.center.x;
+        focusPosition.z = bounds.center.z;
+        focusPosition.y = Mathf.Max(bounds.center.y, bounds.min.y + desiredHeight);
+
+        proxy.position = focusPosition;
+        proxy.rotation = unit.transform.rotation;
+    }
+
+    /// <summary>
+    /// Crée (si nécessaire) un point de focus dédié à une unité.
+    /// </summary>
+    private Transform CreateFocusProxy(CharacterUnit unit)
+    {
+        if (unit == null)
+            return null;
+
+        if (focusProxyRoot == null)
+        {
+            GameObject root = new GameObject("BattleCamera_FocusRoot");
+            root.hideFlags = HideFlags.HideInHierarchy;
+            focusProxyRoot = root.transform;
+            focusProxyRoot.SetParent(transform, worldPositionStays: false);
+        }
+
+        GameObject proxyGO = new GameObject($"FocusPoint_{unit.name}");
+        proxyGO.hideFlags = HideFlags.HideInHierarchy;
+        Transform proxy = proxyGO.transform;
+        proxy.SetParent(focusProxyRoot, worldPositionStays: false);
+        return proxy;
+    }
+
+    /// <summary>
+    /// Supprime les points de focus associés à des unités détruites afin d'éviter toute fuite mémoire.
+    /// </summary>
+    private void PruneInvalidFocusProxies()
+    {
+        if (focusPointByUnit.Count == 0)
+            return;
+
+        focusPruneBuffer.Clear();
+
+        foreach (var kvp in focusPointByUnit)
+        {
+            bool unitMissing = kvp.Key == null;
+            bool proxyMissing = kvp.Value == null;
+            if (unitMissing || proxyMissing)
+                focusPruneBuffer.Add(kvp.Key);
+        }
+
+        foreach (CharacterUnit unit in focusPruneBuffer)
+        {
+            if (focusPointByUnit.TryGetValue(unit, out Transform proxy) && proxy != null)
+            {
+                if (Application.isPlaying)
+                    Destroy(proxy.gameObject);
+                else
+                    DestroyImmediate(proxy.gameObject);
+            }
+
+            focusPointByUnit.Remove(unit);
+        }
+
+        focusPruneBuffer.Clear();
     }
 
     /// <summary>
