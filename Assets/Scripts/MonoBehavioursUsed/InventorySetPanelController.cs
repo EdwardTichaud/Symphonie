@@ -45,6 +45,26 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
     [SerializeField] private string itemViewportTitle = "Sac d'objets";
     [SerializeField] [TextArea] private string helperNavigationText = "🕹️ Joystick pour naviguer — ✅ pour ajouter/retirer — ❌ pour fermer.";
 
+    [Header("Curseurs visuels")]
+    [Tooltip("Curseur global indiquant le panneau sélectionné.")]
+    [SerializeField] private RectTransform panelCursor;
+
+    [Tooltip("Curseur dédié aux sous-panneaux (moves/items).")]
+    [SerializeField] private RectTransform subPanelCursor;
+
+    [Tooltip("Curseur indiquant le slot actuellement ciblé.")]
+    [SerializeField] private RectTransform slotCursor;
+
+    [Header("Paramètres de navigation hiérarchique")]
+    [Tooltip("Racine contenant l'ensemble des panneaux d'inventaire.")]
+    [SerializeField] private RectTransform panelsRoot;
+
+    [Tooltip("Nom du panneau sélectionné par défaut à l'ouverture.")]
+    [SerializeField] private string defaultPanelName = "Inventory_Sets_Panel";
+
+    [Tooltip("Nom du sous-panneau ciblé par défaut à l'ouverture.")]
+    [SerializeField] private string defaultSubPanelName = "Inventory_MusicalMovesSet_SubPanel";
+
     // Données runtime manipulées par le panneau.
     private readonly List<ItemData> availableItems = new();
     private readonly List<InventorySetSlot> musicalSelection = new();
@@ -55,7 +75,9 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
     private readonly List<int> itemDropdownMap = new();
 
     private InventoryViewportController[] viewports;
-    private int currentViewportIndex = 0;
+    private int currentViewportIndex = -1;
+    private int currentPanelIndex = -1;
+    private int currentSubPanelIndex = -1;
     private bool isOpen = false;
     private bool ownsLocalInputs = false;
     private bool isAwaitingNameInput = false;
@@ -63,6 +85,10 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
     private CharacterUnit currentCharacter;
     private InputsManager inputsManager;
     private PlayerInputs playerInputs;
+
+    private readonly List<RectTransform> panelOrder = new();
+    private readonly Dictionary<RectTransform, List<RectTransform>> subPanelOrder = new();
+    private readonly Dictionary<RectTransform, InventoryViewportController> subPanelToViewport = new();
 
     private enum PendingPromptType { None, SaveMusical, SaveItem }
     private PendingPromptType pendingPrompt = PendingPromptType.None;
@@ -97,6 +123,14 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
         panelRoot.SetActive(false);
         viewports = new[] { musicalViewport, itemViewport };
 
+        foreach (var viewport in viewports)
+        {
+            if (viewport != null)
+                viewport.FocusChanged += OnViewportFocusChanged;
+        }
+
+        AutoAssignCursors();
+
         RegisterButton(saveMusicalSetButton, RequestSaveMusicalSet);
         RegisterButton(deleteMusicalSetButton, RequestDeleteMusicalSet);
         RegisterButton(saveItemSetButton, RequestSaveItemSet);
@@ -115,6 +149,15 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
             musicalSetsDropdown.onValueChanged.RemoveListener(OnMusicalSetDropdownChanged);
         if (itemSetsDropdown != null)
             itemSetsDropdown.onValueChanged.RemoveListener(OnItemSetDropdownChanged);
+
+        if (viewports != null)
+        {
+            foreach (var viewport in viewports)
+            {
+                if (viewport != null)
+                    viewport.FocusChanged -= OnViewportFocusChanged;
+            }
+        }
 
         if (ownsLocalInputs && playerInputs != null)
             playerInputs.Dispose();
@@ -199,7 +242,8 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
         isOpen = true;
         isAwaitingNameInput = false;
 
-        SelectViewport(0);
+        RebuildLayoutCache();
+        ResetNavigationState();
         UpdateHelperTexts();
         ShowFeedback("Bienvenue dans la gestion des sets !");
 
@@ -247,6 +291,8 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
         isOpen = false;
         isAwaitingNameInput = false;
         pendingPrompt = PendingPromptType.None;
+
+        HideNavigationCursors();
     }
 
     #endregion
@@ -274,15 +320,22 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
         {
             foreach (var move in data.musicalAttacks)
             {
-                if (move == null || !uniqueMoves.Add(move))
-                    continue;
-
-                CreateMusicalSlot(move);
+                if (move != null)
+                    uniqueMoves.Add(move);
             }
         }
 
-        if (data.specialMusicalMove != null && uniqueMoves.Add(data.specialMusicalMove))
-            CreateMusicalSlot(data.specialMusicalMove);
+        if (data.specialMusicalMove != null)
+            uniqueMoves.Add(data.specialMusicalMove);
+
+        // Trie alphabétiquement pour offrir une lecture cohérente dès l'ouverture.
+        var orderedMoves = uniqueMoves
+            .Where(move => move != null)
+            .OrderBy(move => move.moveName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var move in orderedMoves)
+            CreateMusicalSlot(move);
 
         musicalViewport.FocusFirstEntry();
     }
@@ -305,9 +358,17 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
         HashSet<ItemData> uniqueItems = new();
         foreach (var item in availableItems)
         {
-            if (item == null || !uniqueItems.Add(item))
-                continue;
+            if (item != null)
+                uniqueItems.Add(item);
+        }
 
+        var orderedItems = uniqueItems
+            .Where(item => item != null)
+            .OrderBy(item => item.itemName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var item in orderedItems)
+        {
             var slot = itemViewport.CreateSlot();
             if (slot == null)
                 continue;
@@ -378,15 +439,321 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
         }
     }
 
+#region Navigation hiérarchique et curseurs
+
+    /// <summary>
+    /// Analyse la hiérarchie de l'inventaire pour indexer les panneaux et sous-panneaux.
+    /// Cette étape est volontairement recalculée à l'ouverture pour refléter toute
+    /// modification dans la scène (activation/désactivation de panneaux, etc.).
+    /// </summary>
+    private void RebuildLayoutCache()
+    {
+        panelOrder.Clear();
+        subPanelOrder.Clear();
+        subPanelToViewport.Clear();
+
+        var root = ResolvePanelsRoot();
+        if (root == null)
+        {
+            currentPanelIndex = -1;
+            currentSubPanelIndex = -1;
+            return;
+        }
+
+        for (int i = 0; i < root.childCount; i++)
+        {
+            if (root.GetChild(i) is not RectTransform panel)
+                continue;
+
+            panelOrder.Add(panel);
+
+            List<RectTransform> subPanels = new();
+            for (int j = 0; j < panel.childCount; j++)
+            {
+                if (panel.GetChild(j) is not RectTransform child)
+                    continue;
+
+                if (!child.name.Contains("SubPanel", StringComparison.OrdinalIgnoreCase))
+                    continue; // Ignore les éléments décoratifs.
+
+                subPanels.Add(child);
+
+                // Associe le ScrollRect contrôlé au sous-panneau pour lier navigation et curseur.
+                var viewport = child.GetComponentInChildren<InventoryViewportController>(true);
+                if (viewport != null)
+                    subPanelToViewport[child] = viewport;
+            }
+
+            subPanels.Sort((a, b) => a.GetSiblingIndex().CompareTo(b.GetSiblingIndex()));
+            subPanelOrder[panel] = subPanels;
+        }
+
+        panelOrder.Sort((a, b) => a.GetSiblingIndex().CompareTo(b.GetSiblingIndex()));
+
+        currentPanelIndex = -1;
+        currentSubPanelIndex = -1;
+    }
+
+    /// <summary>
+    /// Tente de récupérer automatiquement les curseurs si aucun n'a été assigné
+    /// dans l'inspecteur. Cela évite les oublis lors du branchement en scène.
+    /// </summary>
+    private void AutoAssignCursors()
+    {
+        var root = transform.root;
+        if (root == null)
+            return;
+
+        var candidates = root.GetComponentsInChildren<RectTransform>(true);
+
+        if (panelCursor == null)
+            panelCursor = candidates.FirstOrDefault(r => string.Equals(r.name, "InventoryCursor_Panel", StringComparison.OrdinalIgnoreCase));
+
+        if (subPanelCursor == null)
+            subPanelCursor = candidates.FirstOrDefault(r => string.Equals(r.name, "InventoryCursor_SubPanel", StringComparison.OrdinalIgnoreCase));
+
+        if (slotCursor == null)
+            slotCursor = candidates.FirstOrDefault(r => string.Equals(r.name, "InventoryCursor_Slot", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Détermine la racine des panneaux. Permet de rester robuste si le script
+    /// est déplacé dans la hiérarchie sans reconfiguration manuelle.
+    /// </summary>
+    private RectTransform ResolvePanelsRoot()
+    {
+        if (panelsRoot != null)
+            return panelsRoot;
+
+        if (panelRoot != null && panelRoot.TryGetComponent(out RectTransform rect))
+            return rect;
+
+        return GetComponent<RectTransform>();
+    }
+
+    /// <summary>
+    /// Sélectionne les panneaux/sous-panneaux par défaut et repositionne les curseurs.
+    /// </summary>
+    private void ResetNavigationState()
+    {
+        HideNavigationCursors();
+
+        if (panelOrder.Count == 0)
+        {
+            SelectViewport(-1);
+            return;
+        }
+
+        ApplyPanelSelection(GetDefaultPanelIndex(), true);
+    }
+
+    private int GetDefaultPanelIndex()
+    {
+        if (panelOrder.Count == 0)
+            return -1;
+
+        int index = panelOrder.FindIndex(p => string.Equals(p.name, defaultPanelName, StringComparison.OrdinalIgnoreCase));
+        return index >= 0 ? index : 0;
+    }
+
+    private int GetDefaultSubPanelIndex(RectTransform panel)
+    {
+        var subPanels = GetSubPanels(panel);
+        if (subPanels.Count == 0)
+            return -1;
+
+        if (!string.IsNullOrWhiteSpace(defaultSubPanelName))
+        {
+            for (int i = 0; i < subPanels.Count; i++)
+            {
+                if (string.Equals(subPanels[i].name, defaultSubPanelName, StringComparison.OrdinalIgnoreCase))
+                    return i;
+            }
+        }
+
+        return 0;
+    }
+
+    private static int WrapIndex(int index, int count)
+    {
+        if (count <= 0)
+            return -1;
+
+        if (index < 0)
+            index = (index % count + count) % count;
+        else if (index >= count)
+            index %= count;
+
+        return index;
+    }
+
+    private IReadOnlyList<RectTransform> GetSubPanels(RectTransform panel)
+    {
+        if (panel != null && subPanelOrder.TryGetValue(panel, out var list) && list != null)
+            return list;
+
+        return Array.Empty<RectTransform>();
+    }
+
+    private RectTransform CurrentPanelRect =>
+        (currentPanelIndex >= 0 && currentPanelIndex < panelOrder.Count)
+            ? panelOrder[currentPanelIndex]
+            : null;
+
+    private void ApplyPanelSelection(int index, bool forceDefaultSubPanel)
+    {
+        if (panelOrder.Count == 0)
+        {
+            currentPanelIndex = -1;
+            UpdateCursor(panelCursor, null);
+            SelectViewport(-1);
+            return;
+        }
+
+        index = WrapIndex(index, panelOrder.Count);
+        currentPanelIndex = index;
+
+        var panel = CurrentPanelRect;
+        UpdateCursor(panelCursor, panel);
+
+        int targetSubIndex = forceDefaultSubPanel ? GetDefaultSubPanelIndex(panel) : currentSubPanelIndex;
+        ApplySubPanelSelection(targetSubIndex);
+    }
+
+    private void ApplySubPanelSelection(int index)
+    {
+        var panel = CurrentPanelRect;
+        var subPanels = GetSubPanels(panel);
+
+        if (subPanels.Count == 0)
+        {
+            currentSubPanelIndex = -1;
+            UpdateCursor(subPanelCursor, null);
+            SelectViewport(-1);
+            return;
+        }
+
+        if (index < 0)
+            index = GetDefaultSubPanelIndex(panel);
+
+        index = WrapIndex(index, subPanels.Count);
+        currentSubPanelIndex = index;
+
+        var subPanel = subPanels[currentSubPanelIndex];
+        UpdateCursor(subPanelCursor, subPanel);
+
+        if (subPanelToViewport.TryGetValue(subPanel, out var viewport) && viewport != null)
+        {
+            int viewportIndex = Array.IndexOf(viewports, viewport);
+            SelectViewport(viewportIndex);
+        }
+        else
+        {
+            SelectViewport(-1);
+        }
+    }
+
+    private void CyclePanel(int delta)
+    {
+        if (panelOrder.Count == 0)
+            RebuildLayoutCache();
+
+        if (panelOrder.Count == 0)
+            return;
+
+        int targetIndex = currentPanelIndex >= 0 ? currentPanelIndex : GetDefaultPanelIndex();
+        ApplyPanelSelection(targetIndex + delta, true);
+    }
+
+    private void CycleSubPanel(int delta)
+    {
+        if (panelOrder.Count == 0)
+            RebuildLayoutCache();
+
+        var panel = CurrentPanelRect;
+        var subPanels = GetSubPanels(panel);
+        if (subPanels.Count == 0)
+            return;
+
+        int targetIndex = currentSubPanelIndex >= 0 ? currentSubPanelIndex : GetDefaultSubPanelIndex(panel);
+        ApplySubPanelSelection(targetIndex + delta);
+    }
+
+    private void UpdateCursor(RectTransform cursor, RectTransform target)
+    {
+        if (cursor == null)
+            return;
+
+        if (target == null)
+        {
+            cursor.gameObject.SetActive(false);
+            return;
+        }
+
+        cursor.gameObject.SetActive(true);
+
+        // Force la mise à jour des layouts pour obtenir des tailles correctes.
+        Canvas.ForceUpdateCanvases();
+
+        cursor.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, target.rect.width);
+        cursor.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, target.rect.height);
+
+        Vector3 worldCenter = target.TransformPoint(target.rect.center);
+        cursor.position = worldCenter;
+        cursor.rotation = target.rotation;
+        cursor.localScale = Vector3.one;
+        cursor.SetAsLastSibling();
+    }
+
+    private void UpdateSlotCursor(InventorySetSlot slot)
+    {
+        var rect = slot != null ? slot.transform as RectTransform : null;
+        UpdateCursor(slotCursor, rect);
+    }
+
+    private void UpdateSlotCursorFromCurrentViewport()
+    {
+        UpdateSlotCursor(CurrentViewport?.CurrentSlot);
+    }
+
+    private void HideNavigationCursors()
+    {
+        UpdateCursor(panelCursor, null);
+        UpdateCursor(subPanelCursor, null);
+        UpdateSlotCursor(null);
+    }
+
+    private void OnViewportFocusChanged(InventoryViewportController viewport, InventorySetSlot slot)
+    {
+        if (!isOpen)
+            return;
+
+        if (viewport != null && viewport == CurrentViewport)
+            UpdateSlotCursor(slot);
+    }
+
+#endregion
+
     private void SelectViewport(int index)
     {
         if (viewports == null || viewports.Length == 0)
+        {
+            currentViewportIndex = -1;
+            UpdateSlotCursor(null);
+            UpdateHelperTexts();
             return;
+        }
 
-        if (index < 0)
-            index = viewports.Length - 1;
-        if (index >= viewports.Length)
-            index = 0;
+        if (index < 0 || index >= viewports.Length)
+        {
+            currentViewportIndex = -1;
+            foreach (var viewport in viewports)
+                viewport?.SetFocus(false);
+
+            UpdateSlotCursor(null);
+            UpdateHelperTexts();
+            return;
+        }
 
         currentViewportIndex = index;
 
@@ -395,6 +762,7 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
 
         viewports[currentViewportIndex]?.FocusFirstEntry();
         UpdateHelperTexts();
+        UpdateSlotCursorFromCurrentViewport();
     }
 
     private InventoryViewportController CurrentViewport =>
@@ -968,20 +1336,36 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
 
     #region Implémentation de IInventoryActions
 
-    public void OnSelectViewPort_Left(InputAction.CallbackContext context)
+    public void OnSelectSubPanel_Left(InputAction.CallbackContext context)
     {
         if (!isOpen || !context.performed || isAwaitingNameInput)
             return;
 
-        SelectViewport(currentViewportIndex - 1);
+        CycleSubPanel(-1);
     }
 
-    public void OnSelectViewPort_Right(InputAction.CallbackContext context)
+    public void OnSelectSubPanel_Right(InputAction.CallbackContext context)
     {
         if (!isOpen || !context.performed || isAwaitingNameInput)
             return;
 
-        SelectViewport(currentViewportIndex + 1);
+        CycleSubPanel(1);
+    }
+
+    public void OnSelectPanel_Left(InputAction.CallbackContext context)
+    {
+        if (!isOpen || !context.performed || isAwaitingNameInput)
+            return;
+
+        CyclePanel(-1);
+    }
+
+    public void OnSelectPanel_Right(InputAction.CallbackContext context)
+    {
+        if (!isOpen || !context.performed || isAwaitingNameInput)
+            return;
+
+        CyclePanel(1);
     }
 
     public void OnNavigate(InputAction.CallbackContext context)
