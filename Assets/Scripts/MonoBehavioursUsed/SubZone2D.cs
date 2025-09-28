@@ -66,6 +66,11 @@ public class SubZone2D : MonoBehaviour
 
     private Collider cachedCollider;
 
+    // Suivi de l'état d'occupation afin de savoir si le joueur est toujours présent lorsque la sous-zone
+    // est désactivée. Cela nous permet de prévenir la zone principale pour qu'elle restaure le parent
+    // de la WorldCamera immédiatement et évite des transitions bancales.
+    private bool playerInside;
+
     private void Reset()
     {
         Collider col = GetComponent<Collider>();
@@ -107,6 +112,7 @@ public class SubZone2D : MonoBehaviour
             // Dès que le joueur pénètre dans la sous-zone, on notifie la zone parente afin qu'elle
             // recalcule immédiatement ses paramètres (y compris la nouvelle cible WorldCam_Origin).
             parentZone.RegisterSubZone(this);
+            playerInside = true; // Mémorise l'état pour une désactivation éventuelle de la sous-zone.
         }
     }
 
@@ -122,15 +128,22 @@ public class SubZone2D : MonoBehaviour
             // Lorsque le joueur quitte le volume, on retire la sous-zone pour restaurer les réglages
             // par défaut de la zone 2D et redonner la main aux autres sous-zones éventuelles.
             parentZone.UnregisterSubZone(this);
+            playerInside = false;
         }
     }
 
     private void OnDisable()
     {
-        if (parentZone != null)
+        if (playerInside && parentZone != null)
         {
+            // Si la sous-zone s'éteint alors que le joueur est encore dedans (ex : activation/désactivation
+            // dynamique de volumes), on force immédiatement la zone principale à recalculer ses paramètres.
+            // Cela évite qu'un override temporaire laisse la WorldCamera attachée à un parent inattendu.
             parentZone.UnregisterSubZone(this);
         }
+
+        // Réinitialise l'état interne pour éviter toute incohérence à la prochaine activation.
+        playerInside = false;
     }
 
     /// <summary>

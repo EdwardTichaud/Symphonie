@@ -131,6 +131,10 @@ public class Zone2D : MonoBehaviour
         public Vector3 rigPosition;
         public Quaternion rigRotation;
         public bool usedRig;
+
+        // Hiérarchie d'origine à restaurer pour la WorldCamera et pour son éventuel rig (WorldCam_Origin).
+        public Transform cameraParent;
+        public Transform rigParent;
     }
 
     private CameraBackup previousState;
@@ -166,6 +170,15 @@ public class Zone2D : MonoBehaviour
         {
             col.isTrigger = true;
         }
+    }
+
+    private void OnDisable()
+    {
+        // Si la zone est désactivée (ex : changement de scène, activation/désactivation dynamique),
+        // on force la sortie propre afin de restaurer immédiatement la hiérarchie et l'état de la caméra.
+        // Sans cette mesure, la WorldCamera pouvait rester attachée à un parent temporaire défini
+        // pendant la séquence 2D, ce qui provoquait des sauts ou des comportements inattendus ensuite.
+        DeactivateZone();
     }
 
     private void LateUpdate()
@@ -269,6 +282,9 @@ public class Zone2D : MonoBehaviour
         previousState.cameraRotation = cameraTransform.rotation;
         previousState.fieldOfView = runtimeCamera.fieldOfView;
         previousState.usedRig = runtimeCameraMotionRoot != null && runtimeCameraMotionRoot != cameraTransform;
+        // Conservation du parent pour restaurer la hiérarchie une fois sorti de la zone.
+        previousState.cameraParent = cameraTransform.parent;
+        previousState.rigParent = runtimeCameraMotionRoot != null ? runtimeCameraMotionRoot.parent : null;
         if (runtimeCameraMotionRoot != null)
         {
             // On mémorise systématiquement la position du pivot (WorldCam_Origin) afin de pouvoir
@@ -293,6 +309,20 @@ public class Zone2D : MonoBehaviour
         if (!zoneActive)
         {
             return;
+        }
+
+        Transform cameraTransform = runtimeCamera != null ? runtimeCamera.transform : null;
+
+        // On restaure en priorité la hiérarchie d'origine pour garantir que les prochaines mises à jour
+        // (par le CameraController ou d'autres systèmes) retrouvent exactement la même organisation.
+        if (previousState.usedRig && runtimeCameraMotionRoot != null)
+        {
+            RestoreTransformParent(runtimeCameraMotionRoot, previousState.rigParent);
+        }
+
+        if (cameraTransform != null)
+        {
+            RestoreTransformParent(cameraTransform, previousState.cameraParent);
         }
 
         if (runtimeCamera != null)
@@ -327,6 +357,37 @@ public class Zone2D : MonoBehaviour
         runtimeCamera = null;
         runtimeCameraMotionRoot = null;
         activeSubZones.Clear();
+    }
+
+    /// <summary>
+    /// Replace un transform sous son parent d'origine en conservant sa transformation monde.
+    /// </summary>
+    /// <param name="target">Transform à replacer.</param>
+    /// <param name="originalParent">Parent qui était actif avant l'entrée dans la zone.</param>
+    private static void RestoreTransformParent(Transform target, Transform originalParent)
+    {
+        if (target == null)
+        {
+            return;
+        }
+
+        Transform currentParent = target.parent;
+        if (currentParent == originalParent)
+        {
+            // Rien à faire si la hiérarchie n'a pas changé.
+            return;
+        }
+
+        if (originalParent != null)
+        {
+            // On conserve la transformation monde pour éviter tout déplacement indésirable.
+            target.SetParent(originalParent, true);
+        }
+        else
+        {
+            // Cas d'une caméra initialement à la racine : on détache simplement le transform.
+            target.SetParent(null, true);
+        }
     }
 
     /// <summary>
