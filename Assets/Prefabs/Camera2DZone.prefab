@@ -1,5 +1,97 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1752938476501384921
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1752938476501384922}
+  - component: {fileID: 1752938476501384923}
+  - component: {fileID: 1752938476501384924}
+  m_Layer: 0
+  m_Name: SubZoneExample
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1752938476501384922
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1752938476501384921}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 3}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4379047365140272636}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1752938476501384923
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1752938476501384921}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 5.999998, y: 7.7536597, z: 19.03047}
+  m_Center: {x: 0.000018970191, y: 0.12316489, z: 6.5152354}
+--- !u!114 &1752938476501384924
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1752938476501384921}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 106d096e0c1c460584a2d93f3eee553a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  parentZone: {fileID: 4379047365140272638}
+  overrideDistance: 0
+  distance: 6
+  overrideFieldOfView: 1
+  fieldOfView: 45
+  overrideFollowOffset: 0
+  followOffset: {x: 0, y: 1.6, z: 0}
+  overrideCameraOffset: 0
+  cameraOffset: {x: 0, y: 0, z: 0}
+  overrideRotationOffset: 0
+  rotationOffset: {x: 0, y: 0, z: 0}
+  overridePositionSmoothing: 0
+  smoothPosition: 1
+  positionSmoothTime: 0.3
+  overrideRotationSmoothing: 0
+  smoothRotation: 1
+  rotationSmoothSpeed: 6
+  overrideFovSmoothTime: 0
+  fovSmoothTime: 0.25
+  overridePlaneWithTransformUp: 0
+  planeReference: {fileID: 0}
+  overrideFixedBehaviour: 0
+  keepCameraFixed: 0
+  fixedCameraAnchor: {fileID: 0}
+  overrideFollowTarget: 0
+  followTargetOverride: {fileID: 0}
 --- !u!1 &4379047365140272635
 GameObject:
   m_ObjectHideFlags: 0
@@ -42,11 +134,19 @@ BoxCollider:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4379047365140272635}
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
   m_IsTrigger: 1
+  m_ProvidesContacts: 0
   m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 10, y: 4, z: 10}
-  m_Center: {x: 0, y: 2, z: 0}
+  serializedVersion: 3
+  m_Size: {x: 10, y: 8.247313, z: 24.78591}
+  m_Center: {x: 0.0000184313, y: -0.12366092, z: 7.392958}
 --- !u!114 &4379047365140272638
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -57,17 +157,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 74ab8ef5aeb14e2a82cfe37001b847f9, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   targetCamera: {fileID: 0}
   playerTag: Player
   baseSettings:
-    plane: 1
-    customPlaneNormal: {x: 0, y: 1, z: 0}
     distance: 8
     fieldOfView: 55
-    keepCameraFixed: 0
-    fixedCameraAnchor: {fileID: 0}
+    keepCameraFixed: 1
+    fixedCameraAnchor: {fileID: 4379047365140272636}
     followPlayerByDefault: 1
     explicitFollowTarget: {fileID: 0}
     followOffset: {x: 0, y: 1.6, z: 0}
@@ -78,88 +176,3 @@ MonoBehaviour:
     smoothRotation: 1
     rotationSmoothSpeed: 6
     fovSmoothTime: 0.25
---- !u!1 &1752938476501384921
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1752938476501384922}
-  - component: {fileID: 1752938476501384923}
-  - component: {fileID: 1752938476501384924}
-  m_Layer: 0
-  m_Name: SubZoneExample
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1752938476501384922
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1752938476501384921}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 3}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4379047365140272636}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &1752938476501384923
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1752938476501384921}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 6, y: 4, z: 6}
-  m_Center: {x: 0, y: 2, z: 0}
---- !u!114 &1752938476501384924
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1752938476501384921}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 106d096e0c1c460584a2d93f3eee553a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
-  parentZone: {fileID: 4379047365140272638}
-  overrideDistance: 0
-  distance: 6
-  overrideFieldOfView: 1
-  fieldOfView: 45
-  overrideFollowOffset: 0
-  followOffset: {x: 0, y: 1.6, z: 0}
-  overrideCameraOffset: 0
-  cameraOffset: {x: 0, y: 0, z: 0}
-  overrideRotationOffset: 0
-  rotationOffset: {x: 0, y: 0, z: 0}
-  overridePositionSmoothing: 0
-  smoothPosition: 1
-  positionSmoothTime: 0.3
-  overrideRotationSmoothing: 0
-  smoothRotation: 1
-  rotationSmoothSpeed: 6
-  overrideFovSmoothTime: 0
-  fovSmoothTime: 0.25
-  overridePlane: 0
-  plane: 1
-  customPlaneNormal: {x: 0, y: 1, z: 0}
-  overrideFixedBehaviour: 0
-  keepCameraFixed: 0
-  fixedCameraAnchor: {fileID: 0}
-  overrideFollowTarget: 0
-  followTargetOverride: {fileID: 0}
