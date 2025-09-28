@@ -1052,7 +1052,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             ""id"": ""95248508-ef66-4fae-abf7-5612ef25a2c7"",
             ""actions"": [
                 {
-                    ""name"": ""SelectViewPort_Left"",
+                    ""name"": ""SelectSubPanel_Left"",
                     ""type"": ""Button"",
                     ""id"": ""2d235c7c-5506-409f-a250-ae8ed2a6d026"",
                     ""expectedControlType"": """",
@@ -1061,7 +1061,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""SelectViewPort_Right"",
+                    ""name"": ""SelectSubPanel_Right"",
                     ""type"": ""Button"",
                     ""id"": ""52fe1d1e-166c-49e9-948a-232a4e29e514"",
                     ""expectedControlType"": """",
@@ -1095,6 +1095,24 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SelectPanel_Left"",
+                    ""type"": ""Button"",
+                    ""id"": ""5e0e246b-05ca-451a-abc7-5162549a497e"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""SelectPanel_Right"",
+                    ""type"": ""Button"",
+                    ""id"": ""d02f3abb-dd06-4523-bd97-74b42a831840"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -1105,7 +1123,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""SelectViewPort_Left"",
+                    ""action"": ""SelectSubPanel_Left"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -1116,7 +1134,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""SelectViewPort_Right"",
+                    ""action"": ""SelectSubPanel_Right"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
@@ -1262,6 +1280,28 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""action"": ""Cancel"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""685eff7b-eaea-4573-ae6b-f9e19c5ec30d"",
+                    ""path"": ""<Gamepad>/leftTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SelectPanel_Left"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""62f11dc5-bbcb-4593-ab79-a8f6ac7e447b"",
+                    ""path"": ""<Gamepad>/rightTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""SelectPanel_Right"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
                 }
             ]
         },
@@ -1373,11 +1413,13 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_InfoBox_Confirm = m_InfoBox.FindAction("Confirm", throwIfNotFound: true);
         // Inventory
         m_Inventory = asset.FindActionMap("Inventory", throwIfNotFound: true);
-        m_Inventory_SelectViewPort_Left = m_Inventory.FindAction("SelectViewPort_Left", throwIfNotFound: true);
-        m_Inventory_SelectViewPort_Right = m_Inventory.FindAction("SelectViewPort_Right", throwIfNotFound: true);
+        m_Inventory_SelectSubPanel_Left = m_Inventory.FindAction("SelectSubPanel_Left", throwIfNotFound: true);
+        m_Inventory_SelectSubPanel_Right = m_Inventory.FindAction("SelectSubPanel_Right", throwIfNotFound: true);
         m_Inventory_Navigate = m_Inventory.FindAction("Navigate", throwIfNotFound: true);
         m_Inventory_Confirm = m_Inventory.FindAction("Confirm", throwIfNotFound: true);
         m_Inventory_Cancel = m_Inventory.FindAction("Cancel", throwIfNotFound: true);
+        m_Inventory_SelectPanel_Left = m_Inventory.FindAction("SelectPanel_Left", throwIfNotFound: true);
+        m_Inventory_SelectPanel_Right = m_Inventory.FindAction("SelectPanel_Right", throwIfNotFound: true);
         // Menu
         m_Menu = asset.FindActionMap("Menu", throwIfNotFound: true);
         m_Menu_Confirm = m_Menu.FindAction("Confirm", throwIfNotFound: true);
@@ -2018,11 +2060,13 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     // Inventory
     private readonly InputActionMap m_Inventory;
     private List<IInventoryActions> m_InventoryActionsCallbackInterfaces = new List<IInventoryActions>();
-    private readonly InputAction m_Inventory_SelectViewPort_Left;
-    private readonly InputAction m_Inventory_SelectViewPort_Right;
+    private readonly InputAction m_Inventory_SelectSubPanel_Left;
+    private readonly InputAction m_Inventory_SelectSubPanel_Right;
     private readonly InputAction m_Inventory_Navigate;
     private readonly InputAction m_Inventory_Confirm;
     private readonly InputAction m_Inventory_Cancel;
+    private readonly InputAction m_Inventory_SelectPanel_Left;
+    private readonly InputAction m_Inventory_SelectPanel_Right;
     /// <summary>
     /// Provides access to input actions defined in input action map "Inventory".
     /// </summary>
@@ -2035,13 +2079,13 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// </summary>
         public InventoryActions(@PlayerInputs wrapper) { m_Wrapper = wrapper; }
         /// <summary>
-        /// Provides access to the underlying input action "Inventory/SelectViewPort_Left".
+        /// Provides access to the underlying input action "Inventory/SelectSubPanel_Left".
         /// </summary>
-        public InputAction @SelectViewPort_Left => m_Wrapper.m_Inventory_SelectViewPort_Left;
+        public InputAction @SelectSubPanel_Left => m_Wrapper.m_Inventory_SelectSubPanel_Left;
         /// <summary>
-        /// Provides access to the underlying input action "Inventory/SelectViewPort_Right".
+        /// Provides access to the underlying input action "Inventory/SelectSubPanel_Right".
         /// </summary>
-        public InputAction @SelectViewPort_Right => m_Wrapper.m_Inventory_SelectViewPort_Right;
+        public InputAction @SelectSubPanel_Right => m_Wrapper.m_Inventory_SelectSubPanel_Right;
         /// <summary>
         /// Provides access to the underlying input action "Inventory/Navigate".
         /// </summary>
@@ -2054,6 +2098,14 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Inventory/Cancel".
         /// </summary>
         public InputAction @Cancel => m_Wrapper.m_Inventory_Cancel;
+        /// <summary>
+        /// Provides access to the underlying input action "Inventory/SelectPanel_Left".
+        /// </summary>
+        public InputAction @SelectPanel_Left => m_Wrapper.m_Inventory_SelectPanel_Left;
+        /// <summary>
+        /// Provides access to the underlying input action "Inventory/SelectPanel_Right".
+        /// </summary>
+        public InputAction @SelectPanel_Right => m_Wrapper.m_Inventory_SelectPanel_Right;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -2080,12 +2132,12 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         {
             if (instance == null || m_Wrapper.m_InventoryActionsCallbackInterfaces.Contains(instance)) return;
             m_Wrapper.m_InventoryActionsCallbackInterfaces.Add(instance);
-            @SelectViewPort_Left.started += instance.OnSelectViewPort_Left;
-            @SelectViewPort_Left.performed += instance.OnSelectViewPort_Left;
-            @SelectViewPort_Left.canceled += instance.OnSelectViewPort_Left;
-            @SelectViewPort_Right.started += instance.OnSelectViewPort_Right;
-            @SelectViewPort_Right.performed += instance.OnSelectViewPort_Right;
-            @SelectViewPort_Right.canceled += instance.OnSelectViewPort_Right;
+            @SelectSubPanel_Left.started += instance.OnSelectSubPanel_Left;
+            @SelectSubPanel_Left.performed += instance.OnSelectSubPanel_Left;
+            @SelectSubPanel_Left.canceled += instance.OnSelectSubPanel_Left;
+            @SelectSubPanel_Right.started += instance.OnSelectSubPanel_Right;
+            @SelectSubPanel_Right.performed += instance.OnSelectSubPanel_Right;
+            @SelectSubPanel_Right.canceled += instance.OnSelectSubPanel_Right;
             @Navigate.started += instance.OnNavigate;
             @Navigate.performed += instance.OnNavigate;
             @Navigate.canceled += instance.OnNavigate;
@@ -2095,6 +2147,12 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @Cancel.started += instance.OnCancel;
             @Cancel.performed += instance.OnCancel;
             @Cancel.canceled += instance.OnCancel;
+            @SelectPanel_Left.started += instance.OnSelectPanel_Left;
+            @SelectPanel_Left.performed += instance.OnSelectPanel_Left;
+            @SelectPanel_Left.canceled += instance.OnSelectPanel_Left;
+            @SelectPanel_Right.started += instance.OnSelectPanel_Right;
+            @SelectPanel_Right.performed += instance.OnSelectPanel_Right;
+            @SelectPanel_Right.canceled += instance.OnSelectPanel_Right;
         }
 
         /// <summary>
@@ -2106,12 +2164,12 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="InventoryActions" />
         private void UnregisterCallbacks(IInventoryActions instance)
         {
-            @SelectViewPort_Left.started -= instance.OnSelectViewPort_Left;
-            @SelectViewPort_Left.performed -= instance.OnSelectViewPort_Left;
-            @SelectViewPort_Left.canceled -= instance.OnSelectViewPort_Left;
-            @SelectViewPort_Right.started -= instance.OnSelectViewPort_Right;
-            @SelectViewPort_Right.performed -= instance.OnSelectViewPort_Right;
-            @SelectViewPort_Right.canceled -= instance.OnSelectViewPort_Right;
+            @SelectSubPanel_Left.started -= instance.OnSelectSubPanel_Left;
+            @SelectSubPanel_Left.performed -= instance.OnSelectSubPanel_Left;
+            @SelectSubPanel_Left.canceled -= instance.OnSelectSubPanel_Left;
+            @SelectSubPanel_Right.started -= instance.OnSelectSubPanel_Right;
+            @SelectSubPanel_Right.performed -= instance.OnSelectSubPanel_Right;
+            @SelectSubPanel_Right.canceled -= instance.OnSelectSubPanel_Right;
             @Navigate.started -= instance.OnNavigate;
             @Navigate.performed -= instance.OnNavigate;
             @Navigate.canceled -= instance.OnNavigate;
@@ -2121,6 +2179,12 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @Cancel.started -= instance.OnCancel;
             @Cancel.performed -= instance.OnCancel;
             @Cancel.canceled -= instance.OnCancel;
+            @SelectPanel_Left.started -= instance.OnSelectPanel_Left;
+            @SelectPanel_Left.performed -= instance.OnSelectPanel_Left;
+            @SelectPanel_Left.canceled -= instance.OnSelectPanel_Left;
+            @SelectPanel_Right.started -= instance.OnSelectPanel_Right;
+            @SelectPanel_Right.performed -= instance.OnSelectPanel_Right;
+            @SelectPanel_Right.canceled -= instance.OnSelectPanel_Right;
         }
 
         /// <summary>
@@ -2482,19 +2546,19 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     public interface IInventoryActions
     {
         /// <summary>
-        /// Method invoked when associated input action "SelectViewPort_Left" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "SelectSubPanel_Left" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnSelectViewPort_Left(InputAction.CallbackContext context);
+        void OnSelectSubPanel_Left(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "SelectViewPort_Right" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "SelectSubPanel_Right" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnSelectViewPort_Right(InputAction.CallbackContext context);
+        void OnSelectSubPanel_Right(InputAction.CallbackContext context);
         /// <summary>
         /// Method invoked when associated input action "Navigate" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
@@ -2516,6 +2580,20 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnCancel(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SelectPanel_Left" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSelectPanel_Left(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "SelectPanel_Right" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnSelectPanel_Right(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Menu" which allows adding and removing callbacks.

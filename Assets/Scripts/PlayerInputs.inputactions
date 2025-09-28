@@ -966,7 +966,7 @@
             "id": "95248508-ef66-4fae-abf7-5612ef25a2c7",
             "actions": [
                 {
-                    "name": "SelectViewPort_Left",
+                    "name": "SelectSubPanel_Left",
                     "type": "Button",
                     "id": "2d235c7c-5506-409f-a250-ae8ed2a6d026",
                     "expectedControlType": "",
@@ -975,7 +975,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "SelectViewPort_Right",
+                    "name": "SelectSubPanel_Right",
                     "type": "Button",
                     "id": "52fe1d1e-166c-49e9-948a-232a4e29e514",
                     "expectedControlType": "",
@@ -1009,6 +1009,24 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
+                },
+                {
+                    "name": "SelectPanel_Left",
+                    "type": "Button",
+                    "id": "5e0e246b-05ca-451a-abc7-5162549a497e",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "SelectPanel_Right",
+                    "type": "Button",
+                    "id": "d02f3abb-dd06-4523-bd97-74b42a831840",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -1019,7 +1037,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "SelectViewPort_Left",
+                    "action": "SelectSubPanel_Left",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -1030,7 +1048,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "SelectViewPort_Right",
+                    "action": "SelectSubPanel_Right",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -1174,6 +1192,28 @@
                     "processors": "",
                     "groups": "",
                     "action": "Cancel",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "685eff7b-eaea-4573-ae6b-f9e19c5ec30d",
+                    "path": "<Gamepad>/leftTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SelectPanel_Left",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "62f11dc5-bbcb-4593-ab79-a8f6ac7e447b",
+                    "path": "<Gamepad>/rightTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "SelectPanel_Right",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
