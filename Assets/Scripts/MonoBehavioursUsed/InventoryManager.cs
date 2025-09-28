@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 
 public class InventoryManager : MonoBehaviour
@@ -13,6 +14,14 @@ public class InventoryManager : MonoBehaviour
 
     [Tooltip("Piles d'objets disponibles au lancement. Chaque entrée référence un ScriptableObject ItemData.")]
     [SerializeField] private List<InventoryItemStack> itemStacks = new();
+
+    [Header("Interface utilisateur - Inventaire")]
+    [Tooltip("CanvasGroup principal de l'inventaire. Il est fondu lors de l'ouverture/fermeture.")]
+    [SerializeField] private CanvasGroup inventoryCanvasGroup;
+    [Tooltip("Durée en secondes du fondu d'ouverture/fermeture de l'inventaire.")]
+    [SerializeField] private float inventoryFadeDuration = 2f;
+    [Tooltip("Définit si l'inventaire doit être visible au lancement.")]
+    [SerializeField] private bool openInventoryOnStart = false;
 
     /// <summary>
     /// Dictionnaire interne pour accéder rapidement aux piles existantes.
@@ -28,6 +37,29 @@ public class InventoryManager : MonoBehaviour
     /// Permet d'interroger directement les piles (utile pour les interfaces avancées).
     /// </summary>
     public IReadOnlyList<InventoryItemStack> ItemStacks => itemStacks;
+
+    /// <summary>
+    /// Coroutine en cours responsable du fondu d'alpha du CanvasGroup.
+    /// On la conserve pour éviter d'empiler plusieurs transitions concurrentes.
+    /// </summary>
+    private Coroutine inventoryFadeRoutine;
+
+    /// <summary>
+    /// Lorsque ce drapeau est à <c>true</c>, l'inventaire est pleinement affiché.
+    /// Il nous permet de connaître l'état actuel sans nous baser uniquement sur l'alpha.
+    /// </summary>
+    private bool isInventoryVisible;
+
+    /// <summary>
+    /// Action d'input utilisée pour ouvrir/fermer l'inventaire.
+    /// Stockée pour pouvoir se désabonner proprement.
+    /// </summary>
+    private InputAction inventoryToggleAction;
+
+    /// <summary>
+    /// Routine utilisée pour attendre que l'InputsManager soit disponible si nécessaire.
+    /// </summary>
+    private Coroutine waitForInputsRoutine;
 
     // --- Suivi des effets temporaires appliqués aux personnages ---
     // Pour chaque personnage, on garde la liste des modificateurs actifs afin
@@ -63,6 +95,35 @@ public class InventoryManager : MonoBehaviour
 
         // Un tri systématique garantit un affichage cohérent dans tous les menus.
         SortStacks();
+
+        // On prépare l'état visuel initial de l'inventaire (ouvert ou fermé).
+        InitializeInventoryUI();
+
+        // Dès que possible, on s'abonne à l'input d'ouverture/fermeture.
+        EnsureInventoryInputSubscription();
+    }
+
+    private void OnEnable()
+    {
+        // Lors d'un rechargement de scène ou d'une réactivation du GameObject,
+        // on vérifie que le CanvasGroup est correctement configuré.
+        InitializeInventoryUI();
+
+        // On relance la souscription à l'action d'inventaire si nécessaire.
+        EnsureInventoryInputSubscription();
+    }
+
+    private void OnDisable()
+    {
+        // On évite les fuites d'évènements en se désabonnant systématiquement.
+        ReleaseInventoryInputSubscription();
+
+        // Si une routine d'attente était active (InputsManager manquant), on l'annule.
+        if (waitForInputsRoutine != null)
+        {
+            StopCoroutine(waitForInputsRoutine);
+            waitForInputsRoutine = null;
+        }
     }
 
     /// <summary>
@@ -401,6 +462,187 @@ public class InventoryManager : MonoBehaviour
             return false;
 
         return true;
+    }
+
+    /// <summary>
+    /// Configure l'apparence initiale de l'inventaire et sécurise la référence au CanvasGroup.
+    /// </summary>
+    private void InitializeInventoryUI()
+    {
+        // Si aucun CanvasGroup n'est assigné dans l'inspecteur, on tente d'en trouver un
+        // parmi les enfants pour éviter une erreur bloquante. Cette solution de repli
+        // reste volontairement verbeuse afin de faciliter les diagnostics.
+        if (inventoryCanvasGroup == null)
+        {
+            inventoryCanvasGroup = GetComponentInChildren<CanvasGroup>(true);
+            if (inventoryCanvasGroup == null)
+            {
+                Debug.LogWarning("[InventoryManager] Aucun CanvasGroup assigné pour l'inventaire. Le fondu sera désactivé.");
+                return;
+            }
+        }
+
+        // On force l'alpha et l'interactivité selon l'état initial souhaité.
+        isInventoryVisible = openInventoryOnStart;
+        float initialAlpha = isInventoryVisible ? 1f : 0f;
+        inventoryCanvasGroup.alpha = initialAlpha;
+        inventoryCanvasGroup.interactable = isInventoryVisible;
+        inventoryCanvasGroup.blocksRaycasts = isInventoryVisible;
+    }
+
+    /// <summary>
+    /// Assure l'abonnement à l'action d'input "Inventory" du mapping Inventory.
+    /// </summary>
+    private void EnsureInventoryInputSubscription()
+    {
+        if (!isActiveAndEnabled)
+            return;
+
+        // Si on est déjà inscrit (et que l'action existe), aucune autre opération n'est nécessaire.
+        if (inventoryToggleAction != null)
+            return;
+
+        var inputsManager = InputsManager.Instance;
+        if (inputsManager == null || inputsManager.playerInputs == null)
+        {
+            // L'InputsManager peut être instancié plus tard dans le cycle de vie.
+            // On patiente donc via une coroutine dédiée.
+            if (waitForInputsRoutine == null)
+                waitForInputsRoutine = StartCoroutine(WaitForInputsManager());
+            return;
+        }
+
+        inventoryToggleAction = inputsManager.playerInputs.Inventory.Inventory;
+        if (inventoryToggleAction == null)
+        {
+            Debug.LogWarning("[InventoryManager] L'action 'Inventory' est introuvable dans l'ActionMap Inventory.");
+            return;
+        }
+
+        // On écoute l'évènement performed pour capturer les appuis validés et on active l'action.
+        inventoryToggleAction.performed += OnInventoryActionPerformed;
+        inventoryToggleAction.Enable();
+    }
+
+    /// <summary>
+    /// Coroutine d'attente qui surveille l'apparition de l'InputsManager avant de s'inscrire aux inputs.
+    /// </summary>
+    private IEnumerator WaitForInputsManager()
+    {
+        while (InputsManager.Instance == null || InputsManager.Instance.playerInputs == null)
+            yield return null;
+
+        // La routine n'est plus nécessaire une fois l'InputsManager prêt.
+        waitForInputsRoutine = null;
+        EnsureInventoryInputSubscription();
+    }
+
+    /// <summary>
+    /// Désabonne l'action d'input et réinitialise les références associées.
+    /// </summary>
+    private void ReleaseInventoryInputSubscription()
+    {
+        if (inventoryToggleAction == null)
+            return;
+
+        inventoryToggleAction.performed -= OnInventoryActionPerformed;
+        inventoryToggleAction.Disable();
+        inventoryToggleAction = null;
+    }
+
+    /// <summary>
+    /// Callback invoqué par l'Input System lorsqu'un appui valide est détecté.
+    /// </summary>
+    private void OnInventoryActionPerformed(InputAction.CallbackContext context)
+    {
+        // La méthode n'est appelée que pour l'évènement "performed", mais ce test garde
+        // la fonction robuste en cas de changement futur.
+        if (!context.performed)
+            return;
+
+        ToggleInventory();
+    }
+
+    /// <summary>
+    /// Inverse l'état d'affichage de l'inventaire.
+    /// </summary>
+    public void ToggleInventory()
+    {
+        SetInventoryVisibility(!isInventoryVisible);
+    }
+
+    /// <summary>
+    /// Applique un état ouvert/fermé et gère le fondu correspondant.
+    /// </summary>
+    /// <param name="visible">Nouvel état souhaité.</param>
+    private void SetInventoryVisibility(bool visible)
+    {
+        if (inventoryCanvasGroup == null)
+        {
+            Debug.LogWarning("[InventoryManager] Impossible de modifier l'UI d'inventaire : CanvasGroup manquant.");
+            return;
+        }
+
+        isInventoryVisible = visible;
+
+        // On interrompt toute transition précédente pour garantir un comportement déterministe.
+        if (inventoryFadeRoutine != null)
+        {
+            StopCoroutine(inventoryFadeRoutine);
+            inventoryFadeRoutine = null;
+        }
+
+        float targetAlpha = visible ? 1f : 0f;
+
+        // Si la durée est quasi nulle, on applique immédiatement le résultat final.
+        if (inventoryFadeDuration <= 0f)
+        {
+            inventoryCanvasGroup.alpha = targetAlpha;
+            inventoryCanvasGroup.interactable = visible;
+            inventoryCanvasGroup.blocksRaycasts = visible;
+            return;
+        }
+
+        // Lors de l'ouverture on bloque immédiatement les clics sur le monde.
+        if (visible)
+        {
+            inventoryCanvasGroup.blocksRaycasts = true;
+        }
+        else
+        {
+            // À la fermeture, l'interactivité est coupée dès le début du fondu pour éviter
+            // qu'un clic résiduel déclenche une action pendant la transition.
+            inventoryCanvasGroup.interactable = false;
+        }
+
+        inventoryFadeRoutine = StartCoroutine(FadeInventoryCanvas(targetAlpha, visible));
+    }
+
+    /// <summary>
+    /// Coroutine responsable de l'interpolation de l'alpha du CanvasGroup.
+    /// </summary>
+    /// <param name="targetAlpha">Alpha final à atteindre.</param>
+    /// <param name="targetVisible">État logique attendu à la fin du fondu.</param>
+    private IEnumerator FadeInventoryCanvas(float targetAlpha, bool targetVisible)
+    {
+        float startingAlpha = inventoryCanvasGroup.alpha;
+        float elapsed = 0f;
+        float duration = Mathf.Max(0.0001f, inventoryFadeDuration);
+
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime; // On utilise le temps non-scalé pour garder le fondu actif même en pause.
+            float t = Mathf.Clamp01(elapsed / duration);
+            inventoryCanvasGroup.alpha = Mathf.Lerp(startingAlpha, targetAlpha, t);
+            yield return null;
+        }
+
+        // On force la valeur finale pour éviter les approximations flottantes.
+        inventoryCanvasGroup.alpha = targetAlpha;
+        inventoryCanvasGroup.interactable = targetVisible;
+        inventoryCanvasGroup.blocksRaycasts = targetVisible;
+
+        inventoryFadeRoutine = null;
     }
 
     private void RebuildLookup()
