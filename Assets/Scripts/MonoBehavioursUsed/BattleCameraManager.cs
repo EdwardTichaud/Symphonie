@@ -824,6 +824,11 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Enregistre l'unité actuellement active (tour en cours).</summary>
     public void SetTurnOwner(CharacterUnit unit, bool alsoSetAsCaster = true)
     {
+        // 🧹 Chaque nouveau tour doit repartir d'un contexte caméra vierge afin d'éviter que
+        // les Cinemachine restent verrouillées sur les « CMVPoint_… » de l'unité précédente.
+        // On purge donc toutes les références explicites avant de renseigner la nouvelle unité.
+        ResetCameraAnchorContext(unit, alsoSetAsCaster);
+
         currentTurnOwner = unit;
         if (alsoSetAsCaster && unit != null)
             currentCaster = unit;
@@ -833,6 +838,36 @@ public class BattleCameraManager : MonoBehaviour
         BattleCameraDamageFilter.Instance?.SetActiveUnit(unit);
 
         RefreshAllCameraPlacements();
+    }
+
+    /// <summary>
+    /// Nettoie l'ensemble des ancres utilisées par les caméras en vue d'un nouveau tour.
+    /// </summary>
+    /// <param name="upcomingUnit">Unité qui s'apprête à jouer.</param>
+    /// <param name="willAlsoSetAsCaster">
+    /// Indique si la méthode appelante souhaite aligner immédiatement <see cref="currentCaster"/>.
+    /// </param>
+    private void ResetCameraAnchorContext(CharacterUnit upcomingUnit, bool willAlsoSetAsCaster)
+    {
+        if (willAlsoSetAsCaster)
+        {
+            // 🔁 Le lanceur va être redéfini : on coupe le lien avec la précédente unité pour
+            // que les requêtes d'ancres repartent de zéro.
+            currentCaster = null;
+        }
+
+        // 🎯 Les cibles explicites deviennent obsolètes : on annule leur override afin que le
+        // prochain rafraîchissement recalcule naturellement la meilleure ancre disponible.
+        currentTarget = null;
+        casterAnchorOverride = null;
+        targetAnchorOverride = null;
+
+        if (upcomingUnit != null)
+        {
+            // 🗺️ On force également l'unité à invalider son cache local d'ancres caméra pour
+            // s'assurer que tous les « CMVPoint_… » sont relus directement dans la hiérarchie.
+            upcomingUnit.ClearCachedCameraAnchors();
+        }
     }
 
     /// <summary>Définit l'unité ciblée lors de la sélection ou de l'exécution d'une action.</summary>

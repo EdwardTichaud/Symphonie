@@ -248,6 +248,21 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     }
 
     /// <summary>
+    /// Vide le cache interne des ancres caméra pour forcer une nouvelle détection lors
+    /// des prochains rafraîchissements. Cette opération est particulièrement utile en
+    /// début de tour afin d'éviter qu'une unité ne conserve en mémoire les repères
+    /// « CMVPoint_… » utilisés par un combattant précédent.
+    /// </summary>
+    public void ClearCachedCameraAnchors()
+    {
+        // 🗑️ En supprimant toutes les entrées, on oblige le prochain appel à
+        // <see cref="GetCameraAnchor"/> à reparcourir la hiérarchie complète.
+        // Cela garantit que les Cinemachine se recalibrent sur les points fraîchement
+        // activés ou repositionnés dans la scène.
+        cachedCameraAnchors.Clear();
+    }
+
+    /// <summary>
     /// Rôle principal associé au point caméra recherché lorsqu'on souhaite
     /// fournir un override explicite au <see cref="BattleCameraManager"/>.
     /// </summary>
