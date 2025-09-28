@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
@@ -19,6 +20,13 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
     [Header("Racine UI")]
     [Tooltip("GameObject racine du panneau d'inventaire.")]
     [SerializeField] private GameObject panelRoot;
+
+    [Header("Animation d'ouverture")]
+    [Tooltip("CanvasGroup principal de l'inventaire à faire apparaître en fondu.")]
+    [SerializeField] private CanvasGroup inventoryCanvasGroup;
+
+    [Tooltip("Durée (en secondes) du fondu d'ouverture et de fermeture.")]
+    [SerializeField] private float inventoryFadeDuration = 2f;
 
     [Header("Viewports de sélection")]
     [SerializeField] private InventoryViewportController musicalViewport;
@@ -81,6 +89,8 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
     private bool isOpen = false;
     private bool ownsLocalInputs = false;
     private bool isAwaitingNameInput = false;
+    private Coroutine fadeRoutine; // Routine en charge du fondu du CanvasGroup.
+    private bool isClosing = false; // Indique si une fermeture progressive est en cours.
 
     private CharacterUnit currentCharacter;
     private InputsManager inputsManager;
@@ -119,6 +129,17 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
 
         if (panelRoot == null)
             panelRoot = gameObject;
+
+        if (inventoryCanvasGroup == null && panelRoot != null)
+            inventoryCanvasGroup = panelRoot.GetComponent<CanvasGroup>();
+
+        if (inventoryCanvasGroup != null)
+        {
+            // On force une opacité nulle et on désactive les interactions tant que l'inventaire est fermé.
+            inventoryCanvasGroup.alpha = 0f;
+            inventoryCanvasGroup.interactable = false;
+            inventoryCanvasGroup.blocksRaycasts = false;
+        }
 
         panelRoot.SetActive(false);
         viewports = new[] { musicalViewport, itemViewport };
@@ -166,17 +187,20 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
     private void OnEnable()
     {
         if (playerInputs != null)
-            playerInputs.World.Inventory.performed += OnInventoryShortcut;
+            playerInputs.World.Inventory.performed += HandleInventoryInput;
     }
 
     private void OnDisable()
     {
         if (playerInputs != null)
-            playerInputs.World.Inventory.performed -= OnInventoryShortcut;
+            playerInputs.World.Inventory.performed -= HandleInventoryInput;
 
         // Sécurité : garantit la fermeture même en cas de désactivation extérieure.
-        if (isOpen)
+        if (isOpen || isClosing)
+        {
+            StopFadeRoutine();
             ClosePanelImmediate();
+        }
     }
 
     #region Configuration publique
@@ -209,12 +233,18 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
     #region Ouverture / fermeture du panneau
 
     /// <summary>
-    /// Appelé par l'InputsManager lorsque le joueur presse la touche d'inventaire.
+    /// Centralise la réaction à l'input d'inventaire (monde + map Inventory).
     /// </summary>
-    private void OnInventoryShortcut(InputAction.CallbackContext context)
+    private void HandleInventoryInput(InputAction.CallbackContext context)
     {
         if (!context.performed)
             return;
+
+        if (isAwaitingNameInput)
+            return; // On ignore la demande si le joueur saisit un texte.
+
+        if (isClosing)
+            return; // Une fermeture est déjà en cours, inutile de relancer.
 
         if (isOpen)
             ClosePanel();
@@ -232,6 +262,18 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
 
         if (panelRoot != null)
             panelRoot.SetActive(true);
+
+        StopFadeRoutine();
+        isClosing = false;
+
+        if (inventoryCanvasGroup != null)
+        {
+            // Prépare le CanvasGroup pour un fondu entrant.
+            inventoryCanvasGroup.blocksRaycasts = true; // Empêche les interactions avec l'arrière-plan.
+            inventoryCanvasGroup.interactable = false;
+            inventoryCanvasGroup.alpha = 0f;
+            fadeRoutine = StartCoroutine(FadeCanvasGroupTo(1f, false));
+        }
 
         if (inputsManager != null)
             inputsManager.ActivateOnly(playerInputs.Inventory.Get());
@@ -263,15 +305,26 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
     /// </summary>
     public void ClosePanel()
     {
-        if (!isOpen)
+        if (!isOpen || isClosing)
             return;
 
-        ClosePanelImmediate();
+        isOpen = false;
+        isClosing = true;
+        isAwaitingNameInput = false;
 
-        if (inputsManager != null)
-            inputsManager.ActivateOnly(playerInputs.World.Get());
+        if (inventoryCanvasGroup != null)
+        {
+            inventoryCanvasGroup.interactable = false;
+            inventoryCanvasGroup.blocksRaycasts = true; // On garde le blocage jusqu'à disparition complète.
+            StopFadeRoutine();
+            fadeRoutine = StartCoroutine(FadeAndCloseRoutine());
+        }
         else
-            playerInputs.World.Enable();
+        {
+            StopFadeRoutine();
+            ClosePanelImmediate();
+            ReactivateWorldInputs();
+        }
     }
 
     /// <summary>
@@ -280,6 +333,13 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
     /// </summary>
     private void ClosePanelImmediate()
     {
+        if (inventoryCanvasGroup != null)
+        {
+            inventoryCanvasGroup.alpha = 0f;
+            inventoryCanvasGroup.interactable = false;
+            inventoryCanvasGroup.blocksRaycasts = false;
+        }
+
         if (panelRoot != null)
             panelRoot.SetActive(false);
 
@@ -288,11 +348,80 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
             playerInputs.Inventory.RemoveCallbacks(this);
             playerInputs.Inventory.Disable();
         }
+
         isOpen = false;
         isAwaitingNameInput = false;
         pendingPrompt = PendingPromptType.None;
+        isClosing = false;
 
         HideNavigationCursors();
+    }
+
+    private IEnumerator FadeAndCloseRoutine()
+    {
+        if (inventoryCanvasGroup != null)
+            yield return FadeCanvasGroupTo(0f, true);
+
+        ClosePanelImmediate();
+        ReactivateWorldInputs();
+    }
+
+    private IEnumerator FadeCanvasGroupTo(float targetAlpha, bool deactivateOnComplete)
+    {
+        if (inventoryCanvasGroup == null)
+        {
+            fadeRoutine = null;
+            yield break;
+        }
+
+        float startAlpha = inventoryCanvasGroup.alpha;
+        float duration = Mathf.Max(0f, inventoryFadeDuration);
+
+        if (duration <= 0f)
+        {
+            inventoryCanvasGroup.alpha = targetAlpha;
+        }
+        else
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                elapsed += Time.unscaledDeltaTime;
+                float progress = Mathf.Clamp01(elapsed / duration);
+                inventoryCanvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, progress);
+                yield return null;
+            }
+            inventoryCanvasGroup.alpha = targetAlpha;
+        }
+
+        bool fullyVisible = Mathf.Approximately(targetAlpha, 1f);
+        inventoryCanvasGroup.interactable = fullyVisible;
+        inventoryCanvasGroup.blocksRaycasts = fullyVisible;
+
+        if (deactivateOnComplete && !fullyVisible && panelRoot != null)
+            panelRoot.SetActive(false);
+
+        fadeRoutine = null;
+    }
+
+    private void StopFadeRoutine()
+    {
+        if (fadeRoutine != null)
+        {
+            StopCoroutine(fadeRoutine);
+            fadeRoutine = null;
+        }
+    }
+
+    private void ReactivateWorldInputs()
+    {
+        if (playerInputs == null)
+            return;
+
+        if (inputsManager != null)
+            inputsManager.ActivateOnly(playerInputs.World.Get());
+        else
+            playerInputs.World.Enable();
     }
 
     #endregion
@@ -1335,6 +1464,12 @@ public class InventorySetPanelController : MonoBehaviour, PlayerInputs.IInventor
     #endregion
 
     #region Implémentation de IInventoryActions
+
+    public void OnInventory(InputAction.CallbackContext context)
+    {
+        // L'action Inventory agit désormais comme un toggle dans tous les contextes.
+        HandleInventoryInput(context);
+    }
 
     public void OnSelectSubPanel_Left(InputAction.CallbackContext context)
     {
