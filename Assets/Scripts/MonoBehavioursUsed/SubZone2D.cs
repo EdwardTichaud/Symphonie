@@ -49,10 +49,10 @@ public class SubZone2D : MonoBehaviour
     public bool overrideFovSmoothTime;
     public float fovSmoothTime = 0.25f;
 
-    [Tooltip("Remplace le plan de déplacement en utilisant l'orientation de cette sous-zone (axe Up).")]
+    [Tooltip("Remplace le plan de déplacement en utilisant le plan XY local de cette sous-zone (axe Forward comme normale).")]
     public bool overridePlaneWithTransformUp;
 
-    [Tooltip("Transform optionnel servant de référence pour l'axe Up. Laisser vide pour utiliser ce GameObject.")]
+    [Tooltip("Transform optionnel servant de référence pour définir le plan XY. Laisser vide pour utiliser ce GameObject.")]
     public Transform planeReference;
 
     [Tooltip("Forcer la caméra à rester fixe depuis cette sous-zone.")]
@@ -180,8 +180,11 @@ public class SubZone2D : MonoBehaviour
         if (overridePlaneWithTransformUp)
         {
             Transform reference = planeReference != null ? planeReference : transform;
-            // On s'appuie sur l'axe Up du transform pour rester cohérent avec le placement manuel du prefab.
-            settings.planeNormal = Zone2D.NormalizePlaneNormal(reference.up);
+            // On s'appuie sur l'axe Forward du transform afin de cibler le plan XY local
+            // défini par la sous-zone. Cela garantit un verrouillage cohérent avec l'orientation
+            // choisie par les level designers dans la scène.
+            settings.planeNormal = Zone2D.NormalizePlaneNormal(reference.forward);
+            settings.planeUp = Zone2D.ResolvePlaneUp(settings.planeNormal, reference.up);
         }
 
         if (overrideFixedBehaviour)

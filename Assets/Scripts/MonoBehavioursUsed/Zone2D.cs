@@ -76,6 +76,7 @@ public class Zone2D : MonoBehaviour
     public struct ResolvedSettings
     {
         public Vector3 planeNormal;
+        public Vector3 planeUp;
         public float distance;
         public float fieldOfView;
         public bool keepCameraFixed;
@@ -90,10 +91,11 @@ public class Zone2D : MonoBehaviour
         public float rotationSmoothSpeed;
         public float fovSmoothTime;
 
-        public ResolvedSettings(ZoneSettings source, Transform follow, Vector3 defaultPlaneNormal)
+        public ResolvedSettings(ZoneSettings source, Transform follow, Vector3 defaultPlaneNormal, Vector3 defaultPlaneUp)
         {
             // La normale est dérivée de l'orientation du prefab ou d'une sous-zone éventuelle.
             planeNormal = NormalizePlaneNormal(defaultPlaneNormal);
+            planeUp = ResolvePlaneUp(planeNormal, defaultPlaneUp);
             distance = Mathf.Max(0f, source.distance);
             fieldOfView = Mathf.Clamp(source.fieldOfView, 1f, 179f);
             keepCameraFixed = source.keepCameraFixed;
@@ -137,6 +139,11 @@ public class Zone2D : MonoBehaviour
     private Vector3 velocity;
     private float fovVelocity;
     private readonly List<SubZone2D> activeSubZones = new();
+
+    // Référence optionnelle vers le contrôleur de la WorldCamera. On le met en pause
+    // quand la zone 2D prend la main afin d'éviter tout conflit de mise à jour.
+    private CameraController cachedWorldCameraController;
+    private bool worldCameraControllerTemporarilyDisabled;
 
     private Vector3 PlaneOrigin => transform.position;
 
@@ -241,6 +248,16 @@ public class Zone2D : MonoBehaviour
 
         activeActor = actor;
 
+        // On suspend immédiatement le contrôleur World pour que la caméra physique ne soit plus
+        // déplacée par son comportement par défaut tant que nous sommes dans la zone 2D.
+        cachedWorldCameraController = CameraController.Instance;
+        worldCameraControllerTemporarilyDisabled = false;
+        if (cachedWorldCameraController != null && cachedWorldCameraController.enabled)
+        {
+            cachedWorldCameraController.enabled = false;
+            worldCameraControllerTemporarilyDisabled = true;
+        }
+
         previousState.position = runtimeCamera.transform.position;
         previousState.rotation = runtimeCamera.transform.rotation;
         previousState.fieldOfView = runtimeCamera.fieldOfView;
@@ -268,6 +285,18 @@ public class Zone2D : MonoBehaviour
             runtimeCamera.transform.position = previousState.position;
             runtimeCamera.transform.rotation = previousState.rotation;
             runtimeCamera.fieldOfView = previousState.fieldOfView;
+        }
+
+        // Restauration du contrôleur World uniquement si nous l'avons désactivé nous-même.
+        if (cachedWorldCameraController != null)
+        {
+            if (worldCameraControllerTemporarilyDisabled)
+            {
+                cachedWorldCameraController.enabled = true;
+            }
+
+            cachedWorldCameraController = null;
+            worldCameraControllerTemporarilyDisabled = false;
         }
 
         zoneActive = false;
@@ -306,7 +335,7 @@ public class Zone2D : MonoBehaviour
         Vector3 planeNormal = settings.planeNormal.sqrMagnitude < 0.0001f
             ? Vector3.up
             : settings.planeNormal.normalized;
-        Vector3 planeUp = ResolvePlaneUp(planeNormal);
+        Vector3 planeUp = ResolvePlaneUp(planeNormal, settings.planeUp);
 
         if (settings.keepCameraFixed)
         {
@@ -372,7 +401,7 @@ public class Zone2D : MonoBehaviour
     private ResolvedSettings ResolveSettings(Transform followTarget)
     {
         // On initialise les réglages avec la normale issue du placement manuel du prefab.
-        ResolvedSettings settings = new ResolvedSettings(baseSettings, followTarget, GetDefaultPlaneNormal());
+        ResolvedSettings settings = new ResolvedSettings(baseSettings, followTarget, GetDefaultPlaneNormal(), GetDefaultPlaneUp());
 
         // Les sous-zones s'appliquent dans l'ordre d'entrée, la dernière ayant la priorité.
         for (int i = 0; i < activeSubZones.Count; i++)
@@ -409,7 +438,19 @@ public class Zone2D : MonoBehaviour
     /// </summary>
     private Vector3 GetDefaultPlaneNormal()
     {
-        // L'axe "Up" du transform est utilisé afin d'offrir une lecture intuitive dans la scène.
+        // On verrouille la caméra sur le plan XY local de la zone : la normale correspond donc
+        // à l'axe Z (Forward) du GameObject qui porte le script. Ainsi, l'artiste peut orienter
+        // librement la zone dans la scène et obtenir automatiquement un plan cohérent.
+        return transform.forward;
+    }
+
+    /// <summary>
+    /// Détermine le vecteur "up" local associé au plan XY utilisé pour contraindre la caméra.
+    /// </summary>
+    private Vector3 GetDefaultPlaneUp()
+    {
+        // Le plan XY local est défini par les axes Right et Up du GameObject. On renvoie donc
+        // l'axe Up pour fournir un indice de rotation cohérent à la caméra 2D.
         return transform.up;
     }
 
@@ -424,13 +465,24 @@ public class Zone2D : MonoBehaviour
     /// <summary>
     /// Fournit un vecteur "up" cohérent pour LookRotation, même si la normale pointe vers le haut.
     /// </summary>
-    private static Vector3 ResolvePlaneUp(Vector3 planeNormal)
+    internal static Vector3 ResolvePlaneUp(Vector3 planeNormal, Vector3 upHint)
     {
-        Vector3 up = Vector3.up;
-        if (Mathf.Abs(Vector3.Dot(up.normalized, planeNormal.normalized)) > 0.99f)
+        // L'indice fourni par la zone (souvent son axe Up local) nous permet d'aligner la caméra
+        // avec l'espace désiré. On retombe sur l'axe global par défaut en cas de valeur dégénérée.
+        Vector3 up = upHint.sqrMagnitude < 0.0001f ? Vector3.up : upHint.normalized;
+
+        // Si l'indice est quasi parallèle à la normale, on calcule un nouvel axe en utilisant un
+        // produit vectoriel pour éviter les problèmes de LookRotation (gimbal lock).
+        Vector3 normalizedNormal = planeNormal.sqrMagnitude < 0.0001f ? Vector3.forward : planeNormal.normalized;
+        if (Mathf.Abs(Vector3.Dot(up, normalizedNormal)) > 0.99f)
         {
-            // Si la normale est quasiment parallèle à l'up mondial, on choisit un autre axe.
-            up = Vector3.right;
+            up = Vector3.Cross(normalizedNormal, Vector3.right);
+            if (up.sqrMagnitude < 0.0001f)
+            {
+                up = Vector3.Cross(normalizedNormal, Vector3.up);
+            }
+
+            up = up.sqrMagnitude < 0.0001f ? Vector3.up : up.normalized;
         }
 
         return up;
