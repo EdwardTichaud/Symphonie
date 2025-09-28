@@ -1420,6 +1420,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_Inventory_Cancel = m_Inventory.FindAction("Cancel", throwIfNotFound: true);
         m_Inventory_SelectPanel_Left = m_Inventory.FindAction("SelectPanel_Left", throwIfNotFound: true);
         m_Inventory_SelectPanel_Right = m_Inventory.FindAction("SelectPanel_Right", throwIfNotFound: true);
+        m_Inventory_Inventory = m_Inventory.FindAction("Inventory", throwIfNotFound: true);
         // Menu
         m_Menu = asset.FindActionMap("Menu", throwIfNotFound: true);
         m_Menu_Confirm = m_Menu.FindAction("Confirm", throwIfNotFound: true);
@@ -2067,6 +2068,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_Inventory_Cancel;
     private readonly InputAction m_Inventory_SelectPanel_Left;
     private readonly InputAction m_Inventory_SelectPanel_Right;
+    private readonly InputAction m_Inventory_Inventory;
     /// <summary>
     /// Provides access to input actions defined in input action map "Inventory".
     /// </summary>
@@ -2106,6 +2108,10 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Inventory/SelectPanel_Right".
         /// </summary>
         public InputAction @SelectPanel_Right => m_Wrapper.m_Inventory_SelectPanel_Right;
+        /// <summary>
+        /// Provides access to the underlying input action "Inventory/Inventory".
+        /// </summary>
+        public InputAction @Inventory => m_Wrapper.m_Inventory_Inventory;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -2153,6 +2159,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @SelectPanel_Right.started += instance.OnSelectPanel_Right;
             @SelectPanel_Right.performed += instance.OnSelectPanel_Right;
             @SelectPanel_Right.canceled += instance.OnSelectPanel_Right;
+            @Inventory.started += instance.OnInventory;
+            @Inventory.performed += instance.OnInventory;
+            @Inventory.canceled += instance.OnInventory;
         }
 
         /// <summary>
@@ -2185,6 +2194,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @SelectPanel_Right.started -= instance.OnSelectPanel_Right;
             @SelectPanel_Right.performed -= instance.OnSelectPanel_Right;
             @SelectPanel_Right.canceled -= instance.OnSelectPanel_Right;
+            @Inventory.started -= instance.OnInventory;
+            @Inventory.performed -= instance.OnInventory;
+            @Inventory.canceled -= instance.OnInventory;
         }
 
         /// <summary>
@@ -2594,6 +2606,13 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnSelectPanel_Right(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Inventory" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnInventory(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Menu" which allows adding and removing callbacks.
