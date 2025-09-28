@@ -51,6 +51,19 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private readonly Dictionary<string, Transform> cachedCameraAnchors = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
+    /// Volume visuel approximatif de l'unité (mesh, colliders…), mis en cache afin
+    /// d'éviter un recalcul systématique lorsque les caméras ont besoin d'estimer
+    /// la taille du personnage. Cette information est indispensable pour adapter
+    /// dynamiquement le cadrage face aux très grands ennemis.
+    /// </summary>
+    private Bounds cachedVisualBounds;
+
+    /// <summary>
+    /// Indique si <see cref="cachedVisualBounds"/> contient déjà une valeur fiable.
+    /// </summary>
+    private bool hasCachedVisualBounds;
+
+    /// <summary>
     /// PlayableDirector individuel utilisé pour jouer les timelines de combat
     /// propres à cette unité. Ce composant remplace l'ancien système centralisé
     /// et garantit que les pistes "Caster" restent toujours correctement liées.
@@ -214,6 +227,114 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     }
 
     /// <summary>
+    /// Fournit un volume englobant approximatif de l'unité afin que les caméras
+    /// puissent adapter automatiquement leur cadrage selon la taille du modèle.
+    /// </summary>
+    /// <param name="forceRefresh">Vrai pour ignorer le cache et recalculer immédiatement.</param>
+    /// <returns>Bounds monde représentant la silhouette globale de l'unité.</returns>
+    public Bounds GetVisualBounds(bool forceRefresh = false)
+    {
+        if (!forceRefresh && hasCachedVisualBounds)
+            return cachedVisualBounds;
+
+        if (TryComputeVisualBounds(out Bounds newBounds))
+        {
+            // ✅ Bounds valides : on les met en cache pour les prochaines requêtes.
+            cachedVisualBounds = newBounds;
+            hasCachedVisualBounds = true;
+            return cachedVisualBounds;
+        }
+
+        // ⚠️ Fallback : aucune géométrie exploitable n'a été trouvée (ex : FX uniquement).
+        //     On construit alors un volume standard centré sur la position de l'unité afin
+        //     d'éviter les divisions par zéro lors des calculs de cadrage.
+        Vector3 fallbackCenter = transform.position + Vector3.up;
+        cachedVisualBounds = new Bounds(fallbackCenter, new Vector3(1.5f, 2f, 1.5f));
+        hasCachedVisualBounds = true;
+        return cachedVisualBounds;
+    }
+
+    /// <summary>
+    /// Renvoie une estimation directe de la hauteur de l'unité en se basant sur
+    /// les <see cref="Bounds"/> visuels. Cette méthode est utilisée par le gestionnaire
+    /// de caméras pour déterminer l'offset vertical idéal du point de focus.
+    /// </summary>
+    /// <param name="forceRefresh">Vrai pour déclencher un recalcul du volume.</param>
+    public float GetVisualHeightEstimate(bool forceRefresh = false)
+    {
+        Bounds bounds = GetVisualBounds(forceRefresh);
+        return Mathf.Max(bounds.size.y, 0.1f);
+    }
+
+    /// <summary>
+    /// Tente de construire un volume englobant à partir des renderers et colliders
+    /// présents sous l'unité. Les FX temporaires (trail, particules…) sont ignorés
+    /// pour éviter de gonfler artificiellement la taille estimée.
+    /// </summary>
+    private bool TryComputeVisualBounds(out Bounds aggregatedBounds)
+    {
+        aggregatedBounds = default;
+        bool hasBounds = false;
+
+        // 🧱 Étape 1 : on parcourt l'ensemble des MeshRenderer/SkinnedMeshRenderer/SpriteRenderer.
+        var renderers = GetComponentsInChildren<Renderer>(includeInactive: true);
+        foreach (Renderer renderer in renderers)
+        {
+            if (!ShouldUseRendererForBounds(renderer))
+                continue;
+
+            if (!hasBounds)
+            {
+                aggregatedBounds = renderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                aggregatedBounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        // 🛡️ Étape 2 : si aucun renderer pertinent n'a été trouvé, on tente un fallback via les colliders.
+        if (!hasBounds)
+        {
+            var colliders = GetComponentsInChildren<Collider>(includeInactive: true);
+            foreach (Collider collider in colliders)
+            {
+                if (collider == null)
+                    continue;
+
+                if (!hasBounds)
+                {
+                    aggregatedBounds = collider.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    aggregatedBounds.Encapsulate(collider.bounds);
+                }
+            }
+        }
+
+        return hasBounds;
+    }
+
+    /// <summary>
+    /// Filtre les renderers à considérer lorsqu'on calcule un volume englobant.
+    /// </summary>
+    private static bool ShouldUseRendererForBounds(Renderer renderer)
+    {
+        if (renderer == null)
+            return false;
+
+        // Les particules, traînées et lignes étirent les bounds sur de grandes distances
+        // et ne reflètent pas la taille réelle de l'unité.
+        if (renderer is ParticleSystemRenderer || renderer is TrailRenderer || renderer is LineRenderer)
+            return false;
+
+        return renderer is MeshRenderer || renderer is SkinnedMeshRenderer || renderer is SpriteRenderer;
+    }
+
+    /// <summary>
     /// Recherche (et met en cache) une ancre caméra particulière sur le CharacterUnit.
     /// </summary>
     /// <param name="anchorName">Nom exact du point de caméra recherché.</param>
@@ -255,6 +376,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void RefreshCameraAnchorCache()
     {
         cachedCameraAnchors.Clear();
+        // 🧹 On invalide également le cache des bounds visuels afin que les prochains
+        //     calculs prennent en compte les éventuelles modifications de posture
+        //     (ex : Timeline qui change l'échelle d'un mesh, activation d'un accessoire, etc.).
+        hasCachedVisualBounds = false;
     }
 
     /// <summary>
