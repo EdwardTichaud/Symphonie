@@ -50,9 +50,20 @@ public class InventoryManager : MonoBehaviour
 
     /// <summary>
     /// Renvoie la liste des items possédés et utilisables en combat.
+    /// Lorsque <paramref name="prioritizedFor"/> est défini, les items sont
+    /// réordonnés pour placer les favoris du set actif en tête de liste.
     /// </summary>
-    public List<ItemData> GetUsableItems()
-        => inventoryItems.Where(item => item.isUsableInBattle && CanUseItem(item)).ToList();
+    public List<ItemData> GetUsableItems(CharacterUnit prioritizedFor = null)
+    {
+        var usable = inventoryItems
+            .Where(item => item != null && item.isUsableInBattle && CanUseItem(item))
+            .ToList();
+
+        if (prioritizedFor == null || prioritizedFor.Data == null)
+            return usable;
+
+        return prioritizedFor.OrderItemsForCurrentSet(usable);
+    }
 
     /// <summary>
     /// Ajoute un item à l'inventaire (uniquement si c'est un item valide du jeu).

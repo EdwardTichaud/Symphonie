@@ -1734,7 +1734,7 @@ public class NewBattleManager : MonoBehaviour
             caster.GetHarmonicCount(caster.Data.harmonicType) >= m.harmonicCost &&
             (!m.enterAwake || caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.resonancePoint) &&
             !caster.IsMoveOnCooldown(m));
-        bool hasItem = InventoryManager.Instance.GetUsableItems().Count > 0;
+        bool hasItem = InventoryManager.Instance.GetUsableItems(caster).Count > 0;
 
         if (!hasSkill && !hasItem)
             EndTurn();
@@ -2455,6 +2455,9 @@ public class NewBattleManager : MonoBehaviour
             .Where(m => currentCharacterUnit.CanUseMove(m))
             .ToList();
 
+        // Réordonne les attaques selon le set sélectionné afin de mettre en avant les favoris.
+        skillChoices = currentCharacterUnit.OrderMovesForCurrentSet(skillChoices);
+
         // Détermine le mouvement spécial autorisé, qui sera affiché dans le 4e slot
         specialMoveChoice = (currentCharacterUnit.Data.specialMusicalMove != null &&
             currentCharacterUnit.CanUseMove(currentCharacterUnit.Data.specialMusicalMove))
@@ -2591,7 +2594,7 @@ public class NewBattleManager : MonoBehaviour
         // Démarre la Timeline d'attente de sélection d'objet
         StartItemPreparingTimeline();
 
-        itemChoices = InventoryManager.Instance.GetUsableItems();
+        itemChoices = InventoryManager.Instance.GetUsableItems(currentCharacterUnit);
 
         // 6) Création des boutons d’items
         for (int i = 0; i < itemChoices.Count && i < currentItemsMenuSlots.Count; i++)
