@@ -23,6 +23,13 @@ public class MusicalMoveSO : ScriptableObject
     public Sprite moveIcon;
     [TextArea, Tooltip("Description textuelle détaillant l'effet et l'utilisation du move.")]
     public string description;
+    [Header("Inventaire & Accessibilité")]
+    [Tooltip("Catégorie affichée dans l'inventaire pour ce move.")]
+    public string inventoryCategory = "Attaque musicale";
+    [TextArea, Tooltip("Résumé court utilisé pour les aides contextuelles de l'inventaire.")]
+    public string inventorySummary;
+    [Tooltip("Objets qui se combinent particulièrement bien avec ce move.")]
+    public List<ItemData> recommendedItems = new();
     // L'animation de ciblage est désormais pilotée par la Timeline de préparation
     [Tooltip("Si vrai, le lanceur garde constamment la cible en ligne de mire lors de la préparation.")]
     public bool stayFaceToTarget = true;
