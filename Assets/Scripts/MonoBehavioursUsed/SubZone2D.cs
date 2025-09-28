@@ -104,6 +104,8 @@ public class SubZone2D : MonoBehaviour
 
         if (other.CompareTag(parentZone.playerTag))
         {
+            // Dès que le joueur pénètre dans la sous-zone, on notifie la zone parente afin qu'elle
+            // recalcule immédiatement ses paramètres (y compris la nouvelle cible WorldCam_Origin).
             parentZone.RegisterSubZone(this);
         }
     }
@@ -117,6 +119,8 @@ public class SubZone2D : MonoBehaviour
 
         if (other.CompareTag(parentZone.playerTag))
         {
+            // Lorsque le joueur quitte le volume, on retire la sous-zone pour restaurer les réglages
+            // par défaut de la zone 2D et redonner la main aux autres sous-zones éventuelles.
             parentZone.UnregisterSubZone(this);
         }
     }
