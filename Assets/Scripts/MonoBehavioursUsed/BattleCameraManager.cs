@@ -656,20 +656,22 @@ public class BattleCameraManager : MonoBehaviour
 
         var targetSettings = camera.Target;
 
-        // 🔐 On force systématiquement la Cinemachine à considérer l'ancre comme source de Follow pour
-        //     empêcher un autre système (Timeline, previous state, etc.) de déplacer la caméra après coup.
-        //     Depuis Cinemachine 3.x, le booléen « CustomFollowTarget » n'existe plus : le moteur déduit
-        //     désormais automatiquement l'état à partir de la présence d'un transform. On assigne donc
-        //     directement la référence souhaitée.
-        targetSettings.Follow = anchor;
+        // 🔐 On force systématiquement la Cinemachine à considérer l'ancre comme source de suivi.
+        //     Dans Cinemachine 3.x, la structure <see cref="CameraTarget"/> expose désormais la
+        //     propriété <c>TrackingTarget</c> pour remplacer l'ancien champ <c>Follow</c>.
+        //     Ce renommage est pris en compte ici pour garantir la compatibilité avec le nouvel API
+        //     tout en conservant la logique métier historique (ancre imposée pour éviter les overrides).
+        targetSettings.TrackingTarget = anchor;
 
         if (lookTarget != null)
         {
-            targetSettings.LookAt = lookTarget;
+            // 🎯 Même principe pour l'orientation : <c>LookAt</c> devient <c>LookAtTarget</c> dans la
+            //     version récente du package. L'assignation explicite conserve la lisibilité de la scène.
+            targetSettings.LookAtTarget = lookTarget;
         }
         else
         {
-            targetSettings.LookAt = null;
+            targetSettings.LookAtTarget = null;
         }
 
         camera.Target = targetSettings;
