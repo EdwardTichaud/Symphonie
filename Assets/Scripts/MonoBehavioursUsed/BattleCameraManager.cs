@@ -210,19 +210,23 @@ public class BattleCameraManager : MonoBehaviour
     /// </summary>
     private Transform orbitReturnTarget;
 
-    /// <summary>Configuration déclarative de toutes les caméras "CMV_" présentes dans la scène.</summary>
+    /// <summary>
+    /// Configuration déclarative de toutes les caméras "CMV_" présentes dans la scène.
+    /// 📸 Le système a été simplifié : toutes les CMV (hors cas manuels) se calent désormais
+    /// directement sur les « CMVPoint_… » de l'unité qui joue son tour. Cela garantit une
+    /// lecture instantanée et cohérente sans passer par les notions historiques de caster/target.
+    /// </summary>
     private static readonly Dictionary<string, CameraBindingConfig> CameraBindings = new(StringComparer.OrdinalIgnoreCase)
     {
         ["CMV_MainMenu"] = new(CameraAnchorOwner.TurnOwner, "MainMenu", false),
         ["CMV_SkillsMenu"] = new(CameraAnchorOwner.TurnOwner, "SkillsMenu", false),
         ["CMV_ItemsMenu"] = new(CameraAnchorOwner.TurnOwner, "ItemsMenu", false),
-        // Caméra orbitale utilisée pour mettre en valeur la cible durant le choix d'un objet.
-        ["CMV_OrbitAroundUnit"] = new(CameraAnchorOwner.Target, "OrbitAroundUnit", false),
-        ["CMV_TargetReaction"] = new(CameraAnchorOwner.Target, "TargetReaction", false),
-        ["CMV_Projectile_Flyby"] = new(CameraAnchorOwner.Caster, "Projectile_Flyby", false),
-        ["CMV_OverShoulder_CasterLookTarget"] = new(CameraAnchorOwner.Caster, "OverShoulder_CasterLookTarget", true),
-        ["CMV_OverShoulder_CasterToTarget"] = new(CameraAnchorOwner.Caster, "OverShoulder_CasterToTarget", true),
-        ["CMV_OverHead_CasterLookTarget"] = new(CameraAnchorOwner.Caster, "OverHead_CasterLookTarget", true),
+        ["CMV_OrbitAroundUnit"] = new(CameraAnchorOwner.TurnOwner, "OrbitAroundUnit", false),
+        ["CMV_TargetReaction"] = new(CameraAnchorOwner.TurnOwner, "TargetReaction", false),
+        ["CMV_Projectile_Flyby"] = new(CameraAnchorOwner.TurnOwner, "Projectile_Flyby", false),
+        ["CMV_OverShoulder_CasterLookTarget"] = new(CameraAnchorOwner.TurnOwner, "OverShoulder_CasterLookTarget", false),
+        ["CMV_OverShoulder_CasterToTarget"] = new(CameraAnchorOwner.TurnOwner, "OverShoulder_CasterToTarget", false),
+        ["CMV_OverHead_CasterLookTarget"] = new(CameraAnchorOwner.TurnOwner, "OverHead_CasterLookTarget", false),
         ["CMV_BattleIntro"] = new(CameraAnchorOwner.Manual, "BattleIntro", false),
         ["CMV_Victory"] = new(CameraAnchorOwner.Manual, "Victory", false)
     };
@@ -470,13 +474,10 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Identifie l'unité responsable d'une caméra donnée.</summary>
     private CharacterUnit ResolveAnchorOwner(CameraAnchorOwner owner)
     {
-        return owner switch
-        {
-            CameraAnchorOwner.TurnOwner => currentTurnOwner,
-            CameraAnchorOwner.Caster => currentCaster ?? currentTurnOwner,
-            CameraAnchorOwner.Target => currentTarget,
-            _ => null
-        };
+        // 🎯 Les caméras de combat suivent désormais exclusivement l'unité qui joue son tour.
+        // Même si l'API historique mentionne « caster » ou « target », nous renvoyons systématiquement
+        // le tour actif afin de conserver une compatibilité ascendante avec les appels existants.
+        return owner == CameraAnchorOwner.Manual ? null : currentTurnOwner;
     }
 
     /// <summary>Récupère l'ancre "CMVPoint_" appropriée sur l'unité fournie.</summary>
@@ -519,8 +520,12 @@ public class BattleCameraManager : MonoBehaviour
     /// </summary>
     private static bool ShouldUseParentCasterLookTarget(CameraBindingConfig config)
     {
-        return config.Owner == CameraAnchorOwner.Caster
-            && !string.IsNullOrEmpty(config.Suffix)
+        // 🔁 Même si toutes les caméras se basent désormais sur le tour actif, nous devons
+        // conserver ce traitement particulier : le point « OverShoulder_CasterLookTarget »
+        // est instancié directement sous le parent du CharacterUnit (PlayerPosition_X / EnemyPosition_X).
+        // Sans cette recherche explicite, la Cinemachine ne retomberait pas sur le repère
+        // parfaitement aligné défini par les level designers.
+        return !string.IsNullOrEmpty(config.Suffix)
             && string.Equals(config.Suffix, "OverShoulder_CasterLookTarget", StringComparison.OrdinalIgnoreCase);
     }
 
@@ -877,7 +882,11 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Enregistre l'unité actuellement active (tour en cours).</summary>
     public void SetTurnOwner(CharacterUnit unit, bool alsoSetAsCaster = true)
     {
+        // ♻️ Avant de repositionner toutes les caméras, on remet à zéro le cache des ancres
+        // de l'unité qui entame son tour. Cela évite les références obsolètes lorsque les artistes
+        // ont ajusté un « CMVPoint_… » pendant l'exécution (changement de posture, animation spéciale…).
         currentTurnOwner = unit;
+        currentTurnOwner?.RefreshCameraAnchorCache();
         if (alsoSetAsCaster && unit != null)
             currentCaster = unit;
 

@@ -248,6 +248,16 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     }
 
     /// <summary>
+    /// Vide explicitement le cache des ancres « CMVPoint_… » afin de forcer un recalcul complet.
+    /// Cette méthode est utilisée par le <see cref="BattleCameraManager"/> à chaque début de tour
+    /// pour garantir que la caméra épouse bien les derniers ajustements effectués dans l'éditeur.
+    /// </summary>
+    public void RefreshCameraAnchorCache()
+    {
+        cachedCameraAnchors.Clear();
+    }
+
+    /// <summary>
     /// Rôle principal associé au point caméra recherché lorsqu'on souhaite
     /// fournir un override explicite au <see cref="BattleCameraManager"/>.
     /// </summary>
