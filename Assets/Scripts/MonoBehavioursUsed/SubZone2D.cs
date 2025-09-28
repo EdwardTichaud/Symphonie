@@ -1,17 +1,17 @@
 using UnityEngine;
 
 /// <summary>
-/// Sous-zone permettant d'ajuster temporairement les paramètres d'une <see cref="TwoDZone"/>.
+/// Sous-zone permettant d'ajuster temporairement les paramètres d'une <see cref="Zone2D"/>.
 /// Idéal pour créer des variations de distance, de FOV ou de comportement à l'intérieur
 /// d'une même zone principale (par exemple lors d'un couloir qui se resserre).
 /// </summary>
 [RequireComponent(typeof(Collider))]
 [AddComponentMenu("Camera/2D Sub Zone")]
-public class TwoDZoneSubZone : MonoBehaviour
+public class SubZone2D : MonoBehaviour
 {
     [Header("Références")]
     [Tooltip("Zone 2D parente. Si vide, sera automatiquement recherchée dans les parents.")]
-    public TwoDZone parentZone;
+    public Zone2D parentZone;
 
     [Header("Overrides")]
     [Tooltip("Remplace la distance de caméra définie par la zone principale.")]
@@ -51,7 +51,7 @@ public class TwoDZoneSubZone : MonoBehaviour
 
     [Tooltip("Remplace le plan de déplacement.")]
     public bool overridePlane;
-    public TwoDZone.CameraPlane plane = TwoDZone.CameraPlane.XZ;
+    public Zone2D.CameraPlane plane = Zone2D.CameraPlane.XZ;
     public Vector3 customPlaneNormal = Vector3.up;
 
     [Tooltip("Forcer la caméra à rester fixe depuis cette sous-zone.")]
@@ -81,7 +81,7 @@ public class TwoDZoneSubZone : MonoBehaviour
 
         if (parentZone == null)
         {
-            parentZone = GetComponentInParent<TwoDZone>();
+            parentZone = GetComponentInParent<Zone2D>();
         }
     }
 
@@ -132,7 +132,7 @@ public class TwoDZoneSubZone : MonoBehaviour
     /// Applique les overrides actifs aux réglages courants de la zone.
     /// </summary>
     /// <param name="settings">Réglages à modifier.</param>
-    public void ApplyOverrides(ref TwoDZone.ResolvedSettings settings)
+    public void ApplyOverrides(ref Zone2D.ResolvedSettings settings)
     {
         if (overrideDistance)
         {
@@ -178,7 +178,7 @@ public class TwoDZoneSubZone : MonoBehaviour
 
         if (overridePlane)
         {
-            settings.planeNormal = TwoDZone.ResolvePlaneNormal(plane, customPlaneNormal);
+            settings.planeNormal = Zone2D.ResolvePlaneNormal(plane, customPlaneNormal);
         }
 
         if (overrideFixedBehaviour)

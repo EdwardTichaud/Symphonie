@@ -13,7 +13,7 @@ using UnityEngine;
 /// </summary>
 [RequireComponent(typeof(Collider))]
 [AddComponentMenu("Camera/2D Zone")]
-public class TwoDZone : MonoBehaviour
+public class Zone2D : MonoBehaviour
 {
     /// <summary>
     /// Plan dans lequel la caméra doit se déplacer.
@@ -153,7 +153,7 @@ public class TwoDZone : MonoBehaviour
     private bool zoneActive;
     private Vector3 velocity;
     private float fovVelocity;
-    private readonly List<TwoDZoneSubZone> activeSubZones = new();
+    private readonly List<SubZone2D> activeSubZones = new();
 
     private Vector3 PlaneOrigin => transform.position;
 
@@ -211,7 +211,7 @@ public class TwoDZone : MonoBehaviour
     /// Enregistre une sous-zone actuellement traversée par le joueur.
     /// </summary>
     /// <param name="subZone">Sous-zone qui vient d'être activée.</param>
-    internal void RegisterSubZone(TwoDZoneSubZone subZone)
+    internal void RegisterSubZone(SubZone2D subZone)
     {
         if (subZone == null)
         {
@@ -230,7 +230,7 @@ public class TwoDZone : MonoBehaviour
     /// Retire une sous-zone du suivi lorsque le joueur en sort.
     /// </summary>
     /// <param name="subZone">Sous-zone à retirer.</param>
-    internal void UnregisterSubZone(TwoDZoneSubZone subZone)
+    internal void UnregisterSubZone(SubZone2D subZone)
     {
         if (subZone == null)
         {
@@ -393,7 +393,7 @@ public class TwoDZone : MonoBehaviour
         // Les sous-zones s'appliquent dans l'ordre d'entrée, la dernière ayant la priorité.
         for (int i = 0; i < activeSubZones.Count; i++)
         {
-            TwoDZoneSubZone subZone = activeSubZones[i];
+            SubZone2D subZone = activeSubZones[i];
             if (subZone == null)
             {
                 continue;
