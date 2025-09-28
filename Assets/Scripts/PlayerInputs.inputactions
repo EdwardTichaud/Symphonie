@@ -966,19 +966,19 @@
             "id": "95248508-ef66-4fae-abf7-5612ef25a2c7",
             "actions": [
                 {
-                    "name": "Display",
+                    "name": "SelectViewPort_Left",
                     "type": "Button",
-                    "id": "023f4272-4c29-412d-a591-6fc2d2c185a1",
+                    "id": "2d235c7c-5506-409f-a250-ae8ed2a6d026",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
                 },
                 {
-                    "name": "ItemOptions",
+                    "name": "SelectViewPort_Right",
                     "type": "Button",
-                    "id": "9e67e511-50ba-48ee-a75a-ece3a637a831",
-                    "expectedControlType": "Button",
+                    "id": "52fe1d1e-166c-49e9-948a-232a4e29e514",
+                    "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -987,23 +987,23 @@
             "bindings": [
                 {
                     "name": "",
-                    "id": "fa7fa541-2566-4920-9bad-cc9df80802a5",
-                    "path": "<Keyboard>/i",
+                    "id": "cb349551-8289-4a40-b3fc-a94f232d6c0a",
+                    "path": "<Gamepad>/leftShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "Display",
+                    "action": "SelectViewPort_Left",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
                 {
                     "name": "",
-                    "id": "fdb94a4a-100c-4643-aba1-5151fcbf4761",
-                    "path": "<Mouse>/rightButton",
+                    "id": "e90aef1f-bcf9-4f6e-86fe-73c620c55101",
+                    "path": "<Gamepad>/rightShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
-                    "action": "ItemOptions",
+                    "action": "SelectViewPort_Right",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

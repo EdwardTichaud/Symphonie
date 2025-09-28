@@ -1052,19 +1052,19 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             ""id"": ""95248508-ef66-4fae-abf7-5612ef25a2c7"",
             ""actions"": [
                 {
-                    ""name"": ""Display"",
+                    ""name"": ""SelectViewPort_Left"",
                     ""type"": ""Button"",
-                    ""id"": ""023f4272-4c29-412d-a591-6fc2d2c185a1"",
+                    ""id"": ""2d235c7c-5506-409f-a250-ae8ed2a6d026"",
                     ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
                 },
                 {
-                    ""name"": ""ItemOptions"",
+                    ""name"": ""SelectViewPort_Right"",
                     ""type"": ""Button"",
-                    ""id"": ""9e67e511-50ba-48ee-a75a-ece3a637a831"",
-                    ""expectedControlType"": ""Button"",
+                    ""id"": ""52fe1d1e-166c-49e9-948a-232a4e29e514"",
+                    ""expectedControlType"": """",
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
@@ -1073,23 +1073,23 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             ""bindings"": [
                 {
                     ""name"": """",
-                    ""id"": ""fa7fa541-2566-4920-9bad-cc9df80802a5"",
-                    ""path"": ""<Keyboard>/i"",
+                    ""id"": ""cb349551-8289-4a40-b3fc-a94f232d6c0a"",
+                    ""path"": ""<Gamepad>/leftShoulder"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""Display"",
+                    ""action"": ""SelectViewPort_Left"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 },
                 {
                     ""name"": """",
-                    ""id"": ""fdb94a4a-100c-4643-aba1-5151fcbf4761"",
-                    ""path"": ""<Mouse>/rightButton"",
+                    ""id"": ""e90aef1f-bcf9-4f6e-86fe-73c620c55101"",
+                    ""path"": ""<Gamepad>/rightShoulder"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": """",
-                    ""action"": ""ItemOptions"",
+                    ""action"": ""SelectViewPort_Right"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1203,8 +1203,8 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_InfoBox_Confirm = m_InfoBox.FindAction("Confirm", throwIfNotFound: true);
         // Inventory
         m_Inventory = asset.FindActionMap("Inventory", throwIfNotFound: true);
-        m_Inventory_Display = m_Inventory.FindAction("Display", throwIfNotFound: true);
-        m_Inventory_ItemOptions = m_Inventory.FindAction("ItemOptions", throwIfNotFound: true);
+        m_Inventory_SelectViewPort_Left = m_Inventory.FindAction("SelectViewPort_Left", throwIfNotFound: true);
+        m_Inventory_SelectViewPort_Right = m_Inventory.FindAction("SelectViewPort_Right", throwIfNotFound: true);
         // Menu
         m_Menu = asset.FindActionMap("Menu", throwIfNotFound: true);
         m_Menu_Confirm = m_Menu.FindAction("Confirm", throwIfNotFound: true);
@@ -1845,8 +1845,8 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     // Inventory
     private readonly InputActionMap m_Inventory;
     private List<IInventoryActions> m_InventoryActionsCallbackInterfaces = new List<IInventoryActions>();
-    private readonly InputAction m_Inventory_Display;
-    private readonly InputAction m_Inventory_ItemOptions;
+    private readonly InputAction m_Inventory_SelectViewPort_Left;
+    private readonly InputAction m_Inventory_SelectViewPort_Right;
     /// <summary>
     /// Provides access to input actions defined in input action map "Inventory".
     /// </summary>
@@ -1859,13 +1859,13 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// </summary>
         public InventoryActions(@PlayerInputs wrapper) { m_Wrapper = wrapper; }
         /// <summary>
-        /// Provides access to the underlying input action "Inventory/Display".
+        /// Provides access to the underlying input action "Inventory/SelectViewPort_Left".
         /// </summary>
-        public InputAction @Display => m_Wrapper.m_Inventory_Display;
+        public InputAction @SelectViewPort_Left => m_Wrapper.m_Inventory_SelectViewPort_Left;
         /// <summary>
-        /// Provides access to the underlying input action "Inventory/ItemOptions".
+        /// Provides access to the underlying input action "Inventory/SelectViewPort_Right".
         /// </summary>
-        public InputAction @ItemOptions => m_Wrapper.m_Inventory_ItemOptions;
+        public InputAction @SelectViewPort_Right => m_Wrapper.m_Inventory_SelectViewPort_Right;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1892,12 +1892,12 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         {
             if (instance == null || m_Wrapper.m_InventoryActionsCallbackInterfaces.Contains(instance)) return;
             m_Wrapper.m_InventoryActionsCallbackInterfaces.Add(instance);
-            @Display.started += instance.OnDisplay;
-            @Display.performed += instance.OnDisplay;
-            @Display.canceled += instance.OnDisplay;
-            @ItemOptions.started += instance.OnItemOptions;
-            @ItemOptions.performed += instance.OnItemOptions;
-            @ItemOptions.canceled += instance.OnItemOptions;
+            @SelectViewPort_Left.started += instance.OnSelectViewPort_Left;
+            @SelectViewPort_Left.performed += instance.OnSelectViewPort_Left;
+            @SelectViewPort_Left.canceled += instance.OnSelectViewPort_Left;
+            @SelectViewPort_Right.started += instance.OnSelectViewPort_Right;
+            @SelectViewPort_Right.performed += instance.OnSelectViewPort_Right;
+            @SelectViewPort_Right.canceled += instance.OnSelectViewPort_Right;
         }
 
         /// <summary>
@@ -1909,12 +1909,12 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="InventoryActions" />
         private void UnregisterCallbacks(IInventoryActions instance)
         {
-            @Display.started -= instance.OnDisplay;
-            @Display.performed -= instance.OnDisplay;
-            @Display.canceled -= instance.OnDisplay;
-            @ItemOptions.started -= instance.OnItemOptions;
-            @ItemOptions.performed -= instance.OnItemOptions;
-            @ItemOptions.canceled -= instance.OnItemOptions;
+            @SelectViewPort_Left.started -= instance.OnSelectViewPort_Left;
+            @SelectViewPort_Left.performed -= instance.OnSelectViewPort_Left;
+            @SelectViewPort_Left.canceled -= instance.OnSelectViewPort_Left;
+            @SelectViewPort_Right.started -= instance.OnSelectViewPort_Right;
+            @SelectViewPort_Right.performed -= instance.OnSelectViewPort_Right;
+            @SelectViewPort_Right.canceled -= instance.OnSelectViewPort_Right;
         }
 
         /// <summary>
@@ -2276,19 +2276,19 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     public interface IInventoryActions
     {
         /// <summary>
-        /// Method invoked when associated input action "Display" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "SelectViewPort_Left" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnDisplay(InputAction.CallbackContext context);
+        void OnSelectViewPort_Left(InputAction.CallbackContext context);
         /// <summary>
-        /// Method invoked when associated input action "ItemOptions" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// Method invoked when associated input action "SelectViewPort_Right" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
         /// </summary>
         /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
-        void OnItemOptions(InputAction.CallbackContext context);
+        void OnSelectViewPort_Right(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "Menu" which allows adding and removing callbacks.
