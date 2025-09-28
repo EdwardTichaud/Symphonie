@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -27,6 +28,14 @@ public class InventoryViewportController : MonoBehaviour
     private int focusedIndex = 0;
     private bool hasFocus = false;
     private float lastNavigationTime = -999f;
+    private InventorySetSlot lastNotifiedSlot;
+
+    /// <summary>
+    /// Évènement déclenché à chaque fois que le focus change de slot.
+    /// Le premier paramètre correspond toujours à ce viewport pour
+    /// faciliter les souscriptions depuis le contrôleur parent.
+    /// </summary>
+    public event Action<InventoryViewportController, InventorySetSlot> FocusChanged;
 
     /// <summary>
     /// Fournit un accès en lecture aux slots instanciés (utile pour le panneau parent).
@@ -66,6 +75,7 @@ public class InventoryViewportController : MonoBehaviour
 
         slots.Clear();
         focusedIndex = 0;
+        lastNotifiedSlot = null;
         UpdateFocusVisuals();
     }
 
@@ -199,6 +209,22 @@ public class InventoryViewportController : MonoBehaviour
 
         if (hasFocus)
             ScrollToFocusedSlot();
+
+        NotifyFocusChanged();
+    }
+
+    /// <summary>
+    /// Informe les auditeurs du changement de focus afin de déplacer
+    /// les curseurs visuels synchronisés avec ce viewport.
+    /// </summary>
+    private void NotifyFocusChanged()
+    {
+        var current = CurrentSlot;
+        if (current == lastNotifiedSlot)
+            return;
+
+        lastNotifiedSlot = current;
+        FocusChanged?.Invoke(this, current);
     }
 }
 
