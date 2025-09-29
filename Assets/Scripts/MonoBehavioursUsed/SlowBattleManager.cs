@@ -39,6 +39,19 @@ public class SlowBattleManager : MonoBehaviour
     [SerializeField] private List<CharacterUnit> orderedUnits = new();
 
     /// <summary>
+    /// Constante utilisée pour simuler un incrément d'ATB identique à celui du <see cref="NewBattleManager"/>.
+    /// La valeur est volontairement privée au gestionnaire lent afin d'éviter les dépendances croisées tout
+    /// en conservant une référence facile à ajuster si la boucle historique venait à évoluer.
+    /// </summary>
+    private const float SimulatedAtbThreshold = 100f;
+
+    /// <summary>
+    /// Valeur de repli appliquée lorsqu'une unité dispose d'une initiative nulle ou négative. Sans ce garde-fou,
+    /// la simulation d'ordre de jeu pourrait tourner indéfiniment, ce qui bloquerait l'ensemble de la boucle lente.
+    /// </summary>
+    private const float MinimumInitiativeStep = 0.1f;
+
+    /// <summary>
     /// File courante des unités à jouer pendant la manche.
     /// </summary>
     private readonly Queue<CharacterUnit> turnQueue = new();
@@ -175,9 +188,117 @@ public class SlowBattleManager : MonoBehaviour
             : allUnits.Where(u => u != null && !u.IsDead).Distinct().ToList();
 
         // Tri personnalisé : initiative faible = agir en premier, initiative haute = agir en dernier.
-        orderedUnits.Sort((a, b) => a.currentInitiative.CompareTo(b.currentInitiative));
+        // On délègue néanmoins le calcul à une méthode dédiée pour reproduire le comportement du NewBattleManager
+        // (accumulation d'ATB) tout en inversant le résultat final conformément au gameplay attendu.
+        RefreshOrderedUnitsFromInitiative();
 
         roundIndex = 0;
+    }
+    #endregion
+
+    #region Calcul d'ordre d'initiative
+    /// <summary>
+    /// Reconstruit la liste ordonnée d'unités en se basant sur leur initiative actuelle. L'objectif est de proposer un ordre
+    /// cohérent avec la boucle historique (<see cref="NewBattleManager"/>) tout en inversant le résultat pour que les
+    /// initiatives élevées agissent en fin de manche.
+    /// </summary>
+    private void RefreshOrderedUnitsFromInitiative()
+    {
+        if (orderedUnits == null)
+            orderedUnits = new List<CharacterUnit>();
+
+        // Si le gestionnaire classique est disponible, on récupère sa vision des unités pour rester parfaitement synchronisé.
+        IEnumerable<CharacterUnit> sourceUnits = legacyBattleManager != null && legacyBattleManager.unitsInBattle != null
+            ? legacyBattleManager.unitsInBattle
+            : orderedUnits;
+
+        List<CharacterUnit> aliveUnits = sourceUnits
+            .Where(u => u != null && !u.IsDead)
+            .Distinct()
+            .ToList();
+
+        orderedUnits.Clear();
+
+        if (aliveUnits.Count == 0)
+            return;
+
+        List<CharacterUnit> simulatedOrder = SimulateInvertedInitiativeOrdering(aliveUnits);
+
+        orderedUnits.AddRange(simulatedOrder);
+    }
+
+    /// <summary>
+    /// Simule une boucle ATB identique à celle du <see cref="NewBattleManager"/> pour déterminer l'ordre naturel des unités.
+    /// Le résultat est ensuite inversé afin que la plus grande initiative termine la manche, conformément à la variante lente.
+    /// </summary>
+    private List<CharacterUnit> SimulateInvertedInitiativeOrdering(List<CharacterUnit> aliveUnits)
+    {
+        // Copie locale de la liste pour garantir un parcours stable pendant la simulation.
+        var workingList = aliveUnits.ToList();
+        var remainingUnits = new HashSet<CharacterUnit>(workingList);
+        var simulatedMeters = new Dictionary<CharacterUnit, float>(workingList.Count);
+        var increments = new Dictionary<CharacterUnit, float>(workingList.Count);
+
+        foreach (CharacterUnit unit in workingList)
+        {
+            float initiativeStep = GetEffectiveInitiativeStep(unit);
+            simulatedMeters[unit] = 0f;
+            increments[unit] = initiativeStep;
+        }
+
+        var orderedByInitiative = new List<CharacterUnit>(workingList.Count);
+        const int safetyCap = 2048;
+        int iterations = 0;
+
+        while (remainingUnits.Count > 0 && iterations < safetyCap)
+        {
+            foreach (CharacterUnit unit in workingList)
+            {
+                if (!remainingUnits.Contains(unit))
+                    continue;
+
+                simulatedMeters[unit] += increments[unit];
+                if (simulatedMeters[unit] >= SimulatedAtbThreshold)
+                {
+                    orderedByInitiative.Add(unit);
+                    remainingUnits.Remove(unit);
+                }
+            }
+
+            iterations++;
+        }
+
+        if (remainingUnits.Count > 0)
+        {
+            Debug.LogWarning("[SlowBattleManager] Seuil de sécurité atteint pendant le calcul d'initiative : " +
+                "ajout des unités restantes en fin de liste.");
+
+            // On trie les unités restantes selon leur incrément théorique pour rester le plus cohérent possible.
+            orderedByInitiative.AddRange(remainingUnits.OrderBy(u => increments[u]));
+        }
+
+        // L'ordre obtenu correspond à celui du gestionnaire rapide (initiative forte = premier).
+        // On inverse donc le tableau pour coller à la règle inverse : initiative forte = dernier.
+        orderedByInitiative.Reverse();
+
+        return orderedByInitiative;
+    }
+
+    /// <summary>
+    /// Renvoie l'incrément d'initiative à utiliser dans la simulation. Les valeurs nulles ou négatives sont remplacées par un
+    /// pas minimal afin d'éviter les boucles infinies tout en conservant une différence perceptible entre les unités.
+    /// </summary>
+    private static float GetEffectiveInitiativeStep(CharacterUnit unit)
+    {
+        if (unit == null)
+            return MinimumInitiativeStep;
+
+        float rawInitiative = unit.currentInitiative;
+
+        if (float.IsNaN(rawInitiative) || float.IsInfinity(rawInitiative) || rawInitiative <= 0f)
+            return MinimumInitiativeStep;
+
+        return rawInitiative;
     }
     #endregion
 
@@ -187,6 +308,10 @@ public class SlowBattleManager : MonoBehaviour
     /// </summary>
     public void BeginBattleLoop()
     {
+        // Petite synchronisation de sécurité : si l'initiative d'une unité a été modifiée juste avant le lancement
+        // explicite de la boucle, on recalcule immédiatement l'ordre pour éviter un premier tour incohérent.
+        RefreshOrderedUnitsFromInitiative();
+
         if (orderedUnits == null || orderedUnits.Count == 0)
         {
             Debug.LogWarning("[SlowBattleManager] Aucun combattant actif : la boucle lente ne démarrera pas.");
@@ -250,6 +375,10 @@ public class SlowBattleManager : MonoBehaviour
     {
         if (resetPositionsAtRoundStart)
             RestoreUnitsToOrigin();
+
+        // Avant de constituer la file, on recalcule l'ordre complet pour intégrer les éventuelles variations d'initiative
+        // (buffs, debuffs, objets...) survenues depuis la manche précédente.
+        RefreshOrderedUnitsFromInitiative();
 
         turnQueue.Clear();
         foreach (CharacterUnit unit in orderedUnits)
