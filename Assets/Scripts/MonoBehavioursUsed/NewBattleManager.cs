@@ -75,6 +75,22 @@ public class NewBattleManager : MonoBehaviour
 {
     public static NewBattleManager Instance { get; private set; }
 
+    [Header("Mode de combat")]
+    [Tooltip("Active le gestionnaire expérimental SlowBattleManager pour tester le nouveau système de tours lents.")]
+    [SerializeField] private bool useSlowBattleManager = false;
+    [Tooltip("Référence (facultative) vers l'instance SlowBattleManager à utiliser. Si non renseignée, elle sera recherchée/ajoutée automatiquement.")]
+    [SerializeField] private SlowBattleManager slowBattleManager;
+
+    /// <summary>
+    /// Expose l'état du nouveau mode afin que les autres systèmes puissent adapter leur logique.
+    /// </summary>
+    public bool UseSlowBattleManager => useSlowBattleManager;
+
+    /// <summary>
+    /// Fournit un accès direct au gestionnaire lent pour configurer les actions ou s'abonner à ses événements.
+    /// </summary>
+    public SlowBattleManager SlowManager => slowBattleManager;
+
     [Header("État du combat")]
     public BattleState currentBattleState;
 
@@ -408,6 +424,14 @@ public class NewBattleManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        if (useSlowBattleManager)
+            EnsureSlowBattleManager();
+        else
+        {
+            slowBattleManager = slowBattleManager != null ? slowBattleManager : GetComponent<SlowBattleManager>();
+            slowBattleManager?.ConfigureWithClassicManager(this);
+        }
     }
 
     /// <summary>
@@ -418,6 +442,19 @@ public class NewBattleManager : MonoBehaviour
         EnsureTargetCursor();
         // Recherche initiale de la caméra de combat pour éviter de la chercher à chaque frame
         EnsureBattleCamera();
+    }
+
+    /// <summary>
+    /// S'assure qu'un SlowBattleManager est disponible et correctement configuré.
+    /// </summary>
+    private void EnsureSlowBattleManager()
+    {
+        slowBattleManager = slowBattleManager != null ? slowBattleManager : GetComponent<SlowBattleManager>();
+
+        if (slowBattleManager == null)
+            slowBattleManager = gameObject.AddComponent<SlowBattleManager>();
+
+        slowBattleManager.ConfigureWithClassicManager(this);
     }
 
     /// <summary>
@@ -849,7 +886,16 @@ public class NewBattleManager : MonoBehaviour
         InputsManager.Instance?.RestoreBattleInputsAfterIntro();
 
         //7 Démarre la boucle de tours
-        StartCoroutine(TurnLoop());
+        if (useSlowBattleManager)
+        {
+            EnsureSlowBattleManager();
+            slowBattleManager.InitializeBattle(unitsInBattle, activeCharacterUnits);
+            slowBattleManager.BeginBattleLoop();
+        }
+        else
+        {
+            StartCoroutine(TurnLoop());
+        }
 
         //// Change l’état du jeu
         //GameManager.Instance.ChangeGameState(GameState.StartBattle);
@@ -1627,6 +1673,14 @@ public class NewBattleManager : MonoBehaviour
 
     public void EndTurn(CharacterUnit forcedUnit = null, bool skipIdleAnimation = false)
     {
+        if (useSlowBattleManager)
+        {
+            EnsureSlowBattleManager();
+            CharacterUnit targetUnit = forcedUnit ?? currentCharacterUnit;
+            slowBattleManager.RequestSkipCurrentTurn(targetUnit, "Fin de tour déclenchée par le NewBattleManager");
+            return;
+        }
+
         // Détermine l'unité qui termine effectivement son tour :
         //  * par défaut, on conserve l'unité actuellement enregistrée ;
         //  * certains raccourcis (sommeil, fatigue...) fournissent explicitement l'unité à traiter
@@ -3625,7 +3679,10 @@ public class NewBattleManager : MonoBehaviour
         UpdateCameraBehaviour(newState);
     }
 
-    private void ChangeCurrentCharacterUnit(CharacterUnit newCurrentCharacterUnit)
+    /// <summary>
+    /// Rend public le changement d'unité active afin que le SlowBattleManager puisse synchroniser les sélections.
+    /// </summary>
+    public void ChangeCurrentCharacterUnit(CharacterUnit newCurrentCharacterUnit)
     {
         bool unitChanged = currentCharacterUnit != newCurrentCharacterUnit;
 
@@ -3895,6 +3952,12 @@ public class NewBattleManager : MonoBehaviour
     {
         // Réinitialise l’état du combat
         ChangeBattleState(BattleState.None);
+
+        if (useSlowBattleManager)
+        {
+            EnsureSlowBattleManager();
+            slowBattleManager.AbortBattleLoop();
+        }
 
         // Supprime toute trace d'un éventuel verrou d'introduction pour la prochaine rencontre.
         battleIntroMenusLocked = false;
