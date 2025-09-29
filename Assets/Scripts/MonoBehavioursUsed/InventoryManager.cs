@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
+using UnityEngine.UI; // Requis pour manipuler les ScrollRect/LayoutElement lors de la navigation.
 using TMPro;
 
 public class InventoryManager : MonoBehaviour
@@ -1267,6 +1268,13 @@ public class InventoryManager : MonoBehaviour
         if (targetParent == null)
             return;
 
+        // On ajoute dynamiquement un LayoutElement afin que le curseur soit ignoré par les LayoutGroup.
+        // Sans cela, le déplacement du curseur comme frère du sous-panel modifie la répartition dans les HorizontalLayoutGroup.
+        if (!cursor.TryGetComponent(out LayoutElement layoutElement))
+            layoutElement = cursor.gameObject.AddComponent<LayoutElement>();
+
+        layoutElement.ignoreLayout = true; // Toujours vrai pour neutraliser l'influence du curseur sur la mise en page.
+
         cursor.SetParent(targetParent, false);
         cursor.SetSiblingIndex(target.GetSiblingIndex() + 1);
         cursor.anchorMin = target.anchorMin;
@@ -1323,17 +1331,28 @@ public class InventoryManager : MonoBehaviour
         if (root == null)
             return null;
 
+        // 1) Prioriser la configuration d'un ScrollRect : c'est la source de vérité de la zone défilable.
+        var scrollRect = root.GetComponentInChildren<ScrollRect>(true);
+        if (scrollRect != null && scrollRect.content != null && scrollRect.content.IsChildOf(root))
+            return scrollRect.content;
+
+        // 2) Tenter de trouver un enfant direct nommé "Content" (structure courante de l'inventaire).
+        for (int i = 0; i < root.childCount; i++)
+        {
+            if (root.GetChild(i) is RectTransform directChild && directChild.gameObject.name == "Content")
+                return directChild;
+        }
+
+        // 3) Parcourir les descendants en ignorant le noeud racine pour éviter les faux positifs sur des slots imbriqués.
         var queue = new Queue<Transform>();
-        queue.Enqueue(root);
+        for (int i = 0; i < root.childCount; i++)
+            queue.Enqueue(root.GetChild(i));
 
         while (queue.Count > 0)
         {
             var current = queue.Dequeue();
-            if (current is RectTransform rect)
-            {
-                if (rect.gameObject.name == "Content")
-                    return rect;
-            }
+            if (current is RectTransform rect && rect.gameObject.name == "Content")
+                return rect;
 
             for (int i = 0; i < current.childCount; i++)
                 queue.Enqueue(current.GetChild(i));
