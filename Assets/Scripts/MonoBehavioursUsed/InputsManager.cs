@@ -140,7 +140,6 @@ public class InputsManager : MonoBehaviour
         battle.RightShoulder.performed += OnNextSkillPage;
 
         var world = playerInputs.World;
-        world.ForceCam.performed += OnForceCamInput;
         world.Inventory.performed += OnWorldInventory;
 
     }
@@ -167,7 +166,6 @@ public class InputsManager : MonoBehaviour
         battle.RightShoulder.performed -= OnNextSkillPage;
 
         var world = playerInputs.World;
-        world.ForceCam.performed -= OnForceCamInput;
         world.Inventory.performed -= OnWorldInventory;
     }
 
@@ -1012,15 +1010,6 @@ public class InputsManager : MonoBehaviour
             bm.SetCurrentTargetToFirst(CharacterType.SquadUnit);
 
         }
-    }
-
-    private void OnForceCamInput(InputAction.CallbackContext ctx)
-    {
-        if (!ctx.performed)
-            return;
-
-        CameraController cc = CameraController.Instance;
-        cc?.ForceCameraBehindPlayer();
     }
 
     /// <summary>
