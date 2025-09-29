@@ -23,6 +23,16 @@ public class InputsManager : MonoBehaviour
     private InputActionMap[] allMaps;
 
     /// <summary>
+    /// Mémorise la liste des ActionMaps actives avant d'entrer dans l'inventaire afin de les restaurer ensuite.
+    /// </summary>
+    private readonly List<InputActionMap> mapsBeforeInventory = new();
+
+    /// <summary>
+    /// Indique si l'on se trouve actuellement dans un contexte où seule l'ActionMap Inventory doit rester active.
+    /// </summary>
+    private bool inventoryModeActive;
+
+    /// <summary>
     /// Liste temporaire des actions du mapping Battle mises en pause pendant
     /// l'introduction du combat. Elle permet de restaurer précisément l'état
     /// des contrôles une fois la cinématique terminée.
@@ -131,6 +141,7 @@ public class InputsManager : MonoBehaviour
 
         var world = playerInputs.World;
         world.ForceCam.performed += OnForceCamInput;
+        world.Inventory.performed += OnWorldInventory;
 
     }
 
@@ -157,6 +168,7 @@ public class InputsManager : MonoBehaviour
 
         var world = playerInputs.World;
         world.ForceCam.performed -= OnForceCamInput;
+        world.Inventory.performed -= OnWorldInventory;
     }
 
     /// <summary>
@@ -171,6 +183,57 @@ public class InputsManager : MonoBehaviour
         // 2) on ré-active le sous-ensemble voulu
         foreach (var m in mapsToEnable)
             m.Enable();
+    }
+
+    /// <summary>
+    /// Active exclusivement l'ActionMap Inventory tout en mémorisant l'état précédent pour pouvoir le restaurer ensuite.
+    /// </summary>
+    public void EnterInventoryMode()
+    {
+        if (playerInputs == null)
+            return;
+
+        if (inventoryModeActive)
+            return;
+
+        mapsBeforeInventory.Clear();
+        foreach (var map in allMaps)
+        {
+            if (map != null && map.enabled)
+                mapsBeforeInventory.Add(map);
+        }
+
+        ActivateOnly(playerInputs.Inventory.Get());
+        inventoryModeActive = true;
+
+        // On s'assure que l'action Inventory est disponible pour permettre la fermeture du menu.
+        var toggleAction = playerInputs.Inventory.Inventory;
+        if (toggleAction != null && !toggleAction.enabled)
+            toggleAction.Enable();
+    }
+
+    /// <summary>
+    /// Restaure les ActionMaps actives avant l'ouverture de l'inventaire.
+    /// </summary>
+    public void ExitInventoryMode()
+    {
+        if (playerInputs == null)
+            return;
+
+        if (!inventoryModeActive)
+            return;
+
+        if (mapsBeforeInventory.Count > 0)
+        {
+            ActivateOnly(mapsBeforeInventory.ToArray());
+        }
+        else
+        {
+            ActivateOnly(playerInputs.World.Get());
+        }
+
+        mapsBeforeInventory.Clear();
+        inventoryModeActive = false;
     }
 
     /// <summary>
@@ -953,7 +1016,22 @@ public class InputsManager : MonoBehaviour
 
     private void OnForceCamInput(InputAction.CallbackContext ctx)
     {
+        if (!ctx.performed)
+            return;
+
         CameraController cc = CameraController.Instance;
+        cc?.ForceCameraBehindPlayer();
+    }
+
+    /// <summary>
+    /// Ouvre l'inventaire lorsque l'action World/Inventory est pressée.
+    /// </summary>
+    private void OnWorldInventory(InputAction.CallbackContext ctx)
+    {
+        if (!ctx.performed)
+            return;
+
+        InventoryManager.Instance?.OpenInventoryFromWorldInput();
     }
     #endregion
 }

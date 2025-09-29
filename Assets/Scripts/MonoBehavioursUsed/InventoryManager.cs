@@ -1,8 +1,10 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
+using TMPro;
 
 public class InventoryManager : MonoBehaviour
 {
@@ -22,6 +24,16 @@ public class InventoryManager : MonoBehaviour
     [SerializeField] private float inventoryFadeDuration = 2f;
     [Tooltip("Définit si l'inventaire doit être visible au lancement.")]
     [SerializeField] private bool openInventoryOnStart = false;
+
+    [Header("Interface utilisateur - Navigation avancée")]
+    [Tooltip("Temps minimal (en secondes) entre deux déplacements consécutifs du curseur de slot. Un petit délai évite les défilements trop rapides lorsque le joystick est fortement incliné.")]
+    [SerializeField] private float navigationRepeatDelay = 0.25f;
+
+    [Tooltip("Nom du panel sélectionné par défaut lors de l'ouverture de l'inventaire.")]
+    [SerializeField] private string defaultPanelName = "Inventory_Sets_Panel";
+
+    [Tooltip("Nom du sous-panel sélectionné par défaut lors de l'ouverture de l'inventaire.")]
+    [SerializeField] private string defaultSubPanelName = "Inventory_MusicalMovesSet_SubPanel";
 
     /// <summary>
     /// Dictionnaire interne pour accéder rapidement aux piles existantes.
@@ -60,6 +72,90 @@ public class InventoryManager : MonoBehaviour
     /// Routine utilisée pour attendre que l'InputsManager soit disponible si nécessaire.
     /// </summary>
     private Coroutine waitForInputsRoutine;
+
+    /// <summary>
+    /// Curseur visuel dédié au panel sélectionné. On le positionne dynamiquement pour offrir un retour clair au joueur.
+    /// </summary>
+    private RectTransform panelCursorRect;
+
+    /// <summary>
+    /// Curseur visuel dédié au sous-panel actuellement ciblé.
+    /// </summary>
+    private RectTransform subPanelCursorRect;
+
+    /// <summary>
+    /// Curseur visuel affichant le slot choisi (item ou MusicalMove).
+    /// </summary>
+    private RectTransform slotCursorRect;
+
+    /// <summary>
+    /// Racine contenant les différents panels d'inventaire (Sets, Items, etc.).
+    /// </summary>
+    private RectTransform panelsRootRect;
+
+    /// <summary>
+    /// Liste ordonnée des panels actuellement détectés. Elle est recalculée à chaque ouverture pour tenir compte des ajouts/suppressions en scène.
+    /// </summary>
+    private readonly List<RectTransform> orderedPanels = new();
+
+    /// <summary>
+    /// Association entre un panel et ses sous-panels (s'il en possède). Un panel sans sous-panels est représenté par une liste vide.
+    /// </summary>
+    private readonly Dictionary<RectTransform, List<RectTransform>> orderedSubPanels = new();
+
+    /// <summary>
+    /// Association entre un conteneur (panel ou sous-panel) et ses slots disponibles.
+    /// </summary>
+    private readonly Dictionary<RectTransform, List<RectTransform>> orderedSlots = new();
+
+    /// <summary>
+    /// Index courant dans orderedPanels. On le conserve pour faciliter les déplacements gauche/droite.
+    /// </summary>
+    private int currentPanelIndex;
+
+    /// <summary>
+    /// Index courant dans la liste des sous-panels du panel sélectionné.
+    /// </summary>
+    private int currentSubPanelIndex;
+
+    /// <summary>
+    /// Index courant dans la liste des slots affichés.
+    /// </summary>
+    private int currentSlotIndex;
+
+    /// <summary>
+    /// Panel actuellement sélectionné (référence directe pour accélérer les comparaisons et repositionner le curseur).
+    /// </summary>
+    private RectTransform currentPanelRect;
+
+    /// <summary>
+    /// Sous-panel actuellement sélectionné (peut être null si le panel n'en possède pas).
+    /// </summary>
+    private RectTransform currentSubPanelRect;
+
+    /// <summary>
+    /// Slot actuellement mis en avant.
+    /// </summary>
+    private RectTransform currentSlotRect;
+
+    /// <summary>
+    /// Horodatage (en temps non-scalé) du dernier déplacement de slot. Permet de filtrer les répétitions trop rapides du joystick.
+    /// </summary>
+    private float lastNavigationTime;
+
+    /// <summary>
+    /// Lorsque vrai, les callbacks d'inputs de l'ActionMap Inventory ont déjà été branchés.
+    /// </summary>
+    private bool inventoryActionsHooked;
+
+    /// <summary>
+    /// Actions supplémentaires du mapping Inventory utilisées pour la navigation.
+    /// </summary>
+    private InputAction inventorySelectPanelLeftAction;
+    private InputAction inventorySelectPanelRightAction;
+    private InputAction inventorySelectSubPanelLeftAction;
+    private InputAction inventorySelectSubPanelRightAction;
+    private InputAction inventoryNavigateAction;
 
     // --- Suivi des effets temporaires appliqués aux personnages ---
     // Pour chaque personnage, on garde la liste des modificateurs actifs afin
@@ -498,10 +594,6 @@ public class InventoryManager : MonoBehaviour
         if (!isActiveAndEnabled)
             return;
 
-        // Si on est déjà inscrit (et que l'action existe), aucune autre opération n'est nécessaire.
-        if (inventoryToggleAction != null)
-            return;
-
         var inputsManager = InputsManager.Instance;
         if (inputsManager == null || inputsManager.playerInputs == null)
         {
@@ -512,16 +604,29 @@ public class InventoryManager : MonoBehaviour
             return;
         }
 
-        inventoryToggleAction = inputsManager.playerInputs.Inventory.Inventory;
+        var inventoryActions = inputsManager.playerInputs.Inventory;
+
+        // On crée dynamiquement la référence à l'action Inventory si nécessaire.
         if (inventoryToggleAction == null)
         {
-            Debug.LogWarning("[InventoryManager] L'action 'Inventory' est introuvable dans l'ActionMap Inventory.");
-            return;
+            inventoryToggleAction = inventoryActions.Inventory;
+            if (inventoryToggleAction == null)
+            {
+                Debug.LogWarning("[InventoryManager] L'action 'Inventory' est introuvable dans l'ActionMap Inventory.");
+            }
+            else
+            {
+                inventoryToggleAction.performed += OnInventoryActionPerformed;
+                inventoryToggleAction.Enable();
+            }
         }
 
-        // On écoute l'évènement performed pour capturer les appuis validés et on active l'action.
-        inventoryToggleAction.performed += OnInventoryActionPerformed;
-        inventoryToggleAction.Enable();
+        // Même si l'action Inventory n'est pas disponible, on tente de brancher les callbacks
+        // secondaires afin d'éviter de multiples tentatives lors des prochains Awake/OnEnable.
+        if (!inventoryActionsHooked)
+        {
+            HookInventoryNavigationActions(inventoryActions);
+        }
     }
 
     /// <summary>
@@ -538,16 +643,103 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Branche l'ensemble des callbacks nécessaires à la navigation dans l'inventaire.
+    /// </summary>
+    /// <param name="inventoryActions">Structure générée par l'Input System exposant les actions du mapping Inventory.</param>
+    private void HookInventoryNavigationActions(PlayerInputs.InventoryActions inventoryActions)
+    {
+        // On protège les appels multiples afin d'éviter une accumulation des abonnements lors d'Awake/OnEnable successifs.
+        if (inventoryActionsHooked)
+            return;
+
+        inventorySelectPanelLeftAction = inventoryActions.SelectPanel_Left;
+        inventorySelectPanelRightAction = inventoryActions.SelectPanel_Right;
+        inventorySelectSubPanelLeftAction = inventoryActions.SelectSubPanel_Left;
+        inventorySelectSubPanelRightAction = inventoryActions.SelectSubPanel_Right;
+        inventoryNavigateAction = inventoryActions.Navigate;
+
+        if (inventorySelectPanelLeftAction != null)
+            inventorySelectPanelLeftAction.performed += OnInventorySelectPanelLeft;
+
+        if (inventorySelectPanelRightAction != null)
+            inventorySelectPanelRightAction.performed += OnInventorySelectPanelRight;
+
+        if (inventorySelectSubPanelLeftAction != null)
+            inventorySelectSubPanelLeftAction.performed += OnInventorySelectSubPanelLeft;
+
+        if (inventorySelectSubPanelRightAction != null)
+            inventorySelectSubPanelRightAction.performed += OnInventorySelectSubPanelRight;
+
+        if (inventoryNavigateAction != null)
+            inventoryNavigateAction.performed += OnInventoryNavigate;
+
+        inventoryActionsHooked = true;
+    }
+
+    /// <summary>
+    /// Désabonne proprement toutes les actions du mapping Inventory pour éviter les fuites d'évènements.
+    /// </summary>
+    private void UnhookInventoryNavigationActions()
+    {
+        if (!inventoryActionsHooked)
+            return;
+
+        if (inventorySelectPanelLeftAction != null)
+        {
+            inventorySelectPanelLeftAction.performed -= OnInventorySelectPanelLeft;
+            if (inventorySelectPanelLeftAction.enabled)
+                inventorySelectPanelLeftAction.Disable();
+            inventorySelectPanelLeftAction = null;
+        }
+
+        if (inventorySelectPanelRightAction != null)
+        {
+            inventorySelectPanelRightAction.performed -= OnInventorySelectPanelRight;
+            if (inventorySelectPanelRightAction.enabled)
+                inventorySelectPanelRightAction.Disable();
+            inventorySelectPanelRightAction = null;
+        }
+
+        if (inventorySelectSubPanelLeftAction != null)
+        {
+            inventorySelectSubPanelLeftAction.performed -= OnInventorySelectSubPanelLeft;
+            if (inventorySelectSubPanelLeftAction.enabled)
+                inventorySelectSubPanelLeftAction.Disable();
+            inventorySelectSubPanelLeftAction = null;
+        }
+
+        if (inventorySelectSubPanelRightAction != null)
+        {
+            inventorySelectSubPanelRightAction.performed -= OnInventorySelectSubPanelRight;
+            if (inventorySelectSubPanelRightAction.enabled)
+                inventorySelectSubPanelRightAction.Disable();
+            inventorySelectSubPanelRightAction = null;
+        }
+
+        if (inventoryNavigateAction != null)
+        {
+            inventoryNavigateAction.performed -= OnInventoryNavigate;
+            if (inventoryNavigateAction.enabled)
+                inventoryNavigateAction.Disable();
+            inventoryNavigateAction = null;
+        }
+
+        inventoryActionsHooked = false;
+    }
+
+    /// <summary>
     /// Désabonne l'action d'input et réinitialise les références associées.
     /// </summary>
     private void ReleaseInventoryInputSubscription()
     {
-        if (inventoryToggleAction == null)
-            return;
+        if (inventoryToggleAction != null)
+        {
+            inventoryToggleAction.performed -= OnInventoryActionPerformed;
+            inventoryToggleAction.Disable();
+            inventoryToggleAction = null;
+        }
 
-        inventoryToggleAction.performed -= OnInventoryActionPerformed;
-        inventoryToggleAction.Disable();
-        inventoryToggleAction = null;
+        UnhookInventoryNavigationActions();
     }
 
     /// <summary>
@@ -564,11 +756,106 @@ public class InventoryManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Navigation vers le panel précédent.
+    /// </summary>
+    private void OnInventorySelectPanelLeft(InputAction.CallbackContext context)
+    {
+        if (!context.performed || !isInventoryVisible)
+            return;
+
+        ChangePanel(-1);
+    }
+
+    /// <summary>
+    /// Navigation vers le panel suivant.
+    /// </summary>
+    private void OnInventorySelectPanelRight(InputAction.CallbackContext context)
+    {
+        if (!context.performed || !isInventoryVisible)
+            return;
+
+        ChangePanel(1);
+    }
+
+    /// <summary>
+    /// Navigation vers le sous-panel précédent.
+    /// </summary>
+    private void OnInventorySelectSubPanelLeft(InputAction.CallbackContext context)
+    {
+        if (!context.performed || !isInventoryVisible)
+            return;
+
+        ChangeSubPanel(-1);
+    }
+
+    /// <summary>
+    /// Navigation vers le sous-panel suivant.
+    /// </summary>
+    private void OnInventorySelectSubPanelRight(InputAction.CallbackContext context)
+    {
+        if (!context.performed || !isInventoryVisible)
+            return;
+
+        ChangeSubPanel(1);
+    }
+
+    /// <summary>
+    /// Navigation dans la liste des slots via le joystick.
+    /// </summary>
+    private void OnInventoryNavigate(InputAction.CallbackContext context)
+    {
+        if (!isInventoryVisible)
+            return;
+
+        Vector2 input = context.ReadValue<Vector2>();
+        if (input.sqrMagnitude < 0.25f)
+            return; // Mouvement trop faible pour être pris en compte.
+
+        if (Time.unscaledTime < lastNavigationTime + navigationRepeatDelay)
+            return;
+
+        int direction = 0;
+        if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
+        {
+            if (input.x > 0.5f)
+                direction = 1;
+            else if (input.x < -0.5f)
+                direction = -1;
+        }
+        else
+        {
+            if (input.y > 0.5f)
+                direction = -1; // Vers le haut : slot précédent.
+            else if (input.y < -0.5f)
+                direction = 1;  // Vers le bas : slot suivant.
+        }
+
+        if (direction == 0)
+            return;
+
+        MoveSlotSelection(direction);
+        lastNavigationTime = Time.unscaledTime;
+    }
+
+    /// <summary>
     /// Inverse l'état d'affichage de l'inventaire.
     /// </summary>
     public void ToggleInventory()
     {
         SetInventoryVisibility(!isInventoryVisible);
+    }
+
+    /// <summary>
+    /// Appelé par l'InputsManager lorsqu'un appui sur World/Inventory est détecté.
+    /// Permet d'ouvrir l'inventaire depuis l'exploration en s'assurant de ne pas tenter
+    /// une ouverture multiple.
+    /// </summary>
+    public void OpenInventoryFromWorldInput()
+    {
+        if (isInventoryVisible)
+            return;
+
+        SetInventoryVisibility(true);
     }
 
     /// <summary>
@@ -583,7 +870,21 @@ public class InventoryManager : MonoBehaviour
             return;
         }
 
+        bool wasVisible = isInventoryVisible;
         isInventoryVisible = visible;
+
+        // Lorsqu'on ouvre l'inventaire, on active immédiatement l'ActionMap dédiée
+        // et on prépare l'état de sélection afin que le joueur comprenne où il se situe.
+        if (visible && !wasVisible)
+        {
+            InputsManager.Instance?.EnterInventoryMode();
+            PrepareInventoryNavigation();
+        }
+        else if (!visible && wasVisible)
+        {
+            InputsManager.Instance?.ExitInventoryMode();
+            ClearInventorySelectionState();
+        }
 
         // On interrompt toute transition précédente pour garantir un comportement déterministe.
         if (inventoryFadeRoutine != null)
@@ -644,6 +945,481 @@ public class InventoryManager : MonoBehaviour
 
         inventoryFadeRoutine = null;
     }
+
+    /// <summary>
+    /// Prépare l'état initial de la navigation lors de l'ouverture de l'inventaire.
+    /// Cette méthode s'occupe de retrouver les différents panneaux, de les trier et
+    /// de positionner les curseurs sur les éléments par défaut exigés par le cahier des charges.
+    /// </summary>
+    private void PrepareInventoryNavigation()
+    {
+        // Un délai trop court rendrait le joystick difficile à contrôler ; on impose donc un minimum raisonnable.
+        navigationRepeatDelay = Mathf.Max(0.05f, navigationRepeatDelay);
+
+        if (!EnsureNavigationReferences())
+            return;
+
+        orderedPanels.Clear();
+        orderedSubPanels.Clear();
+        orderedSlots.Clear();
+        currentPanelIndex = 0;
+        currentSubPanelIndex = 0;
+        currentSlotIndex = 0;
+        currentPanelRect = null;
+        currentSubPanelRect = null;
+        currentSlotRect = null;
+        lastNavigationTime = Time.unscaledTime - navigationRepeatDelay;
+
+        RebuildNavigationCaches();
+
+        if (orderedPanels.Count == 0)
+        {
+            // Aucun panel détecté : on masque les curseurs pour éviter d'induire le joueur en erreur.
+            UpdatePanelCursor();
+            UpdateSubPanelCursor();
+            UpdateSlotCursor();
+            return;
+        }
+
+        // On sélectionne en priorité le panel par défaut demandé ; si absent, on retombe sur le premier panel disponible.
+        SelectPanelByName(defaultPanelName);
+    }
+
+    /// <summary>
+    /// Réinitialise l'état de navigation lors de la fermeture de l'inventaire.
+    /// </summary>
+    private void ClearInventorySelectionState()
+    {
+        currentPanelIndex = 0;
+        currentSubPanelIndex = 0;
+        currentSlotIndex = 0;
+        currentPanelRect = null;
+        currentSubPanelRect = null;
+        currentSlotRect = null;
+        orderedPanels.Clear();
+        orderedSubPanels.Clear();
+        orderedSlots.Clear();
+
+        if (panelCursorRect != null)
+            panelCursorRect.gameObject.SetActive(false);
+
+        if (subPanelCursorRect != null)
+            subPanelCursorRect.gameObject.SetActive(false);
+
+        if (slotCursorRect != null)
+            slotCursorRect.gameObject.SetActive(false);
+    }
+
+    /// <summary>
+    /// Analyse la hiérarchie de l'inventaire pour constituer les listes de panels, sous-panels et slots.
+    /// </summary>
+    private void RebuildNavigationCaches()
+    {
+        if (panelsRootRect == null)
+            return;
+
+        foreach (Transform child in panelsRootRect)
+        {
+            if (child is not RectTransform rect)
+                continue;
+
+            // On ne retient que les objets explicitement identifiés comme panels.
+            if (!rect.gameObject.name.EndsWith("_Panel", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            if (!rect.gameObject.activeInHierarchy)
+                continue;
+
+            orderedPanels.Add(rect);
+
+            var subPanels = new List<RectTransform>();
+            foreach (Transform sub in rect)
+            {
+                if (sub is RectTransform subRect && subRect.gameObject.name.EndsWith("_SubPanel", StringComparison.OrdinalIgnoreCase) && subRect.gameObject.activeInHierarchy)
+                    subPanels.Add(subRect);
+            }
+
+            orderedSubPanels[rect] = subPanels;
+
+            if (subPanels.Count == 0)
+            {
+                // Panel sans sous-panel : on travaille directement avec ses propres slots.
+                orderedSlots[rect] = BuildSlotList(rect);
+            }
+            else
+            {
+                foreach (var sub in subPanels)
+                    orderedSlots[sub] = BuildSlotList(sub);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Sélectionne le panel correspondant au nom fourni. En l'absence de correspondance, on choisit le premier panel de la liste.
+    /// </summary>
+    private void SelectPanelByName(string panelName)
+    {
+        if (orderedPanels.Count == 0)
+        {
+            currentPanelRect = null;
+            UpdatePanelCursor();
+            UpdateSubPanelCursor();
+            UpdateSlotCursor();
+            return;
+        }
+
+        int targetIndex = 0;
+        if (!string.IsNullOrEmpty(panelName))
+        {
+            for (int i = 0; i < orderedPanels.Count; i++)
+            {
+                if (string.Equals(orderedPanels[i]?.gameObject.name, panelName, StringComparison.OrdinalIgnoreCase))
+                {
+                    targetIndex = i;
+                    break;
+                }
+            }
+        }
+
+        currentPanelIndex = WrapIndex(targetIndex, orderedPanels.Count);
+        currentPanelRect = orderedPanels[currentPanelIndex];
+        UpdatePanelCursor();
+        SelectDefaultSubPanelForCurrentPanel();
+    }
+
+    /// <summary>
+    /// Choisit le sous-panel par défaut pour le panel courant (ou aucun si le panel n'en possède pas).
+    /// </summary>
+    private void SelectDefaultSubPanelForCurrentPanel()
+    {
+        currentSubPanelRect = null;
+        currentSubPanelIndex = 0;
+
+        if (currentPanelRect == null)
+        {
+            UpdateSubPanelCursor();
+            RefreshSlotSelection(false);
+            return;
+        }
+
+        if (orderedSubPanels.TryGetValue(currentPanelRect, out var subPanels) && subPanels != null && subPanels.Count > 0)
+        {
+            int targetIndex = 0;
+            if (!string.IsNullOrEmpty(defaultSubPanelName))
+            {
+                for (int i = 0; i < subPanels.Count; i++)
+                {
+                    if (string.Equals(subPanels[i]?.gameObject.name, defaultSubPanelName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            currentSubPanelIndex = WrapIndex(targetIndex, subPanels.Count);
+            currentSubPanelRect = subPanels[currentSubPanelIndex];
+        }
+
+        UpdateSubPanelCursor();
+        currentSlotIndex = 0;
+        RefreshSlotSelection(false);
+    }
+
+    /// <summary>
+    /// Déplacement cyclique entre les panels disponibles.
+    /// </summary>
+    private void ChangePanel(int direction)
+    {
+        if (orderedPanels.Count == 0)
+            return;
+
+        currentPanelIndex = WrapIndex(currentPanelIndex + direction, orderedPanels.Count);
+        currentPanelRect = orderedPanels[currentPanelIndex];
+        UpdatePanelCursor();
+        SelectDefaultSubPanelForCurrentPanel();
+    }
+
+    /// <summary>
+    /// Déplacement cyclique entre les sous-panels du panel actif.
+    /// </summary>
+    private void ChangeSubPanel(int direction)
+    {
+        if (currentPanelRect == null)
+            return;
+
+        if (!orderedSubPanels.TryGetValue(currentPanelRect, out var subPanels) || subPanels == null || subPanels.Count == 0)
+            return;
+
+        currentSubPanelIndex = WrapIndex(currentSubPanelIndex + direction, subPanels.Count);
+        currentSubPanelRect = subPanels[currentSubPanelIndex];
+        UpdateSubPanelCursor();
+        currentSlotIndex = 0;
+        RefreshSlotSelection(false);
+    }
+
+    /// <summary>
+    /// Met à jour la position du curseur de panel.
+    /// </summary>
+    private void UpdatePanelCursor()
+    {
+        if (panelCursorRect == null)
+            return;
+
+        bool hasTarget = currentPanelRect != null;
+        panelCursorRect.gameObject.SetActive(hasTarget);
+        if (hasTarget)
+            PositionCursor(panelCursorRect, currentPanelRect);
+    }
+
+    /// <summary>
+    /// Met à jour la position du curseur de sous-panel (ou le masque si aucun sous-panel n'est sélectionné).
+    /// </summary>
+    private void UpdateSubPanelCursor()
+    {
+        if (subPanelCursorRect == null)
+            return;
+
+        bool hasTarget = currentSubPanelRect != null;
+        subPanelCursorRect.gameObject.SetActive(hasTarget);
+        if (hasTarget)
+            PositionCursor(subPanelCursorRect, currentSubPanelRect);
+    }
+
+    /// <summary>
+    /// Met à jour la position du curseur de slot pour refléter la sélection courante.
+    /// </summary>
+    private void UpdateSlotCursor()
+    {
+        if (slotCursorRect == null)
+            return;
+
+        bool hasTarget = currentSlotRect != null;
+        slotCursorRect.gameObject.SetActive(hasTarget);
+        if (hasTarget)
+            PositionCursor(slotCursorRect, currentSlotRect);
+    }
+
+    /// <summary>
+    /// Applique la sélection d'un slot et repositionne le curseur associé.
+    /// </summary>
+    /// <param name="preserveIndex">Si vrai, conserve l'index actuel lorsque la liste change (dans la limite des bornes).</param>
+    private void RefreshSlotSelection(bool preserveIndex)
+    {
+        var owner = currentSubPanelRect != null ? currentSubPanelRect : currentPanelRect;
+        var slots = GetOrRebuildSlotList(owner);
+
+        if (slots.Count == 0)
+        {
+            currentSlotRect = null;
+            currentSlotIndex = -1;
+            UpdateSlotCursor();
+            return;
+        }
+
+        if (!preserveIndex || currentSlotIndex < 0 || currentSlotIndex >= slots.Count)
+            currentSlotIndex = 0;
+
+        currentSlotRect = slots[Mathf.Clamp(currentSlotIndex, 0, slots.Count - 1)];
+        currentSlotIndex = Mathf.Clamp(currentSlotIndex, 0, slots.Count - 1);
+        UpdateSlotCursor();
+    }
+
+    /// <summary>
+    /// Déplace la sélection de slot vers la gauche/droite ou haut/bas en respectant l'ordre alphabétique.
+    /// </summary>
+    private void MoveSlotSelection(int direction)
+    {
+        if (direction == 0)
+            return;
+
+        var owner = currentSubPanelRect != null ? currentSubPanelRect : currentPanelRect;
+        var slots = GetOrRebuildSlotList(owner);
+        if (slots.Count == 0)
+        {
+            currentSlotRect = null;
+            currentSlotIndex = -1;
+            UpdateSlotCursor();
+            return;
+        }
+
+        if (currentSlotRect != null)
+        {
+            int existingIndex = slots.IndexOf(currentSlotRect);
+            if (existingIndex >= 0)
+                currentSlotIndex = existingIndex;
+        }
+
+        currentSlotIndex = WrapIndex(currentSlotIndex + direction, slots.Count);
+        currentSlotRect = slots[currentSlotIndex];
+        UpdateSlotCursor();
+    }
+
+    /// <summary>
+    /// S'assure que le curseur visuel épouse parfaitement le RectTransform cible.
+    /// </summary>
+    private void PositionCursor(RectTransform cursor, RectTransform target)
+    {
+        if (cursor == null || target == null)
+            return;
+
+        var targetParent = target.parent as RectTransform;
+        if (targetParent == null)
+            return;
+
+        cursor.SetParent(targetParent, false);
+        cursor.SetSiblingIndex(target.GetSiblingIndex() + 1);
+        cursor.anchorMin = target.anchorMin;
+        cursor.anchorMax = target.anchorMax;
+        cursor.pivot = target.pivot;
+        cursor.sizeDelta = target.sizeDelta;
+        cursor.localScale = target.localScale;
+        cursor.localRotation = target.localRotation;
+        cursor.anchoredPosition = target.anchoredPosition;
+    }
+
+    /// <summary>
+    /// Retrouve un RectTransform donné par son nom dans la hiérarchie du gestionnaire d'inventaire.
+    /// </summary>
+    private RectTransform FindRectTransformInChildren(string targetName)
+    {
+        if (string.IsNullOrEmpty(targetName))
+            return null;
+
+        var rects = GetComponentsInChildren<RectTransform>(true);
+        foreach (var rect in rects)
+        {
+            if (rect != null && rect.gameObject.name == targetName)
+                return rect;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// S'assure que les références indispensables à la navigation sont bien initialisées.
+    /// </summary>
+    private bool EnsureNavigationReferences()
+    {
+        panelsRootRect ??= FindRectTransformInChildren("InventoryPanel");
+        panelCursorRect ??= FindRectTransformInChildren("InventoryCursor_Panel");
+        subPanelCursorRect ??= FindRectTransformInChildren("InventoryCursor_SubPanel");
+        slotCursorRect ??= FindRectTransformInChildren("InventoryCursor_Slot");
+
+        if (panelsRootRect == null)
+        {
+            Debug.LogWarning("[InventoryManager] Impossible de configurer la navigation : 'InventoryPanel' est introuvable dans la hiérarchie.");
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Recherche récursivement l'enfant nommé "Content" à partir d'un RectTransform donné.
+    /// </summary>
+    private RectTransform FindContentTransform(RectTransform root)
+    {
+        if (root == null)
+            return null;
+
+        var queue = new Queue<Transform>();
+        queue.Enqueue(root);
+
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            if (current is RectTransform rect)
+            {
+                if (rect.gameObject.name == "Content")
+                    return rect;
+            }
+
+            for (int i = 0; i < current.childCount; i++)
+                queue.Enqueue(current.GetChild(i));
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Construit la liste triée des slots associés à un panel ou sous-panel donné.
+    /// </summary>
+    private List<RectTransform> BuildSlotList(RectTransform owner)
+    {
+        var result = new List<RectTransform>();
+        if (owner == null)
+            return result;
+
+        var content = FindContentTransform(owner);
+        if (content == null)
+            return result;
+
+        for (int i = 0; i < content.childCount; i++)
+        {
+            if (content.GetChild(i) is RectTransform childRect && childRect.gameObject.activeInHierarchy)
+                result.Add(childRect);
+        }
+
+        result.RemoveAll(r => r == null);
+
+        result.Sort((a, b) => string.Compare(GetSlotDisplayName(a), GetSlotDisplayName(b), StringComparison.OrdinalIgnoreCase));
+
+        for (int i = 0; i < result.Count; i++)
+        {
+            // On force l'ordre dans la hiérarchie pour que l'affichage corresponde bien au tri alphabétique.
+            result[i].SetSiblingIndex(i);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Récupère le texte associé à un slot pour effectuer le tri alphabétique.
+    /// </summary>
+    private string GetSlotDisplayName(RectTransform slot)
+    {
+        if (slot == null)
+            return string.Empty;
+
+        var text = slot.GetComponentInChildren<TMP_Text>(true);
+        if (text != null && !string.IsNullOrWhiteSpace(text.text))
+            return text.text.Trim();
+
+        return slot.gameObject.name;
+    }
+
+    /// <summary>
+    /// Retourne (et reconstruit au besoin) la liste des slots pour un panel donné.
+    /// </summary>
+    private List<RectTransform> GetOrRebuildSlotList(RectTransform owner)
+    {
+        if (owner == null)
+            return EmptySlotList;
+
+        var list = BuildSlotList(owner);
+        orderedSlots[owner] = list;
+        return list;
+    }
+
+    /// <summary>
+    /// Applique un modulo positif pour gérer les navigations circulaires.
+    /// </summary>
+    private static int WrapIndex(int value, int count)
+    {
+        if (count <= 0)
+            return 0;
+
+        int result = value % count;
+        if (result < 0)
+            result += count;
+        return result;
+    }
+
+    /// <summary>
+    /// Liste vide réutilisable afin d'éviter des allocations inutiles.
+    /// </summary>
+    private static readonly List<RectTransform> EmptySlotList = new();
 
     private void RebuildLookup()
     {
