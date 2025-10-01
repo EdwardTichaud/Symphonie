@@ -57,6 +57,7 @@ Lorsqu’il accomplit cette Convocation, l’entité qui répond n’est pas Aza
 - Pour lui, la musique n'est d'abord qu'un souffle comparable au vent dont il ignore l'origine, inconscient même de son existence jusqu'à ce que Munin la lui révèle.
 - Au début du jeu, il ne connaît que la plate-forme sur laquelle il vit avec quelques autres êtres et n'a jamais questionné la manière dont il communique avec eux ; le langage lui semble inné.
 - Il découvrira plus tard que ses goûts et connaissances proviennent de sa vie passée, notamment son affection pour les rythmes soutenus proches du métal, domaine dans lequel il excelle.
+- Sa connexion intime avec Munin laisse filtrer les souvenirs des passions qu'ils partageaient, et même celles propres à Munin ; Lucian cite spontanément des références à des jeux vidéo emblématiques, comme lorsqu'il s'exclame : « Nous sommes encerclés. » « Bien, nous pouvons attaquer dans toutes les directions. », rappel inconscient d'une stratégie qu'ils admiraient ensemble.
 - Chaque zone visitée résonne d'une harmonique prédominante dictée par le rythme de sa musique : un tempo rapide met en avant l'harmonique de Luciane, une mesure en trois temps favorise celle de Luna, etc.
 - Lorsqu'un personnage est en parfaite résonance avec la musique d'une zone, une électricité parcourt son corps, similaire aux éclairs de Thor, révélant visuellement sa connexion harmonique.
 
