@@ -660,19 +660,46 @@ public class InventoryManager : MonoBehaviour
         inventoryNavigateAction = inventoryActions.Navigate;
 
         if (inventorySelectPanelLeftAction != null)
+        {
+            // On réactive explicitement l'action au cas où elle aurait été désactivée lors d'un précédent OnDisable.
+            // Sans cela, le simple fait de réactiver l'ActionMap ne suffit pas et la navigation reste bloquée.
+            if (!inventorySelectPanelLeftAction.enabled)
+                inventorySelectPanelLeftAction.Enable();
+
             inventorySelectPanelLeftAction.performed += OnInventorySelectPanelLeft;
+        }
 
         if (inventorySelectPanelRightAction != null)
+        {
+            if (!inventorySelectPanelRightAction.enabled)
+                inventorySelectPanelRightAction.Enable();
+
             inventorySelectPanelRightAction.performed += OnInventorySelectPanelRight;
+        }
 
         if (inventorySelectSubPanelLeftAction != null)
+        {
+            if (!inventorySelectSubPanelLeftAction.enabled)
+                inventorySelectSubPanelLeftAction.Enable();
+
             inventorySelectSubPanelLeftAction.performed += OnInventorySelectSubPanelLeft;
+        }
 
         if (inventorySelectSubPanelRightAction != null)
+        {
+            if (!inventorySelectSubPanelRightAction.enabled)
+                inventorySelectSubPanelRightAction.Enable();
+
             inventorySelectSubPanelRightAction.performed += OnInventorySelectSubPanelRight;
+        }
 
         if (inventoryNavigateAction != null)
+        {
+            if (!inventoryNavigateAction.enabled)
+                inventoryNavigateAction.Enable();
+
             inventoryNavigateAction.performed += OnInventoryNavigate;
+        }
 
         inventoryActionsHooked = true;
     }
