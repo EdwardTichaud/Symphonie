@@ -10,12 +10,13 @@ GameObject:
   m_Component:
   - component: {fileID: 5204114573219567973}
   - component: {fileID: 4948338297405769633}
+  - component: {fileID: 6755362118505109379}
   - component: {fileID: 4662704560674311386}
   - component: {fileID: 2532479745881820963}
   - component: {fileID: 3242446044733657830}
   - component: {fileID: 7792622988747768174}
   m_Layer: 0
-  m_Name: NewBattleManager
+  m_Name: BattleManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -48,14 +49,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fc59b9e3b45a5a4d8022996bcae49f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  useSlowBattleManager: 1
+  slowBattleManager: {fileID: 6755362118505109379}
   currentBattleState: 0
   squadUnitRay: {fileID: 5627696518775099638, guid: 390cc74915d4a054bbd897e1885047a4, type: 3}
   enemyUnitRay: {fileID: 5627696518775099638, guid: 00dd6efc06d3d904f8c54712b85f5042, type: 3}
   enemyTemplates: []
-  overShoulderCasterLookOffset: {x: -1.5, y: 1.8, z: -1.3}
+  overShoulderCasterLookPointPosition_SquadUnit: {x: -1, y: 1.4, z: -2}
+  overShoulderCasterLookPointPosition_EnemyUnit: {x: 1, y: 1.4, z: 2}
   unitsInBattle: []
   activeCharacterUnits: []
   firstStrikeEffect: {fileID: 100000, guid: 1b4e5c63c6bd40e088ef5c2e3c765d3b, type: 3}
+  battleIntroLockDuration: 2
   equipSlowMotionScale: 1
   victoryScreen: {fileID: 0}
   gameOverScreen: {fileID: 0}
@@ -77,10 +82,7 @@ MonoBehaviour:
   interceptionSignalPrefab: {fileID: 4874408200862977924, guid: 67cfab94118992e4faeb091a7b7ad031, type: 3}
   targetCursor: {fileID: 0}
   multiTargetCursors: []
-  rangeIndicatorSprite: {fileID: 21300000, guid: eb6881f2886581344a4925efc11c19ee, type: 3}
-  rangeIndicatorMaterial: {fileID: 0}
-  rangeIndicatorHeightOffset: 0.05
-  rangeIndicatorAlpha: 0.6
+  battleCameraCanvasTransform: {fileID: 0}
   cameraSmoothSpeed: 5
   firstTurnRailDuration: 2.75
   firstTurnRailDepartureDistance: 6.5
@@ -128,13 +130,31 @@ MonoBehaviour:
   currentSkillsMenuSlots: []
   currentItemsMenuContainer: {fileID: 0}
   currentItemsMenuSlots: []
-  mainMenuOpenClip: {fileID: 8300000, guid: 94e41782f1edfb3429d16c065065afaa, type: 3}
-  skillsMenuOpenClip: {fileID: 8300000, guid: 94e41782f1edfb3429d16c065065afaa, type: 3}
-  itemsMenuOpenClip: {fileID: 8300000, guid: 94e41782f1edfb3429d16c065065afaa, type: 3}
-  targetSelectionClip: {fileID: 8300000, guid: 94e41782f1edfb3429d16c065065afaa, type: 3}
-  targetChangeClip: {fileID: 8300000, guid: 94e41782f1edfb3429d16c065065afaa, type: 3}
-  skillPageChangeClip: {fileID: 8300000, guid: 94e41782f1edfb3429d16c065065afaa, type: 3}
-  defaultCharacterSelectionClip: {fileID: 8300000, guid: 94e41782f1edfb3429d16c065065afaa, type: 3}
+  mainMenuOpenClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
+  skillsMenuOpenClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
+  itemsMenuOpenClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
+  targetSelectionClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
+  targetChangeClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
+  skillPageChangeClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
+  defaultCharacterSelectionClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
+--- !u!114 &6755362118505109379
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8651676031145584698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd874ad2029d5fe4f87a833c7f6d4d4b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  legacyBattleManager: {fileID: 4948338297405769633}
+  previewTimeout: 1.25
+  downtimeBetweenTurns: 0.35
+  previewTimeScale: 0.25
+  resetPositionsAtRoundStart: 1
+  orderedUnits: []
 --- !u!114 &4662704560674311386
 MonoBehaviour:
   m_ObjectHideFlags: 0
