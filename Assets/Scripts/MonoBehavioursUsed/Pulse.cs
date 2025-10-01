@@ -4,7 +4,7 @@ public class Pulse : MonoBehaviour
 {
     [Header("Pulse (relatif)")]
     public float pulseSpeed = 2f;
-    [Range(0f, 1f)] public float pulseAmount = 0.1f; // 0.1 = ±10%
+    [Range(0f, 1f)] public float pulseAmount = 0.1f; // 0.1 = Â±10%
 
     [Header("Transparence selon la taille")]
     public bool adjustTransparency = true;
@@ -12,7 +12,7 @@ public class Pulse : MonoBehaviour
     [Range(0f, 1f)] public float maxAlpha = 1f;   // alpha au max scale
 
     [Header("Options")]
-    public bool autoCaptureBaseScaleInEditor = true; // recalcule la base si tu modifies la scale à la main
+    public bool autoCaptureBaseScaleInEditor = true; // recalcule la base si tu modifies la scale Ã  la main
 
     private Vector3 baseScale;
 
@@ -42,20 +42,20 @@ public class Pulse : MonoBehaviour
 
     void CacheRenderers()
     {
-        // Références de rendu
+        // RÃ©fÃ©rences de rendu
         spriteRenderer = GetComponent<SpriteRenderer>();
         canvasGroup = GetComponent<CanvasGroup>();
         genericRenderer = GetComponent<Renderer>();
 
         if (genericRenderer != null)
         {
-            // Prépare MPB et détecte la propriété _Color sans toucher au matériau partagé
+            // PrÃ©pare MPB et dÃ©tecte la propriÃ©tÃ© _Color sans toucher au matÃ©riau partagÃ©
             mpb = new MaterialPropertyBlock();
             hasColorProperty = genericRenderer.sharedMaterial != null && genericRenderer.sharedMaterial.HasProperty(ColorID);
 
             if (hasColorProperty)
             {
-                // Tente de récupérer la couleur de base depuis le matériel
+                // Tente de rÃ©cupÃ©rer la couleur de base depuis le matÃ©riel
                 baseColor = genericRenderer.sharedMaterial.GetColor(ColorID);
             }
         }
@@ -67,14 +67,17 @@ public class Pulse : MonoBehaviour
         }
         else if (canvasGroup != null)
         {
-            // CanvasGroup n’a pas de couleur, seulement alpha
+        // Les CanvasGroup doivent pulser mme lorsque Time.timeScale est nul :
+        // on bascule donc automatiquement sur Time.unscaledTime lorsqu'un lment UI est dtect.
+        float timeSource = canvasGroup != null ? Time.unscaledTime : Time.time;
+        float t = (Mathf.Sin(timeSource * pulseSpeed) + 1f) * 0.5f;
             hasColorProperty = true;
         }
     }
 
     void Update()
     {
-        // Option: recapturer automatiquement la scale de base si elle change dans l’éditeur
+        // Option: recapturer automatiquement la scale de base si elle change dans lâ€™Ã©diteur
 #if UNITY_EDITOR
         if (!Application.isPlaying && autoCaptureBaseScaleInEditor)
         {
@@ -89,7 +92,7 @@ public class Pulse : MonoBehaviour
         if (baseScale == Vector3.zero)
             baseScale = transform.localScale;
 
-        // t va de 0 (min) à 1 (max)
+        // t va de 0 (min) Ã  1 (max)
         float t = (Mathf.Sin(Time.time * pulseSpeed) + 1f) * 0.5f;
         float scaleFactor = Mathf.Lerp(1f - pulseAmount, 1f + pulseAmount, t);
         transform.localScale = baseScale * scaleFactor;
@@ -103,7 +106,7 @@ public class Pulse : MonoBehaviour
 
     void ApplyAlpha(float alpha)
     {
-        // Priorité: CanvasGroup (UI), puis SpriteRenderer, puis Renderer générique via MPB
+        // PrioritÃ©: CanvasGroup (UI), puis SpriteRenderer, puis Renderer gÃ©nÃ©rique via MPB
         if (canvasGroup != null)
         {
             canvasGroup.alpha = alpha;

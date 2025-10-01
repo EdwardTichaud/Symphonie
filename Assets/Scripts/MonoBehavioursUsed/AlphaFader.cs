@@ -5,7 +5,7 @@ public class AlphaFader : MonoBehaviour
 {
     public enum FadeTarget { CanvasGroup, SpriteRenderer, Image }
 
-    [Header("Réglages généraux")]
+    [Header("RÃ©glages gÃ©nÃ©raux")]
     public FadeTarget targetType = FadeTarget.CanvasGroup;
     public bool fadeIn = true; // true = alpha vers 1, false = alpha vers 0
     public float fadeSpeed = 1f;
@@ -58,7 +58,8 @@ public class AlphaFader : MonoBehaviour
         {
             bool done = false;
             float currentAlpha = GetCurrentAlpha();
-            float newAlpha = Mathf.MoveTowards(currentAlpha, targetAlpha, fadeSpeed * Time.deltaTime);
+            // On utilise Time.unscaledDeltaTime pour que les fondues UI restent cohrents quelle que soit la vitesse globale du jeu.
+            float newAlpha = Mathf.MoveTowards(currentAlpha, targetAlpha, fadeSpeed * Time.unscaledDeltaTime);
 
             SetAlpha(newAlpha);
 

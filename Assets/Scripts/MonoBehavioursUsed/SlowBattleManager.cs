@@ -98,6 +98,11 @@ public class SlowBattleManager : MonoBehaviour
     /// </summary>
     private int roundIndex;
 
+    /// <summary>
+    /// Liste des séquences (PerformingTimeline_2 + Retreat) à jouer en fin de manche.
+    /// </summary>
+    private readonly List<SlowBattleTimelineSequence> deferredTimelineSequences = new();
+
     #region Événements publics
     /// <summary>
     /// Notifie que la préparation d'une nouvelle manche débute.
@@ -341,6 +346,7 @@ public class SlowBattleManager : MonoBehaviour
         pendingAction = null;
         turnQueue.Clear();
         roundIndex = 0;
+        deferredTimelineSequences.Clear();
     }
 
     private IEnumerator BattleLoop()
@@ -364,11 +370,39 @@ public class SlowBattleManager : MonoBehaviour
                 yield return HandleTurn(unit);
             }
 
+            if (roundIndex == 0)
+            {
+                yield return PlayDeferredTimelineSequences();
+            }
+
             roundIndex++;
         }
 
         OnBattleLoopCompleted?.Invoke();
         RestoreGlobalTimeScale();
+    }
+
+    /// <summary>
+    /// Joue séquentiellement toutes les timelines différées à la fin du premier tour.
+    /// </summary>
+    private IEnumerator PlayDeferredTimelineSequences()
+    {
+        if (deferredTimelineSequences.Count == 0)
+            yield break;
+
+        // On restaure un timeScale normal pour laisser les timelines se dérouler correctement.
+        RestoreGlobalTimeScale();
+
+        foreach (SlowBattleTimelineSequence sequence in deferredTimelineSequences)
+        {
+            if (sequence == null)
+                continue;
+
+            if (RhythmQTEManager.Instance != null)
+                yield return RhythmQTEManager.Instance.PlayDeferredSlowSequence(sequence);
+        }
+
+        deferredTimelineSequences.Clear();
     }
 
     private void PrepareNewRound()
@@ -467,6 +501,26 @@ public class SlowBattleManager : MonoBehaviour
 
         pendingAction = action ?? SlowBattleAction.CreateSkip(currentUnit, "Action nulle remplacée par un passage");
         waitingForAction = false;
+    }
+
+    /// <summary>
+    /// Met de côté une séquence de timeline à jouer en fin de manche (PerformingTimeline_2 + Retreat).
+    /// </summary>
+    /// <param name="sequence">Séquence construite par le <see cref="RhythmQTEManager"/>.</param>
+    public void RegisterDeferredTimelineSequence(SlowBattleTimelineSequence sequence)
+    {
+        if (sequence == null)
+            return;
+
+        if (roundIndex > 0)
+        {
+            // Hors premier tour, on joue immédiatement la séquence pour éviter toute accumulation imprévue.
+            if (RhythmQTEManager.Instance != null)
+                StartCoroutine(RhythmQTEManager.Instance.PlayDeferredSlowSequence(sequence));
+            return;
+        }
+
+        deferredTimelineSequences.Add(sequence);
     }
 
     /// <summary>

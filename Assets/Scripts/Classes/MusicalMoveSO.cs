@@ -148,8 +148,11 @@ public class MusicalMoveSO : ScriptableObject
     [Header("Timeline")]
     [Tooltip("Timeline jouée lors de la préparation du move")]
     public TimelineAsset preparingTimeline;
-    [Tooltip("Timeline à jouer lors de l'exécution du move")]
-    public TimelineAsset performingTimeline;
+    [Tooltip("Timeline à jouer lors de la première phase d'exécution du move.")]
+    [FormerlySerializedAs("performingTimeline")]
+    public TimelineAsset performingTimelinePhase1;
+    [Tooltip("Timeline déclenchée en fin de manche lorsque l'on utilise le SlowBattleManager.")]
+    public TimelineAsset performingTimelinePhase2;
     [Tooltip("Timeline jouée lors du repli après l'exécution du move")]
     public TimelineAsset retreatTimeline;
 
