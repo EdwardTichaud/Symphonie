@@ -99,9 +99,15 @@ public class SlowBattleManager : MonoBehaviour
     private int roundIndex;
 
     /// <summary>
-    /// Liste des séquences (PerformingTimeline_2 + Retreat) à jouer en fin de manche.
+    /// Liste des séquences différées (reprise de Performing + retrait) à jouer en fin de manche.
     /// </summary>
     private readonly List<SlowBattleTimelineSequence> deferredTimelineSequences = new();
+
+    /// <summary>
+    /// Ensemble des unités dont la timeline de Performing a été suspendue via un Signal.
+    /// Cette collection sert à identifier rapidement quelles timelines devront être reprises.
+    /// </summary>
+    private readonly HashSet<CharacterUnit> pausedPerformingUnits = new();
 
     #region Événements publics
     /// <summary>
@@ -347,6 +353,7 @@ public class SlowBattleManager : MonoBehaviour
         turnQueue.Clear();
         roundIndex = 0;
         deferredTimelineSequences.Clear();
+        pausedPerformingUnits.Clear();
     }
 
     private IEnumerator BattleLoop()
@@ -403,6 +410,37 @@ public class SlowBattleManager : MonoBehaviour
         }
 
         deferredTimelineSequences.Clear();
+        pausedPerformingUnits.Clear();
+    }
+
+    /// <summary>
+    /// Appelé par un Signal de Performing pour mémoriser la pause sur l'unité concernée.
+    /// </summary>
+    public void NotifyPerformingTimelinePaused(CharacterUnit unit)
+    {
+        if (unit == null)
+            return;
+
+        pausedPerformingUnits.Add(unit);
+    }
+
+    /// <summary>
+    /// Vérifie si une unité possède actuellement une Performing suspendue en attente de reprise.
+    /// </summary>
+    public bool IsPerformingTimelinePaused(CharacterUnit unit)
+    {
+        return unit != null && pausedPerformingUnits.Contains(unit);
+    }
+
+    /// <summary>
+    /// Indique que la Performing de l'unité peut être retirée des pauses suivies (reprise effectuée).
+    /// </summary>
+    public void MarkPerformingTimelineResumed(CharacterUnit unit)
+    {
+        if (unit == null)
+            return;
+
+        pausedPerformingUnits.Remove(unit);
     }
 
     private void PrepareNewRound()
@@ -504,7 +542,7 @@ public class SlowBattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Met de côté une séquence de timeline à jouer en fin de manche (PerformingTimeline_2 + Retreat).
+    /// Met de côté une séquence de timeline à jouer en fin de manche (reprise de Performing et retrait).
     /// </summary>
     /// <param name="sequence">Séquence construite par le <see cref="RhythmQTEManager"/>.</param>
     public void RegisterDeferredTimelineSequence(SlowBattleTimelineSequence sequence)

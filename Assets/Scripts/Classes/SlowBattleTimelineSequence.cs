@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Timeline;
 
 /// <summary>
-///     Données sérialisables décrivant une séquence différée (phase 2 + repli)
+///     Données sérialisables décrivant une séquence différée (reprise de Performing + repli)
 ///     à jouer lorsque le <see cref="SlowBattleManager"/> est actif.
 ///     La structure est volontairement générique afin de couvrir aussi bien
 ///     les <see cref="MusicalMoveSO"/> que les <see cref="ItemData"/>.
@@ -22,8 +22,11 @@ public class SlowBattleTimelineSequence
     public bool stayInPlace;
 
     [Header("Timelines")] 
-    public TimelineAsset performingPhase2;
+    public TimelineAsset performingTimeline;
     public TimelineAsset retreatTimeline;
+
+    [Header("Contrôle de lecture")]
+    public bool resumePausedTimeline;
 
     [Header("Caméra et bindings")]
     public bool useOverlay;
@@ -51,12 +54,13 @@ public class SlowBattleTimelineSequence
         GameObject performingCameraTarget,
         GameObject casterCameraTarget,
         Quaternion initialRotation,
-        TimelineAsset performingPhase2,
+        TimelineAsset performingTimeline,
         TimelineAsset retreatTimeline,
         float performingCameraDelay,
         BattleCameraRole performingCameraRole,
         BattleCameraRole retreatCameraRole,
-        bool wasCritical)
+        bool wasCritical,
+        bool resumePausedTimeline)
     {
         return new SlowBattleTimelineSequence
         {
@@ -67,7 +71,7 @@ public class SlowBattleTimelineSequence
             originPosition = originPosition,
             requiresReturn = move != null && move.requiresMovement && !move.stayInPlace,
             stayInPlace = move != null && move.stayInPlace,
-            performingPhase2 = performingPhase2,
+            performingTimeline = performingTimeline,
             retreatTimeline = retreatTimeline,
             useOverlay = useOverlay,
             casterAnimatorGO = casterAnimatorGO,
@@ -77,7 +81,8 @@ public class SlowBattleTimelineSequence
             performingCameraDelay = performingCameraDelay,
             performingCameraRole = performingCameraRole,
             retreatCameraRole = retreatCameraRole,
-            wasCritical = wasCritical
+            wasCritical = wasCritical,
+            resumePausedTimeline = resumePausedTimeline
         };
     }
 
@@ -94,11 +99,12 @@ public class SlowBattleTimelineSequence
         GameObject performingCameraTarget,
         GameObject casterCameraTarget,
         Quaternion initialRotation,
-        TimelineAsset performingPhase2,
+        TimelineAsset performingTimeline,
         TimelineAsset retreatTimeline,
         float performingCameraDelay,
         BattleCameraRole performingCameraRole,
-        BattleCameraRole retreatCameraRole)
+        BattleCameraRole retreatCameraRole,
+        bool resumePausedTimeline)
     {
         return new SlowBattleTimelineSequence
         {
@@ -109,7 +115,7 @@ public class SlowBattleTimelineSequence
             originPosition = originPosition,
             requiresReturn = item != null && item.requiresMovement && !item.stayInPlace,
             stayInPlace = item != null && item.stayInPlace,
-            performingPhase2 = performingPhase2,
+            performingTimeline = performingTimeline,
             retreatTimeline = retreatTimeline,
             useOverlay = useOverlay,
             casterAnimatorGO = casterAnimatorGO,
@@ -119,7 +125,8 @@ public class SlowBattleTimelineSequence
             performingCameraDelay = performingCameraDelay,
             performingCameraRole = performingCameraRole,
             retreatCameraRole = retreatCameraRole,
-            wasCritical = false
+            wasCritical = false,
+            resumePausedTimeline = resumePausedTimeline
         };
     }
 }

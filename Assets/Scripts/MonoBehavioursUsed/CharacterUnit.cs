@@ -819,6 +819,34 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     }
 
     /// <summary>
+    /// Fournit un accès en lecture au <see cref="PlayableDirector"/> pilotant les timelines de combat.
+    /// Cette propriété reste protégée afin d'éviter toute modification extérieure non contrôlée tout
+    /// en permettant aux gestionnaires (comme le <see cref="SlowBattleManager"/>) de vérifier l'état
+    /// du director lorsqu'une timeline est mise en pause pour un tour lent.
+    /// </summary>
+    public PlayableDirector BattleDirector => battleDirector;
+
+    /// <summary>
+    /// Met en pause la timeline courante si elle est en lecture. Ce comportement est principalement
+    /// utilisé par les Signaux des timelines de Performing pour figer la mise en scène le temps que
+    /// le tour se termine dans le mode de combat lent.
+    /// </summary>
+    public void PauseBattleTimeline()
+    {
+        if (battleDirector != null && battleDirector.state == PlayState.Playing)
+            battleDirector.Pause();
+    }
+
+    /// <summary>
+    /// Reprend la lecture d'une timeline précédemment mise en pause via <see cref="PauseBattleTimeline"/>.
+    /// </summary>
+    public void ResumeBattleTimeline()
+    {
+        if (battleDirector != null && battleDirector.state == PlayState.Paused)
+            battleDirector.Resume();
+    }
+
+    /// <summary>
     /// Prépare la timeline d'introduction de combat en reliant explicitement
     /// les pistes "Root" et "Model" du <see cref="PlayableDirector"/> local.
     /// Les autres pistes potentiellement présentes sont nettoyées afin d'éviter
@@ -951,6 +979,13 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// d'exécution. Utile pour synchroniser les différentes phases d'un move.
     /// </summary>
     public bool IsBattleTimelinePlaying => battleDirector != null && battleDirector.state == PlayState.Playing;
+
+    /// <summary>
+    /// Indique si la timeline locale est simplement en pause (ni arrêtée, ni en lecture).
+    /// Cette information complète <see cref="IsBattleTimelinePlaying"/> pour distinguer un arrêt
+    /// normal d'un gel volontaire orchestré par les timelines Performing.
+    /// </summary>
+    public bool IsBattleTimelinePaused => battleDirector != null && battleDirector.state == PlayState.Paused;
 
     /// <summary>
     /// Réalise le binding d'une piste individuelle d'une timeline vers les
