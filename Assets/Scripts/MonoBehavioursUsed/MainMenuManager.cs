@@ -150,7 +150,8 @@ public class MainMenuManager : MonoBehaviour
         if (waitingForInput)
         {
             // Animation de l'indication "Press A"
-            timer += Time.deltaTime * fadeSpeed;
+            // Animation indépendante du timeScale pour que l'invite reste visible en pause.
+            timer += Time.unscaledDeltaTime * fadeSpeed;
             float alpha = 0.25f + 0.25f * (1 + Mathf.Sin(timer));
             if (pressA != null)
                 pressA.alpha = alpha;
@@ -166,7 +167,7 @@ public class MainMenuManager : MonoBehaviour
             menuCursor.transform.position = Vector3.Lerp(
                 menuCursor.transform.position,
                 cursorTargetPosition,
-                Time.deltaTime * cursorLerpSpeed
+                Time.unscaledDeltaTime * cursorLerpSpeed
             );
         }
     }

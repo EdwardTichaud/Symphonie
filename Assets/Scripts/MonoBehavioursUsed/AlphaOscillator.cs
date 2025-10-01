@@ -49,7 +49,8 @@ public class AlphaOscillator : MonoBehaviour
     {
         if (!isOscillating) return;
 
-        t += Time.deltaTime * speed;
+        // Oscillation basée sur le temps réel afin de rester active même lorsque Time.timeScale vaut 0.
+        t += Time.unscaledDeltaTime * speed;
         float alpha = Mathf.Lerp(minAlpha, maxAlpha, (Mathf.Sin(t) + 1f) / 2f);
 
         ApplyAlpha(alpha);

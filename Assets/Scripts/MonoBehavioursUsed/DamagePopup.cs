@@ -59,13 +59,15 @@ public class DamagePopup : MonoBehaviour
     void Update()
     {
         // Avancement de l'animation verticale
-        floatOffset += floatSpeed * Time.deltaTime;
+        // Le popup doit flotter même lorsque le temps de jeu est figé (pause, ralenti).
+        floatOffset += floatSpeed * Time.unscaledDeltaTime;
 
         // Met à jour la position à chaque frame
         UpdatePosition();
 
         // Fade out après 'duration'
-        elapsed += Time.deltaTime;
+        // Les effets d'interface utilisent le temps non-scalé pour rester visibles en pause.
+        elapsed += Time.unscaledDeltaTime;
         if (elapsed >= duration)
         {
             if (canvasGroup != null)

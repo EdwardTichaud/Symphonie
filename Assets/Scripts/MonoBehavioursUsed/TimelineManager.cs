@@ -223,7 +223,8 @@ public class TimelineManager : MonoBehaviour
         // Incrémente le fillAmount pendant tout le maintien du bouton
         while (elapsed < skipHoldDuration)
         {
-            elapsed += Time.deltaTime;
+            // Utilise le temps non-scalé pour que la jauge de skip fonctionne même quand la timeline fige le jeu.
+            elapsed += Time.unscaledDeltaTime;
             if (skipFillImage != null)
                 skipFillImage.fillAmount = Mathf.Clamp01(elapsed / skipHoldDuration);
             yield return null;

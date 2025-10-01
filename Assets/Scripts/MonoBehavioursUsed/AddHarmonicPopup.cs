@@ -54,10 +54,12 @@ public class AddHarmonicPopup : MonoBehaviour
 
     void Update()
     {
-        floatOffset += floatSpeed * Time.deltaTime;
+        // Utilise le temps non-scalé afin que l'animation reste fluide même lorsque le combat est ralenti ou en pause.
+        floatOffset += floatSpeed * Time.unscaledDeltaTime;
         UpdatePosition();
 
-        elapsed += Time.deltaTime;
+        // Même logique pour le fondu : on ne dépend plus du Time.timeScale global.
+        elapsed += Time.unscaledDeltaTime;
         if (elapsed >= duration)
         {
             // Fondu puis destruction

@@ -249,7 +249,7 @@ public class RhythmQTEManager : MonoBehaviour
     {
         // On attend patiemment la durée configurée afin que la phase en cours
         // puisse démarrer tout en conservant le cadrage précédent.
-        yield return new WaitForSeconds(delay);
+        yield return new WaitForSecondsRealtime(delay);
 
         // Si un autre StartTimelinePhase a été appelé durant l'attente, la coroutine
         // aura été stoppée et n'atteindra jamais ce point, évitant ainsi tout conflit.
@@ -275,7 +275,7 @@ public class RhythmQTEManager : MonoBehaviour
                BattleTimelineManager.Instance.IsCasterTimelinePlaying(caster) &&
                timer < maxDuration)
         {
-            timer += Time.deltaTime;
+            timer += Time.unscaledDeltaTime;
             yield return null;
         }
 
@@ -418,7 +418,10 @@ public class RhythmQTEManager : MonoBehaviour
         //     Elle laisse ainsi le temps de mettre en place des effets
         //     ou des annonces avant même le début de la préparation.
         if (move.startDelay > 0f)
-            yield return new WaitForSeconds(move.startDelay);
+        {
+            // Délai en temps réel afin que la préparation commence au bon moment même en pause.
+            yield return new WaitForSecondsRealtime(move.startDelay);
+        }
 
         // L'ancienne timeline globale de caméra est désactivée.
 
@@ -429,7 +432,7 @@ public class RhythmQTEManager : MonoBehaviour
             caster,
             casterAnimatorGO,
             casterCameraTarget,
-            move.performingTimeline == null && move.retreatTimeline == null,
+            move.performingTimelinePhase1 == null && move.performingTimelinePhase2 == null && move.retreatTimeline == null,
             initialRotation,
             move.preparingCameraRole);
         yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay, caster);
@@ -458,15 +461,19 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         // --- Phase d'exécution ---
+        TimelineAsset performingPhase1 = move.performingTimelinePhase1;
+        TimelineAsset performingPhase2 = move.performingTimelinePhase2;
+        bool isSlowMode = NewBattleManager.Instance != null && NewBattleManager.Instance.UseSlowBattleManager && SlowBattleManager.Instance != null;
+
         // Le délai passé en paramètre différera uniquement la bascule de caméra,
         // laissant la timeline de performing démarrer immédiatement.
         StartTimelinePhase(
-            move.performingTimeline,
+            performingPhase1,
             useOverlay,
             caster,
             casterAnimatorGO,
             performingCameraTarget,
-            move.retreatTimeline == null,
+            performingPhase2 == null && move.retreatTimeline == null,
             initialRotation,
             move.performingCameraRole,
             move.preparingToPerformingCameraDelay);
@@ -483,7 +490,8 @@ public class RhythmQTEManager : MonoBehaviour
                 float timer = 0f;
                 while (pendingNotes > 0 && timer < safeDelay)
                 {
-                    timer += Time.deltaTime;
+                    // Le timer de sécurité utilise le temps réel pour rester fiable quelle que soit la vitesse globale.
+                    timer += Time.unscaledDeltaTime;
                     yield return null;
                 }
                 if (pendingNotes > 0)
@@ -494,7 +502,62 @@ public class RhythmQTEManager : MonoBehaviour
             }
         }
 
-        yield return WaitForTimelinePhase(move.performingTimeline, useOverlay, caster);
+        yield return WaitForTimelinePhase(performingPhase1, useOverlay, caster);
+
+        bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
+
+        bool shouldDefer = isSlowMode && (performingPhase2 != null || move.retreatTimeline != null);
+        if (shouldDefer)
+        {
+            var sequence = SlowBattleTimelineSequence.ForMusicalMove(
+                move,
+                caster,
+                target,
+                originPosition,
+                useOverlay,
+                casterAnimatorGO,
+                performingCameraTarget,
+                casterCameraTarget,
+                initialRotation,
+                performingPhase2,
+                move.retreatTimeline,
+                0f,
+                move.performingCameraRole,
+                move.retreatCameraRole,
+                critical);
+
+            SlowBattleManager.Instance.RegisterDeferredTimelineSequence(sequence);
+
+            if (target != null)
+                target.OnDeath -= deathHandler;
+
+            currentMove = null;
+            currentCaster = null;
+            currentTarget = null;
+            delayTargetPreparationAnimationForCurrentMove = false;
+
+            CancelPendingCameraSwitch();
+            BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
+            BattleCameraManager.Instance?.ClearRigTargets();
+            ClearQTEBar();
+
+            isActive = false;
+            yield break;
+        }
+
+        if (performingPhase2 != null)
+        {
+            StartTimelinePhase(
+                performingPhase2,
+                useOverlay,
+                caster,
+                casterAnimatorGO,
+                performingCameraTarget,
+                move.retreatTimeline == null,
+                initialRotation,
+                move.performingCameraRole);
+            yield return WaitForTimelinePhase(performingPhase2, useOverlay, caster);
+        }
 
         // --- Retour ou téléportation de repli ---
         if (move.requiresMovement && !move.stayInPlace && caster != null && target != null)
@@ -512,10 +575,7 @@ public class RhythmQTEManager : MonoBehaviour
             move.retreatCameraRole);
         yield return WaitForTimelinePhase(move.retreatTimeline, useOverlay, caster);
 
-        // Attente finale de la timeline caméra complète (désactivée).
-
         isActive = false;
-        bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
         NewBattleManager.Instance.AfterMusicalMove(move, caster, critical);
 
         if (target != null)
@@ -619,7 +679,7 @@ public class RhythmQTEManager : MonoBehaviour
             caster,
             casterAnimatorGO,
             casterCameraTarget,
-            item.performingTimeline == null && item.retreatTimeline == null,
+            item.performingTimelinePhase1 == null && item.performingTimelinePhase2 == null && item.retreatTimeline == null,
             initialRotation,
             item.preparingCameraRole);
         yield return WaitForTimelinePhase(item.preparingTimeline, useOverlay, caster);
@@ -641,13 +701,17 @@ public class RhythmQTEManager : MonoBehaviour
         // --- Phase d'utilisation ---
         // Comme pour les MusicalMoves, le délai fourni retarde uniquement le changement
         // de caméra sans bloquer l'exécution de la timeline principale.
+        TimelineAsset itemPerformingPhase1 = item.performingTimelinePhase1;
+        TimelineAsset itemPerformingPhase2 = item.performingTimelinePhase2;
+        bool itemSlowMode = NewBattleManager.Instance != null && NewBattleManager.Instance.UseSlowBattleManager && SlowBattleManager.Instance != null;
+
         StartTimelinePhase(
-            item.performingTimeline,
+            itemPerformingPhase1,
             useOverlay,
             caster,
             casterAnimatorGO,
             performingCameraTarget,
-            item.retreatTimeline == null,
+            itemPerformingPhase2 == null && item.retreatTimeline == null,
             initialRotation,
             item.performingCameraRole,
             item.preparingToPerformingCameraDelay);
@@ -666,7 +730,50 @@ public class RhythmQTEManager : MonoBehaviour
             LastItemSuccess = successResults.All(v => v);
         }
 
-        yield return WaitForTimelinePhase(item.performingTimeline, useOverlay, caster);
+        yield return WaitForTimelinePhase(itemPerformingPhase1, useOverlay, caster);
+
+        bool deferItem = itemSlowMode && (itemPerformingPhase2 != null || item.retreatTimeline != null);
+        if (deferItem)
+        {
+            var sequence = SlowBattleTimelineSequence.ForItem(
+                item,
+                caster,
+                target,
+                originPosition,
+                useOverlay,
+                casterAnimatorGO,
+                performingCameraTarget,
+                casterCameraTarget,
+                initialRotation,
+                itemPerformingPhase2,
+                item.retreatTimeline,
+                0f,
+                item.performingCameraRole,
+                item.retreatCameraRole);
+
+            SlowBattleManager.Instance.RegisterDeferredTimelineSequence(sequence);
+
+            ClearQTEBar();
+            CancelPendingCameraSwitch();
+            BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
+            BattleCameraManager.Instance?.ClearRigTargets();
+            isActive = false;
+            yield break;
+        }
+
+        if (itemPerformingPhase2 != null)
+        {
+            StartTimelinePhase(
+                itemPerformingPhase2,
+                useOverlay,
+                caster,
+                casterAnimatorGO,
+                performingCameraTarget,
+                item.retreatTimeline == null,
+                initialRotation,
+                item.performingCameraRole);
+            yield return WaitForTimelinePhase(itemPerformingPhase2, useOverlay, caster);
+        }
 
         // --- Retour à la position d'origine ---
         if (item.requiresMovement && !item.stayInPlace && caster != null && target != null)
@@ -698,6 +805,125 @@ public class RhythmQTEManager : MonoBehaviour
         CancelPendingCameraSwitch();
         BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
         BattleCameraManager.Instance?.ClearRigTargets();
+    }
+
+    /// <summary>
+    /// Joue la phase différée (PerformingTimeline_2 puis Retreat) pour un move ou un item en mode lent.
+    /// </summary>
+    public IEnumerator PlayDeferredSlowSequence(SlowBattleTimelineSequence sequence)
+    {
+        if (sequence == null)
+            yield break;
+
+        if (sequence.move != null)
+        {
+            yield return PlayDeferredSlowMove(sequence);
+        }
+        else if (sequence.item != null)
+        {
+            yield return PlayDeferredSlowItem(sequence);
+        }
+    }
+
+    private IEnumerator PlayDeferredSlowMove(SlowBattleTimelineSequence sequence)
+    {
+        CharacterUnit caster = sequence.caster;
+        if (caster == null || caster.IsDead)
+            yield break;
+
+        isActive = true;
+
+        if (sequence.performingPhase2 != null)
+        {
+            StartTimelinePhase(
+                sequence.performingPhase2,
+                sequence.useOverlay,
+                caster,
+                sequence.casterAnimatorGO,
+                sequence.performingCameraTarget,
+                sequence.retreatTimeline == null,
+                sequence.initialRotation,
+                sequence.performingCameraRole,
+                sequence.performingCameraDelay);
+
+            yield return WaitForTimelinePhase(sequence.performingPhase2, sequence.useOverlay, caster);
+        }
+
+        if (sequence.requiresReturn && caster != null && sequence.target != null)
+            yield return ReturnToInitialPosition(sequence.move, caster, sequence.target, sequence.originPosition);
+
+        if (sequence.retreatTimeline != null)
+        {
+            StartTimelinePhase(
+                sequence.retreatTimeline,
+                sequence.useOverlay,
+                caster,
+                sequence.casterAnimatorGO,
+                sequence.casterCameraTarget,
+                true,
+                sequence.initialRotation,
+                sequence.retreatCameraRole);
+
+            yield return WaitForTimelinePhase(sequence.retreatTimeline, sequence.useOverlay, caster);
+        }
+
+        if (NewBattleManager.Instance != null)
+            NewBattleManager.Instance.AfterMusicalMove(sequence.move, caster, sequence.wasCritical);
+
+        CancelPendingCameraSwitch();
+        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
+        BattleCameraManager.Instance?.ClearRigTargets();
+
+        isActive = false;
+    }
+
+    private IEnumerator PlayDeferredSlowItem(SlowBattleTimelineSequence sequence)
+    {
+        CharacterUnit caster = sequence.caster;
+        if (caster == null || caster.IsDead)
+            yield break;
+
+        isActive = true;
+
+        if (sequence.performingPhase2 != null)
+        {
+            StartTimelinePhase(
+                sequence.performingPhase2,
+                sequence.useOverlay,
+                caster,
+                sequence.casterAnimatorGO,
+                sequence.performingCameraTarget,
+                sequence.retreatTimeline == null,
+                sequence.initialRotation,
+                sequence.performingCameraRole,
+                sequence.performingCameraDelay);
+
+            yield return WaitForTimelinePhase(sequence.performingPhase2, sequence.useOverlay, caster);
+        }
+
+        if (sequence.requiresReturn && caster != null && sequence.target != null && sequence.item != null)
+            yield return SimpleReturnToInitialPosition(caster, sequence.target, sequence.item, sequence.originPosition);
+
+        if (sequence.retreatTimeline != null)
+        {
+            StartTimelinePhase(
+                sequence.retreatTimeline,
+                sequence.useOverlay,
+                caster,
+                sequence.casterAnimatorGO,
+                sequence.casterCameraTarget,
+                true,
+                sequence.initialRotation,
+                sequence.retreatCameraRole);
+
+            yield return WaitForTimelinePhase(sequence.retreatTimeline, sequence.useOverlay, caster);
+        }
+
+        CancelPendingCameraSwitch();
+        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
+        BattleCameraManager.Instance?.ClearRigTargets();
+
+        isActive = false;
     }
 
     /// <summary>
@@ -801,7 +1027,7 @@ public class RhythmQTEManager : MonoBehaviour
         emission.rateOverDistanceMultiplier = 0f;
         instance.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmitting); // Stoppe proprement l'émission.
 
-        yield return new WaitForSeconds(2f); // Laisse le temps aux particules déjà générées de disparaître naturellement.
+        yield return new WaitForSecondsRealtime(2f); // Laisse le temps aux particules déjà générées de disparaître naturellement.
 
         if (instance != null)
             Destroy(instance.gameObject); // Suppression finale pour éviter toute accumulation en scène.
@@ -840,7 +1066,8 @@ public class RhythmQTEManager : MonoBehaviour
 
             // Délai configurable pour laisser apparaître l'effet de téléport
             float delay = item.teleportDelay >= 0f ? item.teleportDelay : defaultTeleportDelay;
-            yield return new WaitForSeconds(delay);
+            // Utilise une attente en temps réel pour que les téléportations fonctionnent même lorsque le jeu est en pause.
+            yield return new WaitForSecondsRealtime(delay);
 
             // Téléportation instantanée
             caster.transform.position = destination;
@@ -921,7 +1148,8 @@ public class RhythmQTEManager : MonoBehaviour
 
             // Délai configurable avant la réapparition à la position initiale
             float delay = item.teleportDelay >= 0f ? item.teleportDelay : defaultTeleportDelay;
-            yield return new WaitForSeconds(delay);
+            // Utilise une attente en temps réel pour que les téléportations fonctionnent même lorsque le jeu est en pause.
+            yield return new WaitForSecondsRealtime(delay);
 
             caster.transform.position = origin;
 
@@ -1023,7 +1251,8 @@ public class RhythmQTEManager : MonoBehaviour
 
             // Délai configurable pour la téléportation du MusicalMove
             float delay = move.teleportDelay >= 0f ? move.teleportDelay : defaultTeleportDelay;
-            yield return new WaitForSeconds(delay);
+            // Utilise une attente en temps réel pour que les téléportations fonctionnent même lorsque le jeu est en pause.
+            yield return new WaitForSecondsRealtime(delay);
 
             caster.transform.position = targetPos;
 
@@ -1121,7 +1350,8 @@ public class RhythmQTEManager : MonoBehaviour
 
             // Délai configurable avant de revenir à la position de départ
             float delay = move.teleportDelay >= 0f ? move.teleportDelay : defaultTeleportDelay;
-            yield return new WaitForSeconds(delay);
+            // Utilise une attente en temps réel pour que les téléportations fonctionnent même lorsque le jeu est en pause.
+            yield return new WaitForSecondsRealtime(delay);
 
             if (caster == null)
             {
@@ -1202,7 +1432,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             // Si tu veux être certain de prendre la longueur du AnimationClip lui-même,
             // tu peux aussi faire : float clipDuration = clip.length;
-            yield return new WaitForSeconds(clipDuration);
+            yield return new WaitForSecondsRealtime(clipDuration);
         }
 
         Debug.Log("Toutes les animations sont terminées.");
@@ -1610,7 +1840,7 @@ public class RhythmQTEManager : MonoBehaviour
 
     private IEnumerator PlayTauntWithDelay(AudioClipSO clip, float delay)
     {
-        yield return new WaitForSeconds(delay);
+        yield return new WaitForSecondsRealtime(delay);
         AudioManager.Instance?.PlayVoice(clip);
     }
 
