@@ -69,6 +69,30 @@ public class BattleTimelineManager : MonoBehaviour
         lastUnitPlaying = unit;
     }
 
+    /// <summary>
+    /// Met en pause la timeline actuellement jouée pour l'unité demandée.
+    /// </summary>
+    public void PauseCasterTimeline(CharacterUnit unit = null)
+    {
+        CharacterUnit target = unit ?? lastUnitPlaying;
+        if (target == null)
+            return;
+
+        target.PauseBattleTimeline();
+    }
+
+    /// <summary>
+    /// Reprend la timeline précédemment mise en pause pour l'unité demandée.
+    /// </summary>
+    public void ResumeCasterTimeline(CharacterUnit unit = null)
+    {
+        CharacterUnit target = unit ?? lastUnitPlaying;
+        if (target == null)
+            return;
+
+        target.ResumeBattleTimeline();
+    }
+
     /// <summary>Arrête la timeline en cours pour l'unité spécifiée.</summary>
     /// <param name="unit">Unité ciblée, ou null pour cibler la dernière unité connue.</param>
     public void StopCasterTimeline(CharacterUnit unit = null)
@@ -91,6 +115,16 @@ public class BattleTimelineManager : MonoBehaviour
     {
         CharacterUnit target = unit ?? lastUnitPlaying;
         return target != null && target.IsBattleTimelinePlaying;
+    }
+
+    /// <summary>
+    /// Indique si la timeline ciblée est simplement en pause (utile pour distinguer un arrêt complet
+    /// d'une suspension volontaire via un Signal de timeline).
+    /// </summary>
+    public bool IsCasterTimelinePaused(CharacterUnit unit = null)
+    {
+        CharacterUnit target = unit ?? lastUnitPlaying;
+        return target != null && target.IsBattleTimelinePaused;
     }
 }
 

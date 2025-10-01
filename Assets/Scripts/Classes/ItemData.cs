@@ -98,11 +98,10 @@ public class ItemData : ScriptableObject
     [Header("Timeline")]
     [Tooltip("Timeline jouée lors de la préparation de l'item")]
     public TimelineAsset preparingTimeline;
-    [Tooltip("Timeline à jouer lors de la première phase d'utilisation de l'item.")]
+    [Tooltip("Timeline complète d'utilisation. Un Signal peut y suspendre l'action en mode lent.")]
+    [FormerlySerializedAs("performingTimelinePhase1")]
     [FormerlySerializedAs("performingTimeline")]
-    public TimelineAsset performingTimelinePhase1;
-    [Tooltip("Timeline secondaire déclenchée en fin de manche lorsque le SlowBattleManager est actif.")]
-    public TimelineAsset performingTimelinePhase2;
+    public TimelineAsset performingTimeline;
     [Tooltip("Timeline jouée lors du repli après utilisation")]
     public TimelineAsset retreatTimeline;
 
