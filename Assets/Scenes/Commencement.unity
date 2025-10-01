@@ -16072,6 +16072,7 @@ GameObject:
   - component: {fileID: 156020977}
   - component: {fileID: 156020979}
   - component: {fileID: 156020978}
+  - component: {fileID: 156020980}
   m_Layer: 8
   m_Name: Solitary Stone.002_LOD0
   m_TagString: Untagged
@@ -16146,6 +16147,28 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 156020976}
+  m_Mesh: {fileID: 780244162007188803, guid: 77f1543f8e6d40c45babc579aa073298, type: 3}
+--- !u!64 &156020980
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 156020976}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
   m_Mesh: {fileID: 780244162007188803, guid: 77f1543f8e6d40c45babc579aa073298, type: 3}
 --- !u!1001 &156212308
 PrefabInstance:
@@ -41510,60 +41533,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 399582816}
   m_Mesh: {fileID: 4300000, guid: abc00000000001789361248183614188, type: 3}
---- !u!1 &400300523
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 400300524}
-  - component: {fileID: 400300525}
-  m_Layer: 8
-  m_Name: Solitary Stone.002_ collider
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &400300524
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 400300523}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.452313, y: 0.543519, z: 0.543519, w: 0.45231304}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
-  m_LocalScale: {x: 99.99999, y: 99.99999, z: 100}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2116612980}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!64 &400300525
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 400300523}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -5803485984091675380, guid: 77f1543f8e6d40c45babc579aa073298, type: 3}
 --- !u!1001 &401753631
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -48371,6 +48340,7 @@ GameObject:
   - component: {fileID: 470273386}
   - component: {fileID: 470273388}
   - component: {fileID: 470273387}
+  - component: {fileID: 470273389}
   m_Layer: 8
   m_Name: Solitary Stone.002_LOD2
   m_TagString: Untagged
@@ -48445,6 +48415,28 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 470273385}
+  m_Mesh: {fileID: -5803485984091675380, guid: 77f1543f8e6d40c45babc579aa073298, type: 3}
+--- !u!64 &470273389
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 470273385}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
   m_Mesh: {fileID: -5803485984091675380, guid: 77f1543f8e6d40c45babc579aa073298, type: 3}
 --- !u!1 &470814979
 GameObject:
@@ -60877,6 +60869,7 @@ GameObject:
   - component: {fileID: 610606270}
   - component: {fileID: 610606272}
   - component: {fileID: 610606271}
+  - component: {fileID: 610606273}
   m_Layer: 8
   m_Name: Solitary Stone.002_LOD1
   m_TagString: Untagged
@@ -60951,6 +60944,28 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 610606269}
+  m_Mesh: {fileID: 233167262786797210, guid: 77f1543f8e6d40c45babc579aa073298, type: 3}
+--- !u!64 &610606273
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 610606269}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
   m_Mesh: {fileID: 233167262786797210, guid: 77f1543f8e6d40c45babc579aa073298, type: 3}
 --- !u!1001 &611368457
 PrefabInstance:
@@ -113193,7 +113208,7 @@ GameObject:
   - component: {fileID: 1106271011}
   - component: {fileID: 1106271012}
   m_Layer: 8
-  m_Name: Collider
+  m_Name: BridgeCollider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -113208,11 +113223,11 @@ Transform:
   m_GameObject: {fileID: 1106271010}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.3852709, z: -0, w: 0.9228036}
-  m_LocalPosition: {x: -10.369995, y: 0, z: 10.75}
+  m_LocalPosition: {x: -10.369995, y: 0.27001953, z: 10.75}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1333653629}
+  m_Father: {fileID: 1880851298}
   m_LocalEulerAnglesHint: {x: 0, y: 45.321, z: 0}
 --- !u!65 &1106271012
 BoxCollider:
@@ -136387,7 +136402,7 @@ Transform:
   m_GameObject: {fileID: 1333653628}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.27, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -137551,7 +137566,6 @@ Transform:
   - {fileID: 954336392}
   - {fileID: 1838376566}
   - {fileID: 536080130}
-  - {fileID: 1106271011}
   m_Father: {fileID: 1880851298}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1333653630
@@ -143368,7 +143382,7 @@ Transform:
   m_GameObject: {fileID: 1384935475}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: -2.74, y: -0.86, z: -5.54}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -192607,6 +192621,7 @@ Transform:
   - {fileID: 738531363}
   - {fileID: 762435141355829121}
   - {fileID: 2116612980}
+  - {fileID: 1106271011}
   - {fileID: 1333653629}
   m_Father: {fileID: 1353724193}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -215613,14 +215628,13 @@ Transform:
   m_GameObject: {fileID: 2116612979}
   serializedVersion: 2
   m_LocalRotation: {x: -0.55531496, y: -0, z: -0.8316401, w: 0}
-  m_LocalPosition: {x: -7.28, y: -2.380005, z: 5.58}
+  m_LocalPosition: {x: -7.28, y: -2.23, z: 5.58}
   m_LocalScale: {x: 8, y: 8, z: 8}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 156020977}
   - {fileID: 610606270}
   - {fileID: 470273386}
-  - {fileID: 400300524}
   m_Father: {fileID: 1880851298}
   m_LocalEulerAnglesHint: {x: 0, y: -292.535, z: 180}
 --- !u!205 &2116612981
@@ -219450,6 +219464,7 @@ GameObject:
   - component: {fileID: 8026263765180102508}
   - component: {fileID: 3671649837687124003}
   - component: {fileID: 6745127346576311835}
+  - component: {fileID: 8026263765180102509}
   m_Layer: 8
   m_Name: Solitary Stone.002_LOD0
   m_TagString: Untagged
@@ -219473,28 +219488,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!64 &213879527719488906
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6658911224765866652}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 1
-  m_CookingOptions: 30
-  m_Mesh: {fileID: -5803485984091675380, guid: 77f1543f8e6d40c45babc579aa073298, type: 3}
 --- !u!4 &235411467150759265
 Transform:
   m_ObjectHideFlags: 0
@@ -219805,7 +219798,6 @@ Transform:
   - {fileID: 8026263765180102508}
   - {fileID: 2556937560407267781}
   - {fileID: 3282996002990993678}
-  - {fileID: 2392196169019422590}
   m_Father: {fileID: 1880851298}
   m_LocalEulerAnglesHint: {x: 0, y: -218.537, z: 180}
 --- !u!4 &774298007633962892 stripped
@@ -220767,7 +220759,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4957865243419136189, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -0.2293761
+      value: 0.037981212
       objectReference: {fileID: 0}
     - target: {fileID: 5328497704870498945, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchorMax.y
@@ -220924,6 +220916,10 @@ PrefabInstance:
     - target: {fileID: 6556343729096243538, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchorMin.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6556343729096243538, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -2513.001
       objectReference: {fileID: 0}
     - target: {fileID: 6605344438349761397, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchorMax.y
@@ -221087,7 +221083,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8557836138217557935, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -2513.0002
+      value: -2513.0005
       objectReference: {fileID: 0}
     - target: {fileID: 8702472518977820776, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchorMax.y
@@ -221107,7 +221103,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9002251911775550289, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.005032433
+      value: -0.31649762
       objectReference: {fileID: 0}
     - target: {fileID: 9190650189389976031, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchorMax.y
@@ -221378,21 +221374,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2392196169019422590
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6658911224765866652}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.452313, y: 0.543519, z: 0.543519, w: 0.45231304}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
-  m_LocalScale: {x: 99.99999, y: 99.99999, z: 100}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 762435141355829121}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!23 &2490312492059500135
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -221467,23 +221448,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 785022425143674786, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_Color.a
-      value: 0.000098435456
+      value: 0.000078376666
       objectReference: {fileID: 0}
     - target: {fileID: 785022425143674786, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_Color.b
-      value: 0.000098435456
+      value: 0.000078376666
       objectReference: {fileID: 0}
     - target: {fileID: 785022425143674786, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_Color.g
-      value: 0.000098435456
+      value: 0.000078376666
       objectReference: {fileID: 0}
     - target: {fileID: 785022425143674786, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_Color.r
-      value: 0.000098435456
+      value: 0.000078376666
       objectReference: {fileID: 0}
     - target: {fileID: 785022425143674786, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_Intensity
-      value: 4.966704
+      value: 6.970579
       objectReference: {fileID: 0}
     - target: {fileID: 3708800652035862243, guid: de5da2353b9e7cc4aa7c67de958c55e3, type: 3}
       propertyPath: m_LocalPosition.x
@@ -222978,15 +222959,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4551284211275759610, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1009.58
+      value: 1006.1
       objectReference: {fileID: 0}
     - target: {fileID: 4551284211275759610, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1052.235
+      value: 1051.16
       objectReference: {fileID: 0}
     - target: {fileID: 4551284211275759610, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1007.16003
+      value: 1001.05
       objectReference: {fileID: 0}
     - target: {fileID: 4551284211275759610, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalRotation.w
@@ -224077,25 +224058,9 @@ GameObject:
   - component: {fileID: 3282996002990993678}
   - component: {fileID: 4573150914151751909}
   - component: {fileID: 6852859449699640822}
+  - component: {fileID: 6852859449699640823}
   m_Layer: 8
   m_Name: Solitary Stone.002_LOD2
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!1 &6658911224765866652
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2392196169019422590}
-  - component: {fileID: 213879527719488906}
-  m_Layer: 8
-  m_Name: Solitary Stone.002_ collider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -224356,23 +224321,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2464690655714508881, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_Color.a
-      value: 0.00009907973
+      value: 0.00009449823
       objectReference: {fileID: 0}
     - target: {fileID: 2464690655714508881, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_Color.b
-      value: 0.00009907973
+      value: 0.00009449823
       objectReference: {fileID: 0}
     - target: {fileID: 2464690655714508881, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_Color.g
-      value: 0.00009907973
+      value: 0.00009449823
       objectReference: {fileID: 0}
     - target: {fileID: 2464690655714508881, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_Color.r
-      value: 0.00009907973
+      value: 0.00009449823
       objectReference: {fileID: 0}
     - target: {fileID: 2464690655714508881, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_Intensity
-      value: 36.38222
+      value: 31.391743
       objectReference: {fileID: 0}
     - target: {fileID: 4267005945266872651, guid: fb1b063d35774324588e8fa9094f3cb2, type: 3}
       propertyPath: m_LocalPosition.x
@@ -224496,6 +224461,28 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!64 &6852859449699640823
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6600373999450162686}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: -5803485984091675380, guid: 77f1543f8e6d40c45babc579aa073298, type: 3}
 --- !u!1 &6979713031893529740
 GameObject:
   m_ObjectHideFlags: 0
@@ -226024,6 +226011,7 @@ GameObject:
   - component: {fileID: 2556937560407267781}
   - component: {fileID: 1634293101300481802}
   - component: {fileID: 2490312492059500135}
+  - component: {fileID: 7015464347022506626}
   m_Layer: 8
   m_Name: Solitary Stone.002_LOD1
   m_TagString: Untagged
@@ -226031,6 +226019,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!64 &7015464347022506626
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7015464347022506625}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 233167262786797210, guid: 77f1543f8e6d40c45babc579aa073298, type: 3}
 --- !u!4 &7184484224203159129
 Transform:
   m_ObjectHideFlags: 0
@@ -226334,6 +226344,28 @@ Transform:
   m_Children: []
   m_Father: {fileID: 762435141355829121}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!64 &8026263765180102509
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 139261987282902607}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 780244162007188803, guid: 77f1543f8e6d40c45babc579aa073298, type: 3}
 --- !u!4 &8069216065413390949
 Transform:
   m_ObjectHideFlags: 0
