@@ -54,10 +54,10 @@ public class AddHarmonicPopup : MonoBehaviour
 
     void Update()
     {
-        floatOffset += floatSpeed * Time.deltaTime;
+        floatOffset += floatSpeed * Time.unscaledDeltaTime; // Mouvement vertical garanti même en pause.
         UpdatePosition();
 
-        elapsed += Time.deltaTime;
+        elapsed += Time.unscaledDeltaTime; // Assure une disparition régulière quel que soit le timeScale.
         if (elapsed >= duration)
         {
             // Fondu puis destruction

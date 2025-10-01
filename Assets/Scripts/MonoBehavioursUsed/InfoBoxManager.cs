@@ -42,6 +42,8 @@ public class InfoBoxManager : MonoBehaviour
         choix = null;
 
         animator?.SetBool("isOpen", true);
+        if (animator != null)
+            animator.updateMode = AnimatorUpdateMode.UnscaledTime; // Lecture des animations d'interface en temps rÃ©el.
 
         // Configure UI
         infoTitleText.text = infoTitle ?? "";
@@ -82,7 +84,7 @@ public class InfoBoxManager : MonoBehaviour
 
         choix = true;
         CloseInfoBox();
-        Debug.Log("Action confirmée : " + choix.Value);
+        Debug.Log("Action confirme : " + choix.Value);
     }
 
     private void OnCancel(InputAction.CallbackContext context)
@@ -91,6 +93,6 @@ public class InfoBoxManager : MonoBehaviour
 
         choix = false;
         CloseInfoBox();
-        Debug.Log("Action annulée : " + choix.Value);
+        Debug.Log("Action annule : " + choix.Value);
     }
 }

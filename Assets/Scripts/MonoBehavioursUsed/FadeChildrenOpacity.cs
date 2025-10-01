@@ -100,7 +100,8 @@ public class FadeChildrenOpacity : MonoBehaviour
 
         while (t < duration)
         {
-            t += Time.deltaTime;
+            // Temps non affecté par le timeScale pour préserver les transitions en pause.
+            t += Time.unscaledDeltaTime;
             float a = Mathf.Lerp(startAlpha, targetAlpha, t / duration);
 
             if (uiImage != null)

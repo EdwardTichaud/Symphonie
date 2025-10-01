@@ -92,7 +92,7 @@ public class CustomBar : MonoBehaviour
             float x = Random.Range(-shakeMagnitude, shakeMagnitude);
             float y = Random.Range(-shakeMagnitude, shakeMagnitude);
             target.localPosition = originalPos + new Vector3(x, y, 0f);
-            yield return new WaitForSeconds(shakeDuration);
+            yield return new WaitForSecondsRealtime(shakeDuration); // Maintient la vibration même si le temps est figé.
         }
 
         target.localPosition = originalPos;

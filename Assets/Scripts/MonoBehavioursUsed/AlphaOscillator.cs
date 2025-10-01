@@ -49,7 +49,7 @@ public class AlphaOscillator : MonoBehaviour
     {
         if (!isOscillating) return;
 
-        t += Time.deltaTime * speed;
+        t += Time.unscaledDeltaTime * speed; // Animation indépendante du timeScale pour les éléments UI.
         float alpha = Mathf.Lerp(minAlpha, maxAlpha, (Mathf.Sin(t) + 1f) / 2f);
 
         ApplyAlpha(alpha);

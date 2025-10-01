@@ -19,6 +19,29 @@ public class RhythmQTEManager : MonoBehaviour
     // Dernier résultat enregistré pour un QTE d'objet
     public bool LastItemSuccess { get; private set; }
 
+    /// <summary>
+    /// Contient toutes les informations nécessaires pour lancer la phase différée
+    /// d'un MusicalMove (PerformingTimeline_2 + repli).
+    /// </summary>
+    public struct DeferredPerformingPhase
+    {
+        public MusicalMoveSO move;
+        public CharacterUnit caster;
+        public CharacterUnit target;
+        public Vector3 originPosition;
+        public GameObject casterAnimatorGO;
+        public GameObject casterCameraTarget;
+        public GameObject performingCameraTarget;
+        public Quaternion initialRotation;
+        public bool useOverlay;
+        /// <summary>Indique si une phase secondaire doit réellement être jouée.</summary>
+        public bool HasContent =>
+            move != null && caster != null &&
+            (move.performingTimelinePhase2 != null ||
+             move.retreatTimeline != null ||
+             (move.requiresMovement && !move.stayInPlace));
+    }
+
     // QTE
     private Coroutine beatRoutine;
     // Coroutine responsable d'un éventuel changement différé de caméra.
@@ -168,6 +191,84 @@ public class RhythmQTEManager : MonoBehaviour
         preparedNotes.Clear();
     }
 
+    /// <summary>Construit les données nécessaires à la lecture différée d'un move.</summary>
+    public DeferredPerformingPhase CreateDeferredPerformingPhase(
+        MusicalMoveSO move,
+        CharacterUnit caster,
+        CharacterUnit target,
+        Vector3 originPosition,
+        GameObject casterAnimatorGO,
+        GameObject casterCameraTarget,
+        GameObject performingCameraTarget,
+        Quaternion initialRotation,
+        bool useOverlay)
+    {
+        return new DeferredPerformingPhase
+        {
+            move = move,
+            caster = caster,
+            target = target,
+            originPosition = originPosition,
+            casterAnimatorGO = casterAnimatorGO,
+            casterCameraTarget = casterCameraTarget,
+            performingCameraTarget = performingCameraTarget,
+            initialRotation = initialRotation,
+            useOverlay = useOverlay
+        };
+    }
+
+    /// <summary>Joue la PerformingTimeline_2 puis la timeline de repli pour un move différé.</summary>
+    public IEnumerator ExecuteDeferredPerformingPhase(DeferredPerformingPhase phase)
+    {
+        if (!phase.HasContent)
+            yield break;
+        var move = phase.move;
+        var caster = phase.caster;
+        if (move == null || caster == null || caster.IsDead)
+            yield break;
+        GameObject casterAnimatorGO = phase.casterAnimatorGO ?? caster.GetCasterBindingTarget();
+        GameObject casterCameraTarget = phase.casterCameraTarget ?? casterAnimatorGO ?? caster.gameObject;
+        GameObject performingCameraTarget = phase.performingCameraTarget ?? casterCameraTarget;
+        // Reconfigure les cibles caméra en utilisant les ancres déjà déterminées lors de la phase 1.
+        BattleCameraManager.Instance?.ConfigureActionTargets(
+            caster,
+            phase.target,
+            null,
+            casterCameraTarget != null ? casterCameraTarget.transform : null,
+            performingCameraTarget != null ? performingCameraTarget.transform : null);
+        if (move.performingTimelinePhase2 != null)
+        {
+            StartTimelinePhase(
+                move.performingTimelinePhase2,
+                phase.useOverlay,
+                caster,
+                casterAnimatorGO,
+                performingCameraTarget,
+                move.performingTimelinePhase2 == null && move.retreatTimeline == null,
+                phase.initialRotation,
+                move.performingCameraRole);
+            yield return WaitForTimelinePhase(move.performingTimelinePhase2, phase.useOverlay, caster);
+        }
+        if (move.requiresMovement && !move.stayInPlace && phase.target != null)
+            yield return ReturnToInitialPosition(move, caster, phase.target, phase.originPosition);
+        if (move.retreatTimeline != null)
+        {
+            StartTimelinePhase(
+                move.retreatTimeline,
+                phase.useOverlay,
+                caster,
+                casterAnimatorGO,
+                casterCameraTarget,
+                true,
+                phase.initialRotation,
+                move.retreatCameraRole);
+            yield return WaitForTimelinePhase(move.retreatTimeline, phase.useOverlay, caster);
+        }
+        CancelPendingCameraSwitch();
+        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
+        BattleCameraManager.Instance?.ClearRigTargets();
+    }
+
     // ------------------------------------------------------------------------------
     // Utilitaires Timeline
     // ------------------------------------------------------------------------------
@@ -249,7 +350,7 @@ public class RhythmQTEManager : MonoBehaviour
     {
         // On attend patiemment la durée configurée afin que la phase en cours
         // puisse démarrer tout en conservant le cadrage précédent.
-        yield return new WaitForSeconds(delay);
+        yield return new WaitForSecondsRealtime(delay); // Attente en temps réel pour garantir le retour même lorsque le temps est figé.
 
         // Si un autre StartTimelinePhase a été appelé durant l'attente, la coroutine
         // aura été stoppée et n'atteindra jamais ce point, évitant ainsi tout conflit.
@@ -429,7 +530,7 @@ public class RhythmQTEManager : MonoBehaviour
             caster,
             casterAnimatorGO,
             casterCameraTarget,
-            move.performingTimeline == null && move.retreatTimeline == null,
+            move.performingTimelinePhase1 == null && move.performingTimelinePhase2 == null && move.retreatTimeline == null,
             initialRotation,
             move.preparingCameraRole);
         yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay, caster);
@@ -461,7 +562,7 @@ public class RhythmQTEManager : MonoBehaviour
         // Le délai passé en paramètre différera uniquement la bascule de caméra,
         // laissant la timeline de performing démarrer immédiatement.
         StartTimelinePhase(
-            move.performingTimeline,
+            move.performingTimelinePhase1,
             useOverlay,
             caster,
             casterAnimatorGO,
@@ -494,29 +595,21 @@ public class RhythmQTEManager : MonoBehaviour
             }
         }
 
-        yield return WaitForTimelinePhase(move.performingTimeline, useOverlay, caster);
+        yield return WaitForTimelinePhase(move.performingTimelinePhase1, useOverlay, caster);
 
-        // --- Retour ou téléportation de repli ---
-        if (move.requiresMovement && !move.stayInPlace && caster != null && target != null)
-            yield return ReturnToInitialPosition(move, caster, target, originPosition);
+        bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
 
-        // --- Phase de repli ---
-        StartTimelinePhase(
-            move.retreatTimeline,
-            useOverlay,
+        // Enregistre la seconde phase (timeline 2 + repli) pour une exécution différée.
+        var deferredPhase = CreateDeferredPerformingPhase(
+            move,
             caster,
+            target,
+            originPosition,
             casterAnimatorGO,
             casterCameraTarget,
-            true,
+            performingCameraTarget,
             initialRotation,
-            move.retreatCameraRole);
-        yield return WaitForTimelinePhase(move.retreatTimeline, useOverlay, caster);
-
-        // Attente finale de la timeline caméra complète (désactivée).
-
-        isActive = false;
-        bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
-        NewBattleManager.Instance.AfterMusicalMove(move, caster, critical);
+            useOverlay);
 
         if (target != null)
             target.OnDeath -= deathHandler;
@@ -526,19 +619,21 @@ public class RhythmQTEManager : MonoBehaviour
         currentTarget = null;
         delayTargetPreparationAnimationForCurrentMove = false; // ✅ Réinitialisation du drapeau de report
 
-        // Restaure la caméra par défaut en fin de move.
-        // Avant de restaurer la caméra par défaut, on s'assure qu'aucun délai
-        // en attente ne viendra réactiver un rôle précédent inopinément.
+        // Libère immédiatement la caméra afin que le tour suivant puisse l'utiliser.
         CancelPendingCameraSwitch();
         BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
         BattleCameraManager.Instance?.ClearRigTargets();
 
-        // Nettoie la barre de QTE une fois la séquence terminée
+        // Nettoie la barre de QTE une fois la première phase terminée.
         ClearQTEBar();
+
+        isActive = false;
+        NewBattleManager.Instance.OnMusicalPerformingPhaseOneCompleted(move, caster, critical, deferredPhase);
 
         // Si le caster a été détruit durant la séquence, on évite une exception
         casterName = caster != null ? caster.name : "(caster nul)";
-        Debug.Log("Fin de la séquence du MusicalMove: " + move + " de " + casterName);
+        Debug.Log("Fin de la phase 1 du MusicalMove: " + move + " de " + casterName);
+        yield break;
     }
 
     /// <summary>
@@ -619,7 +714,7 @@ public class RhythmQTEManager : MonoBehaviour
             caster,
             casterAnimatorGO,
             casterCameraTarget,
-            item.performingTimeline == null && item.retreatTimeline == null,
+            item.performingTimelinePhase1 == null && item.performingTimelinePhase2 == null && item.performingTimelinePhase2 == null && item.retreatTimeline == null,
             initialRotation,
             item.preparingCameraRole);
         yield return WaitForTimelinePhase(item.preparingTimeline, useOverlay, caster);
@@ -642,7 +737,7 @@ public class RhythmQTEManager : MonoBehaviour
         // Comme pour les MusicalMoves, le délai fourni retarde uniquement le changement
         // de caméra sans bloquer l'exécution de la timeline principale.
         StartTimelinePhase(
-            item.performingTimeline,
+            item.performingTimelinePhase1,
             useOverlay,
             caster,
             casterAnimatorGO,
@@ -666,7 +761,7 @@ public class RhythmQTEManager : MonoBehaviour
             LastItemSuccess = successResults.All(v => v);
         }
 
-        yield return WaitForTimelinePhase(item.performingTimeline, useOverlay, caster);
+        yield return WaitForTimelinePhase(item.performingTimelinePhase1, useOverlay, caster);
 
         // --- Retour à la position d'origine ---
         if (item.requiresMovement && !item.stayInPlace && caster != null && target != null)
@@ -801,7 +896,7 @@ public class RhythmQTEManager : MonoBehaviour
         emission.rateOverDistanceMultiplier = 0f;
         instance.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmitting); // Stoppe proprement l'émission.
 
-        yield return new WaitForSeconds(2f); // Laisse le temps aux particules déjà générées de disparaître naturellement.
+        yield return new WaitForSecondsRealtime(2f); // Laisse le temps aux particules déjà générées de disparaître même si le temps est figé.
 
         if (instance != null)
             Destroy(instance.gameObject); // Suppression finale pour éviter toute accumulation en scène.
@@ -840,7 +935,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             // Délai configurable pour laisser apparaître l'effet de téléport
             float delay = item.teleportDelay >= 0f ? item.teleportDelay : defaultTeleportDelay;
-            yield return new WaitForSeconds(delay);
+            yield return new WaitForSecondsRealtime(delay); // Attente en temps réel pour garantir le retour même lorsque le temps est figé.
 
             // Téléportation instantanée
             caster.transform.position = destination;
@@ -870,7 +965,7 @@ public class RhythmQTEManager : MonoBehaviour
             while (t < 1f)
             {
                 caster.transform.position = Vector3.Lerp(startPos, destination, t);
-                t += Time.deltaTime / Mathf.Max(duration, 0.0001f);
+                t += Time.unscaledDeltaTime / Mathf.Max(duration, 0.0001f);
                 yield return null;
             }
             caster.transform.position = destination;
@@ -921,7 +1016,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             // Délai configurable avant la réapparition à la position initiale
             float delay = item.teleportDelay >= 0f ? item.teleportDelay : defaultTeleportDelay;
-            yield return new WaitForSeconds(delay);
+            yield return new WaitForSecondsRealtime(delay); // Attente en temps réel pour garantir le retour même lorsque le temps est figé.
 
             caster.transform.position = origin;
 
@@ -947,7 +1042,7 @@ public class RhythmQTEManager : MonoBehaviour
             while (t < 1f)
             {
                 caster.transform.position = Vector3.Lerp(startPos, origin, t);
-                t += Time.deltaTime / Mathf.Max(duration, 0.0001f);
+                t += Time.unscaledDeltaTime / Mathf.Max(duration, 0.0001f);
                 yield return null;
             }
             caster.transform.position = origin;
@@ -1023,7 +1118,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             // Délai configurable pour la téléportation du MusicalMove
             float delay = move.teleportDelay >= 0f ? move.teleportDelay : defaultTeleportDelay;
-            yield return new WaitForSeconds(delay);
+            yield return new WaitForSecondsRealtime(delay); // Attente en temps réel pour garantir le retour même lorsque le temps est figé.
 
             caster.transform.position = targetPos;
 
@@ -1049,7 +1144,7 @@ public class RhythmQTEManager : MonoBehaviour
             while (t < 1f)
             {
                 caster.transform.position = Vector3.Lerp(startPos, targetPos, t);
-                t += Time.deltaTime / Mathf.Max(duration, 0.0001f);
+                t += Time.unscaledDeltaTime / Mathf.Max(duration, 0.0001f);
                 yield return null;
             }
             caster.transform.position = targetPos;
@@ -1121,7 +1216,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             // Délai configurable avant de revenir à la position de départ
             float delay = move.teleportDelay >= 0f ? move.teleportDelay : defaultTeleportDelay;
-            yield return new WaitForSeconds(delay);
+            yield return new WaitForSecondsRealtime(delay); // Attente en temps réel pour garantir le retour même lorsque le temps est figé.
 
             if (caster == null)
             {
@@ -1152,7 +1247,7 @@ public class RhythmQTEManager : MonoBehaviour
             while (t < 1f)
             {
                 caster.transform.position = Vector3.Lerp(startPos, initialPosition, t);
-                t += Time.deltaTime / Mathf.Max(duration, 0.0001f);
+                t += Time.unscaledDeltaTime / Mathf.Max(duration, 0.0001f);
                 yield return null;
             }
             caster.transform.position = initialPosition;
@@ -1610,7 +1705,7 @@ public class RhythmQTEManager : MonoBehaviour
 
     private IEnumerator PlayTauntWithDelay(AudioClipSO clip, float delay)
     {
-        yield return new WaitForSeconds(delay);
+        yield return new WaitForSecondsRealtime(delay); // Attente en temps réel pour garantir le retour même lorsque le temps est figé.
         AudioManager.Instance?.PlayVoice(clip);
     }
 

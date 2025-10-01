@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.Timeline;
+using UnityEngine.Serialization;
 using System.Collections.Generic;
 #if UNITY_EDITOR
 using UnityEditor; // Nécessaire uniquement dans l'éditeur pour charger l'item de référence.
@@ -97,8 +98,11 @@ public class ItemData : ScriptableObject
     [Header("Timeline")]
     [Tooltip("Timeline jouée lors de la préparation de l'item")]
     public TimelineAsset preparingTimeline;
-    [Tooltip("Timeline à jouer lors de l'utilisation de l'item")]
-    public TimelineAsset performingTimeline;
+    [Tooltip("Timeline à jouer lors de l'utilisation de l'item (phase 1)")]
+    [FormerlySerializedAs("performingTimeline")]
+    public TimelineAsset performingTimelinePhase1;
+    [Tooltip("Timeline complémentaire (phase 2) déclenchée après le premier tour complet")]
+    public TimelineAsset performingTimelinePhase2;
     [Tooltip("Timeline jouée lors du repli après utilisation")]
     public TimelineAsset retreatTimeline;
 

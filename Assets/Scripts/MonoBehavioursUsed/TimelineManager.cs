@@ -123,7 +123,7 @@ public class TimelineManager : MonoBehaviour
         if (enable)
         {
             // Réactivation globale de toutes les actions World une fois la Timeline terminée.
-            worldMap.Enable();
+            worldMap.Enable(); // Temps réel pour éviter que les transitions UI ne se figent.
         }
         else
         {
@@ -223,7 +223,7 @@ public class TimelineManager : MonoBehaviour
         // Incrémente le fillAmount pendant tout le maintien du bouton
         while (elapsed < skipHoldDuration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime; // Surveille la progression en ignorant les variations de timeScale.
             if (skipFillImage != null)
                 skipFillImage.fillAmount = Mathf.Clamp01(elapsed / skipHoldDuration);
             yield return null;
@@ -837,16 +837,16 @@ public class TimelineManager : MonoBehaviour
 
         // 1) transparent vers noir
         fader.ChangeOpacity(0, 1f, 1f);
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSecondsRealtime(1f); // Temps réel pour éviter que les transitions UI ne se figent.
 
         // 2) pause d'une seconde à opacité maximale
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSecondsRealtime(1f);
 
         // 3) noir vers transparent (sauf si on veut rester en noir)
         if (!stayBlack)
         {
             fader.ChangeOpacity(0, 0f, 1f);
-            yield return new WaitForSeconds(1f);
+            yield return new WaitForSecondsRealtime(1f);
         }
     }
 
@@ -861,6 +861,6 @@ public class TimelineManager : MonoBehaviour
             yield break;
 
         fader.ChangeOpacity(0, 0f, 1f);
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSecondsRealtime(1f);
     }
 }

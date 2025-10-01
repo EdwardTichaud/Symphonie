@@ -800,6 +800,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         battleDirector.Stop();
 
         battleDirector.playableAsset = timeline;
+        battleDirector.timeUpdateMode = UnityEngine.Playables.DirectorUpdateMode.UnscaledGameTime; // Les timelines doivent avancer même lorsque le temps de jeu est figé.
 
         // Détermine les cibles de binding prioritaires.
         GameObject bindingRoot = casterBinding ?? GetCasterBindingTarget();

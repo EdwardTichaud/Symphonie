@@ -222,6 +222,14 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     private readonly Queue<PendingTimeline> pendingTimelines = new();
 
+    /// <summary>Phases PerformingTimeline_2 et Retreat en attente d'exécution.</summary>
+    private readonly List<RhythmQTEManager.DeferredPerformingPhase> deferredPerformingPhases = new();
+    /// <summary>Liste des unités ayant déjà joué durant le premier tour.</summary>
+    private readonly HashSet<CharacterUnit> unitsHavingPlayedFirstRound = new();
+    private bool firstRoundCompleted = false;
+    private bool isProcessingDeferredPhases = false;
+    private float defaultFixedDeltaTime = 0.02f;
+
     /// <summary>
     /// Structure stockant les informations nécessaires pour jouer une timeline.
     /// Seul le lanceur est requis : la piste caméra est ignorée.
@@ -424,6 +432,7 @@ public class NewBattleManager : MonoBehaviour
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        defaultFixedDeltaTime = Time.fixedDeltaTime; // Sauvegarde la valeur de référence pour les pauses temporelles.
 
         if (useSlowBattleManager)
             EnsureSlowBattleManager();
@@ -965,8 +974,17 @@ public class NewBattleManager : MonoBehaviour
     //7 Démarre la boucle de tours
     private IEnumerator TurnLoop()
     {
+        deferredPerformingPhases.Clear();
+        unitsHavingPlayedFirstRound.Clear();
+        firstRoundCompleted = false;
+        isProcessingDeferredPhases = false;
         while (true)
         {
+            if (isProcessingDeferredPhases)
+            {
+                yield return null;
+                continue;
+            }
             if (unitsInBattle.All(u => u.currentHP <= 0))
             {
                 Debug.LogWarning("[BattleTurnManager] Tous les combattants sont hors combat.");
@@ -1117,6 +1135,7 @@ public class NewBattleManager : MonoBehaviour
     {
         if (currentBattleState != BattleState.VictoryScreen_Await && currentBattleState != BattleState.VictoryScreen_CanContinue && currentBattleState != BattleState.GameOverScreen_Await && currentBattleState != BattleState.GameOverScreen_CanContinue)
         {
+            ResumeCombatTime(); // Réactive la progression du temps pour le nouveau tour.
             if (unit.TryGetComponent<SleepStatus>(out var sleep) && sleep.IsAsleep && unit.Data.gameplayType != GameplayType.Fatigue)
             {
                 // En cas de sommeil, on clôt immédiatement le tour de l'unité concernée sans relancer son animation idle
@@ -1715,6 +1734,7 @@ public class NewBattleManager : MonoBehaviour
                 endingUnit.PlayIdleAnimation();
             }
         }
+        TrackFirstRoundProgress(endingUnit);
 
         ChangeBattleState(BattleState.EndTurn);
         // Cache tous les menus à la fin du tour
@@ -1728,72 +1748,136 @@ public class NewBattleManager : MonoBehaviour
         PassTurnUI.Instance?.Hide(); // Bouclage
     }
 
-    public void AfterMusicalMove(MusicalMoveSO move, CharacterUnit caster, bool wasCritical)
+    private void ApplyPostMusicalMoveEconomy(MusicalMoveSO move, CharacterUnit caster, bool wasCritical)
     {
-        // Affiche un message si toutes les notes du QTE ont été réussies
+        if (move == null || caster == null)
+            return;
+
         if (wasCritical)
             ActionUIDisplayManager.Instance?.DisplayCriticalHit();
 
-        if (caster != null)
+        int cost = move.harmonicCost;
+        int generation = move.harmonicGeneration;
+
+        if (wasCritical && move.useCriticalVariant)
         {
-            int cost = move.harmonicCost;
-            int generation = move.harmonicGeneration;
-
-            if (wasCritical && move.useCriticalVariant)
-            {
-                // Ajoute les valeurs spécifiées pour le coup critique
-                cost += move.criticalHarmonicCost;
-                generation += move.criticalHarmonicGeneration;
-            }
-
-            caster.ConsumeHarmonic(caster.Data.harmonicType, cost);
-            caster.AddHarmonic(caster.Data.harmonicType, generation);
-            caster.SetMoveCooldown(move);
-            caster.RegisterMoveUse(move);
-
-            // Activation du mode Awake si le move le permet
-            if (move.enterAwake && !caster.IsAwake &&
-                caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.resonancePoint)
-            {
-                caster.EnterAwakeState();
-            }
-
-            // Si l'unité n'a plus d'harmonique, son tour se termine immédiatement
-            if (caster.GetHarmonicCount(caster.Data.harmonicType) <= 0)
-            {
-                EndTurn();
-                return;
-            }
+            // Ajoute les valeurs spécifiées pour le coup critique
+            cost += move.criticalHarmonicCost;
+            generation += move.criticalHarmonicGeneration;
         }
 
-        if (!caster.Data.isPlayerControlled)
+        caster.ConsumeHarmonic(caster.Data.harmonicType, cost);
+        caster.AddHarmonic(caster.Data.harmonicType, generation);
+        caster.SetMoveCooldown(move);
+        caster.RegisterMoveUse(move);
+
+        // Activation du mode Awake si le move le permet
+        if (move.enterAwake && !caster.IsAwake &&
+            caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.resonancePoint)
         {
-            EndTurn();
+            caster.EnterAwakeState();
+        }
+    }
+
+    public void OnMusicalPerformingPhaseOneCompleted(MusicalMoveSO move, CharacterUnit caster, bool wasCritical, RhythmQTEManager.DeferredPerformingPhase deferredPhase)
+    {
+        if (caster == null)
             return;
+
+        bool playImmediately = firstRoundCompleted && deferredPhase.HasContent && RhythmQTEManager.Instance != null;
+
+        if (!firstRoundCompleted && deferredPhase.HasContent)
+            deferredPerformingPhases.Add(deferredPhase);
+
+        ApplyPostMusicalMoveEconomy(move, caster, wasCritical);
+
+        PauseCombatTime();
+
+        if (playImmediately)
+            StartCoroutine(ExecuteImmediateDeferredPhase(deferredPhase));
+
+        if (caster.Data.isPlayerControlled)
+            EndTurn();
+    }
+
+    private void PauseCombatTime()
+    {
+        Time.timeScale = 0f;
+        Time.fixedDeltaTime = defaultFixedDeltaTime * Time.timeScale;
+    }
+
+    private void ResumeCombatTime()
+    {
+        Time.timeScale = 1f;
+        Time.fixedDeltaTime = defaultFixedDeltaTime;
+    }
+
+    private void TrackFirstRoundProgress(CharacterUnit endingUnit)
+    {
+        if (firstRoundCompleted || endingUnit == null)
+            return;
+
+        unitsHavingPlayedFirstRound.Add(endingUnit);
+
+        if (!firstRoundCompleted && HaveAllActiveUnitsPlayedFirstRound())
+            StartCoroutine(TriggerDeferredPerformingPhases());
+    }
+
+    private IEnumerator ExecuteImmediateDeferredPhase(RhythmQTEManager.DeferredPerformingPhase phase)
+    {
+        if (RhythmQTEManager.Instance == null)
+            yield break;
+
+        isProcessingDeferredPhases = true;
+        yield return RhythmQTEManager.Instance.ExecuteDeferredPerformingPhase(phase);
+        isProcessingDeferredPhases = false;
+        ResumeCombatTime();
+    }
+
+    private bool HaveAllActiveUnitsPlayedFirstRound()
+    {
+        foreach (var unit in activeCharacterUnits)
+        {
+            if (unit == null || unit.currentHP <= 0f)
+                continue;
+
+            if (!unitsHavingPlayedFirstRound.Contains(unit))
+                return false;
         }
 
-        //
-        // Vérifie si au moins une compétence reste utilisable pour le lanceur.
-        // On prend en compte les moves standards ainsi que le move spécial
-        // éventuel. On ignore ceux en cooldown pour éviter de terminer
-        // prématurément le tour.
+        return true;
+    }
 
-        IEnumerable<MusicalMoveSO> availableMoves = caster.Data.musicalAttacks;
-        if (caster.Data.specialMusicalMove != null)
-            availableMoves = availableMoves.Append(caster.Data.specialMusicalMove);
+    private IEnumerator TriggerDeferredPerformingPhases()
+    {
+        if (isProcessingDeferredPhases)
+            yield break;
 
-        bool hasSkill = availableMoves.Any(m =>
-            (!m.onlyAwake || caster.IsAwake) &&
-            (!m.enterAwake || !caster.IsAwake) &&
-            caster.GetHarmonicCount(caster.Data.harmonicType) >= m.harmonicCost &&
-            (!m.enterAwake || caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.resonancePoint) &&
-            !caster.IsMoveOnCooldown(m));
-        bool hasItem = InventoryManager.Instance.GetUsableItems(caster).Count > 0;
+        isProcessingDeferredPhases = true;
 
-        if (!hasSkill && !hasItem)
-            EndTurn();
-        else
-            ShowMainMenu();
+        if (deferredPerformingPhases.Count == 0)
+        {
+            firstRoundCompleted = true;
+            isProcessingDeferredPhases = false;
+            ResumeCombatTime();
+            yield break;
+        }
+
+        PauseCombatTime();
+
+        foreach (var phase in deferredPerformingPhases)
+        {
+            if (RhythmQTEManager.Instance == null)
+                break;
+
+            yield return RhythmQTEManager.Instance.ExecuteDeferredPerformingPhase(phase);
+        }
+
+        deferredPerformingPhases.Clear();
+        firstRoundCompleted = true;
+        isProcessingDeferredPhases = false;
+
+        ResumeCombatTime();
     }
 
     public IEnumerator ShowMoveInfoAndHandleSelection(MusicalMoveSO move)

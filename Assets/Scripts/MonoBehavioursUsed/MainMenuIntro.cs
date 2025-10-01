@@ -53,7 +53,7 @@ public class MainMenuIntro : MonoBehaviour
     // Coroutine déclenchée lorsque l'on ne dispose pas d'un PlayableDirector
     private IEnumerator WaitAndActivate()
     {
-        yield return new WaitForSeconds(introDuration);
+        yield return new WaitForSecondsRealtime(introDuration); // Attente en temps réel pour ignorer les variations de timeScale.
         NotifyEnd();
     }
 

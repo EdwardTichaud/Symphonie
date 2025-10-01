@@ -288,7 +288,7 @@ public class DialogueManager : MonoBehaviour
                     break;
                 }
 
-                t += Time.deltaTime;
+                t += Time.unscaledDeltaTime; // Utilise le temps réel pour que la frappe continue pendant les pauses.
                 yield return null;
             }
         }
