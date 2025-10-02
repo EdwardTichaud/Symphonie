@@ -70,12 +70,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     private PlayableDirector battleDirector;
 
-    /// <summary>
-    /// Expose le PlayableDirector de combat à des fins de diagnostic tout en
-    /// conservant la protection d'accès pour éviter toute réaffectation externe.
-    /// </summary>
-    public PlayableDirector BattleDirector => battleDirector;
-
     #region Gestion des sets personnalisés
     /// <summary>
     /// Renvoie le set d'attaques musicales actuellement actif pour cette unité.
