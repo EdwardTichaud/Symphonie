@@ -1,9 +1,13 @@
 using UnityEngine;
 
 /// <summary>
-/// Contrôleur simple à la troisième personne pour Lucian en mode exploration.
-/// Gère le déplacement de base (marche/course), l'orientation et le saut.
-/// La caméra (Munin) peut pivoter autour de Lucian via <see cref="ThirdPersonCameraController"/>.
+/// Contrôleur avancé à la troisième personne pour Lucian en mode exploration.
+/// Cette refonte s'inspire directement de "Clair Obscur Expedition 33" et met
+/// l'accent sur un ressenti fluide :
+/// - Détection robuste du sol via sphere casts.
+/// - Gestion des pentes avec glissade contrôlée.
+/// - Inertie et amortissement des vitesses pour des transitions naturelles.
+/// - Aides au saut (coyote time / jump buffer) pour limiter la frustration.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class ThirdPersonPlayerController : MonoBehaviour
@@ -12,10 +16,12 @@ public class ThirdPersonPlayerController : MonoBehaviour
     [Tooltip("Transform de la WorldCamera utilisée pour orienter le déplacement.")]
     public Transform cameraTransform;
 
-    private CharacterController controller; // Référence au CharacterController Unity.
-    private Animator animator;              // Référence à l'Animator pour déclencher les animations.
-    private Vector3 velocity;               // Vitesse verticale (gravité / saut).
-    private Vector3 horizontalVelocity;     // Vitesse horizontale, conservée en l'air pour éviter les changements brusques.
+    private CharacterController controller;                  // Référence au CharacterController Unity.
+    private Animator animator;                               // Référence à l'Animator pour déclencher les animations.
+
+    private Vector3 horizontalVelocity;                      // Vitesse appliquée sur le plan XZ.
+    private float verticalVelocity;                          // Vitesse verticale isolée pour un contrôle précis.
+    private Vector3 lastMoveDirection = Vector3.forward;     // Mémoire de la dernière direction significative (utile en l'air).
 
     // Verrouillage utilisé lorsque l'animation d'atterrissage est en cours pour éviter toute interruption.
     private bool landingAnimationLocked;
@@ -27,7 +33,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
     private Camera worldCamera;                       // Référence directe à la WorldCamera pour modifier son culling mask.
     private int worldBaseMask;                        // Sauvegarde du culling mask d'origine de la WorldCamera.
     private int revealInteractableLayer;              // ID de la couche "World_ReveLink_Interactable".
-    private int revealObjectLayer;                        // ID de la couche "World_ReveLink_Object".
+    private int revealObjectLayer;                    // ID de la couche "World_ReveLink_Object".
     private int revealUILayer;                        // ID de la couche "World_ReveLink_UI".
     private int revealMask;                           // Masque combinant les couches révélées par le lien.
 
@@ -48,6 +54,8 @@ public class ThirdPersonPlayerController : MonoBehaviour
     public bool isWalking;
     public bool isRunning;
     public bool isJumping;
+    public bool isFalling;
+    public bool isSliding;
 
     /// <summary>
     /// Autorise ou non la course. Peut être modifié par d'autres composants (zones, scripts...).
@@ -55,14 +63,16 @@ public class ThirdPersonPlayerController : MonoBehaviour
     [Tooltip("Si faux, l'input de sprint est ignoré et Lucian marche uniquement.")]
     public bool canRun = true;
 
-    /// <summary>Indique si le personnage touche le sol.</summary>
-    public bool isGrounded => controller.isGrounded;
+    /// <summary>Indique si le personnage touche le sol de manière fiable.</summary>
+    public bool isGrounded => groundedStable;
 
-    [Header("Mouvement")]
+    [Header("Vitesses de base")]
     [Tooltip("Vitesse de marche en unités/seconde.")]
     public float walkSpeed = 5f;
     [Tooltip("Vitesse de course en unités/seconde.")]
     public float runSpeed = 8f;
+
+    [Header("Saut & Gravité")]
     [Tooltip("Hauteur du saut en unités.")]
     public float jumpHeight = 2f;
     [Tooltip("Gravité appliquée au personnage.")]
@@ -73,6 +83,8 @@ public class ThirdPersonPlayerController : MonoBehaviour
     public float ascentGravityMultiplier = 1f;
     [Tooltip("Multiplicateur de gravité durant la descente pour accentuer l'inertie.")]
     public float fallGravityMultiplier = 2f;
+    [Tooltip("Limite de vitesse de chute pour éviter des valeurs extrêmes.")]
+    public float terminalVelocity = -35f;
     [Tooltip("Force dirigée vers le bas appliquée à l'atterrissage pour renforcer l'impact.")]
     public float landingForce = 5f;
 
@@ -81,22 +93,57 @@ public class ThirdPersonPlayerController : MonoBehaviour
     public float acceleration = 20f;
     [Tooltip("Taux de décélération en unités/seconde².")]
     public float deceleration = 25f;
+    [Tooltip("Vitesse de rotation du personnage pour suivre la direction de déplacement.")]
+    public float orientationLerpSpeed = 12f;
+    [Range(0f, 1f), Tooltip("Pourcentage d'influence conservé en l'air.")]
+    public float airControlPercent = 0.35f;
 
-    private float currentSpeed; // Vitesse courant (accélération/décélération progressive).
+    private float currentSpeed; // Vitesse courante (accélération/décélération progressive).
 
-    [Header("Course")]
+    [Header("Gestion du sprint")]
     [Tooltip("Durée durant laquelle la course reste active après avoir relâché l'input (secondes).")]
     public float runReleaseDelay = 1f;
 
     private float runReleaseTimer;
 
-    [Header("Détection des vides")]
+    [Header("Détection du sol & des pentes")]
+    [Tooltip("Décalage vertical pour la détection de sol (évite que le SphereCast parte trop bas).")]
+    public float groundCheckOffset = 0.3f;
+    [Tooltip("Distance maximale de détection du sol sous le personnage.")]
+    public float groundCheckDistance = 0.6f;
+    [Tooltip("Facteur appliqué au rayon du CharacterController pour le SphereCast.")]
+    [Range(0.5f, 1f)] public float groundProbeRadiusFactor = 0.9f;
+    [Tooltip("Force qui plaque le personnage au sol quand il y retouche.")]
+    public float groundStickForce = 6f;
+    [Tooltip("Couches reconnues comme du sol.")]
+    public LayerMask groundLayer = ~0; // Par défaut : toutes les couches.
+    [Tooltip("Vitesse maximale atteinte lors d'un glissement sur une pente trop raide.")]
+    public float slopeSlideSpeed = 6f;
+    [Tooltip("Vitesse à laquelle la glissade rejoint la vitesse cible.")]
+    public float slopeSlideAcceleration = 30f;
+
+    [Header("Sécurité contre le vide")]
     [Tooltip("Distance avant le personnage utilisée pour vérifier la présence du sol.")]
     public float voidCheckDistance = 1f;
-    [Tooltip("Profondeur minimale du raycast pour considérer qu'il y a du sol.")]
+    [Tooltip("Profondeur minimale pour considérer qu'il y a du sol lors du raycast avant.")]
     public float voidCheckDepth = 2f;
-    [Tooltip("Couches reconnues comme du sol lors de la détection des vides.")]
-    public LayerMask groundLayer = ~0; // Par défaut : toutes les couches.
+
+    [Header("Aides au saut")]
+    [Tooltip("Temps pendant lequel un saut reste possible après avoir quitté le sol (coyote time).")]
+    public float coyoteTime = 0.15f;
+    [Tooltip("Temps pendant lequel un appui sur Saut est mémorisé avant l'atterrissage (jump buffer).")]
+    public float jumpBufferTime = 0.2f;
+
+    private bool groundedStable;                            // Résultat consolidé de la détection de sol.
+    private bool wasGroundedLastFrame;                      // Permet d'identifier les transitions sol/air.
+    private Vector3 groundNormal = Vector3.up;              // Normale actuelle du sol sous le joueur.
+    private Vector3 slopeSlideDirection = Vector3.zero;     // Direction naturelle de glissade sur pentes trop raides.
+    private float lastGroundedTimestamp = float.NegativeInfinity;   // Dernière fois où le joueur était considéré comme au sol.
+    private float lastJumpPressedTimestamp = float.NegativeInfinity;// Dernière fois où le bouton de saut a été pressé.
+
+    // Cache des inputs lus à chaque frame pour éviter de multiples accès au système d'inputs.
+    private Vector2 moveInput;
+    private bool runPressed;
 
     private const float locomotionCrossFadeDuration = 0.1f;
 
@@ -133,11 +180,14 @@ public class ThirdPersonPlayerController : MonoBehaviour
         revealObjectLayer = LayerMask.NameToLayer("World_ReveLink_Object");
         revealUILayer = LayerMask.NameToLayer("World_ReveLink_UI");
         if (revealInteractableLayer != -1) revealMask |= 1 << revealInteractableLayer; // Ajout de la couche interactable
-        if (revealObjectLayer != -1) revealMask |= 1 << revealObjectLayer;                     // Ajout de la couche d'UI
+        if (revealObjectLayer != -1) revealMask |= 1 << revealObjectLayer;             // Ajout de la couche objet
         if (revealUILayer != -1) revealMask |= 1 << revealUILayer;                     // Ajout de la couche d'UI
 
         previousLinkToMunin = !linkToMunin; // Force un rafraîchissement au démarrage
         ApplyMuninLinkState();              // Applique immédiatement l'état visuel adéquat
+
+        wasGroundedLastFrame = controller.isGrounded;
+        groundedStable = wasGroundedLastFrame;
     }
 
     void Update()
@@ -146,29 +196,293 @@ public class ThirdPersonPlayerController : MonoBehaviour
         if (linkToMunin != previousLinkToMunin)
             ApplyMuninLinkState();
 
-        HandleMovement();      // Déplacement horizontal + orientation.
-        ApplyGravity();        // Déplacement vertical (gravité / saut).
-        UpdateJumpAnimation(); // Gestion de la boucle de saut en l'air.
-        UpdateLandingLock();   // Déverrouillage après l'animation d'atterrissage.
+        CacheInputs();           // Centralise la lecture des entrées.
+        EvaluateGroundState();   // Analyse précise du sol et des pentes.
+        HandleHorizontalMove();  // Gestion de l'inertie sur le plan XZ.
+        HandleVerticalMove();    // Application des aides au saut et de la gravité.
+        UpdateMovementAnimation();
+        UpdateJumpAnimation();
+        UpdateLandingLock();
     }
 
-    public void ToggleMuninLink()
+    /// <summary>
+    /// Mémorise les entrées de la frame pour alimenter les différentes étapes du cycle de mise à jour.
+    /// </summary>
+    private void CacheInputs()
     {
-        if(linkToMunin)
-            linkToMunin = false;
+        moveInput = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
+        runPressed = canRun && InputsManager.Instance.playerInputs.World.Run.IsPressed();
+
+        // Buffer de relâchement du sprint (évite ping-pong marche/course).
+        if (runPressed) runReleaseTimer = runReleaseDelay;
+        else runReleaseTimer = Mathf.Max(runReleaseTimer - Time.deltaTime, 0f);
+
+        // Si la course est désactivée par une zone, on vide immédiatement le buffer.
+        if (!canRun)
+        {
+            runReleaseTimer = 0f;
+            runPressed = false;
+        }
+
+        if (InputsManager.Instance.playerInputs.World.Jump.triggered)
+        {
+            lastJumpPressedTimestamp = Time.time;
+        }
+    }
+
+    /// <summary>
+    /// Analyse le sol sous le personnage pour déterminer un état "grounded" stable et détecter les pentes.
+    /// </summary>
+    private void EvaluateGroundState()
+    {
+        bool controllerGrounded = controller.isGrounded;
+        Vector3 sphereOrigin = controller.bounds.center + Vector3.up * groundCheckOffset;
+        float sphereRadius = controller.radius * groundProbeRadiusFactor;
+        float castDistance = groundCheckDistance + controller.skinWidth;
+
+        int mask = groundLayer.value == 0 ? Physics.DefaultRaycastLayers : groundLayer;
+
+        bool hitGround = Physics.SphereCast(
+            sphereOrigin,
+            sphereRadius,
+            Vector3.down,
+            out RaycastHit hitInfo,
+            castDistance,
+            mask,
+            QueryTriggerInteraction.Ignore);
+
+        groundNormal = Vector3.up;
+        slopeSlideDirection = Vector3.zero;
+        isSliding = false;
+
+        bool validGround = controllerGrounded;
+
+        if (hitGround)
+        {
+            groundNormal = hitInfo.normal;
+            float slopeAngle = Vector3.Angle(hitInfo.normal, Vector3.up);
+            bool tooSteep = slopeAngle > controller.slopeLimit;
+
+            // On considère le personnage comme au sol si le SphereCast touche à une distance raisonnable.
+            if (hitInfo.distance <= castDistance + 0.05f && !tooSteep)
+            {
+                validGround = true;
+            }
+
+            // Prépare la glissade sur les pentes trop raides.
+            if (controllerGrounded && tooSteep)
+            {
+                isSliding = true;
+                slopeSlideDirection = Vector3.ProjectOnPlane(Vector3.down, hitInfo.normal).normalized;
+            }
+        }
+
+        groundedStable = validGround;
+
+        // Détection des transitions sol ↔ air.
+        if (groundedStable)
+        {
+            lastGroundedTimestamp = Time.time;
+            isFalling = false;
+
+            if (!wasGroundedLastFrame && isJumping)
+            {
+                // Atterrissage : on applique une impulsion vers le bas et on déclenche l'animation dédiée.
+                bool moving = horizontalVelocity.sqrMagnitude > 0.01f;
+                if (animator != null)
+                {
+                    if (moving) animator.Play("Landing_OnMove");
+                    else animator.Play("Landing");
+                }
+
+                verticalVelocity = -landingForce;
+                isJumping = false;
+                landingAnimationLocked = true;
+                currentAnimState = MovementAnimation.IsLanding;
+            }
+
+            // Lorsque l'on est collé au sol, on évite les oscillations verticales.
+            if (verticalVelocity < -groundStickForce)
+            {
+                verticalVelocity = -groundStickForce;
+            }
+        }
         else
-            linkToMunin = true;
+        {
+            if (wasGroundedLastFrame && !isJumping)
+            {
+                // Transition sol → air sans saut explicite : on considère qu'on tombe.
+                isFalling = true;
+            }
+        }
+
+        wasGroundedLastFrame = groundedStable;
     }
 
-    public void LinkMuninToLucian()
+    /// <summary>
+    /// Gestion du déplacement horizontal avec inertie, contrôle aérien et glissades.
+    /// </summary>
+    private void HandleHorizontalMove()
     {
-        linkToMunin = true;
+        if (cameraTransform == null)
+            return;
+
+        // Direction voulue relative à la caméra (plan XZ).
+        Vector3 camForward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
+        Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right, Vector3.up).normalized;
+        Vector3 desiredMove = camForward * moveInput.y + camRight * moveInput.x;
+
+        if (desiredMove.sqrMagnitude > 1f)
+            desiredMove.Normalize();
+        else
+            desiredMove = desiredMove.normalized;
+
+        bool hasInput = moveInput.sqrMagnitude > 0.01f;
+        bool runBuffered = runPressed || runReleaseTimer > 0f;
+
+        // La course est possible uniquement si canRun est vrai.
+        isRunning = hasInput && runBuffered && canRun && !isSliding;
+        isWalking = hasInput && (!runBuffered || !canRun) && !isSliding;
+
+        float targetSpeed = 0f;
+        if (hasInput)
+            targetSpeed = isRunning ? runSpeed : walkSpeed;
+
+        float accelRate = targetSpeed > currentSpeed ? acceleration : deceleration;
+
+        if (groundedStable && hasInput && !IsGroundAhead(desiredMove))
+        {
+            // Pas de sol devant → annule la vitesse horizontale pour éviter les chutes involontaires.
+            targetSpeed = 0f;
+            currentSpeed = 0f;
+            horizontalVelocity = Vector3.zero;
+            hasInput = false;
+        }
+        else
+        {
+            currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, accelRate * Time.deltaTime);
+        }
+
+        Vector3 effectiveDirection = desiredMove;
+
+        if (isSliding)
+        {
+            // Mélange la direction de glisse naturelle avec l'influence du joueur.
+            Vector3 slideDirection = slopeSlideDirection;
+            if (slideDirection == Vector3.zero)
+                slideDirection = Vector3.ProjectOnPlane(Vector3.down, groundNormal).normalized;
+
+            Vector3 controlDirection = desiredMove.sqrMagnitude > 0.001f ? Vector3.ProjectOnPlane(desiredMove, groundNormal).normalized : Vector3.zero;
+            Vector3 combinedDirection = (slideDirection + controlDirection * airControlPercent).normalized;
+
+            currentSpeed = Mathf.MoveTowards(currentSpeed, slopeSlideSpeed, slopeSlideAcceleration * Time.deltaTime);
+            effectiveDirection = combinedDirection;
+        }
+        else if (!groundedStable)
+        {
+            if (lastMoveDirection == Vector3.zero)
+                lastMoveDirection = transform.forward;
+
+            if (desiredMove.sqrMagnitude > 0.001f)
+                effectiveDirection = Vector3.Slerp(lastMoveDirection, desiredMove, airControlPercent);
+            else
+                effectiveDirection = lastMoveDirection;
+        }
+        else if (!hasInput && horizontalVelocity.sqrMagnitude > 0.001f)
+        {
+            // Maintient légèrement l'inertie au sol lorsqu'on relâche les inputs.
+            effectiveDirection = horizontalVelocity.normalized;
+        }
+
+        if (effectiveDirection.sqrMagnitude > 0.001f)
+        {
+            if (groundedStable && !isSliding)
+            {
+                // Épouse la pente pour éviter que le personnage ne "flotte".
+                effectiveDirection = Vector3.ProjectOnPlane(effectiveDirection, groundNormal).normalized;
+            }
+
+            horizontalVelocity = effectiveDirection * currentSpeed;
+            lastMoveDirection = effectiveDirection;
+        }
+        else
+        {
+            horizontalVelocity = Vector3.Lerp(horizontalVelocity, Vector3.zero, deceleration * Time.deltaTime);
+        }
+
+        controller.Move(horizontalVelocity * Time.deltaTime);
+
+        // Orientation (autorisé en l'air pour du contrôle visuel).
+        Vector3 lookDirection = horizontalVelocity.sqrMagnitude > 0.0001f ? horizontalVelocity : effectiveDirection;
+        if (lookDirection.sqrMagnitude > 0.001f)
+        {
+            Quaternion targetRot = Quaternion.LookRotation(lookDirection);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, orientationLerpSpeed * Time.deltaTime);
+        }
+    }
+
+    /// <summary>
+    /// Gestion du saut intelligent et de la gravité non linéaire.
+    /// </summary>
+    private void HandleVerticalMove()
+    {
+        bool recentlyGrounded = Time.time - lastGroundedTimestamp <= coyoteTime;
+        bool jumpBuffered = Time.time - lastJumpPressedTimestamp <= jumpBufferTime;
+
+        if (jumpBuffered && recentlyGrounded && !landingAnimationLocked)
+        {
+            float baseJumpVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            verticalVelocity = baseJumpVelocity * jumpBoost;
+            isJumping = true;
+            isFalling = false;
+            lastJumpPressedTimestamp = float.NegativeInfinity;
+
+            if (animator != null)
+            {
+                animator.Play("Jump_Start");
+            }
+        }
+
+        if (groundedStable && verticalVelocity < 0f)
+        {
+            // Plaque légèrement le personnage au sol pour éviter les micro-sauts.
+            verticalVelocity = -groundStickForce;
+        }
+        else
+        {
+            float gravityMultiplier = verticalVelocity > 0f ? ascentGravityMultiplier : fallGravityMultiplier;
+            verticalVelocity += gravity * gravityMultiplier * Time.deltaTime;
+            verticalVelocity = Mathf.Max(verticalVelocity, terminalVelocity);
+        }
+
+        if (!groundedStable && verticalVelocity < 0f)
+        {
+            isFalling = true;
+        }
+
+        controller.Move(new Vector3(0f, verticalVelocity, 0f) * Time.deltaTime);
+    }
+
+    /// <summary>
+    /// Évite les chutes involontaires : vérifie s'il y a du sol devant.
+    /// </summary>
+    private bool IsGroundAhead(Vector3 direction)
+    {
+        if (direction.sqrMagnitude < 0.01f)
+            return true;
+
+        Vector3 origin = controller.bounds.center + Vector3.up * 0.05f;
+        float checkDistance = controller.radius + voidCheckDistance;
+        Vector3 checkPos = origin + direction.normalized * checkDistance;
+
+        int mask = groundLayer.value == 0 ? Physics.DefaultRaycastLayers : groundLayer;
+        return Physics.Raycast(checkPos, Vector3.down, voidCheckDepth, mask, QueryTriggerInteraction.Ignore);
     }
 
     /// <summary>
     /// Sélectionne et lance les animations de locomotion (idle/walk/run) sans paramètres Animator.
     /// </summary>
-    void UpdateMovementAnimation()
+    private void UpdateMovementAnimation()
     {
         if (animator == null || isJumping || landingAnimationLocked)
             return;
@@ -200,132 +514,9 @@ public class ThirdPersonPlayerController : MonoBehaviour
     }
 
     /// <summary>
-    /// Lecture des inputs, calcul de la vitesse horizontale, orientation du personnage.
-    /// </summary>
-    void HandleMovement()
-    {
-        if (cameraTransform == null)
-            return;
-
-        // Axes de déplacement (WASD / stick gauche).
-        Vector2 input = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
-
-        // Lecture du bouton de sprint uniquement si la course est autorisée.
-        bool runPressed = canRun && InputsManager.Instance.playerInputs.World.Run.IsPressed();
-
-        // Buffer de relâchement du sprint (évite ping-pong marche/course).
-        if (runPressed) runReleaseTimer = runReleaseDelay;
-        else runReleaseTimer = Mathf.Max(runReleaseTimer - Time.deltaTime, 0f);
-
-        // Si la course est désactivée par une zone, on vide immédiatement le buffer.
-        if (!canRun)
-            runReleaseTimer = 0f;
-
-        // Direction voulue relative à la caméra (plan XZ).
-        Vector3 camForward = Vector3.ProjectOnPlane(cameraTransform.forward, Vector3.up).normalized;
-        Vector3 camRight = Vector3.ProjectOnPlane(cameraTransform.right, Vector3.up).normalized;
-        Vector3 desiredMove = camForward * input.y + camRight * input.x;
-
-        bool hasInput = input.sqrMagnitude > 0.01f;
-        bool runBuffered = runPressed || runReleaseTimer > 0f;
-
-        // La course est possible uniquement si canRun est vrai.
-        isRunning = hasInput && runBuffered && canRun;
-        isWalking = hasInput && (!runBuffered || !canRun);
-
-        float targetSpeed = isRunning ? runSpeed : (isWalking ? walkSpeed : 0f);
-        float accelRate = targetSpeed > currentSpeed ? acceleration : deceleration;
-
-        if (controller.isGrounded)
-        {
-            if (!IsGroundAhead(desiredMove))
-            {
-                // Pas de sol devant → annule la vitesse horizontale.
-                targetSpeed = 0f;
-                currentSpeed = 0f;
-                horizontalVelocity = Vector3.zero;
-            }
-            else
-            {
-                currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, accelRate * Time.deltaTime);
-                horizontalVelocity = desiredMove.normalized * currentSpeed; // Mémorisée pour l'air.
-            }
-        }
-
-        // Déplacement horizontal par code (animations in-place).
-        controller.Move(horizontalVelocity * Time.deltaTime);
-
-        // Orientation (autorisé en l'air pour du contrôle visuel).
-        if (desiredMove.sqrMagnitude > 0.0001f)
-        {
-            Quaternion targetRot = Quaternion.LookRotation(desiredMove);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, 10f * Time.deltaTime);
-        }
-
-        // Saut
-        if (InputsManager.Instance.playerInputs.World.Jump.triggered && controller.isGrounded && !landingAnimationLocked)
-        {
-            float baseJumpVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
-            velocity.y = baseJumpVelocity * jumpBoost;
-            isJumping = true;
-
-            if (animator != null) animator.Play("Jump_Start");
-        }
-
-        UpdateMovementAnimation();
-    }
-
-    /// <summary>
-    /// Évite les chutes involontaires : vérifie s'il y a du sol devant.
-    /// </summary>
-    bool IsGroundAhead(Vector3 direction)
-    {
-        if (direction.sqrMagnitude < 0.01f)
-            return true;
-
-        Vector3 origin = controller.bounds.center + direction.normalized * voidCheckDistance;
-        return Physics.Raycast(origin, Vector3.down, voidCheckDepth, groundLayer);
-    }
-
-    /// <summary>
-    /// Gravité non linéaire et déplacement vertical.
-    /// </summary>
-    void ApplyGravity()
-    {
-        if (controller.isGrounded && velocity.y < 0f)
-        {
-            if (isJumping && animator != null)
-            {
-                // Choix du landing selon la vitesse horizontale conservée en l'air.
-                bool isMoving = horizontalVelocity.sqrMagnitude > 0.01f;
-
-                if (isMoving) animator.Play("Landing_OnMove");
-                else animator.Play("Landing");
-
-                velocity.y = -landingForce;     // Petit impact vers le bas.
-                isJumping = false;
-                landingAnimationLocked = true;  // Empêche qu'on écrase l'atterrissage.
-                currentAnimState = MovementAnimation.IsLanding;
-            }
-            else
-            {
-                velocity.y = -2f; // Ancrage au sol.
-            }
-        }
-        else
-        {
-            float gravityMultiplier = velocity.y > 0f ? ascentGravityMultiplier : fallGravityMultiplier;
-            velocity.y += gravity * gravityMultiplier * Time.deltaTime;
-        }
-
-        // Mouvement vertical (séparé du horizontal).
-        controller.Move(new Vector3(0f, velocity.y, 0f) * Time.deltaTime);
-    }
-
-    /// <summary>
     /// Enchaîne automatiquement vers la boucle de saut quand l'anticipation est finie.
     /// </summary>
-    void UpdateJumpAnimation()
+    private void UpdateJumpAnimation()
     {
         if (!isJumping || animator == null)
             return;
@@ -340,7 +531,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
     /// <summary>
     /// Libère le verrou une fois l'animation d'atterrissage terminée et relance la bonne locomotion.
     /// </summary>
-    void UpdateLandingLock()
+    private void UpdateLandingLock()
     {
         if (!landingAnimationLocked || animator == null)
             return;
@@ -354,7 +545,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
             if (isRunning)
             {
                 targetState = MovementAnimation.Run;
-                animator.Play("Run Start"); // Ou "Run" direct si le start est trop long.
+                animator.Play("Run Start");
             }
             else if (isWalking)
             {
@@ -371,12 +562,22 @@ public class ThirdPersonPlayerController : MonoBehaviour
         }
     }
 
+    public void ToggleMuninLink()
+    {
+        linkToMunin = !linkToMunin;
+    }
+
+    public void LinkMuninToLucian()
+    {
+        linkToMunin = true;
+    }
+
     /// <summary>
     /// Applique les effets visuels associés au lien entre Lucian et Munin.
     /// Gère à la fois l'affichage via le culling mask de la WorldCamera et
     /// l'activation des objets placés sur les couches dédiées.
     /// </summary>
-    void ApplyMuninLinkState()
+    private void ApplyMuninLinkState()
     {
         // Sécurités : certaines scènes ou tests peuvent ne pas disposer d'une WorldCamera.
         if (worldCamera != null)
