@@ -537,9 +537,19 @@ public class ThirdPersonPlayerController : MonoBehaviour
             return;
 
         AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
-        if ((state.IsName("Landing") || state.IsName("Landing_OnMove")) && state.normalizedTime >= 1f)
+
+        // L'état peut quitter "Landing" avant d'atteindre normalizedTime = 1 si l'Animator
+        // possède une transition automatique (exit time < 1). Dans ce cas le verrou ne serait jamais
+        // levé et empêcherait définitivement tout nouveau saut. On surveille donc à la fois
+        // l'avancement de l'animation ET le fait d'être encore dans l'un des états de landing.
+        bool isInLandingState = state.IsName("Landing") || state.IsName("Landing_OnMove");
+
+        // On libère le verrou si :
+        // 1. L'animation d'atterrissage est arrivée à son terme (normalizedTime >= 1).
+        // 2. Ou si l'Animator a déjà transitionné vers une autre animation (plus de landing en cours).
+        if ((isInLandingState && state.normalizedTime >= 1f) || !isInLandingState)
         {
-            landingAnimationLocked = false;
+            landingAnimationLocked = false; // Permet de rejouer les animations de locomotion et d'autoriser le saut.
 
             MovementAnimation targetState;
             if (isRunning)
