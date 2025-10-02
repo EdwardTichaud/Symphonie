@@ -24,6 +24,26 @@ public class CharacterController3D : MonoBehaviour
     public float gravity = -9.81f;
     public float rotationSpeed = 10f;
 
+    [Header("Jump & Fall Settings")]
+    [Tooltip("Temps pendant lequel un saut reste possible après avoir quitté le sol (Coyote Time).")]
+    public float coyoteTime = 0.2f;
+    [Tooltip("Temps pendant lequel un appui sur Saut est mémorisé avant l'atterrissage (Jump Buffer).")]
+    public float jumpBufferTime = 0.2f;
+    [Tooltip("Multiplicateur appliqué à la gravité lorsque le personnage monte.")]
+    public float jumpGravityMultiplier = 1f;
+    [Tooltip("Multiplicateur appliqué à la gravité lorsque le personnage chute.")]
+    public float fallGravityMultiplier = 2f;
+    [Tooltip("Limite de vitesse de chute pour éviter des valeurs extrêmes.")]
+    public float terminalVelocity = -30f;
+
+    [Header("Slope & Air Control Settings")]
+    [Tooltip("Vitesse maximale atteinte lors d'un glissement sur une pente trop raide.")]
+    public float slopeSlideSpeed = 6f;
+    [Tooltip("Vitesse à laquelle le glissement rejoint la vitesse cible.")]
+    public float slopeSlideAcceleration = 25f;
+    [Range(0f, 1f), Tooltip("Pourcentage de contrôle conservé dans les airs. 0 = aucun contrôle, 1 = contrôle total.")]
+    public float airControlPercent = 0.35f;
+
     [Header("Inertia Settings")]
     [Tooltip("Accélération appliquée lors du démarrage d'un déplacement")]
     public float acceleration = 15f;
@@ -37,7 +57,11 @@ public class CharacterController3D : MonoBehaviour
     public LayerMask groundLayer;
 
     private Vector3 velocity;
-    private bool jumpRequested = false;
+    private Vector3 groundNormal = Vector3.up;
+    private Vector3 slopeSlideDirection = Vector3.zero;
+    private Vector3 lastMoveDirection = Vector3.forward;
+    private float lastGroundedTimestamp = float.NegativeInfinity;
+    private float lastJumpPressedTimestamp = float.NegativeInfinity;
 
     [Header("Debug Movement State")]
     public bool isGrounded;
@@ -46,6 +70,8 @@ public class CharacterController3D : MonoBehaviour
     public bool isRunning;
     public bool wasRunning;
     public bool isJumping;
+    public bool isFalling;
+    public bool isSliding;
     public bool isHurt;
     public bool isDodging;
     public bool isDead;
@@ -88,8 +114,8 @@ public class CharacterController3D : MonoBehaviour
     void Update()
     {
         if (!controller.enabled) return;
-        isGrounded = controller.isGrounded;
 
+        EvaluateGroundState();
         ReadInputs();
         HandleMovement();
         ApplyGravity();
@@ -101,19 +127,25 @@ public class CharacterController3D : MonoBehaviour
     private void ReadInputs()
     {
         Vector2 moveInput = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
+
+        // Stocke l'état précédent avant de calculer le nouvel état (utile pour détecter les transitions).
+        wasWalking = isWalking;
+        wasRunning = isRunning;
+
         bool movePressed = moveInput.magnitude > 0.1f;
         bool runPressed = InputsManager.Instance.playerInputs.World.Run.IsPressed();
         bool dashTrigger = InputsManager.Instance.playerInputs.World.Dash.triggered;
 
         isRunning = movePressed && runPressed;
         isWalking = movePressed && !isRunning;
-        dashTriggered = dashTrigger && !isRunning && !isWalking && !isJumping && !isDodging && !isHurt;
 
-        wasWalking = isWalking;
-        wasRunning = isRunning;
+        dashTriggered = dashTrigger && !isRunning && !isWalking && !isJumping && !isDodging && !isHurt && !isFalling && !isSliding;
 
-        if (InputsManager.Instance.playerInputs.World.Jump.triggered && controller.isGrounded)
-            jumpRequested = true;
+        // Mémorise le dernier appui sur Saut pour gérer intelligemment les buffers et le coyote time.
+        if (InputsManager.Instance.playerInputs.World.Jump.triggered)
+        {
+            lastJumpPressedTimestamp = Time.time;
+        }
     }
 
     /// <summary>
@@ -124,27 +156,35 @@ public class CharacterController3D : MonoBehaviour
         Vector2 moveInput = InputsManager.Instance.playerInputs.World.Move.ReadValue<Vector2>();
 
         // Toujours appeler la logique de déplacement afin de gérer l'inertie
+        Vector3 desiredMove;
+
         if (movementMode == MovementMode.FixedCamera)
         {
-            HandleFixedCameraMovement(moveInput);
+            desiredMove = HandleFixedCameraMovement(moveInput);
         }
-        else if (movementMode == MovementMode.TPSOverShoulder)
+        else // MovementMode.TPSOverShoulder
         {
-            HandleTPSOverShoulderMovement(moveInput);
+            desiredMove = HandleTPSOverShoulderMovement(moveInput);
         }
 
-        if (jumpRequested)
+        bool hasInput = desiredMove.sqrMagnitude > 0.001f;
+
+        if (isSliding)
         {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
-            isJumping = true;
-            jumpRequested = false;
+            ApplySlopeSlide(desiredMove);
         }
+        else
+        {
+            MoveWithInertia(desiredMove, hasInput);
+        }
+
+        TryConsumeBufferedJump();
     }
 
     /// <summary>
     /// Mouvement adapté aux caméras fixes.
     /// </summary>
-    private void HandleFixedCameraMovement(Vector2 moveInput)
+    private Vector3 HandleFixedCameraMovement(Vector2 moveInput)
     {
         Vector3 camForward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
         Vector3 camRight = Vector3.ProjectOnPlane(Camera.main.transform.right, Vector3.up).normalized;
@@ -165,13 +205,13 @@ public class CharacterController3D : MonoBehaviour
             transform.rotation = Quaternion.Euler(0, angle, 0);
         }
 
-        MoveWithInertia(moveDir);
+        return moveDir;
     }
 
     /// <summary>
     /// Mouvement en vue TPS épaulière avec auto alignement.
     /// </summary>
-    private void HandleTPSOverShoulderMovement(Vector2 moveInput)
+    private Vector3 HandleTPSOverShoulderMovement(Vector2 moveInput)
     {
         Vector3 camForward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
         Vector3 camRight = Vector3.ProjectOnPlane(Camera.main.transform.right, Vector3.up).normalized;
@@ -207,20 +247,43 @@ public class CharacterController3D : MonoBehaviour
             }
         }
 
-        // Applique le déplacement avec inertie, même lorsqu'il n'y a plus d'entrée
-        MoveWithInertia(moveDir);
+        return moveDir;
     }
 
     /// <summary>
     /// Calcule et applique la vitesse avec inertie selon la direction souhaitée.
     /// </summary>
     /// <param name="moveDir">Direction de déplacement normalisée.</param>
-    private void MoveWithInertia(Vector3 moveDir)
+    private void MoveWithInertia(Vector3 moveDir, bool hasInput)
     {
         // Détermine la vitesse cible en fonction de l'état courant
         float targetSpeed = isRunning ? runSpeed : moveSpeed;
 
-        if (moveDir.sqrMagnitude > 0.001f)
+        Vector3 effectiveDirection = moveDir;
+
+        if (lastMoveDirection == Vector3.zero)
+        {
+            // Évite les artefacts lors du premier saut en fournissant une direction de référence.
+            lastMoveDirection = transform.forward;
+        }
+
+        if (!isGrounded && moveDir.sqrMagnitude > 0.001f)
+        {
+            // Interpole la direction pour conserver un peu d'influence en l'air selon la configuration.
+            effectiveDirection = Vector3.Slerp(lastMoveDirection, moveDir, airControlPercent);
+            effectiveDirection.Normalize();
+        }
+        else if (!hasInput && currentSpeed > 0.01f)
+        {
+            // Recycle la dernière direction connue pour prolonger légèrement l'inertie au sol.
+            Vector3 planarDirection = Vector3.ProjectOnPlane(lastMoveDirection, Vector3.up);
+            if (planarDirection.sqrMagnitude > 0.001f)
+            {
+                effectiveDirection = planarDirection.normalized;
+            }
+        }
+
+        if (hasInput)
         {
             // Accélère progressivement jusqu'à la vitesse cible
             currentSpeed = Mathf.MoveTowards(currentSpeed, targetSpeed, acceleration * Time.deltaTime);
@@ -231,7 +294,12 @@ public class CharacterController3D : MonoBehaviour
             currentSpeed = Mathf.MoveTowards(currentSpeed, 0f, deceleration * Time.deltaTime);
         }
 
-        controller.Move(moveDir * currentSpeed * Time.deltaTime);
+        controller.Move(effectiveDirection * currentSpeed * Time.deltaTime);
+
+        if (effectiveDirection.sqrMagnitude > 0.001f)
+        {
+            lastMoveDirection = effectiveDirection;
+        }
     }
 
     private float turnSmoothVelocity;
@@ -245,7 +313,9 @@ public class CharacterController3D : MonoBehaviour
         float checkDistance = controller.radius + 0.1f;
         Vector3 checkPos = origin + direction * checkDistance;
 
-        if (groundLayer == 0 || Physics.Raycast(checkPos, Vector3.down, out RaycastHit hit, groundCheckDistance, groundLayer))
+        int layerMask = groundLayer == 0 ? Physics.DefaultRaycastLayers : groundLayer;
+
+        if (Physics.Raycast(checkPos, Vector3.down, out RaycastHit hit, groundCheckDistance, layerMask))
         {
             return true;
         }
@@ -261,10 +331,101 @@ public class CharacterController3D : MonoBehaviour
         {
             velocity.y = -2f;
             isJumping = false;
+            isFalling = false;
         }
 
-        velocity.y += gravity * Time.deltaTime;
+        float gravityMultiplier = velocity.y > 0 ? jumpGravityMultiplier : fallGravityMultiplier;
+        velocity.y += gravity * gravityMultiplier * Time.deltaTime;
+        velocity.y = Mathf.Max(velocity.y, terminalVelocity);
         controller.Move(velocity * Time.deltaTime);
+    }
+
+    /// <summary>
+    /// Évalue l'état du sol, détecte les pentes et met à jour les indicateurs de glissade/chute.
+    /// </summary>
+    private void EvaluateGroundState()
+    {
+        isGrounded = controller.isGrounded;
+
+        Vector3 rayOrigin = transform.position + Vector3.up * 0.2f;
+        float sphereRadius = controller.radius * 0.95f;
+        // Le SphereCast évite les faux négatifs lors de légères dénivellations.
+        int layerMask = groundLayer == 0 ? Physics.DefaultRaycastLayers : groundLayer;
+        bool hitGround = Physics.SphereCast(rayOrigin, sphereRadius, Vector3.down, out RaycastHit hitInfo, groundCheckDistance, layerMask);
+
+        if (hitGround)
+        {
+            groundNormal = hitInfo.normal;
+            float slopeAngle = Vector3.Angle(hitInfo.normal, Vector3.up);
+            bool tooSteep = slopeAngle > controller.slopeLimit;
+
+            slopeSlideDirection = Vector3.ProjectOnPlane(Vector3.down, hitInfo.normal).normalized;
+            isSliding = isGrounded && tooSteep;
+
+            if (isGrounded)
+            {
+                lastGroundedTimestamp = Time.time;
+
+                if (velocity.y < 0f)
+                {
+                    velocity.y = -2f; // Valeur légère pour coller le personnage au sol.
+                }
+
+                isJumping = false;
+                isFalling = false;
+            }
+        }
+        else
+        {
+            groundNormal = Vector3.up;
+            slopeSlideDirection = Vector3.zero;
+            isSliding = false;
+        }
+
+        if (!isGrounded && velocity.y < -0.1f)
+        {
+            isFalling = true;
+        }
+    }
+
+    /// <summary>
+    /// Consomme un saut mémorisé si les conditions le permettent (coyote time & jump buffer).
+    /// </summary>
+    private void TryConsumeBufferedJump()
+    {
+        bool recentlyGrounded = Time.time - lastGroundedTimestamp <= coyoteTime;
+        bool jumpBuffered = Time.time - lastJumpPressedTimestamp <= jumpBufferTime;
+
+        if (recentlyGrounded && jumpBuffered)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            isJumping = true;
+            isFalling = false;
+            lastJumpPressedTimestamp = float.NegativeInfinity;
+        }
+    }
+
+    /// <summary>
+    /// Applique une glissade contrôlée lorsque la pente dépasse la slopeLimit du CharacterController.
+    /// </summary>
+    /// <param name="desiredMove">Direction souhaitée par le joueur pour conserver un minimum d'influence.</param>
+    private void ApplySlopeSlide(Vector3 desiredMove)
+    {
+        if (slopeSlideDirection == Vector3.zero)
+        {
+            slopeSlideDirection = Vector3.down;
+        }
+
+        Vector3 controlDirection = desiredMove.sqrMagnitude > 0.001f ? Vector3.ProjectOnPlane(desiredMove, groundNormal).normalized : Vector3.zero;
+        Vector3 slideDirection = slopeSlideDirection;
+
+        // Mélange la direction de glisse naturelle avec l'influence du joueur.
+        Vector3 combinedDirection = (slideDirection + controlDirection * airControlPercent).normalized;
+
+        currentSpeed = Mathf.MoveTowards(currentSpeed, slopeSlideSpeed, slopeSlideAcceleration * Time.deltaTime);
+        controller.Move(combinedDirection * currentSpeed * Time.deltaTime);
+
+        lastMoveDirection = combinedDirection;
     }
 
     #endregion
