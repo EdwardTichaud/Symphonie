@@ -119,18 +119,21 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Effet sonore joué lorsque les particules de dash sont générées pour cette unité.")]
     public AudioClipSO dashSoundClip;
 
-    public GameObject awakenEffect;
+    public GameObject awakenEffect_Start;
+    public GameObject awakenEffect_Loop;
+    public GameObject awakenEffect_End;
 
     [Header("Animations spéciales")]
     // Animation générique de dégâts
     public AnimationClip hitAnimation;                // Jouée quand l'unité subit des dégâts
-
     public AnimationClip deathAnimation;
 
     // Animations liées à la téléportation
     public AnimationClip TPAnimation_Start;           // Jouée avant la téléportation
     public AnimationClip TPAnimation_Destination;     // Jouée après la téléportation
     public AnimationClip prepareToUndergoAnimation;   // Prépare la cible à subir un coup
+
+    public AnimationClip awakenIdleAnimation;       // Jouée quand l'unité est en état Awake
 
     [Header("Timeline d'introduction")]
     [Tooltip("Timeline jouée lors de l'introduction du combat pour cette unité.")]
