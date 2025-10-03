@@ -1702,6 +1702,11 @@ public class NewBattleManager : MonoBehaviour
                     endingUnit.isInterceptionImmune = false;
             }
 
+            // ⏳ Gère la décrémentation des états temporaires (ancrage, suspension…)
+            //     directement sur l'unité afin que le BattleManager n'ait pas à
+            //     connaître les détails d'implémentation.
+            endingUnit.ProcessEndOfTurnStatuses();
+
             if (endingUnit.Data.characterType == CharacterType.SquadUnit && currentTurnDamage > maxTurnDamage)
             {
                 maxTurnDamage = currentTurnDamage;
