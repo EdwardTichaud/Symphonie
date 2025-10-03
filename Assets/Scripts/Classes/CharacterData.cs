@@ -119,6 +119,8 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Effet sonore joué lorsque les particules de dash sont générées pour cette unité.")]
     public AudioClipSO dashSoundClip;
 
+    public GameObject awakenEffect;
+
     [Header("Animations spéciales")]
     // Animation générique de dégâts
     public AnimationClip hitAnimation;                // Jouée quand l'unité subit des dégâts

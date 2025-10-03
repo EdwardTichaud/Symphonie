@@ -68,7 +68,7 @@ MonoBehaviour:
   defaultItemSetIndex: -1
   currentInitiative: 1
   currentRange: 9.55
-  currentHP: 10
+  currentHP: 50
   currentStrength: 1
   currentDefense: 1
   currentPower: 0
@@ -76,15 +76,16 @@ MonoBehaviour:
   currentVitality: 0
   currentSagacity: 0
   isPlayerControlled: 1
-  currentRage: 40
+  currentRage: 0
   currentFatigue: 0
   currentReflex: 0
   currentMobility: 0
   currentSpeed: 0
   currentInterceptionRange: 0
   currentInterceptionChance: 0
-  currentMusicalMoveSetIndex: -1
-  currentItemSetIndex: -1
+  currentHarmonicCharge: 1
+  currentMusicalMoveSetIndex: 0
+  currentItemSetIndex: 0
   hitSound: {fileID: 11400000, guid: e62c453f0c6e71b4d8a256bae33452d0, type: 2}
   criticalHitSound: {fileID: 11400000, guid: bd24b3bf43a46ab4fbd9d997c10c3134, type: 2}
   interceptedSound: {fileID: 11400000, guid: f98414021b3ac1b43a114401376cea1d, type: 2}
@@ -108,7 +109,7 @@ MonoBehaviour:
   weepForKaelDeath: {fileID: 0}
   weepForLinkDeath: {fileID: 0}
   weepForLunaDeath: {fileID: 0}
-  awakeHarmonicThreshold: 1
+  awakeHarmonicThreshold: 10
   dissonancePoint: 0
   baseHarmonicCharge: 1
   owner: {fileID: 0}
