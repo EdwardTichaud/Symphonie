@@ -66,6 +66,15 @@ public class AwakeState : UnitStateEffects
         // le déclenchement du loop VFX ainsi que le retour automatique sur l'Idle.
         cachedAwakeOnDuration = GetAnimationClipDuration(AnimatorAwakeOnStateName);
         cachedAwakeOffDuration = GetAnimationClipDuration(AnimatorAwakeOffStateName);
+
+        // Relie automatiquement les clips d'entrée/sortie configurés dans la fiche personnage.
+        if (unit != null && unit.Data != null)
+        {
+            if (unit.Data.awakeEnterClip != null)
+                enterClip = unit.Data.awakeEnterClip;
+            if (unit.Data.awakeExitClip != null)
+                exitClip = unit.Data.awakeExitClip;
+        }
     }
 
     public void EnterAwake()
@@ -73,6 +82,7 @@ public class AwakeState : UnitStateEffects
         if (isAwake) return;
         isAwake = true;
         ApplyStatBonus();
+        unit?.NotifyIdleStateExit(); // Le son de sortie d'Idle doit être joué avant la transition Awake.
         // Activation des ailes de feu lorsque le personnage entre en mode Awake
         if (fireWing != null)
             fireWing.SetActive(true);

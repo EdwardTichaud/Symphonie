@@ -41,6 +41,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     // Indicateur évitant de répéter les avertissements lorsqu'on détecte plusieurs Animator valides chez les enfants.
     private bool hasLoggedMultipleChildAnimatorsWithController;
     private AwakeState awakeState;
+    private DissonantState dissonantState; // Gestionnaire dédié à l'état dissonant (perte d'harmonie).
+
+    // Permet de suivre si l'unité joue actuellement son animation d'Idle pour déclencher les sons adéquats.
+    private bool isIdleActive;
 
     /// <summary>Hash du state Animator "Idle_Battle" pour accélérer les vérifications de disponibilité.</summary>
     private static readonly int AnimatorStateIdleBattle = Animator.StringToHash("Idle_Battle");
@@ -128,6 +132,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// Indique si l'unité est en état Awake (fusion avec l'ange gardien).
     /// </summary>
     public bool IsAwake => awakeState != null && awakeState.IsAwake;
+
+    /// <summary>Indique si l'unité est tombée dans l'état Dissonant.</summary>
+    public bool IsDissonant => dissonantState != null && dissonantState.IsDissonant;
 
     // Gestionnaire de physique pour déléguer les collisions et la gravité à Unity.
     private CharacterController controller;
@@ -828,6 +835,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // Recherche proactive de l'Animator dédié aux timelines dans les enfants (même inactifs).
         animator = GetCasterAnimator(forceRefresh: true);
         awakeState = GetComponent<AwakeState>();
+        dissonantState = GetComponent<DissonantState>();
+        isIdleActive = false; // L'unité n'est pas encore en Idle : permet de jouer le son d'entrée lors du premier appel.
 
         // Setup graphique
         if (spriteRenderer != null && Data.portrait != null)
@@ -851,6 +860,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
                 customBar.SetValue(currentFatigue);
             }
         }
+
+        // Vérifie immédiatement l'état harmonique pour déclencher Awake/Dissonant si nécessaire au lancement du combat.
+        CheckDissonance();
     }
 
     /// <summary>
@@ -879,6 +891,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             Debug.LogError($"[CharacterUnit] Aucun PlayableDirector disponible sur {name}. La timeline '{timeline.name}' ne peut pas être jouée.");
             return;
         }
+
+        NotifyIdleStateExit(); // On quitte l'Idle : joue le son associé et réinitialise l'état sonore.
 
         // Évite que plusieurs timelines se chevauchent sur la même unité.
         battleDirector.Stop();
@@ -1816,12 +1830,41 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     }
 
     /// <summary>
-    /// Vérifie si l'unité doit sortir de l'état Awake en fonction de ses harmoniques.
+    /// Vérifie les seuils harmoniques pour orchestrer automatiquement les transitions Awake/Dissonant.
     /// </summary>
     private void CheckDissonance()
     {
-        if (IsAwake && GetHarmonicCount(Data.harmonicType) < Data.dissonancePoint)
-            ExitAwakeState();
+        if (Data == null)
+            return;
+
+        int currentHarmonics = GetHarmonicCount(Data.harmonicType);
+
+        // 1) Seuil d'éveil atteint : priorité absolue à l'état Awake.
+        if (currentHarmonics >= Data.awakeHarmonicThreshold)
+        {
+            if (IsDissonant)
+                ExitDissonantState();
+            if (!IsAwake)
+                EnterAwakeState();
+            return;
+        }
+
+        // 2) Seuil inférieur atteint : on perd l'éveil et on passe en dissonance.
+        if (currentHarmonics < Data.dissonancePoint)
+        {
+            if (IsAwake)
+                ExitAwakeState();
+            if (!IsDissonant)
+                EnterDissonantState();
+        }
+        else
+        {
+            // 3) Zone tampon entre les deux seuils : aucun état spécial ne doit rester actif.
+            if (IsAwake)
+                ExitAwakeState();
+            if (IsDissonant)
+                ExitDissonantState();
+        }
     }
 
     /// <summary>
@@ -1829,6 +1872,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void EnterAwakeState()
     {
+        if (IsDissonant)
+            ExitDissonantState(); // L'éveil annule immédiatement toute dissonance résiduelle.
         awakeState?.EnterAwake();
     }
 
@@ -1838,6 +1883,22 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void ExitAwakeState()
     {
         awakeState?.ExitAwake();
+    }
+
+    /// <summary>
+    /// Active l'état Dissonant lorsque le seuil inférieur d'harmonie est franchi.
+    /// </summary>
+    public void EnterDissonantState()
+    {
+        dissonantState?.EnterDissonant();
+    }
+
+    /// <summary>
+    /// Désactive l'état Dissonant afin de revenir à un comportement classique.
+    /// </summary>
+    public void ExitDissonantState()
+    {
+        dissonantState?.ExitDissonant();
     }
 
     public float GetAttackMultiplier()
@@ -1860,6 +1921,13 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (TryGetComponent<FatigueSystem>(out var fatigue) && fatigue.IsAsleep)
             return;
 
+        // Si on atteint réellement l'Idle, on déclenche son éventuel son d'entrée.
+        if (!isIdleActive)
+        {
+            PlayStateClip(Data != null ? Data.idleEnterClip : null);
+            isIdleActive = true;
+        }
+
         if (animator != null)
         {
             const int baseLayerIndex = 0;
@@ -1875,6 +1943,29 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
                 animator.Play("Idle_Battle");
             }
         }
+    }
+
+    /// <summary>
+    /// Informe le système que l'unité quitte son Idle actuel afin de jouer le son de sortie une seule fois.
+    /// </summary>
+    public void NotifyIdleStateExit()
+    {
+        if (!isIdleActive)
+            return; // Aucun son à jouer si l'Idle n'était pas actif.
+
+        isIdleActive = false;
+        PlayStateClip(Data != null ? Data.idleExitClip : null);
+    }
+
+    /// <summary>
+    /// Joue un clip stocké dans un <see cref="AudioClipSO"/> en respectant son volume interne.
+    /// </summary>
+    private void PlayStateClip(AudioClipSO clip)
+    {
+        if (clip == null || clip.Clip == null || audioSource == null)
+            return;
+
+        audioSource.PlayOneShot(clip.Clip, clip.Volume);
     }
 
     #endregion
