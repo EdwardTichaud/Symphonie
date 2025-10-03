@@ -56,6 +56,11 @@ public class MusicalMoveSO : ScriptableObject
     public int harmonicCost = 1;
     [Tooltip("Gain d'harmonie généré lors de l'utilisation du move.")]
     public int harmonicGeneration = 0;
+    [Header("Flux Harmoniques")]
+    [Tooltip("Type d'harmonique consommé pour payer le coût du move. Permet de guider les joueurs vers les bonnes synergies.")]
+    public HarmonicType consumedHarmonicType = HarmonicType.Lumiere;
+    [Tooltip("Type d'harmonique ajouté à la réserve lorsqu'un gain est généré. Même si le gain est nul, cette information aide la lecture stratégique.")]
+    public HarmonicType generatedHarmonicType = HarmonicType.Lumiere;
 
     [Header("Puissance et Effet")]
     [Tooltip("Puissance de base de l'action, utilisée dans les calculs de dégâts ou de soin.")]

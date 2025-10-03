@@ -816,7 +816,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentFatigue = Data.baseFatigue;
 
         harmonicReserve.Clear();
-        AddHarmonic(Data.harmonicType);
+        Data.currentHarmonicCharge = 0; // Synchronise explicitement la fiche pour les outils de debug designers.
+        if (Data.baseHarmonicCharge > 0)
+        {
+            // Applique la réserve initiale définie dans le CharacterData pour aider les nouveaux joueurs à démarrer avec un capital clair.
+            AddHarmonic(Data.harmonicType, Data.baseHarmonicCharge);
+        }
 
         spriteRenderer = GetComponent<SpriteRenderer>();
         audioSource = GetComponent<AudioSource>();
@@ -1648,7 +1653,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         var availableAttacks = Data.musicalAttacks
             .Where(m => !m.onlyAwake || IsAwake)
             .Where(m => !m.enterAwake || !IsAwake)
-            .Where(m => !m.enterAwake || GetHarmonicCount(Data.harmonicType) >= Data.resonancePoint)
+            .Where(m => !m.enterAwake || GetHarmonicCount(Data.harmonicType) >= Data.awakeHarmonicThreshold)
             .Where(m => CanUseMove(m))
             .ToArray();
 
@@ -1690,9 +1695,14 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public void AddHarmonic(HarmonicType type, int amount = 1)
     {
+        if (amount <= 0)
+            return; // Évite les écritures inutiles et les dérives numériques.
+
         if (!harmonicReserve.ContainsKey(type))
             harmonicReserve[type] = 0;
         harmonicReserve[type] += amount;
+        if (Data != null && type == Data.harmonicType)
+            Data.currentHarmonicCharge = harmonicReserve[type]; // Suivi analytique côté fiche personnage.
         CheckDissonance();
     }
 
@@ -1701,6 +1711,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (!harmonicReserve.ContainsKey(type) || harmonicReserve[type] < amount)
             return false;
         harmonicReserve[type] -= amount;
+        if (Data != null && type == Data.harmonicType)
+            Data.currentHarmonicCharge = harmonicReserve[type];
         CheckDissonance();
         return true;
     }
@@ -1715,6 +1727,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         var keys = harmonicReserve.Keys.ToList();
         foreach (var key in keys)
             harmonicReserve[key] = 0;
+        if (Data != null)
+            Data.currentHarmonicCharge = 0;
         CheckDissonance();
     }
 

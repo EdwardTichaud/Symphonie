@@ -1349,7 +1349,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         if (move.enterAwake && (caster.IsAwake ||
-            caster.GetHarmonicCount(caster.Data.harmonicType) < caster.Data.resonancePoint))
+            caster.GetHarmonicCount(caster.Data.harmonicType) < caster.Data.awakeHarmonicThreshold))
         {
             Debug.LogWarning("[ExecuteMoveOnTarget] Conditions d'Awake non remplies.");
             yield break;
@@ -1751,14 +1751,23 @@ public class NewBattleManager : MonoBehaviour
                 generation += move.criticalHarmonicGeneration;
             }
 
-            caster.ConsumeHarmonic(caster.Data.harmonicType, cost);
-            caster.AddHarmonic(caster.Data.harmonicType, generation);
+            HarmonicType costType = move.consumedHarmonicType;
+            HarmonicType generationType = move.generatedHarmonicType;
+
+            if (cost > 0)
+            {
+                bool paymentSucceeded = caster.ConsumeHarmonic(costType, cost);
+                if (!paymentSucceeded)
+                    Debug.LogWarning($"[AfterMusicalMove] {caster.Data.characterName} n'avait pas assez d'harmoniques {costType} pour {move.moveName}.");
+            }
+            if (generation > 0)
+                caster.AddHarmonic(generationType, generation);
             caster.SetMoveCooldown(move);
             caster.RegisterMoveUse(move);
 
             // Activation du mode Awake si le move le permet
             if (move.enterAwake && !caster.IsAwake &&
-                caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.resonancePoint)
+                caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.awakeHarmonicThreshold)
             {
                 caster.EnterAwakeState();
             }
@@ -1790,8 +1799,8 @@ public class NewBattleManager : MonoBehaviour
         bool hasSkill = availableMoves.Any(m =>
             (!m.onlyAwake || caster.IsAwake) &&
             (!m.enterAwake || !caster.IsAwake) &&
-            caster.GetHarmonicCount(caster.Data.harmonicType) >= m.harmonicCost &&
-            (!m.enterAwake || caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.resonancePoint) &&
+            caster.GetHarmonicCount(m.consumedHarmonicType) >= m.harmonicCost &&
+            (!m.enterAwake || caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.awakeHarmonicThreshold) &&
             !caster.IsMoveOnCooldown(m));
         bool hasItem = InventoryManager.Instance.GetUsableItems(caster).Count > 0;
 
@@ -1803,7 +1812,13 @@ public class NewBattleManager : MonoBehaviour
 
     public IEnumerator ShowMoveInfoAndHandleSelection(MusicalMoveSO move)
     {
-        string message = $"{move.description}\nCoût : {move.harmonicCost} harmonique(s)\nGénère : {move.harmonicGeneration} harmonique(s)";
+        string costInfo = move.harmonicCost > 0
+            ? $"{move.harmonicCost} harmonique(s) de {move.consumedHarmonicType}"
+            : "0 harmonique";
+        string gainInfo = move.harmonicGeneration > 0
+            ? $"{move.harmonicGeneration} harmonique(s) de {move.generatedHarmonicType}"
+            : "aucune harmonie";
+        string message = $"{move.description}\nCoût : {costInfo}\nGénère : {gainInfo}";
         InfoBoxManager.Instance.OpenInfoBox(move.moveName, message, move.moveIcon);
         while (!InfoBoxManager.Instance.choix.HasValue)
             yield return null;
@@ -2559,8 +2574,8 @@ public class NewBattleManager : MonoBehaviour
                 var move = skillChoices[globalIndex];
                 UpdateButton(currentSkillsMenuSlots[i], move.moveName, move.moveIcon);
 
-                bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= move.harmonicCost;
-                bool resonanceOk = !move.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.resonancePoint;
+                bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(move.consumedHarmonicType) >= move.harmonicCost;
+                bool resonanceOk = !move.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.awakeHarmonicThreshold;
                 bool usageOk = currentCharacterUnit.CanUseMove(move);
                 bool available = enoughHarmonic && resonanceOk && usageOk;
                 SetButtonAvailability(currentSkillsMenuSlots[i], available, false);
@@ -2581,8 +2596,8 @@ public class NewBattleManager : MonoBehaviour
         {
             UpdateButton(currentSkillsMenuSlots[specialSlotIndex], specialMoveChoice.moveName, specialMoveChoice.moveIcon);
 
-            bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= specialMoveChoice.harmonicCost;
-            bool resonanceOk = !specialMoveChoice.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.resonancePoint;
+            bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(specialMoveChoice.consumedHarmonicType) >= specialMoveChoice.harmonicCost;
+            bool resonanceOk = !specialMoveChoice.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.awakeHarmonicThreshold;
             bool usageOk = currentCharacterUnit.CanUseMove(specialMoveChoice);
             bool available = enoughHarmonic && resonanceOk && usageOk;
             SetButtonAvailability(currentSkillsMenuSlots[specialSlotIndex], available, available);
