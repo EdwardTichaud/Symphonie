@@ -14,13 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemID: ExtensionEffets
   itemName: Extension d'Effets
-  description: Prolonge de deux tours tous les effets actifs de la cible.
+  description: "Etire la dur\xE9e de tous les effets temporaires de la cible de deux tours,\n    utile pour verrouiller un contr\xF4le ou prolonger une protection."
+  inventoryCategory: Consommable
+  inventorySummary: "+2 tours sur tous les effets."
+  consumeOnUse: 1
+  recommendedMusicalMoves: []
   itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
   effectValue: 0
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
-  requiresMovement: 1
+  requiresMovement: 0
   teleportDelay: 0
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0
@@ -52,5 +56,9 @@ MonoBehaviour:
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 11400000, guid: f7714b3b704f3c74f98ee23bcd7f4b23, type: 2}
   retreatTimeline: {fileID: 0}
+  preparingCameraRole: 2
+  preparingToPerformingCameraDelay: 0
+  performingCameraRole: 2
+  retreatCameraRole: 4
   beatPattern: []
   notes: []
