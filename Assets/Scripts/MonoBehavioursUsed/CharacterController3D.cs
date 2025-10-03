@@ -144,8 +144,37 @@ public class CharacterController3D : MonoBehaviour
         // Mémorise le dernier appui sur Saut pour gérer intelligemment les buffers et le coyote time.
         if (InputsManager.Instance.playerInputs.World.Jump.triggered)
         {
-            lastJumpPressedTimestamp = Time.time;
+            // On vérifie si un objet interactif prioritaire est présent.
+            // Dans ce cas, on annule immédiatement le saut pour éviter les erreurs de saisie.
+            if (CanProcessJumpInput())
+            {
+                // Aucun interactable en cours : on mémorise l'appui afin que le buffer et le coyote time fonctionnent.
+                lastJumpPressedTimestamp = Time.time;
+            }
+            else
+            {
+                // Un interactable est détecté : on réinitialise la mémoire d'appui pour bloquer le saut.
+                lastJumpPressedTimestamp = float.NegativeInfinity;
+            }
         }
+    }
+
+    /// <summary>
+    /// Indique si l'entrée de saut peut être traitée.
+    /// On bloque volontairement le saut lorsqu'un objet <see cref="IInteractable"/> est à portée
+    /// afin de laisser la priorité à l'action contextuelle.
+    /// </summary>
+    /// <returns><c>true</c> si aucun interactable prioritaire n'est détecté.</returns>
+    private bool CanProcessJumpInput()
+    {
+        // L'InteractionManager peut être absent sur certaines scènes (ex : tests unitaires).
+        if (InteractionManager.Instance == null)
+        {
+            return true;
+        }
+
+        // La présence d'un interactable courant signifie que le joueur peut interagir : on interdit le saut.
+        return InteractionManager.Instance.currentInteractable == null;
     }
 
     /// <summary>
