@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemID: MetronomePrecision
   itemName: "M\xE9tronome de Pr\xE9cision"
-  description: "Stabilise le tempo de Munin et augmente les fen\xEAtres de parade/esquive\n    de 10\u202f% pendant deux tours."
-  inventoryCategory: Consommable
-  inventorySummary: "+10\u202f% parade/esquive (2 tours)."
+  description: "Stabilise le tempo de Munin et augmente les fen\xEAtres de parade/esquive\n   
+    de 10\u202F% pendant deux tours."
+  itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
+  inventoryCategory: Item
+  inventorySummary: "+10\u202F% parade/esquive (2 tours)."
   consumeOnUse: 1
   recommendedMusicalMoves: []
-  itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
   effectValue: 0
   isUsableInBattle: 1
   moveSpeed: 0
@@ -57,8 +58,8 @@ MonoBehaviour:
   performingTimeline: {fileID: 11400000, guid: f7714b3b704f3c74f98ee23bcd7f4b23, type: 2}
   retreatTimeline: {fileID: 0}
   preparingCameraRole: 2
-  preparingToPerformingCameraDelay: 0
   performingCameraRole: 2
   retreatCameraRole: 4
+  preparingToPerformingCameraDelay: 0
   beatPattern: []
   notes: []

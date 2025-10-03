@@ -16,9 +16,10 @@ MonoBehaviour:
   moveType: 2
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Accorde une phrase apaisante soignant environ 10\u202f000 PV et offrant\n    +400 D\xE9fense \xE0 un alli\xE9 durant deux tours."
-  inventoryCategory: Soutien
-  inventorySummary: "Soins ~10\u202f000 + +400 D\xE9fense."
+  description: "Accorde une phrase apaisante soignant environ 10\u202F000 PV et offrant\n   
+    +400 D\xE9fense \xE0 un alli\xE9 durant deux tours."
+  inventoryCategory: MusicalMove
+  inventorySummary: "Soins ~10\u202F000 + +400 D\xE9fense."
   consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 1
@@ -26,8 +27,8 @@ MonoBehaviour:
   fatigueCost: 1
   harmonicCost: 1
   harmonicGeneration: 0
-  consumedHarmonicType: Souffle
-  generatedHarmonicType: Souffle
+  consumedHarmonicType: 0
+  generatedHarmonicType: 0
   power: 0
   effectType: 1
   effectValue: 10000
@@ -52,7 +53,9 @@ MonoBehaviour:
   targetType: 3
   defaultTargetType: 3
   targetTypes: 03000000
-  moveSpeed: 0
+  travelTime: 0
+  legacyMoveSpeed: 0
+  legacyMoveSpeedConverted: 1
   castDistance: 0
   requiresMovement: 1
   teleportDelay: 0.2
@@ -70,5 +73,6 @@ MonoBehaviour:
   performingTimeline: {fileID: 0}
   retreatTimeline: {fileID: 0}
   preparingCameraRole: 5
+  preparingToPerformingCameraDelay: 0
   performingCameraRole: 2
   retreatCameraRole: 4

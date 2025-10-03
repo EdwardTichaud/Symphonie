@@ -16,9 +16,10 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Des larmes lumineuses s'abattent sur toute l'escouade, infligeant environ\n    25\u202f000 points de d\xE9g\xE2ts par cible."
-  inventoryCategory: Boss
-  inventorySummary: "AOE ~25\u202f000 d\xE9g\xE2ts."
+  description: "Des larmes lumineuses s'abattent sur toute l'escouade, infligeant
+    environ\n    25\u202F000 points de d\xE9g\xE2ts par cible."
+  inventoryCategory: MusicalMove
+  inventorySummary: "AOE ~25\u202F000 d\xE9g\xE2ts."
   consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 1
@@ -26,11 +27,19 @@ MonoBehaviour:
   fatigueCost: 1
   harmonicCost: 1
   harmonicGeneration: 0
-  consumedHarmonicType: Lumiere
-  generatedHarmonicType: Lumiere
+  consumedHarmonicType: 0
+  generatedHarmonicType: 0
   power: 0
   effectType: 0
   effectValue: 25000
+  buffStat: 0
+  buffAmount: 0
+  buffDuration: 0
+  buffIsPercentage: 0
+  debuffStat: 0
+  debuffAmount: 0
+  debuffDuration: 0
+  debuffIsPercentage: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -44,7 +53,9 @@ MonoBehaviour:
   targetType: 2
   defaultTargetType: 2
   targetTypes: 02000000
-  moveSpeed: 0
+  travelTime: 0
+  legacyMoveSpeed: 0
+  legacyMoveSpeedConverted: 1
   castDistance: 0
   requiresMovement: 1
   teleportDelay: 0.2
@@ -62,5 +73,6 @@ MonoBehaviour:
   performingTimeline: {fileID: 11400000, guid: 7116d965a53bbee449dc994ffb5382ce, type: 2}
   retreatTimeline: {fileID: 0}
   preparingCameraRole: 5
+  preparingToPerformingCameraDelay: 0
   performingCameraRole: 2
   retreatCameraRole: 4

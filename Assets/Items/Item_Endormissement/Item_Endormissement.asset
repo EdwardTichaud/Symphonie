@@ -14,12 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemID: Endormissement
   itemName: Endormissement
-  description: "Diffuse une poudre soporifique endormant une cible jusqu'\xE0 ce qu'elle\n    soit bless\xE9e. Parfait pour contr\xF4ler une menace majeure."
-  inventoryCategory: Consommable
-  inventorySummary: "Endort une cible."
+  description: "Diffuse une poudre soporifique endormant une cible jusqu'\xE0 ce
+    qu'elle\n    soit bless\xE9e. Parfait pour contr\xF4ler une menace majeure."
+  itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
+  inventoryCategory: Item
+  inventorySummary: Endort une cible.
   consumeOnUse: 1
   recommendedMusicalMoves: []
-  itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
   effectValue: 0
   isUsableInBattle: 1
   moveSpeed: 0
@@ -57,8 +58,8 @@ MonoBehaviour:
   performingTimeline: {fileID: 11400000, guid: f7714b3b704f3c74f98ee23bcd7f4b23, type: 2}
   retreatTimeline: {fileID: 0}
   preparingCameraRole: 2
-  preparingToPerformingCameraDelay: 0
   performingCameraRole: 2
   retreatCameraRole: 4
+  preparingToPerformingCameraDelay: 0
   beatPattern: []
   notes: []

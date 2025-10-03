@@ -18,16 +18,28 @@ MonoBehaviour:
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
   description: "Inflige de lourds d\xE9g\xE2ts \xE0 une cible unique apr\xE8s un
     court d\xE9lai."
+  inventoryCategory: MusicalMove
+  inventorySummary: 
+  consumeOnUse: 1
+  recommendedMusicalMoves: []
   stayFaceToTarget: 1
   notes: []
   fatigueCost: 0
   harmonicCost: 0
   harmonicGeneration: 0
-  consumedHarmonicType: Lumiere
-  generatedHarmonicType: Lumiere
+  consumedHarmonicType: 0
+  generatedHarmonicType: 0
   power: 30
   effectType: 0
   effectValue: 30
+  buffStat: 0
+  buffAmount: 0
+  buffDuration: 0
+  buffIsPercentage: 0
+  debuffStat: 0
+  debuffAmount: 0
+  debuffDuration: 0
+  debuffIsPercentage: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 40

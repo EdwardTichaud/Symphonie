@@ -18,16 +18,28 @@ MonoBehaviour:
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
   description: "Charge fulgurante qui t\xE9l\xE9porte Lucian devant sa cible avant
     de lib\xE9rer une onde de choc sonore."
+  inventoryCategory: MusicalMove
+  inventorySummary: 
+  consumeOnUse: 1
+  recommendedMusicalMoves: []
   stayFaceToTarget: 1
   notes: []
   fatigueCost: 1
   harmonicCost: 1
-  harmonicGeneration: 1
-  consumedHarmonicType: Lumiere
-  generatedHarmonicType: Lumiere
+  harmonicGeneration: 10
+  consumedHarmonicType: 0
+  generatedHarmonicType: 0
   power: 10
   effectType: 0
   effectValue: 20
+  buffStat: 0
+  buffAmount: 0
+  buffDuration: 0
+  buffIsPercentage: 0
+  debuffStat: 0
+  debuffAmount: 0
+  debuffDuration: 0
+  debuffIsPercentage: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20

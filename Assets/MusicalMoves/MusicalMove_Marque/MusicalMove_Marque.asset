@@ -18,8 +18,8 @@ MonoBehaviour:
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
   description: "Relie l'adversaire au lanceur en pla\xE7ant une marque de lien qui
     facilite les combos synchronis\xE9s."
-  inventoryCategory: Tactique
-  inventorySummary: "Applique une Marque de lien."
+  inventoryCategory: MusicalMove
+  inventorySummary: Applique une Marque de lien.
   consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 0
@@ -27,11 +27,19 @@ MonoBehaviour:
   fatigueCost: 1
   harmonicCost: 1
   harmonicGeneration: 0
-  consumedHarmonicType: Lumiere
-  generatedHarmonicType: Lumiere
+  consumedHarmonicType: 0
+  generatedHarmonicType: 0
   power: 0
   effectType: 7
   effectValue: 0
+  buffStat: 0
+  buffAmount: 0
+  buffDuration: 0
+  buffIsPercentage: 0
+  debuffStat: 0
+  debuffAmount: 0
+  debuffDuration: 0
+  debuffIsPercentage: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
