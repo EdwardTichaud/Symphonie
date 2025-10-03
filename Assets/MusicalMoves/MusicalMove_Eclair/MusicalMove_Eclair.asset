@@ -16,7 +16,11 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: 
+  description: "Projette un trait fulgurant infligeant environ 11\u202f000 points de d\xE9g\xE2ts\n    \xE0 une cible isol\xE9e."
+  inventoryCategory: Assaut rapide
+  inventorySummary: "Frappe instantan\xE9e ~11\u202f000 d\xE9g\xE2ts."
+  consumeOnUse: 0
+  recommendedMusicalMoves: []
   stayFaceToTarget: 0
   notes: []
   fatigueCost: 1
@@ -26,7 +30,7 @@ MonoBehaviour:
   generatedHarmonicType: Lumiere
   power: 10
   effectType: 0
-  effectValue: 10
+  effectValue: 11000
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -57,3 +61,6 @@ MonoBehaviour:
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 11400000, guid: bc1a72aa23e36b84d8d545619e3b5f19, type: 2}
   retreatTimeline: {fileID: 0}
+  preparingCameraRole: 5
+  performingCameraRole: 2
+  retreatCameraRole: 4

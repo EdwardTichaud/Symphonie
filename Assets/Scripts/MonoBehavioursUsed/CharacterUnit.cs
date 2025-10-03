@@ -145,12 +145,82 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// <summary>
     /// Indique si l'unité touche actuellement un support solide.
     /// </summary>
-    public bool IsGrounded => controller != null && controller.isGrounded;
+    public bool IsGrounded
+    {
+        get
+        {
+            // 🎯 Avant toute chose, on vérifie si un override d'altitude est en cours.
+            //     Cela permet par exemple à une attaque d'ancrage de considérer
+            //     une unité aérienne comme solidement arrimée au sol durant
+            //     quelques tours.
+            var altitudeOverride = GetAltitudeOverrideStatus();
+            if (altitudeOverride != null)
+            {
+                if (altitudeOverride.IsSuspendedInAir)
+                    return false; // Statut "en l'air" prioritaire : on force une réponse négative.
+
+                if (altitudeOverride.IsForcedGrounded)
+                    return true; // Inutile de consulter la physique : la contrainte prime.
+            }
+
+            return controller != null && controller.isGrounded;
+        }
+    }
 
     /// <summary>
     /// Indique si l'unité est de type aérien.
     /// </summary>
     public bool IsAirUnit => Data != null && Data.isAirUnit;
+
+    /// <summary>
+    ///     Référence mise en cache du composant gérant les overrides d'altitude.
+    ///     L'objectif est d'éviter les <see cref="GetComponent{T}()"/> répétés
+    ///     à chaque interrogation des propriétés publiques.
+    /// </summary>
+    private AltitudeOverrideStatus altitudeOverrideStatus;
+
+    /// <summary>
+    ///     Accès paresseux au composant <see cref="AltitudeOverrideStatus"/>.
+    ///     Le paramètre <paramref name="forceRefresh"/> permet de synchroniser
+    ///     la référence si un script externe supprime le composant à la volée.
+    /// </summary>
+    private AltitudeOverrideStatus GetAltitudeOverrideStatus(bool forceRefresh = false)
+    {
+        if (forceRefresh || altitudeOverrideStatus == null)
+            altitudeOverrideStatus = GetComponent<AltitudeOverrideStatus>();
+
+        return altitudeOverrideStatus;
+    }
+
+    /// <summary>
+    ///     S'assure qu'un composant <see cref="AltitudeOverrideStatus"/> est présent
+    ///     sur cette unité. Les MusicalMoves peuvent ainsi appliquer leurs effets
+    ///     sans se soucier de l'état initial du GameObject.
+    /// </summary>
+    public AltitudeOverrideStatus EnsureAltitudeOverrideStatus()
+    {
+        var status = GetAltitudeOverrideStatus();
+        if (status == null)
+        {
+            status = gameObject.AddComponent<AltitudeOverrideStatus>();
+            altitudeOverrideStatus = status;
+        }
+
+        return status;
+    }
+
+    /// <summary>
+    ///     Indique si l'unité est actuellement contrainte à rester au sol.
+    ///     Cette information complète la propriété <see cref="IsGrounded"/>
+    ///     en reflétant explicitement l'existence d'un override forcé.
+    /// </summary>
+    public bool IsForcedGrounded => GetAltitudeOverrideStatus()?.IsForcedGrounded ?? false;
+
+    /// <summary>
+    ///     Indique si l'unité est suspendue dans les airs via un override temporaire.
+    ///     Pratique pour les contrôles d'altitude ou pour désactiver certains mouvements.
+    /// </summary>
+    public bool IsSuspendedInAir => GetAltitudeOverrideStatus()?.IsSuspendedInAir ?? false;
 
     /// <summary>
     /// Détecte si un sol existe sous l'unité à portée de <see cref="groundCheckDistance"/>.
@@ -162,6 +232,21 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public bool HasGroundBelow()
     {
+        // 🪄 Un override d'altitude actif prime sur la physique classique :
+        //     * une unité ancrée au sol doit être traitée comme si un support
+        //       se trouvait toujours sous elle ;
+        //     * une unité suspendue ne doit jamais détecter de sol pendant
+        //       la durée de l'effet.
+        var altitudeOverride = GetAltitudeOverrideStatus();
+        if (altitudeOverride != null)
+        {
+            if (altitudeOverride.IsForcedGrounded)
+                return true;
+
+            if (altitudeOverride.IsSuspendedInAir)
+                return false;
+        }
+
         // Définit un masque par défaut si aucun n'est précisé dans l'éditeur.
         if (battleGroundLayer == 0)
             battleGroundLayer = LayerMask.GetMask("Battle_Ground");
@@ -1191,6 +1276,27 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     }
 
     /// <summary>
+    ///     Point d'extension pour appliquer des modificateurs de dégâts contextuels.
+    ///     À ce stade du projet, nous nous contentons de normaliser la valeur afin
+    ///     d'éviter toute quantité négative, mais le hook restera disponible pour
+    ///     intégrer facilement d'autres systèmes (talents, états temporaires...).
+    /// </summary>
+    public float ApplyDamageModifiers(float baseValue)
+    {
+        return Mathf.Max(0f, baseValue);
+    }
+
+    /// <summary>
+    ///     Point d'extension équivalent pour les soins. Cela garantit que les
+    ///     MusicalMoves et Items disposent d'un pipeline commun pour ajuster la
+    ///     valeur finale selon les buffs/malus futurs.
+    /// </summary>
+    public float ApplyHealingModifiers(float baseValue)
+    {
+        return Mathf.Max(0f, baseValue);
+    }
+
+    /// <summary>
     /// Appelé quand la cible pare une attaque.
     /// </summary>
     public void TakeParry()
@@ -1291,6 +1397,24 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public void Heal(float amount)
     {
         currentHP = Mathf.Min(currentHP + amount, Data.baseHP + currentVitality);
+    }
+
+    /// <summary>
+    ///     Gestion centralisée des statuts temporaires résolus en fin de tour.
+    ///     Aujourd'hui cela se limite aux overrides d'altitude, mais la méthode
+    ///     servira également de point d'entrée pour d'autres effets persistants.
+    /// </summary>
+    public void ProcessEndOfTurnStatuses()
+    {
+        var altitudeOverride = GetAltitudeOverrideStatus();
+        if (altitudeOverride == null)
+            return;
+
+        // On décale l'état d'un tour ; si plus aucun override n'est actif,
+        // on rafraîchit la référence pour éviter des consultations futures inutiles.
+        bool stillActive = altitudeOverride.TickTurn();
+        if (!stillActive)
+            altitudeOverrideStatus = null;
     }
 
     public void ApplyBuff(float value)

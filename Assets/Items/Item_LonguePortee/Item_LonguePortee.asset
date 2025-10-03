@@ -14,13 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemID: LonguePortee
   itemName: "Longue Port\xE9e"
-  description: "Augmente la port\xE9e du lanceur de 10 pour ce tour."
+  description: "Etend le champ d'action du lanceur de 15 m\xE8tres pour ce tour, id\xE9al\n    pour ouvrir des combos \xE0 distance."
+  inventoryCategory: Consommable
+  inventorySummary: "+15 port\xE9e (1 tour)."
+  consumeOnUse: 1
+  recommendedMusicalMoves: []
   itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
-  effectValue: 20
+  effectValue: 15
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
-  requiresMovement: 1
+  requiresMovement: 0
   teleportDelay: 0
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0

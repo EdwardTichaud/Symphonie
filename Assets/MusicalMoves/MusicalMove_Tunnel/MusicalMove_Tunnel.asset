@@ -13,10 +13,14 @@ MonoBehaviour:
   m_Name: MusicalMove_Tunnel
   m_EditorClassIdentifier: 
   moveName: Tunnel
-  moveType: 1
+  moveType: 3
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: 
+  description: "Fait vibrer le sol sous la cible et l'endort jusqu'\xE0 ce qu'elle\n    subisse des d\xE9g\xE2ts."
+  inventoryCategory: Contr\xF4le
+  inventorySummary: "Endort un ennemi isol\xE9."
+  consumeOnUse: 0
+  recommendedMusicalMoves: []
   stayFaceToTarget: 0
   notes: []
   fatigueCost: 1
@@ -57,3 +61,6 @@ MonoBehaviour:
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 0}
   retreatTimeline: {fileID: 0}
+  preparingCameraRole: 5
+  performingCameraRole: 2
+  retreatCameraRole: 4

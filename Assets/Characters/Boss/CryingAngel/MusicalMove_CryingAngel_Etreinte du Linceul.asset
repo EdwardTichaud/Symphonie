@@ -13,11 +13,14 @@ MonoBehaviour:
   m_Name: MusicalMove_CryingAngel_Etreinte du Linceul
   m_EditorClassIdentifier: 
   moveName: Etreinte du Linceul
-  moveType: 1
+  moveType: 3
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Des bras translucides se mat\xE9rialisent et tentent de retenir la
-    cible."
+  description: "Des bras translucides immobilisent la cible en la plongeant dans un\n    sommeil forc\xE9 jusqu'\xE0 ce qu'elle subisse des d\xE9g\xE2ts."
+  inventoryCategory: Boss
+  inventorySummary: "Immobilisation par sommeil."
+  consumeOnUse: 0
+  recommendedMusicalMoves: []
   stayFaceToTarget: 1
   notes: []
   fatigueCost: 1
@@ -40,7 +43,7 @@ MonoBehaviour:
   altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
-  targetTypes: 
+  targetTypes: 01000000
   travelTime: 0
   legacyMoveSpeed: 0
   legacyMoveSpeedConverted: 1
@@ -60,7 +63,7 @@ MonoBehaviour:
   preparingTimeline: {fileID: 11400000, guid: 923281249d69c464c96295029f742965, type: 2}
   performingTimeline: {fileID: 11400000, guid: b86e10946b4e6fb4d975fd2aee69fae3, type: 2}
   retreatTimeline: {fileID: 11400000, guid: 57375bf4baa7d8e4d9e3f34c0e6b607f, type: 2}
-  preparingCameraRole: 8
-  preparingToPerformingCameraDelay: 0.1
+  preparingCameraRole: 5
+  preparingToPerformingCameraDelay: 0
   performingCameraRole: 2
-  retreatCameraRole: 8
+  retreatCameraRole: 4

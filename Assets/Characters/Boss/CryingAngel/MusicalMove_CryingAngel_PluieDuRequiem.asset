@@ -16,8 +16,11 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Des larmes lumineuses tombent en rafales comme une pluie in\xE9vitable.\nUne
-    b\xE9n\xE9diction devenue mal\xE9diction, une berceuse qui se transforme en temp\xEAte."
+  description: "Des larmes lumineuses s'abattent sur toute l'escouade, infligeant environ\n    25\u202f000 points de d\xE9g\xE2ts par cible."
+  inventoryCategory: Boss
+  inventorySummary: "AOE ~25\u202f000 d\xE9g\xE2ts."
+  consumeOnUse: 0
+  recommendedMusicalMoves: []
   stayFaceToTarget: 1
   notes: []
   fatigueCost: 1
@@ -27,7 +30,7 @@ MonoBehaviour:
   generatedHarmonicType: Lumiere
   power: 0
   effectType: 0
-  effectValue: 10
+  effectValue: 25000
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -40,7 +43,7 @@ MonoBehaviour:
   altitudeCondition: 2
   targetType: 2
   defaultTargetType: 2
-  targetTypes: 
+  targetTypes: 02000000
   moveSpeed: 0
   castDistance: 0
   requiresMovement: 1
@@ -58,3 +61,6 @@ MonoBehaviour:
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 11400000, guid: 7116d965a53bbee449dc994ffb5382ce, type: 2}
   retreatTimeline: {fileID: 0}
+  preparingCameraRole: 5
+  performingCameraRole: 2
+  retreatCameraRole: 4

@@ -16,7 +16,11 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: 
+  description: "Cr\xE9e une onde dissonante touchant tous les ennemis pour environ 13\u202f000\n    points de d\xE9g\xE2ts avant amplifications."
+  inventoryCategory: Assaut de zone
+  inventorySummary: "AOE ~13\u202f000 d\xE9g\xE2ts chacun."
+  consumeOnUse: 0
+  recommendedMusicalMoves: []
   stayFaceToTarget: 0
   notes: []
   fatigueCost: 1
@@ -26,7 +30,7 @@ MonoBehaviour:
   generatedHarmonicType: Lumiere
   power: 50
   effectType: 0
-  effectValue: 50
+  effectValue: 13000
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -39,7 +43,7 @@ MonoBehaviour:
   altitudeCondition: 2
   targetType: 2
   defaultTargetType: 2
-  targetTypes: 01000000
+  targetTypes: 02000000
   travelTime: 0.075
   legacyMoveSpeed: 20
   legacyMoveSpeedConverted: 1
@@ -61,4 +65,4 @@ MonoBehaviour:
   retreatTimeline: {fileID: 0}
   preparingCameraRole: 5
   performingCameraRole: 2
-  retreatCameraRole: 3
+  retreatCameraRole: 4
