@@ -134,6 +134,7 @@ public class CharacterData : ScriptableObject, ITargetable
     public AnimationClip prepareToUndergoAnimation;   // Prépare la cible à subir un coup
 
     public AnimationClip awakenIdleAnimation;       // Jouée quand l'unité est en état Awake
+    public AnimationClip dissonantIdleAnimation;    // Jouée lorsque l'unité tombe en état Dissonant
 
     [Header("Timeline d'introduction")]
     [Tooltip("Timeline jouée lors de l'introduction du combat pour cette unité.")]
@@ -146,6 +147,16 @@ public class CharacterData : ScriptableObject, ITargetable
     [Header("Effets sonores d'interface")]
     [Tooltip("Clip joué lorsque cette unité devient active dans les menus de combat.")]
     public AudioClipSO menuSelectionClip;
+
+    [Header("Sons d'état")] // Clips joués lors des transitions entre les états majeurs de l'unité.
+    [Tooltip("Clip joué lorsque l'unité entre automatiquement en éveil (Awake).")]
+    public AudioClipSO awakeEnterClip;
+    [Tooltip("Clip joué lorsque l'unité quitte l'éveil (Awake).")]
+    public AudioClipSO awakeExitClip;
+    [Tooltip("Clip joué lorsqu'une animation d'Idle démarre (tous états confondus).")]
+    public AudioClipSO idleEnterClip;
+    [Tooltip("Clip joué lorsqu'une animation d'Idle est interrompue.")]
+    public AudioClipSO idleExitClip;
 
     [Header("Voix de deuil")]
     [Tooltip("Lamentation jouée par ce personnage quand Lucian meurt")]
