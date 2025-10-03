@@ -331,9 +331,9 @@ public class BattleTransitionManager : MonoBehaviour
         // Masque l'interface jusqu'au premier tour du joueur
         HideBattleUI();
 
-        // Désactive également le GameObject principal du monde pour empêcher toute interaction
-        if (worldScene != null)
-            worldScene.SetActive(false);
+        //// Désactive également le GameObject principal du monde pour empêcher toute interaction
+        //if (worldScene != null)
+        //    worldScene.SetActive(false);
 
         // Active uniquement les caméras nécessaires au lancement du combat
         CameraActivationManager.Instance?.ActivateBattleAndVersusCameras();
