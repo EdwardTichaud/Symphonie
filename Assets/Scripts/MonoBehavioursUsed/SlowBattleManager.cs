@@ -473,6 +473,11 @@ public class SlowBattleManager : MonoBehaviour
         SynchronizeWithLegacyManager_OnSelection(unit);
         OnUnitSelectionBegan?.Invoke(unit);
 
+        // Dès que le tour d'une unité contrôlée par l'IA commence, on déclenche immédiatement
+        // un comportement par défaut. Jusqu'à l'implémentation complète de la prise de décision
+        // ennemie, le tour est automatiquement passé pour éviter de bloquer la boucle.
+        TryAutoResolveTurnForNonPlayer(unit);
+
         // Attend qu'une action soit soumise par les menus/IA.
         while (waitingForAction && unit != null && !unit.IsDead)
             yield return null;
@@ -598,6 +603,31 @@ public class SlowBattleManager : MonoBehaviour
             legacyBattleManager.ChangeBattleState(BattleState.SquadUnit_MainMenu);
         else
             legacyBattleManager.ChangeBattleState(BattleState.EnemyUnit_Reflexion);
+    }
+
+    /// <summary>
+    /// Résout immédiatement le tour des unités ennemies tant que l'IA n'a pas été branchée.
+    /// Cela empêche la boucle principale de rester bloquée en attendant un ordre qui n'arrivera pas.
+    /// </summary>
+    /// <param name="unit">Unité actuellement active.</param>
+    private void TryAutoResolveTurnForNonPlayer(CharacterUnit unit)
+    {
+        if (unit == null)
+            return;
+
+        // On ne touche jamais aux personnages contrôlés par le joueur : ils doivent conserver
+        // l'accès au menu et aux interactions manuelles.
+        if (unit.Data != null && unit.Data.isPlayerControlled)
+            return;
+
+        // Si une action est déjà en attente (par exemple définie par une future IA),
+        // on n'écrase pas ce choix et on laisse la boucle attendre sa résolution naturelle.
+        if (pendingAction != null || !waitingForAction)
+            return;
+
+        // Les ennemis passent simplement leur tour en attendant l'arrivée d'un véritable système d'IA.
+        // Le libellé explicite facilite le débogage dans la console lorsque le comportement s'exécute.
+        SubmitAction(SlowBattleAction.CreateSkip(unit, "Passage automatique de l'ennemi (IA non implémentée)"));
     }
 
     private void ResolveAction(SlowBattleAction action)
