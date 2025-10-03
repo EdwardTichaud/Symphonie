@@ -554,7 +554,8 @@ public class InputsManager : MonoBehaviour
             if (bm.skillChoices.Count > baseIndex)
             {
                 bm.currentMove = bm.skillChoices[baseIndex];
-                if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
+                HarmonicType requiredType = bm.currentMove.consumedHarmonicType;
+                if (bm.currentCharacterUnit.GetHarmonicCount(requiredType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
                     return;
@@ -615,7 +616,8 @@ public class InputsManager : MonoBehaviour
             if (bm.skillChoices.Count > baseIndex + 1)
             {
                 bm.currentMove = bm.skillChoices[baseIndex + 1];
-                if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
+                HarmonicType requiredType = bm.currentMove.consumedHarmonicType;
+                if (bm.currentCharacterUnit.GetHarmonicCount(requiredType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
                     return;
@@ -668,7 +670,8 @@ public class InputsManager : MonoBehaviour
             if (bm.skillChoices.Count > baseIndex + 2)
             {
                 bm.currentMove = bm.skillChoices[baseIndex + 2];
-                if (bm.currentCharacterUnit.GetHarmonicCount(bm.currentCharacterUnit.Data.harmonicType) < bm.currentMove.harmonicCost)
+                HarmonicType requiredType = bm.currentMove.consumedHarmonicType;
+                if (bm.currentCharacterUnit.GetHarmonicCount(requiredType) < bm.currentMove.harmonicCost)
                 {
                     ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
                     return;
@@ -723,7 +726,7 @@ public class InputsManager : MonoBehaviour
             return;
 
         // Vérifie la réserve d'harmonique nécessaire pour l'éveil
-        if (unit.GetHarmonicCount(unit.Data.harmonicType) < unit.Data.resonancePoint)
+        if (unit.GetHarmonicCount(unit.Data.harmonicType) < unit.Data.awakeHarmonicThreshold)
         {
             // Feedback si le joueur n'a pas assez d'harmonique
             ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();

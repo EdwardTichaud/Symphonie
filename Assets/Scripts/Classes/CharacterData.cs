@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using System.Collections.Generic; // Permet l'utilisation de listes génériques
 using UnityEngine.Timeline; // Référence aux timelines d'introduction
+using UnityEngine.Serialization; // Facilite la migration des anciens champs (par exemple resonancePoint).
 
 [CreateAssetMenu(fileName = "CharacterData", menuName = "Symphonie/CharacterData")]
 public class CharacterData : ScriptableObject, ITargetable
@@ -94,6 +95,8 @@ public class CharacterData : ScriptableObject, ITargetable
     public float currentSpeed;
     public float currentInterceptionRange;
     public float currentInterceptionChance;
+    [Tooltip("Trace la réserve actuelle d'harmoniques du type signature pour aider le game design.")]
+    public int currentHarmonicCharge;
 
     [HideInInspector] public int currentMusicalMoveSetIndex = -1;
     [HideInInspector] public int currentItemSetIndex = -1;
@@ -151,9 +154,12 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Lamentation jouée par ce personnage quand Luna meurt")]
     public AudioClipSO weepForLunaDeath;
 
-    [Header("Awake Mechanics")]
-    [Tooltip("Nombre d'harmoniques requis pour entrer en Awake")] public int resonancePoint = 1;
+    [Header("Gestion des Harmoniques")]
+    [FormerlySerializedAs("resonancePoint"), Tooltip("Quantité d'harmoniques du type signature à accumuler pour pouvoir déclencher l'état Awake.")]
+    public int awakeHarmonicThreshold = 1;
     [Tooltip("Seuil minimal d'harmoniques avant de sortir d'Awake")] public int dissonancePoint = 0;
+    [Tooltip("Réserve d'harmoniques disponible au début d'un combat avant toute génération supplémentaire.")]
+    public int baseHarmonicCharge = 1;
 
     // Ajoute une référence au GameObject source
     public MonoBehaviour owner;
@@ -174,6 +180,7 @@ public class CharacterData : ScriptableObject, ITargetable
         currentMobility = baseMobility;
         currentRange = baseRange;
         currentFatigue = baseFatigue;
+        currentHarmonicCharge = baseHarmonicCharge;
 
         // Assure que les sets actifs sont correctement initialisés pour les combats.
         currentMusicalMoveSetIndex = NormalizeSetIndex(musicalMoveSets, defaultMusicalMoveSetIndex);

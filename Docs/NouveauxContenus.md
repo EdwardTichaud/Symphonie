@@ -7,6 +7,15 @@ Chaque MusicalMove ou Item peut maintenant définir un nombre maximal d'utilisat
 `maxUsesPerTurn` et `maxUsesPerBattle` des ScriptableObjects permettent de configurer ces limites. Une valeur de `0` indique
 une utilisation illimitée.
 
+## Typage des Harmoniques
+Chaque **MusicalMove** précise désormais explicitement deux informations :
+- `consumedHarmonicType` : la couleur d'harmonique dépensée lors de l'utilisation.
+- `generatedHarmonicType` : la couleur d'harmonique rendue au lanceur lorsque le move génère un gain.
+
+Même lorsqu'un coût ou un gain vaut `0`, ces champs aident les joueuses et joueurs à planifier leurs combos et les designers à assurer la cohérence avec l'histoire (voir *Histoire de Symphonie*). Les nouveaux moves doivent donc documenter leurs coûts et gains en précisant clairement ces types.
+
+Les **CharacterData** disposent en complément d'un champ `awakeHarmonicThreshold` (ancien `resonancePoint`) et d'un `baseHarmonicCharge`. Le premier indique la quantité à atteindre pour s'éveiller, tandis que le second fixe la réserve initiale en début de combat. Cette valeur de base pourra être modifiée dynamiquement par d'autres systèmes (objets, événements de narration, etc.).
+
 ## Conditions d'altitude
 Les MusicalMoves peuvent désormais spécifier une contrainte de hauteur :
 - **Aériens** : réalisables uniquement si la cible ne touche pas le sol.
@@ -57,6 +66,7 @@ des possibilités de combinaisons qui n'imposent plus un repositionnement systé
 - **Effet** : inflige 30 points de dégâts à une cible unique.
 - **Coût** : 2 points d'harmonie et 2 points de fatigue.
 - **Gain** : aucun gain d'harmonie supplémentaire.
+- **Harmoniques** : consomme des harmoniques de **Lumière**, n'en génère pas.
 - **Utilisation conseillée** : idéal pour terminer un adversaire affaibli. Les joueurs débutants pourront l'utiliser simplement après avoir accumulé suffisamment d'harmonie, tandis que les joueurs avancés pourront l'enchaîner avec des débuffs pour maximiser les dégâts.
 
 ## Item : Élixir Revitalisant
@@ -72,6 +82,7 @@ des possibilités de combinaisons qui n'imposent plus un repositionnement systé
 - **Effet** : soigne 20 PV à tous les alliés.
 - **Coût** : 2 points d'harmonie et 2 points de fatigue.
 - **Gain** : aucun.
+- **Harmoniques** : puise dans l'harmonique **Souffle** et ne restitue rien.
 - **Utilisation conseillée** : parfaite pour maintenir l'équipe en vie. Facile à exécuter pour les débutants, mais permet aux joueurs expérimentés d'enchaîner de longs combats.
 
 ## MusicalMove : Staccato Étourdissant
@@ -79,6 +90,7 @@ des possibilités de combinaisons qui n'imposent plus un repositionnement systé
 - **Effet** : endort une cible ennemie pendant un tour.
 - **Coût** : 2 points d'harmonie et 2 points de fatigue.
 - **Gain** : aucun.
+- **Harmoniques** : consomme des harmoniques de **Lumière**, sans restitution.
 - **Utilisation conseillée** : idéal pour interrompre un adversaire puissant le temps de préparer une combinaison.
 
 ## Item : Clé du Courage
@@ -96,6 +108,7 @@ des possibilités de combinaisons qui n'imposent plus un repositionnement systé
 - **Effet** : crée un pont éphémère sous une cible volante afin de la considérer comme au sol.
 - **Coût** : 1 point d'harmonie et 1 point de fatigue.
 - **Gain** : aucun.
+- **Harmoniques** : dépense une harmonique **Lumière** pour plaquer la cible au sol.
 - **Utilisation conseillée** : parfait pour les débutants qui peinent à atteindre les adversaires aériens. Les joueurs expérimentés pourront l'enchaîner avec des attaques terrestres pour réaliser des combinaisons originales.
 
 ## MusicalMove : Sforzando
@@ -103,6 +116,7 @@ des possibilités de combinaisons qui n'imposent plus un repositionnement systé
 - **Effet** : Lucian se matérialise face à une cible unique et libère une onde percussive qui inflige 20 points de dégâts (plus la puissance courante) tout en générant 1 point d'harmonie supplémentaire.
 - **Coût** : 1 point d'harmonie et 1 point de fatigue.
 - **Gain** : +1 harmonie grâce à la puissance du choc musical.
+- **Harmoniques** : utilise et régénère la même harmonique **Lumière**.
 - **Utilisation conseillée** : idéal pour surprendre un adversaire isolé. L'attaque place Lucian au contact de sa cible ; les débutants peuvent l'utiliser comme finisher direct, tandis que les joueurs expérimentés profiteront du maintien en mêlée pour enchaîner immédiatement un combo ou préparer une interception.
 
 ## MusicalMove : Abîme Harmonique
@@ -110,4 +124,5 @@ des possibilités de combinaisons qui n'imposent plus un repositionnement systé
 - **Effet** : annule le sol sous la cible, la forçant à flotter et la rendant sensible aux stratégies aériennes.
 - **Coût** : 1 point d'harmonie et 1 point de fatigue.
 - **Gain** : aucun.
+- **Harmoniques** : nécessite une harmonique de **Brume** et n'en rapporte pas.
 - **Utilisation conseillée** : utile pour isoler un ennemi trop bien protégé au sol. Les stratèges confirmés l'utiliseront pour préparer des enchaînements de MusicalMoves aériens.
