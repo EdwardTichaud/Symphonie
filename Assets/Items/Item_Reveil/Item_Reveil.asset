@@ -14,13 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemID: Reveil
   itemName: Reveil
-  description: "R\xE9veille une unit\xE9 endormie."
+  description: "Frappe une note claire qui r\xE9veille instantan\xE9ment une unit\xE9 alli\xE9e\n    endormie sans consommer de ressources."
+  inventoryCategory: Consommable
+  inventorySummary: "R\xE9veille un alli\xE9."
+  consumeOnUse: 1
+  recommendedMusicalMoves: []
   itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
   effectValue: 0
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
-  requiresMovement: 1
+  requiresMovement: 0
   teleportDelay: 0
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0
@@ -52,5 +56,9 @@ MonoBehaviour:
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 11400000, guid: f7714b3b704f3c74f98ee23bcd7f4b23, type: 2}
   retreatTimeline: {fileID: 0}
+  preparingCameraRole: 2
+  preparingToPerformingCameraDelay: 0
+  performingCameraRole: 2
+  retreatCameraRole: 4
   beatPattern: []
   notes: []

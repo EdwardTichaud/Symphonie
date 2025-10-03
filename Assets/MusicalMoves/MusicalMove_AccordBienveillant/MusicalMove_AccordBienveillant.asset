@@ -16,8 +16,11 @@ MonoBehaviour:
   moveType: 2
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Soigne l\xE9g\xE8rement un alli\xE9 et augmente sa D\xE9fense pour
-    deux tours."
+  description: "Accorde une phrase apaisante soignant environ 10\u202f000 PV et offrant\n    +400 D\xE9fense \xE0 un alli\xE9 durant deux tours."
+  inventoryCategory: Soutien
+  inventorySummary: "Soins ~10\u202f000 + +400 D\xE9fense."
+  consumeOnUse: 0
+  recommendedMusicalMoves: []
   stayFaceToTarget: 1
   notes: []
   fatigueCost: 1
@@ -25,7 +28,15 @@ MonoBehaviour:
   harmonicGeneration: 0
   power: 0
   effectType: 1
-  effectValue: 10
+  effectValue: 10000
+  buffStat: 2
+  buffAmount: 400
+  buffDuration: 2
+  buffIsPercentage: 0
+  debuffStat: 0
+  debuffAmount: 0
+  debuffDuration: 0
+  debuffIsPercentage: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -56,3 +67,6 @@ MonoBehaviour:
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 0}
   retreatTimeline: {fileID: 0}
+  preparingCameraRole: 5
+  performingCameraRole: 2
+  retreatCameraRole: 4

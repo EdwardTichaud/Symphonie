@@ -16,15 +16,27 @@ MonoBehaviour:
   moveType: 3
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Inflige des d\xE9g\xE2ts et r\xE9duit la D\xE9fense de la cible."
+  description: "Frappe cibl\xE9e infligeant environ 9\u202f500 d\xE9g\xE2ts et fracturant la d\xE9fense\n    adverse pendant deux tours."
+  inventoryCategory: Affaiblissement
+  inventorySummary: "D\xE9g\xE2ts + -400 D\xE9fense (2 tours)."
+  consumeOnUse: 0
+  recommendedMusicalMoves: []
   stayFaceToTarget: 0
   notes: []
   fatigueCost: 1
   harmonicCost: 2
   harmonicGeneration: 0
-  power: 10
+  power: 0
   effectType: 0
-  effectValue: 10
+  effectValue: 9500
+  buffStat: 0
+  buffAmount: 0
+  buffDuration: 0
+  buffIsPercentage: 0
+  debuffStat: 2
+  debuffAmount: 400
+  debuffDuration: 2
+  debuffIsPercentage: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -55,3 +67,6 @@ MonoBehaviour:
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 0}
   retreatTimeline: {fileID: 0}
+  preparingCameraRole: 5
+  performingCameraRole: 2
+  retreatCameraRole: 4

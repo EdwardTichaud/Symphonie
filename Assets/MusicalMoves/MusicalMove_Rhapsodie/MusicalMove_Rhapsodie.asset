@@ -16,15 +16,19 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: 
+  description: "Encha\xEEne un motif classique infligeant environ 7\u202f500 points de d\xE9g\xE2ts\n    avant application des multiplicateurs de runes."
+  inventoryCategory: Attaque de base
+  inventorySummary: "Attaque simple ~7\u202f500 d\xE9g\xE2ts."
+  consumeOnUse: 0
+  recommendedMusicalMoves: []
   stayFaceToTarget: 1
   notes: []
   fatigueCost: 0
   harmonicCost: 0
   harmonicGeneration: 0
-  power: 10
+  power: 0
   effectType: 0
-  effectValue: 10
+  effectValue: 6500
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -57,6 +61,6 @@ MonoBehaviour:
   preparingTimeline: {fileID: 11400000, guid: 4fa946d42fae10b48bc20bf37f9fc9eb, type: 2}
   performingTimeline: {fileID: 11400000, guid: 361e91e8ca92edc459ed5ed247a853bd, type: 2}
   retreatTimeline: {fileID: 0}
-  preparingCameraRole: 2
-  performingCameraRole: 8
+  preparingCameraRole: 5
+  performingCameraRole: 2
   retreatCameraRole: 4

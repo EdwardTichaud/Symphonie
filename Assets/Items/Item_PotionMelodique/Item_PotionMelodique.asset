@@ -14,13 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemID: PotionMelodique
   itemName: "Potion M\xE9lodique"
-  description: "Restaure des PV \xE0 une unit\xE9 alli\xE9e."
+  description: "Restaure environ 12\u202f000 PV \xE0 une unit\xE9 alli\xE9e, un soin id\xE9al\n    avant d'encha\xEEner sur une d\xE9fense renforc\xE9e."
+  inventoryCategory: Consommable
+  inventorySummary: "Soigne ~12\u202f000 PV."
+  consumeOnUse: 1
+  recommendedMusicalMoves: []
   itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
   effectValue: 0
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
-  requiresMovement: 1
+  requiresMovement: 0
   teleportDelay: 0
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0
@@ -29,7 +33,7 @@ MonoBehaviour:
   criticalEffectValue: 20
   stayInPlace: 0
   effectType: 1
-  healAmount: 50
+  healAmount: 12000
   healIsPercentage: 0
   revivePercentage: 0
   buffStat: 0
@@ -52,5 +56,9 @@ MonoBehaviour:
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 11400000, guid: f7714b3b704f3c74f98ee23bcd7f4b23, type: 2}
   retreatTimeline: {fileID: 0}
+  preparingCameraRole: 2
+  preparingToPerformingCameraDelay: 0
+  performingCameraRole: 2
+  retreatCameraRole: 4
   beatPattern: []
   notes: []

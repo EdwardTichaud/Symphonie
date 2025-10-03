@@ -65,6 +65,28 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Valeur numérique associée à l'effet principal.")]
     public int effectValue = 10;
 
+    // ------------------------------------------------------------------
+    // Buffs et débuffs supplémentaires
+    // ------------------------------------------------------------------
+    [Header("Effets secondaires optionnels")]
+    [Tooltip("Stat à augmenter après l'application de l'effet principal (None = aucun bonus).")]
+    public BuffStatType buffStat = BuffStatType.None;
+    [Tooltip("Valeur brute ajoutée par le buff (en points ou pourcentage selon buffIsPercentage).")]
+    public int buffAmount = 0;
+    [Tooltip("Durée du buff en tours.")]
+    public float buffDuration = 0f;
+    [Tooltip("Interpréter buffAmount comme un pourcentage ?")]
+    public bool buffIsPercentage = false;
+
+    [Tooltip("Stat à réduire après l'effet principal (None = aucun malus).")]
+    public DebuffStatType debuffStat = DebuffStatType.None;
+    [Tooltip("Valeur brute retirée par le débuff (en points ou pourcentage selon debuffIsPercentage).")]
+    public int debuffAmount = 0;
+    [Tooltip("Durée du débuff en tours.")]
+    public float debuffDuration = 0f;
+    [Tooltip("Interpréter debuffAmount comme un pourcentage ?")]
+    public bool debuffIsPercentage = false;
+
     [Header("Coup Critique")]
     [Tooltip("Active une variante lorsque le QTE est réussi")]
     public bool useCriticalVariant = false;
@@ -280,8 +302,17 @@ public class MusicalMoveSO : ScriptableObject
         float finalValue = baseValue;
         if (caster != null)
         {
-            finalValue += caster.currentPower;
+            float powerToUse = caster.currentPower;
+            if (typeToUse == MusicalEffectType.Heal)
+                powerToUse = Mathf.Max(caster.currentSagacity, caster.currentPower);
+
+            finalValue += powerToUse;
             finalValue *= caster.GetAttackMultiplier();
+
+            if (typeToUse == MusicalEffectType.Damage)
+                finalValue = caster.ApplyDamageModifiers(finalValue);
+            else if (typeToUse == MusicalEffectType.Heal)
+                finalValue = caster.ApplyHealingModifiers(finalValue);
         }
 
         // Ancien comportement : simple multiplicateur si aucune variante
@@ -290,19 +321,22 @@ public class MusicalMoveSO : ScriptableObject
 
         if (typeToUse == MusicalEffectType.Damage)
         {
-            // ⚠️ Correction : les dégâts doivent maintenant s'appliquer à toutes les cibles valides.
-            // Auparavant, une vérification restrictive empêchait les ennemis
-            // d'endommager l'escouade car seules les EnemyUnit recevaient des dégâts.
-            // En retirant ce filtre, on rétablit la logique attendue tout en conservant
-            // la transmission de la source pour les animations directionnelles.
             target.TakeDamage(finalValue, caster != null ? caster.transform : null);
             NewBattleManager.Instance?.RegisterDamage(caster, finalValue);
         }
         else if (typeToUse == MusicalEffectType.Heal)
         {
-            // Même logique que pour les dégâts : l'appelant gère déjà la sélection
-            // de cible, inutile de limiter la guérison aux seules unités alliées.
             target.Heal(finalValue);
+        }
+        else if (typeToUse == MusicalEffectType.Buff)
+        {
+            // Les buffs intrinsèques sont gérés via l'InventoryManager pour
+            // conserver une logique unique entre les Items et les MusicalMoves.
+            InventoryManager.Instance?.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
+        }
+        else if (typeToUse == MusicalEffectType.Debuff)
+        {
+            InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
         }
         else if (typeToUse == MusicalEffectType.Sleep)
         {
@@ -327,12 +361,33 @@ public class MusicalMoveSO : ScriptableObject
             if (target.GetComponent<LinkMark>() == null)
                 target.gameObject.AddComponent<LinkMark>();
         }
+        else if (typeToUse == MusicalEffectType.AnchorGround)
+        {
+            int turns = Mathf.Max(1, Mathf.RoundToInt(baseValue));
+            target.EnsureAltitudeOverrideStatus().AnchorToGround(turns);
+        }
+        else if (typeToUse == MusicalEffectType.SuspendAir)
+        {
+            int turns = Mathf.Max(1, Mathf.RoundToInt(baseValue));
+            target.EnsureAltitudeOverrideStatus().SuspendInAir(turns);
+        }
         // Les effets visuels comme la création ou la suppression de sol sont
         // désormais entièrement gérés par la timeline, aucune instanciation
         // de prefab n'est nécessaire ici.
         if (caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
             caster.GetComponent<FatigueSystem>()?.OnActionPerformed(fatigueToApply);
+        }
+
+        // Applique ensuite les éventuels effets secondaires définis plus haut.
+        if (buffStat != BuffStatType.None && typeToUse != MusicalEffectType.Buff)
+        {
+            InventoryManager.Instance?.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
+        }
+
+        if (debuffStat != DebuffStatType.None && typeToUse != MusicalEffectType.Debuff)
+        {
+            InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
         }
     }
 }
@@ -350,7 +405,7 @@ public enum MoveType
     Alteration  // Modifie le terrain ou l'état d'une cible sans être purement offensif ou défensif.
 }
 
-public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark }
+public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark, AnchorGround, SuspendAir }
 
 public enum RelativePosition { Front, Back, Left, Right , NC}
 
