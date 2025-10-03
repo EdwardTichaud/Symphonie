@@ -24,7 +24,19 @@ public class ThirdPersonPlayerController : MonoBehaviour
     private Vector3 lastMoveDirection = Vector3.forward;     // Mémoire de la dernière direction significative (utile en l'air).
 
     // Verrouillage utilisé lorsque l'animation d'atterrissage est en cours pour éviter toute interruption.
-    private bool landingAnimationLocked;
+    private bool landingAnimationLocked;                  // Verrou utilisé pour empêcher toute transition prématurée hors des animations d'atterrissage.
+    private Vector3 landingVelocitySnapshot;              // Vitesse horizontale capturée au moment de l'impact au sol.
+    private float landingSpeedSnapshot;                   // Vitesse scalaire correspondante pour synchroniser currentSpeed.
+    private float landingAnimationEndTime;                // Moment auquel l'animation d'atterrissage est terminée (calculé via la durée du clip).
+    private int activeLandingStateHash;                   // Hash de l'état d'animation de landing en cours (immobile ou en mouvement).
+
+    // Hashes réutilisés pour identifier rapidement les états d'animations dans l'Animator.
+    private static readonly int landingStateHash = Animator.StringToHash("Landing");
+    private static readonly int landingOnMoveStateHash = Animator.StringToHash("Landing_OnMove");
+
+    // Durées des animations d'atterrissage récupérées dynamiquement pour attendre leur fin exacte.
+    private float landingClipLength = 0.5f;               // Valeur par défaut de secours si le clip n'est pas trouvé.
+    private float landingOnMoveClipLength = 0.5f;         // Idem pour la version en mouvement.
 
     [Header("Lien avec Munin")]
     [Tooltip("Détermine si Lucian est actuellement lié à Munin.")]
@@ -157,6 +169,9 @@ public class ThirdPersonPlayerController : MonoBehaviour
             // Déplacement géré par le code : animations in-place sans root motion.
             animator.applyRootMotion = false;
             animator.Play("Idle_World");
+
+            // Pré-calcul des durées d'animations d'atterrissage pour verrouiller précisément les transitions.
+            CacheLandingClipDurations();
         }
 
         // Si aucune caméra n'est assignée, on cherche d'abord la WorldCamera, sinon la MainCamera.
@@ -291,8 +306,26 @@ public class ThirdPersonPlayerController : MonoBehaviour
                 bool moving = horizontalVelocity.sqrMagnitude > 0.01f;
                 if (animator != null)
                 {
-                    if (moving) animator.Play("Landing_OnMove");
-                    else animator.Play("Landing");
+                    if (moving)
+                    {
+                        animator.Play("Landing_OnMove");
+                        activeLandingStateHash = landingOnMoveStateHash;
+                        landingAnimationEndTime = Time.time + landingOnMoveClipLength;
+                    }
+                    else
+                    {
+                        animator.Play("Landing");
+                        activeLandingStateHash = landingStateHash;
+                        landingAnimationEndTime = Time.time + landingClipLength;
+                    }
+                }
+
+                // Mémorisation complète de la vitesse pour maintenir l'inertie durant la séquence.
+                landingVelocitySnapshot = horizontalVelocity;
+                landingSpeedSnapshot = currentSpeed;
+                if (landingVelocitySnapshot.sqrMagnitude > 0.0001f)
+                {
+                    lastMoveDirection = landingVelocitySnapshot.normalized;
                 }
 
                 verticalVelocity = -landingForce;
@@ -343,6 +376,23 @@ public class ThirdPersonPlayerController : MonoBehaviour
         // La course est possible uniquement si canRun est vrai.
         isRunning = hasInput && runBuffered && canRun && !isSliding;
         isWalking = hasInput && (!runBuffered || !canRun) && !isSliding;
+
+        // Si l'animation d'atterrissage est verrouillée, on fige complètement la vitesse horizontale.
+        if (landingAnimationLocked)
+        {
+            currentSpeed = landingSpeedSnapshot;
+            horizontalVelocity = landingVelocitySnapshot;
+
+            controller.Move(horizontalVelocity * Time.deltaTime);
+
+            if (horizontalVelocity.sqrMagnitude > 0.0001f)
+            {
+                Quaternion targetRot = Quaternion.LookRotation(horizontalVelocity);
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, orientationLerpSpeed * Time.deltaTime);
+            }
+
+            return; // On stoppe ici pour conserver l'inertie et éviter tout ajustement de vitesse.
+        }
 
         float targetSpeed = 0f;
         if (hasInput)
@@ -538,38 +588,70 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
 
-        // L'état peut quitter "Landing" avant d'atteindre normalizedTime = 1 si l'Animator
-        // possède une transition automatique (exit time < 1). Dans ce cas le verrou ne serait jamais
-        // levé et empêcherait définitivement tout nouveau saut. On surveille donc à la fois
-        // l'avancement de l'animation ET le fait d'être encore dans l'un des états de landing.
-        bool isInLandingState = state.IsName("Landing") || state.IsName("Landing_OnMove");
+        bool isCurrentLanding = state.shortNameHash == activeLandingStateHash;
+        bool animationCompleted = Time.time >= landingAnimationEndTime;
 
-        // On libère le verrou si :
-        // 1. L'animation d'atterrissage est arrivée à son terme (normalizedTime >= 1).
-        // 2. Ou si l'Animator a déjà transitionné vers une autre animation (plus de landing en cours).
-        if ((isInLandingState && state.normalizedTime >= 1f) || !isInLandingState)
+        // Si nous sommes toujours dans l'état d'atterrissage, on vérifie également l'avancement de la timeline.
+        if (isCurrentLanding && state.normalizedTime >= 1f)
         {
-            landingAnimationLocked = false; // Permet de rejouer les animations de locomotion et d'autoriser le saut.
-
-            MovementAnimation targetState;
-            if (isRunning)
-            {
-                targetState = MovementAnimation.Run;
-                animator.Play("Run Start");
-            }
-            else if (isWalking)
-            {
-                targetState = MovementAnimation.Walk;
-                animator.Play("Walk_Start");
-            }
-            else
-            {
-                targetState = MovementAnimation.Idle;
-                animator.Play("Idle_World");
-            }
-
-            currentAnimState = targetState;
+            animationCompleted = true;
         }
+
+        // Tant que l'animation dédiée n'est pas totalement achevée, aucune transition n'est autorisée.
+        if (!animationCompleted)
+            return;
+
+        landingAnimationLocked = false; // Permet de rejouer les animations de locomotion et d'autoriser le saut.
+
+        MovementAnimation targetState;
+        if (isRunning)
+        {
+            targetState = MovementAnimation.Run;
+            animator.Play("Run Start");
+        }
+        else if (isWalking)
+        {
+            targetState = MovementAnimation.Walk;
+            animator.Play("Walk_Start");
+        }
+        else
+        {
+            targetState = MovementAnimation.Idle;
+            animator.Play("Idle_World");
+        }
+
+        currentAnimState = targetState;
+    }
+
+    /// <summary>
+    /// Récupère la durée des animations de landing afin de pouvoir verrouiller les transitions jusqu'à leur fin.
+    /// </summary>
+    private void CacheLandingClipDurations()
+    {
+        if (animator == null || animator.runtimeAnimatorController == null)
+            return;
+
+        foreach (AnimationClip clip in animator.runtimeAnimatorController.animationClips)
+        {
+            if (clip == null)
+                continue;
+
+            if (clip.name == "Landing")
+            {
+                landingClipLength = clip.length;
+            }
+            else if (clip.name == "Landing_OnMove")
+            {
+                landingOnMoveClipLength = clip.length;
+            }
+        }
+
+        // Sécurités : si les clips ne sont pas trouvés (variant de nom, configuration incomplète...), on conserve des valeurs par défaut.
+        if (landingClipLength <= 0f)
+            landingClipLength = 0.5f;
+
+        if (landingOnMoveClipLength <= 0f)
+            landingOnMoveClipLength = landingClipLength;
     }
 
     public void ToggleMuninLink()
