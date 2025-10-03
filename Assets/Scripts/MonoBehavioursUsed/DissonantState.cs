@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic; // Permet d'utiliser les structures de données génériques telles que KeyValuePair.
 using UnityEngine;
 
 /// <summary>
