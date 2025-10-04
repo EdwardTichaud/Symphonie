@@ -613,8 +613,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7692517274693987840}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.99358064, z: -0, w: 0.1131268}
-  m_LocalPosition: {x: -1.124006, y: 1.006, z: 4.872023}
+  m_LocalRotation: {x: -0, y: 0.89183235, z: -0, w: 0.45236614}
+  m_LocalPosition: {x: -4.0343475, y: 1.006, z: 2.9536488}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1315,7 +1315,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8868803223004906565, guid: 7c058cf1c14af0d4cb9a7a76e486ded6, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.023
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8868803223004906565, guid: 7c058cf1c14af0d4cb9a7a76e486ded6, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1363,9 +1363,6 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 8097332656330268415, guid: 7c058cf1c14af0d4cb9a7a76e486ded6, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 665416737212308100}
-    - targetCorrespondingSourceObject: {fileID: 8097332656330268415, guid: 7c058cf1c14af0d4cb9a7a76e486ded6, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 6513537645394326324}
   m_SourcePrefab: {fileID: 100100000, guid: 7c058cf1c14af0d4cb9a7a76e486ded6, type: 3}
 --- !u!4 &6240336398259050320 stripped
@@ -1378,29 +1375,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8097332656330268415, guid: 7c058cf1c14af0d4cb9a7a76e486ded6, type: 3}
   m_PrefabInstance: {fileID: 3282685899471049493}
   m_PrefabAsset: {fileID: 0}
---- !u!136 &665416737212308100
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6760448710433017322}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.27969712
-  m_Height: 1.9607663
-  m_Direction: 1
-  m_Center: {x: 0.0074524283, y: -0.11737108, z: 0}
 --- !u!114 &6513537645394326324
 MonoBehaviour:
   m_ObjectHideFlags: 0
