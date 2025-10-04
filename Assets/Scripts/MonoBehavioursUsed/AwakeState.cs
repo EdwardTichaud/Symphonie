@@ -55,9 +55,6 @@ public class AwakeState : UnitStateEffects
 
     #region Constantes Animator
 
-    [Tooltip("Multiplicateur appliqué aux caractéristiques en mode Awake")]
-    public float statMultiplier = 1.5f;
-
     private const string AnimatorIdleStateName = "Idle_Battle";
     private const string AnimatorAwakeOnStateName = "Awake_On";
     private const string AnimatorAwakeOffStateName = "Awake_Off";
@@ -97,6 +94,18 @@ public class AwakeState : UnitStateEffects
 
     private Coroutine idleRestoreCoroutine;
 
+    /// <summary>
+    ///     Mémorise le multiplicateur effectivement appliqué lors de l'activation d'Awake.
+    ///     Cette valeur provient désormais du <see cref="CharacterData"/> pour éviter toute duplication
+    ///     de configuration dans l'inspecteur Unity.
+    /// </summary>
+    private float activeStatMultiplier = 1f;
+
+    /// <summary>
+    ///     Valeur de repli utilisée si la fiche personnage ne définit pas explicitement de multiplicateur.
+    /// </summary>
+    private const float DefaultStatMultiplier = 1.5f;
+
     #endregion
 
     #region Accesseurs publics
@@ -116,6 +125,12 @@ public class AwakeState : UnitStateEffects
         base.Awake();
 
         unit = GetComponent<CharacterUnit>();
+
+        // L'animator utilisé pour les transitions doit impérativement provenir des enfants.
+        // Cela évite les confusions avec d'éventuels composants techniques placés sur l'objet racine.
+        var childAnimator = GetComponentInChildren<Animator>(includeInactive: true);
+        if (childAnimator != null)
+            animator = childAnimator;
 
         InitializeAnimatorOverrideData();
         BuildPhaseConfigurations();
@@ -659,14 +674,17 @@ public class AwakeState : UnitStateEffects
         if (unit == null)
             return;
 
-        unit.currentStrength *= statMultiplier;
-        unit.currentDefense *= statMultiplier;
-        unit.currentReflex *= statMultiplier;
-        unit.currentMobility *= statMultiplier;
-        unit.currentPower *= statMultiplier;
-        unit.currentStability *= statMultiplier;
-        unit.currentVitality *= statMultiplier;
-        unit.currentSagacity *= statMultiplier;
+        activeStatMultiplier = ResolveAwakeStatMultiplier();
+
+        // Les statistiques sont multipliées en se basant sur la donnée centralisée dans la fiche personnage.
+        unit.currentStrength *= activeStatMultiplier;
+        unit.currentDefense *= activeStatMultiplier;
+        unit.currentReflex *= activeStatMultiplier;
+        unit.currentMobility *= activeStatMultiplier;
+        unit.currentPower *= activeStatMultiplier;
+        unit.currentStability *= activeStatMultiplier;
+        unit.currentVitality *= activeStatMultiplier;
+        unit.currentSagacity *= activeStatMultiplier;
     }
 
     private void RemoveStatBonus()
@@ -674,14 +692,35 @@ public class AwakeState : UnitStateEffects
         if (unit == null)
             return;
 
-        unit.currentStrength /= statMultiplier;
-        unit.currentDefense /= statMultiplier;
-        unit.currentReflex /= statMultiplier;
-        unit.currentMobility /= statMultiplier;
-        unit.currentPower /= statMultiplier;
-        unit.currentStability /= statMultiplier;
-        unit.currentVitality /= statMultiplier;
-        unit.currentSagacity /= statMultiplier;
+        // Sécurise la valeur afin de ne jamais diviser par zéro dans les situations de données incomplètes.
+        float safeMultiplier = activeStatMultiplier <= 0f ? DefaultStatMultiplier : activeStatMultiplier;
+
+        unit.currentStrength /= safeMultiplier;
+        unit.currentDefense /= safeMultiplier;
+        unit.currentReflex /= safeMultiplier;
+        unit.currentMobility /= safeMultiplier;
+        unit.currentPower /= safeMultiplier;
+        unit.currentStability /= safeMultiplier;
+        unit.currentVitality /= safeMultiplier;
+        unit.currentSagacity /= safeMultiplier;
+
+        activeStatMultiplier = 1f;
+    }
+
+    /// <summary>
+    ///     Récupère le multiplicateur d'Awake en consultant directement la fiche personnage.
+    ///     Cette méthode centralise la logique de secours en cas de valeur non définie ou incohérente.
+    /// </summary>
+    private float ResolveAwakeStatMultiplier()
+    {
+        if (unit == null || unit.Data == null)
+            return DefaultStatMultiplier;
+
+        float configuredValue = unit.Data.awakeStatMultiplier;
+        if (configuredValue <= 0f)
+            return DefaultStatMultiplier;
+
+        return configuredValue;
     }
 
     #endregion
