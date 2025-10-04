@@ -40,8 +40,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private bool hasLoggedMissingChildAnimator;
     // Indicateur évitant de répéter les avertissements lorsqu'on détecte plusieurs Animator valides chez les enfants.
     private bool hasLoggedMultipleChildAnimatorsWithController;
-    private AwakeState awakeState;
-    private DissonantState dissonantState; // Gestionnaire dédié à l'état dissonant (perte d'harmonie).
+    private AwakeState awakeState; // Nouveau gestionnaire unifié des états Awake et dissonant.
 
     // Permet de suivre si l'unité joue actuellement son animation d'Idle pour déclencher les sons adéquats.
     private bool isIdleActive;
@@ -134,7 +133,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public bool IsAwake => awakeState != null && awakeState.IsAwake;
 
     /// <summary>Indique si l'unité est tombée dans l'état Dissonant.</summary>
-    public bool IsDissonant => dissonantState != null && dissonantState.IsDissonant;
+    public bool IsDissonant => awakeState != null && awakeState.IsDissonant;
 
     // Gestionnaire de physique pour déléguer les collisions et la gravité à Unity.
     private CharacterController controller;
@@ -835,7 +834,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // Recherche proactive de l'Animator dédié aux timelines dans les enfants (même inactifs).
         animator = GetCasterAnimator(forceRefresh: true);
         awakeState = GetComponent<AwakeState>();
-        dissonantState = GetComponent<DissonantState>();
         isIdleActive = false; // L'unité n'est pas encore en Idle : permet de jouer le son d'entrée lors du premier appel.
 
         // Setup graphique
@@ -1890,7 +1888,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void EnterDissonantState()
     {
-        dissonantState?.EnterDissonant();
+        awakeState?.EnterDissonant();
     }
 
     /// <summary>
@@ -1898,7 +1896,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void ExitDissonantState()
     {
-        dissonantState?.ExitDissonant();
+        awakeState?.ExitDissonant();
     }
 
     public float GetAttackMultiplier()

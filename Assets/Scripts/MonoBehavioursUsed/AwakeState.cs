@@ -2,172 +2,270 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+/// <summary>
+///     Gère désormais l'intégralité des transitions harmoniques d'une unité :
+///     - déclenchement de l'éveil (Awake) lorsque suffisamment d'harmoniques sont accumulées ;
+///     - bascule vers la dissonance quand la réserve tombe en dessous du seuil critique ;
+///     - restitution des effets visuels, sonores et d'animation définis dans la <see cref="CharacterData"/>.
+///     L'objectif est de centraliser la logique afin de faciliter l'équilibrage et la maintenance du récit.
+/// </summary>
 [RequireComponent(typeof(CharacterUnit))]
 public class AwakeState : UnitStateEffects
 {
+    #region Types internes
+
+    /// <summary>
+    ///     Enumération descriptive des deux phases harmoniques manipulées par ce composant.
+    /// </summary>
+    private enum HarmonicPhase
+    {
+        Awake,
+        Dissonant
+    }
+
+    /// <summary>
+    ///     Structure de configuration alimentée par la <see cref="CharacterData"/>.
+    ///     Chaque phase dispose de ses clips audio, animations et effets propres.
+    /// </summary>
+    private sealed class PhaseConfig
+    {
+        public AnimationClip idleOverride;
+        public GameObject startEffectPrefab;
+        public GameObject loopEffectPrefab;
+        public GameObject endEffectPrefab;
+        public AudioClipSO enterClip;
+        public AudioClipSO exitClip;
+        public AnimationClip enterAnimationOverride;
+        public AnimationClip exitAnimationOverride;
+    }
+
+    /// <summary>
+    ///     Données runtime associées à une phase : instances d'effets, coroutines en cours et durées mises en cache.
+    /// </summary>
+    private sealed class PhaseRuntime
+    {
+        public float cachedEnterDuration;
+        public float cachedExitDuration;
+        public GameObject startInstance;
+        public GameObject loopInstance;
+        public Coroutine transitionCoroutine;
+    }
+
+    #endregion
+
+    #region Constantes Animator
+
     [Tooltip("Multiplicateur appliqué aux caractéristiques en mode Awake")]
     public float statMultiplier = 1.5f;
 
-    [Header("Aura")]
-    [Tooltip("Prefab de l'aura affichée en mode Awake")] public GameObject auraPrefab;
-    private GameObject auraInstance;
+    private const string AnimatorIdleStateName = "Idle_Battle";
+    private const string AnimatorAwakeOnStateName = "Awake_On";
+    private const string AnimatorAwakeOffStateName = "Awake_Off";
+    private const string AnimatorDissonanceOnStateName = "Dissonance_On";
+    private const string AnimatorDissonanceOffStateName = "Dissonance_Off";
+    private const int AnimatorBaseLayerIndex = 0;
+    private const float AnimatorCrossFadeDuration = 0.1f;
+    private const float DefaultLoopTransitionDelay = 1f;
 
-    [Header("FireWing")]
-    [Tooltip("Référence à l'objet 'FireWing' à activer en mode Awake")]
-    [SerializeField] private GameObject fireWing; // Peut rester vide : recherché automatiquement
+    private static readonly int AnimatorAwakeOnHash = Animator.StringToHash(AnimatorAwakeOnStateName);
+    private static readonly int AnimatorAwakeOffHash = Animator.StringToHash(AnimatorAwakeOffStateName);
+    private static readonly int AnimatorDissonanceOnHash = Animator.StringToHash(AnimatorDissonanceOnStateName);
+    private static readonly int AnimatorDissonanceOffHash = Animator.StringToHash(AnimatorDissonanceOffStateName);
+
+    #endregion
+
+    #region Références & états
 
     private CharacterUnit unit;
     private bool isAwake;
+    private bool isDissonant;
 
-    // --- Animation --------------------------------------------------------
-    private AnimatorOverrideController animatorOverrideController; // Copie runtime permettant de remplacer les clips d'Idle.
-    private AnimationClip idleClipOriginalKey;                     // Clip "clé" (celui déclaré dans le controller) à substituer.
-    private AnimationClip idleClipOriginalValue;                   // Valeur d'origine à restaurer lorsque l'état Awake se termine.
-    private const string AnimatorIdleStateName = "Idle_Battle";    // Nom du state Idle à remplacer pendant l'Awake.
-    private const string AnimatorAwakeOnStateName = "Awake_On";    // Nom de l'animation de démarrage d'Awake dans l'Animator.
-    private const string AnimatorAwakeOffStateName = "Awake_Off";  // Nom de l'animation de sortie d'Awake dans l'Animator.
-    private static readonly int AnimatorAwakeOnHash = Animator.StringToHash(AnimatorAwakeOnStateName);
-    private static readonly int AnimatorAwakeOffHash = Animator.StringToHash(AnimatorAwakeOffStateName);
-    private const int AnimatorBaseLayerIndex = 0;                  // Couche principale utilisée pour la plupart des animations.
-    private const float AnimatorCrossFadeDuration = 0.1f;          // Durée standard des transitions déclenchées par script.
-    private float cachedAwakeOnDuration = -1f;                     // Mise en cache de la durée de l'anim Awake_On.
-    private float cachedAwakeOffDuration = -1f;                    // Mise en cache de la durée de l'anim Awake_Off.
-    private Coroutine idleRestoreCoroutine;                        // Coroutine relançant l'Idle une fois les animations terminées.
+    private AnimatorOverrideController animatorOverrideController;
+    private AnimationClip idleClipOriginalKey;
+    private AnimationClip idleClipOriginalValue;
+    private AnimationClip awakeOnClipKey;
+    private AnimationClip awakeOnOriginalValue;
+    private AnimationClip awakeOffClipKey;
+    private AnimationClip awakeOffOriginalValue;
+    private AnimationClip dissonanceOnClipKey;
+    private AnimationClip dissonanceOnOriginalValue;
+    private AnimationClip dissonanceOffClipKey;
+    private AnimationClip dissonanceOffOriginalValue;
 
-    // --- Effets visuels ---------------------------------------------------
-    private const float DefaultLoopTransitionDelay = 1f;           // Fallback utilisé si aucune durée précise n'est trouvée.
-    private GameObject awakenStartInstance;                        // Instance de l'effet "Start" (transitoire).
-    private GameObject awakenLoopInstance;                         // Instance de l'effet "Loop" (permanent).
-    private Coroutine awakenEffectTransitionCoroutine;             // Coroutine basculant du Start vers le Loop.
+    private readonly Dictionary<HarmonicPhase, PhaseConfig> phaseConfigs = new();
+    private readonly Dictionary<HarmonicPhase, PhaseRuntime> phaseRuntimes = new();
 
+    private Coroutine idleRestoreCoroutine;
+
+    #endregion
+
+    #region Accesseurs publics
+
+    /// <summary>Expose l'état Awake afin de simplifier les vérifications côté <see cref="CharacterUnit"/>.</summary>
     public bool IsAwake => isAwake;
+
+    /// <summary>Indique si la phase dissonante est active.</summary>
+    public bool IsDissonant => isDissonant;
+
+    #endregion
+
+    #region Cycle de vie
 
     protected override void Awake()
     {
         base.Awake();
+
         unit = GetComponent<CharacterUnit>();
-        // Si aucune référence n'est fournie, on recherche l'enfant nommé "FireWing"
-        if (fireWing == null)
-        {
-            Transform child = transform.Find("FireWing");
-            if (child != null)
-                fireWing = child.gameObject;
-        }
 
-        // Au départ l'objet FireWing doit être désactivé
-        if (fireWing != null)
-            fireWing.SetActive(false);
-
-        // Prépare un AnimatorOverrideController afin de pouvoir remplacer dynamiquement
-        // le clip d'Idle par sa version éveillée tout en conservant une restauration aisée.
         InitializeAnimatorOverrideData();
-
-        // Mise en cache des durées des animations "On" et "Off" afin d'orchestrer précisément
-        // le déclenchement du loop VFX ainsi que le retour automatique sur l'Idle.
-        cachedAwakeOnDuration = GetAnimationClipDuration(AnimatorAwakeOnStateName);
-        cachedAwakeOffDuration = GetAnimationClipDuration(AnimatorAwakeOffStateName);
-
-        // Relie automatiquement les clips d'entrée/sortie configurés dans la fiche personnage.
-        if (unit != null && unit.Data != null)
-        {
-            if (unit.Data.awakeEnterClip != null)
-                enterClip = unit.Data.awakeEnterClip;
-            if (unit.Data.awakeExitClip != null)
-                exitClip = unit.Data.awakeExitClip;
-        }
+        BuildPhaseConfigurations();
+        ApplyAnimatorOverridesFromData();
+        CachePhaseDurations();
     }
 
-    public void EnterAwake()
-    {
-        if (isAwake) return;
-        isAwake = true;
-        ApplyStatBonus();
-        unit?.NotifyIdleStateExit(); // Le son de sortie d'Idle doit être joué avant la transition Awake.
-        // Activation des ailes de feu lorsque le personnage entre en mode Awake
-        if (fireWing != null)
-            fireWing.SetActive(true);
-        if (auraPrefab != null && auraInstance == null)
-            auraInstance = Instantiate(auraPrefab, transform.position, Quaternion.identity, transform);
+    #endregion
 
-        // Lance l'animation d'entrée et planifie le retour vers l'Idle une fois la transition achevée.
-        PlayAwakeOnAnimation();
-        OverrideIdleAnimation();
-        ScheduleIdlePlayback(cachedAwakeOnDuration);
-
-        // Déploie l'effet de démarrage puis prépare la bascule vers l'effet de loop continu.
-        HandleAwakenStartEffect();
-
-        EnterState();
-    }
-
-    public void ExitAwake()
-    {
-        if (!isAwake) return;
-        isAwake = false;
-        RemoveStatBonus();
-        // Désactivation des ailes de feu quand on quitte le mode Awake
-        if (fireWing != null)
-            fireWing.SetActive(false);
-        if (auraInstance != null)
-        {
-            Destroy(auraInstance);
-            auraInstance = null;
-        }
-
-        // Interrompt immédiatement toute coroutine en attente et supprime les effets actifs.
-        StopAwakenEffectTransitionCoroutine();
-        DestroyAwakenEffect(ref awakenStartInstance);
-        DestroyAwakenEffect(ref awakenLoopInstance);
-
-        // Déclenche l'animation de sortie, remet l'Idle d'origine et programme sa relance.
-        PlayAwakeOffAnimation();
-        RestoreIdleAnimation();
-        ScheduleIdlePlayback(cachedAwakeOffDuration);
-
-        // Génère l'effet de fin si défini dans les données du personnage.
-        SpawnAwakenEndEffect();
-
-        ExitState();
-    }
-
-    private void ApplyStatBonus()
-    {
-        if (unit == null) return;
-        unit.currentStrength *= statMultiplier;
-        unit.currentDefense *= statMultiplier;
-        unit.currentReflex *= statMultiplier;
-        unit.currentMobility *= statMultiplier;
-        unit.currentPower *= statMultiplier;
-        unit.currentStability *= statMultiplier;
-        unit.currentVitality *= statMultiplier;
-        unit.currentSagacity *= statMultiplier;
-    }
-
-    private void RemoveStatBonus()
-    {
-        if (unit == null) return;
-        unit.currentStrength /= statMultiplier;
-        unit.currentDefense /= statMultiplier;
-        unit.currentReflex /= statMultiplier;
-        unit.currentMobility /= statMultiplier;
-        unit.currentPower /= statMultiplier;
-        unit.currentStability /= statMultiplier;
-        unit.currentVitality /= statMultiplier;
-        unit.currentSagacity /= statMultiplier;
-    }
-
-    #region Gestion des animations d'Awake
+    #region API publique
 
     /// <summary>
-    ///     Installe un <see cref="AnimatorOverrideController"/> local pour pouvoir remplacer
-    ///     l'animation Idle lorsque l'unité entre en éveil.
+    ///     Active l'éveil : boost de statistiques, override d'animations et déclenchement des effets spécifiques.
+    ///     Toutes les ressources proviennent de la fiche personnage pour respecter la narration.
     /// </summary>
+    public void EnterAwake()
+    {
+        if (isAwake)
+            return;
+
+        // On s'assure que les résidus de dissonance sont nettoyés avant d'appliquer le buff.
+        StopPhaseEffects(HarmonicPhase.Dissonant, false);
+
+        isAwake = true;
+        isDissonant = false;
+
+        ApplyStatBonus();
+        unit?.NotifyIdleStateExit();
+
+        ApplyIdleOverride(GetPhaseConfig(HarmonicPhase.Awake).idleOverride);
+
+        float transitionDuration = PlayPhaseEnterAnimation(HarmonicPhase.Awake);
+
+        StartPhaseEffects(HarmonicPhase.Awake, transitionDuration);
+
+        PrepareAudioForPhase(HarmonicPhase.Awake, true);
+        EnterState();
+        ClearAudioCacheAfterEnter();
+
+        ScheduleIdlePlayback(transitionDuration);
+    }
+
+    /// <summary>Met fin à l'éveil et restaure les valeurs de base de l'unité.</summary>
+    public void ExitAwake()
+    {
+        if (!isAwake)
+            return;
+
+        isAwake = false;
+
+        float transitionDuration = PlayPhaseExitAnimation(HarmonicPhase.Awake);
+
+        RemoveStatBonus();
+        StopPhaseEffects(HarmonicPhase.Awake, true);
+        ApplyIdleOverride(null);
+
+        PrepareAudioForPhase(HarmonicPhase.Awake, false);
+        ExitState();
+        ClearAudioCacheAfterExit();
+
+        ScheduleIdlePlayback(transitionDuration);
+    }
+
+    /// <summary>
+    ///     Déclenche la dissonance : effets négatifs visuels et audio, sans modifier les statistiques pour l'instant.
+    /// </summary>
+    public void EnterDissonant()
+    {
+        if (isDissonant)
+            return;
+
+        StopPhaseEffects(HarmonicPhase.Awake, false);
+
+        isDissonant = true;
+        isAwake = false;
+
+        unit?.NotifyIdleStateExit();
+
+        ApplyIdleOverride(GetPhaseConfig(HarmonicPhase.Dissonant).idleOverride);
+
+        float transitionDuration = PlayPhaseEnterAnimation(HarmonicPhase.Dissonant);
+
+        StartPhaseEffects(HarmonicPhase.Dissonant, transitionDuration);
+
+        PrepareAudioForPhase(HarmonicPhase.Dissonant, true);
+        EnterState();
+        ClearAudioCacheAfterEnter();
+
+        ScheduleIdlePlayback(transitionDuration);
+    }
+
+    /// <summary>Quitte l'état dissonant et restaure l'Idle d'origine.</summary>
+    public void ExitDissonant()
+    {
+        if (!isDissonant)
+            return;
+
+        isDissonant = false;
+
+        float transitionDuration = PlayPhaseExitAnimation(HarmonicPhase.Dissonant);
+
+        StopPhaseEffects(HarmonicPhase.Dissonant, true);
+        ApplyIdleOverride(null);
+
+        PrepareAudioForPhase(HarmonicPhase.Dissonant, false);
+        ExitState();
+        ClearAudioCacheAfterExit();
+
+        ScheduleIdlePlayback(transitionDuration);
+    }
+
+    #endregion
+
+    #region Construction des configurations
+
+    private void BuildPhaseConfigurations()
+    {
+        phaseConfigs.Clear();
+
+        var data = unit != null ? unit.Data : null;
+        phaseConfigs[HarmonicPhase.Awake] = new PhaseConfig
+        {
+            idleOverride = data?.awakenIdleAnimation,
+            startEffectPrefab = data?.awakenEffect_Start,
+            loopEffectPrefab = data?.awakenEffect_Loop,
+            endEffectPrefab = data?.awakenEffect_End,
+            enterClip = data?.awakeEnterClip,
+            exitClip = data?.awakeExitClip,
+            enterAnimationOverride = data?.awakeEnterAnimation,
+            exitAnimationOverride = data?.awakeExitAnimation
+        };
+
+        phaseConfigs[HarmonicPhase.Dissonant] = new PhaseConfig
+        {
+            idleOverride = data?.dissonantIdleAnimation,
+            startEffectPrefab = data?.dissonanceEffect_Start,
+            loopEffectPrefab = data?.dissonanceEffect_Loop,
+            endEffectPrefab = data?.dissonanceEffect_End,
+            enterClip = data?.dissonanceEnterClip,
+            exitClip = data?.dissonanceExitClip,
+            enterAnimationOverride = data?.dissonanceEnterAnimation,
+            exitAnimationOverride = data?.dissonanceExitAnimation
+        };
+    }
+
     private void InitializeAnimatorOverrideData()
     {
         if (animator == null)
             return;
 
-        // On récupère l'override existant ou on en crée un nouveau pour garder la configuration d'origine intacte.
         if (animator.runtimeAnimatorController is AnimatorOverrideController existingOverride)
         {
             animatorOverrideController = existingOverride;
@@ -181,78 +279,325 @@ public class AwakeState : UnitStateEffects
         if (animatorOverrideController == null)
             return;
 
-        // On parcourt la liste des overrides pour mémoriser le couple (clé, valeur) correspondant à l'Idle.
         var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>(animatorOverrideController.overridesCount);
         animatorOverrideController.GetOverrides(overrides);
         foreach (var pair in overrides)
         {
-            if (pair.Key != null && pair.Key.name == AnimatorIdleStateName)
+            if (pair.Key == null)
+                continue;
+
+            var value = pair.Value != null ? pair.Value : pair.Key;
+
+            switch (pair.Key.name)
             {
-                idleClipOriginalKey = pair.Key;
-                idleClipOriginalValue = pair.Value != null ? pair.Value : pair.Key;
-                break;
+                case AnimatorIdleStateName:
+                    idleClipOriginalKey = pair.Key;
+                    idleClipOriginalValue = value;
+                    break;
+                case AnimatorAwakeOnStateName:
+                    awakeOnClipKey = pair.Key;
+                    awakeOnOriginalValue = value;
+                    break;
+                case AnimatorAwakeOffStateName:
+                    awakeOffClipKey = pair.Key;
+                    awakeOffOriginalValue = value;
+                    break;
+                case AnimatorDissonanceOnStateName:
+                    dissonanceOnClipKey = pair.Key;
+                    dissonanceOnOriginalValue = value;
+                    break;
+                case AnimatorDissonanceOffStateName:
+                    dissonanceOffClipKey = pair.Key;
+                    dissonanceOffOriginalValue = value;
+                    break;
             }
         }
     }
 
-    /// <summary>
-    ///     Remplace l'animation d'Idle par la version spéciale définie dans les données du personnage.
-    /// </summary>
-    private void OverrideIdleAnimation()
+    private void ApplyAnimatorOverridesFromData()
     {
-        if (animatorOverrideController == null || idleClipOriginalKey == null)
+        if (animatorOverrideController == null)
             return;
 
-        var awakenIdle = unit != null ? unit.Data?.awakenIdleAnimation : null;
-        if (awakenIdle == null)
-            return;
-
-        animatorOverrideController[idleClipOriginalKey] = awakenIdle;
+        ApplyAnimatorOverrideClip(awakeOnClipKey, awakeOnOriginalValue, GetPhaseConfig(HarmonicPhase.Awake).enterAnimationOverride);
+        ApplyAnimatorOverrideClip(awakeOffClipKey, awakeOffOriginalValue, GetPhaseConfig(HarmonicPhase.Awake).exitAnimationOverride);
+        ApplyAnimatorOverrideClip(dissonanceOnClipKey, dissonanceOnOriginalValue, GetPhaseConfig(HarmonicPhase.Dissonant).enterAnimationOverride);
+        ApplyAnimatorOverrideClip(dissonanceOffClipKey, dissonanceOffOriginalValue, GetPhaseConfig(HarmonicPhase.Dissonant).exitAnimationOverride);
     }
 
-    /// <summary>
-    ///     Restaure l'animation d'Idle d'origine lorsque l'éveil prend fin.
-    /// </summary>
-    private void RestoreIdleAnimation()
+    private void ApplyAnimatorOverrideClip(AnimationClip key, AnimationClip defaultClip, AnimationClip overrideClip)
+    {
+        if (key == null || defaultClip == null)
+            return;
+
+        animatorOverrideController[key] = overrideClip != null ? overrideClip : defaultClip;
+    }
+
+    private void CachePhaseDurations()
+    {
+        CachePhaseDuration(HarmonicPhase.Awake, true);
+        CachePhaseDuration(HarmonicPhase.Awake, false);
+        CachePhaseDuration(HarmonicPhase.Dissonant, true);
+        CachePhaseDuration(HarmonicPhase.Dissonant, false);
+    }
+
+    private void CachePhaseDuration(HarmonicPhase phase, bool entering)
+    {
+        var config = GetPhaseConfig(phase);
+        var runtime = GetPhaseRuntime(phase);
+
+        AnimationClip overrideClip = entering ? config.enterAnimationOverride : config.exitAnimationOverride;
+        string stateName = entering ? GetPhaseEnterStateName(phase) : GetPhaseExitStateName(phase);
+
+        float duration = 0f;
+        if (overrideClip != null)
+            duration = overrideClip.length;
+        else
+            duration = GetAnimationClipDuration(stateName);
+
+        if (entering)
+            runtime.cachedEnterDuration = duration;
+        else
+            runtime.cachedExitDuration = duration;
+    }
+
+    #endregion
+
+    #region Gestion des animations
+
+    private float PlayPhaseEnterAnimation(HarmonicPhase phase)
+    {
+        return PlayAnimatorState(phase, true);
+    }
+
+    private float PlayPhaseExitAnimation(HarmonicPhase phase)
+    {
+        return PlayAnimatorState(phase, false);
+    }
+
+    private float PlayAnimatorState(HarmonicPhase phase, bool entering)
+    {
+        if (animator == null)
+            return 0f;
+
+        string stateName = entering ? GetPhaseEnterStateName(phase) : GetPhaseExitStateName(phase);
+        int stateHash = entering ? GetPhaseEnterHash(phase) : GetPhaseExitHash(phase);
+
+        if (animator.HasState(AnimatorBaseLayerIndex, stateHash))
+            animator.CrossFade(stateHash, AnimatorCrossFadeDuration, AnimatorBaseLayerIndex, 0f);
+        else
+            animator.Play(stateName, AnimatorBaseLayerIndex, 0f);
+
+        var runtime = GetPhaseRuntime(phase);
+        return entering ? runtime.cachedEnterDuration : runtime.cachedExitDuration;
+    }
+
+    private string GetPhaseEnterStateName(HarmonicPhase phase)
+    {
+        return phase == HarmonicPhase.Awake ? AnimatorAwakeOnStateName : AnimatorDissonanceOnStateName;
+    }
+
+    private string GetPhaseExitStateName(HarmonicPhase phase)
+    {
+        return phase == HarmonicPhase.Awake ? AnimatorAwakeOffStateName : AnimatorDissonanceOffStateName;
+    }
+
+    private int GetPhaseEnterHash(HarmonicPhase phase)
+    {
+        return phase == HarmonicPhase.Awake ? AnimatorAwakeOnHash : AnimatorDissonanceOnHash;
+    }
+
+    private int GetPhaseExitHash(HarmonicPhase phase)
+    {
+        return phase == HarmonicPhase.Awake ? AnimatorAwakeOffHash : AnimatorDissonanceOffHash;
+    }
+
+    private float GetAnimationClipDuration(string clipName)
+    {
+        if (animator == null || animator.runtimeAnimatorController == null)
+            return 0f;
+
+        foreach (var clip in animator.runtimeAnimatorController.animationClips)
+        {
+            if (clip != null && clip.name == clipName)
+                return clip.length;
+        }
+
+        return 0f;
+    }
+
+    private void ApplyIdleOverride(AnimationClip overrideClip)
     {
         if (animatorOverrideController == null || idleClipOriginalKey == null || idleClipOriginalValue == null)
             return;
 
-        animatorOverrideController[idleClipOriginalKey] = idleClipOriginalValue;
+        animatorOverrideController[idleClipOriginalKey] = overrideClip != null ? overrideClip : idleClipOriginalValue;
     }
 
-    /// <summary>
-    ///     Lance l'animation "Awake_On" si elle est déclarée dans le controller.
-    /// </summary>
-    private void PlayAwakeOnAnimation()
+    #endregion
+
+    #region Gestion des effets visuels
+
+    private void StartPhaseEffects(HarmonicPhase phase, float transitionDuration)
     {
-        if (animator == null)
+        var config = GetPhaseConfig(phase);
+        var runtime = GetPhaseRuntime(phase);
+
+        StopPhaseEffects(phase, false);
+
+        if (config.startEffectPrefab != null)
+            runtime.startInstance = InstantiatePhaseEffect(config.startEffectPrefab);
+
+        float effectDuration = EstimateEffectDuration(runtime.startInstance);
+        float delay = Mathf.Max(effectDuration, transitionDuration);
+        if (delay <= 0f)
+            delay = DefaultLoopTransitionDelay;
+
+        if (config.loopEffectPrefab != null)
+            runtime.transitionCoroutine = StartCoroutine(SpawnLoopAfterDelay(phase, delay, config.loopEffectPrefab));
+        else if (runtime.startInstance != null)
+            runtime.transitionCoroutine = StartCoroutine(DestroyStartAfterDelay(phase, delay));
+    }
+
+    private void StopPhaseEffects(HarmonicPhase phase, bool spawnEndEffect)
+    {
+        var runtime = GetPhaseRuntime(phase);
+        var config = GetPhaseConfig(phase);
+
+        if (runtime.transitionCoroutine != null)
+        {
+            StopCoroutine(runtime.transitionCoroutine);
+            runtime.transitionCoroutine = null;
+        }
+
+        DestroyEffectInstance(ref runtime.startInstance);
+        DestroyEffectInstance(ref runtime.loopInstance);
+
+        if (spawnEndEffect && config.endEffectPrefab != null)
+            InstantiatePhaseEffect(config.endEffectPrefab);
+    }
+
+    private IEnumerator SpawnLoopAfterDelay(HarmonicPhase phase, float delaySeconds, GameObject loopPrefab)
+    {
+        if (delaySeconds > 0f)
+            yield return new WaitForSeconds(delaySeconds);
+        else
+            yield return null;
+
+        var runtime = GetPhaseRuntime(phase);
+        runtime.transitionCoroutine = null;
+
+        if (!IsPhaseActive(phase))
+            yield break;
+
+        DestroyEffectInstance(ref runtime.startInstance);
+
+        if (loopPrefab != null)
+            runtime.loopInstance = InstantiatePhaseEffect(loopPrefab);
+    }
+
+    private IEnumerator DestroyStartAfterDelay(HarmonicPhase phase, float delaySeconds)
+    {
+        if (delaySeconds > 0f)
+            yield return new WaitForSeconds(delaySeconds);
+        else
+            yield return null;
+
+        var runtime = GetPhaseRuntime(phase);
+        runtime.transitionCoroutine = null;
+
+        DestroyEffectInstance(ref runtime.startInstance);
+    }
+
+    private GameObject InstantiatePhaseEffect(GameObject prefab)
+    {
+        if (prefab == null)
+            return null;
+
+        var instance = Instantiate(prefab, transform.position, Quaternion.identity, transform);
+        instance.transform.localPosition = Vector3.zero;
+        return instance;
+    }
+
+    private static void DestroyEffectInstance(ref GameObject instance)
+    {
+        if (instance == null)
             return;
 
-        if (animator.HasState(AnimatorBaseLayerIndex, AnimatorAwakeOnHash))
-            animator.CrossFade(AnimatorAwakeOnHash, AnimatorCrossFadeDuration, AnimatorBaseLayerIndex, 0f);
-        else
-            animator.Play(AnimatorAwakeOnStateName, AnimatorBaseLayerIndex, 0f);
+        Destroy(instance);
+        instance = null;
     }
 
-    /// <summary>
-    ///     Lance l'animation "Awake_Off" si disponible.
-    /// </summary>
-    private void PlayAwakeOffAnimation()
+    private static float EstimateEffectDuration(GameObject effectInstance)
     {
-        if (animator == null)
-            return;
+        if (effectInstance == null)
+            return 0f;
 
-        if (animator.HasState(AnimatorBaseLayerIndex, AnimatorAwakeOffHash))
-            animator.CrossFade(AnimatorAwakeOffHash, AnimatorCrossFadeDuration, AnimatorBaseLayerIndex, 0f);
-        else
-            animator.Play(AnimatorAwakeOffStateName, AnimatorBaseLayerIndex, 0f);
+        float maxDuration = 0f;
+        var particleSystems = effectInstance.GetComponentsInChildren<ParticleSystem>(true);
+        foreach (var ps in particleSystems)
+        {
+            var main = ps.main;
+
+            if (main.loop)
+                return 0f;
+
+            float simulationSpeed = Mathf.Max(main.simulationSpeed, 0.01f);
+            float duration = main.duration / simulationSpeed;
+            duration += main.startDelay.constantMax;
+            duration += main.startLifetime.constantMax;
+
+            if (duration > maxDuration)
+                maxDuration = duration;
+        }
+
+        return maxDuration;
     }
 
-    /// <summary>
-    ///     Programme le relancement de l'animation Idle après une certaine durée.
-    ///     Un délai minimal est toujours conservé pour laisser la transition s'installer proprement.
-    /// </summary>
+    private bool IsPhaseActive(HarmonicPhase phase)
+    {
+        return phase switch
+        {
+            HarmonicPhase.Awake => isAwake,
+            HarmonicPhase.Dissonant => isDissonant,
+            _ => false
+        };
+    }
+
+    #endregion
+
+    #region Audio & Idle helpers
+
+    private void PrepareAudioForPhase(HarmonicPhase phase, bool entering)
+    {
+        var config = GetPhaseConfig(phase);
+        if (entering)
+        {
+            enterClip = config.enterClip;
+            exitClip = null;
+        }
+        else
+        {
+            exitClip = config.exitClip;
+            enterClip = null;
+        }
+
+        enterAnimation = null;
+        exitAnimation = null;
+        enterEffectPrefab = null;
+        exitEffectPrefab = null;
+    }
+
+    private void ClearAudioCacheAfterEnter()
+    {
+        enterClip = null;
+    }
+
+    private void ClearAudioCacheAfterExit()
+    {
+        exitClip = null;
+    }
+
     private void ScheduleIdlePlayback(float delaySeconds)
     {
         if (unit == null)
@@ -270,172 +615,73 @@ public class AwakeState : UnitStateEffects
 
     private IEnumerator PlayIdleAfterDelay(float delaySeconds)
     {
-        yield return new WaitForSeconds(delaySeconds);
-        unit?.PlayIdleAnimation();
-        idleRestoreCoroutine = null;
-    }
-
-    /// <summary>
-    ///     Renvoie la durée (en secondes) du clip portant le nom indiqué.
-    /// </summary>
-    private float GetAnimationClipDuration(string clipName)
-    {
-        if (animator == null)
-            return 0f;
-
-        var controller = animator.runtimeAnimatorController;
-        if (controller == null)
-            return 0f;
-
-        foreach (var clip in controller.animationClips)
-        {
-            if (clip != null && clip.name == clipName)
-                return clip.length;
-        }
-
-        return 0f;
-    }
-
-    #endregion
-
-    #region Gestion des effets visuels spécifiques à l'Awake
-
-    /// <summary>
-    ///     Gère l'instanciation de l'effet "Start" et programme la bascule vers le loop.
-    /// </summary>
-    private void HandleAwakenStartEffect()
-    {
-        var data = unit != null ? unit.Data : null;
-        if (data == null)
-            return;
-
-        StopAwakenEffectTransitionCoroutine();
-        DestroyAwakenEffect(ref awakenStartInstance);
-        DestroyAwakenEffect(ref awakenLoopInstance);
-
-        if (data.awakenEffect_Start != null)
-            awakenStartInstance = InstantiateAwakenEffect(data.awakenEffect_Start);
-
-        float effectDuration = EstimateEffectDuration(awakenStartInstance);
-        float delay = Mathf.Max(effectDuration, cachedAwakeOnDuration);
-        if (delay <= 0f)
-            delay = DefaultLoopTransitionDelay;
-
-        if (data.awakenEffect_Loop != null)
-            awakenEffectTransitionCoroutine = StartCoroutine(SpawnAwakenLoopAfterDelay(delay, data.awakenEffect_Loop));
-        else if (awakenStartInstance != null)
-            awakenEffectTransitionCoroutine = StartCoroutine(DestroyStartEffectAfterDelay(delay));
-    }
-
-    private IEnumerator SpawnAwakenLoopAfterDelay(float delaySeconds, GameObject loopPrefab)
-    {
-        if (delaySeconds > 0f)
-            yield return new WaitForSeconds(delaySeconds);
-        else
-            yield return null; // On attend un frame pour s'assurer que l'effet Start a le temps d'initialiser ses particules.
-
-        if (!isAwake)
-        {
-            awakenEffectTransitionCoroutine = null;
-            yield break;
-        }
-
-        DestroyAwakenEffect(ref awakenStartInstance);
-
-        if (loopPrefab != null)
-            awakenLoopInstance = InstantiateAwakenEffect(loopPrefab);
-
-        awakenEffectTransitionCoroutine = null;
-    }
-
-    private IEnumerator DestroyStartEffectAfterDelay(float delaySeconds)
-    {
         if (delaySeconds > 0f)
             yield return new WaitForSeconds(delaySeconds);
         else
             yield return null;
 
-        DestroyAwakenEffect(ref awakenStartInstance);
-        awakenEffectTransitionCoroutine = null;
+        unit?.PlayIdleAnimation();
+        idleRestoreCoroutine = null;
     }
 
-    /// <summary>
-    ///     Instancie l'effet de fin lorsqu'on quitte l'éveil.
-    /// </summary>
-    private void SpawnAwakenEndEffect()
-    {
-        var data = unit != null ? unit.Data : null;
-        if (data?.awakenEffect_End == null)
-            return;
+    #endregion
 
-        InstantiateAwakenEffect(data.awakenEffect_End);
-    }
+    #region Accès aux dictionnaires
 
-    /// <summary>
-    ///     Arrête la coroutine qui gérait la transition Start -> Loop.
-    /// </summary>
-    private void StopAwakenEffectTransitionCoroutine()
+    private PhaseConfig GetPhaseConfig(HarmonicPhase phase)
     {
-        if (awakenEffectTransitionCoroutine != null)
+        if (!phaseConfigs.TryGetValue(phase, out var config) || config == null)
         {
-            StopCoroutine(awakenEffectTransitionCoroutine);
-            awakenEffectTransitionCoroutine = null;
-        }
-    }
-
-    /// <summary>
-    ///     Détruit proprement une instance d'effet et vide la référence associée.
-    /// </summary>
-    private void DestroyAwakenEffect(ref GameObject effectInstance)
-    {
-        if (effectInstance == null)
-            return;
-
-        Destroy(effectInstance);
-        effectInstance = null;
-    }
-
-    /// <summary>
-    ///     Instancie un prefab d'effet sur l'unité en s'assurant qu'il suit le transform parent.
-    /// </summary>
-    private GameObject InstantiateAwakenEffect(GameObject prefab)
-    {
-        if (prefab == null)
-            return null;
-
-        var instance = Instantiate(prefab, transform.position, Quaternion.identity, transform);
-        instance.transform.localPosition = Vector3.zero;
-        return instance;
-    }
-
-    /// <summary>
-    ///     Essaie d'estimer la durée de vie d'un effet basé sur des ParticleSystems afin de déterminer
-    ///     quand lancer l'effet de loop. Si aucune information fiable n'est disponible, renvoie 0.
-    /// </summary>
-    private static float EstimateEffectDuration(GameObject effectInstance)
-    {
-        if (effectInstance == null)
-            return 0f;
-
-        float maxDuration = 0f;
-        var particleSystems = effectInstance.GetComponentsInChildren<ParticleSystem>(true);
-        foreach (var ps in particleSystems)
-        {
-            var main = ps.main;
-
-            if (main.loop)
-                return 0f; // Les systèmes bouclant indéfiniment ne permettent pas d'estimer une durée fiable.
-
-            float simulationSpeed = Mathf.Max(main.simulationSpeed, 0.01f);
-            float duration = main.duration / simulationSpeed;
-            duration += main.startDelay.constantMax;
-            duration += main.startLifetime.constantMax;
-
-            if (duration > maxDuration)
-                maxDuration = duration;
+            config = new PhaseConfig();
+            phaseConfigs[phase] = config;
         }
 
-        return maxDuration;
+        return config;
+    }
+
+    private PhaseRuntime GetPhaseRuntime(HarmonicPhase phase)
+    {
+        if (!phaseRuntimes.TryGetValue(phase, out var runtime) || runtime == null)
+        {
+            runtime = new PhaseRuntime();
+            phaseRuntimes[phase] = runtime;
+        }
+
+        return runtime;
+    }
+
+    #endregion
+
+    #region Gestion des statistiques
+
+    private void ApplyStatBonus()
+    {
+        if (unit == null)
+            return;
+
+        unit.currentStrength *= statMultiplier;
+        unit.currentDefense *= statMultiplier;
+        unit.currentReflex *= statMultiplier;
+        unit.currentMobility *= statMultiplier;
+        unit.currentPower *= statMultiplier;
+        unit.currentStability *= statMultiplier;
+        unit.currentVitality *= statMultiplier;
+        unit.currentSagacity *= statMultiplier;
+    }
+
+    private void RemoveStatBonus()
+    {
+        if (unit == null)
+            return;
+
+        unit.currentStrength /= statMultiplier;
+        unit.currentDefense /= statMultiplier;
+        unit.currentReflex /= statMultiplier;
+        unit.currentMobility /= statMultiplier;
+        unit.currentPower /= statMultiplier;
+        unit.currentStability /= statMultiplier;
+        unit.currentVitality /= statMultiplier;
+        unit.currentSagacity /= statMultiplier;
     }
 
     #endregion
