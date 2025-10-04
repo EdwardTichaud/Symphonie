@@ -253,6 +253,15 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Effet visuel utilisé à la fin de l'éveil (Awake).")]
     public GameObject awakenEffect_End;
 
+    [Tooltip("Effet visuel déclenché lorsque l'unité sombre en dissonance.")]
+    public GameObject dissonanceEffect_Start;
+
+    [Tooltip("Effet visuel maintenu tant que l'unité est dissonante.")]
+    public GameObject dissonanceEffect_Loop;
+
+    [Tooltip("Effet visuel joué lorsque l'unité se libère de la dissonance.")]
+    public GameObject dissonanceEffect_End;
+
     #endregion
 
     #region Animations & Timeline
@@ -281,6 +290,18 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Animation Idle utilisée lorsque l'unité est dissonante.")]
     public AnimationClip dissonantIdleAnimation;
 
+    [Tooltip("Animation d'entrée en Awake utilisée pour overrider l'Animator si nécessaire.")]
+    public AnimationClip awakeEnterAnimation;
+
+    [Tooltip("Animation de sortie de l'Awake utilisée pour overrider l'Animator si nécessaire.")]
+    public AnimationClip awakeExitAnimation;
+
+    [Tooltip("Animation d'entrée dans la dissonance.")]
+    public AnimationClip dissonanceEnterAnimation;
+
+    [Tooltip("Animation jouée lorsque la dissonance prend fin.")]
+    public AnimationClip dissonanceExitAnimation;
+
     [Header("Timeline d'introduction")]
     [Tooltip("Timeline jouée lors de l'introduction du combat pour cette unité.")]
     public TimelineAsset introTimeline;
@@ -306,6 +327,12 @@ public class CharacterData : ScriptableObject, ITargetable
 
     [Tooltip("Clip joué lorsque l'unité quitte l'éveil (Awake).")]
     public AudioClipSO awakeExitClip;
+
+    [Tooltip("Clip joué lorsque l'unité devient dissonante.")]
+    public AudioClipSO dissonanceEnterClip;
+
+    [Tooltip("Clip joué lorsque l'unité sort de la dissonance.")]
+    public AudioClipSO dissonanceExitClip;
 
     [Tooltip("Clip joué lorsqu'une animation d'Idle démarre (tous états confondus).")]
     public AudioClipSO idleEnterClip;
