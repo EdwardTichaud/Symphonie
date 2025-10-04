@@ -144,16 +144,16 @@ public class CharacterController3D : MonoBehaviour
         // Mémorise le dernier appui sur Saut pour gérer intelligemment les buffers et le coyote time.
         if (InputsManager.Instance.playerInputs.World.Jump.triggered)
         {
-            // On vérifie si un objet interactif prioritaire est présent.
-            // Dans ce cas, on annule immédiatement le saut pour éviter les erreurs de saisie.
+            // On autorise désormais le saut même en présence d'un interactable.
+            // Cela garantit une meilleure réactivité sans empêcher l'action contextuelle via le bouton dédié.
             if (CanProcessJumpInput())
             {
-                // Aucun interactable en cours : on mémorise l'appui afin que le buffer et le coyote time fonctionnent.
+                // On mémorise systématiquement l'appui pour que le buffer et le coyote time fonctionnent correctement.
                 lastJumpPressedTimestamp = Time.time;
             }
             else
             {
-                // Un interactable est détecté : on réinitialise la mémoire d'appui pour bloquer le saut.
+                // Cas conservé par sécurité si la logique venait à réintroduire des restrictions de saut.
                 lastJumpPressedTimestamp = float.NegativeInfinity;
             }
         }
@@ -161,10 +161,10 @@ public class CharacterController3D : MonoBehaviour
 
     /// <summary>
     /// Indique si l'entrée de saut peut être traitée.
-    /// On bloque volontairement le saut lorsqu'un objet <see cref="IInteractable"/> est à portée
-    /// afin de laisser la priorité à l'action contextuelle.
+    /// On permet désormais le saut même lorsqu'un objet <see cref="IInteractable"/> est à portée
+    /// afin de conserver la fluidité du déplacement tout en laissant l'action contextuelle disponible.
     /// </summary>
-    /// <returns><c>true</c> si aucun interactable prioritaire n'est détecté.</returns>
+    /// <returns><c>true</c> lorsque l'entrée de saut peut être traitée (toujours vrai dans l'état actuel).</returns>
     private bool CanProcessJumpInput()
     {
         // L'InteractionManager peut être absent sur certaines scènes (ex : tests unitaires).
@@ -173,8 +173,10 @@ public class CharacterController3D : MonoBehaviour
             return true;
         }
 
-        // La présence d'un interactable courant signifie que le joueur peut interagir : on interdit le saut.
-        return InteractionManager.Instance.currentInteractable == null;
+        // On ne bloque plus le saut lorsqu'un interactable est détecté :
+        // - L'action contextuelle reste gérée via InteractionManager.Interact.
+        // - La manoeuvrabilité du joueur est préservée pour les situations dynamiques.
+        return true;
     }
 
     /// <summary>
