@@ -262,6 +262,10 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Effet visuel joué lorsque l'unité se libère de la dissonance.")]
     public GameObject dissonanceEffect_End;
 
+    [Header("Réglages Awake & Dissonance")]
+    [Tooltip("Multiplicateur appliqué à toutes les statistiques courantes lorsque l'unité entre en état Awake.")]
+    public float awakeStatMultiplier = 1.5f;
+
     #endregion
 
     #region Animations & Timeline
