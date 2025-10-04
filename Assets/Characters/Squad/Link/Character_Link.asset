@@ -18,7 +18,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 9401e305dc687df49a81222208c4978b, type: 3}
   characterType: 0
   gameplayType: 0
-  harmonicType: 0
+  harmonicType: 2
   characterWorldModel: {fileID: 0}
   characterBattleModel: {fileID: 901204007372340786, guid: 516a13f5ad90e764ca16beb19bf08c5d, type: 3}
   battlefieldIndex: 0
@@ -48,11 +48,15 @@ MonoBehaviour:
   - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
   - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
   specialMusicalMove: {fileID: 0}
+  musicalMoveSets: []
+  defaultMusicalMoveSetIndex: -1
+  itemSets: []
+  defaultItemSetIndex: -1
   currentInitiative: 1
   currentRange: 5
   currentHP: 50
-  currentStrength: 1
-  currentDefense: 1
+  currentStrength: 1.5
+  currentDefense: 1.5
   currentPower: 0
   currentStability: 0
   currentVitality: 0
@@ -65,6 +69,9 @@ MonoBehaviour:
   currentSpeed: 0
   currentInterceptionRange: 1
   currentInterceptionChance: 0
+  currentHarmonicCharge: 2
+  currentMusicalMoveSetIndex: -1
+  currentItemSetIndex: -1
   hitSound: {fileID: 0}
   criticalHitSound: {fileID: 0}
   interceptedSound: {fileID: 0}
@@ -74,16 +81,35 @@ MonoBehaviour:
   deathEffect: {fileID: 0}
   dashParticlesPrefab: {fileID: 6843868886689424030, guid: 39cd3db8310d9e045ad6b122b69635a7, type: 3}
   dashSoundClip: {fileID: 8300000, guid: 888110618ab90bd47b2835044d68f9c0, type: 3}
+  awakenEffect_Start: {fileID: 0}
+  awakenEffect_Loop: {fileID: 0}
+  awakenEffect_End: {fileID: 0}
+  dissonanceEffect_Start: {fileID: 0}
+  dissonanceEffect_Loop: {fileID: 0}
+  dissonanceEffect_End: {fileID: 0}
+  awakeStatMultiplier: 1.5
   hitAnimation: {fileID: 0}
   deathAnimation: {fileID: 0}
   TPAnimation_Start: {fileID: 0}
   TPAnimation_Destination: {fileID: 0}
-  prepareToUndergoAnimation: {fileID: 0}
-  introTimeline: {fileID: 0}
+  prepareToUndergoAnimation: {fileID: 7400000, guid: 84ecef9b8267d434eb7be8dff9ecaec1, type: 2}
+  awakenIdleAnimation: {fileID: 0}
+  dissonantIdleAnimation: {fileID: 0}
+  awakeEnterAnimation: {fileID: 0}
+  awakeExitAnimation: {fileID: 0}
+  dissonanceEnterAnimation: {fileID: 0}
+  dissonanceExitAnimation: {fileID: 0}
+  introTimeline: {fileID: 11400000, guid: 5f0dceeed3fcd914ebde5933df0b5223, type: 2}
   moveStartClip: {fileID: 0}
   moveEndClip: {fileID: 0}
-  menuSelectionClip: {fileID: 0}
-  weepForLucianDeath: {fileID: 8300000, guid: 6f5fca7e1792c6249852c949f39bb537, type: 3}
+  menuSelectionClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
+  awakeEnterClip: {fileID: 0}
+  awakeExitClip: {fileID: 0}
+  dissonanceEnterClip: {fileID: 0}
+  dissonanceExitClip: {fileID: 0}
+  idleEnterClip: {fileID: 0}
+  idleExitClip: {fileID: 0}
+  weepForLucianDeath: {fileID: 11400000, guid: 2d1d9014fe8dd8644add2537649bc776, type: 2}
   weepForThaliaDeath: {fileID: 0}
   weepForKaelDeath: {fileID: 0}
   weepForLinkDeath: {fileID: 0}
