@@ -215,6 +215,7 @@ public class InteractionManager : MonoBehaviour
                     // Seule la map "World" est nécessaire pour récupérer l'action Interact.
                     InputsManager.Instance.ActivateOnly(
                         InputsManager.Instance.playerInputs.World.Get());
+                    InputsManager.Instance.playerInputs.World.Jump.Disable();
                 }
             }
         }
@@ -227,6 +228,7 @@ public class InteractionManager : MonoBehaviour
             {
                 localInfoBox.SetActive(false);
                 InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
+                InputsManager.Instance.playerInputs.World.Jump.Enable();
             }
         }
     }

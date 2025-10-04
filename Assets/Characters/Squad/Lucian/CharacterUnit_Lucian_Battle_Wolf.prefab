@@ -19,7 +19,6 @@ GameObject:
   - component: {fileID: 8451842496839274301}
   - component: {fileID: 8211509223971570505}
   - component: {fileID: 3586413064619319714}
-  - component: {fileID: -4172441101195392650}
   - component: {fileID: -702438390584808726}
   m_Layer: 17
   m_Name: CharacterUnit_Lucian_Battle_Wolf
@@ -439,26 +438,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &-4172441101195392650
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 901204007372340786}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a306d06e57198514989c4063a4896156, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  enterEffectPrefab: {fileID: 0}
-  exitEffectPrefab: {fileID: 0}
-  effectOffset: {x: 0, y: 2, z: 0}
-  enterAnimation: {fileID: 0}
-  exitAnimation: {fileID: 0}
-  enterClip: {fileID: 0}
-  exitClip: {fileID: 0}
-  cameraPath: {fileID: 0}
 --- !u!114 &-702438390584808726
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -480,8 +459,6 @@ MonoBehaviour:
   exitClip: {fileID: 0}
   cameraPath: {fileID: 0}
   statMultiplier: 1.5
-  auraPrefab: {fileID: 0}
-  fireWing: {fileID: 0}
 --- !u!1 &4015147607227891262
 GameObject:
   m_ObjectHideFlags: 0

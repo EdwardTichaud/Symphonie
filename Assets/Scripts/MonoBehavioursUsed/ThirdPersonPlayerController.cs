@@ -241,40 +241,8 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         if (InputsManager.Instance.playerInputs.World.Jump.triggered)
         {
-            // Le saut est volontairement bloqué à proximité d'un interactable pour éviter les
-            // erreurs de manipulation (un appui sur saut déclenchait l'interaction).
-            if (CanProcessJumpInput())
-            {
-                // Aucun interactable prioritaire : on mémorise l'appui pour la logique de buffer.
-                lastJumpPressedTimestamp = Time.time;
-            }
-            else
-            {
-                // Dès qu'un interactable est actif, on annule la tentative de saut pour empêcher
-                // un déclenchement immédiat lorsque le joueur s'écarte de l'objet interactif.
-                lastJumpPressedTimestamp = float.NegativeInfinity;
-            }
+            lastJumpPressedTimestamp = Time.time;
         }
-    }
-
-    /// <summary>
-    /// Indique si le joueur peut consommer l'entrée de saut. Lorsque Lucian est
-    /// suffisamment proche d'un interactable (détecté par <see cref="InteractionManager"/>),
-    /// on désactive volontairement le saut pour privilégier l'action contextuelle.
-    /// </summary>
-    /// <returns>
-    /// <c>true</c> si aucun interactable prioritaire n'est en portée et que le saut peut être traité.
-    /// </returns>
-    private bool CanProcessJumpInput()
-    {
-        // Si le gestionnaire d'interactions n'est pas encore initialisé, on laisse le saut actif.
-        if (InteractionManager.Instance == null)
-        {
-            return true;
-        }
-
-        // La présence d'un objet interactable courant signifie que le joueur est à portée : on bloque le saut.
-        return InteractionManager.Instance.currentInteractable == null;
     }
 
     /// <summary>
@@ -509,7 +477,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
     private void HandleVerticalMove()
     {
         bool recentlyGrounded = Time.time - lastGroundedTimestamp <= coyoteTime;
-        bool jumpBuffered = CanProcessJumpInput() && Time.time - lastJumpPressedTimestamp <= jumpBufferTime;
+        bool jumpBuffered = Time.time - lastJumpPressedTimestamp <= jumpBufferTime;
 
         if (jumpBuffered && recentlyGrounded && !landingAnimationLocked)
         {
