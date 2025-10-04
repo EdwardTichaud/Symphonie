@@ -83,10 +83,10 @@ MonoBehaviour:
   currentSpeed: 0
   currentInterceptionRange: 0
   currentInterceptionChance: 0
-  currentHarmonicCharge: 21
+  currentHarmonicCharge: 30
   currentMusicalMoveSetIndex: 0
   currentItemSetIndex: 0
-  hitSound: {fileID: 11400000, guid: e62c453f0c6e71b4d8a256bae33452d0, type: 2}
+  hitSound: {fileID: 11400000, guid: bd24b3bf43a46ab4fbd9d997c10c3134, type: 2}
   criticalHitSound: {fileID: 11400000, guid: bd24b3bf43a46ab4fbd9d997c10c3134, type: 2}
   interceptedSound: {fileID: 11400000, guid: f98414021b3ac1b43a114401376cea1d, type: 2}
   interceptionSound: {fileID: 11400000, guid: 211d90b0af76e0c4198c31a6908013d2, type: 2}
@@ -101,6 +101,7 @@ MonoBehaviour:
   dissonanceEffect_Start: {fileID: 0}
   dissonanceEffect_Loop: {fileID: 0}
   dissonanceEffect_End: {fileID: 0}
+  awakeStatMultiplier: 1.5
   hitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
   deathAnimation: {fileID: 7400000, guid: 7f67a9c1949f03342bd793ce58156a74, type: 2}
   TPAnimation_Start: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
