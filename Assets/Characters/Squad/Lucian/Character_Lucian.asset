@@ -83,7 +83,7 @@ MonoBehaviour:
   currentSpeed: 0
   currentInterceptionRange: 0
   currentInterceptionChance: 0
-  currentHarmonicCharge: 20
+  currentHarmonicCharge: 21
   currentMusicalMoveSetIndex: 0
   currentItemSetIndex: 0
   hitSound: {fileID: 11400000, guid: e62c453f0c6e71b4d8a256bae33452d0, type: 2}
@@ -94,10 +94,13 @@ MonoBehaviour:
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   dashParticlesPrefab: {fileID: 3551257785712818506, guid: 7f9985d13c4572a42a87dda564860b9f, type: 3}
-  dashSoundClip: {fileID: 11400000, guid: 490fcbd9581321b4ebf1a1439be6b128, type: 2}
+  dashSoundClip: {fileID: 0}
   awakenEffect_Start: {fileID: 8714244275622671896, guid: abf8d5b763621654486813c5c8af8234, type: 3}
   awakenEffect_Loop: {fileID: 4777767706225920755, guid: 2daffade3e749e34290d6be46d5eec66, type: 3}
   awakenEffect_End: {fileID: 8714244275622671896, guid: abf8d5b763621654486813c5c8af8234, type: 3}
+  dissonanceEffect_Start: {fileID: 0}
+  dissonanceEffect_Loop: {fileID: 0}
+  dissonanceEffect_End: {fileID: 0}
   hitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
   deathAnimation: {fileID: 7400000, guid: 7f67a9c1949f03342bd793ce58156a74, type: 2}
   TPAnimation_Start: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
@@ -105,12 +108,18 @@ MonoBehaviour:
   prepareToUndergoAnimation: {fileID: 7400000, guid: 84ecef9b8267d434eb7be8dff9ecaec1, type: 2}
   awakenIdleAnimation: {fileID: 7400000, guid: a4eb069d620da524c961a54cc910a4af, type: 3}
   dissonantIdleAnimation: {fileID: 0}
+  awakeEnterAnimation: {fileID: 0}
+  awakeExitAnimation: {fileID: 0}
+  dissonanceEnterAnimation: {fileID: 0}
+  dissonanceExitAnimation: {fileID: 0}
   introTimeline: {fileID: 11400000, guid: 5f0dceeed3fcd914ebde5933df0b5223, type: 2}
   moveStartClip: {fileID: 0}
   moveEndClip: {fileID: 0}
   menuSelectionClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
   awakeEnterClip: {fileID: 0}
   awakeExitClip: {fileID: 0}
+  dissonanceEnterClip: {fileID: 0}
+  dissonanceExitClip: {fileID: 0}
   idleEnterClip: {fileID: 0}
   idleExitClip: {fileID: 0}
   weepForLucianDeath: {fileID: 11400000, guid: c554f0b9eb5bfea43b056abf24347ef0, type: 2}
