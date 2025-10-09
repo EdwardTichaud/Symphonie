@@ -28,6 +28,8 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _DISABLE_SSR_TRANSPARENT
+  - _MATERIAL_FEATURE_SUBSURFACE_SCATTERING
+  - _MATERIAL_FEATURE_TRANSMISSION
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -207,15 +209,19 @@ Material:
     - _DoubleSidedGIMode: 0
     - _DoubleSidedNormalMode: 2
     - _DstBlend: 0
+    - _DstBlend2: 0
     - _EarScatterScale: 1
     - _EarSmoothnessMod: 0
     - _EnableBlendModePreserveSpecularLighting: 1
     - _EnableFogOnTransparent: 1
+    - _ExcludeFromTUAndAA: 0
     - _ForeheadScatterScale: 1
     - _ForeheadSmoothnessMod: 0
     - _GScatterScale: 1
     - _GSmoothnessMod: 0
     - _LipsCavityAO: 2.5
+    - _MaterialID: 0
+    - _MaterialTypeMask: 1
     - _MicroNormalStrength: 0.5
     - _MicroNormalTiling: 25
     - _MicroSmoothnessMod: 0
@@ -226,6 +232,7 @@ Material:
     - _NormalStrength: 1
     - _NostrilCavityAO: 2.5
     - _OpaqueCullMode: 2
+    - _PerPixelSorting: 0
     - _RScatterScale: 1
     - _RSmoothnessMod: 0
     - _RayTracing: 0
@@ -244,15 +251,16 @@ Material:
     - _StencilRefGBuffer: 14
     - _StencilRefMV: 40
     - _StencilWriteMask: 6
-    - _StencilWriteMaskDepth: 8
+    - _StencilWriteMaskDepth: 9
     - _StencilWriteMaskDistortionVec: 4
-    - _StencilWriteMaskGBuffer: 14
-    - _StencilWriteMaskMV: 40
+    - _StencilWriteMaskGBuffer: 15
+    - _StencilWriteMaskMV: 41
     - _SubsurfaceScale: 1
     - _SupportDecals: 1
     - _SurfaceType: 0
     - _ThicknessScale: 0.9
     - _ThicknessScaleMin: 0.25
+    - _TransmissionEnable: 1
     - _TransparentBackfaceEnable: 0
     - _TransparentCullMode: 2
     - _TransparentDepthPostpassEnable: 0
