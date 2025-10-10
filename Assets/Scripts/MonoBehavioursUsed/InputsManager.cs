@@ -807,7 +807,11 @@ public class InputsManager : MonoBehaviour
         if (IsSkillTargetSelectionState(bm.currentBattleState))
         {
             bm.OpenSkillsMenu();
-            bm.currentCharacterUnit.GetCasterAnimator()?.SetTrigger("exitAction");
+            CharacterAnimationController controller = bm.currentCharacterUnit != null ? bm.currentCharacterUnit.GetAnimationController() : null;
+            if (controller != null)
+                controller.ActivateBodyTrigger(CharacterAnimationController.BodyAnimationTrigger.ExitAction);
+            else
+                bm.currentCharacterUnit?.GetCasterAnimator()?.SetTrigger("exitAction");
         }
         else if (IsItemTargetSelectionState(bm.currentBattleState))
         {

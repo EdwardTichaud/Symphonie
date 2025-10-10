@@ -36,6 +36,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
     [HideInInspector] public Animator animator;
+    private CharacterAnimationController animationController; // Contrôleur dédié pour orchestrer les layers Body/Face.
     // Indicateur évitant les multiples avertissements lorsque l'Animator enfant est introuvable.
     private bool hasLoggedMissingChildAnimator;
     // Indicateur évitant de répéter les avertissements lorsqu'on détecte plusieurs Animator valides chez les enfants.
@@ -352,6 +353,35 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         animator = null;
         return animator;
+    }
+
+    /// <summary>
+    /// Récupère (et met en cache) le <see cref="CharacterAnimationController"/> associé à l'Animator de l'unité.
+    /// Cette méthode centralise la création dynamique du composant lorsque les Prefabs existants ne l'ont
+    /// pas encore intégré, ce qui garantit une migration progressive du projet vers le nouveau pipeline.
+    /// </summary>
+    /// <param name="forceRefresh">Si vrai, le cache est réinitialisé avant la recherche.</param>
+    public CharacterAnimationController GetAnimationController(bool forceRefresh = false)
+    {
+        if (forceRefresh)
+            animationController = null; // Invalide explicitement le cache lorsque demandé.
+
+        if (animationController != null)
+            return animationController; // Composant déjà résolu, on le réutilise directement.
+
+        Animator casterAnimator = GetCasterAnimator(forceRefresh);
+        if (casterAnimator == null)
+            return null; // Impossible de piloter les animations sans Animator.
+
+        animationController = casterAnimator.GetComponent<CharacterAnimationController>();
+        if (animationController == null)
+        {
+            // Ajout dynamique pour maintenir la compatibilité des Prefabs existants sans retouche manuelle immédiate.
+            animationController = casterAnimator.gameObject.AddComponent<CharacterAnimationController>();
+        }
+
+        animationController.RefreshCachedParameters(); // Sécurise le recalcul des hashes après une éventuelle création dynamique.
+        return animationController;
     }
 
     /// <summary>
@@ -1348,7 +1378,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         }
         Animator animator = GetCasterAnimator();
         Debug.Log(this + " handleDeath called, playing death animation.");
-        if (animator != null)
+        CharacterAnimationController controller = GetAnimationController();
+        if (controller != null)
+        {
+            controller.SetBodyState(CharacterAnimationController.BodyAnimationState.Death, 0.05f, 0f, forceInstantTransition: true);
+        }
+        else if (animator != null)
         {
             animator.Play("Death");
         }
@@ -1545,22 +1580,32 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     void PlayAnimationClip(AnimationClip clip)
     {
-        // Ne rien jouer si l'unité est morte
-        if (IsDead)
+        // Ne rien jouer si l'unité est morte ou si aucun clip n'est fourni.
+        if (IsDead || clip == null)
             return;
 
-        if (animator != null && clip != null)
+        // Utilise en priorité le nouveau contrôleur pour préserver la synchronisation des layers.
+        CharacterAnimationController controller = GetAnimationController();
+        if (controller != null)
         {
-            // CrossFade pour éviter d'interrompre brutalement l'animation en cours
+            controller.PlayRawClip(clip.name, 0.05f);
+            return;
+        }
+
+        // Garde un repli vers l'ancien comportement pour éviter toute régression si le contrôleur n'est pas disponible.
+        if (animator != null)
+        {
             animator.CrossFade(clip.name, 0.05f);
         }
     }
 
     public void PlayHurtAnimation(Transform attacker = null)
     {
-        // Si l'unité est morte ou qu'aucun Animator n'est disponible, on ne fait rien
-        if (IsDead || animator == null)
+        // Si l'unité est morte ou qu'aucun contrôleur n'est disponible, on ne fait rien
+        if (IsDead)
             return;
+
+        CharacterAnimationController controller = GetAnimationController();
 
         // Lorsque l'attaquant est connu, on calcule le côté touché
         if (attacker != null)
@@ -1575,35 +1620,58 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
             // Nom de l'état à jouer. Par défaut on considère une attaque de face.
             string state = "Hit_F";
+            CharacterAnimationController.BodyAnimationState mappedState = CharacterAnimationController.BodyAnimationState.HitFront;
 
             // Avant : angle proche de 0°
             if (Mathf.Abs(angle) <= 45f)
             {
                 state = "Hit_F";
+                mappedState = CharacterAnimationController.BodyAnimationState.HitFront;
             }
             // Arrière : angle > 135° ou < -135°
             else if (Mathf.Abs(angle) > 135f)
             {
                 state = "Hit_B";
+                mappedState = CharacterAnimationController.BodyAnimationState.HitBack;
             }
             // Droite : angle positif (attaque venant de la droite)
             else if (angle > 0f)
             {
                 state = "Hit_R";
+                mappedState = CharacterAnimationController.BodyAnimationState.HitRight;
             }
             // Gauche : angle négatif
             else
             {
                 state = "Hit_L";
+                mappedState = CharacterAnimationController.BodyAnimationState.HitLeft;
             }
 
-            // Lance l'animation correspondante dans l'Animator
-            animator.CrossFade(state, 0.05f);
+            if (controller != null)
+            {
+                controller.SetBodyState(mappedState, 0.05f, 0f, forceInstantTransition: true);
+            }
+            else if (animator != null)
+            {
+                // Fallback historique : garantit la lecture même si le nouveau contrôleur n'est pas encore configuré.
+                animator.CrossFade(state, 0.05f);
+            }
             return;
         }
 
         // Si aucun attaquant n'est fourni, on se rabat sur l'animation générique
-        PlayAnimationClip(Data?.hitAnimation ?? hurtAnimation);
+        AnimationClip fallback = Data?.hitAnimation ?? hurtAnimation;
+        if (fallback == null)
+            return;
+
+        if (controller != null)
+        {
+            controller.PlayRawClip(fallback.name, 0.05f);
+        }
+        else
+        {
+            PlayAnimationClip(fallback);
+        }
     }
     public void PlayInterceptedAnimation() => PlayAnimationClip(interceptedAnimation);
     public void PlayInterceptionAnimation() => PlayAnimationClip(interceptionAnimation);
@@ -1640,10 +1708,18 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         // Même si le cache renvoie null (absence d'Animator valide) on évite toute
         // NullReferenceException en contrôlant Data et le clip demandé.
-        if (anim != null && Data != null && Data.prepareToUndergoAnimation != null)
+        if (Data != null && Data.prepareToUndergoAnimation != null)
         {
-            // Utilise CrossFade pour garantir la bonne transition
-            anim.CrossFade(Data.prepareToUndergoAnimation.name, 0.05f);
+            CharacterAnimationController controller = GetAnimationController(forceRefresh: true);
+            if (controller != null)
+            {
+                controller.PlayRawClip(Data.prepareToUndergoAnimation.name, 0.05f);
+            }
+            else if (anim != null)
+            {
+                // Fallback minimal pour garantir la compatibilité tant que tous les personnages n'utilisent pas le nouveau système.
+                anim.CrossFade(Data.prepareToUndergoAnimation.name, 0.05f);
+            }
         }
     }
 
@@ -1924,6 +2000,13 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         {
             PlayStateClip(Data != null ? Data.idleEnterClip : null);
             isIdleActive = true;
+        }
+
+        CharacterAnimationController controller = GetAnimationController();
+        if (controller != null)
+        {
+            controller.SetBodyState(CharacterAnimationController.BodyAnimationState.IdleBattle, IdleCrossFadeDurationSeconds);
+            return;
         }
 
         if (animator != null)

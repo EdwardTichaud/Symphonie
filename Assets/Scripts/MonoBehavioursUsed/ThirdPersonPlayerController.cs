@@ -17,7 +17,21 @@ public class ThirdPersonPlayerController : MonoBehaviour
     public Transform cameraTransform;
 
     private CharacterController controller;                  // Référence au CharacterController Unity.
-    private Animator animator;                               // Référence à l'Animator pour déclencher les animations.
+    private Animator animator;                               // Référence à l'Animator utilisée comme source d'état.
+    private CharacterAnimationController animationController; // Nouveau chef d'orchestre des layers Body/Face.
+
+    // Hashes des paramètres Animator utilisés en secours lorsque le CharacterAnimationController n'est pas disponible.
+    private static readonly int bodyStateParamHash = Animator.StringToHash("BodyState");
+    private static readonly int bodyTransitionParamHash = Animator.StringToHash("BodyTransition");
+    private static readonly int bodyNormalizedTimeParamHash = Animator.StringToHash("BodyNormalizedTime");
+    private static readonly int bodyInstantParamHash = Animator.StringToHash("BodyInstant");
+    private static readonly int bodySpeedParamHash = Animator.StringToHash("BodySpeed");
+
+    private bool animatorHasBodyStateParam;           // Permet de savoir si l'on peut piloter l'état via un entier.
+    private bool animatorHasBodyTransitionParam;      // Permet de renseigner la durée de blend pour garder la cohérence.
+    private bool animatorHasBodyNormalizedTimeParam;  // Permet d'initialiser précisément la timeline d'un état.
+    private bool animatorHasBodyInstantParam;         // Permet de forcer une transition immédiate (landing notamment).
+    private bool animatorHasBodySpeedParam;           // Permet d'alimenter le blend tree de locomotion.
 
     private Vector3 horizontalVelocity;                      // Vitesse appliquée sur le plan XZ.
     private float verticalVelocity;                          // Vitesse verticale isolée pour un contrôle précis.
@@ -61,6 +75,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
     }
 
     [SerializeField] private MovementAnimation currentAnimState = MovementAnimation.Idle;
+    private CharacterAnimationController.BodyAnimationState cachedBodyState = CharacterAnimationController.BodyAnimationState.IdleWorld;
 
     // États exposés si un AnimationHandler externe souhaite les lire.
     public bool isWalking;
@@ -166,9 +181,19 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         if (animator != null)
         {
+            animationController = animator.GetComponent<CharacterAnimationController>();
+            if (animationController == null)
+            {
+                // Ajout dynamique pour garantir la transition vers le nouveau pipeline sans retoucher tous les prefabs.
+                animationController = animator.gameObject.AddComponent<CharacterAnimationController>();
+            }
+
+            animationController.RefreshCachedParameters();
+            CacheAnimatorBodyParameters(); // On détermine dès maintenant si les paramètres attendus sont présents.
+
             // Déplacement géré par le code : animations in-place sans root motion.
             animator.applyRootMotion = false;
-            animator.Play("Idle_World");
+            RequestBodyState(CharacterAnimationController.BodyAnimationState.IdleWorld, 0f, 0f, forceInstantTransition: true);
 
             // Pré-calcul des durées d'animations d'atterrissage pour verrouiller précisément les transitions.
             CacheLandingClipDurations();
@@ -304,21 +329,14 @@ public class ThirdPersonPlayerController : MonoBehaviour
             {
                 // Atterrissage : on applique une impulsion vers le bas et on déclenche l'animation dédiée.
                 bool moving = horizontalVelocity.sqrMagnitude > 0.01f;
-                if (animator != null)
-                {
-                    if (moving)
-                    {
-                        animator.Play("Landing_OnMove");
-                        activeLandingStateHash = landingOnMoveStateHash;
-                        landingAnimationEndTime = Time.time + landingOnMoveClipLength;
-                    }
-                    else
-                    {
-                        animator.Play("Landing");
-                        activeLandingStateHash = landingStateHash;
-                        landingAnimationEndTime = Time.time + landingClipLength;
-                    }
-                }
+                CharacterAnimationController.BodyAnimationState landingState = moving
+                    ? CharacterAnimationController.BodyAnimationState.LandingMoving
+                    : CharacterAnimationController.BodyAnimationState.Landing;
+
+                RequestBodyState(landingState, 0.05f, 0f, forceInstantTransition: true);
+
+                activeLandingStateHash = moving ? landingOnMoveStateHash : landingStateHash;
+                landingAnimationEndTime = Time.time + (moving ? landingOnMoveClipLength : landingClipLength);
 
                 // Mémorisation complète de la vitesse pour maintenir l'inertie durant la séquence.
                 landingVelocitySnapshot = horizontalVelocity;
@@ -462,6 +480,10 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         controller.Move(horizontalVelocity * Time.deltaTime);
 
+        // Normalise la vitesse actuelle pour alimenter le blend tree dédié dans l'Animator.
+        float normalizedSpeed = Mathf.Approximately(runSpeed, 0f) ? 0f : Mathf.Clamp01(currentSpeed / runSpeed);
+        RequestBodySpeed(normalizedSpeed);
+
         // Orientation (autorisé en l'air pour du contrôle visuel).
         Vector3 lookDirection = horizontalVelocity.sqrMagnitude > 0.0001f ? horizontalVelocity : effectiveDirection;
         if (lookDirection.sqrMagnitude > 0.001f)
@@ -487,10 +509,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
             isFalling = false;
             lastJumpPressedTimestamp = float.NegativeInfinity;
 
-            if (animator != null)
-            {
-                animator.Play("Jump_Start");
-            }
+            RequestBodyState(CharacterAnimationController.BodyAnimationState.JumpStart, 0f, 0f, forceInstantTransition: true);
         }
 
         if (groundedStable && verticalVelocity < 0f)
@@ -534,7 +553,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
     /// </summary>
     private void UpdateMovementAnimation()
     {
-        if (animator == null || isJumping || landingAnimationLocked)
+        if ((animator == null && animationController == null) || isJumping || landingAnimationLocked)
             return;
 
         MovementAnimation targetState =
@@ -545,20 +564,23 @@ public class ThirdPersonPlayerController : MonoBehaviour
         if (targetState == currentAnimState)
             return;
 
+        CharacterAnimationController.BodyAnimationState targetBodyState = CharacterAnimationController.BodyAnimationState.IdleWorld;
+
         switch (targetState)
         {
             case MovementAnimation.Run:
-                animator.CrossFade("Run Start", locomotionCrossFadeDuration);
+                targetBodyState = CharacterAnimationController.BodyAnimationState.Run;
                 break;
             case MovementAnimation.Walk:
-                animator.CrossFade("Walk_Start", locomotionCrossFadeDuration);
+                targetBodyState = CharacterAnimationController.BodyAnimationState.Walk;
                 break;
             case MovementAnimation.Idle:
-                if (currentAnimState == MovementAnimation.Run) animator.CrossFade("Run Stop", locomotionCrossFadeDuration);
-                else if (currentAnimState == MovementAnimation.Walk) animator.CrossFade("Walk_Stop", locomotionCrossFadeDuration);
-                else animator.CrossFade("Idle_World", locomotionCrossFadeDuration);
+                targetBodyState = CharacterAnimationController.BodyAnimationState.IdleWorld;
                 break;
         }
+
+        // Le contrôleur se charge des transitions internes entre les sous-states (start/stop) définis dans l'Animator.
+        RequestBodyState(targetBodyState, locomotionCrossFadeDuration);
 
         currentAnimState = targetState;
     }
@@ -574,7 +596,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
         AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
         if (state.IsName("Jump_Start") && state.normalizedTime >= 1f)
         {
-            animator.CrossFade("Jump_Loop", 0.1f);
+            RequestBodyState(CharacterAnimationController.BodyAnimationState.JumpLoop, 0.1f);
         }
     }
 
@@ -583,18 +605,21 @@ public class ThirdPersonPlayerController : MonoBehaviour
     /// </summary>
     private void UpdateLandingLock()
     {
-        if (!landingAnimationLocked || animator == null)
+        if (!landingAnimationLocked)
             return;
 
-        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
-
-        bool isCurrentLanding = state.shortNameHash == activeLandingStateHash;
         bool animationCompleted = Time.time >= landingAnimationEndTime;
 
-        // Si nous sommes toujours dans l'état d'atterrissage, on vérifie également l'avancement de la timeline.
-        if (isCurrentLanding && state.normalizedTime >= 1f)
+        if (animator != null)
         {
-            animationCompleted = true;
+            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+            bool isCurrentLanding = state.shortNameHash == activeLandingStateHash;
+
+            // Si nous sommes toujours dans l'état d'atterrissage, on vérifie également l'avancement de la timeline.
+            if (isCurrentLanding && state.normalizedTime >= 1f)
+            {
+                animationCompleted = true;
+            }
         }
 
         // Tant que l'animation dédiée n'est pas totalement achevée, aucune transition n'est autorisée.
@@ -607,17 +632,17 @@ public class ThirdPersonPlayerController : MonoBehaviour
         if (isRunning)
         {
             targetState = MovementAnimation.Run;
-            animator.Play("Run Start");
+            RequestBodyState(CharacterAnimationController.BodyAnimationState.Run, 0.05f, 0f, forceInstantTransition: true);
         }
         else if (isWalking)
         {
             targetState = MovementAnimation.Walk;
-            animator.Play("Walk_Start");
+            RequestBodyState(CharacterAnimationController.BodyAnimationState.Walk, 0.05f, 0f, forceInstantTransition: true);
         }
         else
         {
             targetState = MovementAnimation.Idle;
-            animator.Play("Idle_World");
+            RequestBodyState(CharacterAnimationController.BodyAnimationState.IdleWorld, 0.05f, 0f, forceInstantTransition: true);
         }
 
         currentAnimState = targetState;
@@ -652,6 +677,83 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         if (landingOnMoveClipLength <= 0f)
             landingOnMoveClipLength = landingClipLength;
+    }
+
+    /// <summary>
+    /// Cache la disponibilité des paramètres du layer corps pour pouvoir piloter l'Animator par entiers/float.
+    /// </summary>
+    private void CacheAnimatorBodyParameters()
+    {
+        animatorHasBodyStateParam = false;
+        animatorHasBodyTransitionParam = false;
+        animatorHasBodyNormalizedTimeParam = false;
+        animatorHasBodyInstantParam = false;
+        animatorHasBodySpeedParam = false;
+
+        if (animator == null)
+            return;
+
+        foreach (var parameter in animator.parameters)
+        {
+            if (parameter.nameHash == bodyStateParamHash && parameter.type == AnimatorControllerParameterType.Int)
+                animatorHasBodyStateParam = true;
+            else if (parameter.nameHash == bodyTransitionParamHash && parameter.type == AnimatorControllerParameterType.Float)
+                animatorHasBodyTransitionParam = true;
+            else if (parameter.nameHash == bodyNormalizedTimeParamHash && parameter.type == AnimatorControllerParameterType.Float)
+                animatorHasBodyNormalizedTimeParam = true;
+            else if (parameter.nameHash == bodyInstantParamHash && parameter.type == AnimatorControllerParameterType.Trigger)
+                animatorHasBodyInstantParam = true;
+            else if (parameter.nameHash == bodySpeedParamHash && parameter.type == AnimatorControllerParameterType.Float)
+                animatorHasBodySpeedParam = true;
+        }
+    }
+
+    /// <summary>
+    /// Centralise l'envoi d'un état de corps en privilégiant le CharacterAnimationController
+    /// puis, en dernier recours, en écrivant directement dans les paramètres de l'Animator.
+    /// </summary>
+    private void RequestBodyState(CharacterAnimationController.BodyAnimationState state, float transitionDuration, float normalizedStartTime = 0f, bool forceInstantTransition = false)
+    {
+        if (animationController != null)
+        {
+            animationController.SetBodyState(state, transitionDuration, normalizedStartTime, forceInstantTransition);
+        }
+        else if (animator != null)
+        {
+            if (animatorHasBodyTransitionParam)
+                animator.SetFloat(bodyTransitionParamHash, Mathf.Max(0f, transitionDuration));
+
+            if (animatorHasBodyNormalizedTimeParam)
+                animator.SetFloat(bodyNormalizedTimeParamHash, Mathf.Clamp01(normalizedStartTime));
+
+            if (forceInstantTransition && animatorHasBodyInstantParam)
+            {
+                animator.ResetTrigger(bodyInstantParamHash);
+                animator.SetTrigger(bodyInstantParamHash);
+            }
+
+            if (animatorHasBodyStateParam)
+                animator.SetInteger(bodyStateParamHash, (int)state);
+        }
+
+        cachedBodyState = state; // On conserve un cache local pour les autres systèmes (landing, transitions logiques...).
+    }
+
+    /// <summary>
+    /// Informe le blend tree de la vitesse actuelle via le pipeline paramétrique.
+    /// </summary>
+    private void RequestBodySpeed(float normalizedSpeed)
+    {
+        float clampedSpeed = Mathf.Clamp01(normalizedSpeed);
+
+        if (animationController != null)
+        {
+            animationController.SetBodySpeed(clampedSpeed);
+        }
+        else if (animator != null && animatorHasBodySpeedParam)
+        {
+            animator.SetFloat(bodySpeedParamHash, clampedSpeed);
+        }
     }
 
     public void ToggleMuninLink()
