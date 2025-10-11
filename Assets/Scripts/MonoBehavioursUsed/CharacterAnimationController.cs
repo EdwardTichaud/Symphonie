@@ -201,6 +201,16 @@ public class CharacterAnimationController : MonoBehaviour
     /// </summary>
     public void RefreshCachedParameters()
     {
+        // Lorsqu'un personnage est instancié pour la prévisualisation depuis l'éditeur,
+        // Unity n'exécute pas systématiquement Awake(). Sans cet appel, le cache de
+        // l'Animator reste vide et aucun paramètre n'est détecté par le testeur
+        // d'animations. On récupère donc explicitement la référence pour garantir que
+        // les méthodes de prévisualisation puissent piloter correctement le layer Body.
+        if (cachedAnimator == null)
+        {
+            cachedAnimator = GetComponent<Animator>();
+        }
+
         CacheFallbackDictionaries();
         CacheParameterAvailability();
     }
