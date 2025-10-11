@@ -436,7 +436,18 @@ public class AnimationLayerTesterWindow : EditorWindow
     /// </summary>
     private float ResolveLayerWeight(AnimatorControllerLayer layer, int layerIndex)
     {
-        float weight = Mathf.Clamp01(layer.defaultWeight);
+        float weight = layer.defaultWeight;
+
+        if (!EditorApplication.isPlaying && layer != null && layer.name == "Layer Body")
+        {
+            // Dans le testeur on souhaite pouvoir manipuler directement la couche Body même si
+            // son poids par défaut est configuré à 0 dans l'Animator. En forçant un poids de 1
+            // lorsque l'on n'est pas en Play Mode, on garantit que les poses du corps restent
+            // visibles sans intervention manuelle de l'utilisateur.
+            weight = 1f;
+        }
+
+        weight = Mathf.Clamp01(weight);
 
         if (_targetAnimator != null && EditorApplication.isPlaying)
         {
