@@ -38,3 +38,14 @@
 - **Accessibilité :** conservez des transitions fluides pour les débutants, tout en permettant aux joueurs expérimentés de maîtriser des combinaisons avancées de `MusicalMoves` et d'`Items`.
 
 Grâce à ces étapes, le système d'animation reste entièrement piloté par paramètres, garantissant un enchaînement propre entre les états (`Falling_Loop` → `Landing`, etc.) sans appel direct à `Animator.Play()`.
+
+## Test des transitions hors Play Mode
+
+Pour valider les transitions sans lancer le mode Play, ouvrez la fenêtre **Symphonie ▸ Animations ▸ Tester les transitions**. Elle instancie une copie du personnage dans une scène de prévisualisation isolée et permet :
+
+- de **choisir l'état Body** (Idle, Jump, Landing, etc.), ajuster la durée de transition, la position de départ et la vitesse normalisée ;
+- de **déclencher les triggers** configurés dans le `CharacterAnimationController` ;
+- de **piloter les expressions faciales** et les transitions correspondantes ;
+- d'**observer le résultat** grâce à un aperçu 3D rotatif et zoomable, jouable en continu ou image par image.
+
+> Astuce : Profitez du bouton **Rebind Animator** pour revenir instantanément à un état neutre lorsque vous expérimentez différentes chaînes d'animations inspirées du scénario principal d'**Histoire de Symphonie**.

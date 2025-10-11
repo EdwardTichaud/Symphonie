@@ -464,16 +464,14 @@ public class CharacterAnimationController : MonoBehaviour
         }
 
         // Création sécurisée de chaque paramètre attendu par le pipeline.
-        // Nous utilisons explicitement le type UnityEngine.AnimatorControllerParameterType pour garantir la compatibilité
-        // avec les assemblies runtime, même si la configuration n'est accessible qu'en mode éditeur.
-        EnsureAnimatorParameter(animatorController, bodyStateParameter, AnimatorControllerParameterType.Int);
-        EnsureAnimatorParameter(animatorController, bodyTransitionDurationParameter, AnimatorControllerParameterType.Float);
-        EnsureAnimatorParameter(animatorController, bodyNormalizedTimeParameter, AnimatorControllerParameterType.Float);
-        EnsureAnimatorParameter(animatorController, bodyInstantTransitionParameter, AnimatorControllerParameterType.Trigger);
-        EnsureAnimatorParameter(animatorController, bodySpeedParameter, AnimatorControllerParameterType.Float);
-        EnsureAnimatorParameter(animatorController, faceStateParameter, AnimatorControllerParameterType.Int);
-        EnsureAnimatorParameter(animatorController, faceTransitionDurationParameter, AnimatorControllerParameterType.Float);
-        EnsureAnimatorParameter(animatorController, faceInstantTransitionParameter, AnimatorControllerParameterType.Trigger);
+        EnsureAnimatorParameter(animatorController, bodyStateParameter, UnityEditor.Animations.AnimatorControllerParameterType.Int);
+        EnsureAnimatorParameter(animatorController, bodyTransitionDurationParameter, UnityEditor.Animations.AnimatorControllerParameterType.Float);
+        EnsureAnimatorParameter(animatorController, bodyNormalizedTimeParameter, UnityEditor.Animations.AnimatorControllerParameterType.Float);
+        EnsureAnimatorParameter(animatorController, bodyInstantTransitionParameter, UnityEditor.Animations.AnimatorControllerParameterType.Trigger);
+        EnsureAnimatorParameter(animatorController, bodySpeedParameter, UnityEditor.Animations.AnimatorControllerParameterType.Float);
+        EnsureAnimatorParameter(animatorController, faceStateParameter, UnityEditor.Animations.AnimatorControllerParameterType.Int);
+        EnsureAnimatorParameter(animatorController, faceTransitionDurationParameter, UnityEditor.Animations.AnimatorControllerParameterType.Float);
+        EnsureAnimatorParameter(animatorController, faceInstantTransitionParameter, UnityEditor.Animations.AnimatorControllerParameterType.Trigger);
 
         if (bodyTriggers != null)
         {
@@ -482,7 +480,7 @@ public class CharacterAnimationController : MonoBehaviour
                 if (trigger.trigger == BodyAnimationTrigger.None || string.IsNullOrEmpty(trigger.parameterName))
                     continue;
 
-                EnsureAnimatorParameter(animatorController, trigger.parameterName, AnimatorControllerParameterType.Trigger);
+                EnsureAnimatorParameter(animatorController, trigger.parameterName, UnityEditor.Animations.AnimatorControllerParameterType.Trigger);
             }
         }
 
@@ -518,7 +516,7 @@ public class CharacterAnimationController : MonoBehaviour
     /// <summary>
     /// Ajoute un paramètre à l'Animator s'il est absent ou si son type est incorrect.
     /// </summary>
-    private void EnsureAnimatorParameter(UnityEditor.Animations.AnimatorController controller, string parameterName, AnimatorControllerParameterType type)
+    private void EnsureAnimatorParameter(UnityEditor.Animations.AnimatorController controller, string parameterName, UnityEditor.Animations.AnimatorControllerParameterType type)
     {
         if (controller == null || string.IsNullOrEmpty(parameterName))
             return;
