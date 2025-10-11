@@ -41,7 +41,12 @@ public class CharacterAnimationTesterWindow : EditorWindow
     /// Scene spécifique utilisée pour les prévisualisations. Elle est isolée du
     /// contenu principal du projet et se ferme automatiquement avec la fenêtre.
     /// </summary>
-    private PreviewScene previewScene;
+    // NOTE : nous utilisons désormais directement le struct Scene d'Unity.
+    // Le type PreviewScene exposé par UnityEditor est interne dans certaines
+    // versions d'Unity, ce qui provoquait l'erreur CS0122. En conservant un
+    // Scene standard nous restons compatibles tout en profitant de la même
+    // API (IsValid, MoveGameObjectToScene, etc.).
+    private Scene previewScene;
 
     /// <summary>
     /// Utilitaire Unity permettant de rendre une prévisualisation 3D dans une
@@ -507,7 +512,10 @@ public class CharacterAnimationTesterWindow : EditorWindow
 
         if (!previewScene.IsValid())
         {
-            previewScene = new PreviewScene("CharacterAnimationTester");
+            // Création explicite d'une nouvelle scène de prévisualisation via
+            // l'API publique d'EditorSceneManager afin d'éviter toute dépendance
+            // à des types internes non accessibles.
+            previewScene = EditorSceneManager.NewPreviewScene();
         }
 
         try
@@ -519,7 +527,8 @@ public class CharacterAnimationTesterWindow : EditorWindow
             else
             {
                 previewInstance = Instantiate(sourceObject);
-                SceneManager.MoveGameObjectToScene(previewInstance, previewScene.scene);
+                // Déplacement dans la scène de prévisualisation nouvellement créée.
+                SceneManager.MoveGameObjectToScene(previewInstance, previewScene);
             }
         }
         catch (Exception ex)
@@ -576,7 +585,10 @@ public class CharacterAnimationTesterWindow : EditorWindow
 
         if (previewScene.IsValid())
         {
-            previewScene.Close();
+            // Fermeture propre de la scène de prévisualisation en passant par
+            // l'API d'EditorSceneManager, évitant ainsi l'appel à une méthode
+            // interne de PreviewScene.
+            EditorSceneManager.ClosePreviewScene(previewScene);
             previewScene = default;
         }
 
