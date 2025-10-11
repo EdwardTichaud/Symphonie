@@ -436,4 +436,107 @@ public class CharacterAnimationController : MonoBehaviour
             cachedAnimator.CrossFade(clipName, Mathf.Max(0f, transitionDuration), layerIndex, Mathf.Clamp01(normalizedStartTime));
         }
     }
+
+#if UNITY_EDITOR
+    /// <summary>
+    /// Action disponible via le menu contextuel du composant pour configurer automatiquement
+    /// l'Animator côté éditeur. Cette méthode ajoute tous les paramètres attendus si besoin,
+    /// puis regénère les caches afin que le gameplay puisse immédiatement exploiter les valeurs.
+    /// </summary>
+    [ContextMenu("Animator/Configurer automatiquement les paramètres")]
+    private void ConfigureAnimatorParametersInEditor()
+    {
+        // Nous veillons à disposer d'une référence valide vers l'Animator avant d'aller plus loin.
+        if (cachedAnimator == null)
+            cachedAnimator = GetComponent<Animator>();
+
+        if (cachedAnimator == null)
+        {
+            Debug.LogWarning("CharacterAnimationController : aucun Animator trouvé pour configurer les paramètres.", this);
+            return;
+        }
+
+        var animatorController = ResolveAnimatorControllerAsset();
+        if (animatorController == null)
+        {
+            Debug.LogWarning("CharacterAnimationController : impossible d'accéder à l'AnimatorController pour ajouter les paramètres.", this);
+            return;
+        }
+
+        // Création sécurisée de chaque paramètre attendu par le pipeline.
+        EnsureAnimatorParameter(animatorController, bodyStateParameter, UnityEditor.Animations.AnimatorControllerParameterType.Int);
+        EnsureAnimatorParameter(animatorController, bodyTransitionDurationParameter, UnityEditor.Animations.AnimatorControllerParameterType.Float);
+        EnsureAnimatorParameter(animatorController, bodyNormalizedTimeParameter, UnityEditor.Animations.AnimatorControllerParameterType.Float);
+        EnsureAnimatorParameter(animatorController, bodyInstantTransitionParameter, UnityEditor.Animations.AnimatorControllerParameterType.Trigger);
+        EnsureAnimatorParameter(animatorController, bodySpeedParameter, UnityEditor.Animations.AnimatorControllerParameterType.Float);
+        EnsureAnimatorParameter(animatorController, faceStateParameter, UnityEditor.Animations.AnimatorControllerParameterType.Int);
+        EnsureAnimatorParameter(animatorController, faceTransitionDurationParameter, UnityEditor.Animations.AnimatorControllerParameterType.Float);
+        EnsureAnimatorParameter(animatorController, faceInstantTransitionParameter, UnityEditor.Animations.AnimatorControllerParameterType.Trigger);
+
+        if (bodyTriggers != null)
+        {
+            foreach (var trigger in bodyTriggers)
+            {
+                if (trigger.trigger == BodyAnimationTrigger.None || string.IsNullOrEmpty(trigger.parameterName))
+                    continue;
+
+                EnsureAnimatorParameter(animatorController, trigger.parameterName, UnityEditor.Animations.AnimatorControllerParameterType.Trigger);
+            }
+        }
+
+        // À la fin du processus, on regénère immédiatement les caches pour que l'aperçu dans
+        // l'inspecteur soit cohérent avec les paramètres fraîchement ajoutés.
+        CacheParameterAvailability();
+
+        Debug.Log("CharacterAnimationController : configuration des paramètres terminée avec succès.", this);
+    }
+
+    /// <summary>
+    /// Récupère l'AnimatorController éditable associé au composant (même si un AnimatorOverride est utilisé).
+    /// </summary>
+    private UnityEditor.Animations.AnimatorController ResolveAnimatorControllerAsset()
+    {
+        if (cachedAnimator == null)
+            return null;
+
+        var runtimeController = cachedAnimator.runtimeAnimatorController;
+        if (runtimeController == null)
+            return null;
+
+        // On gère également le cas où l'on emploie un AnimatorOverrideController pour personnaliser des clips.
+        if (runtimeController is UnityEditor.Animations.AnimatorController controller)
+            return controller;
+
+        if (runtimeController is AnimatorOverrideController overrideController)
+            return overrideController.runtimeAnimatorController as UnityEditor.Animations.AnimatorController;
+
+        return null;
+    }
+
+    /// <summary>
+    /// Ajoute un paramètre à l'Animator s'il est absent ou si son type est incorrect.
+    /// </summary>
+    private void EnsureAnimatorParameter(UnityEditor.Animations.AnimatorController controller, string parameterName, UnityEditor.Animations.AnimatorControllerParameterType type)
+    {
+        if (controller == null || string.IsNullOrEmpty(parameterName))
+            return;
+
+        foreach (var parameter in controller.parameters)
+        {
+            if (parameter.name == parameterName)
+            {
+                if (parameter.type != type)
+                {
+                    // Si le paramètre existe mais d'un autre type, on le remplace pour éviter un comportement incohérent.
+                    controller.RemoveParameter(parameter);
+                    controller.AddParameter(parameterName, type);
+                }
+
+                return;
+            }
+        }
+
+        controller.AddParameter(parameterName, type);
+    }
+#endif
 }
