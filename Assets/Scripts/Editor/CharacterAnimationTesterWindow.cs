@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -153,6 +156,91 @@ public class CharacterAnimationTesterWindow : EditorWindow
     /// </summary>
     private double lastUpdateTime;
 
+    /// <summary>
+    /// Contrôleur actuellement analysé afin d'éviter de reconstruire les caches
+    /// inutilement lorsque l'utilisateur ne change pas de personnage.
+    /// </summary>
+    private RuntimeAnimatorController cachedRuntimeController;
+
+    /// <summary>
+    /// Dictionnaire regroupant les états disponibles par nom court. Chaque entrée
+    /// liste les layers et chemins correspondants partageant ce même identifiant.
+    /// </summary>
+    private readonly Dictionary<string, List<AnimatorStateReference>> animationStatesByName = new();
+
+    /// <summary>
+    /// Liste triée alphabétiquement des noms d'états détectés. Elle alimente
+    /// directement l'interface de sélection pour afficher des résultats stables.
+    /// </summary>
+    private readonly List<string> sortedAnimationNames = new();
+
+    /// <summary>
+    /// Mémorisation de l'état des volets (foldouts) utilisés pour détailler les
+    /// layers associés à une animation donnée. Permet de conserver l'UI ouverte
+    /// entre deux repaints.
+    /// </summary>
+    private readonly Dictionary<string, bool> animationFoldoutStates = new();
+
+    /// <summary>
+    /// Position du scroll des animations directes. Cela évite que la liste ne se
+    /// réinitialise lors des rafraîchissements de la fenêtre.
+    /// </summary>
+    private Vector2 animationListScroll;
+
+    /// <summary>
+    /// Filtre textuel appliqué sur les noms d'animations afin de faciliter la
+    /// recherche des clips souhaités.
+    /// </summary>
+    private string animationNameFilter = string.Empty;
+
+    /// <summary>
+    /// Durée de transition utilisée lorsque l'on joue manuellement un état dans
+    /// tous les layers correspondants.
+    /// </summary>
+    private float directAnimationTransitionDuration = 0.1f;
+
+    /// <summary>
+    /// Position normalisée de départ (0-1) lors de l'exécution manuelle d'un état.
+    /// </summary>
+    private float directAnimationNormalizedStartTime = 0f;
+
+    /// <summary>
+    /// Représentation simplifiée d'un état Animator. Elle regroupe toutes les
+    /// informations nécessaires pour jouer ou afficher les occurrences d'un nom.
+    /// </summary>
+    private struct AnimatorStateReference
+    {
+        /// <summary>
+        /// Index du layer dans lequel l'état est déclaré.
+        /// </summary>
+        public int LayerIndex;
+
+        /// <summary>
+        /// Hash du nom court (sans chemin) généré par Unity. Utile pour vérifier
+        /// rapidement l'existence d'un état via <see cref="Animator.HasState(int, int)"/>.
+        /// </summary>
+        public int ShortNameHash;
+
+        /// <summary>
+        /// Hash du chemin complet (layer + sous machines) calculé par Unity.
+        /// Il garantit l'accès correct à l'état, même si plusieurs partagent le
+        /// même nom court dans des sous-machines différentes.
+        /// </summary>
+        public int FullPathHash;
+
+        /// <summary>
+        /// Nom lisible de l'état. Il correspond à la clé du dictionnaire mais est
+        /// stocké ici pour tracer facilement les opérations dans les logs.
+        /// </summary>
+        public string StateName;
+
+        /// <summary>
+        /// Chemin lisible dans la hiérarchie des state machines (Layer/SousState/Etat).
+        /// Très utile pour le debug et la présentation dans l'interface.
+        /// </summary>
+        public string DisplayPath;
+    }
+
     private void OnEnable()
     {
         EditorApplication.update += OnEditorUpdate;
@@ -188,6 +276,7 @@ public class CharacterAnimationTesterWindow : EditorWindow
         DrawBodyControls();
         DrawFaceControls();
         DrawTriggerControls();
+        DrawDirectAnimationControls();
         DrawPreviewArea();
     }
 
@@ -223,6 +312,7 @@ public class CharacterAnimationTesterWindow : EditorWindow
                     previewController?.ForceAnimatorRebind();
                     previewAnimator?.Update(0f);
                     lastUpdateTime = EditorApplication.timeSinceStartup;
+                    RebuildAnimationLookup();
                 }
             }
         }
@@ -340,6 +430,108 @@ public class CharacterAnimationTesterWindow : EditorWindow
     }
 
     /// <summary>
+    /// Interface permettant de lancer rapidement une animation par son nom sur tous
+    /// les layers possédant un état correspondant.
+    /// </summary>
+    private void DrawDirectAnimationControls()
+    {
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Lecture par nom", EditorStyles.boldLabel);
+
+        if (previewAnimator == null)
+        {
+            EditorGUILayout.HelpBox("Instanciez un personnage pour accéder à la lecture directe des animations.", MessageType.Info);
+            return;
+        }
+
+        // Si le contrôleur change à chaud (édition du prefab), nous reconstruisons automatiquement
+        // les caches pour éviter tout décalage entre la réalité et l'interface.
+        if (previewAnimator.runtimeAnimatorController != cachedRuntimeController)
+        {
+            RebuildAnimationLookup();
+        }
+
+        if (sortedAnimationNames.Count == 0)
+        {
+            EditorGUILayout.HelpBox("Aucun état détecté sur l'Animator. Cliquez sur \"Rafraîchir\" après avoir configuré un contrôleur.", MessageType.Warning);
+            if (GUILayout.Button(new GUIContent("Rafraîchir", "Analyse à nouveau le contrôleur pour détecter les états disponibles.")))
+            {
+                RebuildAnimationLookup();
+            }
+            return;
+        }
+
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            animationNameFilter = EditorGUILayout.TextField(new GUIContent("Filtre", "Filtre textuel appliqué sur les noms d'états."), animationNameFilter);
+
+            if (GUILayout.Button(new GUIContent("Rafraîchir", "Reconstruit la liste d'états depuis le contrôleur courant."), GUILayout.Width(100f)))
+            {
+                RebuildAnimationLookup();
+            }
+        }
+
+        directAnimationTransitionDuration = EditorGUILayout.Slider(new GUIContent("Transition", "Durée de cross-fade appliquée lors du lancement manuel."), directAnimationTransitionDuration, 0f, 1.5f);
+        directAnimationNormalizedStartTime = EditorGUILayout.Slider(new GUIContent("Départ normalisé", "Position dans l'animation (0 = début, 1 = fin)."), directAnimationNormalizedStartTime, 0f, 1f);
+
+        IEnumerable<string> filteredNames = sortedAnimationNames;
+        if (!string.IsNullOrWhiteSpace(animationNameFilter))
+        {
+            filteredNames = filteredNames.Where(name => name.IndexOf(animationNameFilter, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        List<string> namesToDisplay = filteredNames.ToList();
+        if (namesToDisplay.Count == 0)
+        {
+            EditorGUILayout.HelpBox("Aucune animation ne correspond au filtre actuel.", MessageType.Info);
+            return;
+        }
+
+        using (var scroll = new EditorGUILayout.ScrollViewScope(animationListScroll, GUILayout.Height(250f)))
+        {
+            animationListScroll = scroll.scrollPosition;
+
+            foreach (string animationName in namesToDisplay)
+            {
+                if (!animationStatesByName.TryGetValue(animationName, out List<AnimatorStateReference> states) || states.Count == 0)
+                    continue;
+
+                string header = $"{animationName} ({states.Count} occurrence(s))";
+                animationFoldoutStates.TryGetValue(animationName, out bool foldout);
+
+                foldout = EditorGUILayout.BeginFoldoutHeaderGroup(foldout, new GUIContent(header, "Afficher les layers possédant cet état."));
+                if (foldout)
+                {
+                    using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                    {
+                        if (GUILayout.Button(new GUIContent("Jouer sur tous les layers", "Lance simultanément l'état sur chaque layer correspondant.")))
+                        {
+                            PlayAnimationOnMatchingLayers(animationName);
+                        }
+
+                        foreach (AnimatorStateReference stateReference in states)
+                        {
+                            using (new EditorGUILayout.HorizontalScope())
+                            {
+                                string layerLabel = previewAnimator.GetLayerName(stateReference.LayerIndex);
+                                EditorGUILayout.LabelField(new GUIContent(layerLabel, "Nom du layer dans l'Animator."), GUILayout.Width(120f));
+                                EditorGUILayout.LabelField(new GUIContent(stateReference.DisplayPath, "Chemin complet de l'état."));
+
+                                if (GUILayout.Button(new GUIContent("Solo", "Joue uniquement cette occurrence."), GUILayout.Width(60f)))
+                                {
+                                    PlaySingleAnimationState(stateReference);
+                                }
+                            }
+                        }
+                    }
+                }
+                EditorGUILayout.EndFoldoutHeaderGroup();
+                animationFoldoutStates[animationName] = foldout;
+            }
+        }
+    }
+
+    /// <summary>
     /// Dessine la zone de rendu 3D qui affiche le personnage testé.
     /// </summary>
     private void DrawPreviewArea()
@@ -435,6 +627,68 @@ public class CharacterAnimationTesterWindow : EditorWindow
     }
 
     /// <summary>
+    /// Lance une animation par son nom sur tous les layers possédant un état correspondant.
+    /// </summary>
+    /// <param name="stateName">Nom court de l'état à jouer.</param>
+    private void PlayAnimationOnMatchingLayers(string stateName)
+    {
+        if (previewAnimator == null)
+            return;
+
+        if (!animationStatesByName.TryGetValue(stateName, out List<AnimatorStateReference> states) || states.Count == 0)
+        {
+            Debug.LogWarning($"[AnimationTester] Aucun état nommé '{stateName}' n'a été trouvé lors de la lecture groupée.");
+            return;
+        }
+
+        int playedCount = 0;
+        foreach (AnimatorStateReference stateReference in states)
+        {
+            if (!previewAnimator.HasState(stateReference.LayerIndex, stateReference.FullPathHash) &&
+                !previewAnimator.HasState(stateReference.LayerIndex, stateReference.ShortNameHash))
+            {
+                continue;
+            }
+
+            previewAnimator.CrossFade(stateReference.FullPathHash, Mathf.Max(0f, directAnimationTransitionDuration), stateReference.LayerIndex, Mathf.Clamp01(directAnimationNormalizedStartTime));
+            playedCount++;
+        }
+
+        if (playedCount == 0)
+        {
+            Debug.LogWarning($"[AnimationTester] Impossible de jouer '{stateName}' : aucun layer valide détecté.");
+            return;
+        }
+
+        previewAnimator.Update(0f);
+        lastUpdateTime = EditorApplication.timeSinceStartup;
+        Debug.Log($"[AnimationTester] Lecture de '{stateName}' sur {playedCount} layer(s).");
+        Repaint();
+    }
+
+    /// <summary>
+    /// Joue une occurrence précise d'un état sur un layer donné.
+    /// </summary>
+    private void PlaySingleAnimationState(AnimatorStateReference stateReference)
+    {
+        if (previewAnimator == null)
+            return;
+
+        if (!previewAnimator.HasState(stateReference.LayerIndex, stateReference.FullPathHash) &&
+            !previewAnimator.HasState(stateReference.LayerIndex, stateReference.ShortNameHash))
+        {
+            Debug.LogWarning($"[AnimationTester] L'état '{stateReference.DisplayPath}' n'existe plus dans l'Animator.");
+            return;
+        }
+
+        previewAnimator.CrossFade(stateReference.FullPathHash, Mathf.Max(0f, directAnimationTransitionDuration), stateReference.LayerIndex, Mathf.Clamp01(directAnimationNormalizedStartTime));
+        previewAnimator.Update(0f);
+        lastUpdateTime = EditorApplication.timeSinceStartup;
+        Debug.Log($"[AnimationTester] Lecture solo de '{stateReference.DisplayPath}'.");
+        Repaint();
+    }
+
+    /// <summary>
     /// Applique tous les paramètres actuellement configurés pour le layer Body.
     /// </summary>
     private void ApplyBodyState()
@@ -445,6 +699,82 @@ public class CharacterAnimationTesterWindow : EditorWindow
         previewController.SetBodySpeed(bodyNormalizedSpeed);
         previewController.SetBodyState(selectedBodyState, bodyTransitionDuration, bodyNormalizedStartTime, forceInstantBodyTransition);
         previewAnimator?.Update(0f);
+    }
+
+    /// <summary>
+    /// Reconstruit les caches de lecture directe en analysant le contrôleur Animator courant.
+    /// </summary>
+    private void RebuildAnimationLookup()
+    {
+        animationStatesByName.Clear();
+        sortedAnimationNames.Clear();
+        animationFoldoutStates.Clear();
+
+        if (previewAnimator == null)
+        {
+            cachedRuntimeController = null;
+            return;
+        }
+
+        cachedRuntimeController = previewAnimator.runtimeAnimatorController;
+        if (cachedRuntimeController is not AnimatorController controller)
+            return;
+
+        for (int layerIndex = 0; layerIndex < controller.layers.Length; layerIndex++)
+        {
+            AnimatorControllerLayer layer = controller.layers[layerIndex];
+            if (layer?.stateMachine == null)
+                continue;
+
+            string initialPath = string.IsNullOrEmpty(layer.name) ? $"Layer {layerIndex}" : layer.name;
+            CollectStatesRecursive(layer.stateMachine, layerIndex, initialPath);
+        }
+
+        sortedAnimationNames.AddRange(animationStatesByName.Keys);
+        sortedAnimationNames.Sort(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Parcourt récursivement une state machine afin d'enregistrer tous les états disponibles.
+    /// </summary>
+    private void CollectStatesRecursive(AnimatorStateMachine stateMachine, int layerIndex, string parentPath)
+    {
+        if (stateMachine == null)
+            return;
+
+        foreach (ChildAnimatorState childState in stateMachine.states)
+        {
+            if (childState.state == null)
+                continue;
+
+            string displayPath = string.IsNullOrEmpty(parentPath) ? childState.state.name : $"{parentPath}/{childState.state.name}";
+
+            var reference = new AnimatorStateReference
+            {
+                LayerIndex = layerIndex,
+                ShortNameHash = childState.state.shortNameHash,
+                FullPathHash = childState.state.fullPathHash,
+                StateName = childState.state.name,
+                DisplayPath = displayPath
+            };
+
+            if (!animationStatesByName.TryGetValue(reference.StateName, out List<AnimatorStateReference> list))
+            {
+                list = new List<AnimatorStateReference>();
+                animationStatesByName.Add(reference.StateName, list);
+            }
+
+            list.Add(reference);
+        }
+
+        foreach (ChildAnimatorStateMachine childMachine in stateMachine.stateMachines)
+        {
+            if (childMachine.stateMachine == null)
+                continue;
+
+            string nextPath = string.IsNullOrEmpty(parentPath) ? childMachine.stateMachine.name : $"{parentPath}/{childMachine.stateMachine.name}";
+            CollectStatesRecursive(childMachine.stateMachine, layerIndex, nextPath);
+        }
     }
 
     /// <summary>
@@ -555,6 +885,7 @@ public class CharacterAnimationTesterWindow : EditorWindow
         {
             previewAnimator.Rebind();
             previewAnimator.Update(0f);
+            RebuildAnimationLookup();
         }
 
         lastUpdateTime = EditorApplication.timeSinceStartup;
@@ -574,6 +905,10 @@ public class CharacterAnimationTesterWindow : EditorWindow
 
         previewController = null;
         previewAnimator = null;
+        cachedRuntimeController = null;
+        animationStatesByName.Clear();
+        sortedAnimationNames.Clear();
+        animationFoldoutStates.Clear();
     }
 
     /// <summary>
