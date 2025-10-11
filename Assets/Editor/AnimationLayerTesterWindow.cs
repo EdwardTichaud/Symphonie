@@ -14,14 +14,25 @@ public class AnimationLayerTesterWindow : EditorWindow
     /// </summary>
     private struct LayerState
     {
-        public LayerState(string layerName, AnimationClip clip)
+        public LayerState(
+            string layerName,
+            AnimationClip clip,
+            float weight,
+            AnimatorLayerBlendingMode blendingMode,
+            int layerIndex)
         {
             LayerName = layerName;
             Clip = clip;
+            Weight = weight;
+            BlendingMode = blendingMode;
+            LayerIndex = layerIndex;
         }
 
         public string LayerName { get; private set; }
         public AnimationClip Clip { get; private set; }
+        public float Weight { get; private set; }
+        public AnimatorLayerBlendingMode BlendingMode { get; private set; }
+        public int LayerIndex { get; private set; }
     }
 
     // ------------------------- Données de configuration -------------------------
@@ -168,7 +179,20 @@ public class AnimationLayerTesterWindow : EditorWindow
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    EditorGUILayout.LabelField(match.LayerName, GUILayout.Width(160f));
+                    float displayWeight = match.Weight;
+                    if (_targetAnimator != null && EditorApplication.isPlaying)
+                    {
+                        // Pendant le Play Mode on reflète les poids runtime réels pour faciliter le debug.
+                        displayWeight = Mathf.Clamp01(_targetAnimator.GetLayerWeight(match.LayerIndex));
+                    }
+
+                    string label = string.Format(
+                        "Layer {0} - {1} (poids {2:0.###}, mode {3})",
+                        match.LayerIndex,
+                        match.LayerName,
+                        displayWeight,
+                        match.BlendingMode);
+                    EditorGUILayout.LabelField(label, GUILayout.Width(260f));
                     EditorGUILayout.ObjectField(match.Clip, typeof(AnimationClip), false);
                 }
             }
@@ -247,7 +271,8 @@ public class AnimationLayerTesterWindow : EditorWindow
                 AnimationClip clip = state.motion as AnimationClip;
                 if (clip != null)
                 {
-                    _matches.Add(new LayerState(layer.name, clip));
+                    float weight = ResolveLayerWeight(layer, i);
+                    _matches.Add(new LayerState(layer.name, clip, weight, layer.blendingMode, i));
                 }
                 else
                 {
@@ -312,7 +337,15 @@ public class AnimationLayerTesterWindow : EditorWindow
         EnsureAnimationMode();
 
         GameObject go = _targetAnimator.gameObject;
-        AnimationMode.BeginSampling();
+
+        // On capture une photographie complète de la pose actuelle pour pouvoir revenir
+        // à l'état initial entre deux layers. Cela permet de simuler un vrai système
+        // de blending en utilisant les poids configurés sur l'Animator.
+        Transform[] hierarchy = go.GetComponentsInChildren<Transform>(true);
+        Dictionary<Transform, PoseSnapshot> basePose = CapturePose(hierarchy, null);
+        Dictionary<Transform, PoseSnapshot> finalPose = ClonePose(basePose);
+        Dictionary<Transform, PoseSnapshot> sampledPose = CapturePose(hierarchy, null);
+
         foreach (LayerState match in _matches)
         {
             AnimationClip clip = match.Clip;
@@ -321,11 +354,36 @@ public class AnimationLayerTesterWindow : EditorWindow
                 continue;
             }
 
+            float weight = Mathf.Clamp01(match.Weight);
+            if (_targetAnimator != null && EditorApplication.isPlaying)
+            {
+                // On privilégie le poids runtime pour suivre les variations dynamiques éventuelles.
+                weight = Mathf.Clamp01(_targetAnimator.GetLayerWeight(match.LayerIndex));
+            }
+            if (weight <= 0f)
+            {
+                // Un layer sans influence n'a pas besoin d'être traité.
+                continue;
+            }
+
             float clipLength = Mathf.Max(clip.length, 0.0001f); // On évite les divisions par zéro.
             float localTime = Mathf.Clamp01(normalizedTime) * clipLength;
+
+            // On restaure la pose d'origine pour obtenir l'influence pure du layer courant.
+            ApplyPose(hierarchy, basePose);
+
+            AnimationMode.BeginSampling();
             AnimationMode.SampleAnimationClip(go, clip, localTime);
+            AnimationMode.EndSampling();
+
+            // On capture la pose générée par ce clip puis on la mélange avec le résultat
+            // cumulé en respectant le poids du layer et son mode de blending.
+            CapturePose(hierarchy, sampledPose);
+            BlendPoses(hierarchy, finalPose, basePose, sampledPose, weight, match.BlendingMode);
         }
-        AnimationMode.EndSampling();
+
+        // Application finale de la pose résultante sur l'Animator ciblé.
+        ApplyPose(hierarchy, finalPose);
 
         SceneView.RepaintAll();
         EditorApplication.QueuePlayerLoopUpdate();
@@ -368,5 +426,141 @@ public class AnimationLayerTesterWindow : EditorWindow
 
         _normalizedTime = newNormalized;
         SampleAtNormalizedTime(_normalizedTime);
+    }
+
+    /// <summary>
+    /// Récupère le poids effectif pour un layer donné. En mode édition on se base
+    /// principalement sur le poids par défaut défini dans l'AnimatorController, mais
+    /// si l'Animator est en cours de lecture on tente de lire le poids runtime pour
+    /// refléter d'éventuels réglages effectués par des scripts.
+    /// </summary>
+    private float ResolveLayerWeight(AnimatorControllerLayer layer, int layerIndex)
+    {
+        float weight = Mathf.Clamp01(layer.defaultWeight);
+
+        if (_targetAnimator != null && EditorApplication.isPlaying)
+        {
+            // En Play Mode l'Animator renvoie les poids runtime configurés par le jeu.
+            weight = Mathf.Clamp01(_targetAnimator.GetLayerWeight(layerIndex));
+        }
+
+        return weight;
+    }
+
+    /// <summary>
+    /// Structure simple utilisée pour conserver la pose locale d'un Transform.
+    /// </summary>
+    private struct PoseSnapshot
+    {
+        public PoseSnapshot(Vector3 position, Quaternion rotation, Vector3 scale)
+        {
+            Position = position;
+            Rotation = rotation;
+            Scale = scale;
+        }
+
+        public Vector3 Position;
+        public Quaternion Rotation;
+        public Vector3 Scale;
+    }
+
+    /// <summary>
+    /// Capture la pose de tous les transforms fournis afin de pouvoir la restaurer plus tard.
+    /// </summary>
+    private static Dictionary<Transform, PoseSnapshot> CapturePose(Transform[] transforms, Dictionary<Transform, PoseSnapshot> buffer)
+    {
+        Dictionary<Transform, PoseSnapshot> pose = buffer ?? new Dictionary<Transform, PoseSnapshot>(transforms.Length);
+        pose.Clear();
+
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform t = transforms[i];
+            pose[t] = new PoseSnapshot(t.localPosition, t.localRotation, t.localScale);
+        }
+
+        return pose;
+    }
+
+    /// <summary>
+    /// Crée une copie profonde d'un dictionnaire de poses pour servir de base au blending.
+    /// </summary>
+    private static Dictionary<Transform, PoseSnapshot> ClonePose(Dictionary<Transform, PoseSnapshot> source)
+    {
+        Dictionary<Transform, PoseSnapshot> clone = new Dictionary<Transform, PoseSnapshot>(source.Count);
+        foreach (KeyValuePair<Transform, PoseSnapshot> kvp in source)
+        {
+            clone[kvp.Key] = kvp.Value;
+        }
+
+        return clone;
+    }
+
+    /// <summary>
+    /// Applique la pose fournie sur l'ensemble de la hiérarchie pour la rendre visible dans la scène.
+    /// </summary>
+    private static void ApplyPose(Transform[] transforms, Dictionary<Transform, PoseSnapshot> pose)
+    {
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform t = transforms[i];
+            PoseSnapshot snapshot;
+            if (!pose.TryGetValue(t, out snapshot))
+            {
+                continue;
+            }
+
+            t.localPosition = snapshot.Position;
+            t.localRotation = snapshot.Rotation;
+            t.localScale = snapshot.Scale;
+        }
+    }
+
+    /// <summary>
+    /// Mélange la pose en cours avec celle issue d'un layer spécifique en respectant son poids et
+    /// son mode de blending (Override ou Additive).
+    /// </summary>
+    private static void BlendPoses(
+        Transform[] transforms,
+        Dictionary<Transform, PoseSnapshot> finalPose,
+        Dictionary<Transform, PoseSnapshot> basePose,
+        Dictionary<Transform, PoseSnapshot> sampledPose,
+        float weight,
+        AnimatorLayerBlendingMode blendingMode)
+    {
+        if (weight <= 0f)
+        {
+            return;
+        }
+
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform t = transforms[i];
+
+            PoseSnapshot previous = finalPose[t];
+            PoseSnapshot baseSnapshot = basePose[t];
+            PoseSnapshot sampled = sampledPose[t];
+
+            PoseSnapshot blended;
+            if (blendingMode == AnimatorLayerBlendingMode.Additive)
+            {
+                // Les layers additifs ajoutent un delta par rapport à la pose de base.
+                Vector3 deltaPosition = sampled.Position - baseSnapshot.Position;
+                Vector3 deltaScale = sampled.Scale - baseSnapshot.Scale;
+                Quaternion deltaRotation = Quaternion.Inverse(baseSnapshot.Rotation) * sampled.Rotation;
+
+                blended.Position = previous.Position + deltaPosition * weight;
+                blended.Scale = previous.Scale + deltaScale * weight;
+                blended.Rotation = previous.Rotation * Quaternion.Slerp(Quaternion.identity, deltaRotation, weight);
+            }
+            else
+            {
+                // Les layers Override interpolent directement vers la pose du clip.
+                blended.Position = Vector3.Lerp(previous.Position, sampled.Position, weight);
+                blended.Scale = Vector3.Lerp(previous.Scale, sampled.Scale, weight);
+                blended.Rotation = Quaternion.Slerp(previous.Rotation, sampled.Rotation, weight);
+            }
+
+            finalPose[t] = blended;
+        }
     }
 }
