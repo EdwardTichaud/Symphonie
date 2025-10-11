@@ -1874,8 +1874,14 @@ public class NewBattleManager : MonoBehaviour
             {
                 // Si l’angle est > 90°, on déclenche le trigger "isTurning" sur l’Animator enfant
                 Animator anim = unit.GetCasterAnimator();
-                if (anim != null)
+                CharacterAnimationController controller = unit.GetAnimationController();
+                if (controller != null)
                 {
+                    controller.ActivateBodyTrigger(CharacterAnimationController.BodyAnimationTrigger.Turn);
+                }
+                else if (anim != null)
+                {
+                    // Fallback direct : l'ancien pipeline reste disponible si la migration n'est pas complète.
                     anim.SetTrigger("isTurning");
                 }
             }
@@ -1922,7 +1928,12 @@ public class NewBattleManager : MonoBehaviour
             {
                 // Si > 90°, déclenche "isTurning" sur l’Animator enfant
                 Animator anim = unit.GetCasterAnimator();
-                if (anim != null)
+                CharacterAnimationController controller = unit.GetAnimationController();
+                if (controller != null)
+                {
+                    controller.ActivateBodyTrigger(CharacterAnimationController.BodyAnimationTrigger.Turn);
+                }
+                else if (anim != null)
                 {
                     anim.SetTrigger("isTurning");
                 }
@@ -2118,9 +2129,15 @@ public class NewBattleManager : MonoBehaviour
     private IEnumerator RotateUnitSmoothly(CharacterUnit unit, Quaternion targetRotation, float rotationSpeed)
     {
         Animator anim = unit.GetCasterAnimator();
-        if (anim != null)
+        CharacterAnimationController controller = unit.GetAnimationController();
+        if (controller != null)
         {
-            // Joue l'animation de rotation en boucle pendant la rotation
+            // Le nouveau pipeline se charge de piloter les sous-transitions du layer Body.
+            controller.SetBodyState(CharacterAnimationController.BodyAnimationState.Turn90, 0.05f, 0f, forceInstantTransition: true);
+        }
+        else if (anim != null)
+        {
+            // Fallback temporaire en attendant que tous les contrôleurs soient migrés.
             anim.Play("Turn_90");
         }
 
@@ -2144,7 +2161,11 @@ public class NewBattleManager : MonoBehaviour
         unit.transform.rotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
 
         // Lecture instantanée de l'animation "Idle_Battle" une fois la rotation terminée
-        if (anim != null)
+        if (controller != null)
+        {
+            controller.SetBodyState(CharacterAnimationController.BodyAnimationState.IdleBattle, 0.1f);
+        }
+        else if (anim != null)
         {
             anim.Play("Idle_Battle");
         }
@@ -2763,8 +2784,13 @@ public class NewBattleManager : MonoBehaviour
 
         // Récupère l'Animator enfant du lanceur via l'utilitaire centralisé pour garantir un binding correct.
         Animator casterAnimator = currentCharacterUnit.GetCasterAnimator();
+        CharacterAnimationController casterController = currentCharacterUnit.GetAnimationController();
 
-        if (casterAnimator != null)
+        if (casterController != null)
+        {
+            casterController.SetBodyState(CharacterAnimationController.BodyAnimationState.ItemPrepare, 0.1f);
+        }
+        else if (casterAnimator != null)
         {
             // CrossFade permet d'éviter un cut sec lorsque l'on ouvre le menu après une autre animation.
             if (casterAnimator.HasState(0, AnimatorStateItemPrepare))
@@ -2830,7 +2856,12 @@ public class NewBattleManager : MonoBehaviour
         {
             // Même logique que dans Start : priorité au cache, puis recherche de secours.
             Animator casterAnimator = currentCharacterUnit.GetCasterAnimator();
-            if (casterAnimator != null)
+            CharacterAnimationController casterController = currentCharacterUnit.GetAnimationController();
+            if (casterController != null)
+            {
+                casterController.SetBodyState(CharacterAnimationController.BodyAnimationState.IdleBattle, 0.1f);
+            }
+            else if (casterAnimator != null)
             {
                 if (casterAnimator.HasState(0, AnimatorStateIdleBattle))
                     casterAnimator.CrossFade(AnimatorStateIdleBattle, 0.1f, 0, 0f);
