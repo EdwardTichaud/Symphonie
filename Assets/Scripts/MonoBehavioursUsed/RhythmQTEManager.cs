@@ -1078,7 +1078,7 @@ public class RhythmQTEManager : MonoBehaviour
 
             // Animation de déplacement
             if (!caster.IsDead)
-                animator?.Play("Dash_Battle");
+                PlayUnitBodyAnimation(caster, CharacterAnimationController.BodyAnimationState.DashBattle, "Dash_Battle");
 
             // Cache le visuel le temps de la téléportation
             if (visualRoot != null)
@@ -1105,7 +1105,7 @@ public class RhythmQTEManager : MonoBehaviour
         {
             // Animation du dash
             if (!caster.IsDead)
-                animator?.Play("Dash_Battle");
+                PlayUnitBodyAnimation(caster, CharacterAnimationController.BodyAnimationState.DashBattle, "Dash_Battle");
 
             Vector3 startPos = caster.transform.position;
             float distance = Vector3.Distance(startPos, destination);
@@ -1160,7 +1160,7 @@ public class RhythmQTEManager : MonoBehaviour
                 Instantiate(item.tpVfx_Start, caster.transform.position, Quaternion.identity);
 
             if (!caster.IsDead)
-                animator?.Play("Retreat_Battle");
+                PlayUnitBodyAnimation(caster, CharacterAnimationController.BodyAnimationState.RetreatBattle, "Retreat_Battle");
 
             // Cache le GameObject visuel pendant l'attente
             if (visualRoot != null)
@@ -1185,7 +1185,7 @@ public class RhythmQTEManager : MonoBehaviour
         else if (!isTeleport)
         {
             if (!caster.IsDead)
-                animator?.Play("Retreat_Battle");
+                PlayUnitBodyAnimation(caster, CharacterAnimationController.BodyAnimationState.RetreatBattle, "Retreat_Battle");
 
             Vector3 startPos = caster.transform.position;
             float distance = Vector3.Distance(startPos, origin);
@@ -1263,7 +1263,7 @@ public class RhythmQTEManager : MonoBehaviour
                 Instantiate(move.tpVfx_Start, caster.transform.position, Quaternion.identity);
 
             if (!caster.IsDead)
-                animator?.Play("Dash_Battle");
+                PlayUnitBodyAnimation(caster, CharacterAnimationController.BodyAnimationState.DashBattle, "Dash_Battle");
 
             // Masque le visuel du lanceur pendant l'attente
             if (visualRoot != null)
@@ -1288,7 +1288,7 @@ public class RhythmQTEManager : MonoBehaviour
         else if (!isTeleport)
         {
             if (!caster.IsDead)
-                animator?.Play("Dash_Battle");
+                PlayUnitBodyAnimation(caster, CharacterAnimationController.BodyAnimationState.DashBattle, "Dash_Battle");
 
             Vector3 startPos = caster.transform.position;
             float distance = Vector3.Distance(startPos, targetPos);
@@ -1362,7 +1362,7 @@ public class RhythmQTEManager : MonoBehaviour
                 Instantiate(move.tpVfx_Start, caster.transform.position, Quaternion.identity);
 
             if (!caster.IsDead)
-                animator?.Play("Dash_Battle");
+                PlayUnitBodyAnimation(caster, CharacterAnimationController.BodyAnimationState.DashBattle, "Dash_Battle");
 
             // Cache temporairement le GameObject visuel
             if (visualRoot != null)
@@ -1393,7 +1393,7 @@ public class RhythmQTEManager : MonoBehaviour
         else if (!isTeleport)
         {
             if (!caster.IsDead)
-                animator?.Play("Dash_Battle");
+                PlayUnitBodyAnimation(caster, CharacterAnimationController.BodyAnimationState.DashBattle, "Dash_Battle");
 
             float distance = Vector3.Distance(startPos, initialPosition);
             ParticleSystem dashParticles = distance > 0.01f ? SpawnDashParticles(caster) : null;
@@ -1436,19 +1436,25 @@ public class RhythmQTEManager : MonoBehaviour
     {
         // Récupère une fois l’Animator plutôt que de l’appeler à chaque itération
         Animator animator = caster.GetCasterAnimator();
+        CharacterAnimationController controller = caster.GetAnimationController();
 
         foreach (string clip in animationClips)
         {
             // Lance le clip courant uniquement si l'unité est en vie
             if (!caster.IsDead)
-                animator.Play(clip);
+            {
+                if (controller != null)
+                    controller.PlayRawClip(clip, 0.05f);
+                else
+                    animator?.Play(clip);
+            }
             Debug.Log("Animation jouée : " + clip);
 
             // On attend un frame pour laisser l’Animator passer à l’état du clip
             yield return null;
 
             // Récupère la longueur de l’état actuel (le clip qui vient d'être joué)
-            float clipDuration = animator.GetCurrentAnimatorStateInfo(0).length;
+            float clipDuration = animator != null ? animator.GetCurrentAnimatorStateInfo(0).length : 0f;
 
             // Si tu veux être certain de prendre la longueur du AnimationClip lui-même,
             // tu peux aussi faire : float clipDuration = clip.length;
@@ -1883,6 +1889,28 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Centralise la lecture d'une animation de corps en utilisant en priorité le nouveau contrôleur paramétré.
+    /// </summary>
+    private void PlayUnitBodyAnimation(CharacterUnit unit, CharacterAnimationController.BodyAnimationState state, string legacyClipName, float transitionDuration = 0.05f)
+    {
+        if (unit == null)
+            return;
+
+        CharacterAnimationController controller = unit.GetAnimationController();
+        if (controller != null)
+        {
+            controller.SetBodyState(state, transitionDuration, 0f, forceInstantTransition: true);
+            return;
+        }
+
+        Animator animator = unit.GetCasterAnimator();
+        if (animator != null && !string.IsNullOrEmpty(legacyClipName))
+        {
+            animator.Play(legacyClipName);
+        }
     }
 
     #endregion
