@@ -27,16 +27,16 @@ public static class AnimationPreviewHub
 {
     public class Session
     {
-        public System.Guid id;
-        public GameObject go;
-        public AnimationClip clip;
-        public float speed;
-        public bool loop;
-        public float time;
-        public double startEditorTime;
-        public float startOffset;
-        public bool followComponent;     // si true, on lit speed/loop/time depuis le composant quand il existe
-        public AnimationPreviewer source;// composant (peut devenir null si objet détruit ou scène fermée)
+        public System.Guid id;               // Identifiant unique pour manipuler la session dans le Hub.
+        public GameObject go;                // Cible réelle qui reçoit l'échantillonnage de l'animation.
+        public AnimationClip clip;           // Clip actuellement joué.
+        public float speed;                  // Vitesse de lecture effective.
+        public bool loop;                    // Mode boucle actif ?
+        public float time;                   // Temps courant d'échantillonnage (en secondes).
+        public double startEditorTime;       // Temps Editor au moment de la dernière resynchronisation.
+        public float startOffset;            // Offset initial (permet de reprendre depuis previewTime).
+        public bool followComponent;         // Si true, on lit dynamiquement les paramètres exposés par le composant.
+        public AnimationPreviewer source;    // Référence vers le composant d'origine (peut devenir null si détruit).
     }
 
     static readonly List<Session> sessions = new List<Session>();
@@ -128,10 +128,61 @@ public static class AnimationPreviewHub
             }
 
             // Si on suit le composant et qu’il existe encore, récupérer speed/loop/time en direct
+            bool resyncedFromComponent = false; // Indique si un changement manuel doit être appliqué immédiatement.
+
             if (s.followComponent && s.source != null)
             {
+                // Synchronise la vitesse et la boucle pour refléter instantanément les modifications Inspector.
                 s.speed = Mathf.Max(0.01f, s.source.speed);
                 s.loop  = s.source.loop;
+
+                // Vérifie si la cible (Animator / GameObject) a changé pendant la lecture.
+                GameObject desiredGo = s.source.animator != null ? s.source.animator.gameObject : s.source.gameObject;
+                if (desiredGo != s.go)
+                {
+                    s.go = desiredGo;
+                    resyncedFromComponent = true;
+                }
+
+                // Autorise le remplacement du clip "à chaud".
+                AnimationClip desiredClip = s.source.clip;
+                if (desiredClip != s.clip)
+                {
+                    if (desiredClip == null)
+                    {
+                        // Si le clip est effacé pendant la lecture, on stoppe proprement la session.
+                        sessions.RemoveAt(i);
+                        continue;
+                    }
+
+                    s.clip = desiredClip;
+                    // On recale immédiatement le temps de lecture pour rester dans la durée valide du nouveau clip.
+                    s.time = Mathf.Clamp(s.source.previewTime, 0f, s.clip.length);
+                    resyncedFromComponent = true;
+                }
+
+                // Permet de forcer la position de lecture depuis le champ previewTime.
+                float desiredTime = Mathf.Clamp(s.source.previewTime, 0f, s.clip.length);
+                if (Mathf.Abs(desiredTime - s.time) > 0.0001f)
+                {
+                    s.time = desiredTime;
+                    resyncedFromComponent = true;
+                }
+
+                if (resyncedFromComponent)
+                {
+                    // On redémarre l'horloge d'Editor pour éviter les sauts lorsque l'utilisateur ajuste les valeurs.
+                    s.startEditorTime = now;
+                    s.startOffset = s.time;
+
+                    // On pousse immédiatement l'état synchronisé pour que la scène reflète instantanément la modification.
+                    Sample(s, s.time);
+
+                    // Comme on vient de ré-échantillonner, on passe à la session suivante pour éviter un double calcul.
+                    if (!s.loop && s.time >= s.clip.length - 1e-4f)
+                        sessions.RemoveAt(i);
+                    continue;
+                }
             }
 
             double elapsed = (now - s.startEditorTime) * s.speed;
