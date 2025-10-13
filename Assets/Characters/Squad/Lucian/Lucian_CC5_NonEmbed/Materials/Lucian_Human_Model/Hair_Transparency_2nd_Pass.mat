@@ -109,11 +109,13 @@ Material:
     - _AOOccludeAll: 0.5
     - _AOStrength: 1
     - _AddPrecomputedVelocity: 0
-    - _AlphaClip: 0.666
+    - _AlphaClip: 0.05
     - _AlphaCutoffEnable: 1
     - _AlphaDstBlend: 10
     - _AlphaPower: 0.7
     - _AlphaRemap: 1
+    - _AlphaToMask: 1
+    - _AlphaToMaskInspectorValue: 1
     - _AlphaSrcBlend: 1
     - _BaseColorStrength: 1
     - _BlendMode: 0
@@ -137,7 +139,7 @@ Material:
     - _GlobalStrength: 1
     - _HighlightAOverlapEnd: 1
     - _HighlightAOverlapInvert: 1
-    - _HighlightAStrength: 0.543
+    - _HighlightAStrength: 1
     - _HighlightBOverlapEnd: 0
     - _HighlightBOverlapInvert: 0
     - _HighlightBStrength: 0
@@ -150,16 +152,16 @@ Material:
     - _ReceivesSSRTransparent: 0
     - _RenderQueueType: 4
     - _RequireSplitLighting: 0
-    - _RimTransmissionIntensity: 0.08714213
+    - _RimTransmissionIntensity: 0.05
     - _RootColorStrength: 1
     - _SecondarySmoothness: 0.625
-    - _SecondarySpecularMultiplier: 0.07411879
+    - _SecondarySpecularMultiplier: 0.05
     - _SecondarySpecularShift: 0
-    - _ShadowClip: 0.5
+    - _ShadowClip: 0.35
     - _SmoothnessMax: 0.8
     - _SmoothnessMin: 0.3808
     - _SmoothnessPower: 1
-    - _SpecularMultiplier: 0.27045408
+    - _SpecularMultiplier: 0.5
     - _SpecularShiftMax: 0
     - _SpecularShiftMin: 0
     - _SrcBlend: 1
