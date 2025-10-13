@@ -109,6 +109,50 @@ public class AnimationClipLayerGenerator : EditorWindow
         Debug.Log($"✅ Génération terminée. Clips scannés: {scanned} — Variantes créées: {created} (destination: {dstPath})");
     }
 
+    // Catégories anatomiques supportées par les heuristiques de filtrage.
+    enum BodyRegion
+    {
+        Unknown,
+        UpperBody,
+        Face,
+        Torso,
+        HeadAndNeck,
+    }
+
+    // Fragments utilisés pour identifier chaque catégorie (tous en minuscules pour éviter les ToLower multiples).
+    static readonly string[] UpperBodyInclude =
+    {
+        "spine_02", "spine_03", "cc_base_l_ribstwist", "cc_base_r_ribstwist", "clavicle", "shoulder",
+        "upperarm", "lowerarm", "forearm", "hand", "arm", "weapon", "elbow", "wrist"
+    };
+    static readonly string[] UpperBodyExclude =
+    {
+        "pelvis", "thigh", "calf", "foot", "ball", "toe", "finger", "thumb", "head", "neck",
+        "cc_base_facialbone", "jaw", "eye", "teeth", "tongue"
+    };
+    static readonly string[] FaceInclude =
+    {
+        "cc_base_facialbone", "facial", "face", "jaw", "lip", "mouth", "eye", "eyebrow", "brow",
+        "nose", "tongue", "teeth", "cheek"
+    };
+    static readonly string[] TorsoInclude =
+    {
+        "spine_01", "spine_02", "spine_03", "chest", "spine", "ribcage", "torso"
+    };
+    static readonly string[] TorsoExclude =
+    {
+        "clavicle", "upperarm", "lowerarm", "hand", "arm", "weapon", "head", "neck", "facial",
+        "cc_base_facialbone", "jaw", "tongue", "eye", "teeth"
+    };
+    static readonly string[] HeadNeckInclude =
+    {
+        "neck", "head", "c_neck", "c_head", "neck_01", "neck_02", "neck_03", "headtop", "skull"
+    };
+    static readonly string[] HeadNeckExclude =
+    {
+        "cc_base_facialbone", "jaw", "tongue", "eye", "teeth", "brow", "lip"
+    };
+
     static void FilterClip(AnimationClip clip, LayerFilterConfig.LayerRule rule)
     {
         // Float curves (inclut transforms, blendshapes, constraints, etc.)
@@ -174,6 +218,89 @@ public class AnimationClipLayerGenerator : EditorWindow
             if (rule.excludePathFragments.Any(f => lowerPath.Contains((f ?? "").ToLowerInvariant())))
                 return false;
         }
+
+        // Heuristiques anatomiques : si la règle correspond à une zone connue et que le chemin ne colle pas à
+        // cette zone, on ignore la courbe. Cela sécurise les variantes même lorsque le squelette change légèrement
+        // (nouvelles souches de noms d'os par exemple).
+        var region = DetectBodyRegion(rule);
+        if (region != BodyRegion.Unknown && !MatchesBodyRegion(lowerPath, region))
+            return false;
+
         return true;
+    }
+
+    /// <summary>
+    /// Détermine automatiquement la zone du corps visée par la règle.
+    /// L'objectif est de fiabiliser la génération lorsque les listes include/exclude
+    /// n'anticipent pas toutes les variantes de noms de bones.
+    /// </summary>
+    static BodyRegion DetectBodyRegion(LayerFilterConfig.LayerRule rule)
+    {
+        if (rule == null) return BodyRegion.Unknown;
+
+        // On normalise les libellés une seule fois pour éviter des ToLower répétitifs.
+        string name = (rule.layerName ?? string.Empty).ToLowerInvariant();
+        string prefix = (rule.prefix ?? string.Empty).ToLowerInvariant();
+
+        // On vérifie aussi le contenu textuel des fragments pour enrichir la détection.
+        bool HasFragment(IEnumerable<string> fragments, params string[] keys)
+            => fragments != null && fragments.Any(f =>
+                {
+                    string lower = (f ?? string.Empty).ToLowerInvariant();
+                    return keys.Any(k => lower.Contains(k));
+                });
+
+        if (name.Contains("upperbody") || prefix.Contains("upperbody")
+            || HasFragment(rule.includePathFragments, "upperarm", "lowerarm", "clavicle", "spine_03"))
+            return BodyRegion.UpperBody;
+
+        if (name.Contains("face") || prefix.Contains("face") || rule.keepOnlyBlendshapes
+            || HasFragment(rule.includePathFragments, "facial", "jaw", "eye", "brow"))
+            return BodyRegion.Face;
+
+        if (name.Contains("torso") || name.Contains("chest") || prefix.Contains("torso")
+            || HasFragment(rule.includePathFragments, "spine_01", "spine_02", "chest"))
+            return BodyRegion.Torso;
+
+        if (name.Contains("headneck") || name.Contains("head") || name.Contains("neck")
+            || prefix.Contains("headneck") || HasFragment(rule.includePathFragments, "neck", "head"))
+            return BodyRegion.HeadAndNeck;
+
+        return BodyRegion.Unknown;
+    }
+
+    /// <summary>
+    /// Vérifie si le chemin appartient bien à la zone détectée. Les heuristiques sont volontairement
+    /// permissives : on accepte la courbe si au moins un fragment attendu est trouvé et qu'aucun fragment
+    /// d'exclusion majeur n'est détecté.
+    /// </summary>
+    static bool MatchesBodyRegion(string lowerPath, BodyRegion region)
+    {
+        if (string.IsNullOrEmpty(lowerPath))
+            return region == BodyRegion.Face; // Les blendshapes faciaux n'ont pas forcément de path explicite.
+
+        bool ContainsAny(string[] fragments) => fragments.Any(lowerPath.Contains);
+
+        switch (region)
+        {
+            case BodyRegion.UpperBody:
+                if (!ContainsAny(UpperBodyInclude)) return false;
+                if (ContainsAny(UpperBodyExclude)) return false;
+                return true;
+            case BodyRegion.Face:
+                // Si la courbe concerne la tête mais pas explicitement un os facial, on reste permissif pour éviter
+                // de filtrer des blendshapes/curves utiles (yeux, mâchoire, etc.).
+                return ContainsAny(FaceInclude) || lowerPath.Contains("head") || lowerPath.Contains("cc_base_head");
+            case BodyRegion.Torso:
+                if (!ContainsAny(TorsoInclude)) return false;
+                if (ContainsAny(TorsoExclude)) return false;
+                return true;
+            case BodyRegion.HeadAndNeck:
+                if (!ContainsAny(HeadNeckInclude)) return false;
+                if (ContainsAny(HeadNeckExclude)) return false;
+                return true;
+            default:
+                return true;
+        }
     }
 }
