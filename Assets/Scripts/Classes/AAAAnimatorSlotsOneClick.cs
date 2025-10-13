@@ -9,7 +9,7 @@ using System.IO;
 
 /// <summary>
 /// One-click AAA-like Animator setup (Unity 6.2 compatible).
-/// Ajoute layers/masks faÁon "slots": Base locomotion, UpperBody (armes), Head/Neck (visÈe),
+/// Ajoute layers/masks fa√ßon "slots": Base locomotion, UpperBody (armes), Head/Neck (vis√©e),
 /// Face (expressions), Additive overlay, Special full-body override.
 /// </summary>
 [DisallowMultipleComponent]
@@ -26,10 +26,16 @@ public class AAAAnimatorSlotsOneClick : MonoBehaviour
     public string maskHeadNeckNoFaceName = "Mask_HeadNeck_NoFace";
     public string maskFaceOnlyName       = "Mask_FaceOnly";
     public string maskTorsoOnlyName      = "Mask_TorsoOnly";
+    public string maskHairSecondaryName  = "Mask_Hair_SecondaryMotion"; // pour Hair_SecondaryMotion
+    public string maskClothesSimName     = "Mask_Clothes_Sim";          // pour Clothes_Sim
 
     [Header("Layer options")]
-    public bool faceLayerAdditive = false;    // override par dÈfaut
+    public bool faceLayerAdditive = false;    // override par d√©faut
     public bool additiveTorsoOnly  = true;    // si true, Additive overlay cible TorsoOnly
+
+    [Header("Poids par d√©faut des layers suppl√©mentaires")]
+    [Range(0f,1f)] public float hairLayerDefaultWeight    = 1f; // Hair_SecondaryMotion -> override continu
+    [Range(0f,1f)] public float clothesLayerDefaultWeight = 1f; // Clothes_Sim -> override continu
 
     [Header("Facial bone name fragments (case-insensitive)")]
     public string[] faceNameFragments = new[]
@@ -38,6 +44,28 @@ public class AAAAnimatorSlotsOneClick : MonoBehaviour
         "mouth","orbicularis","levator","depressor","zygomatic","oris","oculi","risorius",
         "lash","eyeball","pupil"
     };
+
+    [Header("Hair / Clothes name fragments (case-insensitive)")]
+    [Tooltip("Fragments utilis√©s pour construire les Avatar Masks des layers Hair/Clothes.")]
+    public string[] hairNameFragments = new[]
+    {
+        "hair","real_hair","bang","bun","ponytail","braid","strand"
+    };
+
+    [Tooltip("Fragments d'exclusion (hair). Permet d'√©viter par ex. certains bones du visage si n√©cessaire.")]
+    public string[] hairExcludeFragments = new[]
+    {
+        "brow","lash","lid"
+    };
+
+    [Tooltip("Fragments d'inclusion pour Clothes_Sim.")]
+    public string[] clothesNameFragments = new[]
+    {
+        "dress","pants","skirt","coat","cape","cloth","sim","jacket","sleeve","trouser"
+    };
+
+    [Tooltip("Fragments d'exclusion pour Clothes_Sim (par d√©faut aucun).")]
+    public string[] clothesExcludeFragments = new string[0];
 
     [Header("Misc")]
     public bool writeDefaultsOff = true;
@@ -151,12 +179,12 @@ AvatarMask CreateMask(string assetPath, string maskName, System.Func<Transform, 
 
     var mask = new AvatarMask();
 
-    // 1) On nettoie les body parts Humanoid (on ne síen sert pas ici)
+    // 1) On nettoie les body parts Humanoid (on ne s¬íen sert pas ici)
     for (int i = 0; i < (int)AvatarMaskBodyPart.LastBodyPart; i++)
         mask.SetHumanoidBodyPartActive((AvatarMaskBodyPart)i, false);
 
-    // 2) On construit le Transform Mask via líAPI publique
-    //    (cíest la partie qui Èvite le NRE de 'm_Elements')
+    // 2) On construit le Transform Mask via l¬íAPI publique
+    //    (c¬íest la partie qui √©vite le NRE de 'm_Elements')
     int index = 0;
     foreach (var t in EnumerateChildren(_animator.transform))
     {
@@ -164,7 +192,7 @@ AvatarMask CreateMask(string assetPath, string maskName, System.Func<Transform, 
             continue;
 
         // Ajoute le path de ce Transform
-        mask.AddTransformPath(t, false);             // false = n'ajoute pas rÈcursivement les enfants
+        mask.AddTransformPath(t, false);             // false = n'ajoute pas r√©cursivement les enfants
         mask.SetTransformActive(index, true);        // active ce transform dans le mask
         index++;
     }
@@ -254,14 +282,71 @@ AvatarMask CreateMask(string assetPath, string maskName, System.Func<Transform, 
 
         return CreateMask(assetsFolder, maskFaceOnlyName, (t) =>
         {
-            // Inclure tout ce que líon reconnaÓt comme facial OU les bones spÈciaux jaw/eyes
+            // Inclure tout ce que l¬íon reconna√Æt comme facial OU les bones sp√©ciaux jaw/eyes
             if (special.Contains(t)) return true;
             if (IsFacialBone(t)) return true;
 
-            // Beaucoup de rigs mettent les paupiËres/yeux sous Head avec des noms neutres :
-            // si líancÍtre direct est eye/jaw connus, le predicate au-dessus suffira.
+            // Beaucoup de rigs mettent les paupi√®res/yeux sous Head avec des noms neutres :
+            // si l¬íanc√™tre direct est eye/jaw connus, le predicate au-dessus suffira.
             return false;
         });
+    }
+
+    AvatarMask BuildMask_FromFragments(string maskName, string[] includeFragments, string[] excludeFragments, bool includeAllIfEmpty)
+    {
+        // Listes pr√©par√©es en minuscules pour faciliter les comparaisons case-insensitive.
+        var include = new List<string>();
+        if (includeFragments != null)
+        {
+            foreach (var f in includeFragments)
+            {
+                if (!string.IsNullOrEmpty(f)) include.Add(f.ToLowerInvariant());
+            }
+        }
+
+        var exclude = new List<string>();
+        if (excludeFragments != null)
+        {
+            foreach (var f in excludeFragments)
+            {
+                if (!string.IsNullOrEmpty(f)) exclude.Add(f.ToLowerInvariant());
+            }
+        }
+
+        // Predicate commun : on calcule le chemin relatif et on le compare aux fragments.
+        return CreateMask(assetsFolder, maskName, (t) =>
+        {
+            string relPath = AnimationUtility.CalculateTransformPath(t, _animator.transform) ?? string.Empty;
+            relPath = relPath.ToLowerInvariant();
+
+            foreach (var frag in exclude)
+            {
+                if (relPath.Contains(frag)) return false;
+            }
+
+            if (include.Count == 0)
+                return includeAllIfEmpty;
+
+            foreach (var frag in include)
+            {
+                if (relPath.Contains(frag)) return true;
+            }
+
+            return false;
+        });
+    }
+
+    AvatarMask BuildMask_HairSecondary()
+    {
+        // On autorise les strings additionnelles pour couvrir d'√©ventuels rigs CC ou personnalis√©s.
+        return BuildMask_FromFragments(maskHairSecondaryName, hairNameFragments, hairExcludeFragments, false);
+    }
+
+    AvatarMask BuildMask_ClothesSim()
+    {
+        // Le flag includeAllIfEmpty reste √† false : si l'utilisateur supprime tous les fragments,
+        // aucun os ne sera retenu, ce qui √©vite les surprises.
+        return BuildMask_FromFragments(maskClothesSimName, clothesNameFragments, clothesExcludeFragments, false);
     }
 
     // ---------- Main setup ----------
@@ -270,16 +355,16 @@ AvatarMask CreateMask(string assetPath, string maskName, System.Func<Transform, 
         _animator = GetComponent<Animator>();
         if (_animator == null)
         {
-            Debug.LogError("[AAAAnimatorSlots] Aucun Animator trouvÈ sur ce GameObject.");
+            Debug.LogError("[AAAAnimatorSlots] Aucun Animator trouv√© sur ce GameObject.");
             return;
         }
 
         EnsureFolder(assetsFolder);
 
-        // CrÈer/Assigner controller
+        // Cr√©er/Assigner controller
         var ctrl = EnsureAnimatorController(_animator, assetsFolder, controllerName, logDetails);
 
-        // RÈcup os Humanoid clÈs
+        // R√©cup os Humanoid cl√©s
         Transform spine      = _animator.GetBoneTransform(HumanBodyBones.Spine);
         Transform chest      = _animator.GetBoneTransform(HumanBodyBones.Chest);
         Transform upperChest = _animator.GetBoneTransform(HumanBodyBones.UpperChest);
@@ -299,12 +384,14 @@ AvatarMask CreateMask(string assetPath, string maskName, System.Func<Transform, 
         Transform lEye = _animator.GetBoneTransform(HumanBodyBones.LeftEye);
         Transform rEye = _animator.GetBoneTransform(HumanBodyBones.RightEye);
 
-        // CrÈer les masks
+        // Cr√©er les masks
         var mFullNoFace = BuildMask_FullBody_NoFace();
         var mUpperArms  = BuildMask_UpperBodyArms(spine, chest, upperChest, lUpperArm, lLowerArm, lHand, rUpperArm, rLowerArm, rHand);
         var mHeadNeck   = BuildMask_HeadNeck_NoFace(neck, head);
         var mFaceOnly   = BuildMask_FaceOnly(head, jaw, lEye, rEye);
         var mTorsoOnly  = BuildMask_TorsoOnly(spine, chest, upperChest);
+        var mHair       = BuildMask_HairSecondary();
+        var mClothes    = BuildMask_ClothesSim();
 
         // Params
         EnsureParameter(ctrl, "UpperBodyBlend", AnimatorControllerParameterType.Float, 1f);
@@ -317,13 +404,13 @@ AvatarMask CreateMask(string assetPath, string maskName, System.Func<Transform, 
         EnsureParameter(ctrl, "SpecialPlay", AnimatorControllerParameterType.Trigger);
 
         // Layers
-        // 1) Base (locomotion)
+        // 1) LowerBody (locomotion de base)
         {
             var baseLayer = ctrl.layers[0];
-            baseLayer.name = "Base_Locomotion";
+            baseLayer.name = "LowerBody_Locomotion";
             baseLayer.defaultWeight = 1f;
             ctrl.layers[0] = baseLayer;
-            EnsureIdleState(ctrl, "Base_Locomotion", writeDefaultsOff);
+            EnsureIdleState(ctrl, "LowerBody_Locomotion", writeDefaultsOff);
         }
 
         // 2) UpperBody (bras/armes)
@@ -342,7 +429,7 @@ AvatarMask CreateMask(string assetPath, string maskName, System.Func<Transform, 
             EnsureIdleState(ctrl, "UpperBody_ArmsWeapons", writeDefaultsOff);
         }
 
-        // 3) Head/Neck aim (orientation tÍte, no face)
+        // 3) Head/Neck aim (orientation t√™te, no face)
         {
             var L = EnsureLayer(ctrl, "HeadNeck_Aim");
             var layers = ctrl.layers;
@@ -375,7 +462,7 @@ AvatarMask CreateMask(string assetPath, string maskName, System.Func<Transform, 
             EnsureIdleState(ctrl, "Face_Expressions", writeDefaultsOff);
         }
 
-        // 5) Additive overlay (micro-mouvements respir, recoil lÈgerÖ)
+        // 5) Additive overlay (micro-mouvements respir, recoil l√©ger¬Ö)
         {
             var L = EnsureLayer(ctrl, "Additive_Overlay");
             var layers = ctrl.layers;
@@ -391,20 +478,52 @@ AvatarMask CreateMask(string assetPath, string maskName, System.Func<Transform, 
             EnsureIdleState(ctrl, "Additive_Overlay", writeDefaultsOff);
         }
 
-        // 6) Special full-body override (ultime/cinÈ)
+        // 6) Special full-body override (ultime/cin√©)
         {
             var L = EnsureLayer(ctrl, "Special_FullBody_Override");
             var layers = ctrl.layers;
             for (int i = 0; i < layers.Length; i++)
             {
                 if (layers[i].name != L.name) continue;
-                layers[i].defaultWeight = 0f; // activÈ ponctuellement
+                layers[i].defaultWeight = 0f; // activ√© ponctuellement
                 layers[i].blendingMode  = AnimatorLayerBlendingMode.Override;
                 layers[i].avatarMask    = mFullNoFace; // on laisse le visage libre
                 ctrl.layers = layers;
                 break;
             }
             EnsureIdleState(ctrl, "Special_FullBody_Override", writeDefaultsOff);
+        }
+
+        // 7) Hair secondary motion (cheveux dynamiques)
+        {
+            var L = EnsureLayer(ctrl, "Hair_SecondaryMotion");
+            var layers = ctrl.layers;
+            for (int i = 0; i < layers.Length; i++)
+            {
+                if (layers[i].name != L.name) continue;
+                layers[i].defaultWeight = Mathf.Clamp01(hairLayerDefaultWeight);
+                layers[i].blendingMode  = AnimatorLayerBlendingMode.Override; // les bones cheveux n√©cessitent un override
+                layers[i].avatarMask    = mHair; // peut √™tre null si aucun os hair n'a √©t√© trouv√©
+                ctrl.layers = layers;
+                break;
+            }
+            EnsureIdleState(ctrl, "Hair_SecondaryMotion", writeDefaultsOff);
+        }
+
+        // 8) Clothes simulation (v√™tements secondaires)
+        {
+            var L = EnsureLayer(ctrl, "Clothes_Sim");
+            var layers = ctrl.layers;
+            for (int i = 0; i < layers.Length; i++)
+            {
+                if (layers[i].name != L.name) continue;
+                layers[i].defaultWeight = Mathf.Clamp01(clothesLayerDefaultWeight);
+                layers[i].blendingMode  = AnimatorLayerBlendingMode.Override;
+                layers[i].avatarMask    = mClothes; // null si aucun os v√™tement n'est pr√©sent
+                ctrl.layers = layers;
+                break;
+            }
+            EnsureIdleState(ctrl, "Clothes_Sim", writeDefaultsOff);
         }
 
         AssetDatabase.SaveAssets();
@@ -414,15 +533,17 @@ AvatarMask CreateMask(string assetPath, string maskName, System.Func<Transform, 
         if (logDetails)
         {
             Debug.Log(
-@"[AAAAnimatorSlots] Configuration terminÈe.
+@"[AAAAnimatorSlots] Configuration termin√©e.
 
 Layers:
-- Base_Locomotion : corps entier (base layer).
-- UpperBody_ArmsWeapons : override, bras + torse haut (armes, visÈe torse).
-- HeadNeck_Aim : override, cou+tÍte (orientation), sans os faciaux.
+- LowerBody_Locomotion : couche de base (bassin + jambes, locomotion).
+- UpperBody_ArmsWeapons : override, bras + torse haut (armes, vis√©e torse).
+- HeadNeck_Aim : override, cou+t√™te (orientation), sans os faciaux.
 - Face_Expressions : override (ou additive), uniquement rig facial.
 - Additive_Overlay : additive (torse ou full body), pour micro-poses.
 - Special_FullBody_Override : override, tout le corps (sauf os faciaux).
+- Hair_SecondaryMotion : override, cheveux et appendices dynamiques.
+- Clothes_Sim : override, v√™tements secondaires / simulations tissus.
 
 IMPORTANT: gardez les 'blendShape.*' UNIQUEMENT dans Face_Expressions."
             );
@@ -446,7 +567,7 @@ public class AAAAnimatorSlotsOneClickEditor : Editor
 
         EditorGUILayout.HelpBox(
             "Astuce: ajoute des fragments de noms (ex: 'CC_Base_Teeth', 'Eyebrows') dans 'faceNameFragments' si ton rig CC a des noms particuliers.\n" +
-            "Write Defaults: si tu coches 'writeDefaultsOff', les Ètats Idle crÈÈs ont WD=Off.",
+            "Write Defaults: si tu coches 'writeDefaultsOff', les √©tats Idle cr√©√©s ont WD=Off.",
             MessageType.Info);
     }
 }
