@@ -75,6 +75,13 @@ public class AnimationLayerTesterWindow : EditorWindow
         using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
         {
             EditorGUILayout.LabelField("Cible", EditorStyles.boldLabel);
+            // On mémorise les anciennes valeurs pour détecter précisément les changements
+            // effectués par l'utilisateur, même lorsque la lecture est déjà en cours.
+            Animator previousAnimator = _targetAnimator;
+            string previousStateName = _stateName;
+            float previousPlaybackSpeed = _playbackSpeed;
+            bool previousLoop = _loop;
+            float previousNormalizedTime = _normalizedTime;
             using (EditorGUI.ChangeCheckScope change = new EditorGUI.ChangeCheckScope())
             {
                 _targetAnimator = (Animator)EditorGUILayout.ObjectField(
@@ -105,8 +112,20 @@ public class AnimationLayerTesterWindow : EditorWindow
                 {
                     // Dès que quelque chose change on recalcule les correspondances pour rester cohérent.
                     RefreshMatches();
-                    if (!_isPlaying)
+                    if (_isPlaying)
                     {
+                        // Pendant la lecture on veut appliquer immédiatement les changements sans devoir
+                        // redémarrer manuellement : on resynchronise la timeline et on réévalue la pose.
+                        HandleChangesWhilePlaying(
+                            previousAnimator,
+                            previousStateName,
+                            previousPlaybackSpeed,
+                            previousLoop,
+                            previousNormalizedTime);
+                    }
+                    else
+                    {
+                        // Hors lecture on se contente d'échantillonner la nouvelle pose une seule fois.
                         SampleAtNormalizedTime(_normalizedTime);
                     }
                 }
@@ -197,6 +216,59 @@ public class AnimationLayerTesterWindow : EditorWindow
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Applique les modifications faites dans l'inspecteur pendant que la lecture est active.
+    /// </summary>
+    private void HandleChangesWhilePlaying(
+        Animator previousAnimator,
+        string previousStateName,
+        float previousPlaybackSpeed,
+        bool previousLoop,
+        float previousNormalizedTime)
+    {
+        if (_matches.Count == 0)
+        {
+            // Si les nouvelles données ne trouvent plus aucun état valide on arrête la lecture pour
+            // éviter de rester bloqué dans un état incohérent.
+            StopPlayback(true);
+            EditorUtility.DisplayDialog(
+                "Pas de correspondances",
+                "Les paramètres actuels ne correspondent à aucun état jouable. La lecture est arrêtée.",
+                "Compris");
+            return;
+        }
+
+        // On vérifie quels paramètres ont réellement changé afin d'ajuster l'ancre temporelle
+        // correctement. Chaque modification doit être prise en compte pour éviter un saut brutal.
+        bool animatorChanged = previousAnimator != _targetAnimator;
+        bool stateChanged = previousStateName != _stateName;
+        bool speedChanged = !Mathf.Approximately(previousPlaybackSpeed, _playbackSpeed);
+        bool loopChanged = previousLoop != _loop;
+        bool normalizedChanged = !Mathf.Approximately(previousNormalizedTime, _normalizedTime);
+
+        // Les changements impactant directement la position dans le clip (changement de state,
+        // d'Animator ou de temps normalisé) requièrent une resynchronisation immédiate.
+        bool requiresResync = animatorChanged || stateChanged || normalizedChanged || speedChanged;
+
+        if (loopChanged && !_loop)
+        {
+            // En mode non bouclé on garde une valeur 0-1 stricte pour ne pas dépasser la fin du clip.
+            _normalizedTime = Mathf.Clamp01(_normalizedTime);
+        }
+
+        if (requiresResync)
+        {
+            // On redéfinit l'ancre temporelle à partir de la nouvelle configuration pour que la
+            // progression continue de manière fluide après le changement.
+            _normalizedTime = Mathf.Clamp01(_normalizedTime);
+            _playStartNormalized = _normalizedTime;
+            _playStartEditorTime = EditorApplication.timeSinceStartup;
+        }
+
+        // Quoi qu'il arrive on ré-échantillonne la pose courante pour refléter les derniers réglages.
+        SampleAtNormalizedTime(_normalizedTime);
     }
 
     /// <summary>
