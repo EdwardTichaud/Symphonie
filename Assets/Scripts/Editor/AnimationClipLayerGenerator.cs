@@ -72,9 +72,12 @@ public class AnimationClipLayerGenerator : EditorWindow
             // Inspect binding type pour prévenir en cas de muscles (Humanoid)
             var floatBindings = AnimationUtility.GetCurveBindings(clip);
             var pptrBindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
-            bool hasTransformPaths = floatBindings.Any(b => !string.IsNullOrEmpty(b.path))
-                                   || pptrBindings.Any(b => !string.IsNullOrEmpty(b.path));
-            if (!hasTransformPaths)
+
+            // On identifie les clips Humanoid : dans ce mode Unity remplace les paths par des courbes de muscles
+            // liées à l'Animator. Les règles de filtrage basées sur les chemins d'os seraient donc inefficaces et
+            // risqueraient de supprimer tout le contenu utile.
+            bool isHumanoidClip = IsLikelyHumanoidClip(floatBindings, pptrBindings);
+            if (isHumanoidClip)
             {
                 Debug.LogWarning($"[LayerGen] '{baseName}' semble être Humanoid (muscles). " +
                                  $"Les filtres par path ne s'appliqueront pas (duplication brute).");
@@ -91,8 +94,12 @@ public class AnimationClipLayerGenerator : EditorWindow
                 // Copie grossière (courbes & settings) puis on nettoie
                 EditorUtility.CopySerialized(clip, newClip);
 
-                // FILTRAGE
-                FilterClip(newClip, rule);
+                // FILTRAGE : si le clip est Humanoid on le laisse intact et on délègue le masquage au runtime
+                // via un AvatarMask. Sinon on applique le filtrage détaillé par chemins d'os/blendshapes.
+                if (!isHumanoidClip)
+                {
+                    FilterClip(newClip, rule);
+                }
 
                 AssetDatabase.CreateAsset(newClip, outPath);
 
@@ -199,6 +206,28 @@ public class AnimationClipLayerGenerator : EditorWindow
                 AnimationUtility.SetObjectReferenceCurve(clip, bb, null);
             }
         }
+    }
+
+    /// <summary>
+    /// Détecte les clips importés en mode Humanoid. Dans ce cas Unity convertit les courbes en muscles et
+    /// supprime les paths. On vérifie donc l'absence totale de chemins combinée à la présence de bindings
+    /// orientés Animator (signature typique des clips Humanoid).
+    /// </summary>
+    static bool IsLikelyHumanoidClip(EditorCurveBinding[] floatBindings, EditorCurveBinding[] pptrBindings)
+    {
+        if (floatBindings == null) floatBindings = System.Array.Empty<EditorCurveBinding>();
+        if (pptrBindings == null) pptrBindings = System.Array.Empty<EditorCurveBinding>();
+
+        bool HasAnyPath(EditorCurveBinding[] bindings) => bindings.Any(b => !string.IsNullOrEmpty(b.path));
+
+        // Les clips Humanoid n'exposent aucun path : toutes les courbes sont au niveau Animator.
+        if (HasAnyPath(floatBindings) || HasAnyPath(pptrBindings))
+            return false;
+
+        // Dans le doute on vérifie la présence d'au moins une courbe pilotant l'Animator (muscles/quaternions).
+        bool hasAnimatorDrivenCurve = floatBindings.Any(b => b.type == typeof(Animator));
+
+        return hasAnimatorDrivenCurve;
     }
 
     static bool PassesPathFilters(string lowerPath, LayerFilterConfig.LayerRule rule)
