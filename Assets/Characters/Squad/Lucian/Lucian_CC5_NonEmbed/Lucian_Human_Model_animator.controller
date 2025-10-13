@@ -14,9 +14,9 @@ AnimatorStateMachine:
   m_EntryTransitions: []
   m_StateMachineTransitions: {}
   m_StateMachineBehaviours: []
-  m_AnyStatePosition: {x: -540, y: -30, z: 0}
-  m_EntryPosition: {x: -540, y: 20, z: 0}
-  m_ExitPosition: {x: -540, y: 70, z: 0}
+  m_AnyStatePosition: {x: 50, y: 40, z: 0}
+  m_EntryPosition: {x: 50, y: 90, z: 0}
+  m_ExitPosition: {x: 50, y: 140, z: 0}
   m_ParentStateMachinePosition: {x: 800, y: 20, z: 0}
   m_DefaultState: {fileID: 0}
 --- !u!91 &9100000
@@ -128,7 +128,7 @@ AnimatorController:
   - serializedVersion: 5
     m_Name: Additive_Overlay
     m_StateMachine: {fileID: 0}
-    m_Mask: {fileID: 31900000, guid: e06aeaf3a6463a44a936f7853c6c2ec6, type: 2}
+    m_Mask: {fileID: 31900000, guid: e47ce421c44505e478a9e46be8196a65, type: 2}
     m_Motions: []
     m_Behaviours: []
     m_BlendingMode: 1
