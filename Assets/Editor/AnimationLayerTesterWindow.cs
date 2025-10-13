@@ -1,49 +1,157 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
 
 /// <summary>
-/// Fenêtre utilitaire pour tester rapidement des états d'animation hors Play Mode
-/// en synchronisant toutes les couches partageant le même nom d'état.
+/// Fenêtre utilitaire pour tester rapidement des animations multi-couches et leurs transitions
+/// directement dans l'éditeur, sans lancer le Play Mode. Les designers peuvent explorer les
+/// différents layers, ajuster leurs poids, manipuler les paramètres du contrôleur et simuler
+/// des transitions entre deux états pour valider les blendings.
 /// </summary>
 public class AnimationLayerTesterWindow : EditorWindow
 {
     /// <summary>
-    /// Représente un état trouvé dans un layer précis (uniquement les states Motion -> AnimationClip).
+    /// Représente un état jouable dans un layer précis (uniquement les states Motion -> AnimationClip).
     /// </summary>
-    private struct LayerState
+    private class StateCache
     {
-        public LayerState(
-            string layerName,
-            AnimationClip clip,
-            float weight,
-            AnimatorLayerBlendingMode blendingMode,
-            int layerIndex)
+        public StateCache(string displayName, AnimatorState state, AnimationClip clip)
         {
-            LayerName = layerName;
+            DisplayName = displayName;
+            State = state;
             Clip = clip;
-            Weight = weight;
-            BlendingMode = blendingMode;
-            LayerIndex = layerIndex;
         }
 
-        public string LayerName { get; private set; }
+        public string DisplayName { get; private set; }
+        public AnimatorState State { get; private set; }
         public AnimationClip Clip { get; private set; }
-        public float Weight { get; private set; }
+    }
+
+    private class LayerSelection
+    {
+        public LayerSelection(AnimatorControllerLayer controllerLayer, int layerIndex)
+        {
+            ControllerLayer = controllerLayer;
+            LayerIndex = layerIndex;
+            LayerName = controllerLayer.name;
+            BlendingMode = controllerLayer.blendingMode;
+            States = new List<StateCache>();
+            SelectedStateIndex = -1;
+            TransitionStateIndex = -1;
+            ManualWeight = controllerLayer.defaultWeight;
+        }
+
+        public AnimatorControllerLayer ControllerLayer { get; private set; }
+        public string LayerName { get; private set; }
         public AnimatorLayerBlendingMode BlendingMode { get; private set; }
         public int LayerIndex { get; private set; }
+        public List<StateCache> States { get; private set; }
+        public int SelectedStateIndex { get; set; }
+        public int TransitionStateIndex { get; set; }
+        public bool OverrideWeight { get; set; }
+        public float ManualWeight { get; set; }
+
+        public string SelectedStateName
+        {
+            get
+            {
+                return SelectedStateIndex >= 0 && SelectedStateIndex < States.Count
+                    ? States[SelectedStateIndex].DisplayName
+                    : null;
+            }
+        }
+
+        public string TransitionStateName
+        {
+            get
+            {
+                return TransitionStateIndex >= 0 && TransitionStateIndex < States.Count
+                    ? States[TransitionStateIndex].DisplayName
+                    : null;
+            }
+        }
+
+        public AnimationClip SelectedClip
+        {
+            get
+            {
+                return SelectedStateIndex >= 0 && SelectedStateIndex < States.Count
+                    ? States[SelectedStateIndex].Clip
+                    : null;
+            }
+        }
+
+        public AnimationClip TransitionClip
+        {
+            get
+            {
+                return TransitionStateIndex >= 0 && TransitionStateIndex < States.Count
+                    ? States[TransitionStateIndex].Clip
+                    : null;
+            }
+        }
+
+        public int FindStateIndex(string displayName)
+        {
+            if (string.IsNullOrEmpty(displayName))
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < States.Count; i++)
+            {
+                if (States[i].DisplayName == displayName)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+    }
+
+    private struct LayerSelectionSnapshot
+    {
+        public string SelectedStateName;
+        public string TransitionStateName;
+        public bool OverrideWeight;
+        public float ManualWeight;
+    }
+
+    private struct ParameterValue
+    {
+        public ParameterValue(AnimatorControllerParameter parameter)
+        {
+            Type = parameter.type;
+            FloatValue = parameter.defaultFloat;
+            IntValue = parameter.defaultInt;
+            BoolValue = parameter.defaultBool;
+            TriggerArmed = false;
+        }
+
+        public AnimatorControllerParameterType Type;
+        public float FloatValue;
+        public int IntValue;
+        public bool BoolValue;
+        public bool TriggerArmed;
     }
 
     // ------------------------- Données de configuration -------------------------
     [SerializeField] private Animator _targetAnimator;      // Animator ciblé dans la scène
-    [SerializeField] private string _stateName = "Idle_World"; // Nom d'état recherché dans tous les layers
+    [SerializeField] private string _stateName = "Idle_World"; // Nom d'état recherché dans tous les layers (hérité pour rétro-compat)
     [SerializeField] private float _playbackSpeed = 1f;     // Vitesse de lecture (1 = vitesse réelle)
     [SerializeField] private bool _loop = true;             // Relancer la lecture automatiquement ?
     [SerializeField] private float _normalizedTime = 0f;    // Position courante normalisée (0-1)
+    [SerializeField] private float _transitionNormalizedTime = 0f; // Position normalisée de la cible pour simuler la transition
+    [SerializeField] private float _transitionBlend = 0f;    // Facteur de mélange entre l'état courant et la cible (0 = aucun blend)
 
     // ------------------------- État interne -------------------------
-    private readonly List<LayerState> _matches = new List<LayerState>(); // Cache des états trouvés
+    private readonly List<LayerSelection> _layerSelections = new List<LayerSelection>(); // Informations détaillées par layer
+    private readonly Dictionary<string, ParameterValue> _parameterValues = new Dictionary<string, ParameterValue>(); // Paramètres de l'Animator
+    private readonly Dictionary<Transform, PoseSnapshot> _layerSamplePose = new Dictionary<Transform, PoseSnapshot>(); // Pose résultant d'un layer
+    private readonly Dictionary<Transform, PoseSnapshot> _transitionSamplePose = new Dictionary<Transform, PoseSnapshot>(); // Pose temporaire utilisée pour les transitions
     private bool _isPlaying;                                // Flag de lecture en cours ?
     private double _playStartEditorTime;                    // Temps de départ dans l'éditeur
     private float _playStartNormalized;                     // Position de départ pour la lecture
@@ -83,10 +191,6 @@ public class AnimationLayerTesterWindow : EditorWindow
                     typeof(Animator),
                     true);
 
-                _stateName = EditorGUILayout.TextField(
-                    new GUIContent("Nom d'état", "Nom exact de l'état recherché dans chaque layer"),
-                    _stateName);
-
                 _playbackSpeed = EditorGUILayout.FloatField(
                     new GUIContent("Vitesse", "Facteur de vitesse de lecture (1 = vitesse originale)"),
                     _playbackSpeed);
@@ -101,10 +205,26 @@ public class AnimationLayerTesterWindow : EditorWindow
                     0f,
                     1f);
 
+                _transitionNormalizedTime = EditorGUILayout.Slider(
+                    new GUIContent(
+                        "Position transition (0-1)",
+                        "Position de lecture de l'état cible utilisée pour simuler un blend."),
+                    _transitionNormalizedTime,
+                    0f,
+                    1f);
+
+                _transitionBlend = EditorGUILayout.Slider(
+                    new GUIContent(
+                        "Progression transition",
+                        "0 = uniquement l'état principal, 1 = uniquement l'état cible."),
+                    _transitionBlend,
+                    0f,
+                    1f);
+
                 if (change.changed)
                 {
                     // Dès que quelque chose change on recalcule les correspondances pour rester cohérent.
-                    RefreshMatches();
+                    RefreshControllerData();
                     if (!_isPlaying)
                     {
                         SampleAtNormalizedTime(_normalizedTime);
@@ -117,7 +237,7 @@ public class AnimationLayerTesterWindow : EditorWindow
 
         using (new EditorGUILayout.HorizontalScope())
         {
-            GUI.enabled = _targetAnimator != null && !string.IsNullOrEmpty(_stateName);
+            GUI.enabled = _targetAnimator != null;
             if (!_isPlaying)
             {
                 if (GUILayout.Button("▶️ Lancer"))
@@ -142,20 +262,150 @@ public class AnimationLayerTesterWindow : EditorWindow
 
         EditorGUILayout.Space();
 
-        DrawMatchesList();
+        bool needResample = false;
+        needResample |= DrawParametersPanel();
+        needResample |= DrawLayersPanel();
+
+        if (needResample && !_isPlaying)
+        {
+            // Dès que l'utilisateur modifie une sélection nous appliquons immédiatement la nouvelle pose.
+            SampleAtNormalizedTime(_normalizedTime);
+        }
 
         EditorGUILayout.HelpBox(
-            "Saisis le nom d'un état présent dans ton Animator. Toutes les couches " +
-            "contenant un état Motion -> AnimationClip avec ce nom seront évaluées ensemble. " +
-            "La lecture utilise AnimationMode, ce qui permet de tester hors Play Mode.",
+            "Sélectionne les états à prévisualiser par couche et ajuste les paramètres de " +
+            "l'Animator pour tester rapidement les transitions hors Play Mode. La lecture " +
+            "utilise AnimationMode, ce qui permet de rester en mode Édition.",
             MessageType.Info);
     }
 
     /// <summary>
-    /// Affiche la liste des correspondances trouvées pour aider au debug.
+    /// Affiche les paramètres exposés par l'Animator afin de tester les transitions dépendantes.
     /// </summary>
-    private void DrawMatchesList()
+    private bool DrawParametersPanel()
     {
+        bool changed = false;
+
+        using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+        {
+            EditorGUILayout.LabelField("Paramètres de l'Animator", EditorStyles.boldLabel);
+
+            if (_targetAnimator == null)
+            {
+                EditorGUILayout.HelpBox(
+                    "Aucun Animator sélectionné : impossible d'afficher les paramètres.",
+                    MessageType.Info);
+                return false;
+            }
+
+            AnimatorController controller = _targetAnimator.runtimeAnimatorController as AnimatorController;
+            if (controller == null)
+            {
+                EditorGUILayout.HelpBox(
+                    "Le runtimeAnimatorController ciblé n'est pas un AnimatorController.",
+                    MessageType.Warning);
+                return false;
+            }
+
+            if (controller.parameters == null || controller.parameters.Length == 0)
+            {
+                EditorGUILayout.HelpBox(
+                    "Aucun paramètre défini dans ce contrôleur.",
+                    MessageType.Info);
+            }
+            else
+            {
+                foreach (AnimatorControllerParameter parameter in controller.parameters)
+                {
+                    if (!_parameterValues.TryGetValue(parameter.name, out ParameterValue value))
+                    {
+                        value = new ParameterValue(parameter);
+                        _parameterValues[parameter.name] = value;
+                    }
+
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        EditorGUILayout.LabelField(parameter.name, GUILayout.Width(160f));
+
+                        switch (parameter.type)
+                        {
+                            case AnimatorControllerParameterType.Float:
+                                {
+                                    using (EditorGUI.ChangeCheckScope scope = new EditorGUI.ChangeCheckScope())
+                                    {
+                                        float newValue = EditorGUILayout.FloatField(value.FloatValue);
+                                        if (scope.changed)
+                                        {
+                                            value.FloatValue = newValue;
+                                            changed = true;
+                                            ApplyParameterToAnimator(parameter.name, value);
+                                        }
+                                    }
+                                }
+                                break;
+                            case AnimatorControllerParameterType.Int:
+                                {
+                                    using (EditorGUI.ChangeCheckScope scope = new EditorGUI.ChangeCheckScope())
+                                    {
+                                        int newValue = EditorGUILayout.IntField(value.IntValue);
+                                        if (scope.changed)
+                                        {
+                                            value.IntValue = newValue;
+                                            changed = true;
+                                            ApplyParameterToAnimator(parameter.name, value);
+                                        }
+                                    }
+                                }
+                                break;
+                            case AnimatorControllerParameterType.Bool:
+                                {
+                                    using (EditorGUI.ChangeCheckScope scope = new EditorGUI.ChangeCheckScope())
+                                    {
+                                        bool newValue = EditorGUILayout.Toggle(value.BoolValue);
+                                        if (scope.changed)
+                                        {
+                                            value.BoolValue = newValue;
+                                            changed = true;
+                                            ApplyParameterToAnimator(parameter.name, value);
+                                        }
+                                    }
+                                }
+                                break;
+                            case AnimatorControllerParameterType.Trigger:
+                                {
+                                    if (GUILayout.Button("Déclencher", GUILayout.Width(100f)))
+                                    {
+                                        value.TriggerArmed = true;
+                                        changed = true;
+                                        ApplyParameterToAnimator(parameter.name, value);
+                                    }
+
+                                    if (GUILayout.Button("Réinitialiser", GUILayout.Width(100f)))
+                                    {
+                                        value.TriggerArmed = false;
+                                        changed = true;
+                                        ApplyParameterToAnimator(parameter.name, value);
+                                    }
+                                }
+                                break;
+                        }
+
+                        _parameterValues[parameter.name] = value;
+                    }
+                }
+            }
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// Affiche la liste des layers et permet de sélectionner les états à évaluer.
+    /// </summary>
+    private bool DrawLayersPanel()
+    {
+        bool changed = false;
+
         using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
         {
             EditorGUILayout.LabelField("Layers affectés", EditorStyles.boldLabel);
@@ -163,40 +413,143 @@ public class AnimationLayerTesterWindow : EditorWindow
             if (_targetAnimator == null)
             {
                 EditorGUILayout.HelpBox("Aucun Animator sélectionné.", MessageType.Warning);
-                return;
+                return false;
             }
 
-            if (_matches.Count == 0)
+            if (_layerSelections.Count == 0)
             {
                 EditorGUILayout.HelpBox(
-                    "Aucun état ne correspond au nom indiqué. Vérifie l'orthographe et que " +
-                    "chaque state cible contient directement un AnimationClip.",
+                    "Aucun layer ne contient encore d'état Motion -> AnimationClip utilisable.",
                     MessageType.Info);
-                return;
+                return false;
             }
 
-            foreach (LayerState match in _matches)
+            foreach (LayerSelection selection in _layerSelections)
             {
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    float displayWeight = match.Weight;
-                    if (_targetAnimator != null && EditorApplication.isPlaying)
+                    EditorGUILayout.LabelField(
+                        string.Format(
+                            "Layer {0} - {1} (mode {2})",
+                            selection.LayerIndex,
+                            selection.LayerName,
+                            selection.BlendingMode),
+                        EditorStyles.boldLabel);
+                }
+
+                if (selection.States.Count == 0)
+                {
+                    EditorGUILayout.HelpBox(
+                        "Aucun état animé avec un AnimationClip direct dans ce layer.",
+                        MessageType.Warning);
+                    continue;
+                }
+
+                if (selection.SelectedStateIndex < 0 && selection.States.Count > 0)
+                {
+                    selection.SelectedStateIndex = 0;
+                }
+
+                if (selection.TransitionStateIndex >= selection.States.Count)
+                {
+                    selection.TransitionStateIndex = -1;
+                }
+
+                string[] stateNames = selection.States.Select(s => s.DisplayName).ToArray();
+
+                using (EditorGUI.ChangeCheckScope stateChange = new EditorGUI.ChangeCheckScope())
+                {
+                    int newIndex = EditorGUILayout.Popup(
+                        new GUIContent(
+                            "État principal",
+                            "Clip qui servira de base pour calculer la pose du layer."),
+                        Mathf.Max(0, selection.SelectedStateIndex),
+                        stateNames);
+
+                    if (stateChange.changed)
                     {
-                        // Pendant le Play Mode on reflète les poids runtime réels pour faciliter le debug.
-                        displayWeight = Mathf.Clamp01(_targetAnimator.GetLayerWeight(match.LayerIndex));
+                        selection.SelectedStateIndex = newIndex;
+                        changed = true;
+                    }
+                }
+
+                using (EditorGUI.ChangeCheckScope transitionChange = new EditorGUI.ChangeCheckScope())
+                {
+                    string[] transitionOptions = new string[stateNames.Length + 1];
+                    transitionOptions[0] = "(Aucune transition)";
+                    for (int i = 0; i < stateNames.Length; i++)
+                    {
+                        transitionOptions[i + 1] = stateNames[i];
                     }
 
-                    string label = string.Format(
-                        "Layer {0} - {1} (poids {2:0.###}, mode {3})",
-                        match.LayerIndex,
-                        match.LayerName,
-                        displayWeight,
-                        match.BlendingMode);
-                    EditorGUILayout.LabelField(label, GUILayout.Width(260f));
-                    EditorGUILayout.ObjectField(match.Clip, typeof(AnimationClip), false);
+                    int displayIndex = selection.TransitionStateIndex >= 0
+                        ? selection.TransitionStateIndex + 1
+                        : 0;
+
+                    int newTransitionIndex = EditorGUILayout.Popup(
+                        new GUIContent(
+                            "État cible",
+                            "Sélection facultative d'un second état pour simuler un blend."),
+                        displayIndex,
+                        transitionOptions);
+
+                    if (transitionChange.changed)
+                    {
+                        selection.TransitionStateIndex = newTransitionIndex - 1;
+                        changed = true;
+                    }
                 }
+
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    float resolvedWeight = ResolveLayerWeight(selection.ControllerLayer, selection.LayerIndex);
+
+                    using (EditorGUI.ChangeCheckScope overrideScope = new EditorGUI.ChangeCheckScope())
+                    {
+                        bool newOverride = EditorGUILayout.Toggle(
+                            new GUIContent(
+                                "Forcer le poids",
+                                "Permet de tester un poids différent de celui défini sur l'Animator."),
+                            selection.OverrideWeight,
+                            GUILayout.Width(130f));
+
+                        if (overrideScope.changed)
+                        {
+                            selection.OverrideWeight = newOverride;
+                            changed = true;
+                        }
+                    }
+
+                    using (EditorGUI.DisabledScope disabled = new EditorGUI.DisabledScope(!selection.OverrideWeight))
+                    {
+                        using (EditorGUI.ChangeCheckScope weightScope = new EditorGUI.ChangeCheckScope())
+                        {
+                            float newWeight = EditorGUILayout.Slider(
+                                new GUIContent("Poids manuel", "0 = layer ignoré, 1 = layer à poids plein."),
+                                selection.ManualWeight,
+                                0f,
+                                1f);
+
+                            if (weightScope.changed)
+                            {
+                                selection.ManualWeight = newWeight;
+                                changed = true;
+                            }
+                        }
+                    }
+
+                    EditorGUILayout.LabelField(
+                        string.Format(
+                            "Poids effectif : {0:0.###}",
+                            selection.OverrideWeight ? selection.ManualWeight : resolvedWeight),
+                        GUILayout.Width(160f));
+                }
+
+                EditorGUILayout.Space(6f);
             }
         }
+
+        return changed;
     }
 
     /// <summary>
@@ -204,12 +557,12 @@ public class AnimationLayerTesterWindow : EditorWindow
     /// </summary>
     private void StartPlayback()
     {
-        RefreshMatches();
-        if (_matches.Count == 0)
+        RefreshControllerData();
+        if (!HasPlayableStates())
         {
             EditorUtility.DisplayDialog(
                 "Pas de correspondances",
-                "Impossible de trouver un état avec ce nom dans les layers de l'Animator.",
+                "Impossible de trouver un état jouable dans les layers de l'Animator.",
                 "Compris");
             return;
         }
@@ -245,74 +598,6 @@ public class AnimationLayerTesterWindow : EditorWindow
     }
 
     /// <summary>
-    /// Rafraîchit la liste des états correspondant au nom demandé.
-    /// </summary>
-    private void RefreshMatches()
-    {
-        _matches.Clear();
-        if (_targetAnimator == null)
-        {
-            return;
-        }
-
-        AnimatorController controller = _targetAnimator.runtimeAnimatorController as AnimatorController;
-        if (controller == null)
-        {
-            Debug.LogWarning("Le runtimeAnimatorController ciblé n'est pas un AnimatorController.");
-            return;
-        }
-
-        for (int i = 0; i < controller.layers.Length; i++)
-        {
-            AnimatorControllerLayer layer = controller.layers[i];
-            AnimatorState state;
-            if (TryFindState(layer.stateMachine, _stateName, out state))
-            {
-                AnimationClip clip = state.motion as AnimationClip;
-                if (clip != null)
-                {
-                    float weight = ResolveLayerWeight(layer, i);
-                    _matches.Add(new LayerState(layer.name, clip, weight, layer.blendingMode, i));
-                }
-                else
-                {
-                    Debug.LogWarning(string.Format("L'état '{0}' dans le layer '{1}' n'est pas lié à un AnimationClip direct (BlendTree non géré).", _stateName, layer.name));
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// Recherche récursive d'un état dans un state machine donné.
-    /// </summary>
-    private static bool TryFindState(AnimatorStateMachine machine, string name, out AnimatorState state)
-    {
-        // Parcourt d'abord les states simples.
-        ChildAnimatorState[] states = machine.states;
-        for (int i = 0; i < states.Length; i++)
-        {
-            if (states[i].state != null && states[i].state.name == name)
-            {
-                state = states[i].state;
-                return true;
-            }
-        }
-
-        // Puis on descend dans les sous state machines.
-        ChildAnimatorStateMachine[] stateMachines = machine.stateMachines;
-        for (int i = 0; i < stateMachines.Length; i++)
-        {
-            if (TryFindState(stateMachines[i].stateMachine, name, out state))
-            {
-                return true;
-            }
-        }
-
-        state = null;
-        return false;
-    }
-
-    /// <summary>
     /// Assure que l'AnimationMode est actif pour pouvoir sampler des clips hors Play Mode.
     /// </summary>
     private void EnsureAnimationMode()
@@ -329,7 +614,7 @@ public class AnimationLayerTesterWindow : EditorWindow
     /// </summary>
     private void SampleAtNormalizedTime(float normalizedTime)
     {
-        if (_targetAnimator == null || _matches.Count == 0)
+        if (_targetAnimator == null || !HasPlayableStates())
         {
             return;
         }
@@ -346,20 +631,18 @@ public class AnimationLayerTesterWindow : EditorWindow
         Dictionary<Transform, PoseSnapshot> finalPose = ClonePose(basePose);
         Dictionary<Transform, PoseSnapshot> sampledPose = CapturePose(hierarchy, null);
 
-        foreach (LayerState match in _matches)
+        foreach (LayerSelection selection in _layerSelections)
         {
-            AnimationClip clip = match.Clip;
+            AnimationClip clip = selection.SelectedClip;
             if (clip == null)
             {
                 continue;
             }
 
-            float weight = Mathf.Clamp01(match.Weight);
-            if (_targetAnimator != null && EditorApplication.isPlaying)
-            {
-                // On privilégie le poids runtime pour suivre les variations dynamiques éventuelles.
-                weight = Mathf.Clamp01(_targetAnimator.GetLayerWeight(match.LayerIndex));
-            }
+            float weight = selection.OverrideWeight
+                ? Mathf.Clamp01(selection.ManualWeight)
+                : ResolveLayerWeight(selection.ControllerLayer, selection.LayerIndex);
+
             if (weight <= 0f)
             {
                 // Un layer sans influence n'a pas besoin d'être traité.
@@ -379,7 +662,28 @@ public class AnimationLayerTesterWindow : EditorWindow
             // On capture la pose générée par ce clip puis on la mélange avec le résultat
             // cumulé en respectant le poids du layer et son mode de blending.
             CapturePose(hierarchy, sampledPose);
-            BlendPoses(hierarchy, finalPose, basePose, sampledPose, weight, match.BlendingMode);
+            CopyPose(sampledPose, _layerSamplePose);
+
+            AnimationClip transitionClip = selection.TransitionClip;
+            float transitionBlend = Mathf.Clamp01(_transitionBlend);
+            if (transitionClip != null && transitionBlend > 0f)
+            {
+                float transitionLength = Mathf.Max(transitionClip.length, 0.0001f);
+                float transitionTime = Mathf.Clamp01(_transitionNormalizedTime) * transitionLength;
+
+                ApplyPose(hierarchy, basePose);
+
+                AnimationMode.BeginSampling();
+                AnimationMode.SampleAnimationClip(go, transitionClip, transitionTime);
+                AnimationMode.EndSampling();
+
+                CapturePose(hierarchy, sampledPose);
+                CopyPose(sampledPose, _transitionSamplePose);
+
+                InterpolatePoses(hierarchy, _layerSamplePose, _transitionSamplePose, transitionBlend);
+            }
+
+            BlendPoses(hierarchy, finalPose, basePose, _layerSamplePose, weight, selection.BlendingMode);
         }
 
         // Application finale de la pose résultante sur l'Animator ciblé.
@@ -390,16 +694,234 @@ public class AnimationLayerTesterWindow : EditorWindow
     }
 
     /// <summary>
-    /// Tick éditor utilisé uniquement pendant la lecture.
+    /// Rafraîchit la description des layers et synchronise les paramètres exposés par l'Animator.
     /// </summary>
-    private void OnEditorUpdate()
+    private void RefreshControllerData()
     {
-        if (!_isPlaying || _matches.Count == 0)
+        Dictionary<int, LayerSelectionSnapshot> snapshot = CreateLayerSnapshot();
+        _layerSelections.Clear();
+        if (_targetAnimator == null)
         {
             return;
         }
 
-        AnimationClip referenceClip = _matches[0].Clip;
+        AnimatorController controller = _targetAnimator.runtimeAnimatorController as AnimatorController;
+        if (controller == null)
+        {
+            Debug.LogWarning("Le runtimeAnimatorController ciblé n'est pas un AnimatorController.");
+            return;
+        }
+
+        for (int i = 0; i < controller.layers.Length; i++)
+        {
+            AnimatorControllerLayer layer = controller.layers[i];
+            LayerSelection selection = new LayerSelection(layer, i);
+
+            CollectLayerStates(layer.stateMachine, string.Empty, selection.States);
+
+            if (snapshot.TryGetValue(i, out LayerSelectionSnapshot previous))
+            {
+                selection.SelectedStateIndex = selection.FindStateIndex(previous.SelectedStateName);
+                if (selection.SelectedStateIndex < 0 && selection.States.Count > 0)
+                {
+                    int fallbackPrevious = selection.FindStateIndex(_stateName);
+                    selection.SelectedStateIndex = fallbackPrevious >= 0 ? fallbackPrevious : 0;
+                }
+
+                selection.TransitionStateIndex = selection.FindStateIndex(previous.TransitionStateName);
+                selection.OverrideWeight = previous.OverrideWeight;
+                selection.ManualWeight = Mathf.Clamp01(previous.ManualWeight);
+            }
+            else if (selection.States.Count > 0)
+            {
+                int fallback = selection.FindStateIndex(_stateName);
+                selection.SelectedStateIndex = fallback >= 0 ? fallback : 0;
+                selection.TransitionStateIndex = -1;
+            }
+            else
+            {
+                selection.SelectedStateIndex = -1;
+                selection.TransitionStateIndex = -1;
+            }
+
+            _layerSelections.Add(selection);
+        }
+
+        SynchronizeParameters(controller);
+    }
+
+    /// <summary>
+    /// Collecte récursivement tous les états Motion -> AnimationClip d'un state machine.
+    /// </summary>
+    private static void CollectLayerStates(AnimatorStateMachine machine, string parentPath, List<StateCache> results)
+    {
+        ChildAnimatorState[] states = machine.states;
+        for (int i = 0; i < states.Length; i++)
+        {
+            AnimatorState state = states[i].state;
+            if (state == null)
+            {
+                continue;
+            }
+
+            AnimationClip clip = state.motion as AnimationClip;
+            if (clip != null)
+            {
+                string displayName = string.IsNullOrEmpty(parentPath)
+                    ? state.name
+                    : parentPath + "/" + state.name;
+                results.Add(new StateCache(displayName, state, clip));
+            }
+        }
+
+        ChildAnimatorStateMachine[] stateMachines = machine.stateMachines;
+        for (int i = 0; i < stateMachines.Length; i++)
+        {
+            AnimatorStateMachine child = stateMachines[i].stateMachine;
+            if (child == null)
+            {
+                continue;
+            }
+
+            string childPath = string.IsNullOrEmpty(parentPath)
+                ? child.name
+                : parentPath + "/" + child.name;
+            CollectLayerStates(child, childPath, results);
+        }
+    }
+
+    /// <summary>
+    /// Synchronise le cache local des paramètres avec l'AnimatorController pour préserver les valeurs.
+    /// </summary>
+    private void SynchronizeParameters(AnimatorController controller)
+    {
+        if (controller == null)
+        {
+            return;
+        }
+
+        HashSet<string> seenParameters = new HashSet<string>();
+
+        foreach (AnimatorControllerParameter parameter in controller.parameters)
+        {
+            seenParameters.Add(parameter.name);
+
+            if (!_parameterValues.TryGetValue(parameter.name, out ParameterValue value))
+            {
+                value = new ParameterValue(parameter);
+            }
+            else
+            {
+                value.Type = parameter.type;
+            }
+
+            _parameterValues[parameter.name] = value;
+        }
+
+        List<string> keysToRemove = new List<string>();
+        foreach (KeyValuePair<string, ParameterValue> kvp in _parameterValues)
+        {
+            if (!seenParameters.Contains(kvp.Key))
+            {
+                keysToRemove.Add(kvp.Key);
+            }
+        }
+
+        for (int i = 0; i < keysToRemove.Count; i++)
+        {
+            _parameterValues.Remove(keysToRemove[i]);
+        }
+    }
+
+    /// <summary>
+    /// Conserve les sélections actuelles pour les restaurer après un rafraîchissement.
+    /// </summary>
+    private Dictionary<int, LayerSelectionSnapshot> CreateLayerSnapshot()
+    {
+        Dictionary<int, LayerSelectionSnapshot> snapshot = new Dictionary<int, LayerSelectionSnapshot>(_layerSelections.Count);
+        for (int i = 0; i < _layerSelections.Count; i++)
+        {
+            LayerSelection selection = _layerSelections[i];
+            snapshot[selection.LayerIndex] = new LayerSelectionSnapshot
+            {
+                SelectedStateName = selection.SelectedStateName,
+                TransitionStateName = selection.TransitionStateName,
+                OverrideWeight = selection.OverrideWeight,
+                ManualWeight = selection.ManualWeight,
+            };
+        }
+
+        return snapshot;
+    }
+
+    /// <summary>
+    /// Applique immédiatement la valeur d'un paramètre sur l'Animator ciblé.
+    /// </summary>
+    private void ApplyParameterToAnimator(string parameterName, ParameterValue value)
+    {
+        if (_targetAnimator == null)
+        {
+            return;
+        }
+
+        switch (value.Type)
+        {
+            case AnimatorControllerParameterType.Float:
+                _targetAnimator.SetFloat(parameterName, value.FloatValue);
+                break;
+            case AnimatorControllerParameterType.Int:
+                _targetAnimator.SetInteger(parameterName, value.IntValue);
+                break;
+            case AnimatorControllerParameterType.Bool:
+                _targetAnimator.SetBool(parameterName, value.BoolValue);
+                break;
+            case AnimatorControllerParameterType.Trigger:
+                if (value.TriggerArmed)
+                {
+                    _targetAnimator.SetTrigger(parameterName);
+                }
+                else
+                {
+                    _targetAnimator.ResetTrigger(parameterName);
+                }
+
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Retourne vrai si au moins un layer dispose d'un état jouable.
+    /// </summary>
+    private bool HasPlayableStates()
+    {
+        for (int i = 0; i < _layerSelections.Count; i++)
+        {
+            if (_layerSelections[i].SelectedClip != null)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Tick éditor utilisé uniquement pendant la lecture.
+    /// </summary>
+    private void OnEditorUpdate()
+    {
+        if (!_isPlaying || !HasPlayableStates())
+        {
+            return;
+        }
+
+        LayerSelection referenceSelection = _layerSelections.FirstOrDefault(selection => selection.SelectedClip != null);
+        if (referenceSelection == null)
+        {
+            return;
+        }
+
+        AnimationClip referenceClip = referenceSelection.SelectedClip;
         if (referenceClip == null)
         {
             return;
@@ -507,6 +1029,19 @@ public class AnimationLayerTesterWindow : EditorWindow
     }
 
     /// <summary>
+    /// Copie le contenu d'une pose dans un dictionnaire réutilisable afin de limiter les allocations.
+    /// </summary>
+    private static void CopyPose(Dictionary<Transform, PoseSnapshot> source, Dictionary<Transform, PoseSnapshot> destination)
+    {
+        destination.Clear();
+
+        foreach (KeyValuePair<Transform, PoseSnapshot> kvp in source)
+        {
+            destination[kvp.Key] = kvp.Value;
+        }
+    }
+
+    /// <summary>
     /// Applique la pose fournie sur l'ensemble de la hiérarchie pour la rendre visible dans la scène.
     /// </summary>
     private static void ApplyPose(Transform[] transforms, Dictionary<Transform, PoseSnapshot> pose)
@@ -523,6 +1058,36 @@ public class AnimationLayerTesterWindow : EditorWindow
             t.localPosition = snapshot.Position;
             t.localRotation = snapshot.Rotation;
             t.localScale = snapshot.Scale;
+        }
+    }
+
+    /// <summary>
+    /// Mélange deux poses en fonction d'un facteur de progression et stocke le résultat dans fromPose.
+    /// </summary>
+    private static void InterpolatePoses(
+        Transform[] transforms,
+        Dictionary<Transform, PoseSnapshot> fromPose,
+        Dictionary<Transform, PoseSnapshot> toPose,
+        float t)
+    {
+        t = Mathf.Clamp01(t);
+
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            Transform transform = transforms[i];
+            PoseSnapshot from;
+            PoseSnapshot to;
+            if (!fromPose.TryGetValue(transform, out from) || !toPose.TryGetValue(transform, out to))
+            {
+                continue;
+            }
+
+            PoseSnapshot blended;
+            blended.Position = Vector3.Lerp(from.Position, to.Position, t);
+            blended.Scale = Vector3.Lerp(from.Scale, to.Scale, t);
+            blended.Rotation = Quaternion.Slerp(from.Rotation, to.Rotation, t);
+
+            fromPose[transform] = blended;
         }
     }
 
