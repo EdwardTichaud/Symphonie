@@ -2,11 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Cinemachine; // Permet de distinguer les CinemachineCamera des Camera classiques pour éviter les conflits de pilotage.
+using UnityEngine.InputSystem; // Accès direct aux périphériques afin de gérer la caméra TPS (stick droit, souris, molette...).
 
 public enum WorldCameraState
 {
-    Forced,
-    ResearchClosestCamPoint,
+    ThirdPerson,
     OrbitAround
 }
 
@@ -20,10 +20,9 @@ public class CameraController : MonoBehaviour
 
     [Header("Managed Cameras")]
     public List<Camera> managedCameras = new();
-    public WorldCameraState currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint; // ✅ Par défaut en recherche de point
+    public WorldCameraState currentWorldCameraState = WorldCameraState.ThirdPerson; // ✅ Par défaut en vue TPS libre
 
-    private bool forceLookAt;
-    private Transform forcedLookTarget;
+    private Transform forcedLookTarget;         // Cible privilégiée (Point_Chest) si disponible
     private Camera activeCamera;
     private Camera worldCamera; // Référence directe à la WorldCamera
     private Transform worldCameraParent;       // Parent direct de la WorldCamera (utilisé pour le forçage)
@@ -57,36 +56,42 @@ public class CameraController : MonoBehaviour
 
     [Header("---------- World Camera ----------")]
 
-    [Header("Fixed Camera Points")]
-    public bool cameraHandlerEnabled = true; // ✅ Par défaut activé
-    public List<Transform> cameraPositions; // auto from LevelCameraHandler tag
-    public Transform forceCamPoint, forceLookPoint;
-
-    // Mémorise le dernier point de caméra appliqué pour éviter les transitions répétées
-    private Transform lastClosestCameraPoint;
+    [Header("Third Person Settings")]
+    [Tooltip("Décalage appliqué au point de focus (souvent le torse du joueur).")]
+    [SerializeField] private Vector3 thirdPersonFocusOffset = new(0f, 1.6f, 0f);
+    [Tooltip("Référence explicite pour le focus (prioritaire sur l'offset). Laisser vide pour utiliser automatiquement Point_Chest.")]
+    public Transform forceLookPoint;
+    [Tooltip("Vitesse de rotation appliquée aux axes du stick droit / pad souris (degrés par seconde).")]
+    public float forcedCamRotationSpeed = 120f;
+    [Tooltip("Sensibilité de rotation appliquée au delta souris (degrés par pixel).")]
+    [SerializeField] private float mouseRotationSensitivity = 0.15f;
+    [Tooltip("Sensibilité appliquée à la molette de souris (unités de distance par cran).")]
+    [SerializeField] private float mouseZoomSensitivity = 0.05f;
+    [Tooltip("Vitesse de zoom par seconde quand on utilise les gâchettes de la manette.")]
+    [SerializeField] private float gamepadZoomSpeed = 2f;
+    [Tooltip("Active l'inversion de l'axe vertical pour la caméra TPS.")]
+    [SerializeField] private bool invertLookY = false;
+    [Tooltip("N'autorise la rotation souris que lorsque le bouton droit est maintenu (comme dans de nombreux TPS PC).")]
+    [SerializeField] private bool requireRightClickForMouseRotation = true;
+    [Tooltip("Facteur d'assouplissement de suivi. Plus la valeur est élevée, plus la caméra colle vite au joueur.")]
+    [SerializeField] private float forcedCamFollowLerpSpeed = 10f;
+    [Tooltip("Distance minimum autorisée entre la caméra et la cible.")]
+    public float forcedCamMinDistance = 2f;
+    [Tooltip("Distance maximum autorisée entre la caméra et la cible.")]
+    public float forcedCamMaxDistance = 10f;
+    [Tooltip("Inclinaison minimale (en degrés). Valeur négative = regarder vers le bas.")]
+    public float forcedCamMinPitch = -35f;
+    [Tooltip("Inclinaison maximale (en degrés). Valeur positive = regarder vers le haut.")]
+    public float forcedCamMaxPitch = 65f;
 
     private string cameraTargetName;
     private Transform player;
     private EventsManager eventsManager;
 
-    [Header("Forced Camera Point Control")]
-    public bool worldCamForced;
-
-    public Transform forcedCameraPoint; // Ancien système, conservé pour compatibilité mais non utilisé
-    public float forcedCamZoomSpeed = 5f;
-    public float forcedCamRotationSpeed = 50f;
-    public float forcedCamMinDistance = 2f;
-    public float forcedCamMaxDistance = 10f;
-    public float forcedCamMinPitch = -20f;
-    public float forcedCamMaxPitch = 60f;
-
-    [Tooltip("Vitesse d'interpolation utilisée pour suivre le joueur en mode forcé.")]
-    [SerializeField] private float forcedCamFollowLerpSpeed = 10f;
-
-    private float forcedCamYaw = 0f;
+    private float forcedCamYaw = 180f;     // 180° = caméra positionnée derrière le joueur au démarrage
     private float forcedCamPitch = 20f;
     private float forcedCamDistance = 5f;
-    private Vector3 forcedCamOffset = Vector3.zero; // Décalage monde utilisé en mode forcé
+    private Vector3 forcedCamOffset = Vector3.zero; // Décalage monde utilisé en mode TPS
 
     // Toute la gestion des collisions avec le sol a été supprimée pour alléger le système.
     // L'occlusion reste assurée par d'autres composants si un obstacle cache le joueur.
@@ -182,10 +187,11 @@ public class CameraController : MonoBehaviour
             }
         }
 
-        cameraTargetName = FindChildRecursive(player, "Point_Chest")?.name;
+        forcedLookTarget = FindChildRecursive(player, "Point_Chest");
+        cameraTargetName = forcedLookTarget?.name;
         eventsManager = FindFirstObjectByType<EventsManager>();
 
-        UpdateCameraPositionsFromHandler();
+        RecalculateThirdPersonOffset();
         FindManagedCameras();
     }
 
@@ -194,7 +200,6 @@ public class CameraController : MonoBehaviour
     /// </summary>
     void OnValidate()
     {
-        UpdateCameraPositionsFromHandler();
         FindManagedCameras();
     }
 
@@ -208,9 +213,6 @@ public class CameraController : MonoBehaviour
     /// </summary>
     void Update()
     {
-        if (cameraPositions == null || cameraPositions.Count == 0)
-            UpdateCameraPositionsFromHandler();
-
         if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
         {
             // Stoppe toute transition en cours afin d'éviter des conflits avec les Timelines
@@ -255,12 +257,6 @@ public class CameraController : MonoBehaviour
         else
         {
             HandleCameraBehaviour();
-
-            // En mode forcé, l'application de l'offset doit être faite après la mise à jour
-            if (currentWorldCameraState == WorldCameraState.Forced)
-            {
-                FollowForcedCameraPoint();
-            }
         }
 
         // Applique le léger mouvement de respiration directement sur les GameObjects caméra
@@ -343,14 +339,14 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Interrompt le mouvement orbital et remet la recherche de point actif.
+    /// Interrompt le mouvement orbital et rend la caméra au mode TPS classique.
     /// </summary>
     public void StopOrbit()
     {
         orbitTarget = null;
         if (currentWorldCameraState == WorldCameraState.OrbitAround)
         {
-            currentWorldCameraState = WorldCameraState.ResearchClosestCamPoint;
+            currentWorldCameraState = WorldCameraState.ThirdPerson;
         }
         Debug.Log("[CameraController] OrbitAround stoppé.");
     }
@@ -438,12 +434,9 @@ public class CameraController : MonoBehaviour
     {
         switch (currentWorldCameraState)
         {
-            case WorldCameraState.Forced:
-                UpdateForcedCameraPoint();
-                break;
-
-            case WorldCameraState.ResearchClosestCamPoint:
-                ApplyClosestCamera();
+            case WorldCameraState.ThirdPerson:
+                UpdateThirdPersonControls();
+                FollowThirdPersonCamera();
                 break;
 
             default:
@@ -453,119 +446,93 @@ public class CameraController : MonoBehaviour
     }
 
     /// <summary>
-    /// Suit le joueur en mode forcé en interpolant position et rotation pour un mouvement fluide.
+    /// Suit le joueur en vue TPS en interpolant position et rotation pour un mouvement fluide.
     /// </summary>
-    void FollowForcedCameraPoint()
+    void FollowThirdPersonCamera()
     {
         if (worldCamera == null || player == null) return;
 
-        // On manipule le parent pour ne pas écraser l'offset de respiration appliqué à la caméra
         Transform camOrigin = worldCameraParent != null ? worldCameraParent : worldCamera.transform;
-        Transform look = forceLookPoint != null ? forceLookPoint : player;
+        Vector3 focusPoint = GetThirdPersonFocusPoint();
+        Vector3 desiredPos = focusPoint + forcedCamOffset;
+        Quaternion desiredRot = Quaternion.LookRotation(focusPoint - desiredPos, Vector3.up);
 
-        // Position désirée calculée à partir du joueur et de l'offset courant
-        Vector3 desiredPos = player.position + forcedCamOffset;
-        // Rotation désirée pour que la caméra regarde la cible adéquate
-        Quaternion desiredRot = Quaternion.LookRotation(look.position - desiredPos);
+        // Conversion de la vitesse en facteur indépendant du framerate pour conserver une sensation constante.
+        float smoothingFactor = 1f - Mathf.Exp(-forcedCamFollowLerpSpeed * Time.deltaTime);
 
-        // Interpolation pour un mouvement et une rotation plus smooth
-        camOrigin.position = Vector3.Lerp(
-            camOrigin.position,
-            desiredPos,
-            forcedCamFollowLerpSpeed * Time.deltaTime
-        );
-        camOrigin.rotation = Quaternion.Slerp(
-            camOrigin.rotation,
-            desiredRot,
-            forcedCamFollowLerpSpeed * Time.deltaTime
-        );
+        camOrigin.position = Vector3.Lerp(camOrigin.position, desiredPos, smoothingFactor);
+        camOrigin.rotation = Quaternion.Slerp(camOrigin.rotation, desiredRot, smoothingFactor);
     }
 
     /// <summary>
-    /// Met à jour l'offset de la caméra forcée en fonction des entrées utilisateur (rotation autour du joueur).
+    /// Lit les entrées (stick droit, souris, zoom) et recalcule la position relative de la caméra.
     /// </summary>
-    void UpdateForcedCameraPoint()
+    void UpdateThirdPersonControls()
     {
         if (player == null) return;
 
-        Vector2 input = InputsManager.Instance.playerInputs.World.ForcedCamMove.ReadValue<Vector2>();
+        InputsManager inputsManager = InputsManager.Instance;
+        Vector2 lookInput = Vector2.zero;
 
-        // Rotation horizontale et verticale autour du joueur
-        forcedCamYaw += input.x * forcedCamRotationSpeed * Time.deltaTime;
-        forcedCamPitch -= input.y * forcedCamRotationSpeed * Time.deltaTime;
+        if (inputsManager != null)
+        {
+            lookInput = inputsManager.playerInputs.World.ForcedCamMove.ReadValue<Vector2>();
+        }
+
+        if (lookInput.sqrMagnitude > 0.0001f)
+        {
+            forcedCamYaw += lookInput.x * forcedCamRotationSpeed * Time.deltaTime;
+            float vertical = lookInput.y * forcedCamRotationSpeed * Time.deltaTime;
+            forcedCamPitch += invertLookY ? vertical : -vertical;
+        }
+
+        if (Mouse.current != null)
+        {
+            bool allowMouseRotation = !requireRightClickForMouseRotation
+                || Mouse.current.rightButton.isPressed
+                || Cursor.lockState == CursorLockMode.Locked;
+
+            if (allowMouseRotation)
+            {
+                Vector2 delta = Mouse.current.delta.ReadValue() * mouseRotationSensitivity;
+                if (delta.sqrMagnitude > 0.0001f)
+                {
+                    forcedCamYaw += delta.x;
+                    forcedCamPitch += invertLookY ? delta.y : -delta.y;
+                }
+            }
+
+            float scroll = Mouse.current.scroll.ReadValue().y;
+            if (!Mathf.Approximately(scroll, 0f))
+            {
+                forcedCamDistance -= scroll * mouseZoomSensitivity;
+            }
+        }
+
+        if (Gamepad.current != null)
+        {
+            float triggerDelta = Gamepad.current.leftTrigger.ReadValue() - Gamepad.current.rightTrigger.ReadValue();
+            if (!Mathf.Approximately(triggerDelta, 0f))
+            {
+                forcedCamDistance += triggerDelta * gamepadZoomSpeed * Time.deltaTime;
+            }
+        }
+
+        forcedCamYaw = Mathf.Repeat(forcedCamYaw, 360f);
         forcedCamPitch = Mathf.Clamp(forcedCamPitch, forcedCamMinPitch, forcedCamMaxPitch);
+        forcedCamDistance = Mathf.Clamp(forcedCamDistance, forcedCamMinDistance, forcedCamMaxDistance);
 
-        // Conversion sphérique → cartésienne pour obtenir le nouvel offset
-        RecalculateForcedCamOffset();
-    }
-
-    /// <summary>
-    /// Choisit et applique la caméra la plus proche du joueur.
-    /// Peut entrer en conflit avec ForceCam.
-    /// </summary>
-    void ApplyClosestCamera()
-    {
-        if (cameraHandlerEnabled)
-        {
-            if (player == null || string.IsNullOrEmpty(cameraTargetName) || Camera.main == null) return;
-
-            Transform closest = null;
-            float minDist = float.MaxValue;
-            foreach (Transform cp in cameraPositions)
-            {
-                if (cp == null) continue;
-                float dist = Vector3.Distance(player.position, cp.position);
-                if (dist < minDist)
-                {
-                    minDist = dist;
-                    closest = cp;
-                }
-            }
-
-            if (closest != null)
-            {
-                Transform look = FindChildRecursive(player, cameraTargetName);
-                if (look == null) return;
-
-                Vector3 desiredPos = closest.position;
-                Quaternion desiredRot = Quaternion.LookRotation(look.position - desiredPos);
-
-                // Lance une transition uniquement si le point de caméra a changé
-                if (closest != lastClosestCameraPoint)
-                {
-                    lastClosestCameraPoint = closest;
-
-                    if (currentTransition != null)
-                        StopCoroutine(currentTransition);
-
-                    // Déplace le parent pour éviter d'écraser l'offset de respiration de la caméra
-                    currentTransition = StartCoroutine(SmoothMoveAndLook(Camera.main.transform.parent, desiredPos, desiredRot, 2f));
-                }
-                else if (currentTransition == null)
-                {
-                    // Ajuste simplement la rotation pour suivre le joueur sans recréer une transition
-                    Camera.main.transform.parent.rotation = Quaternion.Slerp(
-                        Camera.main.transform.parent.rotation,
-                        desiredRot,
-                        2f * Time.deltaTime
-                    );
-                }
-            }
-        }
-        else
-        {
-            Debug.LogWarning("[CameraController] CameraHandler désactivé, pas de recherche de point.");
-        }
+        RecalculateThirdPersonOffset();
     }
 
     #endregion
 
     #region Utilitaires
     /// <summary>
-    /// Recalcule l'offset de la caméra forcée à partir de l'angle actuel et de la distance.
+    /// Recalcule l'offset de la caméra TPS à partir de l'angle actuel et de la distance.
     /// Centralise la conversion sphérique → cartésienne pour faciliter les modifications.
     /// </summary>
-    void RecalculateForcedCamOffset()
+    void RecalculateThirdPersonOffset()
     {
         // Conversion des angles en radians pour les fonctions trigonométriques
         float yawRad = forcedCamYaw * Mathf.Deg2Rad;
@@ -577,6 +544,58 @@ public class CameraController : MonoBehaviour
             forcedCamDistance * Mathf.Sin(pitchRad),
             forcedCamDistance * Mathf.Cos(yawRad) * Mathf.Cos(pitchRad)
         );
+    }
+
+    /// <summary>
+    /// Détermine dynamiquement le point de focus utilisé par la caméra TPS.
+    /// </summary>
+    Vector3 GetThirdPersonFocusPoint()
+    {
+        if (player == null)
+            return worldCameraParent != null ? worldCameraParent.position : Vector3.zero;
+
+        Transform focusTarget = ResolveThirdPersonLookTarget();
+
+        if (focusTarget != null && focusTarget != player)
+            return focusTarget.position;
+
+        // Fallback : on utilise la racine du joueur accompagnée d'un léger offset configurable.
+        return player.position + thirdPersonFocusOffset;
+    }
+
+    /// <summary>
+    /// Garantit que l'on dispose d'un transform valide à regarder (Point_Chest, override, etc.).
+    /// </summary>
+    Transform ResolveThirdPersonLookTarget()
+    {
+        if (forceLookPoint != null)
+            return forceLookPoint;
+
+        if (player == null)
+            return null;
+
+        if (forcedLookTarget != null)
+        {
+            // Si le joueur a changé (nouvelle instance) ou que le point n'existe plus, on invalide la référence.
+            if (!forcedLookTarget || (forcedLookTarget.root != null && player.root != null && forcedLookTarget.root != player.root))
+            {
+                forcedLookTarget = null;
+            }
+        }
+
+        if (forcedLookTarget == null && !string.IsNullOrEmpty(cameraTargetName))
+        {
+            forcedLookTarget = FindChildRecursive(player, cameraTargetName);
+        }
+
+        if (forcedLookTarget == null)
+        {
+            forcedLookTarget = FindChildRecursive(player, "Point_Chest");
+            if (forcedLookTarget != null)
+                cameraTargetName = forcedLookTarget.name;
+        }
+
+        return forcedLookTarget != null ? forcedLookTarget : player;
     }
 
     /// <summary>
@@ -657,22 +676,6 @@ public class CameraController : MonoBehaviour
 
         if (worldCamera != null)
             worldCamera.transform.SetPositionAndRotation(savedWorldCamPosition, savedWorldCamRotation);
-    }
-
-    /// <summary>
-    /// Récupère dynamiquement les positions caméra à partir du handler dédié.
-    /// </summary>
-    void UpdateCameraPositionsFromHandler()
-    {
-        GameObject handler = GameObject.FindGameObjectWithTag("LevelCameraHandler");
-        if (handler != null)
-        {
-            List<Transform> camPoints = new List<Transform>();
-            foreach (Transform child in handler.transform)
-                if (child != null)
-                    camPoints.Add(child);
-            cameraPositions = camPoints;
-        }
     }
 
     /// <summary>
