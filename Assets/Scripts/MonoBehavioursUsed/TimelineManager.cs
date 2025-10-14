@@ -498,7 +498,7 @@ public class TimelineManager : MonoBehaviour
             if (cameraTag == "WorldCamera")
             {
                 // Sauvegarde la position actuelle de la WorldCamera avant que la Timeline ne la déplace
-                CameraController.Instance?.SaveWorldCameraTransform();
+                WorldCameraController.Instance?.SaveWorldCameraTransform();
             }
 
             // 📌 Positionne l'origine de la caméra uniquement sur la cible fournie.
@@ -716,9 +716,9 @@ public class TimelineManager : MonoBehaviour
             if (passButton != null)
                 passButton.SetActive(false);
         }
-        // Désactive le CameraController pour laisser la Timeline contrôler totalement la caméra
-        if (CameraController.Instance != null)
-            CameraController.Instance.enabled = false;
+        // Désactive le WorldCameraController pour laisser la Timeline contrôler totalement la caméra
+        if (WorldCameraController.Instance != null)
+            WorldCameraController.Instance.enabled = false;
         Debug.Log($"[TimelineManager] Timeline jouée : {pd.name}");
 
         // Bascule la musique vers le thème de timeline si nécessaire.
@@ -795,12 +795,12 @@ public class TimelineManager : MonoBehaviour
             // On redonne le contrôle de Lucian en réactivant les inputs "World".
             ToggleWorldInputs(true);
 
-            // Réactivation du CameraController pour rendre la main après la cinématique
-            if (CameraController.Instance != null)
+            // Réactivation du WorldCameraController pour rendre la main après la cinématique
+            if (WorldCameraController.Instance != null)
             {
-                CameraController.Instance.enabled = true;
+                WorldCameraController.Instance.enabled = true;
                 // ↩️ Replace la WorldCamera à sa dernière position sauvegardée pour garder la continuité
-                CameraController.Instance.RestoreWorldCameraTransform();
+                WorldCameraController.Instance.RestoreWorldCameraTransform();
             }
         }
 

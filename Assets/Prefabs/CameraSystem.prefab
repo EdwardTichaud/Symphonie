@@ -19734,8 +19734,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5849700187293665785}
-  - component: {fileID: 1486481466831601880}
   - component: {fileID: 1172225813807625690}
+  - component: {fileID: 7907233818777064594}
+  - component: {fileID: 5863328437811166610}
+  - component: {fileID: 1276934787825546447}
   - component: {fileID: 7907233818777064594}
   - component: {fileID: 5863328437811166610}
   - component: {fileID: 1276934787825546447}
@@ -19770,47 +19772,37 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5625567887718751476}
+  m_GameObject: {fileID: 8087106060399975759}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f2c5b96ad58d96c41ba3af11e5d1c8bb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  managedCameras:
-  - {fileID: 7100154581780127490}
-  - {fileID: 6052484475872995002}
-  - {fileID: 3522585533358745000}
-  currentWorldCameraState: 0
-  breathingAmplitude: 0.05
-  breathingFrequency: 1
-  enableWorldCameraBreathing: 1
-  enableBattleCameraBreathing: 1
-  cameraHandlerEnabled: 0
-  cameraPositions:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  forceCamPoint: {fileID: 0}
+  m_Name:
+  m_EditorClassIdentifier:
+  worldCamera: {fileID: 7100154581780127490}
+  cameraRig: {fileID: 4551284211275759610}
+  player: {fileID: 0}
   forceLookPoint: {fileID: 0}
-  worldCamForced: 1
-  forcedCameraPoint: {fileID: 0}
-  forcedCamZoomSpeed: 5
-  forcedCamRotationSpeed: 100
+  thirdPersonFocusOffset: {x: 0, y: 1.6, z: 0}
+  forcedCamRotationSpeed: 120
+  mouseRotationSensitivity: 0.15
+  mouseZoomSensitivity: 0.05
+  gamepadZoomSpeed: 2
+  invertLookY: 0
+  requireRightClickForMouseRotation: 1
+  forcedCamFollowLerpSpeed: 10
   forcedCamMinDistance: 2
   forcedCamMaxDistance: 10
-  forcedCamMinPitch: -20
-  forcedCamMaxPitch: 60
-  forcedCamFollowLerpSpeed: 10
-  orbitTarget: {fileID: 0}
+  forcedCamMinPitch: -35
+  forcedCamMaxPitch: 65
+  enableBreathing: 1
+  breathingAmplitude: 0.05
+  breathingFrequency: 1
   orbitDistance: 5
   orbitSpeed: 30
   orbitX: 0
   orbitY: 1
   orbitZ: 0
+  currentState: 0
 --- !u!114 &1172225813807625690
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -24713,6 +24705,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2211083621015039421}
   - component: {fileID: 6052484475872995002}
+  - component: {fileID: 6931234567890123456}
   - component: {fileID: 6698084767633410685}
   - component: {fileID: 1482432584786464906}
   - component: {fileID: 1108275434897552830}
@@ -24790,6 +24783,28 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &6931234567890123456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7666186497415931499}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e923a4a397204f12b618046d9ca0c918, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  battleCamera: {fileID: 6052484475872995002}
+  cameraRig: {fileID: 3949434785713621470}
+  enableBreathing: 1
+  breathingAmplitude: 0.05
+  breathingFrequency: 1
+  orbitDistance: 5
+  orbitSpeed: 30
+  orbitX: 0
+  orbitY: 1
+  orbitZ: 0
 --- !u!114 &6698084767633410685
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25634,6 +25649,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5081781857519556175}
   - component: {fileID: 7100154581780127490}
+  - component: {fileID: 1486481466831601880}
   - component: {fileID: 2828476036957675889}
   m_Layer: 0
   m_Name: WorldCam_Cam

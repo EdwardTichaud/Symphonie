@@ -150,7 +150,7 @@ public class Zone2D : MonoBehaviour
 
     // Référence optionnelle vers le contrôleur de la WorldCamera. On le met en pause
     // quand la zone 2D prend la main afin d'éviter tout conflit de mise à jour.
-    private CameraController cachedWorldCameraController;
+    private WorldCameraController cachedWorldCameraController;
     private bool worldCameraControllerTemporarilyDisabled;
 
     private Vector3 PlaneOrigin => transform.position;
@@ -269,7 +269,7 @@ public class Zone2D : MonoBehaviour
 
         // On suspend immédiatement le contrôleur World pour que la caméra physique ne soit plus
         // déplacée par son comportement par défaut tant que nous sommes dans la zone 2D.
-        cachedWorldCameraController = CameraController.Instance;
+        cachedWorldCameraController = WorldCameraController.Instance;
         worldCameraControllerTemporarilyDisabled = false;
         if (cachedWorldCameraController != null && cachedWorldCameraController.enabled)
         {
@@ -314,7 +314,7 @@ public class Zone2D : MonoBehaviour
         Transform cameraTransform = runtimeCamera != null ? runtimeCamera.transform : null;
 
         // On restaure en priorité la hiérarchie d'origine pour garantir que les prochaines mises à jour
-        // (par le CameraController ou d'autres systèmes) retrouvent exactement la même organisation.
+        // (par le WorldCameraController ou d'autres systèmes) retrouvent exactement la même organisation.
         if (previousState.usedRig && runtimeCameraMotionRoot != null)
         {
             RestoreTransformParent(runtimeCameraMotionRoot, previousState.rigParent);

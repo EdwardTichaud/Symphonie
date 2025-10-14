@@ -7,7 +7,7 @@ public class OrbitAroundTriggerSO : ScriptableObject
     public string targetName;
     [HideInInspector] public Transform target;
 
-    [Header("Paramètres d'orbite")]
+    [Header("ParamÃ¨tres d'orbite")]
     public float distance = 5f;
     public float speed = 30f;
     public bool orbitX = false;
@@ -15,13 +15,13 @@ public class OrbitAroundTriggerSO : ScriptableObject
     public bool orbitZ = false;
 
     /// <summary>
-    /// Déclenche l'orbite via le CameraController
+    /// DÃ©clenche l'orbite en demandant au <see cref="BattleCameraController"/> de tourner autour de la cible.
     /// </summary>
     public void StartOrbit()
     {
-        if (CameraController.Instance == null)
+        if (BattleCameraController.Instance == null)
         {
-            Debug.LogError("[OrbitAroundTriggerSO] CameraController.Instance introuvable !");
+            Debug.LogError("[OrbitAroundTriggerSO] BattleCameraController.Instance introuvable !");
             return;
         }
 
@@ -29,24 +29,24 @@ public class OrbitAroundTriggerSO : ScriptableObject
 
         if (target == null)
         {
-            Debug.LogError("[OrbitAroundTriggerSO] Target non définie !");
+            Debug.LogError("[OrbitAroundTriggerSO] Target non dÃ©finie !");
             return;
         }
 
-        CameraController.Instance.OrbitAround("BattleCamera", target, distance, speed, orbitX, orbitY, orbitZ);
+        BattleCameraController.Instance.StartOrbit(target, distance, speed, orbitX, orbitY, orbitZ);
     }
 
     /// <summary>
-    /// Stoppe l'orbite actuelle
+    /// Stoppe l'orbite actuelle.
     /// </summary>
     public void StopOrbit()
     {
-        if (CameraController.Instance == null)
+        if (BattleCameraController.Instance == null)
         {
-            Debug.LogError("[OrbitAroundTriggerSO] CameraController.Instance introuvable !");
+            Debug.LogError("[OrbitAroundTriggerSO] BattleCameraController.Instance introuvable !");
             return;
         }
 
-        CameraController.Instance.StopOrbit();
+        BattleCameraController.Instance.StopOrbit();
     }
 }
