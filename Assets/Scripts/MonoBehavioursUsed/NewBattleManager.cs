@@ -2217,6 +2217,18 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Coroutine en charge de déclencher la capture une fois que le rendu HDRP
+    /// courant est totalement terminé. On évite ainsi d'invoquer Camera.Render()
+    /// en plein enregistrement du RenderGraph (source des exceptions rencontrées).
+    /// </summary>
+    private Coroutine victoryScreenshotCoroutine;
+
+    /// <summary>
+    /// Prépare la capture d'écran de la caméra de combat sans forcer un nouveau
+    /// rendu immédiat. La capture est effectuée à la fin du frame en cours pour
+    /// rester compatible avec le RenderGraph de l'HDRP.
+    /// </summary>
     public void TakeVictoryScreenshot()
     {
         if (VictoryScreenImage == null)
@@ -2225,22 +2237,57 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        // Utilise la caméra mémorisée ; la recherche est effectuée ponctuellement si nécessaire
+        // Empêche le lancement de plusieurs captures simultanées ; seule la plus
+        // récente est conservée pour ne pas multiplier les attentes d'une frame.
+        if (victoryScreenshotCoroutine != null)
+        {
+            StopCoroutine(victoryScreenshotCoroutine);
+            victoryScreenshotCoroutine = null;
+        }
+
+        victoryScreenshotCoroutine = StartCoroutine(CaptureVictoryScreenshotAtFrameEnd());
+    }
+
+    /// <summary>
+    /// Attend la fin du frame courant puis laisse l'HDRP dessiner naturellement la
+    /// caméra dans la RenderTexture désirée. En procédant ainsi, aucune commande
+    /// de rendu imbriquée n'est exécutée et l'exception RenderGraph disparaît.
+    /// </summary>
+    private IEnumerator CaptureVictoryScreenshotAtFrameEnd()
+    {
+        // Vérifie que le GameObject est actif pour éviter les captures alors que
+        // le manager serait désactivé (par exemple lors des transitions de scène).
+        if (!isActiveAndEnabled)
+        {
+            victoryScreenshotCoroutine = null;
+            yield break;
+        }
+
+        // Utilise la caméra mémorisée ; la recherche est effectuée ponctuellement si nécessaire.
         EnsureBattleCamera();
         Camera screenshotCamera = battleCamera?.GetComponent<Camera>();
         if (screenshotCamera == null)
         {
             Debug.LogError("Aucune caméra trouvée pour la capture !");
-            return;
+            victoryScreenshotCoroutine = null;
+            yield break;
         }
 
-        // Assure-toi que la caméra utilise la render texture pour la capture
-        RenderTexture prevRT = screenshotCamera.targetTexture;
+        // On redirige la sortie de la caméra vers la RenderTexture demandée.
+        RenderTexture previousTarget = screenshotCamera.targetTexture;
         screenshotCamera.targetTexture = VictoryScreenImage;
-        screenshotCamera.Render();
-        screenshotCamera.targetTexture = prevRT;
 
-        Debug.Log("Screenshot de victoire capturé !");
+        // Attendre la fin du frame courant garantit que la caméra sera rendue
+        // naturellement par le pipeline HDRP sans appel imbriqué de RenderGraph.
+        yield return new WaitForEndOfFrame();
+
+        // Une fois la frame terminée, on restaure la cible initiale pour éviter
+        // d'altérer le comportement normal de la caméra dans les frames suivantes.
+        screenshotCamera.targetTexture = previousTarget;
+
+        Debug.Log("Screenshot de victoire capturé sans appel direct à Camera.Render().");
+
+        victoryScreenshotCoroutine = null;
     }
 
     private IEnumerator ReduceTimeAndShowVictoryPanel()
