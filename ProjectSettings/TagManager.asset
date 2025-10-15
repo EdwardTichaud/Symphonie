@@ -37,17 +37,16 @@ TagManager:
   - Battle_UI
   - Battle_VFX
   - Battle_Ground
-  - Battle_Void # Couche pour zones vides en bataille
+  - Battle_Void
   - Versus
-  - "" # Entrée vide préservée explicitement pour conserver l'indexation Unity.
-  - "" # Idem : Unity crée des couches réservées vides que nous conservons.
-  - "" # Les couches vides doivent être définies comme chaînes vides pour éviter les erreurs YAML.
-  - "" # Les anciennes entrées vides sont maintenant valides pour l'analyseur YAML.
-  - "" # Garder la structure permet de ne pas décaler les couches utilisateur.
-  - "" # Couches placeholder utilisées par Unity pour de futures allocations.
-  - "" # Préservation des emplacements libres pour maintenir la compatibilité.
-  - "" # Entrée volontairement libre ; Unity attend une chaîne vide.
-  - "" # Dernière entrée vide maintenue pour la cohérence du projet.
+  - ""
+  - ""
+  - ""
+  - ""
+  - ""
+  - ""
+  - ""
+  - ""
   m_SortingLayers:
   - name: Default
     uniqueID: 0
@@ -88,7 +87,6 @@ TagManager:
   - Light Layer 5 - Light Layer 5 - Light Layer 5 - Light Layer 5 - Light Layer 5
   - Light Layer 6 - Light Layer 6 - Light Layer 6 - Light Layer 6 - Light Layer 6
   - Light Layer 7 - Light Layer 7 - Light Layer 7 - Light Layer 7 - Light Layer 7
-  # Chaîne longue encapsulée pour garantir une définition YAML valide et éviter les retours à la ligne automatiques.
   - "Decal Layer default - Decal Layer default - Decal Layer default - Decal Layer default - Decal Layer default"
   - Decal Layer 1 - Decal Layer 1 - Decal Layer 1 - Decal Layer 1 - Decal Layer 1
   - Decal Layer 2 - Decal Layer 2 - Decal Layer 2 - Decal Layer 2 - Decal Layer 2
