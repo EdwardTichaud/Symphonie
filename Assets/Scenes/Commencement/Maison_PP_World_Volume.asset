@@ -49,16 +49,16 @@ MonoBehaviour:
     m_Value: 0
   exposure:
     m_OverrideState: 1
-    m_Value: -15
+    m_Value: 2
   multiplier:
     m_OverrideState: 1
     m_Value: 1
   upperHemisphereLuxValue:
     m_OverrideState: 1
-    m_Value: 0.15848842
+    m_Value: 0.0040969816
   upperHemisphereLuxColor:
     m_OverrideState: 1
-    m_Value: {x: 0.39797014, y: 0.45284185, z: 0.5}
+    m_Value: {x: 0.3689473, y: 0.44245836, z: 0.5}
   desiredLuxValue:
     m_OverrideState: 1
     m_Value: 0
@@ -73,9 +73,9 @@ MonoBehaviour:
     m_Value: 0
   hdriSky:
     m_OverrideState: 1
-    m_Value: {fileID: 8900000, guid: bb83fe1bfc5214e4585c7cd68b974fde, type: 3}
+    m_Value: {fileID: 8900000, guid: 2e3ca0bc571f48d4096035975cf4b503, type: 3}
   distortionMode:
-    m_OverrideState: 1
+    m_OverrideState: 0
     m_Value: 1
   flowmap:
     m_OverrideState: 1
@@ -86,17 +86,17 @@ MonoBehaviour:
   scrollOrientation:
     m_OverrideState: 1
     m_Value:
-      mode: 1
+      mode: 2
       customValue: 0
       additiveValue: 0
       multiplyValue: 1
   scrollSpeed:
     m_OverrideState: 1
     m_Value:
-      mode: 1
+      mode: 0
       customValue: 100
       additiveValue: 0
-      multiplyValue: 1
+      multiplyValue: 0
   sunInitialRotation:
     m_OverrideState: 1
     m_Value: -Infinity
@@ -218,13 +218,13 @@ MonoBehaviour:
     m_Value: 0
   color:
     m_OverrideState: 1
-    m_Value: {r: 0, g: 0, b: 0, a: 1}
+    m_Value: {r: 0.41509432, g: 0.41509432, b: 0.41509432, a: 1}
   tint:
     m_OverrideState: 1
     m_Value: {r: 1, g: 1, b: 1, a: 1}
   maxFogDistance:
     m_OverrideState: 1
-    m_Value: 5000
+    m_Value: 100
   mipFogMaxMip:
     m_OverrideState: 0
     m_Value: 0.5
@@ -248,7 +248,7 @@ MonoBehaviour:
     m_Value: 1
   albedo:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 1, b: 1, a: 1}
+    m_Value: {r: 1, g: 0.9921534, b: 0.9764151, a: 1}
   globalLightProbeDimmer:
     m_OverrideState: 1
     m_Value: 0
