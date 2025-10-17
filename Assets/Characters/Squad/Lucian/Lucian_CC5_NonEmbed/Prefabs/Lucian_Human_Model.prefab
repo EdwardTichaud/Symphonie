@@ -1285,6 +1285,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d919b26404a8df643b93ebdae5a1772c, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8571400978623058012}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d919b26404a8df643b93ebdae5a1772c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 6023456789012345678}
   m_SourcePrefab: {fileID: 100100000, guid: d919b26404a8df643b93ebdae5a1772c, type: 3}
 --- !u!4 &452633631002264889 stripped
 Transform:
@@ -1612,3 +1615,32 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2168394226173205682, guid: d919b26404a8df643b93ebdae5a1772c, type: 3}
   m_PrefabInstance: {fileID: 7160647249410681817}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &6023456789012345678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8043098453578700424}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ad8a304e6c94f44ad388790273cc70d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  blendShapeOverrides:
+  - blendShapeName: Eye_Blink_L
+    weight: 45
+  - blendShapeName: Eye_Blink_R
+    weight: 45
+  - blendShapeName: Jaw_Open
+    weight: 0
+  - blendShapeName: Jaw_Open_Extreme
+    weight: 0
+  - blendShapeName: Mouth_Lips_Together_UL
+    weight: 0
+  - blendShapeName: Mouth_Lips_Together_UR
+    weight: 0
+  - blendShapeName: Mouth_Lips_Together_DL
+    weight: 0
+  - blendShapeName: Mouth_Lips_Together_DR
+    weight: 0
