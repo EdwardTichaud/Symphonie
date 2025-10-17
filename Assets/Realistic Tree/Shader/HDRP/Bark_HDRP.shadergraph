@@ -38,6 +38,12 @@
         },
         {
             "m_Id": "34e700545e0d490f80c92f2d12e2a093"
+        },
+        {
+            "m_Id": "12884a70eb5e4349983f67df422b648f"
+        },
+        {
+            "m_Id": "56d461ea21b54dd2aa528830143705b9"
         }
     ],
     "m_Keywords": [],
@@ -221,6 +227,12 @@
         },
         {
             "m_Id": "a0785f46498c4788ac9b219765bd7bf9"
+        },
+        {
+            "m_Id": "d0c6b8d4ee234d5a987014bc5fdd7f1b"
+        },
+        {
+            "m_Id": "adfc999a100d4ffaa0b1808b47d52990"
         }
     ],
     "m_GroupDatas": [
@@ -1013,6 +1025,34 @@
                 },
                 "m_SlotId": 0
             }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "d0c6b8d4ee234d5a987014bc5fdd7f1b"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "591855588ebd42f0ab71196b3f6567bf"
+                },
+                "m_SlotId": 0
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "adfc999a100d4ffaa0b1808b47d52990"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "e46dd7cc4b3148ec8553c2eaae096f75"
+                },
+                "m_SlotId": 0
+            }
         }
     ],
     "m_VertexContext": {
@@ -1579,6 +1619,52 @@
     "hlslDeclarationOverride": 0,
     "m_Hidden": false,
     "m_Value": 0.0,
+    "m_FloatType": 0,
+    "m_RangeValues": {
+        "x": 0.0,
+        "y": 1.0
+    }
+}
+
+{
+    "m_SGVersion": 1,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Vector1ShaderProperty",
+    "m_ObjectId": "12884a70eb5e4349983f67df422b648f",
+    "m_Guid": {
+        "m_GuidSerialized": "ebba94bc-fc2c-4b34-a9fa-35fe4221204a"
+    },
+    "m_Name": "Metallic Cristallin",
+    "m_DefaultReferenceName": "Vector1_12884a70eb5e4349983f67df422b648f",
+    "m_OverrideReferenceName": "",
+    "m_GeneratePropertyBlock": true,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "m_Hidden": false,
+    "m_Value": 0.8,
+    "m_FloatType": 0,
+    "m_RangeValues": {
+        "x": 0.0,
+        "y": 1.0
+    }
+}
+
+{
+    "m_SGVersion": 1,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Vector1ShaderProperty",
+    "m_ObjectId": "56d461ea21b54dd2aa528830143705b9",
+    "m_Guid": {
+        "m_GuidSerialized": "d555f4c2-a310-4f5a-b6fb-9e3e399f0b73"
+    },
+    "m_Name": "Lissage Cristallin",
+    "m_DefaultReferenceName": "Vector1_56d461ea21b54dd2aa528830143705b9",
+    "m_OverrideReferenceName": "",
+    "m_GeneratePropertyBlock": true,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "m_Hidden": false,
+    "m_Value": 0.9,
     "m_FloatType": 0,
     "m_RangeValues": {
         "x": 0.0,
@@ -3223,6 +3309,56 @@
         "m_SerializableColors": []
     },
     "m_SerializedDescriptor": "SurfaceDescription.Metallic"
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "ba55984530554369b53197fcbec534d3",
+    "m_Id": 0,
+    "m_DisplayName": "Metallic Cristallin",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "Out",
+    "m_StageCapability": 3,
+    "m_Value": 0.8,
+    "m_DefaultValue": 0.8,
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
+    "m_ObjectId": "d0c6b8d4ee234d5a987014bc5fdd7f1b",
+    "m_Group": {
+        "m_Id": ""
+    },
+    "m_Name": "Metallic Cristallin",
+    "m_DrawState": {
+        "m_Expanded": true,
+        "m_Position": {
+            "serializedVersion": "2",
+            "x": -402.0,
+            "y": -86.0,
+            "width": 210.0,
+            "height": 36.0
+        }
+    },
+    "m_Slots": [
+        {
+            "m_Id": "ba55984530554369b53197fcbec534d3"
+        }
+    ],
+    "synonyms": [],
+    "m_Precision": 0,
+    "m_PreviewExpanded": true,
+    "m_PreviewMode": 0,
+    "m_CustomColors": {
+        "m_SerializableColors": []
+    },
+    "m_Property": {
+        "m_Id": "12884a70eb5e4349983f67df422b648f"
+    }
 }
 
 {
@@ -7064,6 +7200,56 @@
         "m_SerializableColors": []
     },
     "m_SerializedDescriptor": "SurfaceDescription.Smoothness"
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "306e7f98cd904c1e9a7143f36fcac885",
+    "m_Id": 0,
+    "m_DisplayName": "Lissage Cristallin",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "Out",
+    "m_StageCapability": 3,
+    "m_Value": 0.9,
+    "m_DefaultValue": 0.9,
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
+    "m_ObjectId": "adfc999a100d4ffaa0b1808b47d52990",
+    "m_Group": {
+        "m_Id": ""
+    },
+    "m_Name": "Lissage Cristallin",
+    "m_DrawState": {
+        "m_Expanded": true,
+        "m_Position": {
+            "serializedVersion": "2",
+            "x": -404.0,
+            "y": 54.0,
+            "width": 210.0,
+            "height": 36.0
+        }
+    },
+    "m_Slots": [
+        {
+            "m_Id": "306e7f98cd904c1e9a7143f36fcac885"
+        }
+    ],
+    "synonyms": [],
+    "m_Precision": 0,
+    "m_PreviewExpanded": true,
+    "m_PreviewMode": 0,
+    "m_CustomColors": {
+        "m_SerializableColors": []
+    },
+    "m_Property": {
+        "m_Id": "56d461ea21b54dd2aa528830143705b9"
+    }
 }
 
 {
