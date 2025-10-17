@@ -420,9 +420,11 @@ public class AudioManager : MonoBehaviour
         float startVolume = source.volume;
         float t = 0f;
 
+        // ⏱️ Utilise le temps non-scalé afin que le fondu reste fonctionnel
+        // même lorsque la Timeline met le jeu en pause via un timeScale nul.
         while (t < fadeDuration)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             source.volume = Mathf.Lerp(startVolume, 0f, t / fadeDuration);
             yield return null;
         }
@@ -442,9 +444,11 @@ public class AudioManager : MonoBehaviour
         source.volume = 0f;
         float t = 0f;
 
+        // ⏱️ Utilise Time.unscaledDeltaTime pour que le fondu soit insensible
+        // aux ralentis ou arrêts complets provoqués par les timelines.
         while (t < fadeDuration)
         {
-            t += Time.deltaTime;
+            t += Time.unscaledDeltaTime;
             source.volume = Mathf.Lerp(0f, targetVolume, t / fadeDuration);
             yield return null;
         }
@@ -512,9 +516,11 @@ public class AudioManager : MonoBehaviour
         if (clip == null)
         {
             float t = 0f;
+            // 🎵 Même logique : on s'appuie sur le temps non-scalé pour que
+            // le fondu reste actif si la timeline fige le gameplay.
             while (t < fadeDuration)
             {
-                t += Time.deltaTime;
+                t += Time.unscaledDeltaTime;
                 float progress = t / fadeDuration;
                 fromSource.volume = Mathf.Lerp(fromInitialVolume, 0f, progress);
                 yield return null;
@@ -541,9 +547,11 @@ public class AudioManager : MonoBehaviour
 
         float tCrossfade = 0f;
 
+        // 🎚️ Crossfade piloté par le temps non-scalé afin de rester fluide
+        // pendant les cinématiques qui manipulent le timeScale global.
         while (tCrossfade < fadeDuration)
         {
-            tCrossfade += Time.deltaTime;
+            tCrossfade += Time.unscaledDeltaTime;
             float progress = tCrossfade / fadeDuration;
 
             toSource.volume = Mathf.Lerp(0f, targetVolume, progress);
