@@ -16,6 +16,21 @@ public class CameraController : MonoBehaviour
 
     private Coroutine currentTransition;
 
+    /// <summary>
+    /// Indique si le contrôleur de caméra est volontairement mis en pause.
+    /// Lorsque cette valeur est vraie, aucune logique de suivi ou d'input
+    /// n'est exécutée afin de laisser une Timeline (ou un autre système)
+    /// piloter librement la WorldCamera.
+    /// </summary>
+    private bool isPaused = false;
+
+    /// <summary>
+    /// Lecture publique de l'état de pause. Pratique pour les systèmes qui
+    /// souhaitent vérifier si la caméra est disponible avant de lancer un
+    /// comportement spécifique.
+    /// </summary>
+    public bool IsPaused => isPaused;
+
     [Header("---------- Common ----------")]
 
     [Header("Managed Cameras")]
@@ -213,16 +228,17 @@ public class CameraController : MonoBehaviour
     /// </summary>
     void Update()
     {
-        if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
+        bool timelinePlaying = TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying;
+
+        if (timelinePlaying && !isPaused)
         {
-            // Stoppe toute transition en cours afin d'éviter des conflits avec les Timelines
-            if (currentTransition != null)
-            {
-                StopCoroutine(currentTransition);
-                currentTransition = null;
-            }
-            return;
+            // Une Timeline vient de prendre la main : on se met immédiatement en pause
+            // pour éviter que nos transitions influencent la caméra animée.
+            PauseController();
         }
+
+        if (isPaused)
+            return; // La caméra est figée (Timeline, zone spéciale, etc.).
 
         // ✅ Si la MainCamera est désactivée → skip toute logique
         if (Camera.main != null && !Camera.main.enabled)
@@ -241,9 +257,17 @@ public class CameraController : MonoBehaviour
         if (!Application.isPlaying)
             return;
 
-        // Les Timelines prennent le contrôle total de la caméra
-        if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
-            return;
+        bool timelinePlaying = TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying;
+
+        if (timelinePlaying && !isPaused)
+        {
+            // Sécurité supplémentaire : si la Timeline démarre entre Update et
+            // LateUpdate, on applique tout de même la pause pour éviter un frame parasite.
+            PauseController();
+        }
+
+        if (isPaused)
+            return; // Aucun suivi tant que la pause est active.
 
         // Mise à jour des références dynamiques (player, eventsManager)
         player ??= GameObject.FindGameObjectWithTag("Player")?.transform;
@@ -528,6 +552,42 @@ public class CameraController : MonoBehaviour
     #endregion
 
     #region Utilitaires
+    /// <summary>
+    /// Met en pause toutes les logiques internes du contrôleur afin de laisser
+    /// un système externe (Timeline, zone 2D, script temporaire) manipuler la caméra.
+    /// </summary>
+    public void PauseController()
+    {
+        if (isPaused)
+            return; // Déjà en pause, on évite une double initialisation.
+
+        isPaused = true;
+
+        // On stoppe toute transition en cours pour éviter qu'une coroutine continue
+        // de déplacer la caméra en arrière-plan pendant la cinématique.
+        if (currentTransition != null)
+        {
+            StopCoroutine(currentTransition);
+            currentTransition = null;
+        }
+    }
+
+    /// <summary>
+    /// Relance la logique du contrôleur une fois que les systèmes externes
+    /// ont terminé de manipuler la caméra.
+    /// </summary>
+    public void ResumeController()
+    {
+        if (!isPaused)
+            return; // Rien à faire si la caméra fonctionnait déjà normalement.
+
+        isPaused = false;
+
+        // Dès la prochaine Update, la caméra recalcule son offset et reprend
+        // son suivi standard (TPS, orbite, etc.). Aucun autre traitement n'est
+        // nécessaire ici : les méthodes existantes se chargeront du reste.
+    }
+
     /// <summary>
     /// Recalcule l'offset de la caméra TPS à partir de l'angle actuel et de la distance.
     /// Centralise la conversion sphérique → cartésienne pour faciliter les modifications.

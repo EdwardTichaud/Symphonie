@@ -716,9 +716,9 @@ public class TimelineManager : MonoBehaviour
             if (passButton != null)
                 passButton.SetActive(false);
         }
-        // Désactive le CameraController pour laisser la Timeline contrôler totalement la caméra
+        // Met le CameraController en pause pour que seule la Timeline anime la caméra.
         if (CameraController.Instance != null)
-            CameraController.Instance.enabled = false;
+            CameraController.Instance.PauseController();
         Debug.Log($"[TimelineManager] Timeline jouée : {pd.name}");
 
         // Bascule la musique vers le thème de timeline si nécessaire.
@@ -798,7 +798,7 @@ public class TimelineManager : MonoBehaviour
             // Réactivation du CameraController pour rendre la main après la cinématique
             if (CameraController.Instance != null)
             {
-                CameraController.Instance.enabled = true;
+                CameraController.Instance.ResumeController();
                 // ↩️ Replace la WorldCamera à sa dernière position sauvegardée pour garder la continuité
                 CameraController.Instance.RestoreWorldCameraTransform();
             }
