@@ -8697,7 +8697,7 @@
     "m_Guid": {
         "m_GuidSerialized": "20b4631f-8f87-44b7-9ae3-4db16f13d5d9"
     },
-    "m_Name": "Vein Flow Texture",
+    "m_Name": "Blood Texture",
     "m_DefaultReferenceName": "Texture2D_737937b2eb1a40c69a37eee653cada77",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
@@ -8721,7 +8721,7 @@
     "m_Guid": {
         "m_GuidSerialized": "a4718a12-e950-42f8-a9aa-3a2bfc88e7ff"
     },
-    "m_Name": "Vein Color",
+    "m_Name": "Blood Color",
     "m_DefaultReferenceName": "Color_bf06f45a9f5343bb94df3d22574b3b4b",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
@@ -8745,7 +8745,7 @@
     "m_Guid": {
         "m_GuidSerialized": "1c1bffe9-0cb3-4ae4-944e-2d262da1fd06"
     },
-    "m_Name": "Vein Emission Strength",
+    "m_Name": "Blood Emission Strength",
     "m_DefaultReferenceName": "Vector1_52dd10c9b3cb4e70bb7406c2a3f6f71f",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
@@ -8791,7 +8791,7 @@
     "m_Guid": {
         "m_GuidSerialized": "ea124b3b-bf63-4fad-86b0-996a32ef6af6"
     },
-    "m_Name": "Vein Flow Direction",
+    "m_Name": "Blood Flow Direction",
     "m_DefaultReferenceName": "Vector2_c498d62df82147abb458e3533211f4a6",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
@@ -8814,7 +8814,7 @@
     "m_Guid": {
         "m_GuidSerialized": "e8819374-d27b-49c0-a083-926bb63ba7ee"
     },
-    "m_Name": "Vein UV Scale",
+    "m_Name": "Blood UV Scale",
     "m_DefaultReferenceName": "Vector2_6c828c422b9c4c938bc80dcb2d9ebdef",
     "m_OverrideReferenceName": "",
     "m_GeneratePropertyBlock": true,
@@ -8964,7 +8964,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Texture2DMaterialSlot",
     "m_ObjectId": "f97bf91dbe594fdb98c0ed356c00fade",
     "m_Id": 0,
-    "m_DisplayName": "Vein Flow Texture",
+    "m_DisplayName": "Blood Texture",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -9013,7 +9013,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
     "m_ObjectId": "e405ea2dbd65469f9beb4b142a441e3c",
     "m_Id": 0,
-    "m_DisplayName": "Vein Color",
+    "m_DisplayName": "Blood Color",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -9073,7 +9073,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
     "m_ObjectId": "105443f094a1439dba7d0d4af8fdf298",
     "m_Id": 0,
-    "m_DisplayName": "Vein Emission Strength",
+    "m_DisplayName": "Blood Emission Strength",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -9173,7 +9173,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector2MaterialSlot",
     "m_ObjectId": "4e75c3d0cb054225bde20744112772e5",
     "m_Id": 0,
-    "m_DisplayName": "Vein Flow Direction",
+    "m_DisplayName": "Blood Flow Direction",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -9229,7 +9229,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector2MaterialSlot",
     "m_ObjectId": "7ca0e86859554f01984de4946db9d648",
     "m_Id": 0,
-    "m_DisplayName": "Vein UV Scale",
+    "m_DisplayName": "Blood UV Scale",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -9721,7 +9721,7 @@
     "m_Group": {
         "m_Id": ""
     },
-    "m_Name": "Vein UV Scale",
+    "m_Name": "Blood UV Scale",
     "m_DrawState": {
         "m_Expanded": true,
         "m_Position": {
@@ -11436,7 +11436,7 @@
     "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
     "m_ObjectId": "6fcd6cac36034a418e050ac291ce5a37",
     "m_Title": "Flux sanguin",
-    "m_Content": "Nouvelle texture animée pour visualiser le sang en mouvement dans les veines. Contrôles: vitesse de flow, UV Scale et intensité d'émission.",
+    "m_Content": "Nouvelle texture animée pour visualiser le sang en mouvement dans le flux sanguin. Contrôles: vitesse de flow, Blood UV Scale et intensité d'émission sanguine.",
     "m_TextSize": 0,
     "m_Theme": 0,
     "m_Position": {
