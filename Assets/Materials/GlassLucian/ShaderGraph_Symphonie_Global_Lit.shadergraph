@@ -61,6 +61,9 @@
             "m_Id": "259b8898fa1d4488ad6246b620d4e241"
         },
         {
+            "m_Id": "59346597193f4efbad8096d2c8c71dcc"
+        },
+        {
             "m_Id": "f1c387f477ca4e1f8e7aceb116791391"
         }
     ],
@@ -268,6 +271,9 @@
             "m_Id": "7529474b9e904320a8bdb8a81acfed19"
         },
         {
+            "m_Id": "2071e0a1bcb04e7782a36b41c5a351c0"
+        },
+        {
             "m_Id": "a407448c1ebe4d3dad3f5d25ffce5d39"
         },
         {
@@ -362,6 +368,9 @@
         },
         {
             "m_Id": "420f071ac83a48839a06c2f33ad7d679"
+        },
+        {
+            "m_Id": "230a2697eca2467283ab7f5492adb912"
         }
     ],
     "m_Edges": [
@@ -699,6 +708,20 @@
                     "m_Id": "04c3fabbb238469580b18f164b7d145f"
                 },
                 "m_SlotId": 0
+            }
+        },
+        {
+            "m_OutputSlot": {
+                "m_Node": {
+                    "m_Id": "2071e0a1bcb04e7782a36b41c5a351c0"
+                },
+                "m_SlotId": 0
+            },
+            "m_InputSlot": {
+                "m_Node": {
+                    "m_Id": "04c3fabbb238469580b18f164b7d145f"
+                },
+                "m_SlotId": 1
             }
         },
         {
@@ -3247,6 +3270,46 @@
 }
 
 {
+    "m_SGVersion": 1,
+    "m_Type": "UnityEditor.ShaderGraph.Internal.Vector1ShaderProperty",
+    "m_ObjectId": "59346597193f4efbad8096d2c8c71dcc",
+    "m_Guid": {
+        "m_GuidSerialized": "3901192f-747f-48c0-a689-279d81323f97"
+    },
+    "m_Name": "Vein Flow Speed",
+    "m_DefaultRefNameVersion": 0,
+    "m_RefNameGeneratedByDisplayName": "",
+    "m_DefaultReferenceName": "Vector1_59346597193f4efbad8096d2c8c71dcc",
+    "m_OverrideReferenceName": "",
+    "m_GeneratePropertyBlock": true,
+    "m_UseCustomSlotLabel": false,
+    "m_CustomSlotLabel": "",
+    "m_DismissedVersion": 0,
+    "m_Precision": 0,
+    "overrideHLSLDeclaration": false,
+    "hlslDeclarationOverride": 0,
+    "m_Hidden": false,
+    "m_PerRendererData": false,
+    "m_customAttributes": [],
+    "m_Value": 2.0,
+    "m_FloatType": 0,
+    "m_RangeValues": {
+        "x": -5.0,
+        "y": 5.0
+    },
+    "m_SliderType": 0,
+    "m_SliderPower": 3.0,
+    "m_EnumType": 0,
+    "m_CSharpEnumString": "",
+    "m_EnumNames": [
+        "Default"
+    ],
+    "m_EnumValues": [
+        0
+    ]
+}
+
+{
     "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
     "m_ObjectId": "25fd3b55e1764417bdfcb89eeb0ba695",
@@ -5156,6 +5219,9 @@
             "m_Id": "259b8898fa1d4488ad6246b620d4e241"
         },
         {
+            "m_Id": "59346597193f4efbad8096d2c8c71dcc"
+        },
+        {
             "m_Id": "f1c387f477ca4e1f8e7aceb116791391"
         }
     ]
@@ -5286,6 +5352,21 @@
     "m_ObjectId": "53d78f7e8bb64a14b793aedbbaf58e76",
     "m_Id": 0,
     "m_DisplayName": "Vein Pulse Speed",
+    "m_SlotType": 1,
+    "m_Hidden": false,
+    "m_ShaderOutputName": "Out",
+    "m_StageCapability": 3,
+    "m_Value": 0.0,
+    "m_DefaultValue": 0.0,
+    "m_Labels": []
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.Vector1MaterialSlot",
+    "m_ObjectId": "498e4eb3c6084bc68dd0e6ad6eb6d618",
+    "m_Id": 0,
+    "m_DisplayName": "Vein Flow Speed",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",
@@ -6396,6 +6477,26 @@
 
 {
     "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.StickyNoteData",
+    "m_ObjectId": "230a2697eca2467283ab7f5492adb912",
+    "m_Title": "Vitesse de flux des veines",
+    "m_Content": "Vein Flow Speed permet de doser l'animation du masque de veines : 0 fige l'effet, valeurs positives accélèrent le flux et les négatives inversent le sens.",
+    "m_TextSize": 0,
+    "m_Theme": 0,
+    "m_Position": {
+        "serializedVersion": "2",
+        "x": -1500.0,
+        "y": 1080.0,
+        "width": 360.0,
+        "height": 160.0
+    },
+    "m_Group": {
+        "m_Id": ""
+    }
+}
+
+{
+    "m_SGVersion": 0,
     "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
     "m_ObjectId": "705f9255dbb94590a70ba3fd35f7d82a",
     "m_Group": {
@@ -6722,6 +6823,42 @@
     },
     "m_Property": {
         "m_Id": "259b8898fa1d4488ad6246b620d4e241"
+    }
+}
+
+{
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.PropertyNode",
+    "m_ObjectId": "2071e0a1bcb04e7782a36b41c5a351c0",
+    "m_Group": {
+        "m_Id": ""
+    },
+    "m_Name": "Property",
+    "m_DrawState": {
+        "m_Expanded": true,
+        "m_Position": {
+            "serializedVersion": "2",
+            "x": -1800.0,
+            "y": 1180.0,
+            "width": 125.0,
+            "height": 34.0
+        }
+    },
+    "m_Slots": [
+        {
+            "m_Id": "498e4eb3c6084bc68dd0e6ad6eb6d618"
+        }
+    ],
+    "synonyms": [],
+    "m_Precision": 0,
+    "m_PreviewExpanded": true,
+    "m_DismissedVersion": 0,
+    "m_PreviewMode": 0,
+    "m_CustomColors": {
+        "m_SerializableColors": []
+    },
+    "m_Property": {
+        "m_Id": "59346597193f4efbad8096d2c8c71dcc"
     }
 }
 
