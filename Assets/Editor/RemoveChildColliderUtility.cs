@@ -4,19 +4,21 @@ using UnityEditor;
 
 public static class RemoveChildCollidersUtility
 {
-    [MenuItem("Tools/Colliders/Supprimer sur la sÈlection (enfants)")]
+    // Ce menu r√©plique fid√®lement l'ancien outil pr√©sent dans `Assets/RemoveChildColliders.cs`
+    // mais vit d√©sormais dans le dossier Editor pour √©viter tout doublon d'attributs MenuItem.
+    [MenuItem("Tools/Colliders/Supprimer sur la s√©lection (enfants)")]
     public static void RemoveOnSelection()
     {
         var selection = Selection.gameObjects;
         if (selection == null || selection.Length == 0)
         {
-            EditorUtility.DisplayDialog("Remove Colliders", "Aucun GameObject sÈlectionnÈ.", "OK");
+            EditorUtility.DisplayDialog("Remove Colliders", "Aucun GameObject s√©lectionn√©.", "OK");
             return;
         }
 
         bool includeParent = EditorUtility.DisplayDialog(
             "Inclure le parent ?",
-            "Supprimer aussi les colliders directement sur les objets sÈlectionnÈs (en plus de leurs enfants) ?",
+            "Supprimer aussi les colliders directement sur les objets s√©lectionn√©s (en plus de leurs enfants) ?",
             "Oui, inclure le parent", "Non, seulement les enfants");
 
         bool includeInactive = EditorUtility.DisplayDialog(
@@ -30,7 +32,7 @@ public static class RemoveChildCollidersUtility
         int total = 0;
         try
         {
-            EditorUtility.DisplayProgressBar("Suppression des colliders", "Analyse de la sÈlection...", 0f);
+            EditorUtility.DisplayProgressBar("Suppression des colliders", "Analyse de la s√©lection...", 0f);
 
             for (int i = 0; i < selection.Length; i++)
             {
@@ -47,11 +49,11 @@ public static class RemoveChildCollidersUtility
         }
 
         Undo.CollapseUndoOperations(undoGroup);
-        EditorUtility.DisplayDialog("TerminÈ",
-            $"Colliders supprimÈs: {total}\nObjets traitÈs: {selection.Length}", "OK");
+        EditorUtility.DisplayDialog("Termin√©",
+            $"Colliders supprim√©s: {total}\nObjets trait√©s: {selection.Length}", "OK");
     }
 
-    [MenuItem("Tools/Colliders/Supprimer sur la sÈlection (enfants)", true)]
+    [MenuItem("Tools/Colliders/Supprimer sur la s√©lection (enfants)", true)]
     public static bool ValidateRemoveOnSelection()
         => Selection.gameObjects != null && Selection.gameObjects.Length > 0;
 
@@ -64,7 +66,7 @@ public static class RemoveChildCollidersUtility
         var cols3D = root.GetComponentsInChildren<Collider>(includeInactive);
         if (!includeParent) cols3D = cols3D.Where(c => c.gameObject != root).ToArray();
 
-        // 2D (dÈcommente si tu veux aussi les 2D)
+        // 2D (d√©commente si tu veux aussi les 2D)
         var cols2D = root.GetComponentsInChildren<Collider2D>(includeInactive);
         if (!includeParent) cols2D = cols2D.Where(c => c.gameObject != root).ToArray();
 
@@ -73,7 +75,7 @@ public static class RemoveChildCollidersUtility
         foreach (var c in cols2D) { Undo.DestroyObjectImmediate(c); count++; }
 
         if (count > 0)
-            Debug.Log($"[{root.name}] {count} collider(s) supprimÈ(s).");
+            Debug.Log($"[{root.name}] {count} collider(s) supprim√©(s).");
         return count;
     }
 }

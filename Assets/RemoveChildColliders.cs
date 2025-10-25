@@ -127,8 +127,12 @@ public class RemoveChildCollidersEditor : Editor
         // dossier Editor où Unity s'attend à le trouver.
     }
 
-    [MenuItem("Tools/Colliders/Supprimer sur la sélection (enfants)", true)]
-    public static bool ValidateRemoveOnSelection()
-        => Selection.gameObjects != null && Selection.gameObjects.Length > 0;
+    // IMPORTANT : ne pas redéclarer ici de MenuItem pour "Tools/Colliders/Supprimer sur la sélection".
+    // Le menu vit maintenant dans `Assets/Editor/RemoveChildColliderUtility.cs`. Cela évite
+    // le message d'erreur Unity "Cannot add validate method ..." lié aux doublons de validate.
+    // L'implémentation historique est laissée en commentaire à titre de documentation :
+    // [MenuItem("Tools/Colliders/Supprimer sur la sélection (enfants)", true)]
+    // public static bool ValidateRemoveOnSelection()
+    //     => Selection.gameObjects != null && Selection.gameObjects.Length > 0;
 }
 #endif
