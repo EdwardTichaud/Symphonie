@@ -6,12 +6,12 @@ using UnityEditor;
 
 /// <summary>
 /// Composant utilitaire pour supprimer tous les colliders des enfants (et du parent, optionnel).
-/// Fonctionne en mode Édition, compatible multi-sélection via l'inspector personnalisé.
+/// Fonctionne en mode Ã‰dition, compatible multi-sÃ©lection via l'inspector personnalisÃ©.
 /// </summary>
 [ExecuteInEditMode]
 public class RemoveChildColliders : MonoBehaviour
 {
-    [Tooltip("Inclure les colliders sur l'objet parent sélectionné.")]
+    [Tooltip("Inclure les colliders sur l'objet parent sÃ©lectionnÃ©.")]
     public bool includeParent = false;
 
     [Tooltip("Inclure les objets inactifs dans la recherche.")]
@@ -19,13 +19,13 @@ public class RemoveChildColliders : MonoBehaviour
 
 #if UNITY_EDITOR
     /// <summary>
-    /// Supprime les colliders sous 'root'. Utilise Undo en mode éditeur.
+    /// Supprime les colliders sous 'root'. Utilise Undo en mode Ã©diteur.
     /// </summary>
     public static int RemoveCollidersUnder(GameObject root, bool includeParent, bool includeInactive)
     {
         if (root == null) return 0;
 
-        // Récupère tous les colliders (3D). Si tu veux gérer les 2D, duplique le bloc pour Collider2D.
+        // RÃ©cupÃ¨re tous les colliders (3D). Si tu veux gÃ©rer les 2D, duplique le bloc pour Collider2D.
         var all = root.GetComponentsInChildren<Collider>(includeInactive);
         if (!includeParent)
             all = all.Where(c => c.gameObject != root).ToArray();
@@ -33,18 +33,18 @@ public class RemoveChildColliders : MonoBehaviour
         int count = 0;
         foreach (var col in all)
         {
-            Undo.DestroyObjectImmediate(col); // Undo-safe en mode Éditeur
+            Undo.DestroyObjectImmediate(col); // Undo-safe en mode Ã‰diteur
             count++;
         }
         if (count > 0)
-            Debug.Log($"[{root.name}] {count} collider(s) supprimé(s).");
+            Debug.Log($"[{root.name}] {count} collider(s) supprimÃ©(s).");
         return count;
     }
 #endif
 }
 
 #if UNITY_EDITOR
-// ----------- Inspector personnalisé : supporte la multi-sélection -----------
+// ----------- Inspector personnalisÃ© : supporte la multi-sÃ©lection -----------
 [CustomEditor(typeof(RemoveChildColliders)), CanEditMultipleObjects]
 public class RemoveChildCollidersEditor : Editor
 {
@@ -53,59 +53,16 @@ public class RemoveChildCollidersEditor : Editor
         DrawDefaultInspector();
 
         EditorGUILayout.Space();
-        if (GUILayout.Button("Supprimer les colliders sous l'objet (multi-sélection OK)"))
-        {
-            var components = targets.Cast<RemoveChildColliders>().ToArray();
-
-            // Enregistre un Undo global lisible
-            Undo.SetCurrentGroupName("Remove Child Colliders");
-            int undoGroup = Undo.GetCurrentGroup();
-
-            int total = 0;
-            foreach (var comp in components)
-            {
-                if (comp == null || comp.gameObject == null) continue;
-                total += RemoveChildColliders.RemoveCollidersUnder(
-                    comp.gameObject, comp.includeParent, comp.includeInactive);
-            }
-
-            Undo.CollapseUndoOperations(undoGroup);
-            Debug.Log($"Total colliders supprimés: {total} (sélection: {components.Length} objet(s)).");
-        }
-    }
-}
-
-// ----------- Menu Tools (pas besoin d'ajouter le composant) -----------------
-public static class RemoveChildCollidersMenu
-{
-    [MenuItem("Tools/Colliders/Supprimer sur la sélection (enfants)")]
-    public static void RemoveOnSelection()
-    {
-        var selection = Selection.gameObjects;
-        if (selection == null || selection.Length == 0)
-        {
-            EditorUtility.DisplayDialog("Remove Colliders", "Aucun GameObject sélectionné.", "OK");
-            return;
-        }
-
-        bool includeParent = EditorUtility.DisplayDialog(
-            "Inclure le parent ?",
-            "Souhaites-tu aussi supprimer les colliders directement sur les objets sélectionnés (pas seulement leurs enfants) ?",
-            "Oui, inclure le parent", "Non, seulement les enfants");
-
-        bool includeInactive = EditorUtility.DisplayDialog(
-            "Inclure objets inactifs ?",
-            "Faut-il aussi traiter les objets inactifs ?",
-            "Oui", "Non");
-
-        Undo.SetCurrentGroupName("Remove Child Colliders (Selection)");
-        int undoGroup = Undo.GetCurrentGroup();
-
-        int total = 0;
-        try
-        {
-            EditorUtility.DisplayProgressBar("Suppression des colliders", "Analyse de la sélection...", 0f);
-
+// ----------- Menu Tools (historique) -----------------
+// NB : Le menu Tools original vivait dans ce fichier mais entrait en
+// conflit avec la nouvelle implmentation d'outils d'diteur dans
+// `Assets/Editor/RemoveChildColliderUtility.cs`. Pour viter le message
+// "Cannot add validate method ... because a menu item with the same
+// name already has a validate method" signal par Unity, le menu a t
+// entirement dplac dans le script d'diteur. Nous conservons cette note
+// afin que les futurs contributeurs sachent que le menu existe toujours
+// (mme commande, mme fonctionnalit) mais se trouve dsormais dans le
+// dossier Editor o Unity s'attend  le trouver.
             for (int i = 0; i < selection.Length; i++)
             {
                 float p = (i + 1f) / selection.Length;
@@ -121,11 +78,11 @@ public static class RemoveChildCollidersMenu
         }
 
         Undo.CollapseUndoOperations(undoGroup);
-        EditorUtility.DisplayDialog("Terminé",
-            $"Colliders supprimés: {total}\nObjets traités: {selection.Length}", "OK");
+        EditorUtility.DisplayDialog("TerminÃ©",
+            $"Colliders supprimÃ©s: {total}\nObjets traitÃ©s: {selection.Length}", "OK");
     }
 
-    [MenuItem("Tools/Colliders/Supprimer sur la sélection (enfants)", true)]
+    [MenuItem("Tools/Colliders/Supprimer sur la sÃ©lection (enfants)", true)]
     public static bool ValidateRemoveOnSelection()
         => Selection.gameObjects != null && Selection.gameObjects.Length > 0;
 }
