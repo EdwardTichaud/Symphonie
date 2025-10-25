@@ -11,7 +11,12 @@ public class Lucian3D : MonoBehaviour
     public Material electricityPowerMaterial;
 
     [Header("Animation")]
+    [Tooltip("Stocke l'indice de priorité de la dernière animation déclenchée afin de faciliter le debug.")]
     private int currentPriorityIndex = 0;
+    /// <summary>
+    /// Expose l'indice de priorité courant pour les outils de debug sans rendre le champ directement public.
+    /// </summary>
+    public int CurrentPriorityIndex => currentPriorityIndex;
 
     [Header("Movement")]
     public float acceleration = 100f;

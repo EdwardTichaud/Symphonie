@@ -680,7 +680,9 @@ public class ThirdPersonPlayerController : MonoBehaviour
         }
 
         // Active ou désactive tous les GameObjects appartenant aux couches révélées.
-        foreach (Transform t in FindObjectsOfType<Transform>(true)) // true → inclut les objets inactifs
+        // Passage à FindObjectsByType afin de respecter les recommandations Unity, d'éviter le tri inutile
+        // et de récupérer également les objets inactifs nécessaires à l'effet de révélation.
+        foreach (Transform t in FindObjectsByType<Transform>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
             GameObject obj = t.gameObject;
             if (obj.layer == revealInteractableLayer || obj.layer == revealUILayer || obj.layer == revealObjectLayer)

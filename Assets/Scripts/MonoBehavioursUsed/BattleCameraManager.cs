@@ -361,7 +361,9 @@ public class BattleCameraManager : MonoBehaviour
         cameraByName.Clear();
         availableCameras.Clear();
 
-        foreach (var cam in FindObjectsOfType<CinemachineCamera>())
+        // Utilisation de la nouvelle API FindObjectsByType pour éviter l'appel obsolète FindObjectsOfType
+        // ⚠️ Nous n'avons pas besoin d'un tri spécifique ici car la collection est ensuite stockée dans un dictionnaire.
+        foreach (var cam in FindObjectsByType<CinemachineCamera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
         {
             if (cam == null)
                 continue;
