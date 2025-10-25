@@ -13,7 +13,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
     public Transform cameraTransform;
 
     private CharacterController controller;
-    private Animator animator;
+    [SerializeField] private Animator animator;
 
     private Vector3 horizontalVelocity;
     private float verticalVelocity;
@@ -140,20 +140,6 @@ public class ThirdPersonPlayerController : MonoBehaviour
     void Awake()
     {
         controller = GetComponent<CharacterController>();
-
-        // --- Récupération robuste de l'Animator -------------------------------------------------------
-        // Dans certaines scènes Lucian peut être directement porteur de l'Animator, tandis que dans
-        // d'autres le composant est situé plus profondément dans la hiérarchie (préfab réorganisé,
-        // effets temporaires, etc.). Le code précédent se contentait de prendre le tout premier enfant,
-        // ce qui échouait silencieusement si la structure différait (Animator introuvable ⇒ aucune
-        // animation jouée). On cherche donc dans l'ordre : sur l'objet lui-même, puis dans tous les
-        // descendants actifs ou non. Cette approche garantit que les animations restent fonctionnelles
-        // même après un remaniement du prefab.
-        animator = GetComponent<Animator>();
-        if (animator == null)
-        {
-            animator = GetComponentInChildren<Animator>(includeInactive: true);
-        }
 
         if (animator != null)
         {
