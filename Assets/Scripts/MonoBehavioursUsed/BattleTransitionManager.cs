@@ -331,16 +331,16 @@ public class BattleTransitionManager : MonoBehaviour
         // Masque l'interface jusqu'au premier tour du joueur
         HideBattleUI();
 
-        ////// Désactive également le GameObject principal du monde pour empêcher toute interaction
-        //if (worldScene != null)
-        //    worldScene.SetActive(false);
+        //// Désactive également le GameObject principal du monde pour empêcher toute interaction
+        if (worldScene != null)
+            worldScene.SetActive(false);
 
-        ////Bloquer la position du joueur pour éviter qu'il ne chute quand worldScene est temporairement désactivée
-        //CharacterController cC = GameObject.FindGameObjectWithTag("Player").GetComponent<CharacterController>();
-        //if (cC != null)
-        //{
-        //    cC.enabled = false;
-        //}
+        //Bloquer la position du joueur pour éviter qu'il ne chute quand worldScene est temporairement désactivée
+        CharacterController cC = GameObject.FindGameObjectWithTag("Player").GetComponent<CharacterController>();
+        if (cC != null)
+        {
+            cC.gameObject.SetActive(false);
+        }
 
         // Active uniquement les caméras nécessaires au lancement du combat
         CameraActivationManager.Instance?.ActivateBattleAndVersusCameras();

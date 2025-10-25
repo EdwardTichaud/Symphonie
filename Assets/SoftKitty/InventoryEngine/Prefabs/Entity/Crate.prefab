@@ -1,0 +1,1792 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6112975239478026269
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6112975239478026271}
+  - component: {fileID: 6112975239478026268}
+  m_Layer: 0
+  m_Name: Crate
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6112975239478026271
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6112975239478026269}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6112975239478026268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6112975239478026269}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5a76faeebc84974c87f3e5b32e28680, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Name: Crate
+  Type: 0
+  Stacks:
+  - Item:
+      uid: 44
+      name: Knight's Armor
+      description: Knight's plate armor to protect the torso.
+      type: 1
+      icon: {fileID: 2800000, guid: cc108c3e4d9e69d479a8ff8f41d25649, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 1
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 1200
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 6.5
+      dropRates: 4
+      favorite: 0
+      attributes:
+      - key: def
+        name: Defence
+        value: 60
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 1
+        minValue: 60
+        maxValue: 60
+        fold: 1
+      - key: hp
+        name: Health
+        value: 20
+        stringValue: 0
+        upgradeIncrement: 20
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 20
+        maxValue: 40
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials: []
+      actions:
+      - equip
+      tags:
+      - Torso
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Green
+      - Blue
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 55
+      name: Knight's Helmet
+      description: Plate armor helmet with best protection.
+      type: 1
+      icon: {fileID: 2800000, guid: 7a29ab3b587e1b143ad0b653b5faa4c8, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 2
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 900
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 2.5
+      dropRates: 3
+      favorite: 0
+      attributes:
+      - key: def
+        name: Defence
+        value: 30
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 1
+        minValue: 30
+        maxValue: 30
+        fold: 1
+      - key: resist
+        name: Resistance
+        value: 10
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 10
+        maxValue: 20
+        fold: 1
+      - key: hp
+        name: Health
+        value: 20
+        stringValue: 0
+        upgradeIncrement: 20
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 20
+        maxValue: 30
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials:
+      - {x: 8, y: 4}
+      - {x: 12, y: 1}
+      actions:
+      - equip
+      tags:
+      - Helmet
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Green
+      - Blue
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 34
+      name: Knight's Sword
+      description: Fine heavy sword. {stun}% chance to stun enemy on hit.
+      type: 1
+      icon: {fileID: 2800000, guid: 2ed3c772715ec614d83edd38efbf51c9, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 2
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 400
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 1.5
+      dropRates: 2
+      favorite: 0
+      attributes:
+      - key: atk
+        name: Attack
+        value: 20
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 20
+        maxValue: 30
+        fold: 1
+      - key: crit
+        name: Critical Chance
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 3
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: '%'
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 5
+        maxValue: 20
+        fold: 1
+      - key: stun
+        name: Stun Chance
+        value: 3
+        stringValue: 0
+        upgradeIncrement: 1
+        coreStats: 0
+        visible: 0
+        visibleInStatsPanel: 0
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 0
+        randomChange: 100
+        locked: 0
+        isFixed: 1
+        minValue: 3
+        maxValue: 3
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials: []
+      actions:
+      - attck_sword
+      - equip
+      tags:
+      - MainHand
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Red
+      - Yellow
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 52
+      name: Knight's Gauntlet
+      description: Plate armor gauntlet.
+      type: 1
+      icon: {fileID: 2800000, guid: 47c8004104562e74f826e8774f6544b4, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 2
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 700
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 1
+      dropRates: 2
+      favorite: 0
+      attributes:
+      - key: def
+        name: Defence
+        value: 30
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 1
+        minValue: 30
+        maxValue: 30
+        fold: 1
+      - key: atk
+        name: Attack
+        value: 8
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 8
+        maxValue: 12
+        fold: 1
+      - key: crit
+        name: Critical Chance
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 3
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: '%'
+        compareInfo: 1
+        randomChange: 50
+        locked: 0
+        isFixed: 0
+        minValue: 5
+        maxValue: 15
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials:
+      - {x: 6, y: 2}
+      - {x: 8, y: 3}
+      - {x: 13, y: 2}
+      actions:
+      - equip
+      tags:
+      - Gauntlet
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Red
+      - Yellow
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 47
+      name: Knight's Boots
+      description: Knight's plate armor boots.
+      type: 1
+      icon: {fileID: 2800000, guid: f1b07cc1710676646a02476d9dff5ff5, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 2
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 800
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 2
+      dropRates: 3
+      favorite: 0
+      attributes:
+      - key: def
+        name: Defence
+        value: 15
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 1
+        minValue: 15
+        maxValue: 15
+        fold: 1
+      - key: agi
+        name: Agility
+        value: 3
+        stringValue: 0
+        upgradeIncrement: 1
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 3
+        maxValue: 10
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials: []
+      actions:
+      - equip
+      tags:
+      - Boots
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Green
+      - Blue
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 9
+      name: Gold Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 467c27f6466763942a6fdd0fdbd2165b, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 3
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 40
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 10
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 50
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 9
+      name: Gold Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 467c27f6466763942a6fdd0fdbd2165b, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 3
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 40
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 10
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 60
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 9
+      name: Gold Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 467c27f6466763942a6fdd0fdbd2165b, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 3
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 40
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 10
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 20
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 8
+      name: Silver Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 7cc44fcbd7bfc65468eaea4c18b77f72, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 2
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 30
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 15
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 25
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 7
+      name: Copper Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 13b166555b5984b46832144f7d88e9f8, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 1
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 20
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 20
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 42
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 33
+      name: Great Axe
+      description: Great sword can destroy anything. {stun}% chance to stun enemy
+        on hit.
+      type: 1
+      icon: {fileID: 2800000, guid: 13730909590cd7a4d9043c5006a3b166, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 2
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 1200
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 3
+      dropRates: 3
+      favorite: 0
+      attributes:
+      - key: atk
+        name: Attack
+        value: 30
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 30
+        maxValue: 50
+        fold: 1
+      - key: crit
+        name: Critical Chance
+        value: 10
+        stringValue: 0
+        upgradeIncrement: 3
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: '%'
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 10
+        maxValue: 20
+        fold: 1
+      - key: steal
+        name: Health Steal
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 1
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 39
+        locked: 0
+        isFixed: 0
+        minValue: 5
+        maxValue: 15
+        fold: 1
+      - key: stun
+        name: Stun Chance
+        value: 10
+        stringValue: 0
+        upgradeIncrement: 1
+        coreStats: 0
+        visible: 0
+        visibleInStatsPanel: 0
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 0
+        randomChange: 100
+        locked: 0
+        isFixed: 1
+        minValue: 10
+        maxValue: 10
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials:
+      - {x: 6, y: 2}
+      - {x: 8, y: 5}
+      - {x: 15, y: 3}
+      actions:
+      - attck_axe
+      - equip
+      tags:
+      - MainHand
+      - TwoHanded
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Red
+      - Yellow
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 36
+      name: Leather Ring
+      description: Simple ring made with leather.
+      type: 1
+      icon: {fileID: 2800000, guid: c0825c24e7e046d4ebcae22d1a18c117, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 500
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 0.3
+      dropRates: 10
+      favorite: 0
+      attributes:
+      - key: resist
+        name: Resistance
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 5
+        maxValue: 10
+        fold: 1
+      - key: luck
+        name: Luck
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 1
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 1
+        minValue: 5
+        maxValue: 5
+        fold: 1
+      - key: crit
+        name: Critical Chance
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 3
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: '%'
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 1
+        minValue: 5
+        maxValue: 5
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials: []
+      actions:
+      - equip
+      tags:
+      - Ring
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Red
+      - Yellow
+      - Green
+      - Blue
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 37
+      name: Copper Ring
+      description: Nice copper ring with magical power.
+      type: 1
+      icon: {fileID: 2800000, guid: 6f912f0fe9e80f94fbd8a6fcfa21025a, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 1
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 200
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 0.2
+      dropRates: 8
+      favorite: 0
+      attributes:
+      - key: resist
+        name: Resistance
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 5
+        maxValue: 15
+        fold: 1
+      - key: agi
+        name: Agility
+        value: 2
+        stringValue: 0
+        upgradeIncrement: 1
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 1
+        minValue: 2
+        maxValue: 2
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials: []
+      actions:
+      - equip
+      tags:
+      - Ring
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Red
+      - Yellow
+      - Green
+      - Blue
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 38
+      name: Ancient Ring
+      description: Legendary magic ring.
+      type: 1
+      icon: {fileID: 2800000, guid: 9db53c3ed6c613243be0f3d396ed11e2, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 3
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 400
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 0.2
+      dropRates: 5
+      favorite: 0
+      attributes:
+      - key: atk
+        name: Attack
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 5
+        maxValue: 15
+        fold: 1
+      - key: crit
+        name: Critical Chance
+        value: 15
+        stringValue: 0
+        upgradeIncrement: 3
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: '%'
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 1
+        minValue: 15
+        maxValue: 15
+        fold: 1
+      - key: steal
+        name: Health Steal
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 1
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 40
+        locked: 0
+        isFixed: 0
+        minValue: 5
+        maxValue: 10
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials: []
+      actions:
+      - equip
+      tags:
+      - Ring
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Red
+      - Yellow
+      - Green
+      - Blue
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 39
+      name: Necklace of Fire
+      description: Necklace with fire power.
+      type: 1
+      icon: {fileID: 2800000, guid: 744b27e3ef39fb546893e328ce6744b6, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 1
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 200
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 0.2
+      dropRates: 5
+      favorite: 0
+      attributes:
+      - key: resist
+        name: Resistance
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 5
+        maxValue: 15
+        fold: 1
+      - key: def
+        name: Defence
+        value: 3
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 3
+        maxValue: 5
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials: []
+      actions:
+      - equip
+      tags:
+      - Necklace
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Red
+      - Yellow
+      - Green
+      - Blue
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 40
+      name: Blue Gem Necklace
+      description: Beauftiful necklace with blue gem.
+      type: 1
+      icon: {fileID: 2800000, guid: e1e1fe62a6c0cea4e8f8334acf0b2edf, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 2
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 400
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 0.2
+      dropRates: 3
+      favorite: 0
+      attributes:
+      - key: crit
+        name: Critical Chance
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 3
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: '%'
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 5
+        maxValue: 15
+        fold: 1
+      - key: def
+        name: Defence
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 5
+        maxValue: 8
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials: []
+      actions:
+      - equip
+      tags:
+      - Necklace
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Red
+      - Yellow
+      - Green
+      - Blue
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 41
+      name: Red Gem Necklace
+      description: Beauftiful necklace with red gem.
+      type: 1
+      icon: {fileID: 2800000, guid: 242472df2a0312149be2f7fdae1e4ad2, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 3
+      tradeable: 1
+      deletable: 1
+      useable: 1
+      consumable: 0
+      visible: 1
+      price: 400
+      currency: 0
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 0.2
+      dropRates: 2
+      favorite: 0
+      attributes:
+      - key: atk
+        name: Attack
+        value: 15
+        stringValue: 0
+        upgradeIncrement: 2
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 1
+        minValue: 15
+        maxValue: 15
+        fold: 1
+      - key: crit
+        name: Critical Chance
+        value: 10
+        stringValue: 0
+        upgradeIncrement: 3
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: '%'
+        compareInfo: 1
+        randomChange: 100
+        locked: 0
+        isFixed: 0
+        minValue: 10
+        maxValue: 20
+        fold: 1
+      - key: steal
+        name: Health Steal
+        value: 5
+        stringValue: 0
+        upgradeIncrement: 1
+        coreStats: 0
+        visible: 1
+        visibleInStatsPanel: 1
+        displayFormat: 0
+        suffixes: 
+        compareInfo: 1
+        randomChange: 41
+        locked: 0
+        isFixed: 0
+        minValue: 5
+        maxValue: 15
+        fold: 1
+      maximumRandomAttributes: 1
+      enchantments: 
+      craftMaterials: []
+      actions:
+      - equip
+      tags:
+      - Necklace
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag:
+      - Red
+      - Yellow
+      - Green
+      - Blue
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 9
+      name: Gold Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 467c27f6466763942a6fdd0fdbd2165b, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 3
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 40
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 10
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 61
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 9
+      name: Gold Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 467c27f6466763942a6fdd0fdbd2165b, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 3
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 40
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 10
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 40
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 9
+      name: Gold Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 467c27f6466763942a6fdd0fdbd2165b, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 3
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 40
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 10
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 47
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 9
+      name: Gold Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 467c27f6466763942a6fdd0fdbd2165b, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 3
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 40
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 10
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 70
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 9
+      name: Gold Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 467c27f6466763942a6fdd0fdbd2165b, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 3
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 40
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 10
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 80
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 8
+      name: Silver Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 7cc44fcbd7bfc65468eaea4c18b77f72, type: 3}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 2
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 30
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 15
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 45
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      iconLoadMethod: 0
+      iconPath: 
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  HiddenStacks: []
+  Currency:
+    Currency: 000000001e00000015000000
+    KeepPostive: 1
+  InventorySize: 30
+  MaxiumCarryWeight: 1000
+  SellPriceMultiplier: 1
+  BuyPriceMultiplier: 1
+  SpecificPriceMultiplier: []
+  TradeAllItems: 1
+  TradeList: 
+  TradeCategoryList: 
+  BaseStats: []
+  AutoSave: 0
+  AutoLoad: 1
+  SavePath: 
+  BlockAutoSave: 0

@@ -1,0 +1,1182 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &636333745710591909
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 636333745710591908}
+  - component: {fileID: 636333745710591911}
+  m_Layer: 0
+  m_Name: NpcWorker
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &636333745710591908
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636333745710591909}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &636333745710591911
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636333745710591909}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5a76faeebc84974c87f3e5b32e28680, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Name: Worker
+  Type: 4
+  Stacks:
+  - Item:
+      uid: 6
+      name: Iron Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 36bbb9020d8205d42a1403fb005a3fa5, type: 3}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 10
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 30
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 70
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 7
+      name: Copper Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 13b166555b5984b46832144f7d88e9f8, type: 3}
+      quality: 1
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 20
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 20
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 76
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 8
+      name: Silver Ore
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: 7cc44fcbd7bfc65468eaea4c18b77f72, type: 3}
+      quality: 2
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 30
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.5
+      dropRates: 15
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 76
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 13
+      name: Bear's Skin
+      description: Crafting material.
+      type: 2
+      icon: {fileID: 2800000, guid: a5f926258cc9dde4abeb7ee2df3bbbf2, type: 3}
+      quality: 1
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 20
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.2
+      dropRates: 15
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 59
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 22
+      name: Monster Head
+      description: Quest item.
+      type: 2
+      icon: {fileID: 2800000, guid: 669286f610c1a2f4ab1c902ca7802777, type: 3}
+      quality: 1
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 80
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0
+      dropRates: 40
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 93
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 23
+      name: Monster Meat
+      description: Quest item.
+      type: 2
+      icon: {fileID: 2800000, guid: 5ebd164e2f48bbf4a83e6314b2bbbe6d, type: 3}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 50
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0
+      dropRates: 50
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 96
+    Empty: 0
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  - Item:
+      uid: 0
+      name: 
+      description: 
+      type: 0
+      icon: {fileID: 0}
+      quality: 0
+      tradeable: 1
+      deletable: 1
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 0
+      currency: 0
+      maxiumStack: 99
+      upgradeLevel: 0
+      weight: 0.1
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials: []
+      actions: []
+      tags: []
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 0
+    Empty: 1
+    Fold: 1
+  HiddenStacks:
+  - Item:
+      uid: 86
+      name: Health Potion(L) Recipe
+      description: Example Skill.
+      type: 2
+      icon: {fileID: 2800000, guid: 031fe12f217b2d943a7dbd966de8b80c, type: 3}
+      quality: 1
+      tradeable: 0
+      deletable: 0
+      useable: 0
+      consumable: 0
+      visible: 1
+      price: 500
+      currency: 1
+      maxiumStack: 1
+      upgradeLevel: 0
+      weight: 0
+      dropRates: 0
+      favorite: 0
+      attributes: []
+      maximumRandomAttributes: 5
+      enchantments: 
+      craftMaterials:
+      - {x: 1, y: 1}
+      actions: []
+      tags:
+      - Blueprint
+      customData: []
+      lastUseTimeStamp: 0
+      restrictionKey: 
+      restrictionValue: 0
+      socketingSlots: 0
+      socketedItems: 
+      socketingTag: []
+      fold: 1
+    Number: 1
+    Empty: 0
+    Fold: 1
+  Currency:
+    Currency: 020000004c00000029000000
+    KeepPostive: 1
+  InventorySize: 30
+  MaxiumCarryWeight: 100
+  SellPriceMultiplier: 1
+  BuyPriceMultiplier: 1
+  TradeAllItems: 1
+  TradeList: 
+  TradeCategoryList: 
+  BaseStats: []
+  AutoSave: 0
+  SavePath: 
+  BlockAutoSave: 0

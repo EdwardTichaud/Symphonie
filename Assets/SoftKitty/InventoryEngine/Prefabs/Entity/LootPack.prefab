@@ -1,0 +1,58 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &4153987374864549144
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4153987374864549150}
+  - component: {fileID: 4153987374864549151}
+  m_Layer: 0
+  m_Name: LootPack
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4153987374864549150
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4153987374864549144}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 980.4892, y: 784.85156, z: 0.12789288}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4153987374864549151
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4153987374864549144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 044da3d52033c6b4580c1f6578a35ef4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  UID: Loot
+  ItemPool: 16000000220000000000000006000000170000000300000026000000310000001a000000340000005700000058000000590000005a0000002c0000002f00000037000000340000003a000000
+  CurrencyMin: 000000000000000000000000
+  CurrencyMax: 000000000f00000000000000
+  MaxiumItemCount: 7
+  MaxiumCountEachItem: 20
+  DropChanceMultiplier: 1
+  RandomLevel: 0
+  DestoryWhenPlayerCloseLootWindow: 1
+  RandomEnchantment: 1
+  EnchantmentPool: 000000000100000002000000030000000400000005000000060000000700000008000000090000000a0000000b000000
+  MaxiumEnhancingLevel: 10
