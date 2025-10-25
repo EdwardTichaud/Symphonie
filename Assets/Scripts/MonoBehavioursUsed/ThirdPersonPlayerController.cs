@@ -477,8 +477,11 @@ public class ThirdPersonPlayerController : MonoBehaviour
         if (animator == null)
             return;
 
-        // Vitesse horizontale réelle calculée à partir du CharacterController (ignorant l'axe vertical).
-        float rawHorizontalSpeed = new Vector3(controller.velocity.x, 0f, controller.velocity.z).magnitude;
+        // Vitesse horizontale réelle calculée à partir de la dernière intention de déplacement.
+        // IMPORTANT : CharacterController.velocity ne peut pas être utilisé ici car Move() est appelé
+        // deux fois par frame (horizontal puis vertical). Sa valeur finale ne conserve donc plus la
+        // composante horizontale, ce qui donnait une vitesse mesurée à 0 et empêchait les transitions.
+        float rawHorizontalSpeed = horizontalVelocity.magnitude;
 
         // Convertit cette vitesse en valeur normalisée (0 = immobile, 1 = runSpeed ou plus).
         float targetNormalizedSpeed = 0f;
