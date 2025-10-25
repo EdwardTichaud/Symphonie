@@ -52,7 +52,11 @@ namespace Reallusion.Import
 
             if (!camera)
             {
-                Camera[] cams = GameObject.FindObjectsOfType<Camera>();
+                // Utilisation de la nouvelle API FindObjectsByType afin d'éviter l'avertissement
+                // de dépréciation généré par FindObjectsOfType. Nous ne demandons aucun tri
+                // supplémentaire pour des raisons de performances, car le premier rendu actif
+                // trouvé est suffisant pour récupérer la caméra d'aperçu.
+                Camera[] cams = Object.FindObjectsByType<Camera>(FindObjectsSortMode.None);
                 foreach (Camera cam in cams)
                 {
                     if (cam.isActiveAndEnabled)
