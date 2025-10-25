@@ -71,6 +71,17 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
     private float currentSpeed;
 
+    [Header("Animation — cohérence vitesse/état")]
+    [Tooltip("Vitesse normalisée (0 à 1) en dessous de laquelle Lucian est considéré immobile pour l'Animator.")]
+    [Range(0f, 0.3f)] public float idleNormalizedSpeedThreshold = 0.1f;
+    [Tooltip("Vitesse normalisée (0 à 1) à partir de laquelle l'animation de course est prioritaire.")]
+    [Range(0.3f, 1f)] public float runNormalizedSpeedThreshold = 0.7f;
+    [Tooltip("Facteur de lissage (exponentiel) appliqué à la vitesse envoyée à l'Animator pour éviter les à-coups.")]
+    public float animatorSpeedLerpSharpness = 12f;
+
+    // Mémorise la vitesse normalisée envoyée au BlendTree Idle/Walk/Run.
+    private float animatorNormalizedSpeed;
+
     [Header("Gestion du sprint")]
     public float runReleaseDelay = 1f;
     public bool canRun = true;
@@ -458,15 +469,45 @@ public class ThirdPersonPlayerController : MonoBehaviour
     /// </summary>
     private void PushAnimatorLocomotionParameters()
     {
-        if (animator == null || landingAnimationLocked) // pendant le lock, on laisse l’anim d’atterrissage régner
+        if (animator == null)
             return;
 
-        int loco =
-            isRunning ? 2 :
-            isWalking ? 1 : 0;
+        // Vitesse horizontale réelle calculée à partir du CharacterController (ignorant l'axe vertical).
+        float rawHorizontalSpeed = new Vector3(controller.velocity.x, 0f, controller.velocity.z).magnitude;
+
+        // Convertit cette vitesse en valeur normalisée (0 = immobile, 1 = runSpeed ou plus).
+        float targetNormalizedSpeed = 0f;
+        if (runSpeed > 0.0001f)
+            targetNormalizedSpeed = Mathf.Clamp01(rawHorizontalSpeed / runSpeed);
+
+        // Lisser la valeur pour éviter les oscillations rapides qui provoqueraient des transitions d'états parasites.
+        if (animatorSpeedLerpSharpness > 0f)
+        {
+            float lerpFactor = 1f - Mathf.Exp(-animatorSpeedLerpSharpness * Time.deltaTime);
+            animatorNormalizedSpeed = Mathf.Lerp(animatorNormalizedSpeed, targetNormalizedSpeed, lerpFactor);
+        }
+        else
+        {
+            animatorNormalizedSpeed = targetNormalizedSpeed;
+        }
+
+        if (landingAnimationLocked)
+            return; // pendant le lock, on laisse l’anim d’atterrissage régner malgré la vitesse mesurée.
+
+        // Assurer des seuils cohérents (run > idle) puis déterminer l'état de locomotion le plus adapté.
+        float idleThreshold = Mathf.Clamp01(idleNormalizedSpeedThreshold);
+        float runThreshold = Mathf.Clamp01(Mathf.Max(runNormalizedSpeedThreshold, idleThreshold + 0.05f));
+
+        int loco;
+        if (animatorNormalizedSpeed <= idleThreshold)
+            loco = (int)MovementAnimation.Idle;
+        else if (animatorNormalizedSpeed < runThreshold)
+            loco = (int)MovementAnimation.Walk;
+        else
+            loco = (int)MovementAnimation.Run;
 
         animator.SetInteger(pLocomotionState, loco);
-        animator.SetFloat(pSpeed, currentSpeed);
+        animator.SetFloat(pSpeed, animatorNormalizedSpeed);
         animator.SetBool(pIsGrounded, groundedStable);
         animator.SetBool(pIsSliding, isSliding);
         animator.SetBool(pIsFalling, isFalling);
