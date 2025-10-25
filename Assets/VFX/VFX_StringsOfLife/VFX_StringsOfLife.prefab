@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 8337027606867783464}
   - component: {fileID: 791011087322201061}
   - component: {fileID: 8167218803190081925}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: VFX_StringsOfLife
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -26,7 +26,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6941881401478175037}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.17518201, y: 0.8182438, z: 0.3256683, w: 0.44014594}
+  m_LocalRotation: {x: -0.1751821, y: 0.81824374, z: 0.32566833, w: 0.44014618}
   m_LocalPosition: {x: -4.73, y: 7.44, z: 3.11}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -72,7 +72,7 @@ VisualEffect:
       m_Array: []
     m_NamedObject:
       m_Array:
-      - m_Value: {fileID: 11700000, guid: 7b3827210d9cbb34e820fa5772a12096, type: 2}
+      - m_Value: {fileID: 11700000, guid: d0c2db30083cc174e81c54bd02b74e44, type: 2}
         m_Name: SDF
         m_Overridden: 1
     m_Bool:
@@ -98,6 +98,8 @@ VFXRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_StaticBatchInfo:
@@ -117,6 +119,7 @@ VFXRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
