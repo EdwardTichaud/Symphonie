@@ -32,7 +32,9 @@ public static class OptimizationTools
     [MenuItem("Symphonie/Optimisation/Marquer les objets statiques de la sc\u00e8ne")]
     private static void MarkSceneObjectsStatic()
     {
-        GameObject[] allObjects = Object.FindObjectsOfType<GameObject>();
+        // Utilise la nouvelle API recommandée par Unity pour récupérer les objets de la scène
+        // sans coût supplémentaire de tri lorsque ce n'est pas nécessaire.
+        GameObject[] allObjects = Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None);
         int count = 0;
         foreach (GameObject go in allObjects)
         {
