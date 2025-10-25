@@ -42,7 +42,10 @@ public class MainScene : MonoBehaviour {
     private Vector3 sunRotation = new Vector3(25, 300, 0);
     private float moveScale = 2.5f;
     private List<Parameter> parameters = new List<Parameter>();
-    private int timeToAutoDetail=100;
+    [SerializeField, Tooltip("Nombre de frames à espacer entre deux ajustements automatiques du détail.")]
+    private int timeToAutoDetail = 100;
+    // Compteur décrémenté à chaque frame lorsque l'ajustement automatique est actif pour étaler les calculs.
+    private int autoDetailFrameBudget;
     private bool autoDetail = false;
     private bool displayMenu = true;
 
@@ -64,6 +67,8 @@ public class MainScene : MonoBehaviour {
 
 
 	void Start () {
+        autoDetailFrameBudget = Mathf.Max(1, timeToAutoDetail);
+
         parameters.Add(new Parameter("Scale", "_CloudScale", 0.3f, 0, 1));
         parameters.Add(new Parameter("Distance", "_CloudDistance", 0.03f, 0, 0.25f));
         parameters.Add(new Parameter("Detail", "_MaxDetail", 0.33f, 0, 1f));
@@ -117,14 +122,28 @@ public class MainScene : MonoBehaviour {
 
     void SetAutoDetail() {
         if (autoDetail)   {
+            // On espace les recalculs pour éviter de recalculer à chaque frame (coût inutile lors de faibles variations).
+            if (timeToAutoDetail > 1)
+            {
+                if (--autoDetailFrameBudget > 0)
+                    return;
+
+                autoDetailFrameBudget = Mathf.Max(1, timeToAutoDetail);
+            }
+
             float fps = Mathf.Clamp(1.0f/Time.smoothDeltaTime,1,60);
 //            Debug.Log(fps);
             float dir = (fps - 25); // Target FPS
             Parameter detail = getParameter("Detail");
-            if (detail==null) 
+            if (detail==null)
                 return;
-            
+
             detail.value +=dir*0.0005f;
+        }
+        else
+        {
+            // Lorsque le mode auto est désactivé, on réinitialise le compteur pour que la reprise soit instantanée.
+            autoDetailFrameBudget = Mathf.Max(1, timeToAutoDetail);
         }
     }
 

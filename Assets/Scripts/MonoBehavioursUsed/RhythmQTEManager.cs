@@ -13,6 +13,10 @@ public class RhythmQTEManager : MonoBehaviour
     public MusicalMoveSO currentMove;
     private float startTime;
     private int currentBeatIndex = 0;
+    /// <summary>
+    /// Expose l'index du beat actuellement traité (pratique pour les outils de debug).
+    /// </summary>
+    public int CurrentBeatIndex => currentBeatIndex;
     private bool isActive = false;
     private List<bool> successResults;
 
@@ -46,7 +50,6 @@ public class RhythmQTEManager : MonoBehaviour
     public DefenseResult GetDefenseResult() => defenseResult;
 
     // MoveTo
-    float elapsed = 0f;
 
     // Durée par défaut utilisée si aucun délai n'est défini dans les données
     // Conserve l'ancien comportement en cas d'oubli de paramétrage
@@ -89,6 +92,10 @@ public class RhythmQTEManager : MonoBehaviour
     private CharacterUnit currentTarget;
     private int pendingNotes = 0;
     private bool qteActive = false;
+    /// <summary>
+    /// Permet aux autres systèmes de connaître l'état d'activité d'un QTE en temps réel.
+    /// </summary>
+    public bool IsQteActive => qteActive;
 
     // Si activé, le temps de jeu est figé durant les QTE pour faciliter l'exécution
     [SerializeField] private bool easyMode = false;
