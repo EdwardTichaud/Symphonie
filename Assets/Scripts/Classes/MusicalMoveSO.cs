@@ -171,6 +171,8 @@ public class MusicalMoveSO : ScriptableObject
     [Header("Awake")]
     [Tooltip("Si vrai, ce move fait entrer le lanceur en mode Awake")] public bool enterAwake = false;
 
+    [Header("Animation")]
+    public AnimationClip preparingAnimation;
 
     [Header("Timeline")]
     [Tooltip("Timeline jouée lors de la préparation du move")]
