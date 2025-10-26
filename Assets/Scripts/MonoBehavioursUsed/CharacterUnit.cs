@@ -1556,6 +1556,34 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         }
     }
 
+    /// <summary>
+    /// Lance l'animation de préparation associée au <see cref="MusicalMoveSO"/> sélectionné.
+    /// Cette étape se déroule avant la validation de la cible afin que le joueur
+    /// perçoive immédiatement la posture préparatoire du personnage actif, comme
+    /// décrit dans l'Histoire de Symphonie.
+    /// </summary>
+    /// <param name="clip">
+    /// AnimationClip fourni par le move en cours de sélection. Peut être nul
+    /// si le move ne définit pas d'animation personnalisée.
+    /// </param>
+    public void PlayPreparingAnimation(AnimationClip clip)
+    {
+        // Les moves d'entrée de gamme n'ont pas toujours de pose dédiée :
+        // on ignore simplement l'appel lorsque le clip est absent pour
+        // éviter toute erreur et conserver un feedback cohérent.
+        if (clip == null)
+            return;
+
+        // On s'assure de disposer de l'Animator enfant adéquat avant de
+        // lancer la transition, notamment lorsque l'unité vient juste
+        // d'apparaître sur le champ de bataille.
+        GetCasterAnimator();
+
+        // Réutilise la méthode centralisée afin de bénéficier de tous les
+        // garde-fous existants (vérification d'état mort, CrossFade, etc.).
+        PlayAnimationClip(clip);
+    }
+
     public void PlayHurtAnimation(Transform attacker = null)
     {
         // Si l'unité est morte ou qu'aucun Animator n'est disponible, on ne fait rien

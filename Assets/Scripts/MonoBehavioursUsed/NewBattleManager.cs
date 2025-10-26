@@ -3168,6 +3168,15 @@ public class NewBattleManager : MonoBehaviour
             ActionUIDisplayManager.Instance.DisplayInstruction_SelectGroup();
         else
             ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
+
+        // Dès que le joueur bascule en mode ciblage, on synchronise l'Animator
+        // du lanceur avec l'animation de préparation définie sur la compétence.
+        // Ce feedback immédiat renforce la lisibilité pour les débutants tout en
+        // soulignant l'intention tactique du move pour les joueurs chevronnés.
+        if (currentCharacterUnit != null)
+        {
+            currentCharacterUnit.PlayPreparingAnimation(move?.preparingAnimation);
+        }
     }
 
     public void HandleTargetSelection(ItemData item)
