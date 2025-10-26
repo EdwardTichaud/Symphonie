@@ -2,8 +2,10 @@
 using UnityEngine;
 
 /// <summary>
-/// Préfracture à la volée le Mesh de ce GameObject en "targetPieces" morceaux (groupes de triangles),
-/// puis applique une explosion (forces + torque). 100% runtime (Play Mode).
+/// RuntimeFractureExploder
+///  - Préfracture à la volée le Mesh de ce GameObject en 'targetPieces' morceaux (groupes de triangles)
+///  - Applique une explosion vers le haut + dispersion + spin aléatoire
+///  - 100% runtime, sans code éditeur.
 /// </summary>
 [DisallowMultipleComponent]
 public class RuntimeFractureExploder : MonoBehaviour
@@ -14,41 +16,61 @@ public class RuntimeFractureExploder : MonoBehaviour
     public MeshRenderer sourceMeshRenderer;
 
     [Header("Fracture")]
-    [Tooltip("Nombre approximatif de morceaux. Sera borné au nombre de triangles du mesh.")]
+    [Tooltip("Nombre approximatif de morceaux (borné par le nb de triangles).")]
     [Min(1)] public int targetPieces = 200;
-    [Tooltip("Ajoute une petite épaisseur artificielle (extrude le morceau le long de sa normale moyenne).")]
-    [Min(0)] public float fakeThickness = 0f;
-    [Tooltip("Mélanger les triangles avant partition (meilleure répartition visuelle).")]
+    [Tooltip("Mélange l'ordre des triangles pour répartir visuellement les morceaux.")]
     public bool shuffleTriangles = true;
-    [Tooltip("Parent des morceaux (par défaut: ce GameObject).")]
+    [Tooltip("Épaisseur factice des morceaux (0 = faces sans volume).")]
+    [Min(0)] public float fakeThickness = 0f;
+    [Tooltip("Parent des morceaux (par défaut : ce transform).")]
     public Transform piecesParent;
 
-    [Header("Physique & Explosion")]
+    [Header("Physique des morceaux")]
+    [Tooltip("Ajoute un Rigidbody sur chaque morceau.")]
     public bool addRigidbody = true;
-    public float pieceMass = 0.2f;
-    public bool addBoxCollider = true;       // léger & suffisant la plupart du temps
-    public bool addMeshColliderConvex = false; // ⚠️ coûteux si beaucoup de pièces
-    [Tooltip("Détruit les morceaux après X sec (<=0 : garde).")]
+    [Min(0.001f)] public float pieceMass = 0.2f;
+    [Tooltip("Ajoute un BoxCollider par morceau (léger).")]
+    public bool addBoxCollider = true;
+    [Tooltip("Ajoute un MeshCollider convex (⚠️ coûteux si beaucoup de morceaux).")]
+    public bool addMeshColliderConvex = false;
+
+    [Header("Explosion")]
+    [Tooltip("Impulsion verticale de base.")]
+    public float upForce = 12f;
+    [Tooltip("Dispersion aléatoire (impulsion).")]
+    public float randomSpread = 4f;
+    [Tooltip("Modificateur vertical d'AddExplosionForce.")]
+    public float upwardsModifier = 0.8f;
+
+    [Header("Spin")]
+    [Tooltip("Impulsion de couple initiale (coup de clé).")]
+    public float spinImpulse = 6f;
+    [Tooltip("Vitesse angulaire continue cible (rad/s). 10 ≈ 95 RPM.")]
+    public Vector2 spinAngularSpeedRange = new Vector2(10f, 18f);
+    [Tooltip("Vitesse angulaire max autorisée par Unity (augmente pour des spins rapides).")]
+    public float maxAngularVelocity = 50f;
+
+    [Header("Temporalité")]
+    [Tooltip("Délai (s) avant l'explosion après fracture.")]
+    public float delayBeforeExplode = 0.03f;
+    [Tooltip("Applique une 2e impulsion après la première pour un look plus organique.")]
+    public bool secondKick = true;
+    [Tooltip("Délai (s) avant la 2e impulsion.")]
+    public float secondKickDelay = 0.12f;
+    [Tooltip("Coefficient appliqué aux forces du 2e kick (0.3–1).")]
+    [Range(0f, 2f)] public float secondKickScale = 0.6f;
+
+    [Header("Cycle de vie")]
+    [Tooltip("Détruit chaque morceau après X secondes (<=0 : ne pas détruire).")]
     public float autoDestroyAfter = 6f;
 
-    [Space]
-    [Tooltip("Délai avant explosion après la fracture.")]
-    public float delayBeforeExplode = 0.05f;
-    [Tooltip("Impulsion verticale de base.")]
-    public float upForce = 8f;
-    [Tooltip("Dispersion aléatoire.")]
-    public float randomSpread = 3f;
-    [Tooltip("Couple aléatoire appliqué.")]
-    public float randomTorque = 4f;
-    [Tooltip("Modificateur vertical d'AddExplosionForce.")]
-    public float upwardsModifier = 0.7f;
-
-    [Header("Contrôle")]
+    [Header("Déclenchement")]
     [Tooltip("Coche en Play pour déclencher (one-shot).")]
     public bool triggerNow;
 
     bool _done;
 
+    // ========================= Unity =========================
     void Reset()
     {
         sourceMeshFilter = GetComponent<MeshFilter>();
@@ -58,35 +80,41 @@ public class RuntimeFractureExploder : MonoBehaviour
 
     void Update()
     {
-        if (Application.isPlaying && triggerNow && !_done)
+        if (!Application.isPlaying) return;
+        if (triggerNow && !_done)
         {
             triggerNow = false;
             Trigger();
         }
     }
 
-    /// <summary> Déclenche préfracturation puis explosion. </summary>
+    // ========================= API =========================
+    /// <summary> Préfracture immédiatement puis déclenche l’explosion selon les réglages. </summary>
     public void Trigger()
     {
-        if (_done) return;
+        if (_done) _done = false; // autorise relance si tu régénères avant
         if (!ValidateSource()) return;
 
-        // 1) Fracture → renvoie la liste des rbs créés (peut être vide si addRigidbody=false)
         var rbs = PreFractureRuntime();
 
-        // 2) Explosion après un léger délai
-        if (delayBeforeExplode <= 0f) ApplyExplosion(rbs);
-        else StartCoroutine(ExplodeNextFrame(rbs, delayBeforeExplode));
-
-        _done = true;
+        if (delayBeforeExplode <= 0f) ApplyExplosion(rbs, 1f);
+        else StartCoroutine(Co_Explode(rbs));
     }
 
-    System.Collections.IEnumerator ExplodeNextFrame(List<Rigidbody> rbs, float delay)
+    // ========================= Routines =========================
+    System.Collections.IEnumerator Co_Explode(List<Rigidbody> rbs)
     {
-        yield return new WaitForSeconds(delay);
-        ApplyExplosion(rbs);
+        yield return new WaitForSeconds(delayBeforeExplode);
+        ApplyExplosion(rbs, 1f);
+
+        if (secondKick)
+        {
+            yield return new WaitForSeconds(secondKickDelay);
+            ApplyExplosion(rbs, Mathf.Max(0f, secondKickScale));
+        }
     }
 
+    // ========================= Implémentation =========================
     bool ValidateSource()
     {
         if (!sourceMeshFilter) sourceMeshFilter = GetComponent<MeshFilter>();
@@ -109,9 +137,9 @@ public class RuntimeFractureExploder : MonoBehaviour
         var norms = mesh.normals;
         var uvs = mesh.uv;
 
+        // Normal map fallback si absent
         if (norms == null || norms.Length != verts.Length)
         {
-            // crée une copie pour recalculer (évite d'écraser le mesh partagé)
             var temp = Instantiate(mesh);
             temp.RecalculateNormals();
             norms = temp.normals;
@@ -126,7 +154,6 @@ public class RuntimeFractureExploder : MonoBehaviour
         for (int i = 0; i < triCount; i++) triIndices.Add(i);
         if (shuffleTriangles) FisherYatesShuffle(triIndices);
 
-        // Partition en "pieces" groupes d'environ triCount/pieces triangles
         int trisPerPiece = Mathf.Max(1, triCount / pieces);
         var chunks = new List<List<int>>(pieces);
         int cursor = 0;
@@ -146,12 +173,12 @@ public class RuntimeFractureExploder : MonoBehaviour
             cursor += take;
         }
 
-        // Désactive l'objet intact (juste le renderer ; on garde le transform)
+        // Cache la version intacte, on garde le transform
         sourceMeshRenderer.enabled = false;
 
         var createdRigidbodies = new List<Rigidbody>(chunks.Count);
 
-        // Génération de chaque morceau
+        // Génère chaque morceau
         for (int c = 0; c < chunks.Count; c++)
         {
             var triList = chunks[c];
@@ -176,7 +203,7 @@ public class RuntimeFractureExploder : MonoBehaviour
                 localTris.Add(newIdx);
             }
 
-            // Épaisseur artificielle (optionnelle)
+            // Épaisseur factice (faces arrière + translation)
             if (fakeThickness > 0f)
             {
                 int countBefore = localVerts.Count;
@@ -190,7 +217,6 @@ public class RuntimeFractureExploder : MonoBehaviour
                     localNorms.Add(-localNorms[i]);
                     localUVs.Add(localUVs[i]);
                 }
-                // faces arrières (winding inversé)
                 int trisBefore = localTris.Count;
                 for (int i = 0; i < trisBefore; i += 3)
                 {
@@ -238,9 +264,11 @@ public class RuntimeFractureExploder : MonoBehaviour
             {
                 rb = go.AddComponent<Rigidbody>();
                 rb.mass = pieceMass;
-                rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+                rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
                 rb.interpolation = RigidbodyInterpolation.Interpolate;
+                rb.maxAngularVelocity = Mathf.Max(maxAngularVelocity, 50f);
             }
+
             if (autoDestroyAfter > 0f) Destroy(go, autoDestroyAfter);
             if (rb) createdRigidbodies.Add(rb);
         }
@@ -248,24 +276,43 @@ public class RuntimeFractureExploder : MonoBehaviour
         return createdRigidbodies;
     }
 
-    void ApplyExplosion(List<Rigidbody> rbs)
+    void ApplyExplosion(List<Rigidbody> rbs, float forceScale)
     {
-        // Point d’explosion: centre des bounds du mesh source en monde
-        var worldCenter = GetWorldBoundsCenter();
+        if (rbs == null || rbs.Count == 0) return;
 
-        // Applique forces
-        if (rbs != null && rbs.Count > 0)
+        var worldCenter = GetWorldBoundsCenter();
+        float radius = Mathf.Max(0.5f, GetApproxRadius());
+
+        foreach (var rb in rbs)
         {
-            float radius = Mathf.Max(0.5f, GetApproxRadius());
-            foreach (var rb in rbs)
-            {
-                if (!rb) continue;
-                Vector3 random = Random.insideUnitSphere * randomSpread;
-                Vector3 up = Vector3.up * upForce;
-                rb.AddForce(up + random, ForceMode.Impulse);
-                rb.AddExplosionForce(upForce * 0.6f + random.magnitude, worldCenter, radius, upwardsModifier, ForceMode.Impulse);
-                rb.AddTorque(Random.onUnitSphere * randomTorque, ForceMode.Impulse);
-            }
+            if (!rb) continue;
+
+            // Qualité physique
+            rb.isKinematic = false;
+            rb.useGravity = true;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.maxAngularVelocity = Mathf.Max(rb.maxAngularVelocity, maxAngularVelocity);
+
+            // Reset pour un burst net
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+
+            // 1) Force vers le haut + dispersion
+            Vector3 random = Random.insideUnitSphere * randomSpread * forceScale;
+            Vector3 upward = Vector3.up * upForce * forceScale;
+            rb.AddForce(upward + random, ForceMode.Impulse);
+
+            // 2) Souffle radial doux depuis le centre du mesh
+            float extra = (upForce * 0.6f + random.magnitude) * forceScale;
+            rb.AddExplosionForce(extra, worldCenter, radius, upwardsModifier, ForceMode.Impulse);
+
+            // 3) Spin aléatoire fort (impulsion + vitesse continue)
+            Vector3 axis = Random.onUnitSphere.normalized;
+            rb.AddTorque(axis * (spinImpulse * forceScale), ForceMode.Impulse);
+
+            float w = Random.Range(spinAngularSpeedRange.x, spinAngularSpeedRange.y) * forceScale;
+            rb.angularVelocity = axis * w;
         }
     }
 
@@ -273,15 +320,15 @@ public class RuntimeFractureExploder : MonoBehaviour
     {
         var mf = sourceMeshFilter;
         var mesh = mf.sharedMesh;
-        var b = mesh.bounds; // en local
-        return mf.transform.TransformPoint(b.center);
+        return mf.transform.TransformPoint(mesh.bounds.center);
     }
 
     float GetApproxRadius()
     {
-        var b = sourceMeshFilter.sharedMesh.bounds.size;
-        float r = Mathf.Max(b.x, Mathf.Max(b.y, b.z)) * 0.6f * Mathf.Max(transform.lossyScale.x, Mathf.Max(transform.lossyScale.y, transform.lossyScale.z));
-        return r;
+        var s = sourceMeshFilter.sharedMesh.bounds.size;
+        float rLocal = Mathf.Max(s.x, Mathf.Max(s.y, s.z)) * 0.6f;
+        float scale = Mathf.Max(transform.lossyScale.x, Mathf.Max(transform.lossyScale.y, transform.lossyScale.z));
+        return rLocal * Mathf.Max(0.01f, scale);
     }
 
     static void FisherYatesShuffle(List<int> list)
