@@ -150,7 +150,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5956521904293237788
 Transform:
   m_ObjectHideFlags: 0
@@ -651,7 +651,6 @@ GameObject:
   - component: {fileID: 1060779475742604616}
   - component: {fileID: 6810365122975884808}
   - component: {fileID: 5978056026784855715}
-  - component: {fileID: 5121978842292800978}
   m_Layer: 16
   m_Name: Spot Light_2
   m_TagString: Untagged
@@ -667,8 +666,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3057100487106820327}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.49279517, y: -0.5071025, z: 0.49279517, w: 0.5071025}
-  m_LocalPosition: {x: 300, y: 52, z: 0}
+  m_LocalRotation: {x: 0, y: -0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 300, y: 26, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -881,20 +880,6 @@ MonoBehaviour:
   m_ObsoleteUseShadowQualitySettings: 0
   m_ObsoleteCustomShadowResolution: 512
   m_ObsoleteContactShadows: 0
---- !u!114 &5121978842292800978
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3057100487106820327}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 474bd210d9d0c1a459ddf22b77e872ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Rotate
-  speed: 2
-  axis: {x: 0, y: 0, z: 1}
 --- !u!1 &3066538992152069551
 GameObject:
   m_ObjectHideFlags: 0
@@ -906,7 +891,6 @@ GameObject:
   - component: {fileID: 6591643288941427236}
   - component: {fileID: 7919322166806086435}
   - component: {fileID: 7813499465955427886}
-  - component: {fileID: 965014700051247829}
   m_Layer: 16
   m_Name: Spot Light_1
   m_TagString: Untagged
@@ -922,8 +906,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3066538992152069551}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.6969214, y: 0.7171476, z: -0, w: 0}
-  m_LocalPosition: {x: 0, y: 52, z: 300}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: 0, y: 26, z: 300}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1136,20 +1120,6 @@ MonoBehaviour:
   m_ObsoleteUseShadowQualitySettings: 0
   m_ObsoleteCustomShadowResolution: 512
   m_ObsoleteContactShadows: 0
---- !u!114 &965014700051247829
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3066538992152069551}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 474bd210d9d0c1a459ddf22b77e872ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Rotate
-  speed: 2
-  axis: {x: 0, y: 0, z: 1}
 --- !u!1 &4097228486523377320
 GameObject:
   m_ObjectHideFlags: 0
@@ -1302,7 +1272,7 @@ Transform:
   m_GameObject: {fileID: 4648381435317418437}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 50, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -1324,7 +1294,6 @@ GameObject:
   - component: {fileID: 363781001765238474}
   - component: {fileID: 5068867560742014494}
   - component: {fileID: 2714076018944201051}
-  - component: {fileID: 7903071349216841104}
   m_Layer: 16
   m_Name: Spot Light_3
   m_TagString: Untagged
@@ -1340,8 +1309,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4749520475659176133}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: 0.6969214, w: 0.7171476}
-  m_LocalPosition: {x: 0, y: 52, z: -300}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 26, z: -300}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1554,20 +1523,6 @@ MonoBehaviour:
   m_ObsoleteUseShadowQualitySettings: 0
   m_ObsoleteCustomShadowResolution: 512
   m_ObsoleteContactShadows: 0
---- !u!114 &7903071349216841104
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4749520475659176133}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 474bd210d9d0c1a459ddf22b77e872ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Rotate
-  speed: 2
-  axis: {x: 0, y: 0, z: 1}
 --- !u!1 &5047645902125735249
 GameObject:
   m_ObjectHideFlags: 0
@@ -1732,7 +1687,6 @@ GameObject:
   - component: {fileID: 1468121494799024174}
   - component: {fileID: 8780297335699426546}
   - component: {fileID: 5628517460731619026}
-  - component: {fileID: 296560019662471273}
   m_Layer: 16
   m_Name: Spot Light_4
   m_TagString: Untagged
@@ -1748,8 +1702,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7156306132770341435}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.49279517, y: 0.5071025, z: 0.49279517, w: 0.5071025}
-  m_LocalPosition: {x: -300, y: 52, z: 0}
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -300, y: 26, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1962,20 +1916,6 @@ MonoBehaviour:
   m_ObsoleteUseShadowQualitySettings: 0
   m_ObsoleteCustomShadowResolution: 512
   m_ObsoleteContactShadows: 0
---- !u!114 &296560019662471273
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7156306132770341435}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 474bd210d9d0c1a459ddf22b77e872ec, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Rotate
-  speed: 2
-  axis: {x: 0, y: 0, z: 1}
 --- !u!1 &7439247113614518148
 GameObject:
   m_ObjectHideFlags: 0
@@ -6966,7 +6906,7 @@ Transform:
   m_GameObject: {fileID: 8631620132973454864}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -100, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
