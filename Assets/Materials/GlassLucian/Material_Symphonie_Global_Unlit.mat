@@ -23,7 +23,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: ShaderGraph_Symphonie_Global_Unlit
+  m_Name: Material_Symphonie_Global_Unlit
   m_Shader: {fileID: -6465566751694194690, guid: 57c160b9c0b0bc043a97d75291557cb0, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -31,9 +31,10 @@ Material:
   - _ALPHATEST_ON
   m_InvalidKeywords:
   - _DISABLE_SSR_TRANSPARENT
+  - _DOUBLESIDED_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
+  m_DoubleSidedGI: 1
   m_CustomRenderQueue: 2450
   stringTagMap:
     MotionVector: User
@@ -90,10 +91,10 @@ Material:
     - Vector1_52dd10c9b3cb4e70bb7406c2a3f6f71f: 0
     - Vector1_59346597193f4efbad8096d2c8c71dcc: 2
     - Vector1_5b72296967714b29a00e14aaefa6ac91: 1
-    - Vector1_649f0e8a49ad4cfd91729f4082f80c06: 0
+    - Vector1_649f0e8a49ad4cfd91729f4082f80c06: 1
     - Vector1_71a597c98ec04b44b719687761fd61a7: 0
     - Vector1_754d0192e57f494ba11b15bab4b357f3: 0.35
-    - Vector1_9fd3215e954844f3bfcebed762ec7389: 0
+    - Vector1_9fd3215e954844f3bfcebed762ec7389: 1
     - Vector1_a55d7d26f69949da8af08357b914a59d: 0
     - Vector1_d28f418bf18340b99f3f0199330c19ba: 0
     - Vector1_f1c387f477ca4e1f8e7aceb116791391: 0
@@ -103,10 +104,10 @@ Material:
     - _AlphaSrcBlend: 1
     - _BlendMode: 0
     - _ConservativeDepthOffsetEnable: 0
-    - _CullMode: 2
-    - _CullModeForward: 2
+    - _CullMode: 0
+    - _CullModeForward: 0
     - _DepthOffsetEnable: 0
-    - _DoubleSidedEnable: 0
+    - _DoubleSidedEnable: 1
     - _DoubleSidedGIMode: 0
     - _DoubleSidedNormalMode: 2
     - _DstBlend: 0
@@ -151,7 +152,7 @@ Material:
     - _ZTestTransparent: 4
     - _ZWrite: 1
     m_Colors:
-    - Color_a26a7c25e19e407eb588ec6eab02b9ae: {r: 32, g: 32, b: 32, a: 0}
+    - Color_a26a7c25e19e407eb588ec6eab02b9ae: {r: 42.722507, g: 42.722507, b: 42.722507, a: 0}
     - Color_bf06f45a9f5343bb94df3d22574b3b4b: {r: 1, g: 1, b: 1, a: 1}
     - Vector2_34e700545e0d490f80c92f2d12e2a093: {r: 0, g: 0, b: 0, a: 0}
     - Vector2_6c828c422b9c4c938bc80dcb2d9ebdef: {r: 1, g: 1, b: 0, a: 0}
