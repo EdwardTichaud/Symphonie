@@ -1,19 +1,14 @@
-using System; // Nécessaire pour comparer proprement les noms d'évènements.
 using UnityEngine;
 using UnityEngine.VFX;
 
 [RequireComponent(typeof(VisualEffect))]
 public class TriggerVFX : MonoBehaviour
 {
-    [Header("Nom de l'événement à envoyer au VFX Graph")]
-    [Tooltip("Doit correspondre au nom d'un Event dans ton VFX Graph (ex: OnBurst)")]
+    [Header("Nom de l'événement VFX (ex: OnBurst). Laisse vide pour utiliser Play().")]
     public string eventName = "OnBurst";
 
     [Header("Déclenchement automatique")]
-    [Tooltip("Lance automatiquement le VFX au démarrage")]
     public bool playOnStart = false;
-
-    [Tooltip("Relancer automatiquement si le VFX a fini ?")]
     public bool loop = false;
 
     private VisualEffect vfx;
@@ -26,58 +21,34 @@ public class TriggerVFX : MonoBehaviour
     void Start()
     {
         if (playOnStart)
-        {
             TriggerEffect();
-        }
     }
 
-    /// <summary>
-    /// Lance le VFX avec l'événement défini.
-    /// </summary>
+    /// <summary> Déclenche le VFX (SendEvent si eventName renseigné, sinon Play). </summary>
     public void TriggerEffect()
     {
-        if (vfx == null)
+        if (!vfx)
         {
-            // On journalise pour ne pas laisser un appel silencieux, cela facilite le débogage en scène.
-            Debug.LogWarning("TriggerVFX n'a trouvé aucun VisualEffect à déclencher.", this);
+            Debug.LogWarning("TriggerVFX: aucun VisualEffect trouvé sur cet objet.", this);
             return;
         }
 
-        // Lorsque l'évènement n'est pas renseigné (cas par défaut) on lance simplement le Play classique du VFX.
-        if (string.IsNullOrEmpty(eventName))
+        if (string.IsNullOrEmpty(eventName) || eventName.Equals("OnPlay"))
         {
+            // Graph configuré sur OnPlay (par défaut)
             vfx.Play();
-            return;
-        }
-
-        // Beaucoup de graph VFX, comme DebrisBurst, attendent l'évènement par défaut "OnPlay".
-        // On simplifie donc la configuration en traitant ce cas comme un appel direct à Play.
-        if (eventName.Equals("OnPlay", StringComparison.OrdinalIgnoreCase))
-        {
-            vfx.Play();
-            return;
-        }
-
-        // Si l'évènement personnalisé existe vraiment dans le graph, on le lance comme prévu.
-        if (vfx.HasEvent(eventName))
-        {
-            vfx.SendEvent(eventName);
         }
         else
         {
-            // En dernier recours (cas de DebrisBurst paramétré en "OnBurst"), on repasse sur Play afin de garantir l'effet.
-            Debug.LogWarning($"L'évènement '{eventName}' n'existe pas sur le graph VFX attaché à '{vfx.visualEffectAsset?.name}'. Utilisation de Play à la place.", this);
-            vfx.Play();
+            // Envoie l'événement personnalisé (ex: OnBurst)
+            vfx.SendEvent(eventName);
         }
     }
 
-    /// <summary>
-    /// Stoppe le VFX.
-    /// </summary>
+    /// <summary> Stoppe le VFX. </summary>
     public void StopEffect()
     {
-        if (vfx == null) return;
-        vfx.Stop();
+        if (vfx) vfx.Stop();
     }
 
     void Update()
@@ -86,9 +57,11 @@ public class TriggerVFX : MonoBehaviour
         {
             // Quand il n'y a plus de particules actives, on relance
             if (vfx.aliveParticleCount == 0)
-            {
                 TriggerEffect();
-            }
         }
     }
+
+    // Pour tester rapidement depuis le menu contextuel du composant
+    [ContextMenu("Trigger Now")]
+    void ContextTrigger() => TriggerEffect();
 }
