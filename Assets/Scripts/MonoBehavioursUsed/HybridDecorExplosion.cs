@@ -351,7 +351,7 @@ public class HybridDecorExplosion : MonoBehaviour
 
             rb.transform.position = center + Random.insideUnitSphere * heroChunkSpawnRadius;
             rb.transform.rotation = Random.rotation;
-            rb.velocity = Vector3.zero;
+            rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             rb.AddExplosionForce(heroChunkExplosionForce, center, heroChunkExplosionRadius, heroChunkUpwardsModifier, ForceMode.Impulse);
         }
@@ -459,7 +459,7 @@ public class HybridDecorExplosion : MonoBehaviour
                 continue;
             }
 
-            rb.velocity = Vector3.zero;
+            rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
             rb.transform.localPosition = i < heroChunksInitialLocalPositions.Count ? heroChunksInitialLocalPositions[i] : rb.transform.localPosition;
             rb.transform.localRotation = i < heroChunksInitialLocalRotations.Count ? heroChunksInitialLocalRotations[i] : rb.transform.localRotation;

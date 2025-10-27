@@ -52427,10 +52427,63 @@ MonoBehaviour:
   m_GameObject: {fileID: 732296237}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66586cddfbd3b5b44a07637056a6d64f, type: 3}
+  m_Script: {fileID: 11500000, guid: d565bb6e325340189847f79afce722e3, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: '::'
-  vfx: {fileID: 0}
+  m_EditorClassIdentifier: Assembly-CSharp::HybridDecorExplosion
+  decorRenderer: {fileID: 732296240}
+  dissolvePropertyName: _Dissolve
+  initialDissolveValue: 0
+  dissolveDuration: 0.8
+  dissolveCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  disableRendererWhenComplete: 1
+  mainExplosionVfx: {fileID: 1921767707}
+  mainBurstEventName: OnBurst
+  burstCenterProperty: burstCenter
+  burstRadiusProperty: burstRadius
+  burstCountProperty: spawnCount
+  mainBurstRadius: 3
+  mainBurstCount: 4000
+  mainBurstDelay: 0.6
+  secondaryVfx: {fileID: 0}
+  secondaryVfxDelay: 0.8
+  heroChunks: []
+  heroChunksDelay: 0.65
+  heroChunkExplosionForce: 200
+  heroChunkExplosionRadius: 3
+  heroChunkUpwardsModifier: 1
+  heroChunkSpawnRadius: 0.5
+  flashLight: {fileID: 0}
+  flashPeakIntensity: 8
+  flashPeakRange: 10
+  flashDelay: 0.7
+  flashFadeDuration: 0.4
+  explosionCenterOverride: {fileID: 0}
+  onExplosionComplete:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &732479632
 GameObject:
   m_ObjectHideFlags: 0
@@ -125491,7 +125544,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1753353395}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.8331595, y: 0.24492857, z: 0.45295748, w: 0.20170477}
+  m_LocalRotation: {x: -0.7075253, y: -0.50355, z: -0.36226514, w: -0.33854014}
   m_LocalPosition: {x: 0.000032186508, y: 0.31699875, z: -0.000006561318}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -138276,7 +138329,6 @@ GameObject:
   - component: {fileID: 1921767704}
   - component: {fileID: 1921767707}
   - component: {fileID: 1921767706}
-  - component: {fileID: 1921767705}
   m_Layer: 8
   m_Name: Base_VFX
   m_TagString: Untagged
@@ -138299,19 +138351,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1838402570}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1921767705
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1921767703}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 66586cddfbd3b5b44a07637056a6d64f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  vfx: {fileID: 1921767707}
 --- !u!73398921 &1921767706
 VFXRenderer:
   serializedVersion: 1
@@ -138368,7 +138407,7 @@ VisualEffect:
   m_Enabled: 0
   m_Asset: {fileID: 8926484042661614526, guid: df29f3ef3dd412a43b8e7d08f16906df, type: 3}
   m_InitialEventName: OnPlay
-  m_InitialEventNameOverriden: 0
+  m_InitialEventNameOverriden: 1
   m_StartSeed: 0
   m_ResetSeedOnPlay: 1
   m_AllowInstancing: 1
@@ -157152,7 +157191,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4957865243419136189, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -0.08163227
+      value: 0.16439646
       objectReference: {fileID: 0}
     - target: {fileID: 5328497704870498945, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchorMax.y
@@ -157496,7 +157535,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9002251911775550289, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -0.26125178
+      value: -0.08377801
       objectReference: {fileID: 0}
     - target: {fileID: 9190650189389976031, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchorMax.y
@@ -158394,7 +158433,7 @@ PrefabInstance:
     - target: {fileID: 1161395142967048933, guid: 5421da732b988df45baf775b82f725eb, type: 3}
       propertyPath: m_Events.m_Events.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 732296242}
     - target: {fileID: 1161395142967048933, guid: 5421da732b988df45baf775b82f725eb, type: 3}
       propertyPath: m_Events.m_Events.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
@@ -158421,7 +158460,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1161395142967048933, guid: 5421da732b988df45baf775b82f725eb, type: 3}
       propertyPath: m_Events.m_Events.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: Trigger
+      value: TriggerExplosion
       objectReference: {fileID: 0}
     - target: {fileID: 1161395142967048933, guid: 5421da732b988df45baf775b82f725eb, type: 3}
       propertyPath: m_Events.m_Events.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
@@ -158437,7 +158476,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1161395142967048933, guid: 5421da732b988df45baf775b82f725eb, type: 3}
       propertyPath: m_Events.m_Events.Array.data[1].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: RuntimeFractureExploder, Assembly-CSharp
+      value: HybridDecorExplosion, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 1161395142967048933, guid: 5421da732b988df45baf775b82f725eb, type: 3}
       propertyPath: m_Events.m_Events.Array.data[2].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
@@ -159174,15 +159213,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4551284211275759610, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1006.7
+      value: 1006.52
       objectReference: {fileID: 0}
     - target: {fileID: 4551284211275759610, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1051.7
+      value: 1050.37
       objectReference: {fileID: 0}
     - target: {fileID: 4551284211275759610, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 1006
+      value: 1005.77
       objectReference: {fileID: 0}
     - target: {fileID: 4551284211275759610, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalRotation.w
