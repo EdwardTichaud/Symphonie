@@ -120,7 +120,17 @@ public class HybridDecorExplosion : MonoBehaviour
         // Préparation des références automatiques pour simplifier l'usage dans la scène.
         if (decorRenderer == null)
         {
+            // Récupère automatiquement le Renderer présent sur le GameObject ou ses enfants afin
+            // de garantir la possibilité de dissoudre l'objet sans configuration manuelle.
             decorRenderer = GetComponentInChildren<Renderer>();
+        }
+
+        if (mainExplosionVfx == null)
+        {
+            // Même logique d'auto-récupération pour le VisualEffect : on prend celui présent sur
+            // le GameObject porteur du script pour assurer que TriggerExplosion déclenchera bien
+            // le VFX par défaut comme demandé.
+            mainExplosionVfx = GetComponentInChildren<VisualEffect>();
         }
 
         // Mise en cache de l'identifiant du paramètre shader afin d'éviter une allocation répétée.
@@ -152,6 +162,16 @@ public class HybridDecorExplosion : MonoBehaviour
         {
             StopCoroutine(runningSequence);
         }
+
+        // Assure que le décor redevient visible avant de lancer une nouvelle séquence, afin que la
+        // dissolution soit bien perceptible même si l'effet est rejoué plusieurs fois d'affilée.
+        if (decorRenderer != null)
+        {
+            decorRenderer.enabled = true;
+        }
+
+        // Réinitialise explicitement la valeur de dissolve pour que l'animation reparte de 0.
+        ApplyDissolveValue(initialDissolveValue);
 
         runningSequence = StartCoroutine(ExplosionSequence());
     }
@@ -195,6 +215,8 @@ public class HybridDecorExplosion : MonoBehaviour
         Coroutine dissolveRoutine = null;
         if (decorRenderer != null)
         {
+            // Lance la progression de dissolve immédiatement afin qu'elle démarre en même temps que
+            // le déclenchement des VFX.
             dissolveRoutine = StartCoroutine(DissolveMesh());
         }
 
