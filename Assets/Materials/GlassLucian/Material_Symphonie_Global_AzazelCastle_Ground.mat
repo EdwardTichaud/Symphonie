@@ -24,7 +24,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Material_Symphonie_Global_AzazelCastle_Ground
-  m_Shader: {fileID: -6465566751694194690, guid: 8ae3bfe1d7d09fb43b8894821184c872, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 426b5b77ed9c0da4da589c967d36438b, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
@@ -68,6 +68,14 @@ Material:
         m_Offset: {x: 0, y: 0}
     - Texture2D_dd3ebea1c8a14c9eab9ccc9ee3f5b2e2:
         m_Texture: {fileID: 2800000, guid: 76e40daca71ef9d4ab3d2673f1327bba, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Blood:
+        m_Texture: {fileID: 2800000, guid: 40185c7290fecd242bff498d86499d80, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Veins:
+        m_Texture: {fileID: 2800000, guid: 69fb6abfa9923dd4aa29c3ab93ac6f4f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -114,17 +122,26 @@ Material:
     - _CullMode: 2
     - _CullModeForward: 2
     - _DepthOffsetEnable: 0
+    - _Dissolve: 0
+    - _DissolveOutlinesStrength: 0.01
+    - _DissolveStrength: 0
     - _DoubleSidedEnable: 0
     - _DoubleSidedGIMode: 0
     - _DoubleSidedNormalMode: 2
     - _DstBlend: 0
     - _DstBlend2: 0
+    - _EdgeStrength: 0
     - _EnableBlendModePreserveSpecularLighting: 0
     - _EnableFogOnTransparent: 1
     - _ExcludeFromTUAndAA: 0
+    - _Float: 0.5
     - _MaterialID: 1
     - _MaterialTypeMask: 2
+    - _Metalic: 0
+    - _NoiseScale: 100
+    - _OffsetAmp: 0
     - _OpaqueCullMode: 2
+    - _OutlinesStrength: 0.01
     - _PerPixelSorting: 0
     - _RayTracing: 0
     - _ReceivesSSR: 1
@@ -132,6 +149,7 @@ Material:
     - _RefractionModel: 0
     - _RenderQueueType: 1
     - _RequireSplitLighting: 0
+    - _Smoothness: 0
     - _SrcBlend: 1
     - _StencilRef: 0
     - _StencilRefDepth: 8
@@ -165,8 +183,16 @@ Material:
     - Color_bf06f45a9f5343bb94df3d22574b3b4b: {r: 3.2207556, g: 1.514416, b: 0.62288195, a: 1}
     - Vector2_34e700545e0d490f80c92f2d12e2a093: {r: 0, g: 0, b: 0, a: 0}
     - Vector2_6c828c422b9c4c938bc80dcb2d9ebdef: {r: 1, g: 1, b: 0, a: 0}
+    - Vector2_c0c4f6d6825e48ed81d9ec6bb79ede15: {r: 0, g: 1, b: 0, a: 0}
     - Vector2_c498d62df82147abb458e3533211f4a6: {r: 0, g: 1, b: 0, a: 0}
+    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _BloodScale: {r: 0.5, g: 0.3, b: 0, a: 0}
+    - _BloodSpeed: {r: 0, g: -50, b: 0, a: 0}
+    - _DissolveColor: {r: 0, g: 0.6013947, b: 32, a: 1}
     - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
+    - _OutlinesColor: {r: 0, g: 0.592119, b: 19.74909, a: 1}
+    - _VeinsScale: {r: 0.5, g: 0.3, b: 0, a: 0}
+    - _VeinsSpeed: {r: 0, g: -0.5, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
