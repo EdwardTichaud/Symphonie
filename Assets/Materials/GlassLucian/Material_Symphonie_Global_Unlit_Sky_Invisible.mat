@@ -23,25 +23,28 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Material_Symphonie_Global_Lit_Lucian_Pants
-  m_Shader: {fileID: -6465566751694194690, guid: 426b5b77ed9c0da4da589c967d36438b, type: 3}
+  m_Name: Material_Symphonie_Global_Unlit_Sky_Invisible
+  m_Shader: {fileID: -6465566751694194690, guid: c04b0352b0336bc4b8eae76d2a4f08de, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
+  - _ALPHATEST_ON
+  m_InvalidKeywords:
   - _DISABLE_SSR_TRANSPARENT
-  m_InvalidKeywords: []
+  - _DOUBLESIDED_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
-  m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 2225
+  m_DoubleSidedGI: 1
+  m_CustomRenderQueue: 2510
   stringTagMap:
     MotionVector: User
+    RenderType: TransparentCutout
   disabledShaderPasses:
-  - TransparentDepthPrepass
+  - RayTracingPrepass
   - TransparentDepthPostpass
   - TransparentBackface
   - MOTIONVECTORS
-  - RayTracingPrepass
+  - TransparentDepthPrepass
   m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
@@ -51,7 +54,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - Texture2D_293a4ff1725045559f81e565700ff485:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: bf69fe7bc0f403c4a87f786040e07ecb, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - Texture2D_36c526d0e2c54cc183d740888f6f8c01:
@@ -63,19 +66,19 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - Texture2D_737937b2eb1a40c69a37eee653cada77:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: db01fbdf6e4fa524a96bfbeb2bede485, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - Texture2D_dd3ebea1c8a14c9eab9ccc9ee3f5b2e2:
-        m_Texture: {fileID: 2800000, guid: 76e40daca71ef9d4ab3d2673f1327bba, type: 3}
+        m_Texture: {fileID: 2800000, guid: 69fb6abfa9923dd4aa29c3ab93ac6f4f, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Blood:
-        m_Texture: {fileID: 2800000, guid: 40185c7290fecd242bff498d86499d80, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Veins:
-        m_Texture: {fileID: 2800000, guid: 69fb6abfa9923dd4aa29c3ab93ac6f4f, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -97,12 +100,12 @@ Material:
     - Vector1_259b8898fa1d4488ad6246b620d4e241: 1.2
     - Vector1_52dd10c9b3cb4e70bb7406c2a3f6f71f: 1
     - Vector1_56d461ea21b54dd2aa528830143705b9: 0.9
-    - Vector1_59346597193f4efbad8096d2c8c71dcc: 2
+    - Vector1_59346597193f4efbad8096d2c8c71dcc: 0.46
     - Vector1_59381d74c3cd41ef8e20750199da1206: 1.2
     - Vector1_5b72296967714b29a00e14aaefa6ac91: 1
     - Vector1_649f0e8a49ad4cfd91729f4082f80c06: 1
     - Vector1_71a597c98ec04b44b719687761fd61a7: 0
-    - Vector1_754d0192e57f494ba11b15bab4b357f3: 0.2
+    - Vector1_754d0192e57f494ba11b15bab4b357f3: 0.1
     - Vector1_79f9591193644fbfac871e22a814ec56: 4
     - Vector1_8c877c35ec3b4fa3abc8c82f0b9f0f3b: 0
     - Vector1_9fd3215e954844f3bfcebed762ec7389: 1
@@ -114,32 +117,34 @@ Material:
     - Vector1_f1c387f477ca4e1f8e7aceb116791391: 0
     - Vector1_f569cdbb9fc847f5b7bc3b350f632a0f: 0
     - _AddPrecomputedVelocity: 0
-    - _AlphaCutoffEnable: 0
+    - _AlphaCutoffEnable: 1
     - _AlphaDstBlend: 0
     - _AlphaSrcBlend: 1
+    - _BaseOpacity: 0
     - _BlendMode: 0
     - _ConservativeDepthOffsetEnable: 0
-    - _CullMode: 2
-    - _CullModeForward: 2
+    - _CullMode: 0
+    - _CullModeForward: 0
     - _DepthOffsetEnable: 0
     - _Dissolve: 0
     - _DissolveOutlinesStrength: 0.01
     - _DissolveStrength: 0
-    - _DoubleSidedEnable: 0
-    - _DoubleSidedGIMode: 0
+    - _DoubleSidedEnable: 1
+    - _DoubleSidedGIMode: 1
     - _DoubleSidedNormalMode: 2
     - _DstBlend: 0
     - _DstBlend2: 0
     - _EdgeStrength: 0
+    - _EdgeWidth: 0
     - _EmissionIntensity: 0
     - _EnableBlendModePreserveSpecularLighting: 0
-    - _EnableFogOnTransparent: 1
+    - _EnableFogOnTransparent: 0
     - _ExcludeFromTUAndAA: 0
     - _Float: 0.5
     - _MaterialID: 1
     - _MaterialTypeMask: 2
-    - _Metalic: 0
-    - _NoiseScale: 100
+    - _Metalic: 1
+    - _NoiseScale: 300
     - _OffsetAmp: 0
     - _OpaqueCullMode: 2
     - _OutlinesIntensity: 1
@@ -149,20 +154,20 @@ Material:
     - _ReceivesSSR: 1
     - _ReceivesSSRTransparent: 0
     - _RefractionModel: 0
-    - _RenderQueueType: 1
+    - _RenderQueueType: 2
     - _RequireSplitLighting: 0
-    - _Smoothness: 0
+    - _Smoothness: 1
     - _SrcBlend: 1
     - _StencilRef: 0
-    - _StencilRefDepth: 8
+    - _StencilRefDepth: 1
     - _StencilRefDistortionVec: 4
-    - _StencilRefGBuffer: 10
-    - _StencilRefMV: 40
+    - _StencilRefGBuffer: 2
+    - _StencilRefMV: 33
     - _StencilWriteMask: 6
     - _StencilWriteMaskDepth: 9
     - _StencilWriteMaskDistortionVec: 4
     - _StencilWriteMaskGBuffer: 15
-    - _StencilWriteMaskMV: 41
+    - _StencilWriteMaskMV: 43
     - _SupportDecals: 1
     - _SurfaceType: 0
     - _TransmissionEnable: 1
@@ -174,29 +179,30 @@ Material:
     - _TransparentWritingMotionVec: 0
     - _TransparentZWrite: 0
     - _UseShadowThreshold: 0
-    - _VeinsIntensity: 1
-    - _ZTestDepthEqualForOpaque: 3
-    - _ZTestGBuffer: 4
+    - _VeinsIntensity: 0
+    - _ZTestDepthEqualForOpaque: 4
+    - _ZTestGBuffer: 3
     - _ZTestTransparent: 4
     - _ZWrite: 1
     m_Colors:
     - Color_0f77c6ead26e46ce8da3cd4ee1fd9520: {r: 0.8666667, g: 0.6627451, b: 0.62352943, a: 1}
     - Color_8b7bdc468d3640ae8ea60da3cd1fbca6: {r: 0.7764706, g: 0.08627451, b: 0.1019608, a: 1}
     - Color_a26a7c25e19e407eb588ec6eab02b9ae: {r: 1, g: 1, b: 1, a: 0}
-    - Color_bf06f45a9f5343bb94df3d22574b3b4b: {r: 0, g: 0, b: 0, a: 1}
-    - Vector2_34e700545e0d490f80c92f2d12e2a093: {r: 10, g: 10, b: 0, a: 0}
+    - Color_bf06f45a9f5343bb94df3d22574b3b4b: {r: 11.970988, g: 2.5570073, b: 0, a: 1}
+    - Vector2_34e700545e0d490f80c92f2d12e2a093: {r: 1, g: 1, b: 0, a: 0}
     - Vector2_6c828c422b9c4c938bc80dcb2d9ebdef: {r: 1, g: 1, b: 0, a: 0}
     - Vector2_c0c4f6d6825e48ed81d9ec6bb79ede15: {r: 0, g: 1, b: 0, a: 0}
     - Vector2_c498d62df82147abb458e3533211f4a6: {r: 0, g: 1, b: 0, a: 0}
-    - _BaseColor: {r: 1, g: 1, b: 1, a: 1}
-    - _BloodScale: {r: 0.5, g: 0.3, b: 0, a: 0}
-    - _BloodSpeed: {r: 0, g: -50, b: 0, a: 0}
+    - _BaseColor: {r: 0, g: 0, b: 0, a: 1}
+    - _BloodScale: {r: 0, g: 0, b: 0, a: 0}
+    - _BloodSpeed: {r: 0, g: 0, b: 0, a: 0}
     - _DissolveColor: {r: 0, g: 0.6013947, b: 32, a: 1}
     - _DissolveOutlinesColor: {r: 0, g: 0.6013947, b: 32, a: 1}
-    - _DoubleSidedConstants: {r: 1, g: 1, b: -1, a: 0}
+    - _DoubleSidedConstants: {r: 1, g: 1, b: 1, a: 0}
+    - _EdgeColor: {r: 0, g: 0, b: 0, a: 1}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
-    - _OutlinesColor: {r: 1, g: 1, b: 1, a: 1}
-    - _VeinsScale: {r: 0.5, g: 0.3, b: 0, a: 0}
-    - _VeinsSpeed: {r: 0, g: -0.5, b: 0, a: 0}
+    - _OutlinesColor: {r: 2, g: 2, b: 2, a: 1}
+    - _VeinsScale: {r: 0, g: 0, b: 0, a: 0}
+    - _VeinsSpeed: {r: 0, g: 0, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
