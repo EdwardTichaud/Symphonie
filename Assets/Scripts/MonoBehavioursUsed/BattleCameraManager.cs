@@ -77,6 +77,22 @@ public class BattleCameraManager : MonoBehaviour
     [Tooltip("Courbe définissant l'atténuation du tremblement (1 = départ fort, 0 = repos).")]
     [SerializeField] private AnimationCurve damageShakeEnvelope = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
 
+    [Header("Recul des menus")] // 🎚️ Paramétrage de l'impulsion lors du changement de menu
+    [Tooltip("Active un léger recul lorsque la caméra passe d'un menu de combat à un autre.")]
+    [SerializeField] private bool enableMenuRecoil = true;
+
+    [Tooltip("Distance maximale (en mètres) parcourue par la caméra pendant le recul.")]
+    [SerializeField] private float menuRecoilDistance = 0.4f;
+
+    [Tooltip("Durée minimale (en secondes) de l'effet, même si le blend est plus court.")]
+    [SerializeField] private float menuRecoilMinimumDuration = 0.2f;
+
+    [Tooltip("Courbe de modulation de l'intensité (pic à 0,5 pour marquer le milieu du déplacement).")]
+    [SerializeField] private AnimationCurve menuRecoilCurve = new(
+        new Keyframe(0f, 0f, 0f, 0f),
+        new Keyframe(0.5f, 1f, 0f, 0f),
+        new Keyframe(1f, 0f, 0f, 0f));
+
     [Header("Compensation de taille")] // ⚖️ Ajustements permettant d'englober correctement les géants
     [Tooltip("Active l'adaptation automatique des plans lorsque l'unité en cours est nettement plus grande que la moyenne.")]
     [SerializeField] private bool enableUnitSizeCompensation = true;
@@ -195,6 +211,18 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Rôle logique actuellement prioritaire.</summary>
     private BattleCameraRole currentRole = BattleCameraRole.None;
 
+    /// <summary>Indique si un recul de menu est en cours d'interpolation.</summary>
+    private bool menuRecoilActive;
+
+    /// <summary>Temps écoulé depuis le déclenchement de l'impulsion de menu.</summary>
+    private float menuRecoilTimer;
+
+    /// <summary>Durée totale retenue pour l'effet de recul courant.</summary>
+    private float menuRecoilDuration;
+
+    /// <summary>Intensité instantanée de l'effet (0 = repos, 1 = pic de recul).</summary>
+    private float menuRecoilCurrentStrength;
+
     /// <summary>Modes d'association entre une caméra Cinemachine et un CharacterUnit.</summary>
     private enum CameraAnchorOwner
     {
@@ -286,6 +314,14 @@ public class BattleCameraManager : MonoBehaviour
         { BattleCameraRole.Victory, "CMV_Victory" }
     };
 
+    /// <summary>Référence rapide des caméras considérées comme des menus de combat.</summary>
+    private static readonly HashSet<string> MenuCameraNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CMV_MainMenu",
+        "CMV_SkillsMenu",
+        "CMV_ItemsMenu"
+    };
+
     /// <summary>Style de blend homogène imposé par le <see cref="CinemachineBlendSwitcher"/>.</summary>
     public CinemachineBlendDefinition.Styles SmoothBlendStyle =>
         blendSwitcher ? blendSwitcher.SmoothBlendStyle : CinemachineBlendSwitcher.ResolveSmoothBlendStyle();
@@ -347,6 +383,9 @@ public class BattleCameraManager : MonoBehaviour
     {
         // 🎢 Met à jour l'effet de secousse avant de replacer les caméras sur leurs ancres.
         UpdateDamageShakeState();
+
+        // 💨 Actualise le recul des menus pour que l'intensité corresponde au blend en cours.
+        UpdateMenuRecoilState();
 
         // 🗑️ On nettoie au passage les points de focus dont l'unité a été détruite depuis la frame précédente.
         PruneInvalidFocusProxies();
@@ -445,6 +484,79 @@ public class BattleCameraManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Met à jour la courbe d'intensité du recul appliqué lors du passage d'un menu à l'autre.
+    /// L'utilisation d'un timer indépendant du TimeScale garantit un rendu stable même en pause.
+    /// </summary>
+    private void UpdateMenuRecoilState()
+    {
+        if (!enableMenuRecoil)
+        {
+            // Effet désactivé : on annule toute valeur résiduelle pour ne pas fausser la pose des caméras.
+            menuRecoilActive = false;
+            menuRecoilCurrentStrength = 0f;
+            return;
+        }
+
+        if (!menuRecoilActive)
+        {
+            // Aucun recul en cours : on force l'intensité à zéro et on quitte immédiatement.
+            menuRecoilCurrentStrength = 0f;
+            return;
+        }
+
+        menuRecoilTimer += Time.unscaledDeltaTime; // 🕒 On se base sur le temps non-scalé pour rester fluide en pause.
+
+        float duration = Mathf.Max(menuRecoilDuration, 0.0001f);
+        float normalizedTime = Mathf.Clamp01(menuRecoilTimer / duration);
+
+        if (menuRecoilCurve != null && menuRecoilCurve.length > 0)
+            menuRecoilCurrentStrength = Mathf.Max(0f, menuRecoilCurve.Evaluate(normalizedTime));
+        else
+        {
+            // Par sécurité, on retombe sur une courbe triangulaire (montée puis descente) si la courbe n'est pas définie.
+            menuRecoilCurrentStrength = normalizedTime <= 0.5f
+                ? Mathf.Lerp(0f, 1f, normalizedTime / 0.5f)
+                : Mathf.Lerp(1f, 0f, (normalizedTime - 0.5f) / 0.5f);
+        }
+
+        if (menuRecoilTimer >= duration)
+        {
+            // Une fois la durée écoulée, on désactive l'effet et on réinitialise la force appliquée.
+            menuRecoilActive = false;
+            menuRecoilCurrentStrength = 0f;
+        }
+    }
+
+    /// <summary>
+    /// Initialise l'effet de recul avec la durée fournie afin qu'il suive le blend en cours.
+    /// Si l'effet est désactivé ou si l'amplitude est nulle, l'état est immédiatement purgé.
+    /// </summary>
+    private void TriggerMenuRecoil(float resolvedDuration)
+    {
+        if (!enableMenuRecoil || Mathf.Abs(menuRecoilDistance) <= 0.0001f)
+        {
+            // Rien à jouer : on réinitialise l'état pour éviter une valeur résiduelle.
+            menuRecoilActive = false;
+            menuRecoilCurrentStrength = 0f;
+            return;
+        }
+
+        menuRecoilActive = true;
+        menuRecoilTimer = 0f;
+        menuRecoilDuration = Mathf.Max(resolvedDuration, 0.0001f);
+        menuRecoilCurrentStrength = 0f; // L'intensité repart systématiquement de zéro.
+    }
+
+    /// <summary>
+    /// Calcule la durée retenue pour l'effet de recul en tenant compte du blend demandé et du minimum imposé.
+    /// </summary>
+    private float ResolveMenuBlendDuration(float requestedBlendTime)
+    {
+        float duration = requestedBlendTime >= 0f ? requestedBlendTime : SmoothBlendDuration;
+        return Mathf.Max(duration, menuRecoilMinimumDuration);
+    }
+
     /// <summary>Replace une caméra donnée sur son point d'ancrage.</summary>
     private void RefreshCameraPlacement(string cameraName, CameraBindingConfig config)
     {
@@ -538,6 +650,9 @@ public class BattleCameraManager : MonoBehaviour
             targetSettings.LookAtTarget = null;
             camera.Target = targetSettings;
         }
+
+        // 🔫 Injecte éventuellement l'effet de recul demandé lors de la navigation entre les menus.
+        ApplyMenuRecoil(camera, cameraName);
 
         // 🎥 Finalise la pose en ajoutant un très léger flottement « respirant » pour bannir les plans figés.
         ApplyBreathingMotion(camera, cameraName);
@@ -775,6 +890,30 @@ public class BattleCameraManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Ajoute un recul temporaire aux caméras de menu pour dynamiser les transitions.
+    /// L'offset est appliqué dans l'axe "forward" de la caméra afin de conserver le cadrage.
+    /// </summary>
+    private void ApplyMenuRecoil(CinemachineCamera camera, string cameraName)
+    {
+        if (!enableMenuRecoil || !menuRecoilActive || camera == null)
+            return; // Aucun effet si la fonctionnalité est coupée ou si aucun recul n'est en cours.
+
+        if (menuRecoilCurrentStrength <= 0f)
+            return; // L'enveloppe est retombée à zéro : inutile de modifier la position.
+
+        if (!IsMenuCamera(cameraName))
+            return; // On limite strictement l'effet aux caméras de menus pour préserver les autres plans.
+
+        if (Mathf.Abs(menuRecoilDistance) <= 0.0001f)
+            return; // Distance négligeable : on évite un calcul superflu.
+
+        float displacement = menuRecoilDistance * menuRecoilCurrentStrength;
+
+        // 🛑 Le recul correspond à un léger pas en arrière le long du forward actuel.
+        camera.transform.position -= camera.transform.forward * displacement;
+    }
+
+    /// <summary>
     /// Applique un léger mouvement sinusoïdal à la caméra sélectionnée afin de simuler une respiration.
     /// L'effet agit à la fois sur la position (verticale + latérale) et sur une micro-rotation
     /// (tangage + lacet). Les paramètres sont volontairement faibles pour conserver un cadrage lisible
@@ -1009,6 +1148,14 @@ public class BattleCameraManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Indique si le nom fourni correspond à l'une des caméras dédiées aux menus de combat.
+    /// </summary>
+    private static bool IsMenuCamera(string cameraName)
+    {
+        return !string.IsNullOrEmpty(cameraName) && MenuCameraNames.Contains(cameraName);
+    }
+
+    /// <summary>
     /// Détermine l'ancre vers laquelle la caméra orbitale doit revenir lorsque aucune cible n'est suivie.
     /// On privilégie les overrides explicites configurés par le gameplay (casterAnchorOverride) avant de
     /// retomber sur l'ancre standard « CMVPoint_OrbitAroundUnit » du lanceur, puis sur son transform racine.
@@ -1198,6 +1345,18 @@ public class BattleCameraManager : MonoBehaviour
             currentCameraName = null;
             DisplayCameraWithBlend(null, blendTime, overrideStyle);
             return;
+        }
+
+        // 🎯 Stocke la caméra précédente avant de déclencher le blend pour déterminer si un recul doit être joué.
+        string previousCameraName = currentCameraName;
+
+        // 🚀 Déclenche l'effet de recul uniquement lorsqu'on navigue entre deux menus distincts.
+        if (enableMenuRecoil
+            && IsMenuCamera(cameraName)
+            && IsMenuCamera(previousCameraName)
+            && !string.Equals(cameraName, previousCameraName, StringComparison.OrdinalIgnoreCase))
+        {
+            TriggerMenuRecoil(ResolveMenuBlendDuration(blendTime));
         }
 
         RefreshCameraPlacement(cameraName, CameraBindings.TryGetValue(cameraName, out var config)
