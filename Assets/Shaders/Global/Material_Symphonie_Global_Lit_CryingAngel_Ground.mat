@@ -16,6 +16,19 @@ MonoBehaviour:
   hdPluginSubTargetMaterialVersions:
     m_Keys: []
     m_Values: 
+--- !u!114 &-605551559477776352
+MonoBehaviour:
+  m_ObjectHideFlags: 11
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 639247ca83abc874e893eb93af2b5e44, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.ShaderGraph.Editor::UnityEditor.Rendering.BuiltIn.AssetVersion
+  version: 0
 --- !u!21 &2100000
 Material:
   serializedVersion: 8
@@ -23,7 +36,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Material_Symphonie_Global_Lit_CryingAngel_Battle_Ground
+  m_Name: Material_Symphonie_Global_Lit_CryingAngel_Ground
   m_Shader: {fileID: -6465566751694194690, guid: 426b5b77ed9c0da4da589c967d36438b, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -86,6 +99,8 @@ Material:
     - _AlphaCutoffEnable: 1
     - _AlphaDstBlend: 0
     - _AlphaSrcBlend: 1
+    - _BUILTIN_QueueControl: -1
+    - _BUILTIN_QueueOffset: 0
     - _BlendMode: 0
     - _ConservativeDepthOffsetEnable: 0
     - _CullMode: 2
@@ -144,17 +159,17 @@ Material:
     - _ZTestTransparent: 4
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 1, g: 0.2546934, b: 0, a: 1}
+    - _BaseColor: {r: 5.9921556, g: 1.5372546, b: 0, a: 1}
     - _BloodScale: {r: 0, g: 0, b: 0, a: 0}
     - _BloodSpeed: {r: 0, g: 0, b: 0, a: 0}
-    - _Color: {r: 1, g: 0.2546934, b: 0, a: 1}
+    - _Color: {r: 5.9921556, g: 1.5372546, b: 0, a: 1}
     - _DoubleSidedConstants: {r: 1, g: 1, b: 1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
     - _OutlinesColor: {r: 1, g: 1, b: 1, a: 1}
     - _TextureSpeed: {r: 0, g: -0.5, b: 0, a: 0}
     - _TextureUVScale: {r: 1, g: 1, b: 0, a: 0}
     - _UV_Scale_MainTexture: {r: 0.2, g: 0.2, b: 0, a: 0}
-    - _VeinsScale: {r: 30, g: 10, b: 0, a: 0}
+    - _VeinsScale: {r: 10, g: 6, b: 0, a: 0}
     - _VeinsSpeed: {r: 0, g: -1, b: 0, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
