@@ -37506,6 +37506,254 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6386229745914439740, guid: 0e91bad9b8c41a84584d54b6450d1213, type: 3}
   m_PrefabInstance: {fileID: 518290135}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &518434309
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 518434310}
+  - component: {fileID: 518434313}
+  - component: {fileID: 518434312}
+  - component: {fileID: 518434311}
+  m_Layer: 8
+  m_Name: VisualEffect
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &518434310
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 518434309}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1838402570}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 1.19}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &518434311
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 518434309}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9173745862bbd54a89e8be0b809efe4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  vfx: {fileID: 518434312}
+  runtimeSlider: {fileID: 0}
+  progressProperty: Progress
+  isIncreasingProperty: IsIncreasing
+  progress: 0.2
+  reinitWhenZero: 1
+  zeroThreshold: 0.0001
+--- !u!2083052967 &518434312
+VisualEffect:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 518434309}
+  m_Enabled: 1
+  m_Asset: {fileID: 8926484042661614526, guid: c28a05fc52c94c9449da0c0ed2554447, type: 3}
+  m_InitialEventName: OnPlay
+  m_InitialEventNameOverriden: 1
+  m_StartSeed: 0
+  m_ResetSeedOnPlay: 1
+  m_AllowInstancing: 1
+  m_ResourceVersion: 1
+  m_PropertySheet:
+    m_Float:
+      m_Array:
+      - m_Value: 25
+        m_Name: burstRadius
+        m_Overridden: 1
+      - m_Value: 0.5
+        m_Name: turbulenceFrequency
+        m_Overridden: 1
+      - m_Value: 0
+        m_Name: turbulenceDrag
+        m_Overridden: 1
+      - m_Value: 1
+        m_Name: turbulenceIintensity
+        m_Overridden: 1
+      - m_Value: 0
+        m_Name: SpawnRate
+        m_Overridden: 1
+      - m_Value: 0.2
+        m_Name: Speed
+        m_Overridden: 1
+      - m_Value: 0
+        m_Name: Turbulence
+        m_Overridden: 1
+      - m_Value: 0
+        m_Name: Gravity
+        m_Overridden: 1
+      - m_Value: 0.02
+        m_Name: ParticleSize
+        m_Overridden: 1
+      - m_Value: 0.7
+        m_Name: Lifetime
+        m_Overridden: 1
+      - m_Value: 0
+        m_Name: Progress
+        m_Overridden: 1
+      - m_Value: 5000
+        m_Name: MaxSpawnRate
+        m_Overridden: 1
+      - m_Value: 5
+        m_Name: MaxDisplacementY
+        m_Overridden: 1
+    m_Vector2f:
+      m_Array:
+      - m_Value: {x: 20, y: 20}
+        m_Name: lifetime
+        m_Overridden: 1
+      - m_Value: {x: 0.01, y: 0.02}
+        m_Name: startSize
+        m_Overridden: 1
+      - m_Value: {x: 4, y: 6}
+        m_Name: startSpeed
+        m_Overridden: 1
+    m_Vector3f:
+      m_Array:
+      - m_Value: {x: 0, y: 0, z: 0}
+        m_Name: burstCenter
+        m_Overridden: 1
+      - m_Value: {x: 0, y: 0, z: 0}
+        m_Name: burstDirection
+        m_Overridden: 1
+      - m_Value: {x: 0, y: 1, z: 0}
+        m_Name: velocity
+        m_Overridden: 1
+      - m_Value: {x: 0.5, y: 0, z: 0}
+        m_Name: size
+        m_Overridden: 1
+    m_Vector4f:
+      m_Array: []
+    m_Uint:
+      m_Array: []
+    m_Int:
+      m_Array:
+      - m_Value: 3000
+        m_Name: spawnCount
+        m_Overridden: 1
+    m_Matrix4x4f:
+      m_Array: []
+    m_AnimationCurve:
+      m_Array:
+      - m_Value:
+          serializedVersion: 2
+          m_Curve:
+          - serializedVersion: 3
+            time: 0
+            value: 0
+            inSlope: 0
+            outSlope: 0
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          - serializedVersion: 3
+            time: 0.57059896
+            value: 0.1620375
+            inSlope: 0.8038536
+            outSlope: 0.8038536
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0.16909547
+            outWeight: 0
+          - serializedVersion: 3
+            time: 1
+            value: 1
+            inSlope: 2
+            outSlope: 2
+            tangentMode: 0
+            weightedMode: 0
+            inWeight: 0
+            outWeight: 0
+          m_PreInfinity: 2
+          m_PostInfinity: 2
+          m_RotationOrder: 4
+        m_Name: SpawnCurve
+        m_Overridden: 1
+    m_Gradient:
+      m_Array: []
+    m_NamedObject:
+      m_Array:
+      - m_Value: {fileID: 4300000, guid: b09905a1784ada94b9125654f2c2605c, type: 3}
+        m_Name: Mesh
+        m_Overridden: 1
+      - m_Value: {fileID: 4300000, guid: 557312668e6cafa468357c067a3ddb41, type: 3}
+        m_Name: ShapeMesh
+        m_Overridden: 1
+    m_Bool:
+      m_Array:
+      - m_Value: 0
+        m_Name: IsIncreasing
+        m_Overridden: 1
+--- !u!73398921 &518434313
+VFXRenderer:
+  serializedVersion: 1
+  m_ObjectHideFlags: 2
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 518434309}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 0
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 4294967295
+  m_RendererPriority: 0
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 802298639
+  m_SortingLayer: 1
+  m_SortingOrder: 0
 --- !u!1 &518818112
 GameObject:
   m_ObjectHideFlags: 0
@@ -52580,11 +52828,8 @@ GameObject:
   - component: {fileID: 732296238}
   - component: {fileID: 732296241}
   - component: {fileID: 732296240}
-  - component: {fileID: 732296244}
-  - component: {fileID: 732296243}
-  - component: {fileID: 732296242}
   m_Layer: 8
-  m_Name: Base
+  m_Name: Model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -52599,8 +52844,8 @@ RectTransform:
   m_GameObject: {fileID: 732296237}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 50, y: 0.5, z: 50}
-  m_ConstrainProportionsScale: 1
+  m_LocalScale: {x: 50, y: 50, z: 50}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1838402570}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -52664,217 +52909,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 732296237}
-  m_Mesh: {fileID: 4300000, guid: 557312668e6cafa468357c067a3ddb41, type: 3}
---- !u!114 &732296242
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 732296237}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f9173745862bbd54a89e8be0b809efe4, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: '::'
-  vfx: {fileID: 732296243}
-  runtimeSlider: {fileID: 0}
-  progressProperty: Progress
-  isIncreasingProperty: IsIncreasing
-  progress: 0.2
-  reinitWhenZero: 1
-  zeroThreshold: 0.0001
---- !u!2083052967 &732296243
-VisualEffect:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 732296237}
-  m_Enabled: 1
-  m_Asset: {fileID: 8926484042661614526, guid: c28a05fc52c94c9449da0c0ed2554447, type: 3}
-  m_InitialEventName: OnPlay
-  m_InitialEventNameOverriden: 1
-  m_StartSeed: 0
-  m_ResetSeedOnPlay: 1
-  m_AllowInstancing: 1
-  m_ResourceVersion: 1
-  m_PropertySheet:
-    m_Float:
-      m_Array:
-      - m_Value: 0.5
-        m_Name: burstRadius
-        m_Overridden: 1
-      - m_Value: 0.5
-        m_Name: turbulenceFrequency
-        m_Overridden: 1
-      - m_Value: 0
-        m_Name: turbulenceDrag
-        m_Overridden: 1
-      - m_Value: 1
-        m_Name: turbulenceIintensity
-        m_Overridden: 1
-      - m_Value: 0
-        m_Name: SpawnRate
-        m_Overridden: 1
-      - m_Value: 0.2
-        m_Name: Speed
-        m_Overridden: 1
-      - m_Value: 0
-        m_Name: Turbulence
-        m_Overridden: 1
-      - m_Value: 0
-        m_Name: Gravity
-        m_Overridden: 1
-      - m_Value: 0.02
-        m_Name: ParticleSize
-        m_Overridden: 1
-      - m_Value: 0.7
-        m_Name: Lifetime
-        m_Overridden: 1
-      - m_Value: 0.2
-        m_Name: Progress
-        m_Overridden: 1
-      - m_Value: 5000
-        m_Name: MaxSpawnRate
-        m_Overridden: 1
-      - m_Value: 5
-        m_Name: MaxDisplacementY
-        m_Overridden: 1
-    m_Vector2f:
-      m_Array:
-      - m_Value: {x: 20, y: 20}
-        m_Name: lifetime
-        m_Overridden: 1
-      - m_Value: {x: 0.01, y: 0.02}
-        m_Name: startSize
-        m_Overridden: 1
-      - m_Value: {x: 4, y: 6}
-        m_Name: startSpeed
-        m_Overridden: 1
-    m_Vector3f:
-      m_Array:
-      - m_Value: {x: 0, y: 0, z: 0}
-        m_Name: burstCenter
-        m_Overridden: 1
-      - m_Value: {x: 0, y: 0, z: 0}
-        m_Name: burstDirection
-        m_Overridden: 1
-      - m_Value: {x: 0, y: 1, z: 0}
-        m_Name: velocity
-        m_Overridden: 1
-      - m_Value: {x: 0.01, y: 0.01, z: 0.01}
-        m_Name: size
-        m_Overridden: 1
-    m_Vector4f:
-      m_Array: []
-    m_Uint:
-      m_Array: []
-    m_Int:
-      m_Array:
-      - m_Value: 3000
-        m_Name: spawnCount
-        m_Overridden: 1
-    m_Matrix4x4f:
-      m_Array: []
-    m_AnimationCurve:
-      m_Array:
-      - m_Value:
-          serializedVersion: 2
-          m_Curve:
-          - serializedVersion: 3
-            time: 0
-            value: 0
-            inSlope: 0
-            outSlope: 0
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          - serializedVersion: 3
-            time: 0.57059896
-            value: 0.1620375
-            inSlope: 0.8038536
-            outSlope: 0.8038536
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0.16909547
-            outWeight: 0
-          - serializedVersion: 3
-            time: 1
-            value: 1
-            inSlope: 2
-            outSlope: 2
-            tangentMode: 0
-            weightedMode: 0
-            inWeight: 0
-            outWeight: 0
-          m_PreInfinity: 2
-          m_PostInfinity: 2
-          m_RotationOrder: 4
-        m_Name: SpawnCurve
-        m_Overridden: 1
-    m_Gradient:
-      m_Array: []
-    m_NamedObject:
-      m_Array:
-      - m_Value: {fileID: 4300000, guid: 6db9eb77265ea6a4c8947cb145f9b569, type: 2}
-        m_Name: Mesh
-        m_Overridden: 1
-      - m_Value: {fileID: 4300000, guid: 557312668e6cafa468357c067a3ddb41, type: 3}
-        m_Name: ShapeMesh
-        m_Overridden: 1
-    m_Bool:
-      m_Array:
-      - m_Value: 0
-        m_Name: IsIncreasing
-        m_Overridden: 1
---- !u!73398921 &732296244
-VFXRenderer:
-  serializedVersion: 1
-  m_ObjectHideFlags: 2
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 732296237}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 0
-  m_LightProbeUsage: 0
-  m_ReflectionProbeUsage: 0
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RayTracingAccelStructBuildFlagsOverride: 0
-  m_RayTracingAccelStructBuildFlags: 1
-  m_SmallMeshCulling: 1
-  m_ForceMeshLod: -1
-  m_MeshLodSelectionBias: 0
-  m_RenderingLayerMask: 4294967295
-  m_RendererPriority: 0
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 802298639
-  m_SortingLayer: 1
-  m_SortingOrder: 0
+  m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &732479632
 GameObject:
   m_ObjectHideFlags: 0
@@ -53512,7 +53547,6 @@ Transform:
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1838402570}
-  - {fileID: 2114011769}
   m_Father: {fileID: 1880851298}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &740341385
@@ -126175,7 +126209,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1753353395}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.44569543, y: -0.745668, z: -0.1954681, w: -0.45511216}
+  m_LocalRotation: {x: -0.8679082, y: 0.03756017, z: -0.49330604, w: -0.044427086}
   m_LocalPosition: {x: 0.000032186508, y: 0.31699875, z: -0.000006561318}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -132477,6 +132511,8 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 732296238}
+  - {fileID: 518434310}
+  - {fileID: 2114011769}
   m_Father: {fileID: 738531363}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1839692234
@@ -152533,12 +152569,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2114011768}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 738531363}
+  m_Father: {fileID: 1838402570}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &2114011770
 BoxCollider:
@@ -220835,7 +220871,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4957865243419136189, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -0.13621989
+      value: 0.17800787
       objectReference: {fileID: 0}
     - target: {fileID: 5328497704870498945, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchorMax.y
@@ -221179,7 +221215,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9002251911775550289, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.18684028
+      value: 0.0009675486
       objectReference: {fileID: 0}
     - target: {fileID: 9190650189389976031, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchorMax.y
@@ -246765,7 +246801,7 @@ MonoBehaviour:
           m_CallState: 1
     - m_PersistentCalls:
         m_Calls:
-        - m_Target: {fileID: 732296242}
+        - m_Target: {fileID: 0}
           m_TargetAssemblyTypeName: VFXProgressDriver, Assembly-CSharp
           m_MethodName: StartProgressFrom0To1
           m_Mode: 4
@@ -350572,7 +350608,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4411384434807303879, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -178.7998
+      value: -178.79979
       objectReference: {fileID: 0}
     - target: {fileID: 4551284211275759610, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalPosition.x
@@ -350768,7 +350804,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7173780019338124961, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -147
+      value: -146.99998
       objectReference: {fileID: 0}
     - target: {fileID: 7666186497415931499, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_IsActive
