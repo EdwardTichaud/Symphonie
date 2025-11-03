@@ -10,4 +10,11 @@ public class TimelineInstantiationParameters : MonoBehaviour
 {
     [Tooltip("Si vrai, le prefab sera instancié sur la cible (target) actuelle. Sinon il apparaîtra sur le lanceur (caster).")]
     public bool spawnOnTarget = false;
+
+    [Header("Offsets d'apparition")]
+    [Tooltip("Décalage supplémentaire appliqué après le choix caster/target afin d'ajuster finement la position finale.")]
+    public Vector3 spawnOffset = Vector3.zero;
+
+    [Tooltip("Force l'alignement sur la base de la cible lorsque l'on instancie dessus (idéal pour les plates-formes comme le Pont Harmonique).")]
+    public bool alignToTargetGround = false;
 }

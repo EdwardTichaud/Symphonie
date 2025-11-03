@@ -33,8 +33,11 @@ public class InstantiateGameObject : MonoBehaviour
     {
         // Par défaut, on instancie sur le lanceur. Ce comportement peut être
         // redéfini par la présence d'un composant TimelineInstantiationParameters
-        // sur le prefab fourni.
+        // sur le prefab fourni. On met également en cache un offset et une
+        // éventuelle contrainte d'alignement vertical pour les plateformes.
         bool spawnOnTarget = false;
+        Vector3 spawnOffset = Vector3.zero;
+        bool alignToTargetGround = false;
 
         if (gameObjectToInstantiate != null)
         {
@@ -43,12 +46,14 @@ public class InstantiateGameObject : MonoBehaviour
             if (parameters != null)
             {
                 spawnOnTarget = parameters.spawnOnTarget;
+                spawnOffset = parameters.spawnOffset;
+                alignToTargetGround = parameters.alignToTargetGround;
             }
         }
 
         // Appel à la variante détaillée permettant d'instancier en tenant compte
-        // de la cible désirée.
-        InstantiateFromTimeline(gameObjectToInstantiate, spawnOnTarget);
+        // de la cible désirée ainsi que des différents offsets demandés.
+        InstantiateFromTimeline(gameObjectToInstantiate, spawnOnTarget, spawnOffset, alignToTargetGround);
     }
 
     /// <summary>
@@ -63,7 +68,7 @@ public class InstantiateGameObject : MonoBehaviour
     ///     Si <c>true</c>, l'objet est instancié sur la cible actuelle.
     ///     Sinon, il apparaît sur le lanceur de l'action.
     /// </param>
-    public void InstantiateFromTimeline(GameObject gameObjectToInstantiate, bool spawnOnTarget)
+    public void InstantiateFromTimeline(GameObject gameObjectToInstantiate, bool spawnOnTarget, Vector3 spawnOffset = default, bool alignToTargetGround = false)
     {
         // Détermination de la position d'apparition en fonction du paramètre
         // "spawnOnTarget". On tente d'abord de récupérer les unités impliquées
@@ -82,6 +87,15 @@ public class InstantiateGameObject : MonoBehaviour
             {
                 // Instanciation au niveau de la cible actuelle
                 spawnPosition = target.transform.position;
+
+                if (alignToTargetGround)
+                {
+                    // Aligne la position verticale sur la base visuelle de l'unité.
+                    // On utilise les bounds agrégés pour prendre en compte les
+                    // échelles ou animations éventuelles.
+                    Bounds targetBounds = target.GetVisualBounds();
+                    spawnPosition.y = targetBounds.min.y;
+                }
             }
             else if (!spawnOnTarget && caster != null)
             {
@@ -101,6 +115,9 @@ public class InstantiateGameObject : MonoBehaviour
             // Pas de gestionnaire de combat : contexte non prévu (ex. cinématique).
             Debug.LogWarning("[InstantiateGameObject] NewBattleManager introuvable, instanciation sur le porteur de script.");
         }
+
+        // Applique les offsets souhaités une fois la position de base déterminée.
+        spawnPosition += spawnOffset;
 
         // Instancie finalement le prefab si fourni.
         if (gameObjectToInstantiate != null)
