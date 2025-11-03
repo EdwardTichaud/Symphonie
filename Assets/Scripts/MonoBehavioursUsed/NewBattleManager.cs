@@ -458,6 +458,36 @@ public class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
+    ///     Calcule la position d'apparition finale d'un personnage en fonction de son type.
+    ///     Les unités aériennes reçoivent une translation verticale additionnelle afin
+    ///     de rester en sustentation au-dessus du sol dès l'instanciation.
+    /// </summary>
+    /// <param name="data">Données du personnage à instancier.</param>
+    /// <param name="spawnPoint">Point d'apparition défini dans la scène.</param>
+    /// <returns>Position monde ajustée respectant la hauteur requise.</returns>
+    private Vector3 ComputeSpawnPosition(CharacterData data, Transform spawnPoint)
+    {
+        // 🚨 Sécurise l'appel : si le point de spawn n'est pas disponible, on renvoie
+        //     une position nulle afin d'éviter toute NullReference lors de l'instanciation.
+        if (spawnPoint == null)
+            return Vector3.zero;
+
+        // Base : on part de la position exacte du point défini par le level design.
+        var finalPosition = spawnPoint.position;
+
+        // ✈️ Si l'unité est aérienne, on applique directement la distance prévue par le Game Design.
+        if (data != null && data.isAirUnit)
+        {
+            // Clamp à zéro pour éviter les valeurs négatives involontaires tout en permettant
+            // aux designers d'ajuster librement la hauteur des ennemis volants.
+            var positiveOffset = Mathf.Max(0f, data.distanceFromGround);
+            finalPosition.y += positiveOffset;
+        }
+
+        return finalPosition;
+    }
+
+    /// <summary>
     /// Gère les sélections de cible pendant le combat.
     /// </summary>
     private void Update()
@@ -520,13 +550,18 @@ public class NewBattleManager : MonoBehaviour
             }
 
             // 🧍 Apparition immédiate de l'unité à sa position de combat.
-            var unitGO = Instantiate(pc.characterBattleModel, spawnPoint.position, Quaternion.identity);
+            //     Nous utilisons désormais une méthode dédiée afin d'appliquer
+            //     automatiquement une hauteur supplémentaire pour les unités
+            //     aériennes, garantissant que les modèles ne "tombent" plus sur
+            //     le sol lorsque la scène démarre.
+            var spawnPosition = ComputeSpawnPosition(pc, spawnPoint);
+            var unitGO = Instantiate(pc.characterBattleModel, spawnPosition, Quaternion.identity);
             unitGO.transform.SetParent(spawnPoint, worldPositionStays: true);
             unitGO.name = $"SquadUnit_{i}";
 
             // ✅ Génère l'effet visuel du rayon directement à l'emplacement final.
             if (squadUnitRay != null)
-                Instantiate(squadUnitRay, spawnPoint.position, Quaternion.identity);
+                Instantiate(squadUnitRay, spawnPosition, Quaternion.identity);
 
             var unit = unitGO.GetComponent<CharacterUnit>();
             unit.Initialize(pc);
@@ -564,13 +599,16 @@ public class NewBattleManager : MonoBehaviour
             }
 
             // 🧍 Apparition immédiate de l'ennemi à sa position de combat.
-            var unitGO = Instantiate(enemyData.characterBattleModel, spawnPoint.position, Quaternion.Euler(0f, 180f, 0f));
+            //     Comme pour l'équipe du joueur, la position est recalculée afin
+            //     d'offrir un point d'apparition cohérent avec le type d'unité.
+            var spawnPosition = ComputeSpawnPosition(enemyData, spawnPoint);
+            var unitGO = Instantiate(enemyData.characterBattleModel, spawnPosition, Quaternion.Euler(0f, 180f, 0f));
             unitGO.transform.SetParent(spawnPoint, worldPositionStays: true);
             unitGO.name = $"EnemyUnit_{i}";
 
             // ✅ Génère l'effet du rayon directement à l'emplacement final.
             if (enemyUnitRay != null)
-                Instantiate(enemyUnitRay, spawnPoint.position, Quaternion.identity);
+                Instantiate(enemyUnitRay, spawnPosition, Quaternion.identity);
 
             var eu = unitGO.GetComponent<CharacterUnit>();
             eu.Initialize(enemyData);
