@@ -53,6 +53,9 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Vrai si l'unité évolue dans les airs et n'est pas affectée par la gravité.")]
     public bool isAirUnit = false;
 
+    [Tooltip("Hauteur supplémentaire appliquée lors du spawn pour les unités aériennes.")]
+    public float distanceFromGround = 0f;
+
     [Header("Réactions en combat")]
     [Tooltip("Si vrai, ce personnage peut être intercepté lors de ses actions.")]
     public bool interceptable = true;
