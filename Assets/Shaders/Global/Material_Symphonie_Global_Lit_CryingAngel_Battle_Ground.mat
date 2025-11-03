@@ -125,7 +125,7 @@ Material:
     - _RequireSplitLighting: 0
     - _RimPower: 4
     - _RimWidth: 1
-    - _Smoothness: 1
+    - _Smoothness: 0.95
     - _SrcBlend: 1
     - _StencilRef: 0
     - _StencilRefDepth: 8
@@ -161,7 +161,7 @@ Material:
     - _DoubleSidedConstants: {r: 1, g: 1, b: 1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
     - _FrostOffset: {r: 0, g: 0, b: 0, a: 0}
-    - _FrostTiling: {r: 1, g: 1, b: 0, a: 0}
+    - _FrostTiling: {r: 5, g: 1, b: 0, a: 0}
     - _OutlinesColor: {r: 1, g: 1, b: 1, a: 1}
     - _TextureSpeed: {r: 0, g: -0.5, b: 0, a: 0}
     - _TextureUVScale: {r: 1, g: 1, b: 0, a: 0}

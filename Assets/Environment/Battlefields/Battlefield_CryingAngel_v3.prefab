@@ -11003,7 +11003,7 @@ ReflectionProbe:
   m_TimeSlicingMode: 0
   m_Resolution: 128
   m_UpdateFrequency: 0
-  m_BoxSize: {x: 100, y: 100, z: 100}
+  m_BoxSize: {x: 1000, y: 1000, z: 1000}
   m_BoxOffset: {x: 0, y: 0, z: 0}
   m_NearClip: 0.3
   m_FarClip: 1000
@@ -11042,16 +11042,16 @@ MonoBehaviour:
     type: 0
     mode: 1
     realtimeMode: 0
-    timeSlicing: 1
+    timeSlicing: 0
     lighting:
       importance: 1
-      multiplier: 1
+      multiplier: 0.5
       weight: 1
       lightLayer: -1
       fadeDistance: 1000
       rangeCompressionFactor: 1
     influence:
-      m_Shape: 0
+      m_Shape: 1
       m_BoxSize: {x: 100, y: 100, z: 100}
       m_BoxBlendDistancePositive: {x: 0.5, y: 0.5, z: 0.5}
       m_BoxBlendDistanceNegative: {x: 0.5, y: 0.5, z: 0.5}
@@ -11059,7 +11059,7 @@ MonoBehaviour:
       m_BoxBlendNormalDistanceNegative: {x: 0, y: 0, z: 0}
       m_BoxSideFadePositive: {x: 1, y: 1, z: 1}
       m_BoxSideFadeNegative: {x: 1, y: 1, z: 1}
-      m_SphereRadius: 200
+      m_SphereRadius: 500
       m_SphereBlendDistance: 0
       m_SphereBlendNormalDistance: 0
       m_EditorAdvancedModeBlendDistancePositive: {x: 1, y: 1, z: 1}
@@ -11095,7 +11095,7 @@ MonoBehaviour:
     cubeResolution:
       m_Override: 128
       m_UseOverride: 0
-      m_Level: 1
+      m_Level: 2
     cameraSettings:
       customRenderingSettings: 0
       renderingPathCustomFrameSettings:
@@ -11160,7 +11160,7 @@ MonoBehaviour:
       flipYMode: 0
       probeLayerMask:
         serializedVersion: 2
-        m_Bits: 4294967295
+        m_Bits: 4128768
       defaultFrameSettings: 0
       m_ObsoleteRenderingPath: 0
       m_ObsoleteFrameSettings:
