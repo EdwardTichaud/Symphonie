@@ -36,7 +36,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Material_Symphonie_Global_Lit_CryingAngel_Ground
+  m_Name: Material_Symphonie_Global_Lit_CryingAngel_World_Ground
   m_Shader: {fileID: -6465566751694194690, guid: 426b5b77ed9c0da4da589c967d36438b, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -65,6 +65,10 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - _FrostNormalMap:
+        m_Texture: {fileID: 2800000, guid: 8a2a057a91c30c04e88d24765dcbb15a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 2800000, guid: 76e40daca71ef9d4ab3d2673f1327bba, type: 3}
         m_Scale: {x: 1, y: 1}
@@ -78,7 +82,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Veins:
-        m_Texture: {fileID: 2800000, guid: 69fb6abfa9923dd4aa29c3ab93ac6f4f, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -102,6 +106,7 @@ Material:
     - _BUILTIN_QueueControl: -1
     - _BUILTIN_QueueOffset: 0
     - _BlendMode: 0
+    - _BlurAmount: 0
     - _ConservativeDepthOffsetEnable: 0
     - _CullMode: 2
     - _CullModeForward: 2
@@ -116,6 +121,7 @@ Material:
     - _EnableBlendModePreserveSpecularLighting: 1
     - _EnableFogOnTransparent: 1
     - _ExcludeFromTUAndAA: 0
+    - _FrostIntensity: 0.8
     - _MaterialID: 1
     - _MaterialTypeMask: 2
     - _Metalic: 1
@@ -130,6 +136,8 @@ Material:
     - _RefractionModel: 0
     - _RenderQueueType: 1
     - _RequireSplitLighting: 0
+    - _RimPower: 4
+    - _RimWidth: 1
     - _Smoothness: 1
     - _SrcBlend: 1
     - _StencilRef: 0
@@ -159,12 +167,14 @@ Material:
     - _ZTestTransparent: 4
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 5.9921556, g: 1.5372546, b: 0, a: 1}
+    - _BaseColor: {r: 0, g: 0, b: 0, a: 1}
     - _BloodScale: {r: 0, g: 0, b: 0, a: 0}
     - _BloodSpeed: {r: 0, g: 0, b: 0, a: 0}
-    - _Color: {r: 5.9921556, g: 1.5372546, b: 0, a: 1}
+    - _Color: {r: 0, g: 0, b: 0, a: 1}
     - _DoubleSidedConstants: {r: 1, g: 1, b: 1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
+    - _FrostOffset: {r: 0, g: 0, b: 0, a: 0}
+    - _FrostTiling: {r: 100, g: 100, b: 0, a: 0}
     - _OutlinesColor: {r: 1, g: 1, b: 1, a: 1}
     - _TextureSpeed: {r: 0, g: -0.5, b: 0, a: 0}
     - _TextureUVScale: {r: 1, g: 1, b: 0, a: 0}
