@@ -440,6 +440,12 @@ public class NewBattleManager : MonoBehaviour
             return Vector3.zero;
 
         // Base : on part de la position exacte du point défini par le level design.
+        //         Cette position correspond explicitement au pivot de PlayerPosition_X
+        //         ou EnemyPosition_X. Il est indispensable de conserver cette
+        //         référence plutôt que de se baser sur le centre géométrique
+        //         d'un éventuel volume (MeshRenderer, Collider...) afin de
+        //         garantir que les artistes puissent ajuster librement leurs
+        //         pivots dans l'éditeur.
         var finalPosition = spawnPoint.position;
 
         // ✈️ Si l'unité est aérienne, on applique directement la distance prévue par le Game Design.
@@ -448,7 +454,14 @@ public class NewBattleManager : MonoBehaviour
             // Clamp à zéro pour éviter les valeurs négatives involontaires tout en permettant
             // aux designers d'ajuster librement la hauteur des ennemis volants.
             var positiveOffset = Mathf.Max(0f, data.distanceFromGround);
-            finalPosition.y += positiveOffset;
+            // 🧭 Utilise explicitement l'axe "Up" du point d'apparition afin de rester
+            //     parfaitement aligné sur le pivot défini dans la scène. En pratique,
+            //     cela signifie que l'offset sera toujours appliqué relativement au
+            //     Transform PlayerPosition_X / EnemyPosition_X, même si ce dernier est
+            //     incliné ou animé par rapport au monde. On évite ainsi les glissements
+            //     visuels observés lorsque l'on additionnait directement sur l'axe Y
+            //     global (qui correspondait au centre du monde et non au pivot local).
+            finalPosition += spawnPoint.up * positiveOffset;
         }
 
         return finalPosition;
