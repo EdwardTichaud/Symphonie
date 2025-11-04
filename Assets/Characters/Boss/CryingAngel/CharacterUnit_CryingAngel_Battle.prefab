@@ -59,10 +59,10 @@ MonoBehaviour:
   interceptedAnimation: {fileID: 0}
   interceptionAnimation: {fileID: 0}
   animator: {fileID: 0}
-  groundCheckDistance: 2
+  groundCheckDistance: 1.9
   battleGroundLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1048576
   currentMP: 0
   currentMusicalGauge: 0
   currentATB: 0
@@ -123,7 +123,7 @@ CharacterController:
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!320 &3468119209878275080
 PlayableDirector:
   m_ObjectHideFlags: 0
@@ -420,8 +420,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6527799902802202830}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.80239487, z: -0, w: 0.59679353}
-  m_LocalPosition: {x: 4.7886405, y: 1.006, z: 1.4383745}
+  m_LocalRotation: {x: -0, y: -0.39268655, z: -0, w: 0.91967237}
+  m_LocalPosition: {x: 3.6114297, y: 1.006, z: -3.4579725}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -656,15 +656,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 17618ef01bd0dc24795dd20d4c6938ae, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.379055
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 17618ef01bd0dc24795dd20d4c6938ae, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.980695
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 17618ef01bd0dc24795dd20d4c6938ae, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.458605
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 17618ef01bd0dc24795dd20d4c6938ae, type: 3}
       propertyPath: m_LocalRotation.w
