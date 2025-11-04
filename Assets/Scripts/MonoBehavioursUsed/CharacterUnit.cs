@@ -1243,8 +1243,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         for (int i = 0; i < timelineAnimationOutputs.Count; i++)
         {
             var output = timelineAnimationOutputs[i];
-            if (!output.GetHandle().IsValid())
+            if (!output.IsOutputValid()) // ✅ au lieu de output.GetHandle().IsValid()
                 continue;
+
             output.SetWeight(weight);
         }
     }
@@ -1267,7 +1268,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         for (int i = 0; i < outputCount; i++)
         {
             PlayableOutput output = graph.GetOutput(i);
-            if (!output.GetHandle().IsValid())
+            if (!output.IsOutputValid()) // ✅ au lieu de output.GetHandle().IsValid()
                 continue;
 
             if (output.GetPlayableOutputType() == typeof(AnimationPlayableOutput))
