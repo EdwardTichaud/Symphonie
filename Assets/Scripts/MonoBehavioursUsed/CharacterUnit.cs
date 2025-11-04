@@ -1779,13 +1779,20 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// AnimationClip fourni par le move en cours de sélection. Peut être nul
     /// si le move ne définit pas d'animation personnalisée.
     /// </param>
-    public void PlayPreparingAnimation(AnimationClip clip)
+    public void PlayPreparingAnimation(AnimationClip clip, CombatAnimationKey fallbackKey = CombatAnimationKey.None)
     {
         // Les moves d'entrée de gamme n'ont pas toujours de pose dédiée :
         // on ignore simplement l'appel lorsque le clip est absent pour
         // éviter toute erreur et conserver un feedback cohérent.
         if (clip == null)
+        {
+            if (fallbackKey != CombatAnimationKey.None)
+            {
+                // En l'absence de clip dédié, on s'appuie sur la configuration Animator partagée.
+                TryPlayCombatAnimation(fallbackKey);
+            }
             return;
+        }
 
         // On s'assure de disposer de l'Animator enfant adéquat avant de
         // lancer la transition, notamment lorsque l'unité vient juste
@@ -1795,6 +1802,68 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // Réutilise la méthode centralisée afin de bénéficier de tous les
         // garde-fous existants (vérification d'état mort, CrossFade, etc.).
         PlayAnimationClip(clip);
+    }
+
+    /// <summary>
+    /// Tente de jouer une animation décrite dans les <see cref="CombatAnimationGroups"/> associés au personnage.
+    /// </summary>
+    /// <param name="key">Identifiant de l'animation à jouer.</param>
+    /// <param name="allowTimelineFallback">True pour autoriser le recours à la timeline de secours lorsque nécessaire.</param>
+    /// <returns>Vrai si une animation a bien été déclenchée.</returns>
+    public bool TryPlayCombatAnimation(CombatAnimationKey key, bool allowTimelineFallback = true)
+    {
+        if (key == CombatAnimationKey.None || Data == null)
+            return false;
+
+        CombatAnimationGroups groups = Data.combatAnimations;
+        if (groups == null || !groups.TryGetAnimation(key, out var definition) || definition == null)
+            return false;
+
+        Animator anim = GetCasterAnimator(forceRefresh: true);
+        bool hasAnimatorState = anim != null && !string.IsNullOrEmpty(definition.animatorStateName);
+        int layerIndex = Mathf.Max(0, definition.layerIndex);
+        int stateHash = 0;
+
+        if (hasAnimatorState)
+        {
+            stateHash = Animator.StringToHash(definition.animatorStateName);
+            if (!anim.HasState(layerIndex, stateHash))
+                hasAnimatorState = false;
+        }
+
+        bool timelineAvailable = definition.timeline != null;
+        bool preferTimeline = definition.useTimelineByDefault;
+        bool timelineAllowed = allowTimelineFallback || preferTimeline;
+        bool shouldUseTimeline = timelineAvailable && timelineAllowed && (preferTimeline || !hasAnimatorState);
+
+        if (shouldUseTimeline)
+        {
+            NotifyIdleStateExit();
+            PlayBattleTimeline(definition.timeline, GetCasterBindingTarget());
+            return true;
+        }
+
+        if (!hasAnimatorState)
+        {
+            if (!timelineAvailable)
+            {
+                Debug.LogWarning($"[CharacterUnit] Aucun state Animator ni timeline pour la clé '{key}' sur '{name}'.");
+            }
+            return false;
+        }
+
+        NotifyIdleStateExit();
+        FadeOutBattleTimelineInfluence();
+
+        ApplyAnimatorParameterOverrides(anim, definition.parameterOverrides);
+
+        float duration = Mathf.Max(0f, definition.crossFadeDuration);
+        if (duration > 0f)
+            anim.CrossFade(stateHash, duration, layerIndex, 0f);
+        else
+            anim.Play(stateHash, layerIndex, 0f);
+
+        return true;
     }
 
     public void PlayHurtAnimation(Transform attacker = null)
@@ -1899,6 +1968,38 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         StartCoroutine(PlayDamageFlash());
         StartCoroutine(PlayShake());
         StartCoroutine(PlayKnockback(Vector3.zero)); // Tu peux adapter la direction
+    }
+
+    /// <summary>
+    /// Applique la liste d'overrides Animator fournie par la définition d'animation.
+    /// </summary>
+    private static void ApplyAnimatorParameterOverrides(Animator animator, AnimatorParameterOverride[] overrides)
+    {
+        if (animator == null || overrides == null)
+            return;
+
+        foreach (var parameter in overrides)
+        {
+            if (parameter == null || string.IsNullOrEmpty(parameter.parameterName))
+                continue;
+
+            switch (parameter.parameterType)
+            {
+                case AnimatorParameterType.Float:
+                    animator.SetFloat(parameter.parameterName, parameter.floatValue);
+                    break;
+                case AnimatorParameterType.Int:
+                    animator.SetInteger(parameter.parameterName, parameter.intValue);
+                    break;
+                case AnimatorParameterType.Bool:
+                    animator.SetBool(parameter.parameterName, parameter.boolValue);
+                    break;
+                case AnimatorParameterType.Trigger:
+                    animator.ResetTrigger(parameter.parameterName);
+                    animator.SetTrigger(parameter.parameterName);
+                    break;
+            }
+        }
     }
 
     public MusicalMoveSO GetRandomMusicalAttack()

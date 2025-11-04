@@ -187,17 +187,36 @@ public class RhythmQTEManager : MonoBehaviour
         bool autoRestore,
         Quaternion initialRotation,
         BattleCameraRole cameraRole = BattleCameraRole.None,
-        float cameraSwitchDelay = 0f)
+        float cameraSwitchDelay = 0f,
+        CombatAnimationKey fallbackAnimation = CombatAnimationKey.None)
     {
-        if (timeline == null || BattleTimelineManager.Instance == null || caster == null)
+        if (caster == null)
             return;
 
-        ConfigureCameraForPhase(caster, animatorGO, cameraTarget, initialRotation, cameraRole, cameraSwitchDelay);
+        BattleTimelineManager manager = BattleTimelineManager.Instance;
+        bool timelineAvailable = timeline != null && manager != null;
+        bool animationAvailable = fallbackAnimation != CombatAnimationKey.None;
 
-        // Lecture de la timeline via le PlayableDirector de l'unité concernée.
-        GameObject defaultCasterTarget = caster.GetCasterBindingTarget();
-        GameObject binding = animatorGO ?? defaultCasterTarget;
-        BattleTimelineManager.Instance.PlayCasterTimeline(timeline, caster, binding);
+        if (!timelineAvailable && !animationAvailable)
+            return;
+
+        if (manager != null)
+        {
+            ConfigureCameraForPhase(caster, animatorGO, cameraTarget, initialRotation, cameraRole, cameraSwitchDelay);
+        }
+
+        if (timelineAvailable)
+        {
+            // Lecture de la timeline via le PlayableDirector de l'unité concernée.
+            GameObject defaultCasterTarget = caster.GetCasterBindingTarget();
+            GameObject binding = animatorGO ?? defaultCasterTarget;
+            manager.PlayCasterTimeline(timeline, caster, binding);
+        }
+        else if (animationAvailable)
+        {
+            // Aucun timeline fournie : on se replie sur l'Animator partagé pour limiter les assets spécifiques.
+            caster.TryPlayCombatAnimation(fallbackAnimation);
+        }
     }
 
     /// <summary>
@@ -425,6 +444,16 @@ public class RhythmQTEManager : MonoBehaviour
         // Ce système est remplacé par l'utilisation de caméras Cinemachine dédiées.
         bool useOverlay = false;
 
+        CombatAnimationKey preparingKey = move != null
+            ? move.ResolvePreparingAnimationKey()
+            : CombatAnimationKey.PrepareHit;
+        CombatAnimationKey performingKey = move != null
+            ? move.ResolvePerformingAnimationKey()
+            : CombatAnimationKey.SkillUseDynamic;
+        CombatAnimationKey retreatKey = move != null
+            ? move.ResolveRetreatAnimationKey()
+            : CombatAnimationKey.RetreatBlendTree;
+
         // Configure le rig caméra avec les cibles du move avant de démarrer la mise en scène.
         BattleCameraManager.Instance?.ConfigureActionTargets(
             caster,
@@ -455,7 +484,9 @@ public class RhythmQTEManager : MonoBehaviour
             casterCameraTarget,
             move.performingTimeline == null && move.retreatTimeline == null,
             initialRotation,
-            move.preparingCameraRole);
+            move.preparingCameraRole,
+            0f,
+            preparingKey);
         yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay, caster);
 
         // 🎬 Si une timeline de préparation vient de s'achever, on enchaîne maintenant
@@ -495,7 +526,8 @@ public class RhythmQTEManager : MonoBehaviour
             move.retreatTimeline == null,
             initialRotation,
             move.performingCameraRole,
-            move.preparingToPerformingCameraDelay);
+            move.preparingToPerformingCameraDelay,
+            performingKey);
 
         if (pendingNotes == 0)
         {
@@ -549,7 +581,9 @@ public class RhythmQTEManager : MonoBehaviour
             casterCameraTarget,
             true,
             initialRotation,
-            move.retreatCameraRole);
+            move.retreatCameraRole,
+            0f,
+            retreatKey);
         yield return WaitForTimelinePhase(move.retreatTimeline, useOverlay, caster);
 
         isActive = false;
@@ -642,6 +676,16 @@ public class RhythmQTEManager : MonoBehaviour
         bool useOverlay = false;
         // Lancement de timeline globale désactivé.
 
+        CombatAnimationKey itemPreparingKey = item != null
+            ? item.ResolvePreparingAnimationKey()
+            : CombatAnimationKey.AimItem;
+        CombatAnimationKey itemPerformingKey = item != null
+            ? item.ResolvePerformingAnimationKey()
+            : CombatAnimationKey.ItemUseDynamic;
+        CombatAnimationKey itemRetreatKey = item != null
+            ? item.ResolveRetreatAnimationKey()
+            : CombatAnimationKey.RetreatBlendTree;
+
         BattleCameraManager.Instance?.ConfigureActionTargets(
             caster,
             target,
@@ -658,7 +702,9 @@ public class RhythmQTEManager : MonoBehaviour
             casterCameraTarget,
             item.performingTimeline == null && item.retreatTimeline == null,
             initialRotation,
-            item.preparingCameraRole);
+            item.preparingCameraRole,
+            0f,
+            itemPreparingKey);
         yield return WaitForTimelinePhase(item.preparingTimeline, useOverlay, caster);
 
         // Déplacement ou téléportation éventuel vers la cible.
@@ -689,7 +735,8 @@ public class RhythmQTEManager : MonoBehaviour
             item.retreatTimeline == null,
             initialRotation,
             item.performingCameraRole,
-            item.preparingToPerformingCameraDelay);
+            item.preparingToPerformingCameraDelay,
+            itemPerformingKey);
 
         // QTE associé à l'objet durant l'utilisation.
         LastItemSuccess = true;
@@ -730,7 +777,9 @@ public class RhythmQTEManager : MonoBehaviour
             casterCameraTarget,
             true,
             initialRotation,
-            item.retreatCameraRole);
+            item.retreatCameraRole,
+            0f,
+            itemRetreatKey);
         yield return WaitForTimelinePhase(item.retreatTimeline, useOverlay, caster);
 
         isActive = false;

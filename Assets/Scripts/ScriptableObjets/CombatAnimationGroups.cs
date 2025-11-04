@@ -1,67 +1,191 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Timeline;
 
+/// <summary>
+/// Décrit l'ensemble des animations utilisables par un personnage en combat.
+/// L'objectif est de privilégier l'Animator pour la majorité des actions afin
+/// de limiter le recours aux timelines coûteuses à maintenir.
+/// </summary>
 [CreateAssetMenu(menuName = "Symphonie/Combat/Animation Groups", fileName = "CombatAnimationGroups")]
 public class CombatAnimationGroups : ScriptableObject
 {
-    [Header("Idle (1D: IdleVar)")]
-    public AnimationClip[] idleVariations = new AnimationClip[3];
+    [SerializeField, Tooltip("Liste sérialisée des animations disponibles triées par identifiant logique.")]
+    private CombatAnimationSlot[] animations = Array.Empty<CombatAnimationSlot>();
 
-    [Header("Move (2D: SpeedX,SpeedY)  L/R/F/B")]
-    public AnimationClip strafeL;
-    public AnimationClip strafeR;
-    public AnimationClip forwardShuffle;
-    public AnimationClip backShuffle;
+    private readonly Dictionary<CombatAnimationKey, CombatAnimationDefinition> lookup =
+        new Dictionary<CombatAnimationKey, CombatAnimationDefinition>();
 
-    [Header("Approach (1D: DistanceNorm)")]
-    public AnimationClip walkApproach;
-    public AnimationClip runApproach;
-    public AnimationClip shortLunge;
+    /// <summary>
+    /// Fournit un accès en lecture à toutes les animations déclarées, utile pour les outils éditeur.
+    /// </summary>
+    public IReadOnlyList<CombatAnimationSlot> Animations => animations;
 
-    [Header("Retreat (1D: DistanceNorm)")]
-    public AnimationClip walkRetreat;
-    public AnimationClip runRetreat;
-    public AnimationClip shortRetreatLunge;
+    private void OnEnable()
+    {
+        BuildLookup();
+    }
 
-    [Header("Hit React (Directional 2D: F/B/L/R)")]
-    public AnimationClip hitF_small;
-    public AnimationClip hitB_small;
-    public AnimationClip hitL_small;
-    public AnimationClip hitR_small;
+    private void OnValidate()
+    {
+        BuildLookup();
+    }
 
-    [Header("Evade (SSM)")]
-    public AnimationClip evadeF;
-    public AnimationClip evadeB;
-    public AnimationClip evadeL;
-    public AnimationClip evadeR;
+    /// <summary>
+    /// Reconstitue le dictionnaire interne à partir du tableau sérialisé.
+    /// </summary>
+    private void BuildLookup()
+    {
+        lookup.Clear();
 
-    [Header("Cast (1D: CastIntensity)")]
-    public AnimationClip castLow;
-    public AnimationClip castMid;
-    public AnimationClip castMax;
+        if (animations == null)
+            return;
 
-    [Header("Item Use")]
-    public AnimationClip itemUse;
+        foreach (var slot in animations)
+        {
+            if (slot.definition == null)
+                continue;
 
-    [Header("Attacks A (1D: AttackStyle)")]
-    public AnimationClip atk_light_A;
-    public AnimationClip atk_heavy_A;
-    public AnimationClip atk_thrust_A;
-    public AnimationClip atk_cleave_A;
-    public AnimationClip atk_projectile_start;
+            lookup[slot.key] = slot.definition;
+        }
+    }
 
-    [Header("Attacks B (1D: AttackStyle)")]
-    public AnimationClip atk_light_B;
-    public AnimationClip atk_heavy_B;
-    public AnimationClip atk_finisher_B;
-    public AnimationClip atk_projectile_release;
+    /// <summary>
+    /// Recherche la définition associée à une clé d'animation donnée.
+    /// </summary>
+    public bool TryGetAnimation(CombatAnimationKey key, out CombatAnimationDefinition definition)
+    {
+        if (lookup.Count == 0)
+            BuildLookup();
 
-    [Header("KO / GetUp / Death")]
-    public AnimationClip knockdown;
-    public AnimationClip getUp;
-    public AnimationClip death;
+        return lookup.TryGetValue(key, out definition) && definition != null;
+    }
 
-    [Header("Turn In Place")]
-    public AnimationClip turn90L;
-    public AnimationClip turn90R;
-    public AnimationClip turn180;
+    /// <summary>
+    /// Retourne la définition associée à la clé demandée ou <c>null</c> si elle n'existe pas.
+    /// </summary>
+    public CombatAnimationDefinition GetAnimationOrDefault(CombatAnimationKey key)
+    {
+        TryGetAnimation(key, out var def);
+        return def;
+    }
+
+    [Serializable]
+    public struct CombatAnimationSlot
+    {
+        [Tooltip("Identifiant logique de l'animation.")]
+        public CombatAnimationKey key;
+
+        [Tooltip("Données décrivant l'animation à lancer (state Animator, paramètres et fallback Timeline).")]
+        public CombatAnimationDefinition definition;
+    }
+}
+
+/// <summary>
+/// Liste des animations supportées par l'Animator de combat.
+/// </summary>
+public enum CombatAnimationKey
+{
+    None = 0,
+    Idle,
+    IdleVariantA,
+    IdleVariantB,
+    MoveBlendTree,
+    ApproachBlendTree,
+    RetreatBlendTree,
+    GuardHold,
+    PrepareHit,
+    Defend,
+    AimSkill,
+    AimItem,
+    SkillUseDynamic,
+    ItemUseDynamic,
+    AttackChainA_Light,
+    AttackChainA_Heavy,
+    AttackChainA_Thrust,
+    AttackChainA_Cleave,
+    AttackProjectile_Start,
+    AttackChainB_Light,
+    AttackChainB_Heavy,
+    AttackChainB_Finisher,
+    AttackProjectile_Release,
+    CastLow,
+    CastMid,
+    CastMax,
+    EvadeForward,
+    EvadeBackward,
+    EvadeLeft,
+    EvadeRight,
+    HitFront,
+    HitBack,
+    HitLeft,
+    HitRight,
+    Knockdown,
+    GetUp,
+    Death,
+    Turn90Left,
+    Turn90Right,
+    Turn180,
+    EnterCombat,
+    BattlePose,
+    ItemUseStatic,
+}
+
+/// <summary>
+/// Paramétrage détaillé d'une animation de combat.
+/// </summary>
+[Serializable]
+public class CombatAnimationDefinition
+{
+    [Tooltip("Nom du state Animator à jouer (chemin complet si contenu dans un sous-state machine).")]
+    public string animatorStateName;
+
+    [Tooltip("Index de layer Animator sur lequel l'état est déclaré (0 = base layer).")]
+    public int layerIndex = 0;
+
+    [Tooltip("Durée du crossfade appliqué lors de la transition vers cet état.")]
+    public float crossFadeDuration = 0.08f;
+
+    [Tooltip("Forcer l'utilisation de la Timeline fournie même si un state Animator est renseigné.")]
+    public bool useTimelineByDefault = false;
+
+    [Tooltip("Timeline alternative à jouer lorsque l'Animator ne dispose pas de l'état demandé.")]
+    public TimelineAsset timeline;
+
+    [Tooltip("Liste des paramètres Animator à appliquer avant de lancer le state.")]
+    public AnimatorParameterOverride[] parameterOverrides = Array.Empty<AnimatorParameterOverride>();
+}
+
+/// <summary>
+/// Type de paramètre Animator supporté par les overrides.
+/// </summary>
+public enum AnimatorParameterType
+{
+    Float,
+    Int,
+    Bool,
+    Trigger,
+}
+
+/// <summary>
+/// Valeur à appliquer sur un paramètre Animator avant de déclencher l'animation.
+/// </summary>
+[Serializable]
+public class AnimatorParameterOverride
+{
+    [Tooltip("Nom exact du paramètre Animator à modifier.")]
+    public string parameterName;
+
+    [Tooltip("Type de paramètre (Float, Int, Bool ou Trigger).")]
+    public AnimatorParameterType parameterType = AnimatorParameterType.Float;
+
+    [Tooltip("Valeur flottante à appliquer lorsque le type est Float.")]
+    public float floatValue;
+
+    [Tooltip("Valeur entière utilisée pour les paramètres Int.")]
+    public int intValue;
+
+    [Tooltip("Valeur booléenne pour les paramètres Bool.")]
+    public bool boolValue;
 }

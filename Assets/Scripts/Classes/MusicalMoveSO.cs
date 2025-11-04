@@ -174,6 +174,16 @@ public class MusicalMoveSO : ScriptableObject
     [Header("Animation")]
     public AnimationClip preparingAnimation;
 
+    [Header("Animator – Clés partagées")]
+    [Tooltip("State Animator à jouer si aucune timeline n'est fournie pour la préparation du move.")]
+    public CombatAnimationKey preparingAnimationKey = CombatAnimationKey.None;
+
+    [Tooltip("State Animator à utiliser pour l'exécution principale lorsque la timeline est absente.")]
+    public CombatAnimationKey performingAnimationKey = CombatAnimationKey.None;
+
+    [Tooltip("State Animator jouée lors du repli si l'on n'utilise pas de timeline dédiée.")]
+    public CombatAnimationKey retreatAnimationKey = CombatAnimationKey.None;
+
     [Header("Timeline")]
     [Tooltip("Timeline jouée lors de la préparation du move")]
     public TimelineAsset preparingTimeline;
@@ -297,6 +307,41 @@ public class MusicalMoveSO : ScriptableObject
         {
             ApplySingleEffect(criticalEffectType, caster, target, criticalEffectValue, criticalFatigueCost, false);
         }
+    }
+
+    /// <summary>
+    /// Identifie le state Animator le plus pertinent pour la phase de préparation.
+    /// Un fallback générique est fourni pour éviter toute posture figée si aucune valeur n'est saisie.
+    /// </summary>
+    public CombatAnimationKey ResolvePreparingAnimationKey()
+    {
+        return preparingAnimationKey != CombatAnimationKey.None
+            ? preparingAnimationKey
+            : CombatAnimationKey.PrepareHit;
+    }
+
+    /// <summary>
+    /// Détermine l'animation principale à utiliser lorsqu'on préfère l'Animator aux timelines.
+    /// Les attaques se rabattent sur la première chaîne A, les autres moves utilisent une posture utilitaire.
+    /// </summary>
+    public CombatAnimationKey ResolvePerformingAnimationKey()
+    {
+        if (performingAnimationKey != CombatAnimationKey.None)
+            return performingAnimationKey;
+
+        return moveType == MoveType.Attack
+            ? CombatAnimationKey.AttackChainA_Light
+            : CombatAnimationKey.SkillUseDynamic;
+    }
+
+    /// <summary>
+    /// Choisit l'animation de repli standard lorsque aucune timeline n'est configurée.
+    /// </summary>
+    public CombatAnimationKey ResolveRetreatAnimationKey()
+    {
+        return retreatAnimationKey != CombatAnimationKey.None
+            ? retreatAnimationKey
+            : CombatAnimationKey.RetreatBlendTree;
     }
 
     /// <summary>

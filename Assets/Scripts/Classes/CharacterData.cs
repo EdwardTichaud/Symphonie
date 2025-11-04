@@ -149,6 +149,10 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Index utilisé au chargement pour activer un set d'objets spécifique. -1 pour aucun.")]
     public int defaultItemSetIndex = -1;
 
+    [Header("Animations de combat (Animator)")]
+    [Tooltip("Mapping vers les states Animator et timelines de secours utilisés pendant les combats.")]
+    public CombatAnimationGroups combatAnimations;
+
     #endregion
 
     #region Etats runtime

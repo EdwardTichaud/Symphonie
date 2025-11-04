@@ -12,44 +12,435 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b4cb36825df6514c895d5bb3891965c, type: 3}
   m_Name: Lucian_Animations_Battle
   m_EditorClassIdentifier: Assembly-CSharp::CombatAnimationGroups
-  idleVariations:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  strafeL: {fileID: 0}
-  strafeR: {fileID: 0}
-  forwardShuffle: {fileID: 0}
-  backShuffle: {fileID: 0}
-  walkApproach: {fileID: 0}
-  runApproach: {fileID: 0}
-  shortLunge: {fileID: 0}
-  walkRetreat: {fileID: 0}
-  runRetreat: {fileID: 0}
-  shortRetreatLunge: {fileID: 0}
-  hitF_small: {fileID: 0}
-  hitB_small: {fileID: 0}
-  hitL_small: {fileID: 0}
-  hitR_small: {fileID: 0}
-  evadeF: {fileID: 0}
-  evadeB: {fileID: 0}
-  evadeL: {fileID: 0}
-  evadeR: {fileID: 0}
-  castLow: {fileID: 0}
-  castMid: {fileID: 0}
-  castMax: {fileID: 0}
-  itemUse: {fileID: 0}
-  atk_light_A: {fileID: 0}
-  atk_heavy_A: {fileID: 0}
-  atk_thrust_A: {fileID: 0}
-  atk_cleave_A: {fileID: 0}
-  atk_projectile_start: {fileID: 0}
-  atk_light_B: {fileID: 0}
-  atk_heavy_B: {fileID: 0}
-  atk_finisher_B: {fileID: 0}
-  atk_projectile_release: {fileID: 0}
-  knockdown: {fileID: 0}
-  getUp: {fileID: 0}
-  death: {fileID: 0}
-  turn90L: {fileID: 0}
-  turn90R: {fileID: 0}
-  turn180: {fileID: 0}
+  animations:
+  - key: 1
+    definition:
+      animatorStateName: Idle_BT
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: IdleVar
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+  - key: 2
+    definition:
+      animatorStateName: Idle_BT
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: IdleVar
+        parameterType: 0
+        floatValue: 0.5
+        intValue: 0
+        boolValue: 0
+  - key: 3
+    definition:
+      animatorStateName: Idle_BT
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: IdleVar
+        parameterType: 0
+        floatValue: 1
+        intValue: 0
+        boolValue: 0
+  - key: 4
+    definition:
+      animatorStateName: Move_BT
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: SpeedX
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+      - parameterName: SpeedY
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+  - key: 5
+    definition:
+      animatorStateName: Approach_BT
+      layerIndex: 0
+      crossFadeDuration: 0.1
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: DistanceNorm
+        parameterType: 0
+        floatValue: 1
+        intValue: 0
+        boolValue: 0
+  - key: 6
+    definition:
+      animatorStateName: Retreat_BT
+      layerIndex: 0
+      crossFadeDuration: 0.1
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: DistanceNorm
+        parameterType: 0
+        floatValue: 0.5
+        intValue: 0
+        boolValue: 0
+  - key: 7
+    definition:
+      animatorStateName: GuardHold
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 8
+    definition:
+      animatorStateName: PrepareHit
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 9
+    definition:
+      animatorStateName: Defend
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 10
+    definition:
+      animatorStateName: Aim_Skill
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 11
+    definition:
+      animatorStateName: Aim_Item
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 12
+    definition:
+      animatorStateName: Skill_Use_Dynamic
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 13
+    definition:
+      animatorStateName: Item_Use_Dynamic
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 14
+    definition:
+      animatorStateName: Attack_BT_A
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: AttackStyle
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+  - key: 15
+    definition:
+      animatorStateName: Attack_BT_A
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: AttackStyle
+        parameterType: 0
+        floatValue: 0.33
+        intValue: 0
+        boolValue: 0
+  - key: 16
+    definition:
+      animatorStateName: Attack_BT_A
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: AttackStyle
+        parameterType: 0
+        floatValue: 0.66
+        intValue: 0
+        boolValue: 0
+  - key: 17
+    definition:
+      animatorStateName: Attack_BT_A
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: AttackStyle
+        parameterType: 0
+        floatValue: 1
+        intValue: 0
+        boolValue: 0
+  - key: 19
+    definition:
+      animatorStateName: Attack_BT_B
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: AttackStyle
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+  - key: 20
+    definition:
+      animatorStateName: Attack_BT_B
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: AttackStyle
+        parameterType: 0
+        floatValue: 0.5
+        intValue: 0
+        boolValue: 0
+  - key: 21
+    definition:
+      animatorStateName: Attack_BT_B
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: AttackStyle
+        parameterType: 0
+        floatValue: 1
+        intValue: 0
+        boolValue: 0
+  - key: 23
+    definition:
+      animatorStateName: Cast_BT
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: CastIntensity
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+  - key: 24
+    definition:
+      animatorStateName: Cast_BT
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: CastIntensity
+        parameterType: 0
+        floatValue: 0.5
+        intValue: 0
+        boolValue: 0
+  - key: 25
+    definition:
+      animatorStateName: Cast_BT
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: CastIntensity
+        parameterType: 0
+        floatValue: 1
+        intValue: 0
+        boolValue: 0
+  - key: 26
+    definition:
+      animatorStateName: Evade_F
+      layerIndex: 0
+      crossFadeDuration: 0.05
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 27
+    definition:
+      animatorStateName: Evade_B
+      layerIndex: 0
+      crossFadeDuration: 0.05
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 28
+    definition:
+      animatorStateName: Evade_L
+      layerIndex: 0
+      crossFadeDuration: 0.05
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 29
+    definition:
+      animatorStateName: Evade_R
+      layerIndex: 0
+      crossFadeDuration: 0.05
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 30
+    definition:
+      animatorStateName: HitReact_BT
+      layerIndex: 0
+      crossFadeDuration: 0.06
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: HitAngle
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+      - parameterName: HitAngleY
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+  - key: 31
+    definition:
+      animatorStateName: HitReact_BT
+      layerIndex: 0
+      crossFadeDuration: 0.06
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: HitAngle
+        parameterType: 0
+        floatValue: 180
+        intValue: 0
+        boolValue: 0
+      - parameterName: HitAngleY
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+  - key: 32
+    definition:
+      animatorStateName: HitReact_BT
+      layerIndex: 0
+      crossFadeDuration: 0.06
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: HitAngle
+        parameterType: 0
+        floatValue: -90
+        intValue: 0
+        boolValue: 0
+      - parameterName: HitAngleY
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+  - key: 33
+    definition:
+      animatorStateName: HitReact_BT
+      layerIndex: 0
+      crossFadeDuration: 0.06
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: HitAngle
+        parameterType: 0
+        floatValue: 90
+        intValue: 0
+        boolValue: 0
+      - parameterName: HitAngleY
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+  - key: 34
+    definition:
+      animatorStateName: Knockdown
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 35
+    definition:
+      animatorStateName: GetUp
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 36
+    definition:
+      animatorStateName: Death
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 40
+    definition:
+      animatorStateName: EnterCombat
+      layerIndex: 0
+      crossFadeDuration: 0.12
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []
+  - key: 41
+    definition:
+      animatorStateName: BattlePose_BT
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides:
+      - parameterName: BattleState
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+      - parameterName: Speed
+        parameterType: 0
+        floatValue: 0
+        intValue: 0
+        boolValue: 0
+  - key: 42
+    definition:
+      animatorStateName: ItemUse
+      layerIndex: 0
+      crossFadeDuration: 0.08
+      useTimelineByDefault: 0
+      timeline: {fileID: 0}
+      parameterOverrides: []

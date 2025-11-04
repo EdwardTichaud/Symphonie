@@ -105,6 +105,16 @@ public class ItemData : ScriptableObject
     [Tooltip("Timeline jouée lors du repli après utilisation")]
     public TimelineAsset retreatTimeline;
 
+    [Header("Animator – Clés partagées")]
+    [Tooltip("State Animator utilisé si aucune timeline de préparation n'est définie.")]
+    public CombatAnimationKey preparingAnimationKey = CombatAnimationKey.None;
+
+    [Tooltip("State Animator lancé durant l'utilisation lorsque la timeline est absente.")]
+    public CombatAnimationKey performingAnimationKey = CombatAnimationKey.None;
+
+    [Tooltip("State Animator de repli si aucune timeline n'est disponible.")]
+    public CombatAnimationKey retreatAnimationKey = CombatAnimationKey.None;
+
     [Header("Caméras par phase")]
     [Tooltip("Plan cinématique utilisé lors de la préparation (None = conserver la vue actuelle, OverShoulderCasterLookTarget = ancre Camera_Shoulder_Stay, OverShoulderCasterToTarget = ancre Camera_Shoulder_Moving).")]
     public BattleCameraRole preparingCameraRole = BattleCameraRole.MainMenuIdle;
@@ -177,6 +187,36 @@ public class ItemData : ScriptableObject
         {
             ApplySingleEffect(criticalEffectType, caster, target, criticalEffectValue);
         }
+    }
+
+    /// <summary>
+    /// Détermine l'animation de préparation à jouer lorsque l'objet n'utilise pas de timeline.
+    /// </summary>
+    public CombatAnimationKey ResolvePreparingAnimationKey()
+    {
+        return preparingAnimationKey != CombatAnimationKey.None
+            ? preparingAnimationKey
+            : CombatAnimationKey.AimItem;
+    }
+
+    /// <summary>
+    /// Sélectionne la pose Animator principale de l'objet en l'absence de timeline dédiée.
+    /// </summary>
+    public CombatAnimationKey ResolvePerformingAnimationKey()
+    {
+        return performingAnimationKey != CombatAnimationKey.None
+            ? performingAnimationKey
+            : CombatAnimationKey.ItemUseDynamic;
+    }
+
+    /// <summary>
+    /// Identifie la pose de repli standard lorsque l'objet ne propose pas de timeline de sortie.
+    /// </summary>
+    public CombatAnimationKey ResolveRetreatAnimationKey()
+    {
+        return retreatAnimationKey != CombatAnimationKey.None
+            ? retreatAnimationKey
+            : CombatAnimationKey.RetreatBlendTree;
     }
 
     /// <summary>

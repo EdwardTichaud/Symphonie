@@ -3177,7 +3177,10 @@ public class NewBattleManager : MonoBehaviour
         // soulignant l'intention tactique du move pour les joueurs chevronnés.
         if (currentCharacterUnit != null)
         {
-            currentCharacterUnit.PlayPreparingAnimation(move?.preparingAnimation);
+            CombatAnimationKey fallbackKey = move != null
+                ? move.ResolvePreparingAnimationKey()
+                : CombatAnimationKey.PrepareHit;
+            currentCharacterUnit.PlayPreparingAnimation(move?.preparingAnimation, fallbackKey);
         }
     }
 
