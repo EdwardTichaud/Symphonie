@@ -917,15 +917,14 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// <summary>
     /// Fournit un accès en lecture au <see cref="PlayableDirector"/> pilotant les timelines de combat.
     /// Cette propriété reste protégée afin d'éviter toute modification extérieure non contrôlée tout
-    /// en permettant aux gestionnaires (comme le <see cref="SlowBattleManager"/>) de vérifier l'état
-    /// du director lorsqu'une timeline est mise en pause pour un tour lent.
+    /// en autorisant les gestionnaires spécialisés (UI, TimelineManager, systèmes de QTE) à vérifier
+    /// l'état du director lorsque des Signaux mettent temporairement en pause une timeline.
     /// </summary>
     public PlayableDirector BattleDirector => battleDirector;
 
     /// <summary>
-    /// Met en pause la timeline courante si elle est en lecture. Ce comportement est principalement
-    /// utilisé par les Signaux des timelines de Performing pour figer la mise en scène le temps que
-    /// le tour se termine dans le mode de combat lent.
+    /// Met en pause la timeline courante si elle est en lecture. Ce comportement reste utilisé par
+    /// certains Signaux hérités pour figer la mise en scène pendant les transitions critiques.
     /// </summary>
     public void PauseBattleTimeline()
     {
