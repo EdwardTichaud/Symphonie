@@ -10,7 +10,6 @@ GameObject:
   m_Component:
   - component: {fileID: 5204114573219567973}
   - component: {fileID: 4948338297405769633}
-  - component: {fileID: 6755362118505109379}
   - component: {fileID: 4662704560674311386}
   - component: {fileID: 2532479745881820963}
   - component: {fileID: 3242446044733657830}
@@ -49,8 +48,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fc59b9e3b45a5a4d8022996bcae49f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  useSlowBattleManager: 1
-  slowBattleManager: {fileID: 6755362118505109379}
   currentBattleState: 0
   squadUnitRay: {fileID: 5627696518775099638, guid: 390cc74915d4a054bbd897e1885047a4, type: 3}
   enemyUnitRay: {fileID: 5627696518775099638, guid: 00dd6efc06d3d904f8c54712b85f5042, type: 3}
@@ -137,24 +134,6 @@ MonoBehaviour:
   targetChangeClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
   skillPageChangeClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
   defaultCharacterSelectionClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
---- !u!114 &6755362118505109379
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8651676031145584698}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd874ad2029d5fe4f87a833c7f6d4d4b, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  legacyBattleManager: {fileID: 4948338297405769633}
-  previewTimeout: 1.25
-  downtimeBetweenTurns: 0.35
-  previewTimeScale: 0.25
-  resetPositionsAtRoundStart: 1
-  orderedUnits: []
 --- !u!114 &4662704560674311386
 MonoBehaviour:
   m_ObjectHideFlags: 0

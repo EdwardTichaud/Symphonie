@@ -483,7 +483,6 @@ public class RhythmQTEManager : MonoBehaviour
 
         // --- Phase d'exécution ---
         TimelineAsset performingTimeline = move.performingTimeline;
-        bool isSlowMode = NewBattleManager.Instance != null && NewBattleManager.Instance.UseSlowBattleManager && SlowBattleManager.Instance != null;
 
         // Le délai passé en paramètre différera uniquement la bascule de caméra,
         // laissant la timeline de performing démarrer immédiatement.
@@ -527,46 +526,14 @@ public class RhythmQTEManager : MonoBehaviour
         bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
 
         bool performingPaused =
-            (BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePaused(caster)) ||
-            (SlowBattleManager.Instance != null && SlowBattleManager.Instance.IsPerformingTimelinePaused(caster));
-        bool shouldDefer = isSlowMode && (performingPaused || move.retreatTimeline != null);
-        if (shouldDefer)
+            BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePaused(caster);
+
+        if (performingPaused)
         {
-            var sequence = SlowBattleTimelineSequence.ForMusicalMove(
-                move,
-                caster,
-                target,
-                originPosition,
-                useOverlay,
-                casterAnimatorGO,
-                performingCameraTarget,
-                casterCameraTarget,
-                initialRotation,
-                performingPaused ? performingTimeline : null,
-                move.retreatTimeline,
-                0f,
-                move.performingCameraRole,
-                move.retreatCameraRole,
-                critical,
-                performingPaused);
-
-            SlowBattleManager.Instance.RegisterDeferredTimelineSequence(sequence);
-
-            if (target != null)
-                target.OnDeath -= deathHandler;
-
-            currentMove = null;
-            currentCaster = null;
-            currentTarget = null;
-            delayTargetPreparationAnimationForCurrentMove = false;
-
-            CancelPendingCameraSwitch();
-            BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
-            BattleCameraManager.Instance?.ClearRigTargets();
-            ClearQTEBar();
-
-            isActive = false;
-            yield break;
+            // 🚦 Une timeline peut encore être suspendue par des Signaux hérités de l'ancien mode lent ;
+            //     nous la relançons donc immédiatement via le gestionnaire principal afin de prévenir
+            //     tout blocage du combat.
+            BattleTimelineManager.Instance?.ResumeCasterTimeline(caster);
         }
 
         // --- Retour ou téléportation de repli ---
@@ -712,7 +679,6 @@ public class RhythmQTEManager : MonoBehaviour
         // Comme pour les MusicalMoves, le délai fourni retarde uniquement le changement
         // de caméra sans bloquer l'exécution de la timeline principale.
         TimelineAsset itemPerformingTimeline = item.performingTimeline;
-        bool itemSlowMode = NewBattleManager.Instance != null && NewBattleManager.Instance.UseSlowBattleManager && SlowBattleManager.Instance != null;
 
         StartTimelinePhase(
             itemPerformingTimeline,
@@ -742,36 +708,13 @@ public class RhythmQTEManager : MonoBehaviour
         yield return WaitForTimelinePhase(itemPerformingTimeline, useOverlay, caster);
 
         bool performingPaused =
-            (BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePaused(caster)) ||
-            (SlowBattleManager.Instance != null && SlowBattleManager.Instance.IsPerformingTimelinePaused(caster));
-        bool deferItem = itemSlowMode && (performingPaused || item.retreatTimeline != null);
-        if (deferItem)
+            BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePaused(caster);
+
+        if (performingPaused)
         {
-            var sequence = SlowBattleTimelineSequence.ForItem(
-                item,
-                caster,
-                target,
-                originPosition,
-                useOverlay,
-                casterAnimatorGO,
-                performingCameraTarget,
-                casterCameraTarget,
-                initialRotation,
-                performingPaused ? itemPerformingTimeline : null,
-                item.retreatTimeline,
-                0f,
-                item.performingCameraRole,
-                item.retreatCameraRole,
-                performingPaused);
-
-            SlowBattleManager.Instance.RegisterDeferredTimelineSequence(sequence);
-
-            ClearQTEBar();
-            CancelPendingCameraSwitch();
-            BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
-            BattleCameraManager.Instance?.ClearRigTargets();
-            isActive = false;
-            yield break;
+            // 🎯 Même logique que pour les MusicalMoves : toute suspension résiduelle est levée
+            //     immédiatement pour garantir une reprise fluide de la mise en scène.
+            BattleTimelineManager.Instance?.ResumeCasterTimeline(caster);
         }
 
         // --- Retour à la position d'origine ---
@@ -804,153 +747,6 @@ public class RhythmQTEManager : MonoBehaviour
         CancelPendingCameraSwitch();
         BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
         BattleCameraManager.Instance?.ClearRigTargets();
-    }
-
-    /// <summary>
-    /// Joue la phase différée (reprise de Performing puis Retreat) pour un move ou un item en mode lent.
-    /// </summary>
-    public IEnumerator PlayDeferredSlowSequence(SlowBattleTimelineSequence sequence)
-    {
-        if (sequence == null)
-            yield break;
-
-        if (sequence.move != null)
-        {
-            yield return PlayDeferredSlowMove(sequence);
-        }
-        else if (sequence.item != null)
-        {
-            yield return PlayDeferredSlowItem(sequence);
-        }
-    }
-
-    private IEnumerator PlayDeferredSlowMove(SlowBattleTimelineSequence sequence)
-    {
-        CharacterUnit caster = sequence.caster;
-        if (caster == null || caster.IsDead)
-            yield break;
-
-        isActive = true;
-
-        if (sequence.resumePausedTimeline)
-        {
-            ResumeTimelinePhase(
-                sequence.performingTimeline,
-                caster,
-                sequence.casterAnimatorGO,
-                sequence.performingCameraTarget,
-                sequence.initialRotation,
-                sequence.performingCameraRole);
-
-            yield return WaitForTimelinePhase(sequence.performingTimeline, sequence.useOverlay, caster);
-
-            SlowBattleManager.Instance?.MarkPerformingTimelineResumed(caster);
-        }
-        else if (sequence.performingTimeline != null)
-        {
-            StartTimelinePhase(
-                sequence.performingTimeline,
-                sequence.useOverlay,
-                caster,
-                sequence.casterAnimatorGO,
-                sequence.performingCameraTarget,
-                sequence.retreatTimeline == null,
-                sequence.initialRotation,
-                sequence.performingCameraRole,
-                sequence.performingCameraDelay);
-
-            yield return WaitForTimelinePhase(sequence.performingTimeline, sequence.useOverlay, caster);
-        }
-
-        if (sequence.requiresReturn && caster != null && sequence.target != null)
-            yield return ReturnToInitialPosition(sequence.move, caster, sequence.target, sequence.originPosition);
-
-        if (sequence.retreatTimeline != null)
-        {
-            StartTimelinePhase(
-                sequence.retreatTimeline,
-                sequence.useOverlay,
-                caster,
-                sequence.casterAnimatorGO,
-                sequence.casterCameraTarget,
-                true,
-                sequence.initialRotation,
-                sequence.retreatCameraRole);
-
-            yield return WaitForTimelinePhase(sequence.retreatTimeline, sequence.useOverlay, caster);
-        }
-
-        if (NewBattleManager.Instance != null)
-            NewBattleManager.Instance.AfterMusicalMove(sequence.move, caster, sequence.wasCritical);
-
-        CancelPendingCameraSwitch();
-        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
-        BattleCameraManager.Instance?.ClearRigTargets();
-
-        isActive = false;
-    }
-
-    private IEnumerator PlayDeferredSlowItem(SlowBattleTimelineSequence sequence)
-    {
-        CharacterUnit caster = sequence.caster;
-        if (caster == null || caster.IsDead)
-            yield break;
-
-        isActive = true;
-
-        if (sequence.resumePausedTimeline)
-        {
-            ResumeTimelinePhase(
-                sequence.performingTimeline,
-                caster,
-                sequence.casterAnimatorGO,
-                sequence.performingCameraTarget,
-                sequence.initialRotation,
-                sequence.performingCameraRole);
-
-            yield return WaitForTimelinePhase(sequence.performingTimeline, sequence.useOverlay, caster);
-
-            SlowBattleManager.Instance?.MarkPerformingTimelineResumed(caster);
-        }
-        else if (sequence.performingTimeline != null)
-        {
-            StartTimelinePhase(
-                sequence.performingTimeline,
-                sequence.useOverlay,
-                caster,
-                sequence.casterAnimatorGO,
-                sequence.performingCameraTarget,
-                sequence.retreatTimeline == null,
-                sequence.initialRotation,
-                sequence.performingCameraRole,
-                sequence.performingCameraDelay);
-
-            yield return WaitForTimelinePhase(sequence.performingTimeline, sequence.useOverlay, caster);
-        }
-
-        if (sequence.requiresReturn && caster != null && sequence.target != null && sequence.item != null)
-            yield return SimpleReturnToInitialPosition(caster, sequence.target, sequence.item, sequence.originPosition);
-
-        if (sequence.retreatTimeline != null)
-        {
-            StartTimelinePhase(
-                sequence.retreatTimeline,
-                sequence.useOverlay,
-                caster,
-                sequence.casterAnimatorGO,
-                sequence.casterCameraTarget,
-                true,
-                sequence.initialRotation,
-                sequence.retreatCameraRole);
-
-            yield return WaitForTimelinePhase(sequence.retreatTimeline, sequence.useOverlay, caster);
-        }
-
-        CancelPendingCameraSwitch();
-        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
-        BattleCameraManager.Instance?.ClearRigTargets();
-
-        isActive = false;
     }
 
     /// <summary>
