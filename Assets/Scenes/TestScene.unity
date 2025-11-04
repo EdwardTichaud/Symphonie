@@ -419,6 +419,8 @@ MeshRenderer:
   m_RayTracingAccelStructBuildFlagsOverride: 0
   m_RayTracingAccelStructBuildFlags: 1
   m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -440,6 +442,7 @@ MeshRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
@@ -485,15 +488,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5387018186125168565, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0
+      value: -0.53
       objectReference: {fileID: 0}
     - target: {fileID: 5387018186125168565, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: 1.98
       objectReference: {fileID: 0}
     - target: {fileID: 5387018186125168565, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 0
+      value: 8.22
       objectReference: {fileID: 0}
     - target: {fileID: 5387018186125168565, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
       propertyPath: m_LocalRotation.w
@@ -522,6 +525,26 @@ PrefabInstance:
     - target: {fileID: 5387018186125168565, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8930234395183566953, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 2.8432274
+      objectReference: {fileID: 0}
+    - target: {fileID: 8930234395183566953, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.006
+      objectReference: {fileID: 0}
+    - target: {fileID: 8930234395183566953, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 4.112914
+      objectReference: {fileID: 0}
+    - target: {fileID: 8930234395183566953, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.29784006
+      objectReference: {fileID: 0}
+    - target: {fileID: 8930234395183566953, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.95461583
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
