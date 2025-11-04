@@ -2,8 +2,9 @@ using System;
 using UnityEngine;
 using UnityEngine.Playables; // 📽️ Gestion des timelines propres à l'unité
 using UnityEngine.Timeline;  // 🎼 Lecture des TimelineAsset assignés au PlayableDirector local
+using UnityEngine.Animations; // ⚙️ Manipulation directe des sorties d'animation pour lisser les transitions Timeline/Animator
+using System.Collections.Generic; // 📚 Listes réutilisées pour éviter des allocations récurrentes lors des fondues Timeline
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>
@@ -72,6 +73,25 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// et garantit que les pistes "Caster" restent toujours correctement liées.
     /// </summary>
     private PlayableDirector battleDirector;
+
+    [Header("Transitions Timeline")]
+    [SerializeField, Tooltip("Durée du fondu lorsque la Timeline prend progressivement le pas sur l'Animator classique.")]
+    private float timelineBlendInDuration = 0.15f;
+
+    [SerializeField, Tooltip("Durée du fondu inverse lorsque l'on rend la main à l'Animator après une Timeline.")]
+    private float timelineBlendOutDuration = 0.15f;
+
+    /// <summary>
+    /// Coroutine en cours responsable du lissage entre Timeline et Animator.
+    /// Elle est annulée dès que l'on déclenche une nouvelle transition pour éviter les conflits de poids.
+    /// </summary>
+    private Coroutine timelineBlendRoutine;
+
+    /// <summary>
+    /// Cache réutilisable des sorties d'animation du PlayableGraph de la Timeline.
+    /// L'objectif est de limiter les allocations et de simplifier les boucles d'application de poids.
+    /// </summary>
+    private readonly List<AnimationPlayableOutput> timelineAnimationOutputs = new();
 
     #region Gestion des sets personnalisés
     /// <summary>
@@ -893,6 +913,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         NotifyIdleStateExit(); // On quitte l'Idle : joue le son associé et réinitialise l'état sonore.
 
         // Évite que plusieurs timelines se chevauchent sur la même unité.
+        CancelTimelineBlendRoutine();
         battleDirector.Stop();
 
         battleDirector.playableAsset = timeline;
@@ -912,6 +933,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         battleDirector.time = 0d;
         battleDirector.Play();
+
+        // Déclenche un fondu doux afin que la Timeline prenne le relais de l'Animator sans à-coup visuel.
+        FadeInBattleTimelineInfluence();
     }
 
     /// <summary>
@@ -1065,8 +1089,194 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void StopBattleTimeline()
     {
-        if (battleDirector != null && battleDirector.state == PlayState.Playing)
+        if (battleDirector == null)
+            return;
+
+        if (battleDirector.state == PlayState.Playing)
+        {
+            // Plutôt qu'un arrêt brutal, on réduit le poids des pistes d'animation puis on stoppe le director.
+            FadeOutBattleTimelineInfluence(stopDirector: true);
+        }
+        else
+        {
             battleDirector.Stop();
+        }
+    }
+
+    /// <summary>
+    /// Lance un fondu entrant afin que la Timeline prenne progressivement le contrôle de l'Animator.
+    /// </summary>
+    private void FadeInBattleTimelineInfluence()
+    {
+        if (battleDirector == null)
+            return;
+
+        // Essaye de couper immédiatement l'influence de la timeline si les sorties existent déjà.
+        if (TryGetTimelineAnimationOutputs())
+            SetTimelineOutputsWeight(0f);
+
+        StartTimelineBlendRoutine(1f, timelineBlendInDuration, stopDirectorOnCompletion: false, waitForOutputs: true);
+    }
+
+    /// <summary>
+    /// Réduit graduellement le poids des pistes d'animation de la Timeline pour redonner la main à l'Animator.
+    /// </summary>
+    /// <param name="stopDirector">
+    /// True pour stopper automatiquement le PlayableDirector lorsque le poids atteint zéro.
+    /// </param>
+    private void FadeOutBattleTimelineInfluence(bool stopDirector = true)
+    {
+        if (battleDirector == null)
+            return;
+
+        StartTimelineBlendRoutine(0f, timelineBlendOutDuration, stopDirectorOnCompletion: stopDirector, waitForOutputs: false);
+    }
+
+    /// <summary>
+    /// Arrête la coroutine de fondu en cours pour éviter des transitions concurrentes.
+    /// </summary>
+    private void CancelTimelineBlendRoutine()
+    {
+        if (timelineBlendRoutine != null)
+        {
+            StopCoroutine(timelineBlendRoutine);
+            timelineBlendRoutine = null;
+        }
+    }
+
+    /// <summary>
+    /// Démarre (ou redémarre) la coroutine responsable du lissage Timeline/Animator.
+    /// </summary>
+    private void StartTimelineBlendRoutine(float targetWeight, float duration, bool stopDirectorOnCompletion, bool waitForOutputs)
+    {
+        CancelTimelineBlendRoutine();
+        timelineBlendRoutine = StartCoroutine(BlendTimelineWeightRoutine(targetWeight, duration, stopDirectorOnCompletion, waitForOutputs));
+    }
+
+    /// <summary>
+    /// Coroutine appliquant progressivement un poids cible sur les sorties d'animation de la Timeline.
+    /// </summary>
+    private IEnumerator BlendTimelineWeightRoutine(float targetWeight, float duration, bool stopDirectorOnCompletion, bool waitForOutputs)
+    {
+        if (battleDirector == null)
+        {
+            yield break;
+        }
+
+        // Recherche (et si besoin attente) des sorties d'animation générées par le PlayableDirector.
+        const int MaxFrameAttempts = 6;
+        int attemptsRemaining = waitForOutputs ? MaxFrameAttempts : 1;
+        bool outputsReady = false;
+
+        while (attemptsRemaining-- > 0)
+        {
+            if (TryGetTimelineAnimationOutputs())
+            {
+                outputsReady = true;
+                break;
+            }
+
+            if (!waitForOutputs)
+                break;
+
+            yield return null; // Laisse Unity construire le PlayableGraph si nécessaire.
+        }
+
+        if (!outputsReady)
+        {
+            if (stopDirectorOnCompletion && battleDirector != null && battleDirector.state == PlayState.Playing)
+                battleDirector.Stop();
+
+            timelineBlendRoutine = null;
+            yield break; // Aucun output d'animation trouvé : rien à lisser.
+        }
+
+        // On capture le poids actuel pour offrir une transition continue.
+        float initialWeight = timelineAnimationOutputs[0].GetWeight();
+
+        // Lors d'une prise de contrôle par la Timeline, on force immédiatement un poids nul
+        // afin d'éviter tout accroc visuel avant le début du fondu.
+        if (targetWeight > initialWeight)
+        {
+            SetTimelineOutputsWeight(0f);
+            initialWeight = 0f;
+        }
+
+        duration = Mathf.Max(0f, duration);
+
+        if (duration <= Mathf.Epsilon)
+        {
+            SetTimelineOutputsWeight(targetWeight);
+        }
+        else
+        {
+            float elapsed = 0f;
+            while (elapsed < duration)
+            {
+                if (battleDirector == null)
+                    yield break; // Le director a disparu pendant le fondu.
+
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float weight = Mathf.Lerp(initialWeight, targetWeight, t);
+                SetTimelineOutputsWeight(weight);
+                yield return null;
+            }
+
+            SetTimelineOutputsWeight(targetWeight);
+        }
+
+        // Stop optionnel une fois la Timeline totalement atténuée.
+        if (stopDirectorOnCompletion && Mathf.Approximately(targetWeight, 0f) && battleDirector != null && battleDirector.state == PlayState.Playing)
+        {
+            battleDirector.Stop();
+        }
+
+        timelineBlendRoutine = null;
+    }
+
+    /// <summary>
+    /// Met à jour uniformément le poids de toutes les sorties d'animation de la Timeline.
+    /// </summary>
+    private void SetTimelineOutputsWeight(float weight)
+    {
+        for (int i = 0; i < timelineAnimationOutputs.Count; i++)
+        {
+            var output = timelineAnimationOutputs[i];
+            if (!output.GetHandle().IsValid())
+                continue;
+            output.SetWeight(weight);
+        }
+    }
+
+    /// <summary>
+    /// Récupère toutes les sorties d'animation actuellement utilisées par le PlayableDirector.
+    /// </summary>
+    private bool TryGetTimelineAnimationOutputs()
+    {
+        timelineAnimationOutputs.Clear();
+
+        if (battleDirector == null)
+            return false;
+
+        PlayableGraph graph = battleDirector.playableGraph;
+        if (!graph.IsValid())
+            return false;
+
+        int outputCount = graph.GetOutputCount();
+        for (int i = 0; i < outputCount; i++)
+        {
+            PlayableOutput output = graph.GetOutput(i);
+            if (!output.GetHandle().IsValid())
+                continue;
+
+            if (output.GetPlayableOutputType() == typeof(AnimationPlayableOutput))
+            {
+                timelineAnimationOutputs.Add((AnimationPlayableOutput)output);
+            }
+        }
+
+        return timelineAnimationOutputs.Count > 0;
     }
 
     /// <summary>
@@ -1550,6 +1760,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         if (animator != null && clip != null)
         {
+            // Avant de rendre la main à l'Animator, on coupe progressivement l'influence de la Timeline en cours.
+            FadeOutBattleTimelineInfluence();
+
             // CrossFade pour éviter d'interrompre brutalement l'animation en cours
             animator.CrossFade(clip.name, 0.05f);
         }
@@ -1945,6 +2158,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         if (TryGetComponent<FatigueSystem>(out var fatigue) && fatigue.IsAsleep)
             return;
+
+        // S'assure que la Timeline libère progressivement le contrôle au profit de l'Animator Idle.
+        FadeOutBattleTimelineInfluence();
 
         // Si on atteint réellement l'Idle, on déclenche son éventuel son d'entrée.
         if (!isIdleActive)
