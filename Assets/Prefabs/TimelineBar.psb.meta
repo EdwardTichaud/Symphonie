@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 53b37bfda5cd69949b4bc292ccd9177f
+guid: e6f2fadd9785f9c4897ead324d26e8c6
 ScriptedImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -83,7 +83,7 @@ ScriptedImporter:
       y: 0
       width: 0
       height: 0
-    spriteID: 8faf3eeb929935e4898488601c07daed
+    spriteID: 5f8dfe1b27827084babef71198e2527b
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -95,29 +95,7 @@ ScriptedImporter:
     spritePosition: {x: 0, y: 0}
   multiSpriteImportData: []
   layeredSpriteImportData:
-  - name: Trunk
-    originalName: 
-    pivot: {x: 0.5, y: 0.5}
-    alignment: 0
-    border: {x: 0, y: 0, z: 0, w: 0}
-    customData: 
-    rect:
-      serializedVersion: 2
-      x: 4
-      y: 313
-      width: 202
-      height: 490
-    spriteID: 0619500e6b12f2742b525f2c10d7e1e8
-    spriteBone: []
-    spriteOutline: []
-    vertices: []
-    spritePhysicsOutline: []
-    indices: 
-    edges: []
-    tessellationDetail: 0
-    uvTransform: {x: 4, y: 313}
-    spritePosition: {x: 85, y: 5}
-  - name: Leafs
+  - name: Frame
     originalName: 
     pivot: {x: 0.5, y: 0.5}
     alignment: 0
@@ -127,9 +105,9 @@ ScriptedImporter:
       serializedVersion: 2
       x: 4
       y: 4
-      width: 366
-      height: 301
-    spriteID: 4876e2c9c9ad37846b99dd2f15d7f624
+      width: 924
+      height: 252
+    spriteID: 5c98d1f2f86fa514798316fe2983a441
     spriteBone: []
     spriteOutline: []
     vertices: []
@@ -138,7 +116,73 @@ ScriptedImporter:
     edges: []
     tessellationDetail: 0
     uvTransform: {x: 4, y: 4}
-    spritePosition: {x: 3, y: 181}
+    spritePosition: {x: 0, y: 0}
+  - name: SP
+    originalName: 
+    pivot: {x: 0.5, y: 0.5}
+    alignment: 0
+    border: {x: 0, y: 0, z: 0, w: 0}
+    customData: 
+    rect:
+      serializedVersion: 2
+      x: 155
+      y: 315
+      width: 682
+      height: 30
+    spriteID: 67204514946b2c44b95aafb2b8c8cfd9
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 155, y: 315}
+    spritePosition: {x: 190, y: 132}
+  - name: HP
+    originalName: 
+    pivot: {x: 0.5, y: 0.5}
+    alignment: 0
+    border: {x: 0, y: 0, z: 0, w: 0}
+    customData: 
+    rect:
+      serializedVersion: 2
+      x: 4
+      y: 264
+      width: 685
+      height: 43
+    spriteID: 66e9425affa5edc418cd92ec170540d3
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 4, y: 264}
+    spritePosition: {x: 195, y: 84}
+  - name: Harmoniques
+    originalName: 
+    pivot: {x: 0.5, y: 0.5}
+    alignment: 0
+    border: {x: 0, y: 0, z: 0, w: 0}
+    customData: 
+    rect:
+      serializedVersion: 2
+      x: 4
+      y: 315
+      width: 143
+      height: 153
+    spriteID: 34de4c842ff8f3a4dbf4c43d9f1230da
+    spriteBone: []
+    spriteOutline: []
+    vertices: []
+    spritePhysicsOutline: []
+    indices: 
+    edges: []
+    tessellationDetail: 0
+    uvTransform: {x: 4, y: 315}
+    spritePosition: {x: 40, y: 50}
   spriteImportData: []
   rigSpriteImportData: []
   sharedRigSpriteImportData: []
@@ -170,23 +214,43 @@ ScriptedImporter:
   resliceFromLayer: 0
   pSDLayerImportSetting: []
   psdLayers:
-  - name: Trunk
-    spriteName: Trunk
+  - name: Frame
+    spriteName: Frame
     isGroup: 0
     parentIndex: -1
-    spriteID: 0619500e6b12f2742b525f2c10d7e1e8
-    layerID: 5
-    mosaicPosition: {x: 4, y: 313}
+    spriteID: 5c98d1f2f86fa514798316fe2983a441
+    layerID: 2
+    mosaicPosition: {x: 4, y: 4}
     flatten: 0
     isImported: 1
     isVisible: 1
-  - name: Leafs
-    spriteName: Leafs
+  - name: SP
+    spriteName: SP
     isGroup: 0
     parentIndex: -1
-    spriteID: 4876e2c9c9ad37846b99dd2f15d7f624
-    layerID: 2
-    mosaicPosition: {x: 4, y: 4}
+    spriteID: 67204514946b2c44b95aafb2b8c8cfd9
+    layerID: 6
+    mosaicPosition: {x: 155, y: 315}
+    flatten: 0
+    isImported: 1
+    isVisible: 1
+  - name: HP
+    spriteName: HP
+    isGroup: 0
+    parentIndex: -1
+    spriteID: 66e9425affa5edc418cd92ec170540d3
+    layerID: 3
+    mosaicPosition: {x: 4, y: 264}
+    flatten: 0
+    isImported: 1
+    isVisible: 1
+  - name: Harmoniques
+    spriteName: Harmoniques
+    isGroup: 0
+    parentIndex: -1
+    spriteID: 34de4c842ff8f3a4dbf4c43d9f1230da
+    layerID: 4
+    mosaicPosition: {x: 4, y: 315}
     flatten: 0
     isImported: 1
     isVisible: 1

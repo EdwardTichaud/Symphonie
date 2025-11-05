@@ -1719,56 +1719,6 @@ ScriptedImporter:
     spritePosition: {x: 23, y: 95}
   sharedRigSpriteImportData: []
   mosaicSpriteImportData: []
-  sharedRigCharacterData:
-    bones: []
-    parts: []
-    dimension: {x: 0, y: 0}
-    characterGroups: []
-    pivot: {x: 0, y: 0}
-    boneReadOnly: 0
-  characterData:
-    bones:
-    - name: bone_1
-      guid: 
-      position: {x: 175.99454, y: 171.4888, z: 0}
-      rotation: {x: 0, y: 0, z: -0.7456125, w: 0.66637975}
-      length: 75.994156
-      parentId: -1
-      color:
-        serializedVersion: 2
-        rgba: 0
-    - name: bone_2
-      guid: 
-      position: {x: 75.99414, y: -0.0000072269795, z: 0}
-      rotation: {x: 0, y: 0, z: -0.5342891, w: 0.84530187}
-      length: 115.29641
-      parentId: 0
-      color:
-        serializedVersion: 2
-        rgba: 0
-    parts:
-    - spritePosition:
-        x: 33
-        y: 14
-        width: 181
-        height: 166
-      spriteId: 7a3a48872a754b345b3d442e299a4154
-      bones: 0100000000000000
-      parentGroup: 0
-      order: 0
-    - spritePosition:
-        x: 23
-        y: 95
-        width: 371
-        height: 328
-      spriteId: eb04ef7e57edff343b0f3c349235d105
-      bones: 
-      parentGroup: 0
-      order: 0
-    dimension: {x: 0, y: 0}
-    characterGroups: []
-    pivot: {x: 0, y: 0}
-    boneReadOnly: 0
   platformSettings: []
   mosaicLayers: 1
   characterMode: 1
@@ -1779,13 +1729,19 @@ ScriptedImporter:
   generatePhysicsShape: 0
   paperDollMode: 0
   keepDupilcateSpriteName: 0
+  generateTileAssets: 0
+  tilePaletteCellLayout: 0
+  tilePaletteHexagonLayout: 0
+  tilePaletteCellSize: {x: 1, y: 1, z: 0}
+  tilePaletteCellSizing: 0
+  transparencySortMode: 0
+  transparencySortAxis: {x: 0, y: 0, z: 1}
+  tileTemplate: {instanceID: 0}
   padding: 4
   spriteSizeExpand: 0
   skeletonAssetReferenceID: 
   pipeline: {instanceID: 0}
   pipelineVersion: 
-  spriteCategoryList:
-    categories: []
   spritePackingTag: 
   resliceFromLayer: 0
   pSDLayerImportSetting: []
