@@ -2362,11 +2362,21 @@ public class NewBattleManager : MonoBehaviour
             Debug.LogWarning("Pas de RawImage sur le VictoryScreen child(0)");
         }
 
-        GameObject continueButton = FindChildRecursive(victoryScreen.transform.GetChild(0), "BattleScene_UI_VictoryPanel_Continue").gameObject;
+        Transform continueButtonTransform = FindChildRecursive(victoryScreen.transform.GetChild(0), "BattleScene_UI_VictoryPanel_Continue");
 
-        // ➡️ Branche un listener explicite sur le bouton Continue pour permettre la sortie via la souris/manette
-        if (continueButton != null)
+        if (continueButtonTransform == null)
         {
+            // Avertit immédiatement si la hiérarchie UI ne contient plus le bouton attendu :
+            // sans cette vérification, un NullReferenceException interrompait la coroutine et
+            // empêchait la transition vers l'état VictoryScreen_CanContinue, bloquant ainsi
+            // la touche Confirm.
+            Debug.LogWarning("[BattleTurnManager] Bouton 'Continue' introuvable dans le panneau de victoire.");
+        }
+        else
+        {
+            GameObject continueButton = continueButtonTransform.gameObject;
+
+            // ➡️ Branche un listener explicite sur le bouton Continue pour permettre la sortie via la souris/manette
             Button uiButton = continueButton.GetComponent<Button>();
             if (uiButton != null)
             {
