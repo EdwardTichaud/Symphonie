@@ -547,29 +547,42 @@ public class BattleTransitionManager : MonoBehaviour
 
         // Nous récupérons ici le composant PlayerDetection afin de pouvoir
         // manipuler la liste temporaire des ennemis en combat.
-        playerDetection ??= FindFirstObjectByType<PlayerDetection>();
+        // ⚠️ Lorsque l'on quitte le combat, la scène d'exploration est encore désactivée.
+        //     PlayerDetection vit dans cette scène : il est donc inactif et invisible
+        //     pour une recherche classique. Sans ce paramètre, l'appel suivant
+        //     (playerDetection.enemiesInFight) provoquait une NullReferenceException
+        //     et bloquait la sortie de l'écran de victoire.
+        playerDetection ??= FindFirstObjectByType<PlayerDetection>(FindObjectsInactive.Include);
+
+        if (playerDetection == null)
+        {
+            Debug.LogWarning("[BattleTransitionManager] PlayerDetection introuvable lors de la sortie de combat.");
+        }
 
         // Suppression des ennemis vaincus présents dans le monde
         // La liste enemiesInFight contient déjà uniquement les ennemis engagés
-        var worldEnemies = playerDetection.enemiesInFight.ToList();
-        foreach (var enemy in worldEnemies)
+        if (playerDetection != null)
         {
-            // On retire l'ennemi de la liste afin qu'il ne puisse plus être redétecté
-            playerDetection.enemiesInFight.Remove(enemy);
-            // Destruction complète de l'objet ennemi dans le World pour
-            // éviter qu'il ne persiste après la victoire du joueur
-            if (enemy != null)
-                Destroy(enemy.transform.parent.gameObject);
-        }
+            var worldEnemies = playerDetection.enemiesInFight.ToList();
+            foreach (var enemy in worldEnemies)
+            {
+                // On retire l'ennemi de la liste afin qu'il ne puisse plus être redétecté
+                playerDetection.enemiesInFight.Remove(enemy);
+                // Destruction complète de l'objet ennemi dans le World pour
+                // éviter qu'il ne persiste après la victoire du joueur
+                if (enemy != null)
+                    Destroy(enemy.transform.parent.gameObject);
+            }
 
-        // Par sécurité, on vide la liste au cas où il resterait des références
-        playerDetection.enemiesInFight.Clear();
-        playerDetection.detectedEnemies.Clear(); // Nettoyage complet des ennemis détectés
+            // Par sécurité, on vide la liste au cas où il resterait des références
+            playerDetection.enemiesInFight.Clear();
+            playerDetection.detectedEnemies.Clear(); // Nettoyage complet des ennemis détectés
+        }
 
         GameManager.Instance.ChangeGameState(GameState.Exploration);
 
         // Réactive la détection après un court délai
-        playerDetection.ResetDetection(1f);
+        playerDetection?.ResetDetection(1f);
 
         // Réactive également le GameObject principal du monde pour reprendre l'exploration
         if (worldScene != null)
