@@ -97,21 +97,31 @@ public class PrestoForcedAttackStatus : MonoBehaviour
         if (endedUnit == null)
             return;
 
-        // Recherche l'attaque basique utilisable par la cible.
-        MusicalMoveSO basicAttack = owner.GetBasicAttack();
-        if (basicAttack == null)
-            return; // Cible incapable d'attaquer : on laisse l'effet actif au cas où un set serait rétabli plus tard.
-
         // Recherche d'une victime valable dans le camp opposé.
         CharacterUnit forcedTarget = ResolveForcedAttackTarget();
         if (forcedTarget == null)
             return; // Aucun adversaire valide (ex : tous K.O.).
 
-        if (NewBattleManager.Instance != null)
-            NewBattleManager.Instance.OrientUnitTowardTarget(owner, forcedTarget);
+        // Préserve l'utilisation du BattleManager lorsqu'il est disponible afin de bénéficier
+        // de l'orientation automatique, de l'enregistrement des dégâts et des éventuels retours caméra.
+        bool attackTriggered = false;
+        NewBattleManager manager = NewBattleManager.Instance;
+        if (manager != null)
+        {
+            attackTriggered = manager.ExecuteBaseAttack(owner, forcedTarget, displayErrors: false, applyFatigue: false);
+        }
+        else
+        {
+            float damage = owner.GetBaseAttackDamage();
+            if (damage > 0f)
+            {
+                forcedTarget.TakeDamage(damage, owner.transform);
+                attackTriggered = true;
+            }
+        }
 
-        // Exécute immédiatement l'effet du move sans passer par un QTE.
-        basicAttack.ApplyEffect(owner, forcedTarget, false);
+        if (!attackTriggered)
+            return;
     }
 
     /// <summary>

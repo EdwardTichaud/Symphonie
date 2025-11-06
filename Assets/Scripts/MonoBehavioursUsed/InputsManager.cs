@@ -126,6 +126,7 @@ public class InputsManager : MonoBehaviour
         battle.Select2.performed += OnSelect2;
         battle.Select3.performed += OnSelect3;
         battle.Awake.performed += OnAwake; // Appui sur la touche d'éveil
+        battle.BaseAttack.performed += OnBaseAttack; // Attaque de base directe depuis le SkillsMenu
         battle.Back.started += OnBackStarted;
         battle.Back.performed += OnBackInput;
         battle.Back.canceled += OnBackCanceled;
@@ -154,6 +155,7 @@ public class InputsManager : MonoBehaviour
         battle.Select2.performed -= OnSelect2;
         battle.Select3.performed -= OnSelect3;
         battle.Awake.performed -= OnAwake; // Désabonnement de la touche d'éveil
+        battle.BaseAttack.performed -= OnBaseAttack; // Retire le binding de l'attaque basique
         battle.Back.started -= OnBackStarted;
         battle.Back.performed -= OnBackInput;
         battle.Back.canceled -= OnBackCanceled;
@@ -448,6 +450,11 @@ public class InputsManager : MonoBehaviour
             bm.ChangeBattleState(BattleState.SquadUnit_PerformingMusicalMove);
             bm.StartCoroutine(bm.ExecuteMoveOnTarget(bm.currentMove, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
+        }
+        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionForBaseAttack)
+        {
+            // L'attaque basique ne nécessite pas de QTE : on délègue au BattleManager l'exécution complète.
+            bm.ConfirmBaseAttack();
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem)
@@ -762,6 +769,27 @@ public class InputsManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Déclenche la sélection d'une attaque de base lorsque le joueur se trouve dans le SkillsMenu.
+    /// </summary>
+    private void OnBaseAttack(InputAction.CallbackContext ctx)
+    {
+        // Impossible d'initier une attaque tant que la BattleIntro verrouille les menus.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
+
+        // On limite strictement l'action au SkillsMenu pour éviter toute incohérence dans les autres états.
+        if (bm.currentBattleState != BattleState.SquadUnit_SkillsMenu)
+            return;
+
+        // L'appel à TryStartBaseAttackSelection masque automatiquement les menus et prépare la cible.
+        if (bm.TryStartBaseAttackSelection())
+        {
+            // On cache immédiatement les conteneurs afin que le joueur se concentre sur la visée.
+            bm.ToggleMenuContainers(false, false, false);
+        }
+    }
+
+    /// <summary>
     /// Appelé lorsque le joueur presse l'épaule droite pour afficher la page suivante de compétences.
     /// </summary>
     private void OnNextSkillPage(InputAction.CallbackContext ctx)
@@ -843,7 +871,8 @@ public class InputsManager : MonoBehaviour
         return state == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
                state == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
                (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && NewBattleManager.Instance.currentMove != null) ||
-               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && NewBattleManager.Instance.currentMove != null);
+               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && NewBattleManager.Instance.currentMove != null) ||
+               state == BattleState.SquadUnit_TargetSelectionForBaseAttack;
     }
 
     private bool IsItemTargetSelectionState(BattleState state)

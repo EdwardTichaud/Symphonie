@@ -43,7 +43,9 @@ public enum BattleState
     SquadUnit_TargetSelectionAmongSquadForItem,
     SquadUnit_TargetSelectionAmongEnemiesForSkill,
     SquadUnit_TargetSelectionAmongEnemiesForItem,
+    SquadUnit_TargetSelectionForBaseAttack,
     SquadUnit_PerformingMusicalMove,
+    SquadUnit_PerformingBaseAttack,
     SquadUnit_Item_Prepare,
     SquadUnit_Item_Use,
 
@@ -3064,10 +3066,14 @@ public class NewBattleManager : MonoBehaviour
                                (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
                                (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentItem != null);
 
-        if (!isSkillTargeting && !isItemTargeting)
+        bool isBaseAttackTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionForBaseAttack;
+
+        if (!isSkillTargeting && !isItemTargeting && !isBaseAttackTargeting)
             return;
 
-        TargetType type = isSkillTargeting ? currentMove.targetType : currentItemTargetType;
+        TargetType type = isBaseAttackTargeting
+            ? TargetType.SingleEnemy
+            : (isSkillTargeting ? currentMove.targetType : currentItemTargetType);
 
         if (type == TargetType.Self)
         {
@@ -3144,7 +3150,9 @@ public class NewBattleManager : MonoBehaviour
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentItem != null);
 
-        if (!(isSkillTargeting || isItemTargeting))
+        bool isBaseAttackTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionForBaseAttack;
+
+        if (!(isSkillTargeting || isItemTargeting || isBaseAttackTargeting))
         {
             if (targetCursor != null)
             {
@@ -3157,7 +3165,9 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        TargetType type = isSkillTargeting ? currentMove.targetType : currentItemTargetType;
+        TargetType type = isBaseAttackTargeting
+            ? TargetType.SingleEnemy
+            : (isSkillTargeting ? currentMove.targetType : currentItemTargetType);
 
         if (type == TargetType.AllEnemies || type == TargetType.AllAllies || type == TargetType.All)
         {
@@ -3247,6 +3257,15 @@ public class NewBattleManager : MonoBehaviour
                     float distance = Vector3.Distance(currentCharacterUnit.transform.position,
                         currentTargetCharacter.transform.position);
                     float maxReach = currentCharacterUnit.Data.currentRange + currentItem.castDistance;
+                    bool inRange = distance <= maxReach;
+                    UpdateTargetCursorColor(inRange);
+                }
+                else if (isBaseAttackTargeting)
+                {
+                    targetCursor.transform.position = currentTargetCharacter.transform.position;
+                    float distance = Vector3.Distance(currentCharacterUnit.transform.position,
+                        currentTargetCharacter.transform.position);
+                    float maxReach = currentCharacterUnit.Data.currentRange;
                     bool inRange = distance <= maxReach;
                     UpdateTargetCursorColor(inRange);
                 }
@@ -3414,6 +3433,151 @@ public class NewBattleManager : MonoBehaviour
         // « CMVPoint_OrbitAroundUnit » tout en laissant la timeline de préparation continuer à se jouer.
         UpdateTargetCursorCinemachine(currentTargetCharacter);
     }
+
+    /// <summary>
+    ///     Prépare la sélection d'une cible pour une attaque de base déclenchée via l'input dédié.
+    ///     En pratique, on masque les menus et l'on présélectionne le premier ennemi valide pour
+    ///     offrir un flux identique à celui d'une compétence classique.
+    /// </summary>
+    /// <returns>Retourne <c>true</c> si une cible initiale a été trouvée.</returns>
+    public bool TryStartBaseAttackSelection()
+    {
+        if (!EnsureCurrentCharacterUnitForMenus(nameof(TryStartBaseAttackSelection)))
+            return false;
+
+        CharacterUnit initialTarget = activeCharacterUnits
+            .FirstOrDefault(u => u != null && u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
+
+        if (initialTarget == null)
+        {
+            ActionUIDisplayManager.Instance?.DisplayInstruction("Aucun ennemi valide");
+            return false;
+        }
+
+        currentMove = null;
+        currentItem = null;
+
+        currentTargetCharacter = initialTarget;
+        currentTargetIndex = 0;
+
+        ChangeBattleState(BattleState.SquadUnit_TargetSelectionForBaseAttack);
+        PlayMenuClip(targetSelectionClip);
+        ActionUIDisplayManager.Instance?.DisplayInstruction_SelectTarget();
+
+        UpdateTargetCursorCinemachine(currentTargetCharacter);
+
+        return true;
+    }
+
+    /// <summary>
+    ///     Valide la sélection de cible et applique les dégâts de l'attaque basique du personnage actif.
+    ///     Un message utilisateur est affiché en cas d'échec (hors portée, données manquantes...).
+    /// </summary>
+    /// <returns><c>true</c> si l'attaque a été exécutée.</returns>
+    public bool ConfirmBaseAttack()
+    {
+        CharacterUnit caster = currentCharacterUnit;
+        CharacterUnit target = currentTargetCharacter;
+
+        if (caster == null || target == null)
+        {
+            Debug.LogWarning("[ConfirmBaseAttack] Lanceur ou cible manquant : réouverture du SkillsMenu.");
+            OpenSkillsMenu();
+            return false;
+        }
+
+        if (caster.Data == null)
+        {
+            Debug.LogWarning("[ConfirmBaseAttack] CharacterData introuvable sur le lanceur.");
+            OpenSkillsMenu();
+            return false;
+        }
+
+        float distance = Vector3.Distance(caster.transform.position, target.transform.position);
+        float maxReach = caster.Data.currentRange;
+        if (distance > maxReach)
+        {
+            ActionUIDisplayManager.Instance?.DisplayInstruction_TargetTooFar();
+            return false;
+        }
+
+        ChangeBattleState(BattleState.SquadUnit_PerformingBaseAttack);
+        ToggleMenuContainers(false, false, false);
+
+        bool success = ExecuteBaseAttack(caster, target, displayErrors: true);
+        if (!success)
+        {
+            OpenSkillsMenu();
+            return false;
+        }
+
+        // L'attaque basique représente l'action principale du tour : on clôt donc immédiatement celui-ci.
+        EndTurn();
+        return true;
+    }
+
+    /// <summary>
+    ///     Calcule et applique les dégâts de l'attaque de base d'une unité.
+    /// </summary>
+    /// <param name="attacker">Lanceur de l'attaque.</param>
+    /// <param name="target">Cible qui reçoit les dégâts.</param>
+    /// <param name="displayErrors">Affiche les messages d'erreur utilisateur si nécessaire.</param>
+    /// <param name="registerStats">Enregistre les dégâts pour le suivi du tour et des statistiques.</param>
+    /// <param name="applyFatigue">Déclenche le système de fatigue associé, utile pour Thalia.</param>
+    /// <returns><c>true</c> si l'attaque a été effectuée.</returns>
+    public bool ExecuteBaseAttack(CharacterUnit attacker, CharacterUnit target, bool displayErrors,
+        bool registerStats = true, bool applyFatigue = true)
+    {
+        if (attacker == null || target == null)
+        {
+            if (displayErrors)
+                Debug.LogWarning("[ExecuteBaseAttack] Lanceur ou cible manquant.");
+            return false;
+        }
+
+        if (attacker.Data == null)
+        {
+            if (displayErrors)
+                Debug.LogWarning("[ExecuteBaseAttack] CharacterData absent sur le lanceur.");
+            return false;
+        }
+
+        if (target.currentHP <= 0f)
+        {
+            if (displayErrors)
+                Debug.LogWarning("[ExecuteBaseAttack] La cible est déjà hors combat.");
+            return false;
+        }
+
+        float distance = Vector3.Distance(attacker.transform.position, target.transform.position);
+        float maxReach = attacker.Data.currentRange;
+        if (distance > maxReach)
+        {
+            if (displayErrors)
+                ActionUIDisplayManager.Instance?.DisplayInstruction_TargetTooFar();
+            return false;
+        }
+
+        OrientUnitTowardTarget(attacker, target);
+
+        float damage = attacker.GetBaseAttackDamage();
+        if (damage <= 0f)
+        {
+            if (displayErrors)
+                Debug.LogWarning("[ExecuteBaseAttack] Dégâts calculés à 0 : annulation.");
+            return false;
+        }
+
+        target.TakeDamage(damage, attacker.transform);
+
+        if (registerStats)
+            RegisterDamage(attacker, damage);
+
+        if (applyFatigue)
+            attacker.GetComponent<FatigueSystem>()?.OnActionPerformed();
+
+        return true;
+    }
     #endregion
 
     #region Gestion des mouvements de la caméra de combat
@@ -3510,6 +3674,7 @@ public class NewBattleManager : MonoBehaviour
             case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
             case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
+            case BattleState.SquadUnit_TargetSelectionForBaseAttack:
                 if (stateChanged)
                 {
                     // On active la Cinemachine appropriée en distinguant les cibles d'objet
@@ -3520,6 +3685,7 @@ public class NewBattleManager : MonoBehaviour
                 break;
 
             case BattleState.SquadUnit_PerformingMusicalMove:
+            case BattleState.SquadUnit_PerformingBaseAttack:
             case BattleState.SquadUnit_Item_Use:
             case BattleState.EnemyUnit_PerformingMusicalMove:
             case BattleState.EnemyUnit_Item_Use:
@@ -4149,7 +4315,8 @@ public class NewBattleManager : MonoBehaviour
                || state == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
                || state == BattleState.SquadUnit_TargetSelectionAmongSquadForItem
                || state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
-               || state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies;
+               || state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies
+               || state == BattleState.SquadUnit_TargetSelectionForBaseAttack;
     }
 
     /// <summary>
