@@ -467,8 +467,16 @@ public class InputsManager : MonoBehaviour
         if (isVictoryOrGameOverScreen)
         {
             bm.ChangeBattleState(BattleState.None);
-            BattleTransitionManager.Instance.StartCoroutine(
-                BattleTransitionManager.Instance.ExitVictoryScreenAndBattle());
+            var transitionManager = BattleTransitionManager.Instance;
+            if (transitionManager != null)
+            {
+                // Même logique que le bouton Continue : on laisse le manager centraliser la sortie.
+                transitionManager.StartCoroutine(transitionManager.ExitVictoryScreenAndBattle());
+            }
+            else
+            {
+                Debug.LogWarning("[InputsManager] BattleTransitionManager introuvable à la validation de l'écran de victoire.");
+            }
         }
     }
 

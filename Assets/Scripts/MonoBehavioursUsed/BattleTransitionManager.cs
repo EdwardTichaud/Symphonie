@@ -43,6 +43,13 @@ public class BattleTransitionManager : MonoBehaviour
 
     private GameObject battleCamera;
 
+    /// <summary>
+    /// Indique si une sortie de combat est déjà en cours. Ce garde-fou évite
+    /// d'empiler plusieurs coroutines ExitVictoryScreenAndBattle lorsque le
+    /// joueur matraque la touche de validation pendant l'écran de victoire.
+    /// </summary>
+    private bool exitBattleRoutineRunning = false;
+
     [Header("Scenes")]
     [SerializeField] private GameObject worldScene; // GameObject racine de la scène du monde à désactiver pendant les combats
 
@@ -538,9 +545,32 @@ public class BattleTransitionManager : MonoBehaviour
 
     public IEnumerator ExitVictoryScreenAndBattle()
     {
-        // Restauration progressive du temps vers la normale
-        yield return StartCoroutine(RestoreTimeScale(Time.timeScale, 1f, 2f));
+        if (exitBattleRoutineRunning)
+        {
+            // En cas de double validation, on logue et on ignore pour conserver
+            // l'état courant : la première coroutine va se charger d'achever la sortie.
+            Debug.LogWarning("[BattleTransitionManager] Une transition de sortie de combat est déjà en cours.");
+            yield break;
+        }
 
+        exitBattleRoutineRunning = true;
+
+        // On fige immédiatement le temps pour empêcher toute frame supplémentaire
+        // du combat avant que l'interface ne soit complètement masquée.
+        Time.timeScale = 0f;
+        Time.fixedDeltaTime = 0f; // La physique est figée elle aussi pour éliminer toute avance discrète des animations.
+
+        yield return ExitVictoryScreenAndBattleSequence();
+
+        exitBattleRoutineRunning = false;
+    }
+
+    /// <summary>
+    /// Corps principal de la sortie de combat. Cette méthode suppose que le temps a
+    /// déjà été figé par l'appelant pour éviter toute reprise momentanée du gameplay.
+    /// </summary>
+    private IEnumerator ExitVictoryScreenAndBattleSequence()
+    {
         CombatSkyboxManager.Instance?.RestoreDefaultSkybox();
 
         //yield return FadeToBlack(2f);
@@ -581,17 +611,31 @@ public class BattleTransitionManager : MonoBehaviour
 
         GameManager.Instance.ChangeGameState(GameState.Exploration);
 
-        // Réactive la détection après un court délai
+        // Réactive la détection après un court délai (en temps réel pour ne pas dépendre du timeScale)
         playerDetection?.ResetDetection(1f);
 
         // Réactive également le GameObject principal du monde pour reprendre l'exploration
         if (worldScene != null)
             worldScene.SetActive(true);
+        else
+            Debug.LogWarning("[BattleTransitionManager] worldScene n'est pas assigné, la scène d'exploration risque de rester masquée.");
 
-        CharacterController cC = GameObject.FindGameObjectWithTag("Player").GetComponent<CharacterController>();
-        if (cC != null)
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerObject != null)
         {
-            cC.enabled = true;
+            CharacterController cC = playerObject.GetComponent<CharacterController>();
+            if (cC != null)
+            {
+                cC.enabled = true;
+            }
+            else
+            {
+                Debug.LogWarning("[BattleTransitionManager] Aucun CharacterController trouvé sur l'objet Player lors de la sortie de combat.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("[BattleTransitionManager] Impossible de localiser le joueur lors de la sortie de combat.");
         }
 
         // Retour à l'exploration : seule la WorldCam doit être active
@@ -619,7 +663,20 @@ public class BattleTransitionManager : MonoBehaviour
         // Cache l'interface de combat pour le retour à l'exploration
         HideBattleUI();
 
-        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
+        // Sécurise l'accès aux inputs pour éviter une NullReference si l'InputsManager
+        // n'est pas encore initialisé (cas limite lors de chargements manuels).
+        if (InputsManager.Instance != null && InputsManager.Instance.playerInputs != null)
+        {
+            InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
+        }
+        else
+        {
+            Debug.LogWarning("[BattleTransitionManager] InputsManager ou son PlayerInputs est manquant lors du retour à l'exploration.");
+        }
+
+        // Une fois l'UI fermée et les inputs réactivés, on peut relancer le temps de jeu.
+        yield return StartCoroutine(RestoreTimeScale(0f, 1f, 2f));
+        Time.fixedDeltaTime = 0.02f; // Garantit la valeur par défaut même si le RestoreTimeScale a été interrompu.
 
         if (Application.isPlaying && !Application.isEditor && SaveAndLoadManager.Instance != null)
         {
@@ -651,6 +708,15 @@ public class BattleTransitionManager : MonoBehaviour
         //yield return FadeToTransparent(1f);
 
         yield return new WaitForSecondsRealtime(0);
+
+        // Si pour une raison quelconque le timeScale reste figé (ex : Restore interrompu),
+        // on force une remise à la valeur attendue pour éviter de bloquer le monde.
+        if (Time.timeScale < 0.999f)
+        {
+            Debug.LogWarning("[BattleTransitionManager] timeScale forcé à 1 après la transition de combat.");
+            Time.timeScale = 1f;
+            Time.fixedDeltaTime = 0.02f;
+        }
     }
 
     /// <summary>

@@ -2481,10 +2481,16 @@ public class NewBattleManager : MonoBehaviour
         ChangeBattleState(BattleState.None);
 
         // Lancement sécurisé de la transition de sortie de combat
-        if (BattleTransitionManager.Instance != null)
+        var transitionManager = BattleTransitionManager.Instance;
+        if (transitionManager != null)
         {
-            BattleTransitionManager.Instance.StartCoroutine(
-                BattleTransitionManager.Instance.ExitVictoryScreenAndBattle());
+            // La coroutine interne est désormais protégée contre les doubles lancements,
+            // mais on centralise tout de même l'appel pour éviter toute NullReference.
+            transitionManager.StartCoroutine(transitionManager.ExitVictoryScreenAndBattle());
+        }
+        else
+        {
+            Debug.LogWarning("[NewBattleManager] BattleTransitionManager introuvable lors de la demande de sortie de combat.");
         }
     }
 
