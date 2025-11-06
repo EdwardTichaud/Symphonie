@@ -71,10 +71,10 @@ public class MusicalMoveSO : ScriptableObject
     public int effectValue = 10;
 
     [Header("Effets spécifiques")]
-    [Tooltip("Prefab instancié au-dessus de la cible lorsqu'une LoyaltyMark est appliquée.")]
-    public GameObject loyaltyMarkPrefab;
-    [Tooltip("Décalage vertical supplémentaire pour positionner le prefab de LoyaltyMark.")]
-    public float loyaltyMarkVerticalOffset = 0.5f;
+    [Tooltip("Prefab générique instancié pour représenter un effet passif appliqué à la cible (marque de loyauté, lien, etc.).")]
+    public GameObject passiveEffectPrefab;
+    [Tooltip("Décalage vertical supplémentaire pour positionner le prefab passif sans chevaucher la cible.")]
+    public float passiveEffectVerticalOffset = 0.5f;
 
     // ------------------------------------------------------------------
     // Buffs et débuffs supplémentaires
@@ -367,7 +367,9 @@ public class MusicalMoveSO : ScriptableObject
             var mark = target.GetComponent<LoyaltyMark>();
             if (mark == null)
                 mark = target.gameObject.AddComponent<LoyaltyMark>();
-            mark.SetProtector(caster, loyaltyMarkPrefab, loyaltyMarkVerticalOffset);
+            // Utilise le prefab générique défini sur le move afin d'autoriser la réutilisation
+            // de ce champ pour d'autres effets passifs sans renommer le code côté gameplay.
+            mark.SetProtector(caster, passiveEffectPrefab, passiveEffectVerticalOffset);
         }
         else if (typeToUse == MusicalEffectType.LinkMark)
         {
