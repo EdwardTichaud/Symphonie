@@ -24,7 +24,10 @@ public class PrestoForcedAttackStatus : MonoBehaviour
     /// <summary>Prefab actuellement utilisé pour l'effet visuel (sert à détecter les changements de configuration).</summary>
     private GameObject currentPrefab;
 
-    /// <summary>Décalage vertical appliqué au visuel afin qu'il flotte au-dessus du personnage.</summary>
+    /// <summary>
+    ///     Décalage vertical appliqué au visuel. Il est désormais relatif au pivot du personnage
+    ///     pour laisser l'inspecteur piloter précisément la hauteur de l'effet visuel.
+    /// </summary>
     private float verticalOffset = 0.5f;
 
     /// <summary>
@@ -57,7 +60,9 @@ public class PrestoForcedAttackStatus : MonoBehaviour
     public void Configure(CharacterUnit source, GameObject effectPrefab, float additionalOffset)
     {
         caster = source;
-        verticalOffset = Mathf.Max(0f, additionalOffset);
+        // On ne contraint plus l'offset afin de permettre un placement exact autour du pivot, qu'il soit
+        // positif (au-dessus du personnage) ou négatif (au niveau du sol ou plus bas) selon les besoins.
+        verticalOffset = additionalOffset;
         casterTurnObservations = 1; // On a déjà observé le tour en cours lors du lancement de Presto.
         isActive = true;
 
@@ -179,10 +184,13 @@ public class PrestoForcedAttackStatus : MonoBehaviour
         if (visualInstance == null || owner == null)
             return;
 
-        Bounds bounds = owner.GetVisualBounds();
-        float topY = bounds.center.y + bounds.extents.y;
         Transform visualTransform = visualInstance.transform;
-        visualTransform.position = new Vector3(owner.transform.position.x, topY + verticalOffset, owner.transform.position.z);
+
+        // Positionne le FX directement depuis le pivot de l'unité, puis applique l'offset configuré.
+        // Cela évite les surprises sur les personnages dont la hauteur visuelle est très variable.
+        Vector3 basePosition = owner.transform.position;
+        Vector3 offset = Vector3.up * verticalOffset;
+        visualTransform.position = basePosition + offset;
         visualTransform.rotation = Quaternion.identity;
     }
 
