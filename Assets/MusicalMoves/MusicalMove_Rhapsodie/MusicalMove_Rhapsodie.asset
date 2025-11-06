@@ -31,7 +31,7 @@ MonoBehaviour:
   generatedHarmonicType: 0
   power: 10
   effectType: 0
-  effectValue: 6500
+  effectValue: 1000
   buffStat: 0
   buffAmount: 0
   buffDuration: 0
@@ -64,11 +64,12 @@ MonoBehaviour:
   relativePosition: 1
   tpVfx_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
   tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpSFx_Start: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
+  tpSFx_Start: {fileID: 0}
   tpSFx_End: {fileID: 0}
   warningClip: {fileID: 11400000, guid: fdb6bfb786458c7469dab751b0b786ac, type: 2}
   startDelay: 0
   enterAwake: 0
+  preparingAnimation: {fileID: 0}
   preparingTimeline: {fileID: 11400000, guid: 4fa946d42fae10b48bc20bf37f9fc9eb, type: 2}
   performingTimeline: {fileID: 11400000, guid: 361e91e8ca92edc459ed5ed247a853bd, type: 2}
   retreatTimeline: {fileID: 0}
