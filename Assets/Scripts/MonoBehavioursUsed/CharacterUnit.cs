@@ -1245,7 +1245,13 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         {
             var mark = GetComponent<LoyaltyMark>();
             if (mark != null && mark.RedirectDamage(amount))
+            {
+                // Lorsque la redirection fonctionne, la cible ne subit aucun dégât.
+                // On en profite pour jouer le remerciement adéquat si le lanceur
+                // est un allié et qu'un clip a été configuré.
+                TryPlayLoyaltyMarkAllyClip(mark);
                 return;
+            }
         }
 
         currentHP = Mathf.Max(currentHP - amount, 0);
@@ -1314,6 +1320,32 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         // Affiche un message de parade via l'UI
         ActionUIDisplayManager.Instance?.DisplayParry(Data.characterName);
+    }
+
+    /// <summary>
+    ///     Déclenche le clip vocal prévu lorsque la marque de loyauté protège
+    ///     un allié. Aucune lecture n'est effectuée si le protecteur est ennemi
+    ///     ou si aucun son n'a été configuré dans les données de personnage.
+    /// </summary>
+    /// <param name="mark">Marque de loyauté actuellement active sur cette unité.</param>
+    private void TryPlayLoyaltyMarkAllyClip(LoyaltyMark mark)
+    {
+        if (mark == null || Data == null)
+            return;
+
+        CharacterUnit markProtector = mark.protector;
+        if (markProtector == null || markProtector.Data == null)
+            return;
+
+        // On vérifie que la victime et le protecteur appartiennent bien à la même équipe.
+        if (markProtector.Data.characterType != Data.characterType)
+            return;
+
+        AudioClipSO clip = Data.loyaltyMarkTargetAlly;
+        if (clip == null)
+            return;
+
+        AudioManager.Instance?.PlayVoice(clip);
     }
 
     /// <summary>
