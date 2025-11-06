@@ -24,6 +24,7 @@ MonoBehaviour:
   characterBattleModel: {fileID: 901204007372340786, guid: f207a3cac0ff13f4986b4dcd8f5dba86, type: 3}
   battlefieldIndex: 0
   isAirUnit: 0
+  distanceFromGround: 0
   interceptable: 1
   avoidable: 1
   baseReflex: 0
@@ -67,23 +68,23 @@ MonoBehaviour:
     - {fileID: 11400000, guid: fd8086605fb14e81a0e94c639309929f, type: 2}
   defaultItemSetIndex: -1
   currentInitiative: 1
-  currentRange: 24.55
-  currentHP: 10
-  currentStrength: 1.5
-  currentDefense: 1.5
+  currentRange: 9.55
+  currentHP: 50
+  currentStrength: 1
+  currentDefense: 1
   currentPower: 0
   currentStability: 0
   currentVitality: 0
   currentSagacity: 0
   isPlayerControlled: 1
-  currentRage: 40
+  currentRage: 0
   currentFatigue: 0
   currentReflex: 0
   currentMobility: 0
   currentSpeed: 0
   currentInterceptionRange: 0
   currentInterceptionChance: 0
-  currentHarmonicCharge: 30
+  currentHarmonicCharge: 1
   currentMusicalMoveSetIndex: 0
   currentItemSetIndex: 0
   hitSound: {fileID: 11400000, guid: bd24b3bf43a46ab4fbd9d997c10c3134, type: 2}
@@ -91,6 +92,7 @@ MonoBehaviour:
   interceptedSound: {fileID: 11400000, guid: f98414021b3ac1b43a114401376cea1d, type: 2}
   interceptionSound: {fileID: 11400000, guid: 211d90b0af76e0c4198c31a6908013d2, type: 2}
   prematureDeathTaunt: {fileID: 11400000, guid: f98414021b3ac1b43a114401376cea1d, type: 2}
+  loyaltyMarkTargetAlly: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   dashParticlesPrefab: {fileID: 3551257785712818506, guid: 7f9985d13c4572a42a87dda564860b9f, type: 3}
