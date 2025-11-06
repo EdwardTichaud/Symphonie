@@ -1738,6 +1738,52 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         return availableAttacks[index];
     }
 
+    /// <summary>
+    ///     Renvoie l'attaque basique utilisée pour les effets automatiques (comme Presto).
+    ///     On privilégie une attaque offensive accessible dans l'état courant.
+    /// </summary>
+    public MusicalMoveSO GetBasicAttack()
+    {
+        if (Data == null || Data.musicalAttacks == null || Data.musicalAttacks.Length == 0)
+            return null;
+
+        foreach (var move in Data.musicalAttacks)
+        {
+            if (move == null)
+                continue;
+
+            bool canUse = (!move.onlyAwake || IsAwake)
+                          && (!move.enterAwake || !IsAwake)
+                          && (!move.enterAwake || GetHarmonicCount(Data.harmonicType) >= Data.awakeHarmonicThreshold)
+                          && GetHarmonicCount(move.consumedHarmonicType) >= move.harmonicCost
+                          && !IsMoveOnCooldown(move);
+
+            if (!canUse)
+                continue;
+
+            if (move.moveType == MoveType.Attack && move.effectType == MusicalEffectType.Damage)
+                return move; // Premier candidat offensif trouvé : suffisant pour une attaque basique.
+        }
+
+        // Aucun move purement offensif : on tente malgré tout de retourner le premier move accessible (ex : support forcé).
+        foreach (var move in Data.musicalAttacks)
+        {
+            if (move == null)
+                continue;
+
+            bool canUse = (!move.onlyAwake || IsAwake)
+                          && (!move.enterAwake || !IsAwake)
+                          && (!move.enterAwake || GetHarmonicCount(Data.harmonicType) >= Data.awakeHarmonicThreshold)
+                          && GetHarmonicCount(move.consumedHarmonicType) >= move.harmonicCost
+                          && !IsMoveOnCooldown(move);
+
+            if (canUse)
+                return move;
+        }
+
+        return null;
+    }
+
     public CharacterUnit SelectTargetFromSquad()
     {
         var squad = NewBattleManager.Instance.activeCharacterUnits

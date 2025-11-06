@@ -13,7 +13,7 @@
 | **Rhapsodie** | Attaque | 0 / 0 | ~7 500 dégâts + puissance actuelle du lanceur. | Idéal pour les débutants : aucune ressource, permet d'accumuler des fragments avant de déclencher un combo majeur. |
 | **Éclair** | Attaque | 1 / 1 | ~11 000 dégâts instantanés. | À lier avec la *Clé du Courage* ou des runes de puissance pour éliminer les menaces rapides. |
 | **Contrepoint Chaotique** | Attaque de zone | 1 / 3 | ~13 000 dégâts à chaque ennemi. | Prépare des balayages massifs avant un *Crescendo Fulgurant* pour achever les survivants. |
-| **Tunnel** | Contrôle | 1 / 1 | Endort un ennemi jusqu’à la prochaine blessure. | Combinez avec *Pont Harmonique* pour fixer une cible aérienne puis la neutraliser durablement. |
+| **Tunnel** | Contrôle | 1 / 1 | Appose le glyphe Presto : la cible déclenche une attaque basique après chaque tour jusqu’au retour du lanceur. | Parfait pour accélérer un allié clef ou forcer un ennemi contrôlé à se retourner contre ses pairs avant la prochaine salve du lanceur. |
 | **Fausse Note** | Altération | 1 / 1 | Réveille toutes les unités alliées. | Annule les effets soporifiques des Entités du Rêve ou de l’*Endormissement*. |
 | **Accord Bienveillant** | Soutien | 1 / 1 | Soigne ~10 000 PV et +400 Défense (2 tours). | Ancre parfaite pour les runes défensives lorsque les assauts de l’Ange Pleureur se déchaînent. |
 | **Rupture Harmonieuse** | Affaiblissement | 1 / 2 | ~9 500 dégâts et -400 Défense sur l’ennemi (2 tours). | Lancez-la avant *Crescendo Fulgurant* ou *Sforzando* pour maximiser les dégâts critiques. |
