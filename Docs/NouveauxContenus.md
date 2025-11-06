@@ -61,6 +61,25 @@ Un booléen `requiresMovement` est présent dans chaque **MusicalMove** et **Ite
 Cette option rend le jeu plus accessible en autorisant des actions à distance simples tout en offrant aux joueurs avancés
 des possibilités de combinaisons qui n'imposent plus un repositionnement systématique.
 
+## Mécanique : Marque de loyauté infiltrée
+- **Principe général** : lorsqu'un **MusicalMove** qui appose une marque de loyauté (comme *Pour qui sonne le glas*) est lancé
+  sur un ennemi, la cible reçoit désormais le statut **Infiltré**. L'entité croit agir pour le lanceur sans comprendre qu'elle
+  sabote sa propre équipe.
+- **Redirection de soutien** : tant que la marque est active, tout soin ou bouclier mono-cible provenant des alliés du marqué
+  se verrouille automatiquement sur lui. Les joueurs débutants y voient une solution simple pour annuler les soins adverses,
+  tandis que les stratèges peuvent isoler un boss des renforts qu'il attendait.
+- **Accumulation de trahison** : chaque fois que l'ennemi infiltré inflige des dégâts, 30% de la valeur est siphonnée dans la
+  marque sous forme de *fragments de dévotion*. Lorsque la marque est retirée (par expiration ou par un nouvel usage), ces
+  fragments explosent en dégâts harmoniques sur la cible infiltrée et l'ennemi le plus proche.
+- **Combinaisons conseillées** :
+  - Les MusicalMoves de type **Protection** peuvent absorber l'explosion finale pour maintenir Lucian debout tout en laissant la
+    détonation punir les ennemis regroupés.
+  - Les **Altérations** modifiant le positionnement (ex. *Pont Harmonique*) permettent de rapprocher deux cibles ennemies pour
+    maximiser la déflagration.
+- **Cohérence narrative** : cette mécanique illustre la stratégie de Lucian consistant à retourner la propagande d'Azazel contre
+  lui : au lieu de protéger ses alliés, l'ennemi infiltré renforce l'attaque harmonique des protagonistes, rappelant que la
+  loyauté imposée par le Rêve peut être détournée par une improvisation bien menée (voir *Histoire de Symphonie*).
+
 ## MusicalMove : Crescendo Fulgurant
 - **Type** : Attaque
 - **Effet** : inflige 30 points de dégâts à une cible unique.
