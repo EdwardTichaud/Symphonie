@@ -51,6 +51,12 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public IReadOnlyList<InventoryItemStack> ItemStacks => itemStacks;
 
+    /// <remarks>
+    /// La gestion des buffs, débuffs et autres états temporaires a été extraite dans
+    /// <see cref="CharacterStatusEffectController"/> afin de clarifier les responsabilités.
+    /// Conserver cette classe centrée sur l'inventaire améliore la maintenabilité globale.
+    /// </remarks>
+
     /// <summary>
     /// Coroutine en cours responsable du fondu d'alpha du CanvasGroup.
     /// On la conserve pour éviter d'empiler plusieurs transitions concurrentes.
@@ -157,20 +163,6 @@ public class InventoryManager : MonoBehaviour
     private InputAction inventorySelectSubPanelLeftAction;
     private InputAction inventorySelectSubPanelRightAction;
     private InputAction inventoryNavigateAction;
-
-    // --- Suivi des effets temporaires appliqués aux personnages ---
-    // Pour chaque personnage, on garde la liste des modificateurs actifs afin
-    // de pouvoir prolonger leur durée si nécessaire.
-    private class ActiveStatModifier
-    {
-        public BuffStatType stat;    // Statistique affectée
-        public float value;          // Valeur actuellement appliquée
-        public float remaining;      // Temps restant avant la fin de l'effet
-        public Coroutine routine;    // Coroutine responsable de la durée
-    }
-
-    // Dictionnaire principal : clé = unité concernée, valeur = liste de ses modificateurs
-    private readonly Dictionary<CharacterUnit, List<ActiveStatModifier>> activeModifiers = new();
 
     private void Awake()
     {
@@ -339,149 +331,6 @@ public class InventoryManager : MonoBehaviour
         item.ApplyEffect(null, target, false);
     }
 
-    public void ApplyBuff(CharacterUnit target, BuffStatType stat, int amount, float duration, bool isPercentage)
-    {
-        if (target == null || stat == BuffStatType.None || amount == 0)
-            return;
-
-        float baseValue = GetBaseStat(target, stat);
-        float value = isPercentage ? baseValue * amount / 100f : amount;
-        ApplyStatModifier(target, stat, value, duration);
-    }
-
-    public void ApplyDebuff(CharacterUnit target, DebuffStatType stat, int amount, float duration, bool isPercentage)
-    {
-        if (target == null || stat == DebuffStatType.None || amount == 0)
-            return;
-
-        float baseValue = GetBaseStat(target, (BuffStatType)stat);
-        float value = isPercentage ? baseValue * amount / 100f : amount;
-        ApplyStatModifier(target, (BuffStatType)stat, -value, duration);
-    }
-
-    /// <summary>
-    /// Applique ou prolonge un modificateur de statistique.
-    /// </summary>
-    private void ApplyStatModifier(CharacterUnit target, BuffStatType stat, float value, float duration)
-    {
-        if (!activeModifiers.TryGetValue(target, out var list))
-        {
-            list = new List<ActiveStatModifier>();
-            activeModifiers[target] = list;
-        }
-
-        var modifier = list.Find(m => m.stat == stat);
-        if (modifier != null)
-        {
-            // Si un modificateur existe déjà, on cumule la valeur et on prolonge sa durée
-            ModifyStat(target, stat, value);
-            modifier.value += value;
-            modifier.remaining += duration;
-        }
-        else
-        {
-            modifier = new ActiveStatModifier
-            {
-                stat = stat,
-                value = value,
-                remaining = duration
-            };
-            ModifyStat(target, stat, value);
-            modifier.routine = StartCoroutine(StatModifierRoutine(target, modifier));
-            list.Add(modifier);
-        }
-    }
-
-    /// <summary>
-    /// Coroutine gérant la durée d'un modificateur.
-    /// </summary>
-    private IEnumerator StatModifierRoutine(CharacterUnit target, ActiveStatModifier modifier)
-    {
-        while (modifier.remaining > 0f)
-        {
-            yield return null;
-            modifier.remaining -= Time.deltaTime;
-        }
-        ModifyStat(target, modifier.stat, -modifier.value);
-        activeModifiers[target].Remove(modifier);
-    }
-
-    private void ModifyStat(CharacterUnit target, BuffStatType stat, float delta)
-    {
-        switch (stat)
-        {
-            case BuffStatType.Strength:
-                target.currentStrength += delta;
-                break;
-            case BuffStatType.Defense:
-                target.currentDefense += delta;
-                break;
-            case BuffStatType.Initiative:
-                target.currentInitiative += delta;
-                break;
-        }
-    }
-
-    private float GetBaseStat(CharacterUnit target, BuffStatType stat)
-    {
-        return stat switch
-        {
-            BuffStatType.Strength => target.Data.baseStrength,
-            BuffStatType.Defense => target.Data.baseDefense,
-            BuffStatType.Initiative => target.Data.baseInitiative,
-            _ => 0f,
-        };
-    }
-
-    public void ApplyInterceptionImmunity(CharacterUnit target, int turns)
-    {
-        if (target == null)
-            return;
-        target.isInterceptionImmune = true;
-        target.interceptionImmunityTurns = Mathf.Max(target.interceptionImmunityTurns, turns);
-    }
-
-    /// <summary>
-    /// Prolonge la durée de tous les effets temporaires actuellement actifs sur la cible.
-    /// </summary>
-    public void ExtendEffectDurations(CharacterUnit target, int additionalTurns)
-    {
-        if (target == null || additionalTurns <= 0)
-            return;
-
-        // Prolonge l'immunité à l'interception si présente
-        if (target.interceptionImmunityTurns > 0)
-            target.interceptionImmunityTurns += additionalTurns;
-
-        // Prolonge également tous les buffs/debuffs suivis pour cette unité
-        if (activeModifiers.TryGetValue(target, out var list))
-        {
-            foreach (var modifier in list)
-            {
-                modifier.remaining += additionalTurns;
-            }
-        }
-    }
-
-    public void ApplySleep(CharacterUnit target)
-    {
-        if (target == null)
-            return;
-        var sleep = target.GetComponent<SleepStatus>();
-        if (sleep == null)
-            sleep = target.gameObject.AddComponent<SleepStatus>();
-        sleep.Sleep();
-    }
-
-    public void RemoveSleep(CharacterUnit target)
-    {
-        if (target == null)
-            return;
-        var sleep = target.GetComponent<SleepStatus>();
-        if (sleep != null)
-            sleep.WakeUp();
-    }
-
     // ------------------------------------------------------------------
     // Gestion des limitations d'utilisation des items
     // ------------------------------------------------------------------
@@ -512,11 +361,11 @@ public class InventoryManager : MonoBehaviour
         if (!consumed && item.consumeOnUse)
             return;
 
-            if (item.consumeOnUse && stack.quantity <= 0)
-            {
-                itemStacks.Remove(stack);
-                stackLookup.Remove(item);
-            }
+        if (item.consumeOnUse && stack.quantity <= 0)
+        {
+            itemStacks.Remove(stack);
+            stackLookup.Remove(item);
+        }
     }
 
     /// <summary>
