@@ -47,6 +47,19 @@ public class PlayerDetection : MonoBehaviour
     [Header("State")]
     public bool battleEngaged;
 
+    // ------------------------------------------------------------------
+    // Gestion interne de la réinitialisation différée : nous avons besoin
+    // d'une coroutine active pour attendre en temps réel avant de
+    // réactiver la détection. Or, si l'objet est désactivé (ce qui arrive
+    // lors de certaines transitions), Unity interdit l'utilisation de
+    // StartCoroutine et déclenche l'erreur observée par l'équipe.
+    // Ces champs nous permettent de mémoriser l'attente à effectuer et
+    // de la relancer automatiquement quand le GameObject redevient actif.
+    // ------------------------------------------------------------------
+    private Coroutine resetDetectionCoroutine;
+    private bool resetReactivationScheduled;
+    private float resetReactivateAtRealtime;
+
     private void Awake()
     {
         currentDetectionRadius = baseDetectionRadius;
@@ -165,10 +178,56 @@ public class PlayerDetection : MonoBehaviour
     /// </summary>
     public void ResetDetection(float delay = 1f)
     {
-        StartCoroutine(ResetDetectionRoutine(delay));
+        // On annule toute coroutine précédente pour éviter les chevauchements.
+        if (resetDetectionCoroutine != null)
+        {
+            StopCoroutine(resetDetectionCoroutine);
+            resetDetectionCoroutine = null;
+        }
+
+        // Stocke le moment auquel la détection doit redevenir active.
+        resetReactivateAtRealtime = Time.realtimeSinceStartup + Mathf.Max(0f, delay);
+        resetReactivationScheduled = true;
+
+        ApplyImmediateResetState();
+
+        // Si le composant est actif, on peut démarrer la coroutine tout de suite.
+        if (isActiveAndEnabled)
+        {
+            resetDetectionCoroutine = StartCoroutine(ResetDetectionRoutine());
+        }
+        else
+        {
+            // Lorsque l'objet est désactivé, on se contente de tracer un message.
+            // La coroutine sera relancée automatiquement lors du OnEnable.
+            Debug.LogWarning(
+                $"[PlayerDetection] ResetDetection demandé alors que \"{name}\" est inactif. La réactivation sera différée jusqu'à la prochaine activation.",
+                this
+            );
+        }
     }
 
-    private IEnumerator ResetDetectionRoutine(float delay)
+    private IEnumerator ResetDetectionRoutine()
+    {
+        // Utilise le temps réel pour ne pas dépendre du timeScale (gelé pendant les transitions).
+        float remainingDelay = resetReactivateAtRealtime - Time.realtimeSinceStartup;
+        if (remainingDelay > 0f)
+        {
+            yield return new WaitForSecondsRealtime(remainingDelay);
+        }
+
+        detectionOn = true;
+        resetReactivationScheduled = false;
+        resetDetectionCoroutine = null;
+
+        Debug.Log("[PlayerDetection] Détection réinitialisée.");
+    }
+
+    /// <summary>
+    /// Applique immédiatement l'état de base de la détection
+    /// (rayon, listes, flags) sans attendre la réactivation différée.
+    /// </summary>
+    private void ApplyImmediateResetState()
     {
         currentDetectionRadius = baseDetectionRadius;
         battleEngaged = false;
@@ -177,13 +236,28 @@ public class PlayerDetection : MonoBehaviour
         detectionOn = false;
         firstEnemyDetected = false;
 
-        Debug.Log($"[PlayerDetection] Réinitialisation en cours, détection réactivée dans {delay} s.");
+        Debug.Log(
+            $"[PlayerDetection] Réinitialisation en cours, détection réactivée dans {Mathf.Max(0f, resetReactivateAtRealtime - Time.realtimeSinceStartup):0.00} s."
+        );
+    }
 
-        // Utilise le temps réel pour ne pas dépendre du timeScale (gelé pendant les transitions).
-        yield return new WaitForSecondsRealtime(delay);
+    private void OnEnable()
+    {
+        // Si une réactivation différée est en attente, on relance la coroutine.
+        if (resetReactivationScheduled && resetDetectionCoroutine == null)
+        {
+            resetDetectionCoroutine = StartCoroutine(ResetDetectionRoutine());
+        }
+    }
 
-        detectionOn = true;
-        Debug.Log("[PlayerDetection] Détection réinitialisée.");
+    private void OnDisable()
+    {
+        // On stoppe la coroutine en cours pour éviter de conserver une référence invalide.
+        if (resetDetectionCoroutine != null)
+        {
+            StopCoroutine(resetDetectionCoroutine);
+            resetDetectionCoroutine = null;
+        }
     }
 
 
