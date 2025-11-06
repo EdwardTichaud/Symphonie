@@ -386,6 +386,11 @@ public class MusicalMoveSO : ScriptableObject
             int turns = Mathf.Max(1, Mathf.RoundToInt(baseValue));
             target.EnsureAltitudeOverrideStatus().SuspendInAir(turns);
         }
+        else if (typeToUse == MusicalEffectType.PrestoForcedAttack)
+        {
+            // Crée un statut dédié qui instancie le prefab et gère les attaques automatiques.
+            PrestoForcedAttackSystem.ApplyStatus(target, caster, passiveEffectPrefab, passiveEffectVerticalOffset);
+        }
         // Les effets visuels comme la création ou la suppression de sol sont
         // désormais entièrement gérés par la timeline, aucune instanciation
         // de prefab n'est nécessaire ici.
@@ -420,7 +425,7 @@ public enum MoveType
     Alteration  // Modifie le terrain ou l'état d'une cible sans être purement offensif ou défensif.
 }
 
-public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark, AnchorGround, SuspendAir }
+public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark, AnchorGround, SuspendAir, PrestoForcedAttack }
 
 public enum RelativePosition { Front, Back, Left, Right , NC}
 

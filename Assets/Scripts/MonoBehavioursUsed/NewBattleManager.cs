@@ -1740,6 +1740,8 @@ public class NewBattleManager : MonoBehaviour
         // Réinitialise la timeline visuelle (ordre + surbrillance)
         BattleTimelineUIManager.Instance?.Refresh(null);
         isTurnResolving = false;
+        // Déclenche les attaques automatiques liées à Presto avant l'évaluation de fin de combat.
+        PrestoForcedAttackSystem.HandleTurnEnded(endingUnit);
         HandleEndOfBattle();
 
         // Cache la jauge si elle existe pour éviter les références invalides.
@@ -3920,6 +3922,9 @@ public class NewBattleManager : MonoBehaviour
             return; // Aucun changement : on évite les répétitions sonores inutiles.
 
         currentCharacterUnit = newCurrentCharacterUnit;
+
+        // Informe immédiatement le statut Presto pour savoir si le lanceur vient de rejouer.
+        PrestoForcedAttackSystem.HandleActiveUnitChanged(currentCharacterUnit);
 
         if (currentCharacterUnit == null)
             return; // Parfois utilisé lors des resets de combat : aucune unité active.

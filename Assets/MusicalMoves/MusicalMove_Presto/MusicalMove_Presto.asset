@@ -16,10 +16,10 @@ MonoBehaviour:
   moveType: 3
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Fait vibrer le sol sous la cible et l'endort jusqu'\xE0 ce qu'elle\n   
-    subisse des d\xE9g\xE2ts."
+  description: "Marque la cible d'un glyphe de tempo qui l'oblige \xE0 lancer une attaque\n
+    basique apr\xE8s chaque tour jusqu'au prochain tour du lanceur."
   inventoryCategory: MusicalMove
-  inventorySummary: "Endort un ennemi isol\xE9."
+  inventorySummary: "Force la cible \xE0 r\xE9pliquer automatiquement jusqu'au prochain tour du lanceur."
   consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 0
@@ -30,8 +30,10 @@ MonoBehaviour:
   consumedHarmonicType: 0
   generatedHarmonicType: 0
   power: 0
-  effectType: 4
+  effectType: 10
   effectValue: 0
+  passiveEffectPrefab: {fileID: 2788147605682259812, guid: bfbd1b12b5fc6c248862eacd73f041b3, type: 3}
+  passiveEffectVerticalOffset: 0.9
   buffStat: 0
   buffAmount: 0
   buffDuration: 0
