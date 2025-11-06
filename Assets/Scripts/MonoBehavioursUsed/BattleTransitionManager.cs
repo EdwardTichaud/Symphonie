@@ -626,7 +626,7 @@ public class BattleTransitionManager : MonoBehaviour
             CharacterController cC = playerObject.GetComponent<CharacterController>();
             if (cC != null)
             {
-                cC.enabled = true;
+                cC.gameObject.SetActive(true);
             }
             else
             {
