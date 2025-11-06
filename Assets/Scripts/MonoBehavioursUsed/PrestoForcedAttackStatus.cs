@@ -106,12 +106,28 @@ public class PrestoForcedAttackStatus : MonoBehaviour
         // de l'orientation automatique, de l'enregistrement des dégâts et des éventuels retours caméra.
         bool attackTriggered = false;
         NewBattleManager manager = NewBattleManager.Instance;
+        // On récupère le MusicalMove utilisé comme attaque basique afin de conserver
+        // la même mise en scène que pour l'input joueur (FX, marques de loyauté, etc.).
+        MusicalMoveSO basicMove = null;
+        if (manager != null)
+            basicMove = manager.ResolveBasicAttackMove(owner);
+        else
+            basicMove = owner.GetBasicAttack();
+
         if (manager != null)
         {
             attackTriggered = manager.ExecuteBaseAttack(owner, forcedTarget, displayErrors: false, applyFatigue: false);
         }
+        else if (basicMove != null)
+        {
+            // Lorsque le BattleManager n'est pas disponible (cas extrêmes en dehors d'un combat standard),
+            // on applique directement l'effet du move tout en ignorant la fatigue pour respecter le design de Presto.
+            basicMove.ApplyEffect(owner, forcedTarget, false, ignoreFatigue: true, skipDamageRegistration: false);
+            attackTriggered = true;
+        }
         else
         {
+            // Dernier recours : on conserve l'ancien calcul brut pour éviter de casser le gameplay dans les contextes inattendus.
             float damage = owner.GetBaseAttackDamage();
             if (damage > 0f)
             {
