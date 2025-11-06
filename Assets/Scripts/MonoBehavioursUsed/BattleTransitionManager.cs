@@ -13,6 +13,11 @@ public class BattleTransitionManager : MonoBehaviour
 
     private PlayerDetection playerDetection;
 
+    /// <summary>
+    /// Identifiant shader mis en cache pour remettre à zéro les dissolves appliqués via MaterialPropertyBlock.
+    /// </summary>
+    private static readonly int DissolveStrengthId = Shader.PropertyToID("_DissolveStrength");
+
     [Header("Ressources Visuals")]
     [SerializeField] private Image worldFadeOverlay;
     [SerializeField] private ParticleSystem maskRingParticles;
@@ -587,6 +592,9 @@ public class BattleTransitionManager : MonoBehaviour
             maskRingParticles.Play();
         }
 
+        // Réinitialise les effets de dissolve ayant pu rester figés après le combat
+        ResetDissolveShaderValues();
+
         HideVictoryPanel();
         HideGameOverPanel();
 
@@ -722,6 +730,46 @@ public class BattleTransitionManager : MonoBehaviour
 
         Time.timeScale = to;
         Time.fixedDeltaTime = 0.02f;
+    }
+
+    /// <summary>
+    /// Parcourt tous les renderers présents dans la scène afin de remettre à zéro la propriété
+    /// de dissolve utilisée durant les transitions de combat. Sans cette étape, certains éléments
+    /// restaient visuellement désintégrés après le retour à l'exploration.
+    /// </summary>
+    private void ResetDissolveShaderValues()
+    {
+        // Inclut les renderers inactifs car certains décors peuvent être masqués pendant le combat
+        Renderer[] renderers = FindObjectsOfType<Renderer>(true);
+        var propertyBlock = new MaterialPropertyBlock();
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null)
+                continue;
+
+            Material[] materials = renderer.sharedMaterials;
+            if (materials == null || materials.Length == 0)
+                continue;
+
+            for (int i = 0; i < materials.Length; i++)
+            {
+                Material material = materials[i];
+                bool materialSupportsDissolve = material != null && material.HasProperty(DissolveStrengthId);
+
+                // On récupère la valeur courante stockée dans le MaterialPropertyBlock
+                propertyBlock.Clear();
+                renderer.GetPropertyBlock(propertyBlock, i);
+                float currentBlockValue = propertyBlock.GetFloat(DissolveStrengthId);
+
+                if (!materialSupportsDissolve && Mathf.Approximately(currentBlockValue, 0f))
+                    continue; // Rien à réinitialiser sur ce sous-matériau
+
+                // Remet à zéro le MPB (et donc la valeur effective affichée par le renderer)
+                propertyBlock.SetFloat(DissolveStrengthId, 0f);
+                renderer.SetPropertyBlock(propertyBlock, i);
+            }
+        }
     }
 
     /// <summary>
