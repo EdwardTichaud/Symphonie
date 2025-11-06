@@ -377,19 +377,24 @@ public class InputsManager : MonoBehaviour
     /// </summary>
     private void OnConfirm(InputAction.CallbackContext ctx)
     {
+        // Tant que la BattleIntro est active, on ne valide aucune action de menu pour éviter les chevauchements.
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
+
+        bool isVictoryOrGameOverScreen = bm.currentBattleState == BattleState.VictoryScreen_CanContinue
+            || bm.currentBattleState == BattleState.GameOverScreen_CanContinue;
+
         // Si une sélection vient juste d'être effectuée, on ignore cette validation
         // pour éviter d'exécuter immédiatement le mouvement sans choix de cible.
-        if (ignorerProchaineValidation)
+        // On autorise néanmoins la validation lorsqu'on se trouve sur l'écran de victoire/game over
+        // afin de ne jamais bloquer le joueur sur ce panneau.
+        if (!isVictoryOrGameOverScreen && ignorerProchaineValidation)
         {
             // Le joueur vient de sélectionner une compétence ou un objet
             // avec la même touche que la validation. On ignore donc toute
             // tentative de confirmation tant que la touche n'a pas été relâchée.
             return;
         }
-
-        // Tant que la BattleIntro est active, on ne valide aucune action de menu pour éviter les chevauchements.
-        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
-            return;
 
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
@@ -459,8 +464,7 @@ public class InputsManager : MonoBehaviour
             bm.ToggleMenuContainers(false, false, false);
         }
 
-        if (bm.currentBattleState == BattleState.VictoryScreen_CanContinue ||
-            bm.currentBattleState == BattleState.GameOverScreen_CanContinue)
+        if (isVictoryOrGameOverScreen)
         {
             bm.ChangeBattleState(BattleState.None);
             BattleTransitionManager.Instance.StartCoroutine(

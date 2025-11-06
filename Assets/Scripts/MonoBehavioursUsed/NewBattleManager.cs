@@ -10,6 +10,7 @@ using TMPro;
 using UnityEngine.Playables;
 using UnityEngine.Timeline;
 using Unity.Cinemachine;
+using UnityEngine.EventSystems;
 
 #region TargetType
 public enum TargetType
@@ -2336,11 +2337,50 @@ public class NewBattleManager : MonoBehaviour
 
         GameObject continueButton = FindChildRecursive(victoryScreen.transform.GetChild(0), "BattleScene_UI_VictoryPanel_Continue").gameObject;
 
+        // ➡️ Branche un listener explicite sur le bouton Continue pour permettre la sortie via la souris/manette
+        if (continueButton != null)
+        {
+            Button uiButton = continueButton.GetComponent<Button>();
+            if (uiButton != null)
+            {
+                // On s'assure de ne pas empiler les callbacks si le panneau est affiché plusieurs fois d'affilée
+                uiButton.onClick.RemoveListener(HandleVictoryContinueRequested);
+                uiButton.onClick.AddListener(HandleVictoryContinueRequested);
+            }
+
+            // Sélectionne le bouton dans l'EventSystem afin que la manette/le clavier puisse valider immédiatement
+            if (EventSystem.current != null)
+            {
+                EventSystem.current.SetSelectedGameObject(continueButton);
+            }
+        }
+
         // Les unités restent désormais en place durant l'écran de victoire afin
         // que le joueur puisse admirer le champ de bataille tel qu'il était au
         // moment de la victoire. Leur suppression se fera plus tard, au retour
         // dans le monde.
         ChangeBattleState(BattleState.VictoryScreen_CanContinue);
+    }
+
+    /// <summary>
+    /// Callback déclenché par le bouton "Continuer" de l'écran de victoire.
+    /// Permet d'appliquer exactement la même logique que la touche de validation.
+    /// </summary>
+    private void HandleVictoryContinueRequested()
+    {
+        // Évite les validations intempestives si l'état du combat n'est pas prêt.
+        if (currentBattleState != BattleState.VictoryScreen_CanContinue
+            && currentBattleState != BattleState.GameOverScreen_CanContinue)
+            return;
+
+        ChangeBattleState(BattleState.None);
+
+        // Lancement sécurisé de la transition de sortie de combat
+        if (BattleTransitionManager.Instance != null)
+        {
+            BattleTransitionManager.Instance.StartCoroutine(
+                BattleTransitionManager.Instance.ExitVictoryScreenAndBattle());
+        }
     }
 
     IEnumerator ShowGameOverPanel()
