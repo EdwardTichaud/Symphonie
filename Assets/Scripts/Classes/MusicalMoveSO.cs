@@ -378,6 +378,10 @@ public class MusicalMoveSO : ScriptableObject
         }
         else if (typeToUse == MusicalEffectType.AnchorGround)
         {
+            // Comme pour Presto ou Pour qui sonne le glas, on s'appuie sur un
+            // composant persistant afin de conserver l'état entre les tours :
+            // ici on force explicitement l'ennemi à rester collé au sol pour
+            // la durée définie par le ScriptableObject.
             int turns = Mathf.Max(1, Mathf.RoundToInt(baseValue));
             target.EnsureAltitudeOverrideStatus().AnchorToGround(turns);
         }
