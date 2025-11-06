@@ -562,7 +562,12 @@ public class InputsManager : MonoBehaviour
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            int baseIndex = bm.currentSkillPageIndex * bm.currentSkillsMenuSlots.Count;
+            // On calcule explicitement la taille d'une page en excluant le slot réservé
+            // au move spécial. Sans cette correction, les compétences affichées sur les
+            // pages suivantes devenaient inaccessibles (ex : « Pour qui sonne le glas »),
+            // car l'indice de base sautait une compétence entière.
+            int pageSize = Mathf.Max(1, bm.currentSkillsMenuSlots.Count - 1);
+            int baseIndex = bm.currentSkillPageIndex * pageSize;
             if (bm.skillChoices.Count > baseIndex)
             {
                 bm.currentMove = bm.skillChoices[baseIndex];
@@ -624,7 +629,10 @@ public class InputsManager : MonoBehaviour
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            int baseIndex = bm.currentSkillPageIndex * bm.currentSkillsMenuSlots.Count;
+            // Même logique que pour la première compétence : on retire le slot spécial
+            // du calcul afin que l'indice colle à l'affichage réel de la page courante.
+            int pageSize = Mathf.Max(1, bm.currentSkillsMenuSlots.Count - 1);
+            int baseIndex = bm.currentSkillPageIndex * pageSize;
             if (bm.skillChoices.Count > baseIndex + 1)
             {
                 bm.currentMove = bm.skillChoices[baseIndex + 1];
@@ -678,7 +686,10 @@ public class InputsManager : MonoBehaviour
 
         if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            int baseIndex = bm.currentSkillPageIndex * bm.currentSkillsMenuSlots.Count;
+            // Idem pour le troisième slot standard : on s'aligne sur la pagination
+            // effective afin que chaque case affichée dans le menu soit sélectionnable.
+            int pageSize = Mathf.Max(1, bm.currentSkillsMenuSlots.Count - 1);
+            int baseIndex = bm.currentSkillPageIndex * pageSize;
             if (bm.skillChoices.Count > baseIndex + 2)
             {
                 bm.currentMove = bm.skillChoices[baseIndex + 2];
