@@ -179,7 +179,8 @@ public class PlayerDetection : MonoBehaviour
 
         Debug.Log($"[PlayerDetection] Réinitialisation en cours, détection réactivée dans {delay} s.");
 
-        yield return new WaitForSeconds(delay);
+        // Utilise le temps réel pour ne pas dépendre du timeScale (gelé pendant les transitions).
+        yield return new WaitForSecondsRealtime(delay);
 
         detectionOn = true;
         Debug.Log("[PlayerDetection] Détection réinitialisée.");
