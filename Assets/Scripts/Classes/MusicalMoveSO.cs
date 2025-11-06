@@ -339,21 +339,21 @@ public class MusicalMoveSO : ScriptableObject
         {
             // Les buffs intrinsèques sont gérés via l'InventoryManager pour
             // conserver une logique unique entre les Items et les MusicalMoves.
-            InventoryManager.Instance?.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
+            CharacterStatusEffectController.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
         }
         else if (typeToUse == MusicalEffectType.Debuff)
         {
-            InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
+            CharacterStatusEffectController.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
         }
         else if (typeToUse == MusicalEffectType.Sleep)
         {
-            InventoryManager.Instance?.ApplySleep(target);
+            CharacterStatusEffectController.ApplySleep(target);
         }
         else if (typeToUse == MusicalEffectType.WakeUpAll)
         {
             foreach (var unit in NewBattleManager.Instance.activeCharacterUnits)
             {
-                InventoryManager.Instance?.RemoveSleep(unit);
+                CharacterStatusEffectController.RemoveSleep(unit);
             }
         }
         else if (typeToUse == MusicalEffectType.LoyaltyMark)
@@ -389,12 +389,12 @@ public class MusicalMoveSO : ScriptableObject
         // Applique ensuite les éventuels effets secondaires définis plus haut.
         if (buffStat != BuffStatType.None && typeToUse != MusicalEffectType.Buff)
         {
-            InventoryManager.Instance?.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
+            CharacterStatusEffectController.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
         }
 
         if (debuffStat != DebuffStatType.None && typeToUse != MusicalEffectType.Debuff)
         {
-            InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
+            CharacterStatusEffectController.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
         }
     }
 }

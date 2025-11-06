@@ -251,13 +251,13 @@ public class ItemData : ScriptableObject
 
     private void ApplyBuff(CharacterUnit target)
     {
-        InventoryManager.Instance?.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
+        CharacterStatusEffectController.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
     }
 
     private void ApplyDebuff(CharacterUnit target)
     {
         // Utilise les champs dédiés aux débuffs pour éviter toute confusion
-        InventoryManager.Instance?.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
+        CharacterStatusEffectController.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
     }
 
     private void ApplyDamage(CharacterUnit caster, CharacterUnit target, float value)
@@ -280,22 +280,22 @@ public class ItemData : ScriptableObject
 
     private void ApplyInterceptionImmunity(CharacterUnit target)
     {
-        InventoryManager.Instance?.ApplyInterceptionImmunity(target, Mathf.RoundToInt(buffDuration));
+        CharacterStatusEffectController.ApplyInterceptionImmunity(target, Mathf.RoundToInt(buffDuration));
     }
 
     private void ApplyExtendEffects(CharacterUnit target)
     {
-        InventoryManager.Instance?.ExtendEffectDurations(target, Mathf.RoundToInt(buffDuration));
+        CharacterStatusEffectController.ExtendEffectDurations(target, buffDuration);
     }
 
     private void ApplySleep(CharacterUnit target)
     {
-        InventoryManager.Instance?.ApplySleep(target);
+        CharacterStatusEffectController.ApplySleep(target);
     }
 
     private void ApplyWakeUp(CharacterUnit target)
     {
-        InventoryManager.Instance?.RemoveSleep(target);
+        CharacterStatusEffectController.RemoveSleep(target);
     }
 }
 
