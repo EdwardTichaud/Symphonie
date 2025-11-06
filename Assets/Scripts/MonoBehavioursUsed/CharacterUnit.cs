@@ -2004,6 +2004,21 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         awakeState?.ExitDissonant();
     }
 
+    /// <summary>
+    /// Calcule les dégâts bruts d'une attaque basique en tenant compte des modificateurs contextuels.
+    /// </summary>
+    /// <returns>Valeur de dégâts prête à être appliquée à une cible.</returns>
+    public float GetBaseAttackDamage()
+    {
+        if (Data == null)
+            return 0f;
+
+        float damage = Mathf.Max(0f, Data.basePower);
+        damage = ApplyDamageModifiers(damage);
+        damage *= GetAttackMultiplier();
+        return damage;
+    }
+
     public float GetAttackMultiplier()
     {
         if (TryGetComponent<SleepStatus>(out var sleep) && sleep.IsAsleep && Data != null && Data.gameplayType == GameplayType.Fatigue)
