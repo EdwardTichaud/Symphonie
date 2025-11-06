@@ -13,6 +13,8 @@ public class Pulse : MonoBehaviour
 
     [Header("Options")]
     public bool autoCaptureBaseScaleInEditor = true; // recalcule la base si tu modifies la scale à la main
+    [Tooltip("Force l'utilisation du temps non-scalé même en dehors de l'UI.")]
+    [SerializeField] private bool forceUnscaledTime = false;
 
     private Vector3 baseScale;
 
@@ -24,6 +26,12 @@ public class Pulse : MonoBehaviour
     private Color baseColor = Color.white;
     private bool hasColorProperty = false;
     private static readonly int ColorID = Shader.PropertyToID("_Color");
+    /// <summary>
+    /// Indique si le script doit se baser sur Time.unscaledTime. Cette valeur est
+    /// forcée à true pour les éléments d'UI afin qu'ils continuent d'animer même
+    /// lorsque Time.timeScale tombe à 0 (cas de l'écran de victoire par exemple).
+    /// </summary>
+    private bool useUnscaledTime = false;
 
     void Awake()
     {
@@ -47,6 +55,11 @@ public class Pulse : MonoBehaviour
         canvasGroup = GetComponent<CanvasGroup>();
         genericRenderer = GetComponent<Renderer>();
 
+        // Le choix du temps utilisé est initialisé à partir du paramètre exposé
+        // dans l'inspecteur. Cela permet de forcer un comportement spécifique
+        // pour des effets hors UI si nécessaire.
+        useUnscaledTime = forceUnscaledTime;
+
         if (genericRenderer != null)
         {
             // Prépare MPB et détecte la propriété _Color sans toucher au matériau partagé
@@ -67,10 +80,9 @@ public class Pulse : MonoBehaviour
         }
         else if (canvasGroup != null)
         {
-        // Les CanvasGroup doivent pulser mme lorsque Time.timeScale est nul :
-        // on bascule donc automatiquement sur Time.unscaledTime lorsqu'un lment UI est dtect.
-        float timeSource = canvasGroup != null ? Time.unscaledTime : Time.time;
-        float t = (Mathf.Sin(timeSource * pulseSpeed) + 1f) * 0.5f;
+            // Les CanvasGroup appartiennent à l'UI : on bascule automatiquement sur
+            // Time.unscaledTime pour que l'animation reste active même durant une pause.
+            useUnscaledTime = true;
             hasColorProperty = true;
         }
     }
@@ -92,8 +104,10 @@ public class Pulse : MonoBehaviour
         if (baseScale == Vector3.zero)
             baseScale = transform.localScale;
 
+        // Sélection du temps de référence : non-scalé pour l'UI/pause, sinon temps classique.
+        float timeSource = useUnscaledTime ? Time.unscaledTime : Time.time;
         // t va de 0 (min) à 1 (max)
-        float t = (Mathf.Sin(Time.time * pulseSpeed) + 1f) * 0.5f;
+        float t = (Mathf.Sin(timeSource * pulseSpeed) + 1f) * 0.5f;
         float scaleFactor = Mathf.Lerp(1f - pulseAmount, 1f + pulseAmount, t);
         transform.localScale = baseScale * scaleFactor;
 
