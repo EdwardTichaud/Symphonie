@@ -379,6 +379,14 @@ public class NewBattleManager : MonoBehaviour
     [HideInInspector] public int currentSkillPageIndex = 0;
     // Sélection nulle pour remplir les emplacements vides
     public MusicalMoveSO emptyMove;
+    [Header("Attaque basique")]
+    [Tooltip("Move utilisé lorsque l'unité ne possède pas d'attaque basique explicite dans sa liste personnelle.")]
+    [SerializeField] private MusicalMoveSO defaultBasicAttackMove;
+    /// <summary>
+    /// Indicateur runtime permettant de savoir si la compétence courante est l'attaque basique.
+    /// Ce drapeau nous aide à appliquer les règles historiques (fin de tour immédiate, etc.).
+    /// </summary>
+    private bool currentMoveIsBasicAttack = false;
 
     // Menus personnalisés pour l’unité qui joue
     public GameObject currentMainMenuContainer;
@@ -1534,6 +1542,28 @@ public class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
+    ///     Retourne l'attaque basique à utiliser pour une unité donnée en appliquant un fallback
+    ///     global si aucune compétence offensive n'est définie dans sa liste personnelle.
+    ///     Ce point d'accès centralise la logique afin que les autres systèmes (inputs, statuts...)
+    ///     restent cohérents.
+    /// </summary>
+    /// <param name="unit">Unité pour laquelle déterminer l'attaque basique.</param>
+    public MusicalMoveSO ResolveBasicAttackMove(CharacterUnit unit)
+    {
+        if (unit == null)
+            return defaultBasicAttackMove;
+
+        // On privilégie l'attaque basique explicitement configurée dans les données du personnage.
+        MusicalMoveSO configuredMove = unit.GetBasicAttack();
+        if (configuredMove != null)
+            return configuredMove;
+
+        // À défaut, on retombe sur la référence globale (configurable dans l'inspecteur) afin de
+        // garantir que chaque unité dispose d'une action minimale pour Presto et l'input dédié.
+        return defaultBasicAttackMove;
+    }
+
+    /// <summary>
     /// Vérifie si la hauteur actuelle de la cible correspond aux exigences du mouvement.
     /// </summary>
     public bool IsTargetAltitudeValid(CharacterUnit target, MusicalMoveSO move)
@@ -1756,6 +1786,11 @@ public class NewBattleManager : MonoBehaviour
         if (wasCritical)
             ActionUIDisplayManager.Instance?.DisplayCriticalHit();
 
+        // On capture l'état de l'attaque basique avant toute modification pour pouvoir
+        // décider en fin de méthode si le tour doit se terminer immédiatement.
+        bool resolveAsBasicAttack = currentMoveIsBasicAttack;
+        currentMoveIsBasicAttack = false; // Reset systématique pour éviter les effets de bord.
+
         if (caster != null)
         {
             int cost = move.harmonicCost;
@@ -1795,6 +1830,14 @@ public class NewBattleManager : MonoBehaviour
                 EndTurn();
                 return;
             }
+        }
+
+        if (resolveAsBasicAttack)
+        {
+            // L'attaque basique met traditionnellement fin au tour : on conserve ce comportement
+            // pour ne pas bouleverser l'équilibrage ni les attentes des joueurs.
+            EndTurn();
+            return;
         }
 
         if (!caster.Data.isPlayerControlled)
@@ -3066,14 +3109,10 @@ public class NewBattleManager : MonoBehaviour
                                (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
                                (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentItem != null);
 
-        bool isBaseAttackTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionForBaseAttack;
-
-        if (!isSkillTargeting && !isItemTargeting && !isBaseAttackTargeting)
+        if (!isSkillTargeting && !isItemTargeting)
             return;
 
-        TargetType type = isBaseAttackTargeting
-            ? TargetType.SingleEnemy
-            : (isSkillTargeting ? currentMove.targetType : currentItemTargetType);
+        TargetType type = isSkillTargeting ? currentMove.targetType : currentItemTargetType;
 
         if (type == TargetType.Self)
         {
@@ -3150,9 +3189,7 @@ public class NewBattleManager : MonoBehaviour
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentItem != null) ||
             (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && currentItem != null);
 
-        bool isBaseAttackTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionForBaseAttack;
-
-        if (!(isSkillTargeting || isItemTargeting || isBaseAttackTargeting))
+        if (!(isSkillTargeting || isItemTargeting))
         {
             if (targetCursor != null)
             {
@@ -3165,9 +3202,7 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        TargetType type = isBaseAttackTargeting
-            ? TargetType.SingleEnemy
-            : (isSkillTargeting ? currentMove.targetType : currentItemTargetType);
+        TargetType type = isSkillTargeting ? currentMove.targetType : currentItemTargetType;
 
         if (type == TargetType.AllEnemies || type == TargetType.AllAllies || type == TargetType.All)
         {
@@ -3260,15 +3295,6 @@ public class NewBattleManager : MonoBehaviour
                     bool inRange = distance <= maxReach;
                     UpdateTargetCursorColor(inRange);
                 }
-                else if (isBaseAttackTargeting)
-                {
-                    targetCursor.transform.position = currentTargetCharacter.transform.position;
-                    float distance = Vector3.Distance(currentCharacterUnit.transform.position,
-                        currentTargetCharacter.transform.position);
-                    float maxReach = currentCharacterUnit.Data.currentRange;
-                    bool inRange = distance <= maxReach;
-                    UpdateTargetCursorColor(inRange);
-                }
                 else
                 {
                     targetCursor.transform.position = currentTargetCharacter.transform.position;
@@ -3280,10 +3306,11 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
-    public void HandleTargetSelection(MusicalMoveSO move)
+    public void HandleTargetSelection(MusicalMoveSO move, bool isBasicAttack = false)
     {
         currentMove = move;
         currentItem = null; // on annule la sélection d'item précédente
+        currentMoveIsBasicAttack = isBasicAttack;
         move.targetType = move.defaultTargetType;
         // Détermine s'il est possible de changer de groupe de cibles
         bool canTargetEnemies = move.targetTypes.Contains(TargetType.SingleEnemy)
@@ -3361,6 +3388,7 @@ public class NewBattleManager : MonoBehaviour
         // le joueur quittera le contexte de l'objet (validation, retour au menu, etc.).
         currentItem = item;
         currentMove = null; // on annule la sélection de compétence précédente
+        currentMoveIsBasicAttack = false; // Sélection d'objet : aucune logique spécifique à l'attaque basique.
         currentItemTargetType = item.defaultTargetType;
 
         bool canTargetEnemies = item.targetTypes.Contains(TargetType.SingleEnemy) ||
@@ -3445,26 +3473,60 @@ public class NewBattleManager : MonoBehaviour
         if (!EnsureCurrentCharacterUnitForMenus(nameof(TryStartBaseAttackSelection)))
             return false;
 
-        CharacterUnit initialTarget = activeCharacterUnits
-            .FirstOrDefault(u => u != null && u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
+        CharacterUnit caster = currentCharacterUnit;
+        if (caster == null)
+            return false;
 
-        if (initialTarget == null)
+        if (caster.Data == null)
         {
-            ActionUIDisplayManager.Instance?.DisplayInstruction("Aucun ennemi valide");
+            Debug.LogWarning("[TryStartBaseAttackSelection] CharacterData introuvable pour l'unité courante.");
             return false;
         }
 
-        currentMove = null;
-        currentItem = null;
+        // Résout l'attaque basique à utiliser pour ce personnage (fallback global compris).
+        MusicalMoveSO basicMove = ResolveBasicAttackMove(caster);
+        if (basicMove == null)
+        {
+            ActionUIDisplayManager.Instance?.DisplayInstruction("Attaque basique indisponible");
+            return false;
+        }
 
-        currentTargetCharacter = initialTarget;
-        currentTargetIndex = 0;
+        // Vérifie les coûts et limitations avant de masquer les menus.
+        if (caster.GetHarmonicCount(basicMove.consumedHarmonicType) < basicMove.harmonicCost)
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+            return false;
+        }
 
-        ChangeBattleState(BattleState.SquadUnit_TargetSelectionForBaseAttack);
-        PlayMenuClip(targetSelectionClip);
-        ActionUIDisplayManager.Instance?.DisplayInstruction_SelectTarget();
+        if (basicMove.enterAwake &&
+            caster.GetHarmonicCount(caster.Data.harmonicType) < caster.Data.awakeHarmonicThreshold)
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+            return false;
+        }
 
-        UpdateTargetCursorCinemachine(currentTargetCharacter);
+        if (caster.IsMoveOnCooldown(basicMove))
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_MoveOnCooldown();
+            return false;
+        }
+
+        if (!caster.CanUseMove(basicMove))
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction("Limite d'utilisation atteinte");
+            return false;
+        }
+
+        // Tout est prêt : on masque les menus pour se comporter comme une sélection classique de compétence.
+        ToggleMenuContainers(false, false, false);
+        HandleTargetSelection(basicMove, isBasicAttack: true);
+
+        if (currentTargetCharacter == null)
+        {
+            ActionUIDisplayManager.Instance?.DisplayInstruction("Aucun ennemi valide");
+            OpenSkillsMenu();
+            return false;
+        }
 
         return true;
     }
@@ -3549,8 +3611,16 @@ public class NewBattleManager : MonoBehaviour
             return false;
         }
 
+        MusicalMoveSO basicMove = ResolveBasicAttackMove(attacker);
+        if (basicMove == null)
+        {
+            if (displayErrors)
+                Debug.LogWarning("[ExecuteBaseAttack] Aucun MusicalMove d'attaque basique n'est disponible.");
+            return false;
+        }
+
         float distance = Vector3.Distance(attacker.transform.position, target.transform.position);
-        float maxReach = attacker.Data.currentRange;
+        float maxReach = attacker.Data.currentRange + basicMove.castDistance;
         if (distance > maxReach)
         {
             if (displayErrors)
@@ -3560,21 +3630,12 @@ public class NewBattleManager : MonoBehaviour
 
         OrientUnitTowardTarget(attacker, target);
 
-        float damage = attacker.GetBaseAttackDamage();
-        if (damage <= 0f)
-        {
-            if (displayErrors)
-                Debug.LogWarning("[ExecuteBaseAttack] Dégâts calculés à 0 : annulation.");
-            return false;
-        }
-
-        target.TakeDamage(damage, attacker.transform);
-
-        if (registerStats)
-            RegisterDamage(attacker, damage);
-
-        if (applyFatigue)
-            attacker.GetComponent<FatigueSystem>()?.OnActionPerformed();
+        // La résolution passe désormais par le MusicalMove afin de profiter des timelines,
+        // effets secondaires et registres de dégâts déjà implémentés. On transmet toutefois
+        // les options historiques (fatigue, statistiques) pour conserver le même contrat public.
+        bool ignoreFatigue = !applyFatigue;
+        bool skipDamageRegistration = !registerStats;
+        basicMove.ApplyEffect(attacker, target, false, ignoreFatigue, skipDamageRegistration);
 
         return true;
     }
@@ -4315,8 +4376,7 @@ public class NewBattleManager : MonoBehaviour
                || state == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
                || state == BattleState.SquadUnit_TargetSelectionAmongSquadForItem
                || state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
-               || state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies
-               || state == BattleState.SquadUnit_TargetSelectionForBaseAttack;
+               || state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies;
     }
 
     /// <summary>

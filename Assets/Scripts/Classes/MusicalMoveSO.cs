@@ -290,18 +290,47 @@ public class MusicalMoveSO : ScriptableObject
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
     {
-        ApplyEffect(caster, target, false);
+        // Les appels historiques utilisent cette surcharge sans paramètre :
+        // on délègue au noyau commun avec les options par défaut pour conserver
+        // un comportement identique.
+        ApplyEffectInternal(caster, target, false, ignoreFatigue: false, skipDamageRegistration: false);
     }
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target, bool isCritical)
     {
+        // Variante utilisée par les QTE classiques : aucune fatigue ignorée et
+        // enregistrement des dégâts actif.
+        ApplyEffectInternal(caster, target, isCritical, ignoreFatigue: false, skipDamageRegistration: false);
+    }
+
+    /// <summary>
+    ///     Nouvelle surcharge dédiée aux déclenchements automatisés (Presto, scripts narratifs...).
+    ///     Elle permet d'ignorer la fatigue ou l'enregistrement des dégâts lorsque la logique
+    ///     existante le nécessite sans dupliquer la formule de résolution.
+    /// </summary>
+    public void ApplyEffect(CharacterUnit caster, CharacterUnit target, bool isCritical, bool ignoreFatigue,
+        bool skipDamageRegistration)
+    {
+        ApplyEffectInternal(caster, target, isCritical, ignoreFatigue, skipDamageRegistration);
+    }
+
+    /// <summary>
+    ///     Point d'entrée commun à toutes les surcharges d'application d'effet.
+    ///     L'ajout des paramètres <paramref name="ignoreFatigue"/> et <paramref name="skipDamageRegistration"/>
+    ///     évite de multiplier les embranchements tout en gardant un comportement clair pour la maintenance.
+    /// </summary>
+    private void ApplyEffectInternal(CharacterUnit caster, CharacterUnit target, bool isCritical, bool ignoreFatigue,
+        bool skipDamageRegistration)
+    {
         // Applique d'abord l'effet de base
-        ApplySingleEffect(effectType, caster, target, effectValue, fatigueCost, isCritical && !useCriticalVariant);
+        ApplySingleEffect(effectType, caster, target, effectValue, fatigueCost, isCritical && !useCriticalVariant,
+            ignoreFatigue, skipDamageRegistration);
 
         // Ajoute l'effet critique si nécessaire
         if (isCritical && useCriticalVariant)
         {
-            ApplySingleEffect(criticalEffectType, caster, target, criticalEffectValue, criticalFatigueCost, false);
+            ApplySingleEffect(criticalEffectType, caster, target, criticalEffectValue, criticalFatigueCost, false,
+                ignoreFatigue, skipDamageRegistration);
         }
     }
 
@@ -310,7 +339,8 @@ public class MusicalMoveSO : ScriptableObject
     /// du système de fatigue éventuel.
     /// </summary>
     private void ApplySingleEffect(MusicalEffectType typeToUse, CharacterUnit caster,
-        CharacterUnit target, int baseValue, float fatigueToApply, bool doubleValue)
+        CharacterUnit target, int baseValue, float fatigueToApply, bool doubleValue, bool ignoreFatigue,
+        bool skipDamageRegistration)
     {
         float finalValue = baseValue;
         if (caster != null)
@@ -335,7 +365,8 @@ public class MusicalMoveSO : ScriptableObject
         if (typeToUse == MusicalEffectType.Damage)
         {
             target.TakeDamage(finalValue, caster != null ? caster.transform : null);
-            NewBattleManager.Instance?.RegisterDamage(caster, finalValue);
+            if (!skipDamageRegistration)
+                NewBattleManager.Instance?.RegisterDamage(caster, finalValue);
         }
         else if (typeToUse == MusicalEffectType.Heal)
         {
@@ -398,7 +429,7 @@ public class MusicalMoveSO : ScriptableObject
         // Les effets visuels comme la création ou la suppression de sol sont
         // désormais entièrement gérés par la timeline, aucune instanciation
         // de prefab n'est nécessaire ici.
-        if (caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
+        if (!ignoreFatigue && caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
             caster.GetComponent<FatigueSystem>()?.OnActionPerformed(fatigueToApply);
         }

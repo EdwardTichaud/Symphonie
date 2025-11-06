@@ -451,11 +451,6 @@ public class InputsManager : MonoBehaviour
             bm.StartCoroutine(bm.ExecuteMoveOnTarget(bm.currentMove, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
         }
-        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionForBaseAttack)
-        {
-            // L'attaque basique ne nécessite pas de QTE : on délègue au BattleManager l'exécution complète.
-            bm.ConfirmBaseAttack();
-        }
         else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem)
         {
@@ -784,8 +779,9 @@ public class InputsManager : MonoBehaviour
         // L'appel à TryStartBaseAttackSelection masque automatiquement les menus et prépare la cible.
         if (bm.TryStartBaseAttackSelection())
         {
-            // On cache immédiatement les conteneurs afin que le joueur se concentre sur la visée.
-            bm.ToggleMenuContainers(false, false, false);
+            // Même logique que pour les autres sélections : si la touche utilisée correspond également
+            // à Confirm, on patiente une frame pour éviter une validation instantanée du move.
+            MettreAJourIgnorerValidationApresSelection(ctx);
         }
     }
 
@@ -871,8 +867,7 @@ public class InputsManager : MonoBehaviour
         return state == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
                state == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
                (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && NewBattleManager.Instance.currentMove != null) ||
-               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && NewBattleManager.Instance.currentMove != null) ||
-               state == BattleState.SquadUnit_TargetSelectionForBaseAttack;
+               (state == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies && NewBattleManager.Instance.currentMove != null);
     }
 
     private bool IsItemTargetSelectionState(BattleState state)
