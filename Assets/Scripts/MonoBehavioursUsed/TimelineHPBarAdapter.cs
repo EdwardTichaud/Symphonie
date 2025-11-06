@@ -1,6 +1,6 @@
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 /// <summary>
 /// Adapte l'affichage de la timeline de combat au système standard de <see cref="HPBar"/>.
