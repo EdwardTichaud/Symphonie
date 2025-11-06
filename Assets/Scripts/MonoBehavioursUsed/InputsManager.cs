@@ -564,37 +564,14 @@ public class InputsManager : MonoBehaviour
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            // On calcule explicitement la taille d'une page en excluant le slot réservé
-            // au move spécial. Sans cette correction, les compétences affichées sur les
-            // pages suivantes devenaient inaccessibles (ex : « Pour qui sonne le glas »),
-            // car l'indice de base sautait une compétence entière.
-            int pageSize = Mathf.Max(1, bm.currentSkillsMenuSlots.Count - 1);
-            int baseIndex = bm.currentSkillPageIndex * pageSize;
-            if (bm.skillChoices.Count > baseIndex)
+            // Le premier slot du SkillsMenu correspond désormais à l'attaque basique fixe.
+            // On délègue toute la validation à la logique dédiée pour conserver les mêmes contrôles
+            // (coûts, cooldown, limites d'utilisation...) que pour l'input direct d'attaque basique.
+            if (bm.TryStartBaseAttackSelection())
             {
-                bm.currentMove = bm.skillChoices[baseIndex];
-                HarmonicType requiredType = bm.currentMove.consumedHarmonicType;
-                if (bm.currentCharacterUnit.GetHarmonicCount(requiredType) < bm.currentMove.harmonicCost)
-                {
-                    ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
-                    return;
-                }
-                if (bm.currentCharacterUnit.IsMoveOnCooldown(bm.currentMove))
-                {
-                    ActionUIDisplayManager.Instance.DisplayInstruction_MoveOnCooldown();
-                    bm.ShowMainMenu();
-                    return;
-                }
-                bm.ToggleMenuContainers(false, false, false);
-                // On contrôle ici si la même touche sert à confirmer : seule cette situation impose
-                // de différer la validation pour éviter un lancement immédiat.
+                // Même protection que pour les autres sélections : si la touche chevauche "Confirm",
+                // on bloque la validation sur la prochaine frame afin d'éviter un déclenchement instantané.
                 MettreAJourIgnorerValidationApresSelection(ctx);
-                bm.HandleTargetSelection(bm.currentMove);
-                // Les animations de visée sont désormais intégrées dans la Timeline de préparation
-            }
-            else
-            {
-                Debug.LogWarning("[InputsManager] OnSelect1 ignoré : pas de skill disponible !");
             }
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
@@ -631,13 +608,19 @@ public class InputsManager : MonoBehaviour
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            // Même logique que pour la première compétence : on retire le slot spécial
-            // du calcul afin que l'indice colle à l'affichage réel de la page courante.
-            int pageSize = Mathf.Max(1, bm.currentSkillsMenuSlots.Count - 1);
-            int baseIndex = bm.currentSkillPageIndex * pageSize;
-            if (bm.skillChoices.Count > baseIndex + 1)
+            // Les slots paginés démarrent à l'indice 1 (0 = attaque basique fixe).
+            int paginatedSlots = bm.currentSkillsMenuSlots.Count - 2;
+            if (paginatedSlots <= 0)
             {
-                bm.currentMove = bm.skillChoices[baseIndex + 1];
+                Debug.LogWarning("[InputsManager] OnSelect2 ignoré : aucun slot paginé disponible !");
+                return;
+            }
+
+            int pageSize = paginatedSlots;
+            int baseIndex = bm.currentSkillPageIndex * pageSize;
+            if (bm.skillChoices.Count > baseIndex)
+            {
+                bm.currentMove = bm.skillChoices[baseIndex];
                 HarmonicType requiredType = bm.currentMove.consumedHarmonicType;
                 if (bm.currentCharacterUnit.GetHarmonicCount(requiredType) < bm.currentMove.harmonicCost)
                 {
@@ -688,13 +671,19 @@ public class InputsManager : MonoBehaviour
 
         if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            // Idem pour le troisième slot standard : on s'aligne sur la pagination
-            // effective afin que chaque case affichée dans le menu soit sélectionnable.
-            int pageSize = Mathf.Max(1, bm.currentSkillsMenuSlots.Count - 1);
-            int baseIndex = bm.currentSkillPageIndex * pageSize;
-            if (bm.skillChoices.Count > baseIndex + 2)
+            // Ce troisième bouton cible le deuxième slot paginé (indice 2 au total).
+            int paginatedSlots = bm.currentSkillsMenuSlots.Count - 2;
+            if (paginatedSlots <= 1)
             {
-                bm.currentMove = bm.skillChoices[baseIndex + 2];
+                Debug.LogWarning("[InputsManager] OnSelect3 ignoré : moins de deux slots paginés disponibles !");
+                return;
+            }
+
+            int pageSize = paginatedSlots;
+            int baseIndex = bm.currentSkillPageIndex * pageSize;
+            if (bm.skillChoices.Count > baseIndex + 1)
+            {
+                bm.currentMove = bm.skillChoices[baseIndex + 1];
                 HarmonicType requiredType = bm.currentMove.consumedHarmonicType;
                 if (bm.currentCharacterUnit.GetHarmonicCount(requiredType) < bm.currentMove.harmonicCost)
                 {
@@ -800,8 +789,12 @@ public class InputsManager : MonoBehaviour
             return;
 
         // Calcule le nombre de cases disponibles pour les attaques musicales classiques
-        // (le dernier slot du menu étant réservé au mouvement spécial).
-        int pageSize = bm.currentSkillsMenuSlots.Count - 1;
+        // (le premier slot étant l'attaque basique fixe et le dernier le move spécial).
+        int pageSize = bm.currentSkillsMenuSlots.Count - 2;
+
+        // Sans slot paginé, aucune page supplémentaire ne peut être affichée.
+        if (pageSize <= 0)
+            return;
 
         // Si le total des attaques disponibles tient sur une seule page, inutile de tenter
         // une navigation : on quitte simplement la méthode.
@@ -826,8 +819,12 @@ public class InputsManager : MonoBehaviour
         if (bm.currentBattleState != BattleState.SquadUnit_SkillsMenu)
             return;
 
-        // Détermination du nombre d'attaques affichables par page (hors move spécial).
-        int pageSize = bm.currentSkillsMenuSlots.Count - 1;
+        // Détermination du nombre d'attaques affichables par page (hors attaque basique et move spécial).
+        int pageSize = bm.currentSkillsMenuSlots.Count - 2;
+
+        // Sans slot paginé, il est impossible de reculer.
+        if (pageSize <= 0)
+            return;
 
         // Si une seule page suffit à afficher toutes les compétences, il n'y a rien
         // à afficher de plus et l'on quitte la méthode.

@@ -369,6 +369,12 @@ public class NewBattleManager : MonoBehaviour
     [HideInInspector] public List<MusicalMoveSO> skillChoices = new List<MusicalMoveSO>();
     // Mouvement spécial actuel (affiché dans le 4e slot du SkillsMenu)
     [HideInInspector] public MusicalMoveSO specialMoveChoice;
+    /// <summary>
+    ///     Mouvement d'attaque basique affiché dans le premier slot du SkillsMenu.
+    ///     Ce champ reste public (en hide) pour simplifier la consultation dans l'inspecteur
+    ///     tout en garantissant un point d'accès unique pour l'UI et les inputs.
+    /// </summary>
+    [HideInInspector] public MusicalMoveSO basicAttackMoveChoice;
     [HideInInspector] public List<ItemData> itemChoices = new List<ItemData>();
     [HideInInspector] public MusicalMoveSO currentMove;
     [HideInInspector] public ItemData currentItem;
@@ -2779,6 +2785,17 @@ public class NewBattleManager : MonoBehaviour
         // Réordonne les attaques selon le set sélectionné afin de mettre en avant les favoris.
         skillChoices = currentCharacterUnit.OrderMovesForCurrentSet(skillChoices);
 
+        // Identifie l'attaque basique dédiée au premier slot du SkillsMenu.
+        // Même si cette attaque n'apparaît pas dans la liste (fallback global, limites d'utilisation...),
+        // on force son affichage fixe pour respecter les attentes des joueurs.
+        basicAttackMoveChoice = ResolveBasicAttackMove(currentCharacterUnit);
+        if (basicAttackMoveChoice != null)
+        {
+            // On retire l'attaque basique de la liste paginée afin qu'elle ne se décale jamais
+            // lorsqu'on feuillette les autres compétences musicales.
+            skillChoices.RemoveAll(move => move == basicAttackMoveChoice);
+        }
+
         // Détermine le mouvement spécial autorisé, qui sera affiché dans le 4e slot
         specialMoveChoice = (currentCharacterUnit.Data.specialMusicalMove != null &&
             currentCharacterUnit.CanUseMove(currentCharacterUnit.Data.specialMusicalMove))
@@ -2809,32 +2826,73 @@ public class NewBattleManager : MonoBehaviour
             return;
         }
 
-        int pageSize = specialSlotIndex; // Slots disponibles pour les attaques musicales classiques
-        int startIndex = currentSkillPageIndex * pageSize;
+        // 0) Assure l'affichage fixe de l'attaque basique dans le tout premier slot
+        if (currentSkillsMenuSlots.Count > 0)
+        {
+            Transform basicSlot = currentSkillsMenuSlots[0];
+            if (basicAttackMoveChoice != null && currentCharacterUnit != null && currentCharacterUnit.Data != null)
+            {
+                UpdateButton(basicSlot, basicAttackMoveChoice.moveName, basicAttackMoveChoice.moveIcon);
 
-        // 1) Affiche les attaques musicales standard dans les premiers slots
+                bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(basicAttackMoveChoice.consumedHarmonicType) >= basicAttackMoveChoice.harmonicCost;
+                bool resonanceOk = !basicAttackMoveChoice.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.awakeHarmonicThreshold;
+                bool usageOk = currentCharacterUnit.CanUseMove(basicAttackMoveChoice);
+                bool cooldownOk = !currentCharacterUnit.IsMoveOnCooldown(basicAttackMoveChoice);
+                bool available = enoughHarmonic && resonanceOk && usageOk && cooldownOk;
+                SetButtonAvailability(basicSlot, available, false);
+            }
+            else
+            {
+                // Fallback visuel en cas d'absence d'attaque basique (situation exceptionnelle)
+                if (emptyMove != null)
+                    UpdateButton(basicSlot, emptyMove.moveName, emptyMove.moveIcon);
+                else
+                    UpdateButton(basicSlot, "Indisponible", null);
+                SetButtonAvailability(basicSlot, false, false);
+            }
+        }
+
+        const int baseAttackSlotIndex = 0;
+        int paginatedSlotOffset = baseAttackSlotIndex + 1;
+        int pageSize = Mathf.Max(0, specialSlotIndex - paginatedSlotOffset);
+
+        if (pageSize > 0)
+        {
+            int maxPage = Mathf.Max(0, (skillChoices.Count - 1) / pageSize);
+            currentSkillPageIndex = Mathf.Clamp(currentSkillPageIndex, 0, maxPage);
+        }
+        else
+        {
+            currentSkillPageIndex = 0;
+        }
+
+        int startIndex = pageSize > 0 ? currentSkillPageIndex * pageSize : 0;
+
+        // 1) Affiche les attaques musicales paginées (hors attaque basique et move spécial)
         for (int i = 0; i < pageSize; i++)
         {
+            int slotIndex = paginatedSlotOffset + i;
+            Transform slot = currentSkillsMenuSlots[slotIndex];
             int globalIndex = startIndex + i;
             if (globalIndex < skillChoices.Count)
             {
                 var move = skillChoices[globalIndex];
-                UpdateButton(currentSkillsMenuSlots[i], move.moveName, move.moveIcon);
+                UpdateButton(slot, move.moveName, move.moveIcon);
 
                 bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(move.consumedHarmonicType) >= move.harmonicCost;
                 bool resonanceOk = !move.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.awakeHarmonicThreshold;
                 bool usageOk = currentCharacterUnit.CanUseMove(move);
                 bool available = enoughHarmonic && resonanceOk && usageOk;
-                SetButtonAvailability(currentSkillsMenuSlots[i], available, false);
+                SetButtonAvailability(slot, available, false);
             }
             else
             {
                 // Slot vide ou hors de portée
                 if (emptyMove != null)
-                    UpdateButton(currentSkillsMenuSlots[i], emptyMove.moveName, emptyMove.moveIcon);
+                    UpdateButton(slot, emptyMove.moveName, emptyMove.moveIcon);
                 else
-                    UpdateButton(currentSkillsMenuSlots[i], "Indisponible", null);
-                SetButtonAvailability(currentSkillsMenuSlots[i], false, false);
+                    UpdateButton(slot, "Indisponible", null);
+                SetButtonAvailability(slot, false, false);
             }
         }
 
@@ -2864,12 +2922,12 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     public void NextSkillPage()
     {
-        // Calcule le nombre de pages possibles (hors slot spécial)
-        int pageSize = currentSkillsMenuSlots.Count - 1;
+        // Calcule le nombre de slots paginés (hors attaque basique et move spécial)
+        int pageSize = currentSkillsMenuSlots.Count - 2;
         if (pageSize <= 0)
         {
-            // Évite une division par zéro si aucun slot n'est disponible
-            Debug.LogWarning("[NextSkillPage] Impossible de changer de page : nombre de slots insuffisant.");
+            // Évite une division par zéro si aucun slot paginé n'est disponible
+            Debug.LogWarning("[NextSkillPage] Impossible de changer de page : aucun slot paginé.");
             return;
         }
 
