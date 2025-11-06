@@ -70,6 +70,12 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Valeur numérique associée à l'effet principal.")]
     public int effectValue = 10;
 
+    [Header("Effets spécifiques")]
+    [Tooltip("Prefab instancié au-dessus de la cible lorsqu'une LoyaltyMark est appliquée.")]
+    public GameObject loyaltyMarkPrefab;
+    [Tooltip("Décalage vertical supplémentaire pour positionner le prefab de LoyaltyMark.")]
+    public float loyaltyMarkVerticalOffset = 0.5f;
+
     // ------------------------------------------------------------------
     // Buffs et débuffs supplémentaires
     // ------------------------------------------------------------------
@@ -361,7 +367,7 @@ public class MusicalMoveSO : ScriptableObject
             var mark = target.GetComponent<LoyaltyMark>();
             if (mark == null)
                 mark = target.gameObject.AddComponent<LoyaltyMark>();
-            mark.SetProtector(caster);
+            mark.SetProtector(caster, loyaltyMarkPrefab, loyaltyMarkVerticalOffset);
         }
         else if (typeToUse == MusicalEffectType.LinkMark)
         {
