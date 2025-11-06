@@ -234,8 +234,8 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Réplique jouée si la cible meurt avant la fin d'une attaque.")]
     public AudioClipSO prematureDeathTaunt;
 
-    [Tooltip("Réplique jouée si la cible devait subir des dégâts mais a une LoyaltyMark sur elle.")]
-    public AudioClipSO loyaltyMarkTarget;
+    [Tooltip("Réplique jouée si la cible devait subir des dégâts mais a une LoyaltyMark sur elle. La cible doit être alliée du lanceur, sinon pas de son joué.")]
+    public AudioClipSO loyaltyMarkTargetAlly;
 
     [Tooltip("Effet visuel déclenché lorsqu'un coup touche la cible.")]
     public GameObject hitEffect;
