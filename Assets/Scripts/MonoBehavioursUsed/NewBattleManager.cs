@@ -154,10 +154,20 @@ public class NewBattleManager : MonoBehaviour
     public TimelineAsset itemPreparingTimeline;
     private bool itemMenuTimelineActive = false;
 
+    /// <summary>
+    /// Empêche le lancement multiple de la séquence de victoire.
+    /// Ce drapeau garantit que la capture, le switch caméra et l'affichage UI
+    /// restent synchronisés même si <see cref="HandleEndOfBattle"/> est évalué
+    /// plusieurs fois sur des frames consécutives.
+    /// </summary>
+    private bool victorySequenceInProgress = false;
+
     /// <summary>Nom de la Cinemachine dédiée au menu principal et aux variations associées.</summary>
     private const string MainMenuCameraName = "CMV_MainMenu";
     /// <summary>Nom de la Cinemachine utilisée pour le menu des compétences.</summary>
     private const string SkillsMenuCameraName = "CMV_SkillsMenu";
+    /// <summary>Nom explicite de la caméra de mise en scène pour l'écran de victoire.</summary>
+    private const string VictoryCameraName = "CMV_Victory";
     /// <summary>Nom de la Cinemachine dédiée au menu des objets.</summary>
     private const string ItemsMenuCameraName = "CMV_ItemsMenu";
     /// <summary>Nom de la Cinemachine utilisée durant les phases de sélection de cible.</summary>
@@ -2176,11 +2186,13 @@ public class NewBattleManager : MonoBehaviour
             .Where(u => u.Data.characterType == CharacterType.SquadUnit)
             .All(u => u.currentHP <= 0);
 
-        if (allEnemiesDead && currentBattleState != BattleState.VictoryScreen_Await)
+        if (allEnemiesDead
+            && !victorySequenceInProgress
+            && currentBattleState != BattleState.VictoryScreen_Await
+            && currentBattleState != BattleState.VictoryScreen_CanContinue)
         {
             Debug.Log("[BattleTurnManager] 🎉 Tous les ennemis sont vaincus !");
             lastBattleOutcome = BattleOutcome.Victory; // Enregistre l'issue du combat
-            ChangeBattleState(BattleState.VictoryScreen_Await);
             StartCoroutine(ReduceTimeAndShowVictoryPanel());
         }
         else if (allSquadDead)
@@ -2295,26 +2307,41 @@ public class NewBattleManager : MonoBehaviour
 
     private IEnumerator ReduceTimeAndShowVictoryPanel()
     {
-        // Ralentissement progressif vers un arrêt complet en 2 secondes
+        victorySequenceInProgress = true; // 🔒 Bloque tout nouveau déclenchement pendant la séquence.
+
+        // 1️⃣ Ralentit progressivement le temps jusqu'à l'arrêt complet pour figer la scène.
         if (BattleTransitionManager.Instance != null)
+        {
             yield return BattleTransitionManager.Instance.StartCoroutine(
                 BattleTransitionManager.Instance.SlowTimeScale(0f, 0.5f));
+        }
         else
+        {
             Time.timeScale = 0f;
+        }
 
-        Time.fixedDeltaTime = 0f;
+        Time.fixedDeltaTime = 0f; // Les physiques sont également gelées.
 
-        // Capture de la dernière image avant d'afficher l'écran de victoire
-        TakeVictoryScreenshot();
+        // 2️⃣ Capture la dernière image du combat avant tout mouvement de caméra.
+        yield return CaptureVictoryScreenshotBeforeCameraSwap();
 
-        // Activation du panneau VictoryScreen (animation en temps réel)
+        // 3️⃣ Demande officiellement la caméra de victoire afin de lancer le travelling.
+        ChangeBattleState(BattleState.VictoryScreen_Await);
+
+        // 4️⃣ Patiente jusqu'à la fin du blend Cinemachine pour que le plan soit parfaitement cadré.
+        yield return WaitForVictoryCameraToSettle();
+
+        // 5️⃣ L'interface de victoire peut maintenant se superposer au plan stabilisé.
         victoryScreen.SetActive(true);
         Transform victoryPanel = victoryScreen.transform.GetChild(0);
         Animator victoryAnim = victoryPanel.GetComponent<Animator>();
         if (victoryAnim != null)
+        {
             victoryAnim.updateMode = AnimatorUpdateMode.UnscaledTime;
+        }
         victoryPanel.gameObject.SetActive(true);
 
+        // 6️⃣ Distribution des récompenses avant de les afficher sur le panneau.
         GameManager.Instance?.AddXPToSquad(rewardXP);
         GameManager.Instance?.AddItemsToInventory(rewardItems);
 
@@ -2324,7 +2351,7 @@ public class NewBattleManager : MonoBehaviour
         int totalEnemies = GameManager.Instance != null ? GameManager.Instance.gameData.enemiesDefeatedCount : 0;
         panel?.DisplayVictory(rewardXP, rewardItems, totalEnemies, duration, mvpUnit, maxTurnDamage);
 
-        // Applique la RenderTexture sur le RawImage du panel
+        // 7️⃣ Applique la capture sur le fond du panneau pour figer la dernière image du combat.
         RawImage img = victoryScreen.transform.GetChild(0).GetComponent<RawImage>();
         if (img != null)
         {
@@ -2360,6 +2387,74 @@ public class NewBattleManager : MonoBehaviour
         // moment de la victoire. Leur suppression se fera plus tard, au retour
         // dans le monde.
         ChangeBattleState(BattleState.VictoryScreen_CanContinue);
+
+        victorySequenceInProgress = false;
+    }
+
+    /// <summary>
+    /// Lance la capture asynchrone du screenshot de victoire puis attend sa complétion.
+    /// Cette étape est effectuée avant la transition caméra pour figer exactement le
+    /// dernier instant du combat.
+    /// </summary>
+    private IEnumerator CaptureVictoryScreenshotBeforeCameraSwap()
+    {
+        // Déclenche la capture si la RenderTexture est correctement configurée.
+        TakeVictoryScreenshot();
+
+        // Si aucune coroutine n'a démarré (RenderTexture manquante, manager désactivé...)
+        // on attend tout de même une frame pour rester déterministe, puis on abandonne.
+        if (victoryScreenshotCoroutine == null)
+        {
+            yield return null;
+            yield break;
+        }
+
+        // Boucle d'attente non bloquante : la capture se termine dès la fin du frame courant.
+        while (victoryScreenshotCoroutine != null)
+        {
+            yield return null;
+        }
+    }
+
+    /// <summary>
+    /// Patiente jusqu'à ce que la caméra Cinemachine « CMV_Victory » soit pleinement active
+    /// et que son blend lissé soit achevé. On évite ainsi d'afficher l'UI tant que le plan
+    /// n'est pas parfaitement cadré.
+    /// </summary>
+    private IEnumerator WaitForVictoryCameraToSettle()
+    {
+        var cameraManager = BattleCameraManager.Instance;
+        if (cameraManager == null)
+        {
+            yield break; // Sécurité : aucune caméra gérée, on évite de bloquer la coroutine.
+        }
+
+        // Première étape : s'assurer que la caméra de victoire est bien la cible actuelle.
+        float ensureTimer = 0f;
+        const float ensureTimeout = 1f; // marge suffisante pour couvrir un frame de retard.
+        while (!string.Equals(cameraManager.CurrentCinemachineCameraName, VictoryCameraName, StringComparison.OrdinalIgnoreCase)
+            && ensureTimer < ensureTimeout)
+        {
+            ensureTimer += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (!string.Equals(cameraManager.CurrentCinemachineCameraName, VictoryCameraName, StringComparison.OrdinalIgnoreCase))
+        {
+            Debug.LogWarning("[BattleTurnManager] Impossible de confirmer la caméra de victoire active.");
+            yield break;
+        }
+
+        // Deuxième étape : attendre la fin effective du blend Smooth imposé (0,5 s).
+        float blendDuration = Mathf.Max(cameraManager.SmoothBlendDuration, 0f);
+        float elapsed = 0f;
+        // Ajoute une petite marge pour éviter les erreurs d'arrondi et garantir un plan stabilisé.
+        float paddedDuration = blendDuration + 0.05f;
+        while (elapsed < paddedDuration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
     }
 
     /// <summary>
