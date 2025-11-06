@@ -599,6 +599,15 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""BaseAttack"",
+                    ""type"": ""Button"",
+                    ""id"": ""bb8c31cc-9857-4183-b7c7-5a257d296502"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -973,6 +982,17 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""RightShoulder"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""32a58e43-1f8b-43b6-8f30-cf5aaf67be4c"",
+                    ""path"": ""<Gamepad>/rightTrigger"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""BaseAttack"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1439,6 +1459,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_Battle_Awake = m_Battle.FindAction("Awake", throwIfNotFound: true);
         m_Battle_LeftShoulder = m_Battle.FindAction("LeftShoulder", throwIfNotFound: true);
         m_Battle_RightShoulder = m_Battle.FindAction("RightShoulder", throwIfNotFound: true);
+        m_Battle_BaseAttack = m_Battle.FindAction("BaseAttack", throwIfNotFound: true);
         // InfoBox
         m_InfoBox = asset.FindActionMap("InfoBox", throwIfNotFound: true);
         m_InfoBox_Cancel = m_InfoBox.FindAction("Cancel", throwIfNotFound: true);
@@ -1771,6 +1792,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_Battle_Awake;
     private readonly InputAction m_Battle_LeftShoulder;
     private readonly InputAction m_Battle_RightShoulder;
+    private readonly InputAction m_Battle_BaseAttack;
     /// <summary>
     /// Provides access to input actions defined in input action map "Battle".
     /// </summary>
@@ -1834,6 +1856,10 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Battle/RightShoulder".
         /// </summary>
         public InputAction @RightShoulder => m_Wrapper.m_Battle_RightShoulder;
+        /// <summary>
+        /// Provides access to the underlying input action "Battle/BaseAttack".
+        /// </summary>
+        public InputAction @BaseAttack => m_Wrapper.m_Battle_BaseAttack;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -1899,6 +1925,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @RightShoulder.started += instance.OnRightShoulder;
             @RightShoulder.performed += instance.OnRightShoulder;
             @RightShoulder.canceled += instance.OnRightShoulder;
+            @BaseAttack.started += instance.OnBaseAttack;
+            @BaseAttack.performed += instance.OnBaseAttack;
+            @BaseAttack.canceled += instance.OnBaseAttack;
         }
 
         /// <summary>
@@ -1949,6 +1978,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @RightShoulder.started -= instance.OnRightShoulder;
             @RightShoulder.performed -= instance.OnRightShoulder;
             @RightShoulder.canceled -= instance.OnRightShoulder;
+            @BaseAttack.started -= instance.OnBaseAttack;
+            @BaseAttack.performed -= instance.OnBaseAttack;
+            @BaseAttack.canceled -= instance.OnBaseAttack;
         }
 
         /// <summary>
@@ -2559,6 +2591,13 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnRightShoulder(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "BaseAttack" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnBaseAttack(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "InfoBox" which allows adding and removing callbacks.
