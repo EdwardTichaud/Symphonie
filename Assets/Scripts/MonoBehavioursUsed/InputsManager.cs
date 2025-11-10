@@ -609,7 +609,7 @@ public class InputsManager : MonoBehaviour
         else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
             // Les slots paginés démarrent à l'indice 1 (0 = attaque basique fixe).
-            int paginatedSlots = bm.currentSkillsMenuSlots.Count - 2;
+            int paginatedSlots = bm.GetPaginatedSkillSlotCount();
             if (paginatedSlots <= 0)
             {
                 Debug.LogWarning("[InputsManager] OnSelect2 ignoré : aucun slot paginé disponible !");
@@ -672,7 +672,7 @@ public class InputsManager : MonoBehaviour
         if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
             // Ce troisième bouton cible le deuxième slot paginé (indice 2 au total).
-            int paginatedSlots = bm.currentSkillsMenuSlots.Count - 2;
+            int paginatedSlots = bm.GetPaginatedSkillSlotCount();
             if (paginatedSlots <= 1)
             {
                 Debug.LogWarning("[InputsManager] OnSelect3 ignoré : moins de deux slots paginés disponibles !");
@@ -790,7 +790,7 @@ public class InputsManager : MonoBehaviour
 
         // Calcule le nombre de cases disponibles pour les attaques musicales classiques
         // (le premier slot étant l'attaque basique fixe et le dernier le move spécial).
-        int pageSize = bm.currentSkillsMenuSlots.Count - 2;
+        int pageSize = bm.GetPaginatedSkillSlotCount();
 
         // Sans slot paginé, aucune page supplémentaire ne peut être affichée.
         if (pageSize <= 0)
@@ -820,7 +820,7 @@ public class InputsManager : MonoBehaviour
             return;
 
         // Détermination du nombre d'attaques affichables par page (hors attaque basique et move spécial).
-        int pageSize = bm.currentSkillsMenuSlots.Count - 2;
+        int pageSize = bm.GetPaginatedSkillSlotCount();
 
         // Sans slot paginé, il est impossible de reculer.
         if (pageSize <= 0)
