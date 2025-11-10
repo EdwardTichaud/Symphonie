@@ -31,7 +31,7 @@ MonoBehaviour:
   power: 0
   effectType: 6
   effectValue: 0
-  passiveEffectPrefab: {fileID: 1003778626229348816, guid: 5c35b8dd08a5cc642984344a67322c33, type: 3}
+  passiveEffectPrefab: {fileID: 0}
   passiveEffectVerticalOffset: 0
   buffStat: 0
   buffAmount: 0
@@ -67,10 +67,10 @@ MonoBehaviour:
   tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
   tpSFx_Start: {fileID: 0}
   tpSFx_End: {fileID: 0}
-  warningClip: {fileID: 11400000, guid: 564d3afa7d0e6c8449978d0fb0517e61, type: 2}
+  warningClip: {fileID: 11400000, guid: 29103ad2cbb379247b134f144ca99f24, type: 2}
   startDelay: 0
   enterAwake: 0
-  preparingAnimation: {fileID: 0}
+  preparingAnimation: {fileID: 7400000, guid: b7036298c1ee56c42b7235c2636f27c9, type: 3}
   preparingTimeline: {fileID: 11400000, guid: cbb447e9d02d47e489dba80576f2f172, type: 2}
   performingTimeline: {fileID: 0}
   retreatTimeline: {fileID: 11400000, guid: 7941d1d99c644d648821c9923267c146, type: 2}
