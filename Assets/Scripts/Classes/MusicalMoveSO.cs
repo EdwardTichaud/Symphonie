@@ -62,12 +62,12 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Type d'harmonique ajouté à la réserve lorsqu'un gain est généré. Même si le gain est nul, cette information aide la lecture stratégique.")]
     public HarmonicType generatedHarmonicType = HarmonicType.Lumiere;
 
-    [Header("Puissance et Effet")]
-    [Tooltip("Puissance de base de l'action, utilisée dans les calculs de dégâts ou de soin.")]
-    public float power = 0;
-    [Tooltip("Effet principal appliqué à la cible lors de l'utilisation du move.")]
+    [Header("Effet principal")]
+    [Tooltip(
+        "Effet appliqué à la cible lors de l'utilisation du move."
+        + " Toute la résolution numérique part désormais de effectValue pour assurer une logique unique.")]
     public MusicalEffectType effectType = MusicalEffectType.Damage;
-    [Tooltip("Valeur numérique associée à l'effet principal.")]
+    [Tooltip("Valeur numérique associée à l'effet principal (dégâts, soins, etc.).")]
     public int effectValue = 10;
 
     [Header("Effets spécifiques")]
