@@ -1570,6 +1570,45 @@ public class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
+    ///     Vérifie si un <see cref="MusicalMoveSO"/> correspond à l'attaque basique de référence.
+    ///     Cette méthode protège le premier slot du SkillsPanel en éliminant toute variante dupliquée
+    ///     qui pointerait vers la même action (même nom d'asset ou nom affiché).
+    /// </summary>
+    /// <param name="candidate">Move évalué.</param>
+    /// <param name="basicMove">Move d'attaque basique attendu.</param>
+    private bool IsEquivalentToBasicAttack(MusicalMoveSO candidate, MusicalMoveSO basicMove)
+    {
+        if (candidate == null || basicMove == null)
+            return false;
+
+        // 1) Référence exacte : cas standard lorsque le ScriptableObject est partagé.
+        if (ReferenceEquals(candidate, basicMove))
+            return true;
+
+        // 2) Comparaison sur le nom affiché pour couvrir les variantes clonées conservant le même titre.
+        if (!string.IsNullOrEmpty(candidate.moveName) && !string.IsNullOrEmpty(basicMove.moveName)
+            && string.Equals(candidate.moveName, basicMove.moveName, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        // 3) Dernier filet : nom Unity de l'asset (utile si le moveName est vide mais que l'asset est dupliqué).
+        return string.Equals(candidate.name, basicMove.name, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     Calcule le nombre de slots réellement disponibles pour les compétences paginées.
+    ///     Le premier slot (attaque de base) et le dernier (move spécial) sont exclus pour
+    ///     empêcher toute réécriture accidentelle de l'attaque basique.
+    /// </summary>
+    public int GetPaginatedSkillSlotCount()
+    {
+        const int reservedSlots = 2; // 1 slot pour l'attaque basique, 1 slot pour le move spécial.
+        if (currentSkillsMenuSlots == null)
+            return 0;
+
+        return Mathf.Max(0, currentSkillsMenuSlots.Count - reservedSlots);
+    }
+
+    /// <summary>
     /// Vérifie si la hauteur actuelle de la cible correspond aux exigences du mouvement.
     /// </summary>
     public bool IsTargetAltitudeValid(CharacterUnit target, MusicalMoveSO move)
@@ -2804,8 +2843,10 @@ public class NewBattleManager : MonoBehaviour
         if (basicAttackMoveChoice != null)
         {
             // On retire l'attaque basique de la liste paginée afin qu'elle ne se décale jamais
-            // lorsqu'on feuillette les autres compétences musicales.
-            skillChoices.RemoveAll(move => move == basicAttackMoveChoice);
+            // lorsqu'on feuillette les autres compétences musicales. La comparaison est volontairement
+            // plus souple (référence + noms) pour couvrir les cas où le ScriptableObject serait dupliqué
+            // dans un set tout en pointant vers la même action de base.
+            skillChoices.RemoveAll(move => IsEquivalentToBasicAttack(move, basicAttackMoveChoice));
         }
 
         // Détermine le mouvement spécial autorisé, qui sera affiché dans le 4e slot
@@ -2935,7 +2976,7 @@ public class NewBattleManager : MonoBehaviour
     public void NextSkillPage()
     {
         // Calcule le nombre de slots paginés (hors attaque basique et move spécial)
-        int pageSize = currentSkillsMenuSlots.Count - 2;
+        int pageSize = GetPaginatedSkillSlotCount();
         if (pageSize <= 0)
         {
             // Évite une division par zéro si aucun slot paginé n'est disponible
@@ -2958,6 +2999,11 @@ public class NewBattleManager : MonoBehaviour
     /// </summary>
     public void PreviousSkillPage()
     {
+        // Empêche toute interaction si aucun slot paginé n'est disponible (par exemple lorsque seul
+        // l'attaque de base et le move spécial sont configurés dans l'UI).
+        if (GetPaginatedSkillSlotCount() <= 0)
+            return;
+
         // Vérifie qu'il existe réellement des pages avant de revenir en arrière
         if (currentSkillPageIndex > 0)
         {
