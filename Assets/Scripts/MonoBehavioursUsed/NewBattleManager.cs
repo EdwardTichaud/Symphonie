@@ -1595,17 +1595,59 @@ public class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
+    ///     Indices attendus des slots paginés dans l'UI. Ils correspondent aux boutons « Select2 », « Select3 » et
+    ///     « Select4 » configurés dans l'InputManager et représentent les cases 2, 3 et 4 visibles dans le panneau.
+    ///     Le tableau est déclaré <see langword="readonly"/> pour éviter toute modification accidentelle en runtime.
+    /// </summary>
+    private static readonly int[] PaginatedSlotPreferredOrder = { 1, 2, 3 };
+
+    /// <summary>
+    ///     Retourne la liste des indices exploitables pour les slots paginés (compétences musicales hors attaque de base
+    ///     et hors move spécial). On filtre explicitement pour ignorer le premier slot ainsi que le dernier qui est
+    ///     réservé à la compétence spéciale, conformément au design du menu et aux attentes des joueurs.
+    /// </summary>
+    private List<int> BuildPaginatedSkillSlotIndices()
+    {
+        // On travaille sur une nouvelle liste à chaque appel : la taille reste minuscule (3 entrées maximum) et cela
+        // évite de gérer manuellement des références potentiellement partagées entre plusieurs appels.
+        List<int> indices = new List<int>(PaginatedSlotPreferredOrder.Length);
+
+        if (currentSkillsMenuSlots == null || currentSkillsMenuSlots.Count == 0)
+            return indices;
+
+        // Le dernier index correspond toujours au slot dédié au mouvement spécial. On le garde à portée pour filtrer
+        // les indices supérieurs ou égaux à cette valeur afin de préserver l'indépendance de ce slot.
+        int specialSlotIndex = currentSkillsMenuSlots.Count - 1;
+
+        foreach (int preferredIndex in PaginatedSlotPreferredOrder)
+        {
+            // a) Les indices négatifs ou au-delà de la taille réelle sont ignorés pour éviter toute exception de type
+            //    IndexOutOfRangeException si la hiérarchie UI a été modifiée sans répercussion dans le code.
+            if (preferredIndex < 0 || preferredIndex >= currentSkillsMenuSlots.Count)
+                continue;
+
+            // b) On exclut volontairement le dernier slot (mouvement spécial) pour que Left/Right Shoulder ne
+            //    paginent jamais ce bouton et laissent l'affichage immuable, comme demandé.
+            if (preferredIndex >= specialSlotIndex)
+                continue;
+
+            indices.Add(preferredIndex);
+        }
+
+        return indices;
+    }
+
+    /// <summary>
     ///     Calcule le nombre de slots réellement disponibles pour les compétences paginées.
     ///     Le premier slot (attaque de base) et le dernier (move spécial) sont exclus pour
     ///     empêcher toute réécriture accidentelle de l'attaque basique.
     /// </summary>
     public int GetPaginatedSkillSlotCount()
     {
-        const int reservedSlots = 2; // 1 slot pour l'attaque basique, 1 slot pour le move spécial.
-        if (currentSkillsMenuSlots == null)
-            return 0;
-
-        return Mathf.Max(0, currentSkillsMenuSlots.Count - reservedSlots);
+        // Plutôt qu'un simple calcul « Count - 2 », on reconstruit explicitement la liste d'indices autorisés afin de
+        // verrouiller les slots réellement exploités (2, 3 et 4). Cela évite qu'un ajout d'éléments dans l'éditeur
+        // entraîne un débordement visuel ou la pagination du slot spécial.
+        return BuildPaginatedSkillSlotIndices().Count;
     }
 
     /// <summary>
@@ -2905,9 +2947,11 @@ public class NewBattleManager : MonoBehaviour
             }
         }
 
-        const int baseAttackSlotIndex = 0;
-        int paginatedSlotOffset = baseAttackSlotIndex + 1;
-        int pageSize = Mathf.Max(0, specialSlotIndex - paginatedSlotOffset);
+        // On récupère dynamiquement les indices réellement disponibles pour les attaques musicales standard. En cas de
+        // modification de la hiérarchie (slot manquant, renommé, etc.), la liste s'ajustera automatiquement plutôt que
+        // d'écraser les emplacements réservés à l'attaque de base ou au mouvement spécial.
+        List<int> paginatedSlotIndices = BuildPaginatedSkillSlotIndices();
+        int pageSize = paginatedSlotIndices.Count;
 
         if (pageSize > 0)
         {
@@ -2924,7 +2968,7 @@ public class NewBattleManager : MonoBehaviour
         // 1) Affiche les attaques musicales paginées (hors attaque basique et move spécial)
         for (int i = 0; i < pageSize; i++)
         {
-            int slotIndex = paginatedSlotOffset + i;
+            int slotIndex = paginatedSlotIndices[i];
             Transform slot = currentSkillsMenuSlots[slotIndex];
             int globalIndex = startIndex + i;
             if (globalIndex < skillChoices.Count)
