@@ -33,11 +33,11 @@ public class AnimationEventsManager : MonoBehaviour
         else
         {
             CharacterUnit caster = transform.GetComponentInParent<CharacterUnit>();
-            float damage = move.power;
-            if (caster != null)
-                damage *= caster.GetAttackMultiplier();
-            // On transmet la position de l'attaquant pour déterminer la bonne animation
-            target.TakeDamage(damage, caster != null ? caster.transform : null);
+            // En supprimant le champ "power", toutes les animations se fient désormais
+            // à la résolution centralisée de MusicalMoveSO.ApplyEffect pour appliquer
+            // les dégâts, soins ou effets spéciaux. Cela garantit que l'on profite
+            // d'EffectValue, des multiplicateurs et des éventuels statuts associés.
+            move.ApplyEffect(caster, target);
         }
     }
 
