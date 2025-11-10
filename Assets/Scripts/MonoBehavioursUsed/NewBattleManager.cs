@@ -2628,16 +2628,28 @@ public class NewBattleManager : MonoBehaviour
                 ? skillsSlotsParent.Cast<Transform>().ToList()
                 : new List<Transform>();
 
-            // S'assure de disposer d'au moins 4 emplacements
-            // (les trois premiers pour les attaques musicales, le dernier pour le move spécial)
+            // S'assure de disposer d'au moins 5 emplacements :
+            //  - Slot 0 : texte / action d'attaque de base
+            //  - Slots 1 à 3 : attaques musicales
+            //  - Slot 4 : move spécial
+            // L'objectif est d'éviter tout débordement lorsque nous injectons dynamiquement
+            // les attaques de la SquadUnit courante. On privilégie un clonage du premier slot
+            // (structure déjà configurée dans l'éditeur) pour conserver les bons réglages d'UI.
             if (currentSkillsMenuSlots.Count > 0)
             {
-                while (currentSkillsMenuSlots.Count < 4)
+                while (currentSkillsMenuSlots.Count < 5)
                 {
-                    // Clone le premier slot pour compléter la liste si besoin
+                    // Clone le premier slot pour compléter la liste si besoin et préserver
+                    // l'homogénéité visuelle avec les éléments déjà configurés dans la scène.
                     Transform clone = Instantiate(currentSkillsMenuSlots[0], currentSkillsMenuSlots[0].parent);
                     currentSkillsMenuSlots.Add(clone);
                 }
+            }
+            else
+            {
+                // Aucun slot n'a été trouvé : on enregistre un avertissement explicite pour faciliter
+                // le diagnostic (probable régression de la hiérarchie UI) tout en évitant un crash.
+                Debug.LogWarning("[SetupCurrentUnitMenus] Aucun slot de compétence détecté ; impossible de garantir les 5 emplacements requis.");
             }
         }
 
