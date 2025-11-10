@@ -130,6 +130,10 @@ public class CharacterData : ScriptableObject, ITargetable
     #region Configurations de combat
 
     [Header("Attaques musicales")]
+
+    [Tooltip("Attaque de base toujours disponible quel que soit l'équipement.")]
+    public MusicalMoveSO[] basicAttack;
+
     [Tooltip("Répertoire complet des attaques disponibles pour ce personnage.")]
     public MusicalMoveSO[] musicalAttacks;
 
