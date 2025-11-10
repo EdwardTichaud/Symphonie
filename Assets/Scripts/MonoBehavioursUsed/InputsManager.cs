@@ -564,15 +564,10 @@ public class InputsManager : MonoBehaviour
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            // Le premier slot du SkillsMenu correspond désormais à l'attaque basique fixe.
-            // On délègue toute la validation à la logique dédiée pour conserver les mêmes contrôles
-            // (coûts, cooldown, limites d'utilisation...) que pour l'input direct d'attaque basique.
-            if (bm.TryStartBaseAttackSelection())
-            {
-                // Même protection que pour les autres sélections : si la touche chevauche "Confirm",
-                // on bloque la validation sur la prochaine frame afin d'éviter un déclenchement instantané.
-                MettreAJourIgnorerValidationApresSelection(ctx);
-            }
+            // Dans le SkillsPanel, les entrées Select1/2/3 doivent exclusivement cibler les MusicalMoves paginés.
+            // On confie donc la sélection à une méthode dédiée qui ignore volontairement l'attaque de base
+            // et le Special Musical Move.
+            TrySelectMusicalMoveFromSkillsPanel(bm, ctx, 0, nameof(OnSelect1));
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
         {
@@ -608,40 +603,9 @@ public class InputsManager : MonoBehaviour
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            // Les slots paginés démarrent à l'indice 1 (0 = attaque basique fixe).
-            int paginatedSlots = bm.GetPaginatedSkillSlotCount();
-            if (paginatedSlots <= 0)
-            {
-                Debug.LogWarning("[InputsManager] OnSelect2 ignoré : aucun slot paginé disponible !");
-                return;
-            }
-
-            int pageSize = paginatedSlots;
-            int baseIndex = bm.currentSkillPageIndex * pageSize;
-            if (bm.skillChoices.Count > baseIndex)
-            {
-                bm.currentMove = bm.skillChoices[baseIndex];
-                HarmonicType requiredType = bm.currentMove.consumedHarmonicType;
-                if (bm.currentCharacterUnit.GetHarmonicCount(requiredType) < bm.currentMove.harmonicCost)
-                {
-                    ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
-                    return;
-                }
-                if (bm.currentCharacterUnit.IsMoveOnCooldown(bm.currentMove))
-                {
-                    ActionUIDisplayManager.Instance.DisplayInstruction_MoveOnCooldown();
-                    bm.ShowMainMenu();
-                    return;
-                }
-                bm.ToggleMenuContainers(false, false, false);
-                // On évalue également cette sélection pour ne bloquer la validation que si nécessaire.
-                MettreAJourIgnorerValidationApresSelection(ctx);
-                bm.HandleTargetSelection(bm.currentMove);
-            }
-            else
-            {
-                Debug.LogWarning("[InputsManager] OnSelect2 ignoré : pas assez de skills !");
-            }
+            // Ce bouton correspond désormais au deuxième slot paginé (offset 1) :
+            // les MusicalMoves restent ainsi indépendants de l'attaque basique fixe.
+            TrySelectMusicalMoveFromSkillsPanel(bm, ctx, 1, nameof(OnSelect2));
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
         {
@@ -671,40 +635,9 @@ public class InputsManager : MonoBehaviour
 
         if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
-            // Ce troisième bouton cible le deuxième slot paginé (indice 2 au total).
-            int paginatedSlots = bm.GetPaginatedSkillSlotCount();
-            if (paginatedSlots <= 1)
-            {
-                Debug.LogWarning("[InputsManager] OnSelect3 ignoré : moins de deux slots paginés disponibles !");
-                return;
-            }
-
-            int pageSize = paginatedSlots;
-            int baseIndex = bm.currentSkillPageIndex * pageSize;
-            if (bm.skillChoices.Count > baseIndex + 1)
-            {
-                bm.currentMove = bm.skillChoices[baseIndex + 1];
-                HarmonicType requiredType = bm.currentMove.consumedHarmonicType;
-                if (bm.currentCharacterUnit.GetHarmonicCount(requiredType) < bm.currentMove.harmonicCost)
-                {
-                    ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
-                    return;
-                }
-                if (bm.currentCharacterUnit.IsMoveOnCooldown(bm.currentMove))
-                {
-                    ActionUIDisplayManager.Instance.DisplayInstruction_MoveOnCooldown();
-                    bm.ShowMainMenu();
-                    return;
-                }
-                bm.ToggleMenuContainers(false, false, false);
-                // Protection spécifique : seules les sélections partageant le bouton Confirm sont bloquées.
-                MettreAJourIgnorerValidationApresSelection(ctx);
-                bm.HandleTargetSelection(bm.currentMove);
-            }
-            else
-            {
-                Debug.LogWarning("[InputsManager] OnSelect3 ignoré : pas assez de skills !");
-            }
+            // Le troisième bouton atteint le troisième slot paginé (offset 2) afin de couvrir les configurations
+            // où plusieurs MusicalMoves sont disponibles sur la même page.
+            TrySelectMusicalMoveFromSkillsPanel(bm, ctx, 2, nameof(OnSelect3));
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
         {
@@ -721,6 +654,79 @@ public class InputsManager : MonoBehaviour
                 Debug.LogWarning("[InputsManager] OnSelect3 ignoré : pas assez d'items !");
             }
         }
+    }
+
+    /// <summary>
+    ///     Tente de sélectionner un MusicalMove affiché dans le SkillsPanel.
+    ///     Les offsets se basent sur les slots paginés (hors attaque de base et hors Special Musical Move).
+    /// </summary>
+    /// <param name="bm">Référence vers le gestionnaire de combat en cours.</param>
+    /// <param name="ctx">Contexte de l'input, utilisé notamment pour détecter les touches partagées avec Confirm.</param>
+    /// <param name="paginatedOffset">Décalage au sein de la page courante (0 = premier slot paginé, etc.).</param>
+    /// <param name="debugContext">Nom de l'action, uniquement pour les logs de diagnostic.</param>
+    /// <returns><c>true</c> si une compétence musicale a été sélectionnée avec succès ; sinon <c>false</c>.</returns>
+    private bool TrySelectMusicalMoveFromSkillsPanel(NewBattleManager bm, InputAction.CallbackContext ctx, int paginatedOffset, string debugContext)
+    {
+        // Sécurise l'offset attendu : un nombre négatif indiquerait un mauvais appel et doit être ignoré.
+        if (paginatedOffset < 0)
+        {
+            Debug.LogWarning($"[InputsManager] {debugContext} ignoré : offset négatif ({paginatedOffset}).");
+            return false;
+        }
+
+        // Sans slots paginés disponibles, impossible d'adresser une compétence musicale.
+        int paginatedSlots = bm.GetPaginatedSkillSlotCount();
+        if (paginatedSlots <= 0)
+        {
+            Debug.LogWarning($"[InputsManager] {debugContext} ignoré : aucun slot de compétence musicale disponible !");
+            return false;
+        }
+
+        // Si l'offset dépasse la capacité de la page, on prévient afin de détecter rapidement une mauvaise configuration UI.
+        if (paginatedOffset >= paginatedSlots)
+        {
+            Debug.LogWarning($"[InputsManager] {debugContext} ignoré : pas assez de slots paginés pour atteindre l'offset {paginatedOffset}.");
+            return false;
+        }
+
+        // Calcule l'index global dans la liste des compétences musicales réellement disponibles.
+        int pageSize = paginatedSlots;
+        int baseIndex = bm.currentSkillPageIndex * pageSize;
+        int globalIndex = baseIndex + paginatedOffset;
+
+        if (bm.skillChoices.Count <= globalIndex)
+        {
+            Debug.LogWarning($"[InputsManager] {debugContext} ignoré : pas assez de skills pour indexer {globalIndex}.");
+            return false;
+        }
+
+        MusicalMoveSO selectedMove = bm.skillChoices[globalIndex];
+        HarmonicType requiredType = selectedMove.consumedHarmonicType;
+
+        // Validation des ressources : on vérifie d'abord la quantité d'harmoniques disponible.
+        if (bm.currentCharacterUnit.GetHarmonicCount(requiredType) < selectedMove.harmonicCost)
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+            return false;
+        }
+
+        // Les compétences en recharge sont signalées visuellement et ne doivent pas être lancées.
+        if (bm.currentCharacterUnit.IsMoveOnCooldown(selectedMove))
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_MoveOnCooldown();
+            bm.ShowMainMenu();
+            return false;
+        }
+
+        // Tout est prêt : on mémorise la compétence choisie et on masque les menus pour passer à la sélection de cible.
+        bm.currentMove = selectedMove;
+        bm.ToggleMenuContainers(false, false, false);
+
+        // Comme pour les autres sélections, on bloque temporairement la validation si la touche est partagée avec Confirm.
+        MettreAJourIgnorerValidationApresSelection(ctx);
+
+        bm.HandleTargetSelection(selectedMove);
+        return true;
     }
 
     /// <summary>
