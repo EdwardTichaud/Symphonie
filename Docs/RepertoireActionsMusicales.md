@@ -4,11 +4,11 @@ Ce document synthétise les effets de base des MusicalMoves accessibles aux hér
 
 ## Système de Sceaux modulaires pour l’accessibilité
 
-> **Commentaire de conception** : ce système a été validé avec les chroniqueurs de `Docs/HistoireSymphonie.md` afin de respecter l’ascension progressive de Lucian et de sa Fratrie.
+> **Commentaire de conception** : ce système a été validé avec les chroniqueurs de `Docs/HistoireSymphonie.md` afin de respecter l’ascension progressive de la Fratrie décrite dans le récit.
 
 - **Principe général** : les Sceaux sont des artefacts narratifs forgés par Munin pour moduler l’intensité des affrontements. On peut en équiper jusqu’à dix avant un combat pour ajuster la difficulté sans modifier le comportement des MusicalMoves ni des Items.
 - **Équilibrage du score** : chaque Sceau appliqué ajuste cumulativement le score de fin de combat et l’XP obtenue. Les Sceaux de facilitation appliquent une décote (généralement –10 %), tandis que les Sceaux de défi octroient une prime (généralement +10 %) pour récompenser les virtuoses.
-- **Compatibilité** : les Sceaux n’ajoutent aucune nouvelle ressource ; ils améliorent temporairement le personnage choisi (souvent Lucian) par des bonus passifs qui se déclenchent automatiquement dès que le combat commence.
+- **Compatibilité** : les Sceaux n’ajoutent aucune nouvelle ressource ; ils améliorent temporairement le personnage choisi, quel que soit son rôle, par des bonus passifs qui se déclenchent automatiquement dès que le combat commence.
 - **Équipement** : les Sceaux ne sont pas pré-équipés. Ils se sélectionnent dans l’interface d’inventaire durant l’exploration, puis restent actifs jusqu’à ce que le joueur les retire manuellement.
 - **Vérification** : avant chaque combat, le moteur vérifie les Sceaux actuellement équipés et applique leurs effets ainsi que leurs modificateurs de score.
 - **Retrait manuel** : il est possible de retirer tous les Sceaux en un clic depuis l’onglet de préparation afin que la difficulté reste intacte pour les vétérans.
@@ -22,31 +22,31 @@ rencontres et les variantes spécifiques optimisées pour des situations récurr
 
 | Nom du Sceau | Effet facilité | Commentaire d’utilisation | Impact sur le score |
 |--------------|----------------|----------------------------|---------------------|
-| **Sceau de Cadence Stable** | Réduit tous les cooldowns de 1 tour (minimum 1). | Maintient un tempo constant pour enchaîner *Tunnel*, *Staccato Étourdissant* et les ultimes de Lucian. | -10 % |
+| **Sceau de Cadence Stable** | Réduit tous les cooldowns de 1 tour (minimum 1). | Maintient un tempo constant pour enchaîner *Tunnel*, *Staccato Étourdissant* et les ultimes offensifs. | -10 % |
 | **Sceau de Main Guidée** | +25 % dégâts sur les attaques basiques seulement. | Sert de socle à des builds centrés sur *Rhapsodie* ou *Serpenteau Mélodique* avant d’embrayer sur les combos lourds. | -10 % |
 | **Sceau de Fatigue Allégée** | Réduit de 1 le coût en Fatigue des MusicalMoves (minimum 0) pour le premier tour uniquement. | Offre une ouverture souple aux stratégies qui demandent plusieurs buffs immédiats. | -10 % |
 | **Sceau du Rempart Arcanique** | Octroie un bouclier de 6 000 PV et dissipe 1 altération au début du combat. | Sécurise l’entrée en scène face aux Séraphins focalisés sur les malédictions. | -10 % |
-| **Sceau de l’Avant-Scène** | +150 Initiative et posture de garde automatique au premier tour. | Garantit la priorité à Lucian pour placer *Pour qui sonne le glas* avant la riposte ennemie. | -10 % |
-| **Sceau du Cœur Accordé** | +30 % soins reçus et +10 % régénération d’Harmonie pendant 3 tours. | Amplifie *Arpège Régénérant* et consolide les duos avec Luna. | -10 % |
+| **Sceau de l’Avant-Scène** | +150 Initiative et posture de garde automatique au premier tour. | Garantit la priorité au meneur choisi pour placer *Pour qui sonne le glas* avant la riposte ennemie. | -10 % |
+| **Sceau du Cœur Accordé** | +30 % soins reçus et +10 % régénération d’Harmonie pendant 3 tours. | Amplifie *Arpège Régénérant* et consolide les duos axés sur le soutien mélodique. | -10 % |
 | **Sceau de l’Écho Suspendu** | La première attaque de zone ennemie inflige -40 % dégâts et ne peut pas repousser. | Protège les lignes en préparation d’un *Crescendo Fulgurant*. | -10 % |
 | **Sceau de Pulsation Constante** | +1 charge de Tempo et +300 Initiative au groupe au tour 1. | Aligne les timings pour lancer un assaut coordonné dès l’ouverture. | -10 % |
 | **Sceau de l’Onde Persévérante** | À 50 % PV, déclenche une vague de soin de 12 000 PV sur le porteur (1 fois par combat). | Soutient les tanks lors des duels prolongés contre Azazel. | -10 % |
 | **Sceau de l’Impulsion Franche** | Les trois premiers MusicalMoves lancés coûtent -1 Harmonie (minimum 0). | Accélère les ouvertures agressives basées sur *Sforzando* et *Crescendo Fulgurant*. | -15 % |
-| **Sceau des Cordes Stoïques** | +40 % durée des buffs défensifs du porteur et +10 % résistances globales. | Prolonge *Accord Bienveillant* et les runes défensives de Kael. | -10 % |
+| **Sceau des Cordes Stoïques** | +40 % durée des buffs défensifs du porteur et +10 % résistances globales. | Prolonge *Accord Bienveillant* et les runes défensives avancées. | -10 % |
 | **Sceau de la Rumeur Lucide** | Révèle l’intention de la cible principale pendant 2 tours et +15 % chances de critique contre elle. | Optimise les fenêtres d’exécution pour *Rupture Harmonieuse*. | -10 % |
 | **Sceau des Fragments Calmes** | Convertit jusqu’à 2 fragments de mélodie en un voile de 4 000 PV chacun au début du combat. | Protège les stratèges qui préparent un *Rappel des Fragments* tardif. | -10 % |
-| **Sceau du Cercle Harmonisé** | Crée au tour 1 une zone qui réduit de 15 % les dégâts reçus par les alliés adjacents (2 tours). | Idéal pour verrouiller les positions autour de Munin. | -10 % |
+| **Sceau du Cercle Harmonisé** | Crée au tour 1 une zone qui réduit de 15 % les dégâts reçus par les alliés adjacents (2 tours). | Idéal pour verrouiller les positions autour du soutien principal. | -10 % |
 | **Sceau du Silence Stratège** | La première incantation ennemie est retardée d’un tour et inflige -20 % dégâts. | Ouvre un créneau pour interrompre les chorales de Séraphins. | -10 % |
 
 #### Sceaux de défi (universels)
 
 | Nom du Sceau | Effet de défi | Commentaire d’utilisation | Impact sur le score |
 |--------------|---------------|----------------------------|---------------------|
-| **Sceau de Lame Déchaînée** | +25 % dégâts subis par le porteur et +20 % dégâts infligés. | Transforme Lucian en glass-cannon assumé pour les combats éclairs. | +10 % |
+| **Sceau de Lame Déchaînée** | +25 % dégâts subis par le porteur et +20 % dégâts infligés. | Transforme le porteur en glass-cannon assumé pour les combats éclairs. | +10 % |
 | **Sceau de Silence Absolu** | Désactive les soins externes sur le porteur mais +40 % dégâts sur les MusicalMoves offensifs. | À réserver aux runs maîtrisés où l’équipe enchaîne les éliminations rapides. | +12 % |
 | **Sceau d’Harmonie Frêle** | -30 % PV max pour tous les alliés mais +50 % régénération d’Harmonie. | Favorise les compositions axées sur les combos incessants. | +15 % |
 | **Sceau de la Mesure Inflexible** | Les cooldowns ne peuvent plus être réduits mais chaque coup critique génère +1 Harmonie. | Encourage la précision rythmique tout en supprimant les sécurités. | +10 % |
-| **Sceau de Virtuosité Soliste** | Le porteur ne peut pas recevoir de buffs alliés mais gagne +35 % Initiative et +15 % critique. | Test ultime de pilotage individuel pour les solos contre Azazel. | +15 % |
+| **Sceau de Virtuosité Soliste** | Le porteur ne peut pas recevoir de buffs alliés mais gagne +35 % Initiative et +15 % critique. | Test ultime de pilotage individuel lors des duels prolongés contre les menaces majeures. | +15 % |
 
 #### Sceaux spécifiques
 
