@@ -42,7 +42,22 @@ public class AddHarmonicPopup : MonoBehaviour
 
         textMesh.text = "+" + amount.ToString();
 
-        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera").GetComponent<Camera>();
+        // Dans certaines scènes de tests simplifiées, la BattleCamera n'est pas instanciée :
+        // on sécurise donc sa récupération pour éviter une NullReference qui crasherait le popup.
+        GameObject battleCameraGO = GameObject.FindGameObjectWithTag("BattleCamera");
+        if (battleCameraGO == null)
+        {
+            Debug.LogWarning("[AddHarmonicPopup] Aucune BattleCamera trouvée : initialisation du popup annulée pour cette scène simplifiée.");
+            return;
+        }
+
+        // La caméra est indispensable pour convertir la position monde en position écran du popup.
+        battleCamera = battleCameraGO.GetComponent<Camera>();
+        if (battleCamera == null)
+        {
+            Debug.LogWarning("[AddHarmonicPopup] Le GameObject BattleCamera n'a pas de composant Camera : initialisation du popup annulée.");
+            return;
+        }
 
         canvasGroup = GetComponent<CanvasGroup>();
         if (canvasGroup == null)
