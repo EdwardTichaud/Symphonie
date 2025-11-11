@@ -16,10 +16,9 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Encha\xEEne un motif classique infligeant environ 7\u202F500 points
-    de d\xE9g\xE2ts\n    avant application des multiplicateurs de runes."
+  description: "Enchaîne un motif classique infligeant environ 7 500 points de dégâts avant d'ajouter la puissance actuelle du lanceur."
   inventoryCategory: MusicalMove
-  inventorySummary: "Attaque simple ~7\u202F500 d\xE9g\xE2ts."
+  inventorySummary: "Attaque ~7 500 dégâts + puissance du lanceur."
   consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 1
@@ -30,7 +29,7 @@ MonoBehaviour:
   consumedHarmonicType: 0
   generatedHarmonicType: 0
   effectType: 0
-  effectValue: 1000
+  effectValue: 7500
   buffStat: 0
   buffAmount: 0
   buffDuration: 0
@@ -48,7 +47,7 @@ MonoBehaviour:
   cooldown: 0
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0
-  altitudeCondition: 0
+  altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
   targetTypes: 01000000

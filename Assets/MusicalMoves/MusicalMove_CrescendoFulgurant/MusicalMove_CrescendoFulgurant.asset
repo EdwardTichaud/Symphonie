@@ -16,21 +16,20 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Inflige de lourds d\xE9g\xE2ts \xE0 une cible unique apr\xE8s un
-    court d\xE9lai."
+  description: "Déchaîne un final concentré infligeant environ 30 000 dégâts à une cible isolée."
   inventoryCategory: MusicalMove
-  inventorySummary: 
-  consumeOnUse: 1
+  inventorySummary: "Finisher ~30 000 dégâts (coût 2/2)."
+  consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 1
   notes: []
-  fatigueCost: 0
-  harmonicCost: 0
+  fatigueCost: 2
+  harmonicCost: 2
   harmonicGeneration: 0
   consumedHarmonicType: 0
   generatedHarmonicType: 0
   effectType: 0
-  effectValue: 30
+  effectValue: 30000
   buffStat: 0
   buffAmount: 0
   buffDuration: 0
@@ -48,7 +47,7 @@ MonoBehaviour:
   cooldown: 1
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0
-  altitudeCondition: 1
+  altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
   targetTypes: 01000000

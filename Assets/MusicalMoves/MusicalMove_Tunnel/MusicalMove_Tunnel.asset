@@ -13,23 +13,24 @@ MonoBehaviour:
   m_Name: MusicalMove_Tunnel
   m_EditorClassIdentifier: 
   moveName: Tunnel
-  moveType: 3
+  moveType: 4
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Fait vibrer le sol sous la cible et l'endort jusqu'\xE0 ce qu'elle\n   
-    subisse des d\xE9g\xE2ts."
+  description: "Appose le glyphe Presto : la cible lance une attaque basique après chaque tour jusqu'au retour du lanceur."
   inventoryCategory: MusicalMove
-  inventorySummary: "Endort un ennemi isol\xE9."
+  inventorySummary: "Glyphe Presto : attaques automatiques forcées."
   consumeOnUse: 0
   recommendedMusicalMoves: []
-  stayFaceToTarget: 0
+  stayFaceToTarget: 1
   notes: []
   fatigueCost: 1
   harmonicCost: 1
   harmonicGeneration: 0
   consumedHarmonicType: 0
   generatedHarmonicType: 0
-  effectType: 4
+  effectType: 10
+  passiveEffectPrefab: {fileID: 1144090914521784546, guid: f066fb66a808fc448b02dcc7477eeeb5, type: 3}
+  passiveEffectVerticalOffset: 0
   effectValue: 0
   buffStat: 0
   buffAmount: 0

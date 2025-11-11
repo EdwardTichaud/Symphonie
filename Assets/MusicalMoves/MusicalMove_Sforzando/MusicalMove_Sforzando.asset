@@ -16,21 +16,20 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Charge fulgurante qui t\xE9l\xE9porte Lucian devant sa cible avant
-    de lib\xE9rer une onde de choc sonore."
+  description: "Bond téléporté infligeant environ 20 000 dégâts et générant +1 Harmonie."
   inventoryCategory: MusicalMove
-  inventorySummary: 
-  consumeOnUse: 1
+  inventorySummary: "20 000 dégâts, téléporte et rend +1 Harmonie."
+  consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 1
   notes: []
   fatigueCost: 1
   harmonicCost: 1
-  harmonicGeneration: 10
+  harmonicGeneration: 1
   consumedHarmonicType: 0
   generatedHarmonicType: 0
   effectType: 0
-  effectValue: 2000
+  effectValue: 20000
   buffStat: 0
   buffAmount: 0
   buffDuration: 0
@@ -48,11 +47,11 @@ MonoBehaviour:
   cooldown: 0
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0
-  altitudeCondition: 0
+  altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
   targetTypes: 01000000
-  travelTime: 0.1
+  travelTime: 0
   legacyMoveSpeed: 500
   legacyMoveSpeedConverted: 1
   castDistance: 2
