@@ -16,7 +16,7 @@ Ce document synthétise les effets de base des MusicalMoves accessibles aux hér
 ### Catalogue de Sceaux recommandés
 
 Afin de faciliter la sélection, les Sceaux sont regroupés en deux familles : les modèles universels utilisables dans toutes les
-rencontres et les variantes spécifiques optimisées pour des menaces précises.
+rencontres et les variantes spécifiques optimisées pour des situations récurrentes (types d’ennemis, environnements ou altérations).
 
 #### Sceaux universels
 
@@ -52,11 +52,11 @@ rencontres et les variantes spécifiques optimisées pour des menaces précises.
 
 | Nom du Sceau | Effet facilité | Commentaire d’utilisation | Impact sur le score |
 |--------------|----------------|----------------------------|---------------------|
-| **Sceau de Murmure Protecteur** | +20 % PV max et +15 % résistances harmoniques. | Stabilise uniquement les duels prolongés contre l’Ange Pleureur sans modifier les rotations offensives. | -10 % |
-| **Sceau de Résonance Apaisée** | Réduit de 50 % les dégâts de Résonance et Dissonance. | Neutralise les débordements harmoniques propres aux manifestations d’Azazel ou aux Séraphins qui en héritent. | -10 % |
-| **Sceau de Vigilance Nocturne** | +25 % résistance aux altérations mentales et vision des entités furtives pendant 2 tours. | Indispensable lorsqu’on affronte les illusions décrites dans `Docs/HistoireSymphonie.md`. | -10 % |
-| **Sceau de la Harpe Solaire** | +20 % dégâts contre les créatures du Néant et lumière persistante annulant la Peur. | Parfait dans les couloirs obscurs de la Convocation montante infestés par ces entités. | -15 % |
-| **Sceau de Gravité Mesurée** | Réduit de 60 % les effets de poussée/traction subis et -25 % dégâts de chute. | Essentiel dans les arènes instables où les Séraphins manipulent les trajectoires gravitationnelles. | -10 % |
+| **Sceau de Murmure Protecteur** | +20 % PV max et +15 % résistances harmoniques. | Conçu pour les duels d’endurance face aux prédateurs empathiques ou aux gardiens drainants qui pressent l’équipe sur la durée. | -10 % |
+| **Sceau de Résonance Apaisée** | Réduit de 50 % les dégâts de Résonance et Dissonance. | Neutralise les débordements harmoniques typiques des chorales séraphiques ou des avatars d’Azazel lors des phases critiques. | -10 % |
+| **Sceau de Vigilance Nocturne** | +25 % résistance aux altérations mentales et vision des entités furtives pendant 2 tours. | Indispensable dans les zones saturées d’illusions ou face aux assassins oniriques évoqués dans `Docs/HistoireSymphonie.md`. | -10 % |
+| **Sceau de la Harpe Solaire** | +20 % dégâts contre les créatures du Néant et lumière persistante annulant la Peur. | S’emploie dès qu’une expédition plonge dans les couloirs obscurs de la Convocation montante infestés de créatures du Néant. | -15 % |
+| **Sceau de Gravité Mesurée** | Réduit de 60 % les effets de poussée/traction subis et -25 % dégâts de chute. | Essentiel dans toutes les arènes instables où les Séraphins ou les anomalies gravitationnelles bousculent les trajectoires. | -10 % |
 
 > **Note d’équilibrage** : l’équipement simultané de plusieurs Sceaux cumule leurs modificateurs de score (ex. deux Sceaux à –10 % et un Sceau à –15 % = –35 %, deux Sceaux de défi à +10 % et +15 % = +25 %). Cela garantit que le mode « difficile » reste l’option naturelle pour les experts qui souhaitent optimiser leur progression, tout en offrant une voie héroïque aux virtuoses.
 
