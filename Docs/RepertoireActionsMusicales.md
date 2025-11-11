@@ -1,12 +1,6 @@
-# Répertoire des MusicalMoves et Items
+# Répertoire des MusicalMoves jouables
 
-> Ce mémento synthétise les effets des actions musicales et des objets en
-> s'appuyant sur l'histoire décrite dans `Docs/HistoireSymphonie.md`. Les
-> valeurs indiquées sont les bases avant application des multiplicateurs de
-> runes : un joueur avancé pourra aisément dépasser le million de dégâts ou de
-> soins en optimisant ses configurations.
-
-## Actions musicales jouables
+Ce document synthétise les effets de base des MusicalMoves accessibles aux héros en s'appuyant sur le contexte narratif de `Docs/HistoireSymphonie.md` pour guider l'apprentissage et la maîtrise.
 
 | Nom | Type | Coûts (Fatigue / Harmonie) | Effet de base | Combinaisons & Conseils |
 |-----|------|----------------------------|---------------|-------------------------|
@@ -27,29 +21,4 @@
 | **Arpège Régénérant** | Soutien | 2 / 2 | ~20 000 PV à toute l’équipe. | Associé aux runes de soin, il permet de soutenir des combats prolongés contre les Séraphins. |
 | **Abîme Harmonique** | Altération | 1 / 1 | Force la cible à flotter pendant 2 tours. | Prépare les stratégies aériennes de Luna et contrebalance les défenses terrestres. |
 
-## Attaques musicales de l’Ange Pleureur
-
-| Nom | Type | Effet | Astuces pour survivre |
-|-----|------|-------|------------------------|
-| **Pluie du Requiem** | Attaque | ~25 000 dégâts à tous les membres de l’escouade. | Utiliser *Accord Bienveillant* ou des runes défensives avant la pluie de larmes. |
-| **Sanglot Écorchant** | Affaiblissement | ~18 000 dégâts de zone et -200 Initiative pendant 1 tour. | Garder une *Potion Mélodique* ou un *Métronome de Précision* pour retrouver le tempo. |
-| **Étreinte du Linceul** | Contrôle | Plonge la cible dans un sommeil forcé jusqu’à ce qu’elle soit frappée. | Une *Fausse Note* bien placée ou un *Réveil* rapide permet de libérer la victime. |
-
-## Objets utilisables
-
-| Nom | Catégorie | Effet de base | Conseils d’utilisation |
-|-----|-----------|---------------|-------------------------|
-| **Potion Mélodique** | Consommable | Soigne ~12 000 PV à un allié. | À enchaîner avec *Accord Bienveillant* pour amortir les pluies de l’ange. |
-| **Élixir Revitalisant** | Consommable | Ranime un allié à 50 % de ses PV massifs. | Sauvetage indispensable après un *Crescendo* adverse ; combinez avec des runes de protection. |
-| **Clé du Courage** | Consommable | +1 500 Force pendant 2 tours. | Préparation idéale pour un duo *Rupture* + *Crescendo*. |
-| **Bombe Sonique** | Consommable | ~15 000 dégâts à tous les ennemis. | Permet de nettoyer un groupe avant qu’il n’impose ses altérations. |
-| **Endormissement** | Consommable | Endort une cible jusqu’à ce qu’elle subisse des dégâts. | À coupler avec les runes de contrôle ou *Pont Harmonique*. |
-| **Réveil** | Consommable | Réveille immédiatement un allié. | Neutralise l’*Étreinte du Linceul* ou les contre-mesures soporifiques. |
-| **Anti-Interception** | Consommable | Immunité à l’interception pendant 2 tours. | Garanti pour déplacer Munin ou Lucian sans risque lors des séquences narratives clés. |
-| **Longue Portée** | Consommable | +15 mètres de portée pour le tour en cours. | Offre des opportunités aux attaques à distance pendant les phases aériennes. |
-| **Extension d’Effets** | Consommable | Prolonge tous les effets d’un allié de 2 tours. | À lancer juste après un buff majeur (Clé du Courage, runes temporaires). |
-| **Métronome de Précision** | Consommable | +10 % fenêtre de parade/esquive pendant 2 tours. | Synchronise les joueurs experts avec les attaques rythmées des boss. |
-
-Ces réglages assurent une lecture claire pour les nouveaux venus tout en
-laissant aux stratèges expérimentés la possibilité d’exploiter pleinement les
-runes harmonisées d’Azazel.
+En maîtrisant cette liste, les débutants disposent d'un guide clair tandis que les virtuoses peuvent planifier des suites d'accords fidèles à la légende de Symphonie.
