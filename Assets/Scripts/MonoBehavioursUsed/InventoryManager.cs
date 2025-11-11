@@ -18,6 +18,36 @@ public class InventoryManager : MonoBehaviour
     [Tooltip("Piles d'objets disponibles au lancement. Chaque entrée référence un ScriptableObject ItemData.")]
     [SerializeField] private List<InventoryItemStack> itemStacks = new();
 
+    private const int MaxEquippedSealCount = 10;
+
+    /// <summary>
+    /// Expose le plafond de Sceaux équipables défini par la documentation de design.
+    /// </summary>
+    public static int MaxEquippedSeals => MaxEquippedSealCount;
+
+    [Header("Sceaux - Accessibilité & Défi")]
+    [Tooltip("Catalogue complet des Sceaux débloqués par le joueur. Chaque entrée référence un ScriptableObject SceauSO.")]
+    [SerializeField] private List<SceauSO> unlockedSeals = new();
+
+    [Tooltip("Sceaux actuellement équipés. Ils modulent la difficulté et sont pris en compte lors des combats.")]
+    [SerializeField] private List<SceauSO> equippedSeals = new();
+
+    /// <summary>
+    /// Permet de consulter la liste des Sceaux débloqués sans exposer la liste modifiable.
+    /// </summary>
+    public IReadOnlyList<SceauSO> UnlockedSeals => unlockedSeals;
+
+    /// <summary>
+    /// Permet de connaître rapidement les Sceaux actifs à appliquer lors d'un combat.
+    /// </summary>
+    public IReadOnlyList<SceauSO> EquippedSeals => equippedSeals;
+
+    /// <summary>
+    /// Jeux de données internes destinés à accélérer les recherches et éviter les doublons.
+    /// </summary>
+    private readonly HashSet<SceauSO> unlockedSealsLookup = new();
+    private readonly HashSet<SceauSO> equippedSealsLookup = new();
+
     [Header("Interface utilisateur - Inventaire")]
     [Tooltip("CanvasGroup principal de l'inventaire. Il est fondu lors de l'ouverture/fermeture.")]
     [SerializeField] private CanvasGroup inventoryCanvasGroup;
@@ -184,6 +214,10 @@ public class InventoryManager : MonoBehaviour
 
         // Un tri systématique garantit un affichage cohérent dans tous les menus.
         SortStacks();
+
+        // Les Sceaux suivent la même logique : on nettoie les données, on reconstruit les caches
+        // et on impose une hiérarchie déterministe pour l'interface et les sauvegardes.
+        InitializeSealCollections();
 
         // On prépare l'état visuel initial de l'inventaire (ouvert ou fermé).
         InitializeInventoryUI();
@@ -1345,5 +1379,254 @@ public class InventoryManager : MonoBehaviour
             string bName = b?.item != null ? b.item.itemName : string.Empty;
             return string.Compare(aName, bName, System.StringComparison.OrdinalIgnoreCase);
         });
+    }
+
+    /// <summary>
+    /// Prépare les données liées aux Sceaux (nettoyage, tri et constitution des dictionnaires d'accès rapide).
+    /// </summary>
+    private void InitializeSealCollections()
+    {
+        unlockedSeals ??= new List<SceauSO>();
+        equippedSeals ??= new List<SceauSO>();
+
+        // On purge immédiatement les entrées nulles afin d'éviter des exceptions lors des accès.
+        unlockedSeals.RemoveAll(seal => seal == null);
+        equippedSeals.RemoveAll(seal => seal == null);
+
+        SanitizeUnlockedSeals();
+        ClampEquippedSeals();
+        SortSeals();
+        RebuildSealLookups();
+    }
+
+    /// <summary>
+    /// Ajoute un Sceau au catalogue du joueur si ce n'est pas déjà fait.
+    /// </summary>
+    /// <returns>Vrai si le Sceau a été ajouté, faux s'il était déjà présent ou invalide.</returns>
+    public bool UnlockSeal(SceauSO seal)
+    {
+        if (seal == null)
+            return false;
+
+        if (!unlockedSealsLookup.Add(seal))
+            return false;
+
+        unlockedSeals.Add(seal);
+        SortSeals();
+        RebuildSealLookups();
+        return true;
+    }
+
+    /// <summary>
+    /// Retire un Sceau du catalogue (utile pour les tests ou les scripts narratifs).
+    /// </summary>
+    /// <param name="seal">Sceau à retirer.</param>
+    /// <returns>Vrai si le Sceau a été supprimé.</returns>
+    public bool RemoveSeal(SceauSO seal)
+    {
+        if (seal == null)
+            return false;
+
+        bool removed = unlockedSealsLookup.Remove(seal);
+        if (!removed)
+            return false;
+
+        unlockedSeals.Remove(seal);
+        UnequipSeal(seal);
+        SortSeals();
+        RebuildSealLookups();
+        return true;
+    }
+
+    /// <summary>
+    /// Équipe un Sceau si la limite n'est pas atteinte et si le joueur le possède.
+    /// </summary>
+    /// <param name="seal">Sceau à équiper.</param>
+    /// <returns>Vrai si l'opération a réussi.</returns>
+    public bool EquipSeal(SceauSO seal)
+    {
+        if (seal == null)
+            return false;
+
+        if (!unlockedSealsLookup.Contains(seal))
+        {
+            Debug.LogWarning($"[Inventory] Impossible d'équiper le Sceau '{seal.name}' : il n'est pas débloqué.");
+            return false;
+        }
+
+        if (equippedSealsLookup.Contains(seal))
+            return false;
+
+        if (equippedSeals.Count >= MaxEquippedSealCount)
+        {
+            Debug.LogWarning($"[Inventory] Limite de {MaxEquippedSealCount} Sceaux équipés atteinte.");
+            return false;
+        }
+
+        equippedSeals.Add(seal);
+        equippedSealsLookup.Add(seal);
+        SortSeals();
+        RebuildSealLookups();
+        return true;
+    }
+
+    /// <summary>
+    /// Déséquipe un Sceau spécifique.
+    /// </summary>
+    /// <param name="seal">Sceau à retirer de la sélection.</param>
+    /// <returns>Vrai si le Sceau était équipé et a bien été retiré.</returns>
+    public bool UnequipSeal(SceauSO seal)
+    {
+        if (seal == null)
+            return false;
+
+        bool removed = equippedSeals.Remove(seal);
+        if (!removed)
+            return false;
+
+        equippedSealsLookup.Remove(seal);
+        RebuildSealLookups();
+        return true;
+    }
+
+    /// <summary>
+    /// Retire tous les Sceaux actifs d'un coup (utile pour restaurer la difficulté d'origine).
+    /// </summary>
+    public void UnequipAllSeals()
+    {
+        equippedSeals.Clear();
+        equippedSealsLookup.Clear();
+        RebuildSealLookups();
+    }
+
+    /// <summary>
+    /// Indique si un Sceau est déjà débloqué.
+    /// </summary>
+    public bool IsSealUnlocked(SceauSO seal) => seal != null && unlockedSealsLookup.Contains(seal);
+
+    /// <summary>
+    /// Indique si un Sceau fait actuellement partie de la sélection active.
+    /// </summary>
+    public bool IsSealEquipped(SceauSO seal) => seal != null && equippedSealsLookup.Contains(seal);
+
+    /// <summary>
+    /// Additionne les modificateurs de score appliqués par l'ensemble des Sceaux actifs.
+    /// </summary>
+    /// <returns>Somme des pourcentages de modification de score.</returns>
+    public float GetEquippedSealsScoreModifier()
+    {
+        float total = 0f;
+        foreach (var seal in equippedSeals)
+        {
+            if (seal == null)
+                continue;
+            total += seal.scoreModifierPercent;
+        }
+
+        return total;
+    }
+
+    /// <summary>
+    /// Supprime les doublons potentiels dans la liste sérialisée et reconstruit le cache correspondant.
+    /// </summary>
+    private void SanitizeUnlockedSeals()
+    {
+        var unique = new HashSet<SceauSO>();
+        var sanitized = new List<SceauSO>(unlockedSeals.Count);
+
+        foreach (var seal in unlockedSeals)
+        {
+            if (seal == null)
+                continue;
+
+            if (!unique.Add(seal))
+                continue; // Une même référence ne doit exister qu'une seule fois dans le catalogue.
+
+            sanitized.Add(seal);
+        }
+
+        unlockedSeals.Clear();
+        unlockedSeals.AddRange(sanitized);
+
+        unlockedSealsLookup.Clear();
+        foreach (var seal in unlockedSeals)
+            unlockedSealsLookup.Add(seal);
+    }
+
+    /// <summary>
+    /// Reconstruit les dictionnaires internes afin de garantir la cohérence après un chargement.
+    /// </summary>
+    private void RebuildSealLookups()
+    {
+        unlockedSealsLookup.Clear();
+        foreach (var seal in unlockedSeals)
+        {
+            if (seal == null)
+                continue;
+            unlockedSealsLookup.Add(seal);
+        }
+
+        equippedSealsLookup.Clear();
+        foreach (var seal in equippedSeals)
+        {
+            if (seal == null)
+                continue;
+            if (!unlockedSealsLookup.Contains(seal))
+                continue; // On ignore les Sceaux orphelins qui ne sont plus débloqués.
+            equippedSealsLookup.Add(seal);
+        }
+    }
+
+    /// <summary>
+    /// S'assure que la sélection respecte la limite maximale de Sceaux équipés et supprime les doublons.
+    /// </summary>
+    private void ClampEquippedSeals()
+    {
+        var sanitized = new List<SceauSO>(Mathf.Min(equippedSeals.Count, MaxEquippedSealCount));
+        var unique = new HashSet<SceauSO>();
+
+        foreach (var seal in equippedSeals)
+        {
+            if (seal == null)
+                continue;
+
+            if (!unlockedSealsLookup.Contains(seal))
+                continue; // Ne jamais conserver un Sceau que le joueur n'a plus.
+
+            if (!unique.Add(seal))
+                continue; // Doublon détecté : on le saute.
+
+            sanitized.Add(seal);
+
+            if (sanitized.Count >= MaxEquippedSealCount)
+                break; // On ne dépasse jamais la limite annoncée dans le GDD.
+        }
+
+        equippedSeals.Clear();
+        equippedSeals.AddRange(sanitized);
+
+        // On reconstruit le cache pour refléter la nouvelle réalité.
+        equippedSealsLookup.Clear();
+        foreach (var seal in equippedSeals)
+            equippedSealsLookup.Add(seal);
+    }
+
+    /// <summary>
+    /// Trie à la fois les Sceaux débloqués et ceux qui sont équipés afin de conserver un affichage stable.
+    /// </summary>
+    private void SortSeals()
+    {
+        unlockedSeals.Sort(CompareSealsByName);
+        equippedSeals.Sort(CompareSealsByName);
+    }
+
+    /// <summary>
+    /// Comparateur commun pour ordonner les Sceaux par nom lisible.
+    /// </summary>
+    private static int CompareSealsByName(SceauSO a, SceauSO b)
+    {
+        string aName = a != null ? a.sealName : string.Empty;
+        string bName = b != null ? b.sealName : string.Empty;
+        return string.Compare(aName, bName, StringComparison.OrdinalIgnoreCase);
     }
 }
