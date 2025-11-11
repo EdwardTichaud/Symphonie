@@ -20,5 +20,9 @@ Ce document synthétise les effets de base des MusicalMoves accessibles aux hér
 | **Crescendo Fulgurant** | Attaque | 2 / 2 | ~30 000 dégâts concentrés. | L’ultime exécution de Lucian, à déclencher après une *Rupture Harmonieuse*. |
 | **Arpège Régénérant** | Soutien | 2 / 2 | ~20 000 PV à toute l’équipe. | Associé aux runes de soin, il permet de soutenir des combats prolongés contre les Séraphins. |
 | **Abîme Harmonique** | Altération | 1 / 1 | Force la cible à flotter pendant 2 tours. | Prépare les stratégies aériennes de Luna et contrebalance les défenses terrestres. |
+| **Battement d’Ouverture** | Soutien | 0 / 1 | Confère +200 Initiative à un allié et réduit sa Fatigue de 1. | Excellente porte d’entrée pour les nouveaux chefs d’orchestre : utilisez-la sur Kael pour sécuriser la première action du tour suivant. |
+| **Serpenteau Mélodique** | Attaque | 1 / 0 | 6 000 dégâts et appose un fragment de mélodie cumulable (max 3). | Facile à manier : chaque fragment peut être converti plus tard en +5 % dégâts pour *Rhapsodie* ou *Éclair*. |
+| **Cantate des Profondeurs** | Contrôle | 2 / 3 | Étourdit une cible immergée ou instable, sinon inflige 12 000 dégâts et -2 Harmonie. | Synergie tardive avec les altérations d’*Abîme Harmonique* et les Items aqueux décrits dans `Docs/RepertoireItemsUtilisables.md`. |
+| **Polyrythmie Fractale** | Attaque de zone | 3 / 4 | 18 000 dégâts + 2 000 par effet sonore actif sur chaque ennemi. | Mécanique avancée : combinez les échos des Séraphins (voir `Docs/HistoireSymphonie.md`) avec les runes de résonance pour déchaîner une salve dévastatrice. |
 
 En maîtrisant cette liste, les débutants disposent d'un guide clair tandis que les virtuoses peuvent planifier des suites d'accords fidèles à la légende de Symphonie.
