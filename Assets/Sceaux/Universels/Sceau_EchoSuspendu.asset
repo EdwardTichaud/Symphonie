@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0de7f5c6b44044e28d89d7c6c8dbc456, type: 3}
+  m_Name: Sceau_EchoSuspendu
+  m_EditorClassIdentifier:
+  sealName: Sceau de l’Écho Suspendu
+  archetype: 0
+  intensity: 0
+  icon: {fileID: 0}
+  effectSummary: La première attaque de zone ennemie inflige -40 % dégâts et ne peut pas repousser.
+  usageTips: Protège les lignes pendant la préparation d’un Crescendo Fulgurant ou d’un Contrechant du Refuge.
+  scoreModifierPercent: -10
+  loreNote: Inspiré par les chants suspendus de Luna pour immobiliser les vagues séraphiques.

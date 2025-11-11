@@ -16,10 +16,10 @@ MonoBehaviour:
   moveType: 4
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Fait dispara\xEEtre le sol sous la cible."
+  description: "Force la cible à flotter pendant deux tours, exposant ses défenses au jeu aérien."
   inventoryCategory: MusicalMove
-  inventorySummary: 
-  consumeOnUse: 1
+  inventorySummary: "Suspend un ennemi (2 tours)."
+  consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 0
   notes: []
@@ -28,8 +28,8 @@ MonoBehaviour:
   harmonicGeneration: 0
   consumedHarmonicType: 0
   generatedHarmonicType: 0
-  effectType: 0
-  effectValue: 0
+  effectType: 9
+  effectValue: 2
   buffStat: 0
   buffAmount: 0
   buffDuration: 0

@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0de7f5c6b44044e28d89d7c6c8dbc456, type: 3}
+  m_Name: Sceau_CercleHarmonise
+  m_EditorClassIdentifier:
+  sealName: Sceau du Cercle Harmonisé
+  archetype: 0
+  intensity: 0
+  icon: {fileID: 0}
+  effectSummary: Crée au tour 1 une zone réduisant de 15 % les dégâts reçus par les alliés adjacents (2 tours).
+  usageTips: Idéal pour fortifier le noyau de soutien autour d’Arpège Régénérant.
+  scoreModifierPercent: -10
+  loreNote: Issu des rites de rassemblement de la Fratrie lorsque Munin dirige la scène.
