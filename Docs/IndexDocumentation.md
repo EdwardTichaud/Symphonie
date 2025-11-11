@@ -9,6 +9,7 @@ Ce document décrit l'organisation thématique des fichiers de `Docs/` afin de r
 
 ## Thèmes gameplay
 - `LimitesUtilisationActions.md` : paramétrage des limites d'utilisation pour les MusicalMoves et Items.
+- `PreparationMusicalMoves.md` : configuration des phases de charge et de leurs risques.
 - `TypageHarmoniques.md` : consommation et génération d'harmoniques par move.
 - `ConditionsAltitude.md` : contraintes de hauteur pour les compétences.
 - `MoveTypeAlteration.md` : description du MoveType Altération.
