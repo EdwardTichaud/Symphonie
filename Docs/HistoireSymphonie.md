@@ -31,11 +31,13 @@ Lorsqu’il accomplit cette Convocation, l’entité qui répond n’est pas Aza
 - Entité créatrice, bienveillante mais distante.
 - Se nourrit des rêves pour générer les mondes.
 - A laissé volontairement du chaos et du libre arbitre dans le monde réel.
+- Considère la « symphonie de la vie » comme une composition impossible à diriger, dont chaque être vivant joue une note au gré de ses choix.
 
 ### 🌙 Le Rêve
 - Projection idéale du monde réel, orchestrée, sans chaos.
 - Source du destin, du contrôle, de l’harmonie imposée.
 - Les Entités du Rêve en sont les garants, et traquent les anomalies (comme Lucian).
+- Cherche à figer la « symphonie de la vie » dans une partition unique, sans jamais parvenir à la saisir totalement.
 
 ### 🪽 Les Séraphins
 - Gardiens du Rêve.
@@ -46,6 +48,7 @@ Lorsqu’il accomplit cette Convocation, l’entité qui répond n’est pas Aza
 - A déserté le Rêve, tente de construire ses propres mondes pour sauver les âmes perdues.
 - Incapable de créer, il ne peut que recomposer des fragments perçus.
 - Son plan secret : remplacer les âmes de l’Univers par les reflets imparfaits de son monde, acceptant la destruction des originaux pour imposer sa vision de la justice.
+- S’acharne à imiter la « symphonie de la vie », sans comprendre qu’elle échappe à tout contrôle, même au sien.
 
 ⸻
 
@@ -109,6 +112,17 @@ Lorsqu’il accomplit cette Convocation, l’entité qui répond n’est pas Aza
 | Nature des rêves | Les rêves sont connectés par un grand Arbre cosmique semblable à Yggdrasill. |
 | Injustice des talents et des vies | Seul le rêve obstiné de son frère offre à Lucian une chance de survie, tandis que d’autres âmes se dissipent. |
 | Sacrifice collectif | Lucian et ses alliés préfèrent risquer leur existence pour préserver les âmes originelles de l’Univers. |
+| Symphonie de la vie | Les protagonistes découvrent que l’Univers compose une mélodie vivante qui transcende toute autorité, révélant la vanité des volontés de contrôle. |
+
+⸻
+
+## 📜 Histoire des idées : la symphonie de la vie
+
+- **Mythe fondateur :** les premiers rêveurs parlent de la « symphonie de la vie » comme d’un chant que l’Univers entonne pour donner naissance aux mondes. Aucun être, même séraphin, n’entend la partition entière.
+- **Hérésie de l’Harmonique Parfaite :** certains Séraphins ont tenté de figer ce chant dans une écriture unique, déclenchant des fractures cosmiques qui ont forcé l’Univers à laisser s’échapper les notes rebelles.
+- **Doctrine de Munin :** en observant Lucian, Munin conclut que la « symphonie de la vie » est un flux libre : chaque décision ajoute une nuance imprévisible, hors d’atteinte des entités les plus puissantes.
+- **Révélation de la Source :** lorsque Lucian approche la Source, il apprend que ce chant n’est pas une arme à maîtriser, mais un espace de résonance partagé. La quête ne consiste plus à contrôler la musique, mais à accepter d’en être une voix éphémère.
+- **Conséquence narrative :** Azazel réalise tardivement que sa rébellion échoue parce qu’il ne peut ni composer ni voler cette mélodie. Il doit choisir entre s’accorder humblement ou se condamner au silence.
 
 ⸻
 
