@@ -6,3 +6,5 @@ Ce document regroupe des répliques emblématiques utilisées pour rythmer les s
 - "Il est temps pour nous deux de nous retirer." — Lucian s'adresse à Azazel lors du combat final.
 - "Les entends-tu, ces êtres imparfaits…" — Azazel provoque le premier séraphin pendant un combat.
 - "Mon ami, je te laisse la suite." — Azazel s'adresse à Lucian avant l'affrontement contre le premier séraphin.
+- "Écoute, Lucian : la symphonie de la vie n'obéit à personne." — Munin révèle que l’Univers seul tisse cette mélodie indomptable.
+- "Je croyais pouvoir écrire la symphonie de la vie… mais elle échappe même aux dieux." — Aveu tardif d’Azazel avant la bataille finale.
