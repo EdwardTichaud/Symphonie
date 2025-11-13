@@ -49,13 +49,15 @@ public class ZoneManager : MonoBehaviour
         OnPredominantHarmonicChanged?.Invoke(currentPredominantHarmonic);
 
         // Notifie le BattlefieldsManager
-        BattlefieldManager.Instance.SetCurrentZone(newZone);
+        if (BattlefieldManager.Instance != null)
+            BattlefieldManager.Instance.SetCurrentZone(newZone);
 
         Debug.Log($"[ZoneManager] Nouvelle zone courante : {newZone.zoneName}");
         Debug.Log($"[ZoneManager] Harmonique prédominante : {currentPredominantHarmonic}");
 
-        ZoneNameDisplay.Instance.ShowCurrentZoneInfo();
+        ZoneNameDisplay.Instance?.ShowCurrentZoneInfo();
 
-        AudioManager.Instance.PlayExplorationMusic(newZone.zoneMusic);
+        if (newZone.zoneMusic != null)
+            AudioManager.Instance?.PlayExplorationMusic(newZone.zoneMusic);
     }
 }

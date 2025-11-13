@@ -15,4 +15,4 @@ Chaque étape est de type `PlayTimeline`, `Wait`, `Dialogue` ou `Event`. Cette a
 
 ## Documentation des nouveautés
 
-Les dernières attaques musicales et objets proposés sont décrits dans [Docs/NouveauxContenus.md](Docs/NouveauxContenus.md).
+Les dernières attaques musicales et objets proposés sont regroupés dans [Docs/IndexDocumentation.md](Docs/IndexDocumentation.md) qui référence les fiches détaillées de `Docs/`.

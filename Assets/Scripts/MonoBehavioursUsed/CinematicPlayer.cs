@@ -11,25 +11,33 @@ public class CinematicPlayer : MonoBehaviour
 
     public void Play()
     {
-        if (sequence == null || playing)
+        if (playing)
             return;
+
+        if (sequence == null || sequence.steps == null || sequence.steps.Length == 0)
+        {
+            Debug.LogWarning("[CinematicPlayer] Impossible de jouer : aucune étape définie.", this);
+            return;
+        }
+
         StartCoroutine(PlaySequence());
     }
 
     private IEnumerator PlaySequence()
     {
+        if (sequence == null || sequence.steps == null)
+            yield break;
+
         playing = true;
         foreach (var step in sequence.steps)
         {
+            if (step == null)
+                continue;
+
             switch (step.type)
             {
                 case CinematicStepType.PlayTimeline:
-                    if (step.timeline != null)
-                    {
-                        TimelineManager.Instance.PlayTimeline(step.timeline);
-                        while (TimelineManager.Instance.IsTimelinePlaying)
-                            yield return null;
-                    }
+                    yield return PlayTimelineStep(step.timeline);
                     break;
                 case CinematicStepType.Wait:
                     yield return new WaitForSeconds(step.waitDuration);
@@ -48,8 +56,29 @@ public class CinematicPlayer : MonoBehaviour
                 case CinematicStepType.Event:
                     step.onEvent?.Invoke();
                     break;
+                default:
+                    break;
             }
         }
         playing = false;
+    }
+
+    private IEnumerator PlayTimelineStep(PlayableDirector director)
+    {
+        if (director == null)
+            yield break;
+
+        if (TimelineManager.Instance != null)
+        {
+            TimelineManager.Instance.PlayTimeline(director);
+            while (TimelineManager.Instance.IsTimelinePlaying)
+                yield return null;
+        }
+        else
+        {
+            director.Play();
+            while (director.state == PlayState.Playing)
+                yield return null;
+        }
     }
 }

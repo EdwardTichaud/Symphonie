@@ -58,6 +58,9 @@ public class GameManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        if (gameData != null)
+            gameData = Instantiate(gameData);
     }
 
     private void Start()

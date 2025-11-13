@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using System.Collections;
 
 public class TimeManager : MonoBehaviour
@@ -6,25 +7,33 @@ public class TimeManager : MonoBehaviour
     public float normalTimeScale = 1.0f;
     public float slowMotionScale = 0.5f;
     public float fixedDeltaTimeNormal = 0.02f;
-    public float transitionDuration = 0.5f; // Durée de la transition en secondes
+    public float transitionDuration = 0.5f;
+
+    [Header("Inputs")]
+    [SerializeField] private InputAction pauseAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/p");
+    [SerializeField] private InputAction logTimeScaleAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/t");
+    [SerializeField] private InputAction slowMotionAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/o");
 
     private void Awake()
     {
-        // Sauvegarder la valeur par défaut de fixedDeltaTime
         fixedDeltaTimeNormal = Time.fixedDeltaTime;
     }
 
-    private void Update()
+    private void OnEnable()
     {
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            TogglePause();
-        }
+        HookAction(pauseAction, OnPausePerformed);
+        HookAction(logTimeScaleAction, OnLogTimeScalePerformed);
+        HookAction(slowMotionAction, OnSlowMotionPerformed);
+    }
 
-        if (Input.GetKeyDown(KeyCode.T))
-        {
-            Debug.Log($"Current TimeScale: {Time.timeScale:F2}");
-        }
+    private void OnDisable()
+    {
+        UnhookAction(pauseAction, OnPausePerformed);
+        UnhookAction(logTimeScaleAction, OnLogTimeScalePerformed);
+        UnhookAction(slowMotionAction, OnSlowMotionPerformed);
+
+        StopAllCoroutines();
+        ResetTimeScale();
     }
 
     public void SetTimeScale(float newTimeScale)
@@ -35,13 +44,12 @@ public class TimeManager : MonoBehaviour
 
     public void ResetTimeScale()
     {
-        Time.timeScale = normalTimeScale;
-        Time.fixedDeltaTime = fixedDeltaTimeNormal;
+        SetTimeScale(normalTimeScale);
     }
 
     public void ToggleSlowMotion()
     {
-        if (Time.timeScale == normalTimeScale)
+        if (Mathf.Approximately(Time.timeScale, normalTimeScale))
         {
             StartCoroutine(SmoothTransitionToSlowMotion(slowMotionScale));
         }
@@ -56,8 +64,8 @@ public class TimeManager : MonoBehaviour
         float elapsedTime = 0f;
         float startTimeScale = Time.timeScale;
 
-        AudioManager.Instance.PlaySfx(10);
-        AudioManager.Instance.PlaySfx(11);
+        AudioManager.Instance?.PlaySfx(10);
+        AudioManager.Instance?.PlaySfx(11);
 
         while (elapsedTime < transitionDuration)
         {
@@ -67,7 +75,7 @@ public class TimeManager : MonoBehaviour
             yield return null;
         }
 
-        SetTimeScale(targetTimeScale); // Assurez-vous que la valeur finale est exacte
+        SetTimeScale(targetTimeScale);
     }
 
     private IEnumerator SmoothTransitionToNormalTime(float targetTimeScale)
@@ -75,7 +83,7 @@ public class TimeManager : MonoBehaviour
         float elapsedTime = 0f;
         float startTimeScale = Time.timeScale;
 
-        AudioManager.Instance.PlaySfx(12);
+        AudioManager.Instance?.PlaySfx(12);
 
         while (elapsedTime < transitionDuration)
         {
@@ -85,12 +93,12 @@ public class TimeManager : MonoBehaviour
             yield return null;
         }
 
-        SetTimeScale(targetTimeScale); // Assurez-vous que la valeur finale est exacte
+        SetTimeScale(targetTimeScale);
     }
 
     public void PauseGame()
     {
-        Time.timeScale = 0;
+        SetTimeScale(0f);
     }
 
     public void UnpauseGame()
@@ -100,7 +108,7 @@ public class TimeManager : MonoBehaviour
 
     public void TogglePause()
     {
-        if (Time.timeScale == 0)
+        if (Mathf.Approximately(Time.timeScale, 0f))
         {
             UnpauseGame();
         }
@@ -108,5 +116,34 @@ public class TimeManager : MonoBehaviour
         {
             PauseGame();
         }
+    }
+
+    private void HookAction(InputAction action, System.Action<InputAction.CallbackContext> handler)
+    {
+        if (action == null)
+            return;
+
+        action.performed += handler;
+        if (!action.enabled)
+            action.Enable();
+    }
+
+    private void UnhookAction(InputAction action, System.Action<InputAction.CallbackContext> handler)
+    {
+        if (action == null)
+            return;
+
+        action.performed -= handler;
+        if (action.enabled)
+            action.Disable();
+    }
+
+    private void OnPausePerformed(InputAction.CallbackContext ctx) => TogglePause();
+
+    private void OnSlowMotionPerformed(InputAction.CallbackContext ctx) => ToggleSlowMotion();
+
+    private void OnLogTimeScalePerformed(InputAction.CallbackContext ctx)
+    {
+        Debug.Log($"Current TimeScale: {Time.timeScale:F2}");
     }
 }
