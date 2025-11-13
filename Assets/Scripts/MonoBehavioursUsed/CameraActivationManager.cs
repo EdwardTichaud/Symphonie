@@ -12,6 +12,10 @@ public class CameraActivationManager : MonoBehaviour
     private Camera worldCamera;   // Référence à la WorldCam_Cam
     private Camera battleCamera;  // Référence à la BattleCam_Cam
     private Camera versusCamera;  // Référence à la VersusCam_Cam
+    private bool timelineOverrideActive;
+    private bool worldCameraPrevState;
+    private bool battleCameraPrevState;
+    private bool versusCameraPrevState;
 
     /// <summary>
     /// Création automatique du gestionnaire après le chargement de la scène.
@@ -98,10 +102,46 @@ public class CameraActivationManager : MonoBehaviour
     /// ne puissent jamais être actives en même temps afin d'éviter des rendus
     /// multiples coûteux.
     /// </summary>
-    private void SetCameraState(Camera cam, bool state)
+    public void BeginWorldCameraTimelineOverride()
+    {
+        if (timelineOverrideActive)
+            return;
+
+        timelineOverrideActive = true;
+
+        worldCameraPrevState = worldCamera != null && worldCamera.gameObject.activeSelf;
+        battleCameraPrevState = battleCamera != null && battleCamera.gameObject.activeSelf;
+        versusCameraPrevState = versusCamera != null && versusCamera.gameObject.activeSelf;
+
+        SetCameraState(worldCamera, true, true);
+        SetCameraState(battleCamera, false, true);
+        SetCameraState(versusCamera, false, true);
+    }
+
+    public void EndWorldCameraTimelineOverride()
+    {
+        if (!timelineOverrideActive)
+            return;
+
+        timelineOverrideActive = false;
+
+        SetCameraState(worldCamera, worldCameraPrevState, true);
+        SetCameraState(battleCamera, battleCameraPrevState, true);
+        SetCameraState(versusCamera, versusCameraPrevState, true);
+    }
+
+    private void SetCameraState(Camera cam, bool state, bool force = false)
     {
         if (cam == null)
             return;
+
+        if (timelineOverrideActive && !force)
+        {
+            if (cam != worldCamera)
+                return;
+            if (!state)
+                return;
+        }
 
         // Active ou désactive directement le GameObject de la caméra ciblée
         cam.gameObject.SetActive(state);

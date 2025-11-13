@@ -179,8 +179,9 @@ public class DialogueManager : MonoBehaviour
 
             if (container != null && container.lines != null && container.lines.Length > 0)
             {
-                nameText.text = container.lines[0].speakerName;
-                dialogueText.text = container.lines[0].text;
+                DialogueLine previewLine = ResolveLine(container.lines[0]);
+                nameText.text = previewLine.speakerName;
+                dialogueText.text = previewLine.text;
 
                 // Force l'ouverture visuelle de la boîte de dialogue
                 var animator = GetComponentInChildren<Animator>();
@@ -225,8 +226,9 @@ public class DialogueManager : MonoBehaviour
 
         foreach (DialogueLine line in container.lines)
         {
-            nameText.text = line.speakerName;
-            yield return StartCoroutine(TypeLine(line.text));
+            DialogueLine resolvedLine = ResolveLine(line);
+            nameText.text = resolvedLine.speakerName;
+            yield return StartCoroutine(TypeLine(resolvedLine.text));
 
             // Attente input OU nextRequested
             yield return new WaitUntil(() =>
@@ -348,13 +350,14 @@ public class DialogueManager : MonoBehaviour
 
         foreach (DialogueLine line in container.lines)
         {
-            nameText.text = line.speakerName;
+            DialogueLine resolvedLine = ResolveLine(line);
+            nameText.text = resolvedLine.speakerName;
 
             // Frappe avec skip possible
-            yield return StartCoroutine(TypeLineAllowSkip(line.text, useUnscaledTime));
+            yield return StartCoroutine(TypeLineAllowSkip(resolvedLine.text, useUnscaledTime));
 
             // Attente d'affichage auto avec possibilité de skip (input) ou NextLine()
-            float target = Mathf.Clamp(line.text?.Length * timePerChar ?? 0f, minHold, maxHold);
+            float target = Mathf.Clamp(resolvedLine.text?.Length * timePerChar ?? 0f, minHold, maxHold);
             float t = 0f;
 
             while (t < target)
@@ -605,6 +608,28 @@ public class DialogueManager : MonoBehaviour
         }
     }
 
+    private DialogueLine ResolveLine(DialogueLine line)
+    {
+        line.speakerName = ResolveTokens(line.speakerName);
+        line.text = ResolveTokens(line.text);
+        return line;
+    }
+
+    private string ResolveTokens(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        string resolved = value;
+
+        if (GameManager.Instance != null && GameManager.Instance.gameData != null)
+        {
+            resolved = resolved.Replace("{MuninName}", GameManager.Instance.gameData.muninName);
+        }
+
+        return resolved;
+    }
+
     //==============================================================
     // Positionnement de la bulle
     //==============================================================
@@ -633,23 +658,62 @@ public class DialogueManager : MonoBehaviour
             }
         }
 
-        Vector2 newPos = Vector2.zero;
-        float margin = 50f;
+        Vector2 newPos;
 
         if (container.randomPosition)
         {
-            float xMin = -canvasRect.rect.width / 2 + rectTransform.rect.width / 2 + margin;
-            float xMax = canvasRect.rect.width / 2 - rectTransform.rect.width / 2 - margin;
-            float yMin = -canvasRect.rect.height / 2 + rectTransform.rect.height / 2 + margin;
-            float yMax = canvasRect.rect.height / 2 - rectTransform.rect.height / 2 - margin;
-
-            newPos = new Vector2(Random.Range(xMin, xMax), Random.Range(yMin, yMax));
+            newPos = GetRandomAnchoredPosition(canvasRect);
         }
         else
         {
-            newPos = new Vector2(container.customPosition.x, container.customPosition.y);
+            newPos = ClampToCanvas(new Vector2(container.customPosition.x, container.customPosition.y), canvasRect);
         }
 
         rectTransform.anchoredPosition = newPos;
+    }
+
+    private Vector2 GetRandomAnchoredPosition(RectTransform canvasRect)
+    {
+        float halfWidth = rectTransform.rect.width * 0.5f;
+        float halfHeight = rectTransform.rect.height * 0.5f;
+
+        float horizontalMargin = Mathf.Max(40f, halfWidth * 0.25f);
+        float verticalMargin = Mathf.Max(40f, halfHeight * 0.25f);
+
+        float xMin = -canvasRect.rect.width * 0.5f + halfWidth + horizontalMargin;
+        float xMax = canvasRect.rect.width * 0.5f - halfWidth - horizontalMargin;
+        float yMin = -canvasRect.rect.height * 0.5f + halfHeight + verticalMargin;
+        float yMax = canvasRect.rect.height * 0.5f - halfHeight - verticalMargin;
+
+        if (xMin > xMax)
+            xMin = xMax = 0f;
+        if (yMin > yMax)
+            yMin = yMax = 0f;
+
+        return new Vector2(Random.Range(xMin, xMax), Random.Range(yMin, yMax));
+    }
+
+    private Vector2 ClampToCanvas(Vector2 desired, RectTransform canvasRect)
+    {
+        float halfWidth = rectTransform.rect.width * 0.5f;
+        float halfHeight = rectTransform.rect.height * 0.5f;
+
+        float horizontalMargin = Mathf.Max(40f, halfWidth * 0.25f);
+        float verticalMargin = Mathf.Max(40f, halfHeight * 0.25f);
+
+        float xMin = -canvasRect.rect.width * 0.5f + halfWidth + horizontalMargin;
+        float xMax = canvasRect.rect.width * 0.5f - halfWidth - horizontalMargin;
+        float yMin = -canvasRect.rect.height * 0.5f + halfHeight + verticalMargin;
+        float yMax = canvasRect.rect.height * 0.5f - halfHeight - verticalMargin;
+
+        if (xMin > xMax)
+            xMin = xMax = 0f;
+        if (yMin > yMax)
+            yMin = yMax = 0f;
+
+        float clampedX = Mathf.Clamp(desired.x, xMin, xMax);
+        float clampedY = Mathf.Clamp(desired.y, yMin, yMax);
+
+        return new Vector2(clampedX, clampedY);
     }
 }

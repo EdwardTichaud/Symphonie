@@ -424,7 +424,7 @@ public class TimelineManager : MonoBehaviour
     /// </param>
     /// <param name="interruptMusic">True pour couper la musique en cours, false pour la laisser jouer.</param>
     /// <param name="allowSkip">False pour empêcher l'utilisateur de passer la timeline.</param>
-    public void PlayTimeline(PlayableDirector newDirector, bool withFade = true, bool interruptMusic = true, bool allowSkip = true, bool autoRestore = true)
+    public void PlayTimeline(PlayableDirector newDirector, bool withFade = true, bool interruptMusic = true, bool allowSkip = true, bool autoRestore = true, bool requiresWorldCamera = true)
     {
         if (newDirector == null)
         {
@@ -446,6 +446,11 @@ public class TimelineManager : MonoBehaviour
         newDirector.stopped += OnStopped;
 
         currentDirector = newDirector;
+
+        if (requiresWorldCamera)
+        {
+            RequestWorldCameraControl();
+        }
 
         // Enregistre les préférences de lecture pour cette timeline.
         useFade = withFade;
@@ -490,12 +495,14 @@ public class TimelineManager : MonoBehaviour
 
         GameObject cameraGO = null;
         Transform cameraParent = null;   // Parent direct de la caméra pour récupérer son Animator
+        bool requiresWorldCamera = !string.IsNullOrEmpty(cameraTag) && cameraTag.Equals("WorldCamera", System.StringComparison.OrdinalIgnoreCase);
+
         if (!string.IsNullOrEmpty(cameraTag))
         {
             cameraGO = GameObject.FindGameObjectWithTag(cameraTag);
             cameraParent = cameraGO != null ? cameraGO.transform.parent : null;
 
-            if (cameraTag == "WorldCamera")
+            if (requiresWorldCamera)
             {
                 // Sauvegarde la position actuelle de la WorldCamera avant que la Timeline ne la déplace
                 CameraController.Instance?.SaveWorldCameraTransform();
@@ -589,7 +596,7 @@ public class TimelineManager : MonoBehaviour
 
         // Joue la timeline en profitant de toute la gestion centralisée (skip, fondu, musique...)
         // La caméra est positionnée une seule fois ; aucun suivi continu n'est effectué.
-        PlayTimeline(reusableDirector, withFade, interruptMusic, allowSkip, autoRestore);
+        PlayTimeline(reusableDirector, withFade, interruptMusic, allowSkip, autoRestore, requiresWorldCamera);
     }
 
     /// <summary>
@@ -820,6 +827,59 @@ public class TimelineManager : MonoBehaviour
 
         // Réinitialise le comportement de restauration pour les prochaines timelines
         autoRestore = true;
+
+        ReleaseWorldCameraControl();
+    }
+
+    private bool worldCameraControlRequested;
+    private Transform storedPlayerTransform;
+    private Quaternion storedPlayerRotation;
+    private bool hasStoredPlayerRotation;
+
+    private void RequestWorldCameraControl()
+    {
+        if (worldCameraControlRequested)
+            return;
+
+        CameraActivationManager.Instance?.BeginWorldCameraTimelineOverride();
+        worldCameraControlRequested = true;
+        StorePlayerRotation();
+    }
+
+    private void ReleaseWorldCameraControl()
+    {
+        if (!worldCameraControlRequested)
+            return;
+
+        CameraActivationManager.Instance?.EndWorldCameraTimelineOverride();
+        worldCameraControlRequested = false;
+        RestorePlayerRotation();
+    }
+
+    private void StorePlayerRotation()
+    {
+        if (hasStoredPlayerRotation)
+            return;
+
+        var player = FindFirstObjectByType<ThirdPersonPlayerController>();
+        if (player == null)
+            return;
+
+        storedPlayerTransform = player.transform;
+        storedPlayerRotation = storedPlayerTransform.rotation;
+        hasStoredPlayerRotation = true;
+    }
+
+    private void RestorePlayerRotation()
+    {
+        if (!hasStoredPlayerRotation)
+            return;
+
+        if (storedPlayerTransform != null)
+            storedPlayerTransform.rotation = storedPlayerRotation;
+
+        storedPlayerTransform = null;
+        hasStoredPlayerRotation = false;
     }
 
     /// <summary>
