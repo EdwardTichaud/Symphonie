@@ -30907,7 +30907,7 @@ PlayableDirector:
   m_Enabled: 1
   serializedVersion: 3
   m_PlayableAsset: {fileID: 11400000, guid: 5e63427658895b745915e4c53fb84570, type: 2}
-  m_InitialState: 1
+  m_InitialState: 0
   m_WrapMode: 2
   m_DirectorUpdateMode: 1
   m_InitialTime: 0
@@ -85491,6 +85491,7 @@ GameObject:
   - component: {fileID: 1192946930}
   - component: {fileID: 1192946932}
   - component: {fileID: 1192946931}
+  - component: {fileID: 1192946933}
   m_Layer: 7
   m_Name: Timeline_AzazelWall_1
   m_TagString: Untagged
@@ -85773,6 +85774,23 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 2}
   m_Center: {x: 0, y: 0, z: -1}
+--- !u!114 &1192946933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1192946927}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b8adddde53344efaf9fc9a37abb5f00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playOnStart: 1
+  withFade: 1
+  interruptMusic: 1
+  allowSkip: 1
+  autoRestore: 1
 --- !u!1 &1193735422
 GameObject:
   m_ObjectHideFlags: 0
