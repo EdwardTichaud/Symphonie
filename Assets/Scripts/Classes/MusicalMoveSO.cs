@@ -45,6 +45,33 @@ public class MusicalMoveSO : ScriptableObject
         public float rhythm = 0.5f;
     }
 
+    [System.Serializable]
+    public class PreparationFailureCondition
+    {
+        [Tooltip(
+            "Type d'événement qui annule la préparation du move."
+            + " Permet d'expliquer clairement aux débutants pourquoi la charge s'interrompt" 
+            + " tout en laissant aux vétérans la possibilité de planifier autour de ces risques.")]
+        public PreparationFailureConditionType conditionType = PreparationFailureConditionType.None;
+
+        [Tooltip(
+            "Valeur seuil utilisée par certaines conditions (par exemple quantité de dégâts reçus en une attaque)."
+            + " Laisser à 0 si la condition n'utilise pas de valeur numérique.")]
+        public float thresholdValue = 0f;
+
+        [Tooltip(
+            "Débuff précis qui annule la préparation lorsqu'il est appliqué."
+            + " Ignoré pour les autres types de conditions mais utile pour refléter les enjeux narratifs décrits"
+            + " dans l'Histoire de Symphonie.")]
+        public DebuffStatType debuffType = DebuffStatType.None;
+
+        [TextArea]
+        [Tooltip(
+            "Note de conception destinée à rappeler le contexte narratif ou stratégique de l'échec."
+            + " Encourage les équipes à garder une cohérence avec l'histoire tout en documentant les combinaisons avancées.")]
+        public string designerNote;
+    }
+
     [Header("Partition musicale")]
     [Tooltip("Suite des notes à jouer pour réussir le QTE du move.")]
     public List<NoteData> notes = new();
@@ -166,6 +193,28 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Son d'avertissement joué avant l'attaque pour prévenir le joueur")]
     public AudioClipSO warningClip;
 
+    [Header("Préparation sur plusieurs tours")]
+    [Tooltip(
+        "Active une phase de charge qui doit être menée à terme avant l'exécution réelle du move."
+        + " Si cette option est cochée, le move démarre lors du tour choisi mais ne se résout qu'après la préparation.")]
+    public bool requiresPreparationBeforeExecution = false;
+
+    [Tooltip(
+        "Nombre de tours complets nécessaires pour terminer la préparation."
+        + " Une valeur de 0 laisse l'exécution se faire immédiatement, même si la charge est activée.")]
+    [Min(0)]
+    public int preparationTurnCount = 0;
+
+    [Tooltip(
+        "Liste des événements qui annulent la préparation si elle survient pendant la charge."
+        + " Permet de configurer des seuils de dégâts, des débuffs ou tout déclencheur scénarisé.")]
+    public List<PreparationFailureCondition> preparationFailureConditions = new();
+
+    // Valeur plancher appliquée automatiquement aux moves à charge afin d'assurer
+    // que les dégâts massifs interrompent toujours la préparation à moins que les
+    // concepteurs n'en décident autrement explicitement.
+    private const float DefaultDamageInterruptionThreshold = 20000f;
+
     [Header("Timing")]
     // ⏱️ Délai ajouté avant toute timeline de préparation.
     //    Permet d'insérer un temps mort contrôlé (par exemple pour une
@@ -236,21 +285,114 @@ public class MusicalMoveSO : ScriptableObject
         // ou supprimé, aucune action n'est effectuée pour ne pas provoquer
         // d'erreur dans l'éditeur.
         var reference = AssetDatabase.LoadAssetAtPath<MusicalMoveSO>(RHAPSODIE_PATH);
-        if (reference == null)
-            return;
+        if (reference != null)
+        {
+            // Pour chaque champ, si aucune valeur n'est renseignée, on copie
+            // celle de "MusicalMove_Rhapsodie". Les concepteurs peuvent ensuite
+            // remplacer ces valeurs manuellement selon les besoins spécifiques
+            // du nouveau move.
+            if (preparingCameraRole == BattleCameraRole.None)
+                preparingCameraRole = reference.preparingCameraRole;
+            if (performingCameraRole == BattleCameraRole.None)
+                performingCameraRole = reference.performingCameraRole;
+            if (retreatCameraRole == BattleCameraRole.None)
+                retreatCameraRole = reference.retreatCameraRole;
+        }
 
-        // Pour chaque champ, si aucune valeur n'est renseignée, on copie
-        // celle de "MusicalMove_Rhapsodie". Les concepteurs peuvent ensuite
-        // remplacer ces valeurs manuellement selon les besoins spécifiques
-        // du nouveau move.
-        if (preparingCameraRole == BattleCameraRole.None)
-            preparingCameraRole = reference.preparingCameraRole;
-        if (performingCameraRole == BattleCameraRole.None)
-            performingCameraRole = reference.performingCameraRole;
-        if (retreatCameraRole == BattleCameraRole.None)
-            retreatCameraRole = reference.retreatCameraRole;
+        // Enfin, on sécurise la configuration des moves nécessitant une préparation
+        // multi-tour : deux garde-fous sont ajoutés ou mis à jour pour garantir que
+        // des dégâts colossaux ou une interruption explicite stoppe bien la charge.
+        EnsureDefaultPreparationFailureConditions();
     }
 #endif
+
+    /// <summary>
+    ///     Injecte automatiquement les conditions minimales d'échec de préparation.
+    ///     Tous les moves nécessitant une charge multi-tour doivent au moins :
+    ///     - être interrompus par une attaque dépassant <see cref="DefaultDamageInterruptionThreshold"/> points de dégâts;
+    ///     - échouer lorsqu'un MusicalMove adverse spécifiquement conçu pour casser les préparations est reçu.
+    ///     Les concepteurs peuvent ajouter d'autres conditions manuellement, mais ces garde-fous
+    ///     garantissent une base cohérente pour l'équilibrage comme pour la narration.
+    /// </summary>
+    private void EnsureDefaultPreparationFailureConditions()
+    {
+        if (!requiresPreparationBeforeExecution)
+            return;
+
+        if (preparationFailureConditions == null)
+            preparationFailureConditions = new List<PreparationFailureCondition>();
+
+        // ------------------------------------------------------------------
+        // 1. Vérifie l'interruption par dégâts massifs.
+        // ------------------------------------------------------------------
+        PreparationFailureCondition damageCondition = null;
+        foreach (var condition in preparationFailureConditions)
+        {
+            if (condition == null)
+                continue;
+
+            if (condition.conditionType == PreparationFailureConditionType.DamageFromSingleAttack)
+            {
+                damageCondition = condition;
+                break;
+            }
+        }
+
+        if (damageCondition == null)
+        {
+            damageCondition = new PreparationFailureCondition
+            {
+                conditionType = PreparationFailureConditionType.DamageFromSingleAttack,
+                thresholdValue = DefaultDamageInterruptionThreshold,
+                designerNote =
+                    "Sécurité automatique : dégâts colossaux interrompent la charge pour protéger le lanceur."
+            };
+            preparationFailureConditions.Add(damageCondition);
+        }
+        else
+        {
+            if (damageCondition.thresholdValue < DefaultDamageInterruptionThreshold)
+                damageCondition.thresholdValue = DefaultDamageInterruptionThreshold;
+
+            if (string.IsNullOrWhiteSpace(damageCondition.designerNote))
+            {
+                damageCondition.designerNote =
+                    "Sécurité automatique : dégâts colossaux interrompent la charge pour protéger le lanceur.";
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // 2. Vérifie l'interruption par un autre MusicalMove.
+        // ------------------------------------------------------------------
+        PreparationFailureCondition interruptingMoveCondition = null;
+        foreach (var condition in preparationFailureConditions)
+        {
+            if (condition == null)
+                continue;
+
+            if (condition.conditionType == PreparationFailureConditionType.InterruptingMusicalMove)
+            {
+                interruptingMoveCondition = condition;
+                break;
+            }
+        }
+
+        if (interruptingMoveCondition == null)
+        {
+            interruptingMoveCondition = new PreparationFailureCondition
+            {
+                conditionType = PreparationFailureConditionType.InterruptingMusicalMove,
+                designerNote =
+                    "Sécurité automatique : réactions ennemies prévues pour casser la préparation interrompent le move."
+            };
+            preparationFailureConditions.Add(interruptingMoveCondition);
+        }
+        else if (string.IsNullOrWhiteSpace(interruptingMoveCondition.designerNote))
+        {
+            interruptingMoveCondition.designerNote =
+                "Sécurité automatique : réactions ennemies prévues pour casser la préparation interrompent le move.";
+        }
+    }
 
     /// <summary>
     ///     Indique si le move doit utiliser une téléportation instantanée pour atteindre sa cible.
@@ -468,3 +610,17 @@ public enum RelativePosition { Front, Back, Left, Right , NC}
 /// Définit dans quel contexte d'altitude un <see cref="MusicalMoveSO"/> est réalisable.
 /// </summary>
 public enum AltitudeCondition { GroundOnly, AirOnly, GroundOrAir }
+
+/// <summary>
+/// Liste les événements capables d'annuler une préparation multi-tour d'un <see cref="MusicalMoveSO"/>.
+/// </summary>
+public enum PreparationFailureConditionType
+{
+    None,                   // Aucune condition : la charge se déroule sans risque.
+    DamageFromSingleAttack, // Un coup dépassant le seuil annule immédiatement la préparation.
+    DamageAccumulatedDuringPreparation, // Le cumul de dégâts sur la phase de charge interrompt le move.
+    AnyDebuffApplied,       // Tout débuff appliqué au lanceur met fin à la préparation.
+    SpecificDebuffApplied,  // Seul un type précis de débuff annule la charge.
+    InterruptingMusicalMove, // Un MusicalMove ennemi désigné comme interruptif stoppe la préparation.
+    CustomEvent             // Condition narrative ou scriptée, documentée dans designerNote.
+}
