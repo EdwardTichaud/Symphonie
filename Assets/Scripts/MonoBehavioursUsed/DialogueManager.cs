@@ -35,6 +35,8 @@ public class DialogueManager : MonoBehaviour
 
     [Header("State (read-only)")]
     public bool isOpen;
+    [SerializeField] private GameObject continueButton;
+    private bool continueButtonWasActive;
 
     // Runtime flags
     private bool isTyping = false;
@@ -220,6 +222,7 @@ public class DialogueManager : MonoBehaviour
 
         // Verrouille les déplacements
         TogglePlayerMovement(false);
+        SetContinueButtonVisibility(true);
 
         yield return null; // Laisse l'UI s'init
         PositionDialogueBox(container);
@@ -257,6 +260,7 @@ public class DialogueManager : MonoBehaviour
 
         onDialogueEndCallback?.Invoke();
         onDialogueEndCallback = null;
+        RestoreContinueButtonVisibility();
     }
 
     /// <summary>
@@ -344,6 +348,7 @@ public class DialogueManager : MonoBehaviour
 
         // Verrouille les déplacements
         TogglePlayerMovement(false);
+        SetContinueButtonVisibility(false);
 
         yield return null; // init UI
         PositionDialogueBox(container);
@@ -386,6 +391,7 @@ public class DialogueManager : MonoBehaviour
 
         onDialogueEndCallback?.Invoke();
         onDialogueEndCallback = null;
+        RestoreContinueButtonVisibility();
     }
 
     /// <summary>
@@ -715,5 +721,22 @@ public class DialogueManager : MonoBehaviour
         float clampedY = Mathf.Clamp(desired.y, yMin, yMax);
 
         return new Vector2(clampedX, clampedY);
+    }
+
+    private void SetContinueButtonVisibility(bool shouldBeVisible)
+    {
+        if (continueButton == null)
+            return;
+
+        continueButtonWasActive = continueButton.activeSelf;
+        continueButton.SetActive(shouldBeVisible);
+    }
+
+    private void RestoreContinueButtonVisibility()
+    {
+        if (continueButton == null)
+            return;
+
+        continueButton.SetActive(continueButtonWasActive);
     }
 }
