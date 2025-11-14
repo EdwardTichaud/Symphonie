@@ -460,6 +460,7 @@ public class AudioManager : MonoBehaviour
     private void StartCrossfade(AudioClipSO newClip, float startTime)
     {
         currentMusicAsset = newClip;
+        AnnounceMusic(newClip);
 
         if (crossfadeRoutine != null)
             StopCoroutine(crossfadeRoutine);
@@ -470,6 +471,7 @@ public class AudioManager : MonoBehaviour
     private void SwitchImmediately(AudioClipSO newClip)
     {
         currentMusicAsset = newClip;
+        AnnounceMusic(newClip);
 
         if (crossfadeRoutine != null)
             StopCoroutine(crossfadeRoutine);
@@ -499,6 +501,17 @@ public class AudioManager : MonoBehaviour
         float volumeFactor = ResolveVolume(newClip, DefaultVolume);
         source.volume = musicVolume * normalization * volumeFactor;
         source.Play();
+    }
+
+    /// <summary>
+    /// Met à jour la boîte d'information musicale en bas de l'écran.
+    /// </summary>
+    private void AnnounceMusic(AudioClipSO clip)
+    {
+        if (clip == null)
+            return;
+
+        MusicInfoBoxUI.Instance.Show(clip);
     }
 
     private IEnumerator CrossfadeMusic(AudioClipSO newClip, float startTime)

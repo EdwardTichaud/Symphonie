@@ -1,19 +1,25 @@
 using UnityEngine;
 
 /// <summary>
-/// Gère l'affichage de la LocalInfoBox en World Space et la fait suivre
-/// l'objet <see cref="InteractionManager.currentInteractable"/>.
-/// L'UI reste en permanence orientée vers la <c>WorldCamera</c> et prend
-/// en compte un décalage configurable pour chaque objet interactif.
+/// Affiche la LocalInfoBox en world space mais la positionne
+/// systématiquement par rapport au joueur plutôt que sur la cible.
 /// </summary>
 [RequireComponent(typeof(Canvas))]
 public class LocalInfoBox : MonoBehaviour
 {
-    [Tooltip("Décalage utilisé si l'objet interactif n'en fournit pas." )]
-    public Vector3 defaultOffset; // Valeur de repli
+    [Header("Placement")]
+    [Tooltip("Référence du joueur à suivre. Laisser vide pour recherche automatique via le tag Player.")]
+    public Transform playerTransform;
+
+    [Tooltip("Décalage appliqué au-dessus du joueur.")]
+    public Vector3 playerOffset = new Vector3(0f, 2f, 0f);
+
+    [Tooltip("Tente de retrouver automatiquement le joueur si la référence est perdue.")]
+    public bool autoResolvePlayer = true;
 
     private Canvas canvas;
     private Camera worldCamera;
+    private bool warnedMissingPlayer;
 
     private void Awake()
     {
@@ -32,6 +38,15 @@ public class LocalInfoBox : MonoBehaviour
         {
             Debug.LogWarning("[LocalInfoBox] WorldCamera introuvable.");
         }
+
+        if (playerTransform == null && autoResolvePlayer)
+            TryResolvePlayer();
+    }
+
+    private void OnEnable()
+    {
+        if (playerTransform == null && autoResolvePlayer)
+            TryResolvePlayer();
     }
 
     private void LateUpdate()
@@ -41,21 +56,37 @@ public class LocalInfoBox : MonoBehaviour
         if (interactable == null)
             return;
 
-        // Récupère un éventuel offset spécifique sur l'objet ciblé.
-        Vector3 offset = defaultOffset;
-        var target = interactable.GetComponent<ILocalInfoBoxTarget>();
-        if (target != null)
+        if (playerTransform == null)
         {
-            offset = target.LocalInfoBoxOffset;
+            if (!autoResolvePlayer || !TryResolvePlayer())
+                return;
         }
 
-        // Positionne la boîte en tenant compte de l'offset.
-        transform.position = interactable.transform.position + offset;
+        // Positionne la boîte directement sur le joueur avec l'offset défini dans l'inspecteur.
+        transform.position = playerTransform.position + playerOffset;
 
         // Oriente la boîte vers la WorldCamera pour rester lisible.
         if (worldCamera != null)
         {
             transform.rotation = Quaternion.LookRotation(transform.position - worldCamera.transform.position);
         }
+    }
+
+    private bool TryResolvePlayer()
+    {
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            playerTransform = player.transform;
+            warnedMissingPlayer = false;
+            return true;
+        }
+
+        if (!warnedMissingPlayer)
+        {
+            Debug.LogWarning("[LocalInfoBox] Aucun joueur trouvé pour positionner l'invite.");
+            warnedMissingPlayer = true;
+        }
+        return false;
     }
 }

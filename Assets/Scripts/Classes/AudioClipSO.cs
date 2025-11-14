@@ -11,6 +11,9 @@ public class AudioClipSO : ScriptableObject
     [Tooltip("Clip audio à jouer.")]
     public AudioClip audioClip;
 
+    public string title;
+    public string compositor;
+
     [Header("Paramètres de lecture par défaut")]
     [Range(0f, 1f)]
     [Tooltip("Volume appliqué par défaut lorsque ce clip est joué.")]
