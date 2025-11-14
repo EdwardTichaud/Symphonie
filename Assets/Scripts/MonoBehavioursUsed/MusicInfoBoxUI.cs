@@ -35,7 +35,7 @@ public class MusicInfoBoxUI : MonoBehaviour
 
     [Header("Animation")]
     [SerializeField, Range(0.1f, 3f)] private float fadeDuration = 0.35f;
-    [SerializeField, Range(1f, 10f)] private float displayDuration = 5f;
+    [SerializeField, Range(1f, 10f)] private float displayDuration = 3f;
 
     private Coroutine displayRoutine;
     private bool runtimeGenerated;

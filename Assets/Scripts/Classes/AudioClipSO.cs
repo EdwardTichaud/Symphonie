@@ -7,6 +7,16 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "AudioClipSO", menuName = "Symphonie/Audio Clip", order = 0)]
 public class AudioClipSO : ScriptableObject
 {
+    public enum AudioClipType
+    {
+        SoundEffect,
+        Music,
+        Ambient,
+        VoiceOver
+    }
+
+    public AudioClipType type;
+
     [Header("Clip de référence")]
     [Tooltip("Clip audio à jouer.")]
     public AudioClip audioClip;
