@@ -95,6 +95,13 @@ public class AudioManager : MonoBehaviour
     private AudioClipSO currentMusicAsset;
     private Dictionary<AudioClip, float> normalizationCache = new Dictionary<AudioClip, float>();
 
+    // Gestion des musiques déclenchées à la volée (timelines, scripts, etc.).
+    private AudioSource musicOverrideSource;
+    private AudioClipSO overrideMusicAsset;
+    private float? overrideCustomVolume;
+    private Coroutine musicOverrideWatcher;
+    private bool[] pausedMusicStates;
+
     /// <summary>
     /// Classe interne dédiée au suivi des AudioSource créées dynamiquement pour les SFX/voix.
     /// Elle nous permet de recalculer facilement les volumes lorsque les réglages globaux changent
@@ -248,6 +255,13 @@ public class AudioManager : MonoBehaviour
             source.volume = musicVolume * factor;
         }
         UpdateWarningVolume();
+
+        if (musicOverrideSource != null && musicOverrideSource.isPlaying && musicOverrideSource.clip != null)
+        {
+            float normalization = GetNormalizationFactor(musicOverrideSource.clip);
+            float volumeFactor = overrideCustomVolume ?? (overrideMusicAsset != null ? ResolveVolume(overrideMusicAsset, DefaultVolume) : DefaultVolume);
+            musicOverrideSource.volume = musicVolume * normalization * volumeFactor;
+        }
     }
 
     public void SetSfxVolume(float value)
@@ -260,6 +274,119 @@ public class AudioManager : MonoBehaviour
     {
         voiceVolume = Mathf.Clamp01(value);
         RefreshDynamicVolumes(activeVoiceHandles, voiceVolume);
+    }
+
+    #endregion
+
+    #region 🎼 Gestion des musiques instantanées
+
+    private void EnsureMusicOverrideSource()
+    {
+        if (musicOverrideSource != null)
+            return;
+
+        var go = new GameObject("AudioSource_Music_Override");
+        go.transform.SetParent(transform);
+        musicOverrideSource = go.AddComponent<AudioSource>();
+        musicOverrideSource.playOnAwake = false;
+        musicOverrideSource.loop = false;
+
+        if (musicSources != null && musicSources.Length > 0 && musicSources[0] != null)
+            CopySourceSettings(musicSources[0], musicOverrideSource);
+    }
+
+    private void PauseMainMusic()
+    {
+        if (pausedMusicStates != null)
+            return;
+
+        if (musicSources == null || musicSources.Length == 0)
+            return;
+
+        pausedMusicStates = new bool[musicSources.Length];
+        for (int i = 0; i < musicSources.Length; i++)
+        {
+            var source = musicSources[i];
+            if (source != null && source.isPlaying)
+            {
+                source.Pause();
+                pausedMusicStates[i] = true;
+            }
+        }
+    }
+
+    private void ResumeMainMusic()
+    {
+        if (pausedMusicStates == null)
+            return;
+
+        for (int i = 0; i < musicSources.Length && i < pausedMusicStates.Length; i++)
+        {
+            if (pausedMusicStates[i] && musicSources[i] != null)
+                musicSources[i].UnPause();
+        }
+
+        pausedMusicStates = null;
+    }
+
+    private void StopMusicOverride(bool resumeMainMusic = true)
+    {
+        if (musicOverrideWatcher != null)
+        {
+            StopCoroutine(musicOverrideWatcher);
+            musicOverrideWatcher = null;
+        }
+
+        if (musicOverrideSource != null)
+            musicOverrideSource.Stop();
+
+        overrideMusicAsset = null;
+        overrideCustomVolume = null;
+
+        if (resumeMainMusic)
+            ResumeMainMusic();
+    }
+
+    private IEnumerator WaitForOverrideEnd()
+    {
+        while (musicOverrideSource != null && musicOverrideSource.isPlaying)
+            yield return null;
+
+        StopMusicOverride();
+    }
+
+    public void PlayMusicOverride(AudioClipSO clipAsset, float? customVolume = null)
+    {
+        if (clipAsset == null)
+            return;
+
+        AudioClip clip = ResolveClip(clipAsset);
+        if (clip == null)
+            return;
+
+        StopMusicOverride(resumeMainMusic: false);
+        PauseMainMusic();
+        EnsureMusicOverrideSource();
+
+        musicOverrideSource.clip = clip;
+        musicOverrideSource.loop = clipAsset.Loop;
+
+        float normalization = GetNormalizationFactor(clip);
+        float volumeFactor = customVolume.HasValue
+            ? Mathf.Clamp01(customVolume.Value)
+            : ResolveVolume(clipAsset, DefaultVolume);
+
+        musicOverrideSource.volume = musicVolume * normalization * volumeFactor;
+        musicOverrideSource.time = 0f;
+        musicOverrideSource.Play();
+
+        overrideMusicAsset = clipAsset;
+        overrideCustomVolume = customVolume;
+
+        if (!clipAsset.Loop)
+            musicOverrideWatcher = StartCoroutine(WaitForOverrideEnd());
+
+        AnnounceMusic(clipAsset);
     }
 
     #endregion
@@ -459,6 +586,7 @@ public class AudioManager : MonoBehaviour
 
     private void StartCrossfade(AudioClipSO newClip, float startTime)
     {
+        StopMusicOverride();
         currentMusicAsset = newClip;
         AnnounceMusic(newClip);
 
@@ -470,6 +598,7 @@ public class AudioManager : MonoBehaviour
 
     private void SwitchImmediately(AudioClipSO newClip)
     {
+        StopMusicOverride();
         currentMusicAsset = newClip;
         AnnounceMusic(newClip);
 
@@ -774,6 +903,12 @@ public class AudioManager : MonoBehaviour
     {
         if (clipAsset == null)
             return;
+
+        if (clipAsset.type == AudioClipSO.AudioClipType.Music)
+        {
+            PlayMusicOverride(clipAsset);
+            return;
+        }
 
         PlaySfx(ResolveClip(clipAsset), ResolveVolume(clipAsset), ResolveLoop(clipAsset));
     }

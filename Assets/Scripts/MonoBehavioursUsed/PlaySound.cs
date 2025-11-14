@@ -47,8 +47,10 @@ public class PlaySound : MonoBehaviour
         }
         if (AudioManager.Instance != null)
         {
-            // Passage par le gestionnaire global afin de respecter les volumes et priorités du mixage.
-            AudioManager.Instance.PlaySfx(clipAsset);
+            if (clipAsset.type == AudioClipSO.AudioClipType.Music)
+                AudioManager.Instance.PlayMusicOverride(clipAsset);
+            else
+                AudioManager.Instance.PlaySfx(clipAsset);
             return;
         }
 

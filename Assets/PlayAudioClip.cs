@@ -157,6 +157,13 @@ public class PlayAudioClip : MonoBehaviour
             return;
         }
 
+        if (clipAsset.type == AudioClipSO.AudioClipType.Music)
+        {
+            float? customVolume = overrideVolume ? Mathf.Clamp01(volumeOverride) : (float?)null;
+            manager.PlayMusicOverride(clipAsset, customVolume);
+            return;
+        }
+
         switch (defaultChannel)
         {
             case AudioChannel.Voice:

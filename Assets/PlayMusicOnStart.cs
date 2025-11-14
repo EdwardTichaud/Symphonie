@@ -12,6 +12,15 @@ public class PlayMusicOnStart : MonoBehaviour
         if (clipToPlay == null || clipToPlay.Clip == null)
             return;
 
+        if (AudioManager.Instance != null)
+        {
+            if (clipToPlay.type == AudioClipSO.AudioClipType.Music)
+                AudioManager.Instance.PlayMusicOverride(clipToPlay);
+            else
+                AudioManager.Instance.PlaySfx(clipToPlay);
+            return;
+        }
+
         audioSource.loop = clipToPlay.Loop;
         audioSource.clip = clipToPlay.Clip;
         audioSource.volume = clipToPlay.Volume;
