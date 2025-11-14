@@ -186,7 +186,6 @@ GameObject:
   - component: {fileID: 7475893172721065688}
   - component: {fileID: 8784307329092069573}
   - component: {fileID: 7379390016632305236}
-  - component: {fileID: 8590410456671727858}
   m_Layer: 11
   m_Name: LocalInfoBoxCanvas
   m_TagString: Untagged
@@ -277,22 +276,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &8590410456671727858
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3711886962752427007}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1c2597004485c7348a9b6ebba5f274bc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MusicInfoBoxUI
-  anchoredPosition: {x: 30, y: 30}
-  boxSize: {x: 360, y: 96}
-  fadeDuration: 0.35
-  displayDuration: 5
 --- !u!1 &4870168035817277207
 GameObject:
   m_ObjectHideFlags: 0

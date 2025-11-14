@@ -6,7 +6,6 @@ using UnityEngine.UI;
 /// <summary>
 /// Affiche une vignette indiquant le titre et le compositeur de la musique
 /// actuellement lancée via un <see cref="AudioClipSO"/>.
-/// L'élément est automatiquement créé au premier usage et persiste entre les scènes.
 /// </summary>
 public class MusicInfoBoxUI : MonoBehaviour
 {
@@ -17,26 +16,29 @@ public class MusicInfoBoxUI : MonoBehaviour
         {
             if (instance == null)
             {
-                var go = new GameObject("MusicInfoBoxUI");
-                instance = go.AddComponent<MusicInfoBoxUI>();
+                instance = FindObjectOfType<MusicInfoBoxUI>(true);
+                if (instance == null)
+                {
+                    var go = new GameObject("MusicInfoBoxUI");
+                    instance = go.AddComponent<MusicInfoBoxUI>();
+                }
             }
             return instance;
         }
     }
 
-    [Header("Layout")]
-    [SerializeField] private Vector2 anchoredPosition = new Vector2(30f, 30f);
-    [SerializeField] private Vector2 boxSize = new Vector2(360f, 96f);
+    [Header("References")]
+    [SerializeField] private RectTransform infoContainer;
+    [SerializeField] private CanvasGroup infoGroup;
+    [SerializeField] private TextMeshProUGUI titleLabel;
+    [SerializeField] private TextMeshProUGUI composerLabel;
 
     [Header("Animation")]
     [SerializeField, Range(0.1f, 3f)] private float fadeDuration = 0.35f;
     [SerializeField, Range(1f, 10f)] private float displayDuration = 5f;
 
-    private CanvasGroup canvasGroup;
-    private RectTransform panelRect;
-    private TextMeshProUGUI titleLabel;
-    private TextMeshProUGUI composerLabel;
     private Coroutine displayRoutine;
+    private bool runtimeGenerated;
 
     private void Awake()
     {
@@ -48,8 +50,17 @@ public class MusicInfoBoxUI : MonoBehaviour
 
         instance = this;
         DontDestroyOnLoad(gameObject);
-        BuildUIIfNeeded();
+        InitializeUI();
         HideImmediate();
+    }
+
+    private void InitializeUI()
+    {
+        if (TryBindExistingHierarchy())
+            return;
+
+        BuildRuntimeUI();
+        runtimeGenerated = true;
     }
 
     /// <summary>
@@ -60,7 +71,7 @@ public class MusicInfoBoxUI : MonoBehaviour
         if (clip == null)
             return;
 
-        BuildUIIfNeeded();
+        EnsureUIReady();
 
         string title = string.IsNullOrWhiteSpace(clip.title)
             ? clip.Clip != null ? clip.Clip.name : clip.name
@@ -80,11 +91,61 @@ public class MusicInfoBoxUI : MonoBehaviour
         displayRoutine = StartCoroutine(DisplaySequence());
     }
 
-    private void BuildUIIfNeeded()
+    private void EnsureUIReady()
     {
-        if (canvasGroup != null)
+        if (infoContainer != null && infoGroup != null && titleLabel != null && composerLabel != null)
             return;
 
+        if (!TryBindExistingHierarchy())
+        {
+            if (!runtimeGenerated)
+                BuildRuntimeUI();
+        }
+    }
+
+    private bool TryBindExistingHierarchy()
+    {
+        RectTransform rootRect = infoContainer;
+
+        if (rootRect == null)
+        {
+            var explicitChild = transform.Find("MusicInfoBox");
+            if (explicitChild != null)
+            {
+                rootRect = explicitChild as RectTransform;
+            }
+            else
+            {
+                foreach (var child in GetComponentsInChildren<RectTransform>(true))
+                {
+                    if (child.gameObject == gameObject)
+                        continue;
+
+                    if (child.name.Contains("MusicInfoBox"))
+                    {
+                        rootRect = child;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (rootRect == null)
+            return false;
+
+        infoContainer = rootRect;
+        infoGroup = infoGroup ?? rootRect.GetComponent<CanvasGroup>() ?? rootRect.gameObject.AddComponent<CanvasGroup>();
+        titleLabel = titleLabel ?? rootRect.Find("MusicInfoBox_Title")?.GetComponent<TextMeshProUGUI>();
+        composerLabel = composerLabel ?? rootRect.Find("MusicInfoBox_Compositor")?.GetComponent<TextMeshProUGUI>();
+
+        if (titleLabel == null || composerLabel == null)
+            return false;
+
+        return true;
+    }
+
+    private void BuildRuntimeUI()
+    {
         var canvasGO = new GameObject("MusicInfoCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         canvasGO.transform.SetParent(transform, false);
 
@@ -97,21 +158,22 @@ public class MusicInfoBoxUI : MonoBehaviour
         scaler.referenceResolution = new Vector2(1920f, 1080f);
         scaler.matchWidthOrHeight = 0.5f;
 
-        var panelGO = new GameObject("Panel", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
+        var panelGO = new GameObject("MusicInfoBox", typeof(RectTransform), typeof(Image), typeof(CanvasGroup));
         panelGO.transform.SetParent(canvasGO.transform, false);
 
-        panelRect = panelGO.GetComponent<RectTransform>();
-        panelRect.anchorMin = Vector2.zero;
-        panelRect.anchorMax = Vector2.zero;
-        panelRect.pivot = Vector2.zero;
-        ApplyLayoutSettings();
+        infoContainer = panelGO.GetComponent<RectTransform>();
+        infoContainer.anchorMin = Vector2.zero;
+        infoContainer.anchorMax = Vector2.zero;
+        infoContainer.pivot = Vector2.zero;
+        infoContainer.anchoredPosition = new Vector2(30f, 30f);
+        infoContainer.sizeDelta = new Vector2(360f, 96f);
 
         var bg = panelGO.GetComponent<Image>();
         bg.color = new Color(0f, 0f, 0f, 0.6f);
 
-        canvasGroup = panelGO.GetComponent<CanvasGroup>();
+        infoGroup = panelGO.GetComponent<CanvasGroup>();
 
-        titleLabel = CreateText("Title", panelRect, 24f, FontStyles.Bold);
+        titleLabel = CreateText("MusicInfoBox_Title", infoContainer, 24f, FontStyles.Bold);
         titleLabel.rectTransform.anchorMin = new Vector2(0f, 1f);
         titleLabel.rectTransform.anchorMax = new Vector2(1f, 1f);
         titleLabel.rectTransform.pivot = new Vector2(0f, 1f);
@@ -119,22 +181,13 @@ public class MusicInfoBoxUI : MonoBehaviour
         titleLabel.rectTransform.offsetMax = new Vector2(-16f, -16f);
         titleLabel.alignment = TextAlignmentOptions.Left;
 
-        composerLabel = CreateText("Composer", panelRect, 18f, FontStyles.Italic);
+        composerLabel = CreateText("MusicInfoBox_Compositor", infoContainer, 18f, FontStyles.Italic);
         composerLabel.rectTransform.anchorMin = new Vector2(0f, 0f);
         composerLabel.rectTransform.anchorMax = new Vector2(1f, 0f);
         composerLabel.rectTransform.pivot = new Vector2(0f, 0f);
         composerLabel.rectTransform.offsetMin = new Vector2(16f, 16f);
         composerLabel.rectTransform.offsetMax = new Vector2(-16f, 48f);
         composerLabel.alignment = TextAlignmentOptions.Left;
-    }
-
-    private void ApplyLayoutSettings()
-    {
-        if (panelRect == null)
-            return;
-
-        panelRect.anchoredPosition = anchoredPosition;
-        panelRect.sizeDelta = boxSize;
     }
 
     private TextMeshProUGUI CreateText(string name, Transform parent, float size, FontStyles style)
@@ -160,38 +213,34 @@ public class MusicInfoBoxUI : MonoBehaviour
 
     private IEnumerator FadeCanvas(float targetAlpha)
     {
-        float startAlpha = canvasGroup.alpha;
+        float startAlpha = infoGroup.alpha;
         float timer = 0f;
 
         while (timer < fadeDuration)
         {
             timer += Time.unscaledDeltaTime;
-            canvasGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, timer / fadeDuration);
+            infoGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, timer / fadeDuration);
             yield return null;
         }
 
-        canvasGroup.alpha = targetAlpha;
-        canvasGroup.blocksRaycasts = targetAlpha > 0f;
-        canvasGroup.interactable = targetAlpha > 0f;
+        infoGroup.alpha = targetAlpha;
+        infoGroup.blocksRaycasts = targetAlpha > 0f;
+        infoGroup.interactable = targetAlpha > 0f;
     }
 
     private void HideImmediate()
     {
-        if (canvasGroup == null)
+        if (infoGroup == null)
             return;
 
-        canvasGroup.alpha = 0f;
-        canvasGroup.blocksRaycasts = false;
-        canvasGroup.interactable = false;
+        infoGroup.alpha = 0f;
+        infoGroup.blocksRaycasts = false;
+        infoGroup.interactable = false;
     }
 
-#if UNITY_EDITOR
-    private void OnValidate()
+    private void OnDestroy()
     {
-        if (Application.isPlaying)
-        {
-            ApplyLayoutSettings();
-        }
+        if (instance == this)
+            instance = null;
     }
-#endif
 }
