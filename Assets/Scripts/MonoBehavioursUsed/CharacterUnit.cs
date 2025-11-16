@@ -675,6 +675,22 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public CharacterType characterType => Data.characterType;
 
     private float _currentHP;
+    private float _currentRage;
+    private float _currentStrength;
+    private float _currentDefense;
+    private float _currentReflex;
+    private float _currentMobility;
+    private float _currentPower;
+    private float _currentStability;
+    private float _currentVitality;
+    private float _currentSagacity;
+    private float _currentRange;
+    private float _currentFatigue;
+    private float _currentInitiative;
+    private float _currentInterceptionRange;
+    private float _currentInterceptionChance;
+    private int _currentHarmonicCharge;
+
     public float currentHP
     {
         get => _currentHP;
@@ -688,9 +704,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
             _currentHP = clampedValue;
 
-            if (Data != null)
-                Data.currentHP = clampedValue;
-
             // Préviens immédiatement toutes les interfaces (dont la timeline) que les PV ont changé.
             NotifyHealthChanged();
 
@@ -702,25 +715,28 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         }
     }
     public float currentMP;
-    public float currentRage { get => Data.currentRage; set => Data.currentRage = value; }
+    public float currentRage { get => _currentRage; set => _currentRage = value; }
 
-    public float currentStrength { get => Data.currentStrength; set => Data.currentStrength = value; }
-    public float currentDefense { get => Data.currentDefense; set => Data.currentDefense = value; }
-    public float currentReflex { get => Data.currentReflex; set => Data.currentReflex = value; }
-    public float currentMobility { get => Data.currentMobility; set => Data.currentMobility = value; }
-    public float currentPower { get => Data.currentPower; set => Data.currentPower = value; }
-    public float currentStability { get => Data.currentStability; set => Data.currentStability = value; }
+    public float currentStrength { get => _currentStrength; set => _currentStrength = value; }
+    public float currentDefense { get => _currentDefense; set => _currentDefense = value; }
+    public float currentReflex { get => _currentReflex; set => _currentReflex = value; }
+    public float currentMobility { get => _currentMobility; set => _currentMobility = value; }
+    public float currentPower { get => _currentPower; set => _currentPower = value; }
+    public float currentStability { get => _currentStability; set => _currentStability = value; }
     public float currentVitality
     {
-        get => Data.currentVitality;
+        get => _currentVitality;
         set
         {
-            Data.currentVitality = value;
+            _currentVitality = value;
             // La vitalité influence directement les PV max : on rafraîchit l'affichage et l'événement.
             NotifyHealthChanged(refreshMax: true);
         }
     }
-    public float currentSagacity { get => Data.currentSagacity; set => Data.currentSagacity = value; }
+    public float currentSagacity { get => _currentSagacity; set => _currentSagacity = value; }
+    public float currentRange { get => _currentRange; set => _currentRange = value; }
+    public float currentInterceptionRange { get => _currentInterceptionRange; set => _currentInterceptionRange = value; }
+    public float currentInterceptionChance { get => _currentInterceptionChance; set => _currentInterceptionChance = value; }
 
     public float currentMusicalGauge;
     // Nouvelle réserve d'harmoniques par type
@@ -730,10 +746,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     // Clé : move, Valeur : nombre d'utilisations
     public Dictionary<MusicalMoveSO, int> moveUsesThisTurn = new();
     public Dictionary<MusicalMoveSO, int> moveUsesThisBattle = new();
-    public float currentFatigue { get => Data.currentFatigue; set => Data.currentFatigue = value; }
+    public float currentFatigue { get => _currentFatigue; set => _currentFatigue = value; }
 
     // Gestion de l'initiative
-    public float currentInitiative { get => Data.currentInitiative; set => Data.currentInitiative = value; }
+    public float currentInitiative { get => _currentInitiative; set => _currentInitiative = value; }
     public float currentATB = 0f;
     public float ATBMax = 100f;
     public bool IsReady => currentATB >= ATBMax && currentHP > 0;
