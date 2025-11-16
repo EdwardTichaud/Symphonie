@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
@@ -32,13 +33,21 @@ public class MusicInfoBoxUI : MonoBehaviour
     [SerializeField] private CanvasGroup infoGroup;
     [SerializeField] private TextMeshProUGUI titleLabel;
     [SerializeField] private TextMeshProUGUI composerLabel;
+    [SerializeField] private ParticleSystem[] particleSystems;
 
     [Header("Animation")]
-    [SerializeField, Range(0.1f, 3f)] private float fadeDuration = 0.35f;
-    [SerializeField, Range(1f, 10f)] private float displayDuration = 3f;
+    [SerializeField, Range(0.1f, 5f)] private float fadeDuration = 1f;
+    [SerializeField, Range(0f, 20f)] private float displayDuration = 5f;
+    [SerializeField, Range(0f, 50f)] private float particleEmissionTarget = 5f;
 
     private Coroutine displayRoutine;
     private bool runtimeGenerated;
+    private ParticleState[] particleStates = Array.Empty<ParticleState>();
+
+    private struct ParticleState
+    {
+        public ParticleSystem system;
+    }
 
     private void Awake()
     {
@@ -57,10 +66,14 @@ public class MusicInfoBoxUI : MonoBehaviour
     private void InitializeUI()
     {
         if (TryBindExistingHierarchy())
+        {
+            CacheParticleStates();
             return;
+        }
 
         BuildRuntimeUI();
         runtimeGenerated = true;
+        CacheParticleStates();
     }
 
     /// <summary>
@@ -94,13 +107,19 @@ public class MusicInfoBoxUI : MonoBehaviour
     private void EnsureUIReady()
     {
         if (infoContainer != null && infoGroup != null && titleLabel != null && composerLabel != null)
+        {
+            if (particleStates == null || particleStates.Length == 0)
+                CacheParticleStates();
             return;
+        }
 
         if (!TryBindExistingHierarchy())
         {
             if (!runtimeGenerated)
                 BuildRuntimeUI();
         }
+
+        CacheParticleStates();
     }
 
     private bool TryBindExistingHierarchy()
@@ -205,25 +224,33 @@ public class MusicInfoBoxUI : MonoBehaviour
 
     private IEnumerator DisplaySequence()
     {
+        SetContainerActive(true);
         yield return FadeCanvas(1f);
-        yield return new WaitForSecondsRealtime(displayDuration);
+        if (displayDuration > 0f)
+            yield return new WaitForSecondsRealtime(displayDuration);
         yield return FadeCanvas(0f);
+        SetContainerActive(false);
         displayRoutine = null;
     }
 
     private IEnumerator FadeCanvas(float targetAlpha)
     {
+        if (infoGroup == null)
+            yield break;
+
         float startAlpha = infoGroup.alpha;
         float timer = 0f;
+        float duration = Mathf.Max(0.01f, fadeDuration);
 
-        while (timer < fadeDuration)
+        while (timer < duration)
         {
             timer += Time.unscaledDeltaTime;
-            infoGroup.alpha = Mathf.Lerp(startAlpha, targetAlpha, timer / fadeDuration);
+            float alpha = Mathf.Lerp(startAlpha, targetAlpha, timer / duration);
+            ApplyVisualState(alpha);
             yield return null;
         }
 
-        infoGroup.alpha = targetAlpha;
+        ApplyVisualState(targetAlpha);
         infoGroup.blocksRaycasts = targetAlpha > 0f;
         infoGroup.interactable = targetAlpha > 0f;
     }
@@ -236,11 +263,111 @@ public class MusicInfoBoxUI : MonoBehaviour
         infoGroup.alpha = 0f;
         infoGroup.blocksRaycasts = false;
         infoGroup.interactable = false;
+        SetContainerActive(false);
+        UpdateParticleEmission(0f);
     }
 
     private void OnDestroy()
     {
         if (instance == this)
             instance = null;
+    }
+
+    private void CacheParticleStates()
+    {
+        ParticleSystem[] resolved = null;
+
+        if (particleSystems != null && particleSystems.Length > 0)
+        {
+            resolved = particleSystems;
+        }
+        else if (infoContainer != null)
+        {
+            resolved = infoContainer.GetComponentsInChildren<ParticleSystem>(true);
+        }
+
+        if (resolved == null || resolved.Length == 0)
+        {
+            particleStates = Array.Empty<ParticleState>();
+            return;
+        }
+
+        particleStates = new ParticleState[resolved.Length];
+        for (int i = 0; i < resolved.Length; i++)
+        {
+            var ps = resolved[i];
+            if (ps == null)
+                continue;
+
+            particleStates[i] = new ParticleState
+            {
+                system = ps
+            };
+
+            SetParticleEmission(ps, 0f);
+            ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
+    }
+
+    private void ApplyVisualState(float alpha)
+    {
+        if (infoGroup != null)
+            infoGroup.alpha = Mathf.Clamp01(alpha);
+
+        UpdateParticleEmission(alpha);
+    }
+
+    private void UpdateParticleEmission(float normalizedAlpha)
+    {
+        if (particleStates == null || particleStates.Length == 0)
+            return;
+
+        float clamped = Mathf.Clamp01(normalizedAlpha);
+        float targetRate = Mathf.Lerp(0f, particleEmissionTarget, clamped);
+        foreach (var state in particleStates)
+        {
+            var system = state.system;
+            if (system == null)
+                continue;
+
+            SetParticleEmission(system, targetRate);
+
+            if (targetRate > 0.001f)
+            {
+                if (!system.isPlaying)
+                    system.Play(true);
+            }
+            else if (system.isPlaying)
+            {
+                system.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            }
+        }
+    }
+
+    private void SetContainerActive(bool active)
+    {
+        if (infoGroup == null)
+            return;
+
+        var target = infoGroup.gameObject;
+        if (target == null)
+            return;
+
+        if (target == gameObject)
+            return;
+
+        if (target.activeSelf == active)
+            return;
+
+        target.SetActive(active);
+    }
+
+    private void SetParticleEmission(ParticleSystem system, float value)
+    {
+        if (system == null)
+            return;
+
+        var emission = system.emission;
+        emission.rateOverTime = new ParticleSystem.MinMaxCurve(value);
     }
 }

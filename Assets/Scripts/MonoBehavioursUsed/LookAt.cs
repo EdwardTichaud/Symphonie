@@ -4,6 +4,8 @@ using UnityEngine;
 public class LookAt : MonoBehaviour
 {
     [Header("Cible")]
+
+    public bool Enabled = true;
     public Transform target; // La cible à regarder
 
     [Header("Options")]
@@ -14,6 +16,7 @@ public class LookAt : MonoBehaviour
 
     void Update()
     {
+        if (!Enabled) return;
         if (target == null) return;
 
         // Calcul direction vers la cible avec offset de position

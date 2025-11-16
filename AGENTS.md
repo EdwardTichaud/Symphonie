@@ -1,31 +1,19 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `Assets/` houses all gameplay code (`Scripts/Classes`, `MonoBehavioursUsed`, `Interfaces`), scenes, prefabs, and art/audio assets. Third-party drop-ins live under `CC5 - AutoSetup/`.
-- `Packages/manifest.json` tracks Unity package dependencies (HDRP, Timeline, Cinemachine, Input System).
-- `ProjectSettings/` and `UserSettings/` contain Unity configuration; never edit manually unless you know the downstream impact.
-- Documentation is collected in `Docs/` (entry point: `Docs/IndexDocumentation.md`).
+Unity assets and gameplay logic live inside `Assets/`. Scripts are grouped by role (`Scripts/MonoBehavioursUsed` for runtime behaviours, `Scripts/Classes` for data helpers, ScriptableObjects throughout `Assets/<Feature>`). Prefabs, animations, and VFX referenced by UI (e.g., `LevelDisplayCanvas.prefab`, `MusicInfoBoxCanvas.prefab`) stay near their driving scripts. `CC5 - AutoSetup/` stores imported tooling, `Docs/` hosts reference material, and package/engine settings are confined to `Packages/manifest.json`, `ProjectSettings/`, and `UserSettings/`. Only edit settings when you understand the downstream impact, and keep `.meta` files paired with their assets.
 
 ## Build, Test, and Development Commands
-- `unity -projectPath . -executeMethod UnityEditor.BuildPlayerWindow.DefaultBuildMethods.BuildPlayer` — produces a build using the active build target.
-- `unity -projectPath . -runTests -testPlatform playmode` — executes play mode tests; replace `playmode` with `editmode` as needed.
-- `rg --files -g '*.cs'` and `rg TODO` are preferred for source scans over `grep` (already configured in this repo’s workflows).
+- `unity -projectPath . -runTests -testPlatform editmode` — executes Edit Mode suites headlessly; add `-testResults results.xml` for CI output.
+- `unity -projectPath . -runTests -testPlatform playmode` — runs Play Mode coverage in scenes such as Ruins; useful before merging gameplay/UI work.
+- `unity -projectPath . -quit -batchmode -executeMethod UnityEditor.BuildPlayerWindow.DefaultBuildMethods.BuildPlayer` — triggers the configured build target; ensure addressables are built beforehand if a scene depends on them.
+- `rg <pattern> Assets/Scripts` — preferred fast search; use it instead of `grep` when triaging code paths or TODOs.
 
 ## Coding Style & Naming Conventions
-- C# scripts use the default Unity style: four-space indentation, PascalCase for types/methods, camelCase for fields, and `kConstantCase` for consts.
-- ScriptableObject assets are suffixed with `SO` or a descriptive type (`MusicalMoveSO`, `TimelineBattleConfigSO`).
-- Keep MonoBehaviour filenames identical to class names and store them inside the closest relevant feature folder (e.g., combat logic under `MonoBehavioursUsed/`).
+Follow Unity C# defaults: four-space indentation, PascalCase for types/methods, camelCase for fields, and `k_` prefixes for serialized constants. File names must match MonoBehaviour class names. Keep feature assets together (e.g., `MusicInfoBoxUI.cs` beside `MusicInfoBoxCanvas.prefab`) and suffix ScriptableObjects with `SO` (e.g., `ZoneSO`). Particle systems, animations, and materials should use descriptive suffixes like `_Particles`, `_anim`, `_mat` to simplify searches.
 
 ## Testing Guidelines
-- PlayMode/EditMode tests follow Unity Test Framework conventions (`Tests/PlayMode`, `Tests/EditMode`). Mirror production namespaces and append `Tests` to the assembly definition.
-- Name tests with the pattern `Method_WhenCondition_ShouldResult`.
-- Run targeted suites via the Unity Test Runner UI or the CLI commands above. Maintain coverage for combat state machines, timeline management, and save/load flows.
+This repo uses the Unity Test Framework. Place Edit Mode suites under `Assets/Tests/EditMode`, Play Mode suites under `Assets/Tests/PlayMode`, mirroring production namespaces and suffixed with `Tests`. Name tests `Method_WhenCondition_ShouldResult`. Before opening a PR, run both CLI commands above and perform a short in-editor validation of any scene touched (e.g., confirm LevelDisplay/MusicInfo fades). Keep regression tests around battle logic, timelines, and audio playback.
 
 ## Commit & Pull Request Guidelines
-- Commits typically follow the imperative mood (`Fix timeline trigger double-play`, `Add input-safe time manager`). Group related asset meta changes with their source files.
-- Pull requests should describe gameplay impact, list verification steps (editor playthrough, automated tests), and attach screenshots/GIFs for visual/UI changes.
-- Reference Jira/Trello tickets or GitHub issues in the PR body using `Closes #123` when applicable, and ensure conflicts are resolved before requesting review.
-
-## Instructions spécifiques pour Codex
-- Par défaut, Codex doit communiquer en français (messages de commit, résumés, commentaires de revue).
-- Basculer en anglais uniquement si la tâche ou le ticket le demande explicitement.
+Commits should be small, scoped, and written in the imperative mood (`Implement LevelDisplay fade`, `Fix MusicInfo particles`). Always commit asset and `.meta` files together. Pull requests must summarize the change, list verification steps (tests run + manual playthrough), attach screenshots or clips for visual updates, and reference tracking issues using `Closes #123`. Resolve merge conflicts locally and ensure CI (including Unity tests) is green before requesting review.

@@ -1,0 +1,120 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbc0c89b53ea7e246ba03cfe31f29194, type: 3}
+  m_Name: Character_DemonDoll
+  m_EditorClassIdentifier: 
+  characterName: "Poup\xE9e mal\xE9fique"
+  portrait: {fileID: 21300000, guid: 63e892185fc76ce40b9984efd172a103, type: 3}
+  versusSprites:
+  - {fileID: 21300000, guid: 2cc33908b95b3a84d97187c8229044ce, type: 3}
+  characterType: 1
+  gameplayType: 0
+  harmonicType: 0
+  characterWorldModel: {fileID: 0}
+  characterBattleModel: {fileID: 919132149155446097, guid: 5e089ae1c9732b8418eb03b7b373e87e, type: 3}
+  battlefieldIndex: 0
+  isAirUnit: 1
+  distanceFromGround: 8
+  interceptable: 1
+  avoidable: 1
+  baseReflex: 0
+  baseMobility: 0
+  baseVitality: 0
+  basePower: 0
+  baseStability: 0
+  baseSagacity: 0
+  baseInitiative: 1
+  baseRange: 2
+  baseHP: 100
+  baseStrength: 1
+  baseDefense: 1
+  baseSpeed: 0
+  baseInterceptionRange: 2
+  baseRage: 0
+  maxRage: 0
+  rageDamageMultiplier: 0
+  baseFatigue: 0
+  maxFatigue: 0
+  basicAttack: []
+  musicalAttacks: []
+  specialMusicalMove: {fileID: 0}
+  musicalMoveSets: []
+  defaultMusicalMoveSetIndex: -1
+  itemSets: []
+  defaultItemSetIndex: -1
+  currentInitiative: 1
+  currentRange: 2
+  currentHP: 100
+  currentStrength: 1
+  currentDefense: 1
+  currentPower: 0
+  currentStability: 0
+  currentVitality: 0
+  currentSagacity: 0
+  isPlayerControlled: 0
+  currentRage: 0
+  currentFatigue: 0
+  currentReflex: 0
+  currentMobility: 0
+  currentSpeed: 0
+  currentInterceptionRange: 0
+  currentInterceptionChance: 0
+  currentHarmonicCharge: 1
+  currentMusicalMoveSetIndex: -1
+  currentItemSetIndex: -1
+  hitSound: {fileID: 0}
+  criticalHitSound: {fileID: 0}
+  interceptedSound: {fileID: 0}
+  interceptionSound: {fileID: 0}
+  prematureDeathTaunt: {fileID: 0}
+  loyaltyMarkTargetAlly: {fileID: 0}
+  hitEffect: {fileID: 0}
+  deathEffect: {fileID: 0}
+  dashParticlesPrefab: {fileID: 6843868886689424030, guid: 39cd3db8310d9e045ad6b122b69635a7, type: 3}
+  dashSoundClip: {fileID: 0}
+  awakenEffect_Start: {fileID: 0}
+  awakenEffect_Loop: {fileID: 0}
+  awakenEffect_End: {fileID: 0}
+  dissonanceEffect_Start: {fileID: 0}
+  dissonanceEffect_Loop: {fileID: 0}
+  dissonanceEffect_End: {fileID: 0}
+  awakeStatMultiplier: 1.5
+  hitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
+  deathAnimation: {fileID: 7400000, guid: 7f67a9c1949f03342bd793ce58156a74, type: 2}
+  TPAnimation_Start: {fileID: 7400000, guid: 4326dd0ea3dda9a45b9c75e45eaf1931, type: 3}
+  TPAnimation_Destination: {fileID: 7400000, guid: 4326dd0ea3dda9a45b9c75e45eaf1931, type: 3}
+  prepareToUndergoAnimation: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
+  awakenIdleAnimation: {fileID: 0}
+  dissonantIdleAnimation: {fileID: 0}
+  awakeEnterAnimation: {fileID: 0}
+  awakeExitAnimation: {fileID: 0}
+  dissonanceEnterAnimation: {fileID: 0}
+  dissonanceExitAnimation: {fileID: 0}
+  introTimeline: {fileID: 0}
+  moveStartClip: {fileID: 0}
+  moveEndClip: {fileID: 0}
+  menuSelectionClip: {fileID: 0}
+  awakeEnterClip: {fileID: 0}
+  awakeExitClip: {fileID: 0}
+  dissonanceEnterClip: {fileID: 0}
+  dissonanceExitClip: {fileID: 0}
+  idleEnterClip: {fileID: 0}
+  idleExitClip: {fileID: 0}
+  weepForLucianDeath: {fileID: 0}
+  weepForThaliaDeath: {fileID: 0}
+  weepForKaelDeath: {fileID: 0}
+  weepForLinkDeath: {fileID: 0}
+  weepForLunaDeath: {fileID: 0}
+  awakeHarmonicThreshold: 1
+  dissonancePoint: 0
+  baseHarmonicCharge: 1
+  owner: {fileID: 0}
