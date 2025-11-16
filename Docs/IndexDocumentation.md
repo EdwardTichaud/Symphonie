@@ -6,6 +6,7 @@ Ce document décrit l'organisation thématique des fichiers de `Docs/` afin de r
 - `HistoireSymphonie.md` : chronologie détaillée des arcs principaux.
 - `AngePleureur.md` : découpage du combat contre l’Ange Pleureur.
 - `Quotes.md` : citations clés à réutiliser dans les dialogues.
+- `CitesAngeliques.md` : répertoire des cités emblématiques aux racines angéliques.
 
 ## Thèmes gameplay
 - `LimitesUtilisationActions.md` : paramétrage des limites d'utilisation pour les MusicalMoves et Items.
