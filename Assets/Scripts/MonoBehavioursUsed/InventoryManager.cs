@@ -66,20 +66,12 @@ public class InventoryManager : MonoBehaviour
     [Tooltip("Nom du sous-panel sélectionné par défaut lors de l'ouverture de l'inventaire.")]
     [SerializeField] private string defaultSubPanelName = "Inventory_MusicalMovesSet_SubPanel";
 
-    /// <summary>
-    /// Dictionnaire interne pour accéder rapidement aux piles existantes.
-    /// </summary>
-    private readonly Dictionary<ItemData, InventoryItemStack> stackLookup = new();
-
-    /// <summary>
-    /// Liste réutilisée pour exposer un inventaire à plat (utilisée par l'UI).
-    /// </summary>
-    private readonly List<ItemData> flatInventoryCache = new();
+    private InventoryDataService inventoryData;
 
     /// <summary>
     /// Permet d'interroger directement les piles (utile pour les interfaces avancées).
     /// </summary>
-    public IReadOnlyList<InventoryItemStack> ItemStacks => itemStacks;
+    public IReadOnlyList<InventoryItemStack> ItemStacks => inventoryData?.ItemStacks ?? itemStacks;
 
     /// <remarks>
     /// La gestion des buffs, débuffs et autres états temporaires a été extraite dans
@@ -205,15 +197,16 @@ public class InventoryManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // On reconstruit le dictionnaire runtime à partir des données sérialisées.
-        RebuildLookup();
+        inventoryData = new InventoryDataService(itemStacks);
 
         // Conversion automatique des anciennes sauvegardes qui utilisaient une
         // simple liste de ScriptableObjects pour représenter l'inventaire.
-        ImportLegacySerializedItems();
-
-        // Un tri systématique garantit un affichage cohérent dans tous les menus.
-        SortStacks();
+        if (legacySerializedItems != null && legacySerializedItems.Count > 0)
+        {
+            foreach (var legacyItem in legacySerializedItems)
+                AddItemInternal(legacyItem, 1, false);
+            legacySerializedItems.Clear();
+        }
 
         // Les Sceaux suivent la même logique : on nettoie les données, on reconstruit les caches
         // et on impose une hiérarchie déterministe pour l'interface et les sauvegardes.
@@ -252,27 +245,8 @@ public class InventoryManager : MonoBehaviour
     /// <summary>
     /// Renvoie la liste des items que le joueur possède.
     /// </summary>
-    public IReadOnlyList<ItemData> GetInventoryItems()
-    {
-        flatInventoryCache.Clear();
-
-        foreach (var stack in itemStacks)
-        {
-            if (stack?.item == null)
-                continue;
-
-            if (stack.item.consumeOnUse && stack.quantity <= 0)
-                continue; // Pile vide : on ne l'affiche plus dans l'UI.
-
-            int copies = stack.item.consumeOnUse
-                ? stack.quantity
-                : Mathf.Max(1, stack.quantity);
-            for (int i = 0; i < copies; i++)
-                flatInventoryCache.Add(stack.item);
-        }
-
-        return flatInventoryCache;
-    }
+    public IReadOnlyList<ItemData> GetInventoryItems() =>
+        inventoryData?.BuildInventorySnapshot() ?? Array.Empty<ItemData>();
 
     /// <summary>
     /// Renvoie la liste des items possédés et utilisables en combat.
@@ -281,19 +255,9 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public List<ItemData> GetUsableItems(CharacterUnit prioritizedFor = null)
     {
-        List<ItemData> usable = new();
-
-        foreach (var stack in itemStacks)
-        {
-            if (!IsStackUsable(stack))
-                continue;
-
-            int copies = stack.item.consumeOnUse
-                ? stack.quantity
-                : Mathf.Max(1, stack.quantity);
-            for (int i = 0; i < copies; i++)
-                usable.Add(stack.item);
-        }
+        List<ItemData> usable = inventoryData != null
+            ? inventoryData.BuildUsableItems()
+            : new List<ItemData>();
 
         if (prioritizedFor == null || prioritizedFor.Data == null)
             return usable;
@@ -311,18 +275,11 @@ public class InventoryManager : MonoBehaviour
 
     private void AddItemInternal(ItemData item, int quantity, bool logAddition)
     {
-        if (item == null || quantity <= 0)
+        if (inventoryData == null)
             return;
 
-        if (!stackLookup.TryGetValue(item, out var stack))
-        {
-            stack = new InventoryItemStack(item, 0);
-            itemStacks.Add(stack);
-            stackLookup[item] = stack;
-        }
-
-        stack.AddQuantity(quantity);
-        SortStacks();
+        if (!inventoryData.AddItem(item, quantity))
+            return;
 
         if (logAddition)
             Debug.Log($"[Inventory] Ajout de l'objet : {item.itemName} (x{quantity}).");
@@ -374,13 +331,7 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public bool CanUseItem(ItemData item)
     {
-        if (item == null)
-            return false;
-
-        if (!stackLookup.TryGetValue(item, out var stack))
-            return false;
-
-        return IsStackUsable(stack);
+        return inventoryData != null && inventoryData.CanUseItem(item);
     }
 
     /// <summary>
@@ -388,18 +339,7 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public void RegisterItemUse(ItemData item)
     {
-        if (!stackLookup.TryGetValue(item, out var stack))
-            return;
-
-        bool consumed = stack.RegisterUse(item.consumeOnUse);
-        if (!consumed && item.consumeOnUse)
-            return;
-
-        if (item.consumeOnUse && stack.quantity <= 0)
-        {
-            itemStacks.Remove(stack);
-            stackLookup.Remove(item);
-        }
+        inventoryData?.RegisterItemUse(item);
     }
 
     /// <summary>
@@ -407,8 +347,7 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public void ResetTurnItemUsage()
     {
-        foreach (var stack in itemStacks)
-            stack?.ResetTurnUsage();
+        inventoryData?.ResetTurnUsage();
     }
 
     /// <summary>
@@ -416,32 +355,7 @@ public class InventoryManager : MonoBehaviour
     /// </summary>
     public void ResetBattleItemUsage()
     {
-        foreach (var stack in itemStacks)
-            stack?.ResetBattleUsage();
-    }
-
-    /// <summary>
-    /// Vérifie si la pile peut être utilisée (stock suffisant + limites respectées).
-    /// </summary>
-    private bool IsStackUsable(InventoryItemStack stack)
-    {
-        if (stack == null || stack.item == null)
-            return false;
-
-        if (!stack.item.isUsableInBattle)
-            return false;
-
-        bool hasStock = stack.item.consumeOnUse ? stack.quantity > 0 : true;
-        if (!hasStock)
-            return false;
-
-        if (stack.item.maxUsesPerTurn > 0 && stack.usesThisTurn >= stack.item.maxUsesPerTurn)
-            return false;
-
-        if (stack.item.maxUsesPerBattle > 0 && stack.usesThisBattle >= stack.item.maxUsesPerBattle)
-            return false;
-
-        return true;
+        inventoryData?.ResetBattleUsage();
     }
 
     /// <summary>
@@ -1349,37 +1263,6 @@ public class InventoryManager : MonoBehaviour
     /// Liste vide réutilisable afin d'éviter des allocations inutiles.
     /// </summary>
     private static readonly List<RectTransform> EmptySlotList = new();
-
-    private void RebuildLookup()
-    {
-        stackLookup.Clear();
-        itemStacks ??= new List<InventoryItemStack>();
-        itemStacks.RemoveAll(stack => stack == null || stack.item == null);
-
-        foreach (var stack in itemStacks)
-            stackLookup[stack.item] = stack;
-    }
-
-    private void ImportLegacySerializedItems()
-    {
-        if (legacySerializedItems == null || legacySerializedItems.Count == 0)
-            return;
-
-        foreach (var item in legacySerializedItems)
-            AddItemInternal(item, 1, false);
-
-        legacySerializedItems.Clear();
-    }
-
-    private void SortStacks()
-    {
-        itemStacks.Sort((a, b) =>
-        {
-            string aName = a?.item != null ? a.item.itemName : string.Empty;
-            string bName = b?.item != null ? b.item.itemName : string.Empty;
-            return string.Compare(aName, bName, System.StringComparison.OrdinalIgnoreCase);
-        });
-    }
 
     /// <summary>
     /// Prépare les données liées aux Sceaux (nettoyage, tri et constitution des dictionnaires d'accès rapide).

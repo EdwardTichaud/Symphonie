@@ -275,7 +275,7 @@ public class ItemData : ScriptableObject
     private void ApplyIncreaseRange(CharacterUnit target, float value)
     {
         if (target != null)
-            target.Data.currentRange += value;
+            target.currentRange += value;
     }
 
     private void ApplyInterceptionImmunity(CharacterUnit target)
@@ -290,7 +290,7 @@ public class ItemData : ScriptableObject
 
     private void ApplySleep(CharacterUnit target)
     {
-        CharacterStatusEffectController.ApplySleep(target);
+        CharacterStatusEffectController.ApplySleep(target, Mathf.Max(1, effectValue));
     }
 
     private void ApplyWakeUp(CharacterUnit target)
@@ -300,6 +300,6 @@ public class ItemData : ScriptableObject
 }
 
 public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange, PreventInterception, ExtendEffects, Sleep, WakeUp }
-public enum BuffStatType { None, Strength, Defense, Initiative }
-public enum DebuffStatType { None, Strength, Defense, Initiative }
+public enum BuffStatType { None, Strength, Defense, Initiative, MaxHP }
+public enum DebuffStatType { None, Strength, Defense, Initiative, MaxHP }
 public enum TimingBoostType { None, ParryWindow, DodgeWindow }

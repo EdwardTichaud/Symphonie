@@ -24,6 +24,10 @@ public class PlayerDetection : MonoBehaviour
     [Tooltip("Tag utilisé pour identifier les ennemis (par exemple : \"Enemy\").")]
     public string enemyTag = "Enemy";
 
+    private readonly Collider[] baseDetectionBuffer = new Collider[32];
+    private readonly Collider[] expandedDetectionBuffer = new Collider[64];
+    private readonly List<Enemy> detectionCandidates = new();
+
     // ------------------------------------------------------------------
     // Liste temporaire des ennemis actuellement engagés dans un combat
     // Permet d'éviter de redétecter en boucle les mêmes ennemis tant
@@ -84,21 +88,19 @@ public class PlayerDetection : MonoBehaviour
         if (!detectionOn)
             return;
 
-        // On recherche tous les colliders dans le rayon de base (sans layer mask)
-        // afin de savoir s'il y a réellement un ennemi à proximité avant de jouer une voix.
-        Collider[] initialColliders = Physics.OverlapSphere(
-            transform.position,
-            currentDetectionRadius
-        );
+        Vector3 origin = transform.position;
+        int baseHitCount = Physics.OverlapSphereNonAlloc(origin, currentDetectionRadius, baseDetectionBuffer);
+        bool enemyDetected = false;
+        for (int i = 0; i < baseHitCount; i++)
+        {
+            Collider collider = baseDetectionBuffer[i];
+            if (collider == null || !collider.CompareTag(enemyTag))
+                continue;
+            enemyDetected = true;
+            break;
+        }
 
-        // On filtre uniquement ceux qui portent le tag "Enemy"
-        var initialHits = initialColliders
-            .Where(c => c.CompareTag(enemyTag))
-            .ToArray();
-
-        // Si aucun ennemi n'est trouvé, on quitte immédiatement la fonction
-        // pour éviter de jouer un clip vocal inutilement.
-        if (initialHits.Length == 0)
+        if (!enemyDetected)
             return; // aucun ennemi trouvé dans le rayon de base
 
         // Lecture du clip vocal uniquement lors de la première détection effective d'un ennemi
@@ -119,40 +121,41 @@ public class PlayerDetection : MonoBehaviour
         detectionOn = false;
         currentDetectionRadius = currentDetectionRadius + detectionExpansion;
 
-        // On récupère tous les colliders dans le rayon élargi
-        Collider[] allColliders = Physics.OverlapSphere(
-            transform.position,
-            currentDetectionRadius
-        );
+        detectionCandidates.Clear();
+        int expandedHits = Physics.OverlapSphereNonAlloc(origin, currentDetectionRadius, expandedDetectionBuffer);
+        for (int i = 0; i < expandedHits; i++)
+        {
+            Collider collider = expandedDetectionBuffer[i];
+            if (collider == null || !collider.CompareTag(enemyTag))
+                continue;
 
-        // On filtre encore par tag "Enemy"
-        var allHits = allColliders
-            .Where(c => c.CompareTag(enemyTag))
-            .ToArray();
+            Enemy enemy = collider.GetComponentInParent<Enemy>();
+            if (enemy == null || enemiesInFight.Contains(enemy))
+                continue;
 
-        // On récupère le composant Enemy (ou le parent contenant Enemy), en évitant les doublons
-        var enemies = allHits
-            .Select(c => c.GetComponentInParent<Enemy>())
-            // On ignore les ennemis déjà engagés dans un combat
-            .Where(e => e != null && !enemiesInFight.Contains(e))
-            .Distinct()
-            .ToList();
+            if (detectionCandidates.Contains(enemy))
+                continue;
 
-        // On ne garde que les 3 plus proches
-        var closestThree = enemies
-            .OrderBy(e => Vector3.Distance(transform.position, e.transform.position))
-            .Take(3)
-            .ToList();
+            detectionCandidates.Add(enemy);
+        }
+
+        detectionCandidates.Sort((a, b) =>
+        {
+            float aDist = Vector3.SqrMagnitude(a.transform.position - origin);
+            float bDist = Vector3.SqrMagnitude(b.transform.position - origin);
+            return aDist.CompareTo(bDist);
+        });
 
         // On remplit detectedEnemies
         detectedEnemies.Clear();
-        foreach (var e in closestThree)
+        for (int i = 0; i < detectionCandidates.Count && i < 3; i++)
         {
-            detectedEnemies.Add(e.enemyData);
+            var enemy = detectionCandidates[i];
+            detectedEnemies.Add(enemy.enemyData);
 
             // Ajout à la liste temporaire pour empêcher une redétection
             // et indiquer que cet ennemi est actuellement engagé dans ce combat
-            enemiesInFight.Add(e);
+            enemiesInFight.Add(enemy);
         }
 
         // 9) On déclenche ou termine le combat

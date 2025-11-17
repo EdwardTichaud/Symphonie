@@ -94,8 +94,8 @@ public class MusicalMoveSO : ScriptableObject
         "Effet appliqué à la cible lors de l'utilisation du move."
         + " Toute la résolution numérique part désormais de effectValue pour assurer une logique unique.")]
     public MusicalEffectType effectType = MusicalEffectType.Damage;
-    [Tooltip("Valeur numérique associée à l'effet principal (dégâts, soins, etc.).")]
-    public int effectValue = 10;
+    [Tooltip("Valeur numérique de l'effet.\n- Damage : dégâts infligés\n- Heal : points de vie restaurés\n- Sleep / LoyaltyMark / LinkMark / AnchorGround / SuspendAir / PrestoForcedAttack : nombre de tours\n- Effets d'augmentation/réduction : valeur (souvent en % avec buffIsPercentage/debuffIsPercentage)")]
+    public int effectValue = 2000;
 
     [Header("Effets spécifiques")]
     [Tooltip("Prefab générique instancié pour représenter un effet passif appliqué à la cible (marque de loyauté, lien, etc.).")]
@@ -125,6 +125,9 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Interpréter debuffAmount comme un pourcentage ?")]
     public bool debuffIsPercentage = false;
 
+#if UNITY_EDITOR
+    [SerializeField, HideInInspector] private MusicalEffectType previousEffectType = MusicalEffectType.Damage;
+#endif
     [Header("Coup Critique")]
     [Tooltip("Active une variante lorsque le QTE est réussi")]
     public bool useCriticalVariant = false;
@@ -303,6 +306,50 @@ public class MusicalMoveSO : ScriptableObject
         // multi-tour : deux garde-fous sont ajoutés ou mis à jour pour garantir que
         // des dégâts colossaux ou une interruption explicite stoppe bien la charge.
         EnsureDefaultPreparationFailureConditions();
+    }
+
+#if UNITY_EDITOR
+    private void OnValidate()
+    {
+        if (previousEffectType != effectType)
+        {
+            effectValue = ResolveDefaultEffectValue(effectType);
+            previousEffectType = effectType;
+        }
+    }
+#endif
+
+    private static bool IsDurationBasedEffect(MusicalEffectType type)
+    {
+        return type == MusicalEffectType.Sleep
+               || type == MusicalEffectType.LoyaltyMark
+               || type == MusicalEffectType.LinkMark
+               || type == MusicalEffectType.AnchorGround
+               || type == MusicalEffectType.SuspendAir
+               || type == MusicalEffectType.PrestoForcedAttack;
+    }
+
+    private static bool IsPercentageBasedEffect(MusicalEffectType type)
+    {
+        return type == MusicalEffectType.IncreaseDamage
+               || type == MusicalEffectType.DecreaseDamage
+               || type == MusicalEffectType.IncreaseDefense
+               || type == MusicalEffectType.DecreaseDefense
+               || type == MusicalEffectType.IncreaseInitiative
+               || type == MusicalEffectType.DecreaseInitiative
+               || type == MusicalEffectType.IncreaseMaxHP
+               || type == MusicalEffectType.DecreaseMaxHP;
+    }
+
+    private static int ResolveDefaultEffectValue(MusicalEffectType type)
+    {
+        if (IsDurationBasedEffect(type))
+            return 2;
+
+        if (IsPercentageBasedEffect(type))
+            return 10;
+
+        return 2000;
     }
 #endif
 
@@ -506,27 +553,19 @@ public class MusicalMoveSO : ScriptableObject
 
         if (typeToUse == MusicalEffectType.Damage)
         {
-            target.TakeDamage(finalValue, caster != null ? caster.transform : null);
+            float damage = Mathf.Max(effectValue, finalValue);
+            target.TakeDamage(damage, caster != null ? caster.transform : null);
             if (!skipDamageRegistration)
-                NewBattleManager.Instance?.RegisterDamage(caster, finalValue);
+                NewBattleManager.Instance?.RegisterDamage(caster, damage);
         }
         else if (typeToUse == MusicalEffectType.Heal)
         {
-            target.Heal(finalValue);
-        }
-        else if (typeToUse == MusicalEffectType.Buff)
-        {
-            // Les buffs intrinsèques sont gérés via l'InventoryManager pour
-            // conserver une logique unique entre les Items et les MusicalMoves.
-            CharacterStatusEffectController.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
-        }
-        else if (typeToUse == MusicalEffectType.Debuff)
-        {
-            CharacterStatusEffectController.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
+            float heal = Mathf.Max(effectValue, finalValue);
+            target.Heal(heal);
         }
         else if (typeToUse == MusicalEffectType.Sleep)
         {
-            CharacterStatusEffectController.ApplySleep(target);
+            CharacterStatusEffectController.ApplySleep(target, Mathf.Max(1, effectValue));
         }
         else if (typeToUse == MusicalEffectType.WakeUpAll)
         {
@@ -540,33 +579,29 @@ public class MusicalMoveSO : ScriptableObject
             var mark = target.GetComponent<LoyaltyMark>();
             if (mark == null)
                 mark = target.gameObject.AddComponent<LoyaltyMark>();
-            // Utilise le prefab générique défini sur le move afin d'autoriser la réutilisation
-            // de ce champ pour d'autres effets passifs sans renommer le code côté gameplay.
-            mark.SetProtector(caster, passiveEffectPrefab, passiveEffectVerticalOffset);
+            mark.SetProtector(caster, passiveEffectPrefab, passiveEffectVerticalOffset, Mathf.Max(1, effectValue));
         }
         else if (typeToUse == MusicalEffectType.LinkMark)
         {
-            if (target.GetComponent<LinkMark>() == null)
-                target.gameObject.AddComponent<LinkMark>();
+            var mark = target.GetComponent<LinkMark>();
+            if (mark == null)
+                mark = target.gameObject.AddComponent<LinkMark>();
+            mark.ApplyDuration(Mathf.Max(1, effectValue));
         }
         else if (typeToUse == MusicalEffectType.AnchorGround)
         {
-            // Comme pour Presto ou Pour qui sonne le glas, on s'appuie sur un
-            // composant persistant afin de conserver l'état entre les tours :
-            // ici on force explicitement l'ennemi à rester collé au sol pour
-            // la durée définie par le ScriptableObject.
-            int turns = Mathf.Max(1, Mathf.RoundToInt(baseValue));
+            int turns = Mathf.Max(1, effectValue);
             target.EnsureAltitudeOverrideStatus().AnchorToGround(turns);
         }
         else if (typeToUse == MusicalEffectType.SuspendAir)
         {
-            int turns = Mathf.Max(1, Mathf.RoundToInt(baseValue));
+            int turns = Mathf.Max(1, effectValue);
             target.EnsureAltitudeOverrideStatus().SuspendInAir(turns);
         }
         else if (typeToUse == MusicalEffectType.PrestoForcedAttack)
         {
-            // Crée un statut dédié qui instancie le prefab et gère les attaques automatiques.
-            PrestoForcedAttackSystem.ApplyStatus(target, caster, passiveEffectPrefab, passiveEffectVerticalOffset);
+            int turns = Mathf.Max(1, effectValue);
+            PrestoForcedAttackSystem.ApplyStatus(target, caster, passiveEffectPrefab, passiveEffectVerticalOffset, turns);
         }
         // Les effets visuels comme la création ou la suppression de sol sont
         // désormais entièrement gérés par la timeline, aucune instanciation
@@ -576,13 +611,46 @@ public class MusicalMoveSO : ScriptableObject
             caster.GetComponent<FatigueSystem>()?.OnActionPerformed(fatigueToApply);
         }
 
+        else if (typeToUse == MusicalEffectType.IncreaseDamage)
+        {
+            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Strength, effectValue, buffDuration, buffIsPercentage);
+        }
+        else if (typeToUse == MusicalEffectType.DecreaseDamage)
+        {
+            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Strength, effectValue, debuffDuration, debuffIsPercentage);
+        }
+        else if (typeToUse == MusicalEffectType.IncreaseDefense)
+        {
+            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Defense, effectValue, buffDuration, buffIsPercentage);
+        }
+        else if (typeToUse == MusicalEffectType.DecreaseDefense)
+        {
+            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Defense, effectValue, debuffDuration, debuffIsPercentage);
+        }
+        else if (typeToUse == MusicalEffectType.IncreaseInitiative)
+        {
+            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Initiative, effectValue, buffDuration, buffIsPercentage);
+        }
+        else if (typeToUse == MusicalEffectType.DecreaseInitiative)
+        {
+            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Initiative, effectValue, debuffDuration, debuffIsPercentage);
+        }
+        else if (typeToUse == MusicalEffectType.IncreaseMaxHP)
+        {
+            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.MaxHP, effectValue, buffDuration, buffIsPercentage);
+        }
+        else if (typeToUse == MusicalEffectType.DecreaseMaxHP)
+        {
+            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.MaxHP, effectValue, debuffDuration, debuffIsPercentage);
+        }
+
         // Applique ensuite les éventuels effets secondaires définis plus haut.
-        if (buffStat != BuffStatType.None && typeToUse != MusicalEffectType.Buff)
+        if (buffStat != BuffStatType.None)
         {
             CharacterStatusEffectController.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
         }
 
-        if (debuffStat != DebuffStatType.None && typeToUse != MusicalEffectType.Debuff)
+        if (debuffStat != DebuffStatType.None)
         {
             CharacterStatusEffectController.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
         }
@@ -602,7 +670,26 @@ public enum MoveType
     Alteration  // Modifie le terrain ou l'état d'une cible sans être purement offensif ou défensif.
 }
 
-public enum MusicalEffectType { Damage, Heal, Buff, Debuff, Sleep, WakeUpAll, LoyaltyMark, LinkMark, AnchorGround, SuspendAir, PrestoForcedAttack }
+public enum MusicalEffectType
+{
+    Damage,
+    Heal,
+    Sleep,
+    WakeUpAll,
+    LoyaltyMark,
+    LinkMark,
+    AnchorGround,
+    SuspendAir,
+    PrestoForcedAttack,
+    IncreaseDamage,
+    DecreaseDamage,
+    IncreaseDefense,
+    DecreaseDefense,
+    IncreaseInitiative,
+    DecreaseInitiative,
+    IncreaseMaxHP,
+    DecreaseMaxHP
+}
 
 public enum RelativePosition { Front, Back, Left, Right , NC}
 

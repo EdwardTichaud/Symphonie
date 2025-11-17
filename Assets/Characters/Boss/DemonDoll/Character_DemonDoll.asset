@@ -17,8 +17,9 @@ MonoBehaviour:
   versusSprites:
   - {fileID: 21300000, guid: 2cc33908b95b3a84d97187c8229044ce, type: 3}
   characterType: 1
-  gameplayType: 0
-  harmonicType: 0
+  gameplayType: 2
+  harmonicType: 1
+  intelligenceLevel: 2
   characterWorldModel: {fileID: 0}
   characterBattleModel: {fileID: 901204007372340786, guid: c591954230709cb4d8c30820466dd1a5, type: 3}
   battlefieldIndex: 0
@@ -44,12 +45,19 @@ MonoBehaviour:
   rageDamageMultiplier: 0
   baseFatigue: 0
   maxFatigue: 0
-  basicAttack: []
-  musicalAttacks: []
+  basicAttack:
+  - {fileID: 11400000, guid: 0514bf9ea21792441935664a65892ea6, type: 2}
+  musicalAttacks:
+  - {fileID: 11400000, guid: 5d3d6b1488094d679b597c6c112c0a3e, type: 2}
+  - {fileID: 11400000, guid: 10abb95f7b0245ffab2fcdc4e5d0dc3d, type: 2}
   specialMusicalMove: {fileID: 0}
   musicalMoveSets: []
   defaultMusicalMoveSetIndex: -1
-  itemSets: []
+  itemSets:
+  - setName: DemonDollItemSet
+    prioritizedItems:
+    - {fileID: 11400000, guid: 24fb197471a64498ae149186e17ba68b, type: 2}
+    - {fileID: 11400000, guid: fd8086605fb14e81a0e94c639309929f, type: 2}
   defaultItemSetIndex: -1
   currentInitiative: 1
   currentRange: 2

@@ -29,6 +29,7 @@ public class PrestoForcedAttackStatus : MonoBehaviour
     ///     pour laisser l'inspecteur piloter précisément la hauteur de l'effet visuel.
     /// </summary>
     private float verticalOffset = 0.5f;
+    private int forcedDuration = -1;
 
     /// <summary>
     /// Compteur du nombre de fois où le début du tour du lanceur a été observé
@@ -57,18 +58,16 @@ public class PrestoForcedAttackStatus : MonoBehaviour
     /// <param name="source">Personnage ayant lancé Presto.</param>
     /// <param name="effectPrefab">Prefab visuel configuré sur le move.</param>
     /// <param name="additionalOffset">Décalage vertical supplémentaire défini sur le move.</param>
-    public void Configure(CharacterUnit source, GameObject effectPrefab, float additionalOffset)
+    public void Configure(CharacterUnit source, GameObject effectPrefab, float additionalOffset, int forcedTurns = -1)
     {
         caster = source;
-        // On ne contraint plus l'offset afin de permettre un placement exact autour du pivot, qu'il soit
-        // positif (au-dessus du personnage) ou négatif (au niveau du sol ou plus bas) selon les besoins.
         verticalOffset = additionalOffset;
-        casterTurnObservations = 1; // On a déjà observé le tour en cours lors du lancement de Presto.
+        casterTurnObservations = forcedTurns > 0 ? 0 : 1;
+        forcedDuration = forcedTurns;
         isActive = true;
 
         EnsureVisual(effectPrefab);
 
-        // Enregistre le statut auprès du gestionnaire global pour recevoir les événements de tour.
         PrestoForcedAttackSystem.Register(this);
     }
 
@@ -152,7 +151,14 @@ public class PrestoForcedAttackStatus : MonoBehaviour
             return;
 
         casterTurnObservations++;
-        if (casterTurnObservations >= 2)
+        if (forcedDuration > 0)
+        {
+            if (casterTurnObservations >= forcedDuration)
+                Cleanup();
+            return;
+        }
+
+        if (forcedDuration < 0 && casterTurnObservations >= 2)
             Cleanup();
     }
 
@@ -281,9 +287,8 @@ public static class PrestoForcedAttackSystem
     /// <summary>
     /// Applique (ou réapplique) l'effet Presto sur une cible donnée.
     /// </summary>
-    public static void ApplyStatus(CharacterUnit target, CharacterUnit caster, GameObject effectPrefab, float verticalOffset)
+    public static void ApplyStatus(CharacterUnit target, CharacterUnit caster, GameObject effectPrefab, float verticalOffset, int forcedTurns = -1)
     {
-        // Sans lanceur la durée ne peut pas être évaluée correctement : on ignore l'application.
         if (target == null || caster == null)
             return;
 
@@ -291,7 +296,7 @@ public static class PrestoForcedAttackSystem
         if (status == null)
             status = target.gameObject.AddComponent<PrestoForcedAttackStatus>();
 
-        status.Configure(caster, effectPrefab, verticalOffset);
+        status.Configure(caster, effectPrefab, verticalOffset, forcedTurns);
     }
 
     /// <summary>

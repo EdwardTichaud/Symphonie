@@ -764,7 +764,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// <summary>
     /// Renvoie les points de vie maximums actuels en tenant compte des bonus/malus de vitalité.
     /// </summary>
-    public float MaxHP => Data != null ? Data.baseHP + Data.currentVitality : Mathf.Max(_currentHP, 0f);
+    public float MaxHP => Data != null ? Data.baseHP + currentVitality : Mathf.Max(_currentHP, 0f);
 
     /// <summary>
     /// Force un rafraîchissement manuel de la barre de vie ainsi que des abonnés à <see cref="OnHealthChanged"/>.
@@ -825,20 +825,20 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentStability = Data.baseStability;
         currentVitality = Data.baseVitality;
         currentSagacity = Data.baseSagacity;
-        // Les HP doivent rester persistants entre les combats
-        if (Data.currentHP <= 0)
-            Data.currentHP = Data.baseHP + currentVitality;
-        currentHP = Data.currentHP;
+        currentHP = Data.baseHP + currentVitality;
         currentRage = Data.baseRage;
         currentInitiative = Data.baseInitiative;
         currentStrength = Data.baseStrength;
         currentDefense = Data.baseDefense;
         currentReflex = Data.baseReflex;
         currentMobility = Data.baseMobility;
+        currentRange = Data.baseRange;
+        currentInterceptionRange = Data.baseInterceptionRange;
+        currentInterceptionChance = 0f;
         currentFatigue = Data.baseFatigue;
 
         harmonicReserve.Clear();
-        Data.currentHarmonicCharge = 0; // Synchronise explicitement la fiche pour les outils de debug designers.
+        _currentHarmonicCharge = 0;
         if (Data.baseHarmonicCharge > 0)
         {
             // Applique la réserve initiale définie dans le CharacterData pour aider les nouveaux joueurs à démarrer avec un capital clair.
@@ -1467,13 +1467,28 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         var altitudeOverride = GetAltitudeOverrideStatus();
         if (altitudeOverride == null)
+        {
+            TickPersistentStatusComponents();
             return;
+        }
 
-        // On décale l'état d'un tour ; si plus aucun override n'est actif,
-        // on rafraîchit la référence pour éviter des consultations futures inutiles.
         bool stillActive = altitudeOverride.TickTurn();
         if (!stillActive)
             altitudeOverrideStatus = null;
+
+        TickPersistentStatusComponents();
+    }
+
+    private void TickPersistentStatusComponents()
+    {
+        var sleep = GetComponent<SleepStatus>();
+        sleep?.TickTurn();
+
+        var loyalty = GetComponent<LoyaltyMark>();
+        loyalty?.Tick();
+
+        var link = GetComponent<LinkMark>();
+        link?.Tick();
     }
 
     public void ApplyBuff(float value)
@@ -1803,7 +1818,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public CharacterUnit SelectTargetFromSquad()
     {
         var squad = NewBattleManager.Instance.activeCharacterUnits
-            .Where(u => u.Data.isPlayerControlled && u.Data.currentHP > 0)
+            .Where(u => u.Data.isPlayerControlled && u.currentHP > 0)
             .ToList();
 
         if (squad == null || squad.Count == 0)
@@ -1818,7 +1833,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             return topDamageDealer;
 
         // Sinon, cible avec le moins de PV
-        var lowestHPUnit = squad.OrderBy(u => u.Data.currentHP).FirstOrDefault();
+        var lowestHPUnit = squad.OrderBy(u => u.currentHP).FirstOrDefault();
         if (lowestHPUnit != null)
             return lowestHPUnit;
 
@@ -1835,7 +1850,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             harmonicReserve[type] = 0;
         harmonicReserve[type] += amount;
         if (Data != null && type == Data.harmonicType)
-            Data.currentHarmonicCharge = harmonicReserve[type]; // Suivi analytique côté fiche personnage.
+            _currentHarmonicCharge = harmonicReserve[type]; // Maintient un suivi runtime sans modifier le ScriptableObject.
         CheckDissonance();
     }
 
@@ -1845,7 +1860,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             return false;
         harmonicReserve[type] -= amount;
         if (Data != null && type == Data.harmonicType)
-            Data.currentHarmonicCharge = harmonicReserve[type];
+            _currentHarmonicCharge = harmonicReserve[type];
         CheckDissonance();
         return true;
     }
@@ -1861,7 +1876,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         foreach (var key in keys)
             harmonicReserve[key] = 0;
         if (Data != null)
-            Data.currentHarmonicCharge = 0;
+            _currentHarmonicCharge = 0;
         CheckDissonance();
     }
 

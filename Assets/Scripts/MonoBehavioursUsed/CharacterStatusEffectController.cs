@@ -95,9 +95,9 @@ public class CharacterStatusEffectController : MonoBehaviour
         GetOrCreate(target)?.ExtendEffectDurationsInternal(additionalDuration);
     }
 
-    public static void ApplySleep(CharacterUnit target)
+    public static void ApplySleep(CharacterUnit target, int turns = -1)
     {
-        GetOrCreate(target)?.ApplySleepInternal();
+        GetOrCreate(target)?.ApplySleepInternal(turns);
     }
 
     public static void RemoveSleep(CharacterUnit target)
@@ -160,7 +160,7 @@ public class CharacterStatusEffectController : MonoBehaviour
             owner.interceptionImmunityTurns += Mathf.RoundToInt(additionalDuration);
     }
 
-    private void ApplySleepInternal()
+    private void ApplySleepInternal(int turns)
     {
         if (owner == null)
             return;
@@ -168,7 +168,7 @@ public class CharacterStatusEffectController : MonoBehaviour
         var sleep = owner.GetComponent<SleepStatus>();
         if (sleep == null)
             sleep = owner.gameObject.AddComponent<SleepStatus>();
-        sleep.Sleep();
+        sleep.Sleep(turns);
     }
 
     private void RemoveSleepInternal()
@@ -264,6 +264,10 @@ public class CharacterStatusEffectController : MonoBehaviour
             case BuffStatType.Initiative:
                 owner.currentInitiative += delta;
                 break;
+            case BuffStatType.MaxHP:
+                owner.currentVitality += delta;
+                owner.RefreshHealthDisplay(refreshMax: true);
+                break;
         }
     }
 
@@ -277,6 +281,7 @@ public class CharacterStatusEffectController : MonoBehaviour
             BuffStatType.Strength => owner.Data.baseStrength,
             BuffStatType.Defense => owner.Data.baseDefense,
             BuffStatType.Initiative => owner.Data.baseInitiative,
+            BuffStatType.MaxHP => owner.Data.baseHP + owner.currentVitality,
             _ => 0f,
         };
     }

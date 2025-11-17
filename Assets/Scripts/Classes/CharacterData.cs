@@ -34,6 +34,9 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Affinité harmonique majeure qui influence les synergies de l'équipe.")]
     public HarmonicType harmonicType = HarmonicType.Lumiere;
 
+    [Tooltip("Niveau de sophistication de l'IA ennemie contrôlant ce personnage.")]
+    public EnemyIntelligenceLevel intelligenceLevel = EnemyIntelligenceLevel.Normal;
+
     [Header("Représentation 3D")]
     [Tooltip("Prefab affiché dans les environnements explorables.")]
     public GameObject characterWorldModel;
@@ -599,4 +602,5 @@ public class CharacterData : ScriptableObject, ITargetable
 
 public enum CharacterType { SquadUnit, EnemyUnit }
 public enum GameplayType { Rage, Fatigue, Concentration, Sacrifice }
+public enum EnemyIntelligenceLevel { Beast, Normal, Intelligent }
 

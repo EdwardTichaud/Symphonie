@@ -4,6 +4,7 @@ public class SleepStatus : MonoBehaviour
 {
     private bool isAsleep;
     public bool IsAsleep => isAsleep;
+    private int remainingTurns = -1;
 
     private AudioSource audioSource;
 
@@ -23,12 +24,13 @@ public class SleepStatus : MonoBehaviour
         audioSource = GetComponent<AudioSource>();
     }
 
-    public void Sleep()
+    public void Sleep(int turns = -1)
     {
-        if (isAsleep)
+        if (isAsleep && turns < 0)
             return;
 
         isAsleep = true;
+        remainingTurns = turns;
 
         if (sleepClip != null && sleepClip.Clip != null && audioSource != null)
             audioSource.PlayOneShot(sleepClip.Clip, sleepClip.Volume);
@@ -46,6 +48,7 @@ public class SleepStatus : MonoBehaviour
             return;
 
         isAsleep = false;
+        remainingTurns = -1;
 
         if (wakeUpClip != null && wakeUpClip.Clip != null && audioSource != null)
             audioSource.PlayOneShot(wakeUpClip.Clip, wakeUpClip.Volume);
@@ -61,6 +64,16 @@ public class SleepStatus : MonoBehaviour
             var effect = Instantiate(wakeUpPrefab, transform.position + effectOffset, Quaternion.identity);
             Destroy(effect, 3f);
         }
+    }
+
+    public void TickTurn()
+    {
+        if (remainingTurns < 0)
+            return;
+
+        remainingTurns--;
+        if (remainingTurns <= 0)
+            WakeUp();
     }
 
     public void OnDamageTaken()

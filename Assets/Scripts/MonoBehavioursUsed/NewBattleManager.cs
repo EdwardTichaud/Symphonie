@@ -84,10 +84,14 @@ public class NewBattleManager : MonoBehaviour
     [Header("Apparition des SquadUnits")]
     public GameObject squadUnitRay;
     private List<Transform> playerSpawnPoints = new List<Transform>();
+    [Tooltip("Assigné dans la scène pour éviter les recherches au runtime.")]
+    [SerializeField] private Transform playerSpawnRoot;
 
     [Header("Apparition des ennemis")]
     public GameObject enemyUnitRay;
     private List<Transform> enemySpawnPoints = new List<Transform>();
+    [Tooltip("Assigné dans la scène pour éviter les recherches via tag si possible.")]
+    [SerializeField] private Transform enemySpawnRoot;
     public List<CharacterData> enemyTemplates = new List<CharacterData>();
 
     [Header("Points de visée pour les caméras contextuelles")]
@@ -163,6 +167,10 @@ public class NewBattleManager : MonoBehaviour
     /// plusieurs fois sur des frames consécutives.
     /// </summary>
     private bool victorySequenceInProgress = false;
+
+    [Header("Références scène")]
+    [Tooltip("Racine du rig BattleCamera pour éviter les recherches GameObject.Find.")]
+    [SerializeField] private Transform battleCameraRig;
 
     /// <summary>Nom de la Cinemachine dédiée au menu principal et aux variations associées.</summary>
     private const string MainMenuCameraName = "CMV_MainMenu";
@@ -525,14 +533,35 @@ public class NewBattleManager : MonoBehaviour
         SpawnEnemies();
     }
 
+    /// <summary>
+    /// Assure la résolution (et la mise en cache) d'un point de spawn afin d'éviter les recherches répétées.
+    /// </summary>
+    private Transform ResolveSpawnRoot(ref Transform cache, string requiredTag)
+    {
+        if (cache != null)
+            return cache;
+
+        var taggedRoot = GameObject.FindGameObjectWithTag(requiredTag);
+        if (taggedRoot == null)
+        {
+            Debug.LogWarning($"[NewBattleManager] Aucun objet avec le tag '{requiredTag}' n'a été trouvé dans la scène.");
+            return null;
+        }
+
+        cache = taggedRoot.transform;
+        return cache;
+    }
+
     private void SpawnSquadUnits()
     {
         playerSpawnPoints.Clear();
-        var playerSpawnRoot = GameObject.FindGameObjectWithTag("PlayerSpawn").transform;
+        var spawnRoot = ResolveSpawnRoot(ref playerSpawnRoot, "PlayerSpawn");
+        if (spawnRoot == null)
+            return;
 
-        for (int i = 0; i < playerSpawnRoot.childCount; i++)
+        for (int i = 0; i < spawnRoot.childCount; i++)
         {
-            var child = playerSpawnRoot.GetChild(i);
+            var child = spawnRoot.GetChild(i);
             if (child != null)
             {
                 playerSpawnPoints.Add(child);
@@ -579,11 +608,13 @@ public class NewBattleManager : MonoBehaviour
     private void SpawnEnemies()
     {
         enemySpawnPoints.Clear();
-        var enemySpawnRoot = GameObject.FindGameObjectWithTag("EnemySpawn").transform;
+        var spawnRoot = ResolveSpawnRoot(ref enemySpawnRoot, "EnemySpawn");
+        if (spawnRoot == null)
+            return;
 
-        for (int i = 0; i < enemySpawnRoot.childCount; i++)
+        for (int i = 0; i < spawnRoot.childCount; i++)
         {
-            var child = enemySpawnRoot.GetChild(i);
+            var child = spawnRoot.GetChild(i);
             if (child != null)
             {
                 enemySpawnPoints.Add(child);
@@ -1285,17 +1316,31 @@ public class NewBattleManager : MonoBehaviour
         if (candidates.Count == 0)
             return null;
 
-        return candidates.OrderBy(u => u.Data.currentHP).First();
+        return candidates.OrderBy(u => u.currentHP).First();
     }
 
     private IEnumerator EnemyTurnWithQTE(CharacterUnit enemy)
     {
+        if (enemy == null)
+            yield break;
+
+        // Choix de l'action via l'IA centralisée
+        var decision = BattleAIStrategy.Decide(enemy, activeCharacterUnits);
+        if (decision.Item != null)
+        {
+            yield return EnemyUseItemRoutine(enemy, decision.Item, decision.Target);
+            yield break;
+        }
+
         ChangeBattleState(BattleState.EnemyUnit_PerformingMusicalMove);
 
-        // Choix de l'attaque et de la cible
-        var move = enemy.GetRandomMusicalAttack();
+        var move = decision.Move ?? enemy.GetRandomMusicalAttack();
         currentMove = move;
-        var target = enemy.SelectTargetFromSquad();
+        currentItem = null;
+        currentMoveIsBasicAttack = false;
+        var target = ResolveAIMoveTarget(enemy, decision.Target, move);
+        if (target == null)
+            target = enemy.SelectTargetFromSquad();
 
         // Anticipe le comportement d'animation de la cible : si le move
         // dispose d'une timeline de préparation, on retarde sa posture
@@ -1352,6 +1397,80 @@ public class NewBattleManager : MonoBehaviour
         }
     }
 
+    private IEnumerator EnemyUseItemRoutine(CharacterUnit enemy, ItemData item, CharacterUnit preferredTarget)
+    {
+        if (enemy == null || item == null)
+            yield break;
+
+        var target = ResolveAIItemTarget(enemy, preferredTarget, item) ?? enemy.SelectTargetFromSquad();
+        if (target == null)
+            yield break;
+
+        currentItem = item;
+        currentMove = null;
+        currentMoveIsBasicAttack = false;
+        currentItemTargetType = item.defaultTargetType;
+        currentTargetCharacter = target;
+
+        string itemName = !string.IsNullOrEmpty(item.itemName) ? item.itemName : item.name;
+        ActionUIDisplayManager.Instance.DisplayEnemyPreparation(enemy.Data.characterName, itemName);
+
+        if (item.beatPattern != null && item.beatPattern.Count > 0)
+            RhythmQTEManager.Instance?.PrepareQTEBar(item.beatPattern);
+
+        yield return new WaitForSecondsRealtime(ENEMY_MOVE_DELAY);
+
+        ChangeBattleState(BattleState.EnemyUnit_Item_Prepare);
+        ChangeBattleState(BattleState.EnemyUnit_Item_Use);
+        yield return UseItemOnTarget(item, enemy, target, true);
+    }
+
+    private CharacterUnit ResolveAIMoveTarget(CharacterUnit enemy, CharacterUnit candidate, MusicalMoveSO move)
+    {
+        if (candidate != null && candidate.currentHP > 0)
+            return candidate;
+
+        if (move == null)
+            return enemy.SelectTargetFromSquad();
+
+        switch (move.defaultTargetType)
+        {
+            case TargetType.Self:
+                return enemy;
+            case TargetType.SingleAlly:
+            case TargetType.AllAllies:
+                return activeCharacterUnits.FirstOrDefault(u =>
+                    u != null &&
+                    u.Data.characterType == enemy.Data.characterType &&
+                    u.currentHP > 0);
+            default:
+                return enemy.SelectTargetFromSquad();
+        }
+    }
+
+    private CharacterUnit ResolveAIItemTarget(CharacterUnit enemy, CharacterUnit candidate, ItemData item)
+    {
+        if (candidate != null && candidate.currentHP > 0)
+            return candidate;
+
+        if (item == null)
+            return null;
+
+        switch (item.defaultTargetType)
+        {
+            case TargetType.Self:
+                return enemy;
+            case TargetType.SingleAlly:
+            case TargetType.AllAllies:
+                return activeCharacterUnits.FirstOrDefault(u =>
+                    u != null &&
+                    u.Data.characterType == enemy.Data.characterType &&
+                    u.currentHP > 0);
+            default:
+                return enemy.SelectTargetFromSquad();
+        }
+    }
+
     public IEnumerator ExecuteMoveOnTarget(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
     {
         Debug.Log($"{caster} exécute le mouvement {move.moveName} sur {target}");
@@ -1397,7 +1516,7 @@ public class NewBattleManager : MonoBehaviour
         // Vérifie si le move et le lanceur peuvent être interceptés
         if (move.interceptable && caster.Data.interceptable && !caster.isInterceptionImmune)
         {
-            var interceptor = CheckForInterception(caster, target, caster.Data.currentInterceptionRange);
+            var interceptor = CheckForInterception(caster, target, caster.currentInterceptionRange);
             if (interceptor != null)
             {
                 yield return InterceptRoutine(interceptor, caster);
@@ -1446,12 +1565,15 @@ public class NewBattleManager : MonoBehaviour
         //currentCharacterUnit.currentATB = 0f;
     }
 
-    public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target)
+    public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target, bool bypassInventory = false)
     {
-        if (!InventoryManager.Instance.CanUseItem(item))
+        if (!bypassInventory)
         {
-            ActionUIDisplayManager.Instance.DisplayInstruction("Limite d'utilisation atteinte");
-            yield break;
+            if (!InventoryManager.Instance.CanUseItem(item))
+            {
+                ActionUIDisplayManager.Instance.DisplayInstruction("Limite d'utilisation atteinte");
+                yield break;
+            }
         }
 
         if (!IsTargetInRange(caster, target, item))
@@ -1468,7 +1590,14 @@ public class NewBattleManager : MonoBehaviour
         bool crit = RhythmQTEManager.Instance.LastItemSuccess;
         if (crit)
             ActionUIDisplayManager.Instance?.DisplayCriticalHit();
-        InventoryManager.Instance.UseItem(item, caster, target, crit);
+        if (bypassInventory)
+        {
+            item.ApplyEffect(caster, target, crit);
+        }
+        else
+        {
+            InventoryManager.Instance.UseItem(item, caster, target, crit);
+        }
 
         // Calcule les dégâts totaux infligés par l'objet
         float dmgVal = 0f;
@@ -1533,7 +1662,7 @@ public class NewBattleManager : MonoBehaviour
             return false;
         }
         float distance = Vector3.Distance(caster.transform.position, target.transform.position);
-        float maxReach = caster.Data.currentRange + move.castDistance;
+        float maxReach = caster.currentRange + move.castDistance;
         return distance <= maxReach;
     }
 
@@ -1543,7 +1672,7 @@ public class NewBattleManager : MonoBehaviour
             return false;
 
         float distance = Vector3.Distance(caster.transform.position, target.transform.position);
-        float maxReach = caster.Data.currentRange + item.castDistance;
+        float maxReach = caster.currentRange + item.castDistance;
         return distance <= maxReach;
     }
 
@@ -1733,7 +1862,7 @@ public class NewBattleManager : MonoBehaviour
         interceptionSucceeded = false;
         if (caster != null && (!caster.Data.interceptable || caster.isInterceptionImmune))
             yield break; // Impossible d'intercepter ce lanceur
-        var interceptor = FindPlayerInterceptor(caster, target, caster.Data.currentInterceptionRange);
+        var interceptor = FindPlayerInterceptor(caster, target, caster.currentInterceptionRange);
         if (interceptor == null)
             yield break;
 
@@ -2036,14 +2165,14 @@ public class NewBattleManager : MonoBehaviour
     {
         foreach (var unit in activeCharacterUnits)
         {
-            if (unit == null || unit.Data.currentHP <= 0)
+            if (unit == null || unit.currentHP <= 0)
                 continue;
 
             bool isPlayer = unit.Data.isPlayerControlled;
 
             // Trouve toutes les unités ennemies vivantes
             var enemies = unitsInBattle
-                .Where(u => u != null && u.Data.currentHP > 0 && u.Data.isPlayerControlled != isPlayer)
+                .Where(u => u != null && u.currentHP > 0 && u.Data.isPlayerControlled != isPlayer)
                 .ToList();
 
             if (enemies.Count == 0)
@@ -2665,11 +2794,27 @@ public class NewBattleManager : MonoBehaviour
 
     #region Gestion de l’ouverture des menus
 
+    private Transform ResolveBattleCameraRig()
+    {
+        if (battleCameraRig != null)
+            return battleCameraRig;
+
+        var cameraGO = GameObject.Find("BattleCamera_Cam");
+        if (cameraGO == null)
+        {
+            Debug.LogWarning("[NewBattleManager] Impossible de localiser 'BattleCamera_Cam' dans la scène.");
+            return null;
+        }
+
+        battleCameraRig = cameraGO.transform;
+        return battleCameraRig;
+    }
+
     private void SetupCurrentUnitMenus()
     {
         // 1) Essaye de récupérer la BattleCamera par tag
-        // Utilise la caméra de combat mémorisée        
-        Transform battleCamCam = GameObject.Find("BattleCamera_Cam").transform;
+        // Utilise la caméra de combat mémorisée
+        Transform battleCamCam = ResolveBattleCameraRig();
         if (battleCamCam == null)
         {
             Debug.LogWarning("[SetupCurrentUnitMenus] BattleCamera introuvable.");
@@ -3434,7 +3579,7 @@ public class NewBattleManager : MonoBehaviour
 
                     float distance = Vector3.Distance(currentCharacterUnit.transform.position,
                         currentTargetCharacter.transform.position);
-                    float maxReach = currentCharacterUnit.Data.currentRange + currentMove.castDistance;
+                    float maxReach = currentCharacterUnit.currentRange + currentMove.castDistance;
                     bool inRange = distance <= maxReach;
                     // Vérifie que la position relative est libre avant d'autoriser l'action.
                     bool hasSpace = HasSpaceForMove(currentCharacterUnit, currentTargetCharacter, currentMove);
@@ -3451,7 +3596,7 @@ public class NewBattleManager : MonoBehaviour
                     targetCursor.transform.position = currentTargetCharacter.transform.position;
                     float distance = Vector3.Distance(currentCharacterUnit.transform.position,
                         currentTargetCharacter.transform.position);
-                    float maxReach = currentCharacterUnit.Data.currentRange + currentItem.castDistance;
+                    float maxReach = currentCharacterUnit.currentRange + currentItem.castDistance;
                     bool inRange = distance <= maxReach;
                     UpdateTargetCursorColor(inRange);
                 }
@@ -3716,7 +3861,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         float distance = Vector3.Distance(caster.transform.position, target.transform.position);
-        float maxReach = caster.Data.currentRange;
+        float maxReach = caster.currentRange;
         if (distance > maxReach)
         {
             ActionUIDisplayManager.Instance?.DisplayInstruction_TargetTooFar();
@@ -3780,7 +3925,7 @@ public class NewBattleManager : MonoBehaviour
         }
 
         float distance = Vector3.Distance(attacker.transform.position, target.transform.position);
-        float maxReach = attacker.Data.currentRange + basicMove.castDistance;
+        float maxReach = attacker.currentRange + basicMove.castDistance;
         if (distance > maxReach)
         {
             if (displayErrors)

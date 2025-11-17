@@ -7,32 +7,14 @@ using UnityEngine;
 /// </summary>
 public class LoyaltyMark : MonoBehaviour
 {
-    /// <summary>Référence de l'unité qui encaisse les dégâts à la place de la cible.</summary>
     public CharacterUnit protector;
-
-    // Décalage vertical appliqué au visuel pour flotter légèrement au-dessus
-    // de la tête de l'unité. Valeur ajustable à l'initialisation.
     private float visualOffset = DefaultVisualOffset;
-
-    // Mise en cache de l'unité porteuse : on évite ainsi des GetComponent
-    // répétés lors des recalculs de position.
     private CharacterUnit owner;
-
-    // Instance runtime du prefab de marque, instanciée lors de l'application
-    // de l'effet. Elle est détruite automatiquement quand le composant est retiré.
     private GameObject visualInstance;
-
-    // Référence du prefab actuellement utilisé, utile pour savoir si l'on doit
-    // ré-instancier un nouveau visuel (par exemple si le designer change le FX).
     private GameObject currentPrefab;
-
-    // Échelle initiale du prefab pour respecter le calibrage artistique lors des repositionnements.
     private Vector3 initialVisualScale = Vector3.one;
-
-    // Valeur de repli utilisée quand aucun volume visuel n'est disponible.
+    private float remainingTurns = -1f;
     private const float DefaultHeightFallback = 1.5f;
-
-    // Décalage par défaut utilisé si le move n'en fournit pas un explicitement.
     private const float DefaultVisualOffset = 0.5f;
 
     private void Awake()
@@ -54,10 +36,11 @@ public class LoyaltyMark : MonoBehaviour
     /// <param name="unit">Unité qui prendra les dégâts à la place de la cible.</param>
     /// <param name="markPrefab">Prefab instancié au-dessus de la victime.</param>
     /// <param name="verticalOffset">Décalage supplémentaire appliqué au visuel.</param>
-    public void SetProtector(CharacterUnit unit, GameObject markPrefab = null, float verticalOffset = DefaultVisualOffset)
+    public void SetProtector(CharacterUnit unit, GameObject markPrefab = null, float verticalOffset = DefaultVisualOffset, int turns = -1)
     {
         protector = unit;
         visualOffset = Mathf.Max(0f, verticalOffset);
+        remainingTurns = turns;
 
         if (markPrefab == null)
         {
@@ -148,7 +131,18 @@ public class LoyaltyMark : MonoBehaviour
 
     private void OnDestroy()
     {
+
         // Nettoie l'éventuel visuel généré dynamiquement pour éviter les GameObjects orphelins.
         RemoveVisual();
+    }
+
+    public void Tick()
+    {
+        if (remainingTurns < 0)
+            return;
+
+        remainingTurns -= 1f;
+        if (remainingTurns <= 0f)
+            Destroy(this);
     }
 }
