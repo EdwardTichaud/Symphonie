@@ -89,13 +89,89 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Type d'harmonique ajouté à la réserve lorsqu'un gain est généré. Même si le gain est nul, cette information aide la lecture stratégique.")]
     public HarmonicType generatedHarmonicType = HarmonicType.Lumiere;
 
-    [Header("Effet principal")]
-    [Tooltip(
-        "Effet appliqué à la cible lors de l'utilisation du move."
-        + " Toute la résolution numérique part désormais de effectValue pour assurer une logique unique.")]
-    public MusicalEffectType effectType = MusicalEffectType.Damage;
-    [Tooltip("Valeur numérique de l'effet.\n- Damage : dégâts infligés\n- Heal : points de vie restaurés\n- Sleep / LoyaltyMark / LinkMark / AnchorGround / SuspendAir / PrestoForcedAttack : nombre de tours\n- Effets d'augmentation/réduction : valeur (souvent en % avec buffIsPercentage/debuffIsPercentage)")]
-    public int effectValue = 2000;
+    [System.Serializable]
+    public class EffectDefinition
+    {
+        [Tooltip("Type d'effet appliqué lors de la résolution principale.")]
+        public MusicalEffectType type = MusicalEffectType.Damage;
+        [Tooltip("Valeur numérique associée à l'effet. Interprétation dépendante du type.")]
+        public int value = 2000;
+    }
+
+    [Header("Effets principaux")]
+    [Tooltip("Liste ordonnée des effets appliqués lors de l'utilisation du move. Le premier élément reste l'effet principal.")]
+    public List<EffectDefinition> effects = new();
+
+    [SerializeField, HideInInspector, FormerlySerializedAs("effectType")]
+    private MusicalEffectType legacyEffectType = MusicalEffectType.Damage;
+    [SerializeField, HideInInspector, FormerlySerializedAs("effectValue")]
+    private int legacyEffectValue = 2000;
+
+    private void EnsureEffectsInitialized()
+    {
+        if (effects == null)
+            effects = new List<EffectDefinition>();
+
+        if (effects.Count == 0)
+        {
+            effects.Add(new EffectDefinition
+            {
+                type = legacyEffectType,
+                value = legacyEffectValue
+            });
+        }
+        else if (effects[0] == null)
+        {
+            effects[0] = new EffectDefinition
+            {
+                type = legacyEffectType,
+                value = legacyEffectValue
+            };
+        }
+    }
+
+    private EffectDefinition GetPrimaryEffect()
+    {
+        EnsureEffectsInitialized();
+        return effects[0];
+    }
+
+    public bool HasEffect(MusicalEffectType type)
+    {
+        EnsureEffectsInitialized();
+        foreach (var effect in effects)
+        {
+            if (effect == null)
+                continue;
+
+            if (effect.type == type)
+                return true;
+        }
+
+        return false;
+    }
+
+    public int GetEffectValue(MusicalEffectType type, int defaultValue = 0)
+    {
+        EnsureEffectsInitialized();
+        foreach (var effect in effects)
+        {
+            if (effect == null)
+                continue;
+
+            if (effect.type == type)
+                return effect.value;
+        }
+
+        return defaultValue;
+    }
+
+    public MusicalEffectType PrimaryEffectType => GetPrimaryEffect().type;
+    public int PrimaryEffectValue => GetPrimaryEffect().value;
+
+    // Compatibilité avec l'ancien champ public unique.
+    public MusicalEffectType effectType => PrimaryEffectType;
+    public int effectValue => PrimaryEffectValue;
 
     [Header("Effets spécifiques")]
     [Tooltip("Prefab générique instancié pour représenter un effet passif appliqué à la cible (marque de loyauté, lien, etc.).")]
@@ -267,6 +343,15 @@ public class MusicalMoveSO : ScriptableObject
 
     private void OnValidate()
     {
+        EnsureEffectsInitialized();
+        var primaryEffect = GetPrimaryEffect();
+        if (previousEffectType != primaryEffect.type)
+        {
+            primaryEffect.value = ResolveDefaultEffectValue(primaryEffect.type);
+            previousEffectType = primaryEffect.type;
+            EditorUtility.SetDirty(this);
+        }
+
         // Conversion automatique des anciens assets qui utilisaient une vitesse de déplacement.
         // Cette opération ne s'effectue qu'une seule fois pour préserver les réglages manuels.
         if (!legacyMoveSpeedConverted)
@@ -308,17 +393,6 @@ public class MusicalMoveSO : ScriptableObject
         EnsureDefaultPreparationFailureConditions();
     }
 
-#if UNITY_EDITOR
-    private void OnValidate()
-    {
-        if (previousEffectType != effectType)
-        {
-            effectValue = ResolveDefaultEffectValue(effectType);
-            previousEffectType = effectType;
-        }
-    }
-#endif
-
     private static bool IsDurationBasedEffect(MusicalEffectType type)
     {
         return type == MusicalEffectType.Sleep
@@ -326,7 +400,8 @@ public class MusicalMoveSO : ScriptableObject
                || type == MusicalEffectType.LinkMark
                || type == MusicalEffectType.AnchorGround
                || type == MusicalEffectType.SuspendAir
-               || type == MusicalEffectType.PrestoForcedAttack;
+               || type == MusicalEffectType.PrestoForcedAttack
+               || type == MusicalEffectType.Stun;
     }
 
     private static bool IsPercentageBasedEffect(MusicalEffectType type)
@@ -511,15 +586,25 @@ public class MusicalMoveSO : ScriptableObject
     private void ApplyEffectInternal(CharacterUnit caster, CharacterUnit target, bool isCritical, bool ignoreFatigue,
         bool skipDamageRegistration)
     {
-        // Applique d'abord l'effet de base
-        ApplySingleEffect(effectType, caster, target, effectValue, fatigueCost, isCritical && !useCriticalVariant,
-            ignoreFatigue, skipDamageRegistration);
+        EnsureEffectsInitialized();
+
+        bool shouldDoubleBaseEffects = isCritical && !useCriticalVariant;
+        for (int i = 0; i < effects.Count; i++)
+        {
+            var effect = effects[i];
+            if (effect == null)
+                continue;
+
+            bool applyFatigue = i == 0;
+            ApplySingleEffect(effect.type, caster, target, effect.value, fatigueCost, shouldDoubleBaseEffects,
+                ignoreFatigue, skipDamageRegistration, applyFatigue);
+        }
 
         // Ajoute l'effet critique si nécessaire
         if (isCritical && useCriticalVariant)
         {
             ApplySingleEffect(criticalEffectType, caster, target, criticalEffectValue, criticalFatigueCost, false,
-                ignoreFatigue, skipDamageRegistration);
+                ignoreFatigue, skipDamageRegistration, true);
         }
     }
 
@@ -529,7 +614,7 @@ public class MusicalMoveSO : ScriptableObject
     /// </summary>
     private void ApplySingleEffect(MusicalEffectType typeToUse, CharacterUnit caster,
         CharacterUnit target, int baseValue, float fatigueToApply, bool doubleValue, bool ignoreFatigue,
-        bool skipDamageRegistration)
+        bool skipDamageRegistration, bool applyFatigue)
     {
         float finalValue = baseValue;
         if (caster != null)
@@ -553,19 +638,19 @@ public class MusicalMoveSO : ScriptableObject
 
         if (typeToUse == MusicalEffectType.Damage)
         {
-            float damage = Mathf.Max(effectValue, finalValue);
+            float damage = Mathf.Max(baseValue, finalValue);
             target.TakeDamage(damage, caster != null ? caster.transform : null);
             if (!skipDamageRegistration)
                 NewBattleManager.Instance?.RegisterDamage(caster, damage);
         }
         else if (typeToUse == MusicalEffectType.Heal)
         {
-            float heal = Mathf.Max(effectValue, finalValue);
+            float heal = Mathf.Max(baseValue, finalValue);
             target.Heal(heal);
         }
         else if (typeToUse == MusicalEffectType.Sleep)
         {
-            CharacterStatusEffectController.ApplySleep(target, Mathf.Max(1, effectValue));
+            CharacterStatusEffectController.ApplySleep(target, Mathf.Max(1, baseValue));
         }
         else if (typeToUse == MusicalEffectType.WakeUpAll)
         {
@@ -579,69 +664,73 @@ public class MusicalMoveSO : ScriptableObject
             var mark = target.GetComponent<LoyaltyMark>();
             if (mark == null)
                 mark = target.gameObject.AddComponent<LoyaltyMark>();
-            mark.SetProtector(caster, passiveEffectPrefab, passiveEffectVerticalOffset, Mathf.Max(1, effectValue));
+            mark.SetProtector(caster, passiveEffectPrefab, passiveEffectVerticalOffset, Mathf.Max(1, baseValue));
         }
         else if (typeToUse == MusicalEffectType.LinkMark)
         {
             var mark = target.GetComponent<LinkMark>();
             if (mark == null)
                 mark = target.gameObject.AddComponent<LinkMark>();
-            mark.ApplyDuration(Mathf.Max(1, effectValue));
+            mark.ApplyDuration(Mathf.Max(1, baseValue));
         }
         else if (typeToUse == MusicalEffectType.AnchorGround)
         {
-            int turns = Mathf.Max(1, effectValue);
+            int turns = Mathf.Max(1, baseValue);
             target.EnsureAltitudeOverrideStatus().AnchorToGround(turns);
         }
         else if (typeToUse == MusicalEffectType.SuspendAir)
         {
-            int turns = Mathf.Max(1, effectValue);
+            int turns = Mathf.Max(1, baseValue);
             target.EnsureAltitudeOverrideStatus().SuspendInAir(turns);
         }
         else if (typeToUse == MusicalEffectType.PrestoForcedAttack)
         {
-            int turns = Mathf.Max(1, effectValue);
+            int turns = Mathf.Max(1, baseValue);
             PrestoForcedAttackSystem.ApplyStatus(target, caster, passiveEffectPrefab, passiveEffectVerticalOffset, turns);
+        }
+        else if (typeToUse == MusicalEffectType.Stun)
+        {
+            CharacterStatusEffectController.ApplyStun(target, Mathf.Max(1, baseValue));
         }
         // Les effets visuels comme la création ou la suppression de sol sont
         // désormais entièrement gérés par la timeline, aucune instanciation
         // de prefab n'est nécessaire ici.
-        if (!ignoreFatigue && caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
+        if (applyFatigue && !ignoreFatigue && caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {
             caster.GetComponent<FatigueSystem>()?.OnActionPerformed(fatigueToApply);
         }
 
-        else if (typeToUse == MusicalEffectType.IncreaseDamage)
+        if (typeToUse == MusicalEffectType.IncreaseDamage)
         {
-            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Strength, effectValue, buffDuration, buffIsPercentage);
+            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Strength, baseValue, buffDuration, buffIsPercentage);
         }
         else if (typeToUse == MusicalEffectType.DecreaseDamage)
         {
-            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Strength, effectValue, debuffDuration, debuffIsPercentage);
+            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Strength, baseValue, debuffDuration, debuffIsPercentage);
         }
         else if (typeToUse == MusicalEffectType.IncreaseDefense)
         {
-            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Defense, effectValue, buffDuration, buffIsPercentage);
+            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Defense, baseValue, buffDuration, buffIsPercentage);
         }
         else if (typeToUse == MusicalEffectType.DecreaseDefense)
         {
-            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Defense, effectValue, debuffDuration, debuffIsPercentage);
+            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Defense, baseValue, debuffDuration, debuffIsPercentage);
         }
         else if (typeToUse == MusicalEffectType.IncreaseInitiative)
         {
-            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Initiative, effectValue, buffDuration, buffIsPercentage);
+            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Initiative, baseValue, buffDuration, buffIsPercentage);
         }
         else if (typeToUse == MusicalEffectType.DecreaseInitiative)
         {
-            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Initiative, effectValue, debuffDuration, debuffIsPercentage);
+            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Initiative, baseValue, debuffDuration, debuffIsPercentage);
         }
         else if (typeToUse == MusicalEffectType.IncreaseMaxHP)
         {
-            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.MaxHP, effectValue, buffDuration, buffIsPercentage);
+            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.MaxHP, baseValue, buffDuration, buffIsPercentage);
         }
         else if (typeToUse == MusicalEffectType.DecreaseMaxHP)
         {
-            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.MaxHP, effectValue, debuffDuration, debuffIsPercentage);
+            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.MaxHP, baseValue, debuffDuration, debuffIsPercentage);
         }
 
         // Applique ensuite les éventuels effets secondaires définis plus haut.
@@ -688,7 +777,8 @@ public enum MusicalEffectType
     IncreaseInitiative,
     DecreaseInitiative,
     IncreaseMaxHP,
-    DecreaseMaxHP
+    DecreaseMaxHP,
+    Stun
 }
 
 public enum RelativePosition { Front, Back, Left, Right , NC}

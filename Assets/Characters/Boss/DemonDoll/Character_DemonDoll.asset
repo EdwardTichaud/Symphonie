@@ -35,7 +35,7 @@ MonoBehaviour:
   baseSagacity: 0
   baseInitiative: 1
   baseRange: 2
-  baseHP: 100
+  baseHP: 100000
   baseStrength: 1
   baseDefense: 1
   baseSpeed: 0
@@ -55,13 +55,11 @@ MonoBehaviour:
   defaultMusicalMoveSetIndex: -1
   itemSets:
   - setName: DemonDollItemSet
-    prioritizedItems:
-    - {fileID: 11400000, guid: 24fb197471a64498ae149186e17ba68b, type: 2}
-    - {fileID: 11400000, guid: fd8086605fb14e81a0e94c639309929f, type: 2}
+    prioritizedItems: []
   defaultItemSetIndex: -1
   currentInitiative: 1
   currentRange: 2
-  currentHP: 100
+  currentHP: 100000
   currentStrength: 1
   currentDefense: 1
   currentPower: 0
@@ -78,7 +76,7 @@ MonoBehaviour:
   currentInterceptionChance: 0
   currentHarmonicCharge: 1
   currentMusicalMoveSetIndex: -1
-  currentItemSetIndex: -1
+  currentItemSetIndex: 0
   hitSound: {fileID: 0}
   criticalHitSound: {fileID: 0}
   interceptedSound: {fileID: 0}

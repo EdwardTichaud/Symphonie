@@ -100,9 +100,19 @@ public class CharacterStatusEffectController : MonoBehaviour
         GetOrCreate(target)?.ApplySleepInternal(turns);
     }
 
+    public static void ApplyStun(CharacterUnit target, int turns = 1)
+    {
+        GetOrCreate(target)?.ApplyStunInternal(turns);
+    }
+
     public static void RemoveSleep(CharacterUnit target)
     {
         GetOrCreate(target)?.RemoveSleepInternal();
+    }
+
+    public static void RemoveStun(CharacterUnit target)
+    {
+        GetOrCreate(target)?.RemoveStunInternal();
     }
 
     #endregion
@@ -171,6 +181,17 @@ public class CharacterStatusEffectController : MonoBehaviour
         sleep.Sleep(turns);
     }
 
+    private void ApplyStunInternal(int turns)
+    {
+        if (owner == null)
+            return;
+
+        var stunned = owner.GetComponent<StunnedStatus>();
+        if (stunned == null)
+            stunned = owner.gameObject.AddComponent<StunnedStatus>();
+        stunned.Stun(Mathf.Max(1, turns));
+    }
+
     private void RemoveSleepInternal()
     {
         if (owner == null)
@@ -179,6 +200,15 @@ public class CharacterStatusEffectController : MonoBehaviour
         var sleep = owner.GetComponent<SleepStatus>();
         if (sleep != null)
             sleep.WakeUp();
+    }
+
+    private void RemoveStunInternal()
+    {
+        if (owner == null)
+            return;
+
+        var stunned = owner.GetComponent<StunnedStatus>();
+        stunned?.Recover();
     }
 
     #endregion

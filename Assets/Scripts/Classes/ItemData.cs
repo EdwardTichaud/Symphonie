@@ -26,7 +26,105 @@ public class ItemData : ScriptableObject
     [Tooltip("Moves conseillés pour créer des combos efficaces avec cet objet.")]
     public List<MusicalMoveSO> recommendedMusicalMoves = new();
 
-    public int effectValue = 10;
+    [System.Serializable]
+    public class EffectDefinition
+    {
+        [Tooltip("Type d'effet appliqué lorsque l'objet est utilisé.")]
+        public ItemEffectType type = ItemEffectType.None;
+        [Tooltip("Valeur de référence associée à l'effet (dégâts, portée supplémentaire, durée de sommeil...).")]
+        public int value = 10;
+    }
+
+    [Header("Effets principaux")]
+    [Tooltip("Liste des effets appliqués lors de l'utilisation de l'objet. L'ordre détermine l'effet principal utilisé par les systèmes existants.")]
+    public List<EffectDefinition> effects = new();
+
+    [SerializeField, HideInInspector, FormerlySerializedAs("effectType")]
+    private ItemEffectType legacyEffectType = ItemEffectType.None;
+    [SerializeField, HideInInspector, FormerlySerializedAs("effectValue")]
+    private int legacyEffectValue = 10;
+
+    private void EnsureEffectsInitialized()
+    {
+        if (effects == null)
+            effects = new List<EffectDefinition>();
+
+        if (effects.Count == 0)
+        {
+            effects.Add(new EffectDefinition
+            {
+                type = legacyEffectType,
+                value = legacyEffectValue
+            });
+        }
+        else if (effects[0] == null)
+        {
+            effects[0] = new EffectDefinition
+            {
+                type = legacyEffectType,
+                value = legacyEffectValue
+            };
+        }
+    }
+
+    private EffectDefinition GetPrimaryEffect()
+    {
+        EnsureEffectsInitialized();
+        return effects[0];
+    }
+
+    public bool HasEffect(ItemEffectType type)
+    {
+        EnsureEffectsInitialized();
+        foreach (var effect in effects)
+        {
+            if (effect == null)
+                continue;
+
+            if (effect.type == type)
+                return true;
+        }
+
+        return false;
+    }
+
+    public int GetEffectValue(ItemEffectType type, int defaultValue = 0)
+    {
+        EnsureEffectsInitialized();
+        foreach (var effect in effects)
+        {
+            if (effect == null)
+                continue;
+
+            if (effect.type == type)
+                return effect.value;
+        }
+
+        return defaultValue;
+    }
+
+    public int GetTotalEffectValue(ItemEffectType type)
+    {
+        EnsureEffectsInitialized();
+        int total = 0;
+        foreach (var effect in effects)
+        {
+            if (effect == null || effect.type != type)
+                continue;
+
+            total += effect.value;
+        }
+
+        return total;
+    }
+
+    public ItemEffectType PrimaryEffectType => GetPrimaryEffect().type;
+    public int PrimaryEffectValue => GetPrimaryEffect().value;
+
+    // Compatibilité avec l'ancien champ unique.
+    public ItemEffectType effectType => PrimaryEffectType;
+    public int effectValue => PrimaryEffectValue;
+
     public bool isUsableInBattle = true;
     public float moveSpeed;
     public float castDistance;
@@ -53,9 +151,6 @@ public class ItemData : ScriptableObject
     public int criticalEffectValue = 20;
 
     [Tooltip("Si vrai, le lanceur reste à la position cible après l'action")] public bool stayInPlace;
-
-    // Le ciblage visuel est désormais géré par la Timeline de préparation
-    public ItemEffectType effectType;
 
     [Header("Heal Settings")]
     public int healAmount = 0;
@@ -130,6 +225,8 @@ public class ItemData : ScriptableObject
 
     private void OnValidate()
     {
+        EnsureEffectsInitialized();
+
         // Récupère l'Item de référence. Si introuvable, on ne fait rien pour
         // éviter les messages d'erreur intempestifs.
         var reference = AssetDatabase.LoadAssetAtPath<ItemData>(LONGUE_PORTEE_PATH);
@@ -169,8 +266,16 @@ public class ItemData : ScriptableObject
 
     public void ApplyEffect(CharacterUnit caster, CharacterUnit target, bool isCritical)
     {
-        // Applique d'abord l'effet principal de l'objet
-        ApplySingleEffect(effectType, caster, target, effectValue);
+        EnsureEffectsInitialized();
+
+        // Applique l'ensemble des effets configurés
+        foreach (var effect in effects)
+        {
+            if (effect == null)
+                continue;
+
+            ApplySingleEffect(effect.type, caster, target, effect.value);
+        }
 
         // Ajoute l'effet critique si nécessaire
         if (isCritical && useCriticalVariant)
@@ -214,7 +319,10 @@ public class ItemData : ScriptableObject
                 ApplyExtendEffects(target);
                 break;
             case ItemEffectType.Sleep:
-                ApplySleep(target);
+                ApplySleep(target, value);
+                break;
+            case ItemEffectType.Stun:
+                ApplyStun(target, value);
                 break;
             case ItemEffectType.WakeUp:
                 ApplyWakeUp(target);
@@ -288,9 +396,14 @@ public class ItemData : ScriptableObject
         CharacterStatusEffectController.ExtendEffectDurations(target, buffDuration);
     }
 
-    private void ApplySleep(CharacterUnit target)
+    private void ApplySleep(CharacterUnit target, float value)
     {
-        CharacterStatusEffectController.ApplySleep(target, Mathf.Max(1, effectValue));
+        CharacterStatusEffectController.ApplySleep(target, Mathf.Max(1, Mathf.RoundToInt(value)));
+    }
+
+    private void ApplyStun(CharacterUnit target, float value)
+    {
+        CharacterStatusEffectController.ApplyStun(target, Mathf.Max(1, Mathf.RoundToInt(value)));
     }
 
     private void ApplyWakeUp(CharacterUnit target)
@@ -299,7 +412,7 @@ public class ItemData : ScriptableObject
     }
 }
 
-public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange, PreventInterception, ExtendEffects, Sleep, WakeUp }
+public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange, PreventInterception, ExtendEffects, Sleep, WakeUp, Stun }
 public enum BuffStatType { None, Strength, Defense, Initiative, MaxHP }
 public enum DebuffStatType { None, Strength, Defense, Initiative, MaxHP }
 public enum TimingBoostType { None, ParryWindow, DodgeWindow }

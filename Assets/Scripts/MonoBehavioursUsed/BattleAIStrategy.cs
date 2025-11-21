@@ -728,26 +728,26 @@ public static class BattleAIStrategy
                || type == TargetType.All;
     }
 
-    private static bool IsHealingMove(MusicalMoveSO move) => move != null && move.effectType == MusicalEffectType.Heal;
-    private static bool IsDamageMove(MusicalMoveSO move) => move != null && move.effectType == MusicalEffectType.Damage;
-    private static bool ProvidesOffensiveBuff(MusicalMoveSO move) => move != null && move.effectType == MusicalEffectType.IncreaseDamage;
+    private static bool IsHealingMove(MusicalMoveSO move) => move != null && move.HasEffect(MusicalEffectType.Heal);
+    private static bool IsDamageMove(MusicalMoveSO move) => move != null && move.HasEffect(MusicalEffectType.Damage);
+    private static bool ProvidesOffensiveBuff(MusicalMoveSO move) => move != null && move.HasEffect(MusicalEffectType.IncreaseDamage);
 
-    private static bool IsHealingItem(ItemData item) => item != null && item.effectType == ItemEffectType.Heal;
-    private static bool IsDamageItem(ItemData item) => item != null && item.effectType == ItemEffectType.Damage;
-    private static bool ProvidesOffensiveBuff(ItemData item) => item != null && item.effectType == ItemEffectType.Buff && item.buffStat == BuffStatType.Strength;
+    private static bool IsHealingItem(ItemData item) => item != null && item.HasEffect(ItemEffectType.Heal);
+    private static bool IsDamageItem(ItemData item) => item != null && item.HasEffect(ItemEffectType.Damage);
+    private static bool ProvidesOffensiveBuff(ItemData item) => item != null && item.HasEffect(ItemEffectType.Buff) && item.buffStat == BuffStatType.Strength;
 
     private static bool IsDefensiveMove(MusicalMoveSO move)
     {
         if (move == null)
             return false;
 
-        if (move.effectType == MusicalEffectType.IncreaseDefense
-            || move.effectType == MusicalEffectType.IncreaseMaxHP
-            || move.effectType == MusicalEffectType.DecreaseDamage
-            || move.effectType == MusicalEffectType.DecreaseDefense)
+        if (move.HasEffect(MusicalEffectType.IncreaseDefense)
+            || move.HasEffect(MusicalEffectType.IncreaseMaxHP)
+            || move.HasEffect(MusicalEffectType.DecreaseDamage)
+            || move.HasEffect(MusicalEffectType.DecreaseDefense))
             return true;
 
-        return move.effectType == MusicalEffectType.Sleep;
+        return move.HasEffect(MusicalEffectType.Sleep);
     }
 
     private static bool IsDefensiveItem(ItemData item)
@@ -755,13 +755,13 @@ public static class BattleAIStrategy
         if (item == null)
             return false;
 
-        if (item.effectType == ItemEffectType.Buff && item.buffStat == BuffStatType.Defense)
+        if (item.HasEffect(ItemEffectType.Buff) && item.buffStat == BuffStatType.Defense)
             return true;
 
-        if (item.effectType == ItemEffectType.Debuff && item.debuffStat == DebuffStatType.Strength)
+        if (item.HasEffect(ItemEffectType.Debuff) && item.debuffStat == DebuffStatType.Strength)
             return true;
 
-        return item.effectType == ItemEffectType.Sleep;
+        return item.HasEffect(ItemEffectType.Sleep);
     }
 
     private static float EstimateDamage(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target, float powerBonus = 0f)
@@ -770,7 +770,7 @@ public static class BattleAIStrategy
             return 0f;
 
         float power = caster.currentPower + powerBonus;
-        float value = move.effectValue + power;
+        float value = move.GetEffectValue(MusicalEffectType.Damage, move.PrimaryEffectValue) + power;
         value *= caster.GetAttackMultiplier();
         value = caster.ApplyDamageModifiers(value);
         return Mathf.Max(0f, value);
@@ -781,7 +781,7 @@ public static class BattleAIStrategy
         if (item == null || target == null)
             return 0f;
 
-        float value = item.effectValue;
+        float value = item.GetTotalEffectValue(ItemEffectType.Damage);
         if (caster != null)
             value *= caster.GetAttackMultiplier();
         return Mathf.Max(0f, value);
@@ -792,7 +792,8 @@ public static class BattleAIStrategy
         if (move == null || target == null)
             return 0f;
 
-        float baseValue = move.effectValue + Mathf.Max(target.currentSagacity, target.currentPower);
+        float baseValue = move.GetEffectValue(MusicalEffectType.Heal, move.PrimaryEffectValue)
+                          + Mathf.Max(target.currentSagacity, target.currentPower);
         return Mathf.Max(0f, target.ApplyHealingModifiers(baseValue));
     }
 
@@ -810,30 +811,36 @@ public static class BattleAIStrategy
         if (move == null || target == null)
             return 0f;
 
-        if (move.effectType == MusicalEffectType.IncreaseDefense)
+        float total = 0f;
+
+        if (move.HasEffect(MusicalEffectType.IncreaseDefense))
         {
-            return move.buffIsPercentage ? target.currentDefense * move.effectValue / 100f : move.effectValue;
+            float amount = move.GetEffectValue(MusicalEffectType.IncreaseDefense);
+            total += move.buffIsPercentage ? target.currentDefense * amount / 100f : amount;
         }
 
-        if (move.effectType == MusicalEffectType.IncreaseMaxHP)
+        if (move.HasEffect(MusicalEffectType.IncreaseMaxHP))
         {
-            return move.buffIsPercentage ? target.MaxHP * move.effectValue / 100f : move.effectValue;
+            float amount = move.GetEffectValue(MusicalEffectType.IncreaseMaxHP);
+            total += move.buffIsPercentage ? target.MaxHP * amount / 100f : amount;
         }
 
-        if (move.effectType == MusicalEffectType.DecreaseDamage)
+        if (move.HasEffect(MusicalEffectType.DecreaseDamage))
         {
-            return move.debuffIsPercentage ? move.effectValue : Mathf.Abs(move.effectValue);
+            float amount = move.GetEffectValue(MusicalEffectType.DecreaseDamage);
+            total += move.debuffIsPercentage ? amount : Mathf.Abs(amount);
         }
 
-        if (move.effectType == MusicalEffectType.DecreaseDefense)
+        if (move.HasEffect(MusicalEffectType.DecreaseDefense))
         {
-            return move.debuffIsPercentage ? move.effectValue : Mathf.Abs(move.effectValue);
+            float amount = move.GetEffectValue(MusicalEffectType.DecreaseDefense);
+            total += move.debuffIsPercentage ? amount : Mathf.Abs(amount);
         }
 
-        if (move.effectType == MusicalEffectType.Sleep)
-            return 10f;
+        if (move.HasEffect(MusicalEffectType.Sleep))
+            total += 10f;
 
-        return 0f;
+        return total;
     }
 
     private static float EstimateItemDefensiveValue(ItemData item, CharacterUnit target)
@@ -841,36 +848,39 @@ public static class BattleAIStrategy
         if (item == null || target == null)
             return 0f;
 
-        if (item.effectType == ItemEffectType.Buff && item.buffStat == BuffStatType.Defense)
+        float total = 0f;
+
+        if (item.HasEffect(ItemEffectType.Buff) && item.buffStat == BuffStatType.Defense)
         {
-            return item.buffIsPercentage ? target.currentDefense * item.buffAmount / 100f : item.buffAmount;
+            total += item.buffIsPercentage ? target.currentDefense * item.buffAmount / 100f : item.buffAmount;
         }
 
-        if (item.effectType == ItemEffectType.Debuff && item.debuffStat == DebuffStatType.Strength)
+        if (item.HasEffect(ItemEffectType.Debuff) && item.debuffStat == DebuffStatType.Strength)
         {
-            return item.debuffIsPercentage ? item.debuffAmount : Mathf.Abs(item.debuffAmount);
+            total += item.debuffIsPercentage ? item.debuffAmount : Mathf.Abs(item.debuffAmount);
         }
 
-        if (item.effectType == ItemEffectType.Sleep)
-            return 10f;
+        if (item.HasEffect(ItemEffectType.Sleep))
+            total += 10f;
 
-        return 0f;
+        return total;
     }
 
     private static float EstimateOffensiveBonus(MusicalMoveSO move, CharacterUnit target)
     {
-        if (move == null || target == null || move.effectType != MusicalEffectType.IncreaseDamage)
+        if (move == null || target == null || !move.HasEffect(MusicalEffectType.IncreaseDamage))
             return 0f;
 
+        float amount = move.GetEffectValue(MusicalEffectType.IncreaseDamage);
         if (move.buffIsPercentage)
-            return target.currentPower * move.effectValue / 100f;
+            return target.currentPower * amount / 100f;
 
-        return move.effectValue;
+        return amount;
     }
 
     private static float EstimateItemOffensiveBonus(ItemData item, CharacterUnit target)
     {
-        if (item == null || target == null || item.buffStat != BuffStatType.Strength)
+        if (item == null || target == null || item.buffStat != BuffStatType.Strength || !item.HasEffect(ItemEffectType.Buff))
             return 0f;
 
         if (item.buffIsPercentage)

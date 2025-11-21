@@ -1484,6 +1484,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         var sleep = GetComponent<SleepStatus>();
         sleep?.TickTurn();
 
+        var stunned = GetComponent<StunnedStatus>();
+        stunned?.TickTurn();
+
         var loyalty = GetComponent<LoyaltyMark>();
         loyalty?.Tick();
 
@@ -1792,7 +1795,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             if (!canUse)
                 continue;
 
-            if (move.moveType == MoveType.Attack && move.effectType == MusicalEffectType.Damage)
+            if (move.moveType == MoveType.Attack && move.HasEffect(MusicalEffectType.Damage))
                 return move; // Premier candidat offensif trouvé : suffisant pour une attaque basique.
         }
 
@@ -2065,6 +2068,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             return;
 
         if (TryGetComponent<SleepStatus>(out var sleep) && sleep.IsAsleep)
+            return;
+
+        if (TryGetComponent<StunnedStatus>(out var stunned) && stunned.IsStunned)
             return;
 
         if (TryGetComponent<FatigueSystem>(out var fatigue) && fatigue.IsAsleep)

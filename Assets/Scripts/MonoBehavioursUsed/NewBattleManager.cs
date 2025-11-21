@@ -1185,6 +1185,12 @@ public class NewBattleManager : MonoBehaviour
     {
         if (currentBattleState != BattleState.VictoryScreen_Await && currentBattleState != BattleState.VictoryScreen_CanContinue && currentBattleState != BattleState.GameOverScreen_Await && currentBattleState != BattleState.GameOverScreen_CanContinue)
         {
+            if (unit.TryGetComponent<StunnedStatus>(out var stunnedStatus) && stunnedStatus.IsStunned)
+            {
+                EndTurn(unit, skipIdleAnimation: true);
+                yield break;
+            }
+
             if (unit.TryGetComponent<SleepStatus>(out var sleep) && sleep.IsAsleep && unit.Data.gameplayType != GameplayType.Fatigue)
             {
                 // En cas de sommeil, on clôt immédiatement le tour de l'unité concernée sans relancer son animation idle
@@ -1538,7 +1544,7 @@ public class NewBattleManager : MonoBehaviour
 
         // Ajout du système de rage manuellement
         var rage = caster.GetComponent<RageSystem>();
-        if (rage != null && move.effectType == MusicalEffectType.Damage)
+        if (rage != null && move.HasEffect(MusicalEffectType.Damage))
         {
             float bonus = rage.CalculateBonusDamage();
             if (bonus > 0)
@@ -1550,9 +1556,10 @@ public class NewBattleManager : MonoBehaviour
         }
 
         var concentration = caster.GetComponent<ConcentrationSystem>();
-        if (concentration != null && move.effectType == MusicalEffectType.Damage)
+        if (concentration != null && move.HasEffect(MusicalEffectType.Damage))
         {
-            float bonus = concentration.CalculateBonusDamage(move.effectValue + caster.currentPower);
+            int baseDamage = move.GetEffectValue(MusicalEffectType.Damage, move.PrimaryEffectValue);
+            float bonus = concentration.CalculateBonusDamage(baseDamage + caster.currentPower);
             if (bonus > 0)
             {
                 target.TakeDamage(bonus, caster.transform);
@@ -1601,8 +1608,8 @@ public class NewBattleManager : MonoBehaviour
 
         // Calcule les dégâts totaux infligés par l'objet
         float dmgVal = 0f;
-        if (item.effectType == ItemEffectType.Damage)
-            dmgVal += item.effectValue;
+        if (item.HasEffect(ItemEffectType.Damage))
+            dmgVal += item.GetTotalEffectValue(ItemEffectType.Damage);
         if (crit && item.useCriticalVariant && item.criticalEffectType == ItemEffectType.Damage)
             dmgVal += item.criticalEffectValue;
 
