@@ -3079,7 +3079,7 @@ public class NewBattleManager : MonoBehaviour
             Transform basicSlot = currentSkillsMenuSlots[0];
             if (basicAttackMoveChoice != null && currentCharacterUnit != null && currentCharacterUnit.Data != null)
             {
-                UpdateButton(basicSlot, basicAttackMoveChoice.moveName, basicAttackMoveChoice.moveIcon);
+                UpdateButton(basicSlot, basicAttackMoveChoice.moveName, basicAttackMoveChoice.moveIcon, basicAttackMoveChoice.description);
 
                 bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(basicAttackMoveChoice.consumedHarmonicType) >= basicAttackMoveChoice.harmonicCost;
                 bool resonanceOk = !basicAttackMoveChoice.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.awakeHarmonicThreshold;
@@ -3126,7 +3126,7 @@ public class NewBattleManager : MonoBehaviour
             if (globalIndex < skillChoices.Count)
             {
                 var move = skillChoices[globalIndex];
-                UpdateButton(slot, move.moveName, move.moveIcon);
+                UpdateButton(slot, move.moveName, move.moveIcon, move.description);
 
                 bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(move.consumedHarmonicType) >= move.harmonicCost;
                 bool resonanceOk = !move.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.awakeHarmonicThreshold;
@@ -3148,7 +3148,7 @@ public class NewBattleManager : MonoBehaviour
         // 2) Place le mouvement spécial dans le dernier slot
         if (specialMoveChoice != null)
         {
-            UpdateButton(currentSkillsMenuSlots[specialSlotIndex], specialMoveChoice.moveName, specialMoveChoice.moveIcon);
+            UpdateButton(currentSkillsMenuSlots[specialSlotIndex], specialMoveChoice.moveName, specialMoveChoice.moveIcon, specialMoveChoice.description);
 
             bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(specialMoveChoice.consumedHarmonicType) >= specialMoveChoice.harmonicCost;
             bool resonanceOk = !specialMoveChoice.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.awakeHarmonicThreshold;
@@ -3268,7 +3268,7 @@ public class NewBattleManager : MonoBehaviour
         currentItemsMenuContainer.SetActive(showItems);
     }
 
-    private void UpdateButton(Transform slot, string label, Sprite icon)
+    private void UpdateButton(Transform slot, string label, Sprite icon, string description = null)
     {
         if (slot == null || slot.childCount == 0)
         {
@@ -3285,7 +3285,13 @@ public class NewBattleManager : MonoBehaviour
         var txt = slot.GetComponentInChildren<TextMeshProUGUI>();
         var img = slot.childCount > 3 ? slot.GetChild(3).GetComponent<Image>() : null;
 
-        if (txt != null) txt.text = label;
+        if (txt != null)
+        {
+            if (!string.IsNullOrWhiteSpace(description))
+                txt.text = $"{label}\n<size=55%><color=#CFCFCF>{description}</color></size>";
+            else
+                txt.text = label;
+        }
         if (img != null) img.sprite = icon;
     }
 
