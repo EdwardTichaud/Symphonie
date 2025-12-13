@@ -226,6 +226,11 @@ public class CharacterData : ScriptableObject, ITargetable
     #region Audio & Effets
 
     [Header("Impacts & réactions")]
+
+    public AudioClipSO turnStartVoiceline;
+    public AudioClipSO turnEndVoiceline;
+    public AudioClipSO baseAttackVoiceline;
+
     [Tooltip("Effet sonore principal joué lors d'un coup reçu.")]
     public AudioClipSO hitSound;
 

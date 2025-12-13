@@ -408,6 +408,10 @@ public class NewBattleManager : MonoBehaviour
 
     public GameObject currentSkillsMenuContainer;
     public List<Transform> currentSkillsMenuSlots;
+    private readonly Dictionary<RectTransform, float> baseMenuSlotHeights = new();
+    private readonly Dictionary<TextMeshProUGUI, float> baseMenuTextHeights = new();
+    private const float MinMenuFontSize = 40f;
+    private const float MenuSlotVerticalPadding = 30f;
 
     public GameObject currentItemsMenuContainer;
     public List<Transform> currentItemsMenuSlots;
@@ -1222,6 +1226,7 @@ public class NewBattleManager : MonoBehaviour
             BattleTimelineUIManager.Instance?.Refresh(unit);
 
             ChangeBattleState(BattleState.NewTurn);
+            PlayTurnStartVoice(unit);
 
             // Initialise un travelling lent rappelant l'intro de combat lorsque le premier joueur prend la main.
             TryLaunchFirstTurnCameraRail(unit);
@@ -1987,6 +1992,8 @@ public class NewBattleManager : MonoBehaviour
                 // Idem que pour le début de tour : on délègue au CharacterUnit pour garantir un fondu systématique.
                 endingUnit.PlayIdleAnimation();
             }
+
+            PlayTurnEndVoice(endingUnit);
         }
 
         ChangeBattleState(BattleState.EndTurn);
@@ -3233,7 +3240,7 @@ public class NewBattleManager : MonoBehaviour
         for (int i = 0; i < itemChoices.Count && i < currentItemsMenuSlots.Count; i++)
         {
             var item = itemChoices[i];
-            UpdateButton(currentItemsMenuSlots[i], item.itemName, item.itemIcon);
+            UpdateButton(currentItemsMenuSlots[i], item.itemName, item.itemIcon, item.description);
         }
 
         // Indique les emplacements vides
@@ -3283,16 +3290,82 @@ public class NewBattleManager : MonoBehaviour
         }
 
         var txt = slot.GetComponentInChildren<TextMeshProUGUI>();
+        var slotRect = slot as RectTransform;
         var img = slot.childCount > 3 ? slot.GetChild(3).GetComponent<Image>() : null;
 
         if (txt != null)
         {
+            ConfigureMenuTextAutosizing(txt);
+
             if (!string.IsNullOrWhiteSpace(description))
-                txt.text = $"{label}\n<size=55%><color=#CFCFCF>{description}</color></size>";
+                txt.text = $"{label}\n<color=#CFCFCF>{description}</color>";
             else
                 txt.text = label;
+
+            AdjustMenuSlotToText(txt, slotRect);
         }
         if (img != null) img.sprite = icon;
+    }
+
+    private void ConfigureMenuTextAutosizing(TextMeshProUGUI txt)
+    {
+        txt.enableAutoSizing = true;
+        txt.fontSizeMin = MinMenuFontSize;
+        if (txt.fontSizeMax < txt.fontSize)
+            txt.fontSizeMax = txt.fontSize;
+    }
+
+    private void AdjustMenuSlotToText(TextMeshProUGUI txt, RectTransform slotRect)
+    {
+        if (txt == null || slotRect == null)
+            return;
+
+        RectTransform textRect = txt.rectTransform;
+
+        if (!baseMenuTextHeights.ContainsKey(txt))
+            baseMenuTextHeights[txt] = textRect.sizeDelta.y;
+
+        if (!baseMenuSlotHeights.ContainsKey(slotRect))
+            baseMenuSlotHeights[slotRect] = slotRect.sizeDelta.y;
+
+        // Met à jour les métriques après application du nouveau contenu.
+        txt.ForceMeshUpdate(true, true);
+
+        float baseTextHeight = baseMenuTextHeights[txt];
+        float desiredTextHeight = baseTextHeight;
+        bool atMinimumSize = txt.enableAutoSizing && txt.fontSize <= MinMenuFontSize + 0.5f;
+
+        // Si le texte est déjà à la taille minimale et déborde encore, on étend la zone.
+        if (atMinimumSize && (txt.isTextOverflowing || txt.preferredHeight > baseTextHeight))
+            desiredTextHeight = Mathf.Max(baseTextHeight, txt.preferredHeight);
+
+        textRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, desiredTextHeight);
+
+        float targetSlotHeight = Mathf.Max(baseMenuSlotHeights[slotRect], desiredTextHeight + MenuSlotVerticalPadding);
+        slotRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, targetSlotHeight);
+    }
+
+    private void PlayTurnStartVoice(CharacterUnit unit)
+    {
+        PlayTurnVoice(unit, unit?.Data?.turnStartVoiceline);
+    }
+
+    private void PlayTurnEndVoice(CharacterUnit unit)
+    {
+        PlayTurnVoice(unit, unit?.Data?.turnEndVoiceline);
+    }
+
+    private void PlayBaseAttackVoice(CharacterUnit unit)
+    {
+        PlayTurnVoice(unit, unit?.Data?.baseAttackVoiceline);
+    }
+
+    private void PlayTurnVoice(CharacterUnit unit, AudioClipSO clip)
+    {
+        if (unit == null || unit.Data == null || clip == null)
+            return;
+
+        AudioManager.Instance?.PlayVoice(clip);
     }
 
     private void SetButtonAvailability(Transform slot, bool available, bool highlight = false)
@@ -3951,6 +4024,7 @@ public class NewBattleManager : MonoBehaviour
         // La résolution passe désormais par le MusicalMove afin de profiter des timelines,
         // effets secondaires et registres de dégâts déjà implémentés. On transmet toutefois
         // les options historiques (fatigue, statistiques) pour conserver le même contrat public.
+        PlayBaseAttackVoice(attacker); // doit précéder la timeline Performing du move
         bool ignoreFatigue = !applyFatigue;
         bool skipDamageRegistration = !registerStats;
         basicMove.ApplyEffect(attacker, target, false, ignoreFatigue, skipDamageRegistration);

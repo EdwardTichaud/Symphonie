@@ -13,10 +13,10 @@ MonoBehaviour:
   m_Name: MusicalMove_AttaqueBasique
   m_EditorClassIdentifier: 
   moveName: Attaque basique
-  moveType: 2
+  moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: 
+  description: "Une attaque de base, simple, mais un peu d\xE9cevante..."
   inventoryCategory: 
   inventorySummary: 
   consumeOnUse: 0
@@ -28,8 +28,11 @@ MonoBehaviour:
   harmonicGeneration: 0
   consumedHarmonicType: 0
   generatedHarmonicType: 0
-  effectType: 0
-  effectValue: 100
+  effects:
+  - type: 0
+    value: 100
+  legacyEffectType: 0
+  legacyEffectValue: 100
   passiveEffectPrefab: {fileID: 0}
   passiveEffectVerticalOffset: 0
   buffStat: 0
@@ -40,19 +43,20 @@ MonoBehaviour:
   debuffAmount: 0
   debuffDuration: 0
   debuffIsPercentage: 0
+  previousEffectType: 0
   useCriticalVariant: 0
   criticalEffectType: 0
-  criticalEffectValue: 20
+  criticalEffectValue: 200
   criticalFatigueCost: 1
   criticalHarmonicCost: 1
   criticalHarmonicGeneration: 0
   cooldown: 0
   maxUsesPerTurn: 1
   maxUsesPerBattle: 0
-  altitudeCondition: 2
-  targetType: 3
-  defaultTargetType: 3
-  targetTypes: 03000000
+  altitudeCondition: 0
+  targetType: 1
+  defaultTargetType: 1
+  targetTypes: 01000000
   travelTime: 0.5
   legacyMoveSpeed: 0
   legacyMoveSpeedConverted: 1
@@ -66,7 +70,10 @@ MonoBehaviour:
   tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
   tpSFx_Start: {fileID: 0}
   tpSFx_End: {fileID: 0}
-  warningClip: {fileID: 11400000, guid: 29103ad2cbb379247b134f144ca99f24, type: 2}
+  warningClip: {fileID: 0}
+  requiresPreparationBeforeExecution: 0
+  preparationTurnCount: 0
+  preparationFailureConditions: []
   startDelay: 0
   enterAwake: 0
   preparingAnimation: {fileID: 7400000, guid: b7036298c1ee56c42b7235c2636f27c9, type: 3}

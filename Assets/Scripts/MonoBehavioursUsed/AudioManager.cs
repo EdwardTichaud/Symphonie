@@ -1017,31 +1017,6 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     private IEnumerator WarningCoroutine(AudioClipSO clipAsset, AudioClip clip, float normalizationFactor, float volumeFactor)
     {
-        // Sauvegarde des volumes actuels
-        float[] musicVols = new float[musicSources.Length];
-        for (int i = 0; i < musicSources.Length; i++) musicVols[i] = musicSources[i].volume;
-        float[] sfxVols = new float[sfxSources.Length];
-        for (int i = 0; i < sfxSources.Length; i++) sfxVols[i] = sfxSources[i].volume;
-        float[] voiceVols = new float[voiceSources.Length];
-        for (int i = 0; i < voiceSources.Length; i++) voiceVols[i] = voiceSources[i].volume;
-
-        cachedWarningMusicVolumes = musicVols;
-        cachedWarningSfxVolumes = sfxVols;
-        cachedWarningVoiceVolumes = voiceVols;
-
-        // Calcul du multiplicateur (1 - pourcentage d'atténuation)
-        float attenuationMultiplier = Mathf.Clamp01(1f - warningAttenuation);
-
-        // Application de l'atténuation
-        foreach (var src in musicSources) src.volume *= attenuationMultiplier;
-        foreach (var src in sfxSources) src.volume *= attenuationMultiplier;
-        foreach (var src in voiceSources) src.volume *= attenuationMultiplier;
-
-        // Les nouvelles sources dynamiques doivent également être prises en compte.
-        currentWarningAttenuation = attenuationMultiplier;
-        RefreshDynamicVolumes(activeSfxHandles, sfxVolume);
-        RefreshDynamicVolumes(activeVoiceHandles, voiceVolume);
-
         // Lecture du warning clip via une AudioSource dédiée créée pour l'occasion.
         // On privilégie le gabarit dédié s'il a été assigné, sinon on recycle
         // les réglages d'un effet sonore classique pour rester cohérent.
@@ -1062,7 +1037,6 @@ public class AudioManager : MonoBehaviour
         yield return DestroySourceWhenFinished(warningSource);
         currentWarningSource = null;
 
-        RestoreWarningVolumes();
         warningRoutine = null;
     }
 

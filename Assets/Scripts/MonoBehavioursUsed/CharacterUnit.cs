@@ -1778,43 +1778,45 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public MusicalMoveSO GetBasicAttack()
     {
-        if (Data == null || Data.musicalAttacks == null || Data.musicalAttacks.Length == 0)
+        if (Data == null)
             return null;
 
-        foreach (var move in Data.musicalAttacks)
+        MusicalMoveSO FindFirstUsable(IEnumerable<MusicalMoveSO> moves, bool requireOffensive)
         {
-            if (move == null)
-                continue;
+            if (moves == null)
+                return null;
 
-            bool canUse = (!move.onlyAwake || IsAwake)
-                          && (!move.enterAwake || !IsAwake)
-                          && (!move.enterAwake || GetHarmonicCount(Data.harmonicType) >= Data.awakeHarmonicThreshold)
-                          && GetHarmonicCount(move.consumedHarmonicType) >= move.harmonicCost
-                          && !IsMoveOnCooldown(move);
+            foreach (var move in moves)
+            {
+                if (move == null)
+                    continue;
 
-            if (!canUse)
-                continue;
+                bool canUse = (!move.onlyAwake || IsAwake)
+                              && (!move.enterAwake || !IsAwake)
+                              && (!move.enterAwake || GetHarmonicCount(Data.harmonicType) >= Data.awakeHarmonicThreshold)
+                              && GetHarmonicCount(move.consumedHarmonicType) >= move.harmonicCost
+                              && !IsMoveOnCooldown(move);
 
-            if (move.moveType == MoveType.Attack && move.HasEffect(MusicalEffectType.Damage))
-                return move; // Premier candidat offensif trouvé : suffisant pour une attaque basique.
+                if (!canUse)
+                    continue;
+
+                if (!requireOffensive || (move.moveType == MoveType.Attack && move.HasEffect(MusicalEffectType.Damage)))
+                    return move; // Premier candidat valide trouvé.
+            }
+
+            return null;
         }
 
-        // Aucun move purement offensif : on tente malgré tout de retourner le premier move accessible (ex : support forcé).
-        foreach (var move in Data.musicalAttacks)
-        {
-            if (move == null)
-                continue;
+        // 1) Priorité : attaques basiques explicitement configurées sur le personnage.
+        var basicOffensive = FindFirstUsable(Data.basicAttack, requireOffensive: true);
+        if (basicOffensive != null)
+            return basicOffensive;
 
-            bool canUse = (!move.onlyAwake || IsAwake)
-                          && (!move.enterAwake || !IsAwake)
-                          && (!move.enterAwake || GetHarmonicCount(Data.harmonicType) >= Data.awakeHarmonicThreshold)
-                          && GetHarmonicCount(move.consumedHarmonicType) >= move.harmonicCost
-                          && !IsMoveOnCooldown(move);
+        var basicAny = FindFirstUsable(Data.basicAttack, requireOffensive: false);
+        if (basicAny != null)
+            return basicAny;
 
-            if (canUse)
-                return move;
-        }
-
+        // 2) Aucun move basique disponible : on laisse la résolution globale gérer un fallback (defaultBasicAttackMove).
         return null;
     }
 

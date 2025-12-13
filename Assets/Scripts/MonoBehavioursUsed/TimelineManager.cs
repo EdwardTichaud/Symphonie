@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using UnityEngine.Playables;
 using UnityEngine.Timeline; // Gestion des TimelineAsset et bindings
 using UnityEngine.InputSystem; // Nécessaire pour manipuler les InputAction du joueur
@@ -457,6 +458,7 @@ public class TimelineManager : MonoBehaviour
         this.interruptMusic = interruptMusic;
         this.allowSkip = allowSkip; // Mémorise si le joueur peut passer la cinématique
         this.autoRestore = autoRestore; // Indique si la caméra/inputs sont restaurés en fin de timeline
+        EnsureCameraBinding(newDirector);
         currentDirector.Play();
     }
 
@@ -854,6 +856,46 @@ public class TimelineManager : MonoBehaviour
         CameraActivationManager.Instance?.EndWorldCameraTimelineOverride();
         worldCameraControlRequested = false;
         RestorePlayerRotation();
+    }
+
+    /// <summary>
+    /// Garantit qu'une track caméra non bindée utilise au moins l'Animator de la WorldCamera.
+    /// Évite les timelines jouées sans contrôle caméra effectif (ex : WakeUp!).
+    /// </summary>
+    private void EnsureCameraBinding(PlayableDirector director)
+    {
+        if (director == null)
+            return;
+
+        var timeline = director.playableAsset as TimelineAsset;
+        if (timeline == null)
+            return;
+
+        var worldCam = GameObject.FindGameObjectWithTag("WorldCamera");
+        Animator camAnimator = worldCam != null
+            ? (worldCam.transform.parent != null
+                ? worldCam.transform.parent.GetComponent<Animator>()
+                : worldCam.GetComponent<Animator>())
+            : null;
+
+        if (camAnimator == null)
+            return;
+
+        foreach (var output in timeline.outputs)
+        {
+            string name = output.streamName ?? string.Empty;
+            var targetType = output.outputTargetType;
+            bool looksLikeCameraTrack = name.IndexOf("camera", StringComparison.OrdinalIgnoreCase) >= 0
+                                        || (targetType != null && targetType.Name.IndexOf("CinemachineBrain", StringComparison.OrdinalIgnoreCase) >= 0);
+
+            if (!looksLikeCameraTrack)
+                continue;
+
+            if (director.GetGenericBinding(output.sourceObject) != null)
+                continue;
+
+            director.SetGenericBinding(output.sourceObject, camAnimator);
+        }
     }
 
     private void StorePlayerRotation()
