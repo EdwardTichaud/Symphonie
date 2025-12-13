@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Cinemachine; // Permet de distinguer les CinemachineCamera des Camera classiques pour éviter les conflits de pilotage.
 using UnityEngine.InputSystem; // Accès direct aux périphériques afin de gérer la caméra TPS (stick droit, souris, molette...).
+using UnityEngine.Playables; // Permet d'écouter les PlayableDirector joués hors TimelineManager.
+using UnityEngine.Timeline;
 
 public enum WorldCameraState
 {
@@ -47,6 +49,7 @@ public class CameraController : MonoBehaviour
     private Quaternion savedWorldCamRotation;
     private Vector3 savedWorldCamParentPosition;
     private Quaternion savedWorldCamParentRotation;
+    private int externalCameraDirectorsPlaying;  // Nombre de timelines caméra jouées en dehors du TimelineManager
 
     [Header("---------- Effet de respiration ----------")]
     [Tooltip("Amplitude du mouvement vertical simulant la respiration.")]
@@ -208,6 +211,7 @@ public class CameraController : MonoBehaviour
 
         RecalculateThirdPersonOffset();
         FindManagedCameras();
+        RegisterExternalCameraDirectors();
     }
 
     /// <summary>
@@ -586,6 +590,79 @@ public class CameraController : MonoBehaviour
         // Dès la prochaine Update, la caméra recalcule son offset et reprend
         // son suivi standard (TPS, orbite, etc.). Aucun autre traitement n'est
         // nécessaire ici : les méthodes existantes se chargeront du reste.
+    }
+
+    private void RegisterExternalCameraDirectors()
+    {
+        var directors = FindObjectsOfType<PlayableDirector>(includeInactive: true);
+        foreach (var director in directors)
+        {
+            if (!DirectorUsesCameraTrack(director))
+                continue;
+
+            director.played -= OnExternalDirectorPlayed;
+            director.stopped -= OnExternalDirectorStopped;
+            director.played += OnExternalDirectorPlayed;
+            director.stopped += OnExternalDirectorStopped;
+        }
+    }
+
+    private void UnregisterExternalCameraDirectors()
+    {
+        var directors = FindObjectsOfType<PlayableDirector>(includeInactive: true);
+        foreach (var director in directors)
+        {
+            director.played -= OnExternalDirectorPlayed;
+            director.stopped -= OnExternalDirectorStopped;
+        }
+    }
+
+    private static bool DirectorUsesCameraTrack(PlayableDirector director)
+    {
+        if (director == null)
+            return false;
+
+        if (director.playableAsset is not TimelineAsset timeline)
+            return false;
+
+        foreach (var output in timeline.outputs)
+        {
+            string name = output.streamName ?? string.Empty;
+            var targetType = output.outputTargetType;
+            bool looksLikeCameraTrack = name.IndexOf("camera", System.StringComparison.OrdinalIgnoreCase) >= 0
+                                        || (targetType != null && targetType.Name.IndexOf("CinemachineBrain", System.StringComparison.OrdinalIgnoreCase) >= 0);
+
+            if (looksLikeCameraTrack)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void OnExternalDirectorPlayed(PlayableDirector director)
+    {
+        if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
+            return; // Le TimelineManager gère déjà la pause.
+
+        externalCameraDirectorsPlaying++;
+        PauseController();
+    }
+
+    private void OnExternalDirectorStopped(PlayableDirector director)
+    {
+        if (externalCameraDirectorsPlaying > 0)
+            externalCameraDirectorsPlaying--;
+
+        if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
+            return; // On attend que le TimelineManager gère la reprise.
+
+        if (externalCameraDirectorsPlaying == 0)
+            ResumeController();
+    }
+
+    void OnDestroy()
+    {
+        UnregisterExternalCameraDirectors();
     }
 
     /// <summary>
