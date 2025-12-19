@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -42,6 +43,7 @@ public class BattleTransitionManager : MonoBehaviour
     private Coroutine transitionAudioCoroutine;
 
     private GameObject battleCamera;
+    private CharacterController cachedPlayerController;
 
     /// <summary>
     /// Indique si une sortie de combat est déjà en cours. Ce garde-fou évite
@@ -75,6 +77,13 @@ public class BattleTransitionManager : MonoBehaviour
     private bool battleUIShown = false; // Suivi de l'affichage initial de l'UI
     [SerializeField] private GameObject victoryScreen;
     [SerializeField] private GameObject gameOverScreen;
+
+    // Mise en cache du rendu Versus pour l'effet de verre brisé
+    private Camera versusCamera;
+    private RenderTexture versusRenderTexture;
+    private RenderTexture frozenVersusFrame;
+    private Renderer[] brokenGlassRenderers = Array.Empty<Renderer>();
+    private RawImage[] brokenGlassRawImages = Array.Empty<RawImage>();
 
     /// <summary>
     /// Cache les éléments d'interface de combat au début de la transition.
@@ -137,7 +146,7 @@ public class BattleTransitionManager : MonoBehaviour
                 if (sprites != null && sprites.Count > 0)
                 {
                     // Choisit un sprite aléatoire parmi la liste fournie
-                    squadImages[i].sprite = sprites[Random.Range(0, sprites.Count)];
+                    squadImages[i].sprite = sprites[UnityEngine.Random.Range(0, sprites.Count)];
                     // Assure une opacité totale pour le sprite sélectionné
                     Color c = squadImages[i].color; c.a = 1f; squadImages[i].color = c;
                 }
@@ -167,7 +176,7 @@ public class BattleTransitionManager : MonoBehaviour
                 if (sprites != null && sprites.Count > 0)
                 {
                     // Sélection d'un sprite aléatoire pour l'ennemi courant
-                    enemyImages[i].sprite = sprites[Random.Range(0, sprites.Count)];
+                    enemyImages[i].sprite = sprites[UnityEngine.Random.Range(0, sprites.Count)];
                     // Opacité maximale pour garantir la visibilité du portrait
                     Color c = enemyImages[i].color; c.a = 1f; enemyImages[i].color = c;
                 }
@@ -206,6 +215,13 @@ public class BattleTransitionManager : MonoBehaviour
         worldFadeOverlay ??= GameObject.Find("WorldFadeOverlayPanel")?.GetComponent<Image>();
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
         battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+        versusCamera = GameObject.FindGameObjectWithTag("VersusCamera")?.GetComponent<Camera>();
+        versusRenderTexture = versusCamera != null ? versusCamera.targetTexture : null;
+        if (brokenGlass != null)
+        {
+            brokenGlassRenderers = brokenGlass.GetComponentsInChildren<Renderer>(true);
+            brokenGlassRawImages = brokenGlass.GetComponentsInChildren<RawImage>(true);
+        }
 
         // Tente de récupérer automatiquement le GameObject "WorldScene" si l'on n'a rien assigné dans l'inspecteur
         worldScene ??= GameObject.Find("WorldScene");
@@ -348,11 +364,11 @@ public class BattleTransitionManager : MonoBehaviour
             worldScene.SetActive(false);
 
         //Bloquer la position du joueur pour éviter qu'il ne chute quand worldScene est temporairement désactivée
-        CharacterController cC = GameObject.FindGameObjectWithTag("Player").GetComponent<CharacterController>();
+        CharacterController cC = ResolvePlayerController();
         if (cC != null)
-        {
             cC.gameObject.SetActive(false);
-        }
+        else
+            Debug.LogWarning("[BattleTransitionManager] Impossible de localiser le joueur pour la transition de combat.");
 
         // Active uniquement les caméras nécessaires au lancement du combat
         CameraActivationManager.Instance?.ActivateBattleAndVersusCameras();
@@ -361,7 +377,7 @@ public class BattleTransitionManager : MonoBehaviour
         ZoneSO currentZone = ZoneManager.Instance != null ? ZoneManager.Instance.currentZone : null;
         if (currentZone != null && currentZone.battleMusic != null && currentZone.battleMusic.Length > 0)
         {
-            randomClip = currentZone.battleMusic[Random.Range(0, currentZone.battleMusic.Length)];
+            randomClip = currentZone.battleMusic[UnityEngine.Random.Range(0, currentZone.battleMusic.Length)];
         }
 
         if (randomClip != null)
@@ -399,6 +415,20 @@ public class BattleTransitionManager : MonoBehaviour
             fader.EnsureTransparency(0, 0f);
             fader.EnsureTransparency(1, 0f);
         }
+
+        // Affiche immédiatement l'écran de Versus pour masquer les chargements restants.
+        battleCamera.SetActive(true);
+        versusTransition.SetActive(true);
+        versusCameraCanvas.SetActive(true);
+        CameraActivationManager.Instance?.ActivateBattleAndVersusCameras();
+
+        // Cache le bouton "Continuer" tant que le chargement du champ de bataille n'est pas terminé
+        foreach (var go in continuePrompts)
+            if (go != null)
+                go.SetActive(false);
+
+        // Laisse une frame pour que l'écran Versus s'affiche avant les traitements plus lourds (sélection du battlefield, chargement, etc.).
+        yield return null;
 
         // Détermine quel champ de bataille doit être chargé en fonction de
         // l'ennemi détecté par le joueur.
@@ -445,18 +475,6 @@ public class BattleTransitionManager : MonoBehaviour
             AudioManager.Instance.PlaySound(versusThunder);
         StartCoroutine(VersusThunderFlash()); // Déclenche un flash blanc synchronisé avec le son
 
-        battleCamera.SetActive(true);
-        versusTransition.SetActive(true);
-        versusCameraCanvas.SetActive(true);
-
-        // S'assure que la VersusCam est bien active conjointement à la BattleCam
-        CameraActivationManager.Instance?.ActivateBattleAndVersusCameras();
-
-        // Cache le bouton "Continuer" tant que le chargement du champ de bataille n'est pas terminé
-        foreach (var go in continuePrompts)
-            if (go != null)
-                go.SetActive(false);
-
         // Met à jour les portraits du Versus et lance l'animation d'apparition
         UpdateVersusPortraits();
         unitSpawnPointsAnimator?.Play("VersusLaunched");
@@ -480,6 +498,9 @@ public class BattleTransitionManager : MonoBehaviour
         confirmAction.Enable();
         yield return new WaitUntil(() => confirmAction.triggered);
         confirmAction.Disable();
+
+        // Capture la frame du Versus avant de masquer la transition pour l'effet de verre brisé.
+        CaptureVersusFrameForGlass();
 
         versusTransition.SetActive(false);
         brokenGlass.SetActive(true);
@@ -621,22 +642,13 @@ public class BattleTransitionManager : MonoBehaviour
             Debug.LogWarning("[BattleTransitionManager] worldScene n'est pas assigné, la scène d'exploration risque de rester masquée.");
 
         GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
-        if (playerObject != null)
-        {
-            CharacterController cC = playerObject.GetComponent<CharacterController>();
-            if (cC != null)
-            {
-                cC.gameObject.SetActive(true);
-            }
-            else
-            {
-                Debug.LogWarning("[BattleTransitionManager] Aucun CharacterController trouvé sur l'objet Player lors de la sortie de combat.");
-            }
-        }
-        else
-        {
+        CharacterController cC = ResolvePlayerController();
+        if (cC != null)
+            cC.gameObject.SetActive(true);
+        else if (playerObject == null)
             Debug.LogWarning("[BattleTransitionManager] Impossible de localiser le joueur lors de la sortie de combat.");
-        }
+        else
+            Debug.LogWarning("[BattleTransitionManager] Aucun CharacterController trouvé sur l'objet Player lors de la sortie de combat.");
 
         // Retour à l'exploration : seule la WorldCam doit être active
         CameraActivationManager.Instance?.ActivateWorldCamera();
@@ -900,6 +912,22 @@ public class BattleTransitionManager : MonoBehaviour
         return instance;
     }
 
+    private CharacterController ResolvePlayerController()
+    {
+        if (cachedPlayerController != null)
+            return cachedPlayerController;
+
+        cachedPlayerController = FindFirstObjectByType<CharacterController>(FindObjectsInactive.Include);
+        if (cachedPlayerController != null)
+            return cachedPlayerController;
+
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerObject != null)
+            cachedPlayerController = playerObject.GetComponent<CharacterController>();
+
+        return cachedPlayerController;
+    }
+
     /// <summary>
     /// Détruit une AudioSource temporaire spécifique et la retire du registre interne.
     /// </summary>
@@ -1067,6 +1095,68 @@ public class BattleTransitionManager : MonoBehaviour
 
     private void HideVictoryPanel() => NewBattleManager.Instance.victoryScreen?.transform.GetChild(0).gameObject.SetActive(false);
     private void HideGameOverPanel() => NewBattleManager.Instance.gameOverScreen?.transform.GetChild(0).gameObject.SetActive(false);
+
+    private void CaptureVersusFrameForGlass()
+    {
+        if (versusRenderTexture == null)
+            return;
+
+        if (frozenVersusFrame == null)
+        {
+            var desc = versusRenderTexture.descriptor;
+            frozenVersusFrame = new RenderTexture(desc)
+            {
+                name = "RT_VersusCaptureRuntime"
+            };
+        }
+
+        if (versusCamera != null && versusCamera.enabled)
+            versusCamera.Render();
+
+        Graphics.Blit(versusRenderTexture, frozenVersusFrame);
+        ApplyGlassTexture(frozenVersusFrame);
+
+        // Désactive la VersusCam pour éviter qu'elle ne nettoie la RT aux frames suivantes.
+        if (versusCamera != null)
+            versusCamera.enabled = false;
+    }
+
+    private void ApplyGlassTexture(RenderTexture texture)
+    {
+        if (texture == null)
+            return;
+
+        foreach (var r in brokenGlassRenderers)
+        {
+            if (r == null)
+                continue;
+
+            var mats = r.materials;
+            for (int i = 0; i < mats.Length; i++)
+            {
+                var mat = mats[i];
+                if (mat == null) continue;
+                mat.SetTexture("_MainTex", texture);
+                mat.SetTexture("_BaseMap", texture);
+                mat.SetTexture("_BASE_COLOR_MAP", texture);
+            }
+        }
+
+        foreach (var img in brokenGlassRawImages)
+        {
+            if (img != null)
+                img.texture = texture;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        if (frozenVersusFrame != null)
+        {
+            frozenVersusFrame.Release();
+            frozenVersusFrame = null;
+        }
+    }
 
     #endregion
 }

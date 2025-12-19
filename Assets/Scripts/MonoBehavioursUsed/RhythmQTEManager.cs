@@ -661,10 +661,9 @@ public class RhythmQTEManager : MonoBehaviour
             item.preparingCameraRole);
         yield return WaitForTimelinePhase(item.preparingTimeline, useOverlay, caster);
 
-        // Déplacement ou téléportation éventuel vers la cible.
-        if (item.requiresMovement && caster != null && target != null)
-            yield return SimpleMoveTo(caster, target, item);
-        else if (caster != null && target != null)
+        // Les objets se jouent désormais sur place : on n'exécute plus de déplacement vers la cible.
+        // On conserve uniquement l'orientation pour que la mise en scène reste cohérente.
+        if (caster != null && target != null)
         {
             // Sans déplacement, on oriente simplement l'utilisateur vers sa cible
             // Limite la rotation à l'axe Y pour éviter les inclinaisons verticales
@@ -716,10 +715,6 @@ public class RhythmQTEManager : MonoBehaviour
             //     immédiatement pour garantir une reprise fluide de la mise en scène.
             BattleTimelineManager.Instance?.ResumeCasterTimeline(caster);
         }
-
-        // --- Retour à la position d'origine ---
-        if (item.requiresMovement && !item.stayInPlace && caster != null && target != null)
-            yield return SimpleReturnToInitialPosition(caster, target, item, originPosition);
 
         // --- Phase de repli ---
         StartTimelinePhase(

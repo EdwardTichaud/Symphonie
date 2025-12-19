@@ -604,6 +604,10 @@ public class CameraController : MonoBehaviour
             director.stopped -= OnExternalDirectorStopped;
             director.played += OnExternalDirectorPlayed;
             director.stopped += OnExternalDirectorStopped;
+
+            // Si la timeline tourne déjà (PlayOnAwake), on applique immédiatement la pause caméra.
+            if (director.state == PlayState.Playing)
+                OnExternalDirectorPlayed(director);
         }
     }
 
@@ -633,6 +637,38 @@ public class CameraController : MonoBehaviour
                                         || (targetType != null && targetType.Name.IndexOf("CinemachineBrain", System.StringComparison.OrdinalIgnoreCase) >= 0);
 
             if (looksLikeCameraTrack)
+                return true;
+
+            // Fallback : on regarde le binding réel pour détecter les pistes caméras mal nommées (ex : Animation Track (2)).
+            var binding = director.GetGenericBinding(output.sourceObject);
+            if (BindingTargetsCamera(binding))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool BindingTargetsCamera(object binding)
+    {
+        if (binding == null)
+            return false;
+
+        if (binding is Camera || binding is CinemachineCamera || binding is CinemachineBrain)
+            return true;
+
+        if (binding is Component comp)
+        {
+            // Vérifie directement l'objet, puis sa hiérarchie proche pour détecter un rig caméra (WorldCam_Origin + WorldCam_Cam enfant).
+            if (comp.CompareTag("WorldCamera") || comp.CompareTag("BattleCamera") || comp.CompareTag("VersusCamera"))
+                return true;
+
+            if (comp.GetComponent<Camera>() != null)
+                return true;
+
+            if (comp.GetComponentInChildren<Camera>() != null)
+                return true;
+
+            if (comp.GetComponentInParent<Camera>() != null)
                 return true;
         }
 

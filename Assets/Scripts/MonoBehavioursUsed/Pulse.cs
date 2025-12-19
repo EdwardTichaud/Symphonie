@@ -4,7 +4,7 @@ using UnityEngine;
 public class Pulse : MonoBehaviour
 {
     [Header("Activation")]
-    public bool active = true;
+    public bool active = false;
 
     [Header("Taille (multiplicateurs de la scale de base)")]
     [Min(0f)] public float minScaleMul = 0.9f;
@@ -21,7 +21,7 @@ public class Pulse : MonoBehaviour
     [Range(0f, 1f)] public float maxAlpha = 1f;   // à maxScale
 
     [Header("Confort éditeur")]
-    public bool autoCaptureBaseScaleInEditor = true;
+    public bool autoCaptureBaseScaleInEditor = false;
 
     private Vector3 baseScale;
     private bool useUnscaledTime;
