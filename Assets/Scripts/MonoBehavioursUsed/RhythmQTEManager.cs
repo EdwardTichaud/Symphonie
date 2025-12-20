@@ -46,6 +46,19 @@ public class RhythmQTEManager : MonoBehaviour
     // Temps d'avance avec lequel une note est affichée avant la zone de validation
     private const float noteAdvanceTime = 2f;
 
+    [Header("Accessibilité QTE")]
+    [Tooltip("Agrandit ou réduit la fenêtre temporelle des QTE (1 = valeur par défaut).")]
+    [SerializeField] private float qteWindowScale = 1f;
+    [Tooltip("Marge additionnelle (en pixels UI) appliquée à la zone de validation.")]
+    [SerializeField] private float qteValidationPadding = 0f;
+    [Tooltip("Seuil (0..1) pour considérer un QTE comme parfait par rapport à la demi-largeur de la zone.")]
+    [Range(0f, 1f)]
+    [SerializeField] private float qtePerfectThreshold = 0.35f;
+    [Tooltip("Active l'affichage d'un feedback textuel après chaque QTE.")]
+    [SerializeField] private bool showQteFeedback = true;
+    [Tooltip("Facteur d'élargissement des fenêtres de parade/esquive pour la défense.")]
+    [SerializeField] private float defenseWindowScale = 1f;
+
     private DefenseResult defenseResult;
     public DefenseResult GetDefenseResult() => defenseResult;
 
@@ -1340,7 +1353,7 @@ public class RhythmQTEManager : MonoBehaviour
         qteActive = true;
         float slowestTimeScale = 0f;
         float transitionDuration = 0.1f;
-        float holdDuration = windowDelay / 1000f; // convertit en secondes
+        float holdDuration = (windowDelay / 1000f) * Mathf.Max(0.1f, qteWindowScale); // convertit en secondes
         float normalTimeScale = 1f;
 
         // 🔻 Ralentissement progressif uniquement en mode facile
@@ -1437,6 +1450,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         float elapsed = 0f;
         bool success = false;
+        QTEFeedback feedback = QTEFeedback.Miss;
         var confirm = InputsManager.Instance.playerInputs.Battle.Confirm;
         confirm.Enable();
 
@@ -1455,10 +1469,28 @@ public class RhythmQTEManager : MonoBehaviour
 
             if (confirm.triggered)
             {
-                if (qteBar != null)
-                    success = qteBar.IsNoteInValidationZone(noteImage);
+                if (qteBar != null && noteImage != null)
+                {
+                    float offset = qteBar.GetSignedDistanceToValidationCenter(noteImage);
+                    float halfWidth = qteBar.GetValidationHalfWidth();
+                    float allowedHalfWidth = halfWidth + Mathf.Max(0f, qteValidationPadding);
+
+                    success = Mathf.Abs(offset) <= allowedHalfWidth;
+                    if (success)
+                    {
+                        float perfectWindow = halfWidth * Mathf.Clamp01(qtePerfectThreshold);
+                        feedback = Mathf.Abs(offset) <= perfectWindow ? QTEFeedback.Perfect : QTEFeedback.Good;
+                    }
+                    else
+                    {
+                        feedback = offset < 0f ? QTEFeedback.Late : QTEFeedback.Early;
+                    }
+                }
                 else
+                {
                     success = true;
+                    feedback = QTEFeedback.Good;
+                }
                 break;
             }
 
@@ -1488,6 +1520,9 @@ public class RhythmQTEManager : MonoBehaviour
             Destroy(noteImage.gameObject);
 
         callback?.Invoke(success);
+
+        if (showQteFeedback)
+            ActionUIDisplayManager.Instance?.DisplayQTEResult(feedback);
 
         // Affichage visuel du résultat
         GameObject effect = success ? successEffectPrefab : failEffectPrefab;
@@ -1526,8 +1561,9 @@ public class RhythmQTEManager : MonoBehaviour
     private IEnumerator WaitForDefenseQTE(System.Action<DefenseResult> callback)
     {
         qteActive = true;
-        const float parryWindow = 0.1f; // Temps pour une parade parfaite
-        const float dodgeWindow = 0.2f; // Temps total pour réussir une esquive
+        float windowScale = Mathf.Max(0.1f, defenseWindowScale);
+        float parryWindow = 0.1f * windowScale; // Temps pour une parade parfaite
+        float dodgeWindow = 0.2f * windowScale; // Temps total pour réussir une esquive
 
         float slowestTimeScale = 0f;
         float transitionDuration = 0.1f;
@@ -1613,6 +1649,17 @@ public class RhythmQTEManager : MonoBehaviour
             result = DefenseResult.Dodge;
 
         callback?.Invoke(result);
+
+        if (showQteFeedback)
+        {
+            QTEFeedback feedback = result switch
+            {
+                DefenseResult.Parry => QTEFeedback.Perfect,
+                DefenseResult.Dodge => QTEFeedback.Good,
+                _ => QTEFeedback.Miss
+            };
+            ActionUIDisplayManager.Instance?.DisplayQTEResult(feedback);
+        }
 
         // 🔺 Retour au temps normal uniquement si le temps a été modifié
         if (easyMode)

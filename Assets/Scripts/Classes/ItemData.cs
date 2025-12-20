@@ -162,13 +162,13 @@ public class ItemData : ScriptableObject
     [Header("Buff Settings")]
     public BuffStatType buffStat;              // Statistique augmentée
     public int buffAmount;                     // Valeur du bonus
-    public float buffDuration;                 // Durée du bonus en secondes/tours
+    public float buffDuration;                 // Durée du bonus en tours
     public bool buffIsPercentage = false;      // Interpréter buffAmount en pourcentage ?
 
     [Header("Debuff Settings")]
     public DebuffStatType debuffStat;          // Statistique diminuée
     public int debuffAmount;                   // Valeur du malus
-    public float debuffDuration;               // Durée du malus en secondes/tours
+    public float debuffDuration;               // Durée du malus en tours
     public bool debuffIsPercentage = false;    // Interpréter debuffAmount en pourcentage ?
 
     [Header("Timing Boost Settings")]
@@ -230,16 +230,106 @@ public class ItemData : ScriptableObject
         // Récupère l'Item de référence. Si introuvable, on ne fait rien pour
         // éviter les messages d'erreur intempestifs.
         var reference = AssetDatabase.LoadAssetAtPath<ItemData>(LONGUE_PORTEE_PATH);
-        if (reference == null)
-            return;
+        if (reference != null)
+        {
+            // Applique les valeurs par défaut uniquement si les champs sont vides.
+            if (preparingCameraRole == BattleCameraRole.None)
+                preparingCameraRole = reference.preparingCameraRole;
+            if (performingCameraRole == BattleCameraRole.None)
+                performingCameraRole = reference.performingCameraRole;
+            if (retreatCameraRole == BattleCameraRole.None)
+                retreatCameraRole = reference.retreatCameraRole;
+        }
 
-        // Applique les valeurs par défaut uniquement si les champs sont vides.
-        if (preparingCameraRole == BattleCameraRole.None)
-            preparingCameraRole = reference.preparingCameraRole;
-        if (performingCameraRole == BattleCameraRole.None)
-            performingCameraRole = reference.performingCameraRole;
-        if (retreatCameraRole == BattleCameraRole.None)
-            retreatCameraRole = reference.retreatCameraRole;
+        ValidateConfiguration();
+    }
+
+    private void ValidateConfiguration()
+    {
+        bool dirty = false;
+
+        if (string.IsNullOrWhiteSpace(itemID))
+            Debug.LogWarning($"[ItemData] itemID est vide pour '{name}'.", this);
+        if (string.IsNullOrWhiteSpace(itemName))
+            Debug.LogWarning($"[ItemData] itemName est vide pour '{name}'.", this);
+        if (itemIcon == null)
+            Debug.LogWarning($"[ItemData] itemIcon manquant pour '{name}'.", this);
+
+        if (maxUsesPerTurn < 0)
+        {
+            maxUsesPerTurn = 0;
+            dirty = true;
+            Debug.LogWarning($"[ItemData] maxUsesPerTurn negatif corrige pour '{name}'.", this);
+        }
+        if (maxUsesPerBattle < 0)
+        {
+            maxUsesPerBattle = 0;
+            dirty = true;
+            Debug.LogWarning($"[ItemData] maxUsesPerBattle negatif corrige pour '{name}'.", this);
+        }
+
+        if (buffDuration < 0f)
+        {
+            buffDuration = 0f;
+            dirty = true;
+            Debug.LogWarning($"[ItemData] buffDuration negatif corrige pour '{name}'.", this);
+        }
+        if (debuffDuration < 0f)
+        {
+            debuffDuration = 0f;
+            dirty = true;
+            Debug.LogWarning($"[ItemData] debuffDuration negatif corrige pour '{name}'.", this);
+        }
+
+        if (castDistance < 0f)
+        {
+            castDistance = 0f;
+            dirty = true;
+            Debug.LogWarning($"[ItemData] castDistance negatif corrige pour '{name}'.", this);
+        }
+
+        if (moveSpeed < 0f)
+        {
+            moveSpeed = 0f;
+            dirty = true;
+            Debug.LogWarning($"[ItemData] moveSpeed negatif corrige pour '{name}'.", this);
+        }
+
+        if (targetTypes == null)
+        {
+            targetTypes = new List<TargetType>();
+            dirty = true;
+        }
+        if (targetTypes.Count == 0)
+        {
+            targetTypes.Add(defaultTargetType);
+            dirty = true;
+            Debug.LogWarning($"[ItemData] targetTypes vide, ajout du defaultTargetType pour '{name}'.", this);
+        }
+        else if (!targetTypes.Contains(defaultTargetType))
+        {
+            targetTypes.Add(defaultTargetType);
+            dirty = true;
+            Debug.LogWarning($"[ItemData] defaultTargetType manquant dans targetTypes pour '{name}'.", this);
+        }
+
+        if (requiresMovement && castDistance <= 0f)
+            Debug.LogWarning($"[ItemData] requiresMovement actif avec castDistance <= 0 pour '{name}'.", this);
+
+        if (beatPattern != null)
+        {
+            for (int i = 0; i < beatPattern.Count; i++)
+            {
+                if (beatPattern[i] <= 0f)
+                {
+                    Debug.LogWarning($"[ItemData] beatPattern contient une valeur <= 0 pour '{name}'.", this);
+                    break;
+                }
+            }
+        }
+
+        if (dirty)
+            EditorUtility.SetDirty(this);
     }
 #endif
 
@@ -342,7 +432,15 @@ public class ItemData : ScriptableObject
             ? (target.Data.baseHP + target.currentVitality) * healAmount / 100f
             : healAmount;
 
-        target.Heal(amount);
+        CombatPipeline.ApplyHealing(null, target, amount, new CombatPipeline.HealOptions
+        {
+            includePower = false,
+            useSagacity = false,
+            applyAttackMultiplier = false,
+            applyModifiers = false,
+            clampToBaseValue = false,
+            valueMultiplier = 1f
+        });
     }
 
     private void ApplyRevive(CharacterUnit target)
@@ -370,14 +468,19 @@ public class ItemData : ScriptableObject
 
     private void ApplyDamage(CharacterUnit caster, CharacterUnit target, float value)
     {
-        if (target != null)
+        if (target == null)
+            return;
+
+        CombatPipeline.ApplyDamage(caster, target, value, new CombatPipeline.DamageOptions
         {
-            float damage = value;
-            if (caster != null)
-                damage *= caster.GetAttackMultiplier();
-            // Précise la source pour jouer l'animation adéquate
-            target.TakeDamage(damage, caster != null ? caster.transform : null);
-        }
+            includePower = false,
+            applyAttackMultiplier = caster != null,
+            applyModifiers = false,
+            clampToBaseValue = false,
+            registerDamage = false,
+            allowRedirect = true,
+            valueMultiplier = 1f
+        });
     }
 
     private void ApplyIncreaseRange(CharacterUnit target, float value)

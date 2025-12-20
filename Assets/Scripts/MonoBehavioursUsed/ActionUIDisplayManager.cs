@@ -3,6 +3,15 @@ using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 
+public enum QTEFeedback
+{
+    Perfect,
+    Good,
+    Early,
+    Late,
+    Miss
+}
+
 public class ActionUIDisplayManager : MonoBehaviour
 {
     public static ActionUIDisplayManager Instance { get; private set; }
@@ -180,6 +189,23 @@ public class ActionUIDisplayManager : MonoBehaviour
     public void DisplayInterceptionAttempt()
     {
         ShowMessage("Tentative d'interception...");
+    }
+
+    /// <summary>
+    /// Retour visuel concis pour un QTE (parfait, ok, trop tôt/tard, raté).
+    /// </summary>
+    public void DisplayQTEResult(QTEFeedback feedback)
+    {
+        string message = feedback switch
+        {
+            QTEFeedback.Perfect => "Parfait !",
+            QTEFeedback.Good => "Bien !",
+            QTEFeedback.Early => "Trop tôt",
+            QTEFeedback.Late => "Trop tard",
+            _ => "Raté"
+        };
+
+        ShowMessage(message);
     }
 
     /// <summary>

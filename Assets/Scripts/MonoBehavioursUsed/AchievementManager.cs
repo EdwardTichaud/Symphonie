@@ -31,6 +31,10 @@ public class AchievementManager : MonoBehaviour
 
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        // Applique immédiatement l'état chargé si une sauvegarde a déjà été lue.
+        if (GameManager.Instance != null && GameManager.Instance.gameData != null)
+            GameManager.Instance.gameData.ApplyAchievementsTo(this);
     }
 
     /// <summary>
@@ -71,5 +75,88 @@ public class AchievementManager : MonoBehaviour
 
         // Ici on pourrait déclencher des effets : affichage d'une UI, sauvegarde, son, etc.
         Debug.Log($"Succès débloqué : {achievement.nom}");
+    }
+
+    /// <summary>
+    /// Construit la liste des IDs à persister à partir des succès débloqués.
+    /// </summary>
+    public List<string> BuildUnlockedAchievementIds()
+    {
+        var ids = new HashSet<string>();
+        foreach (var achievement in GetAllAchievements())
+        {
+            if (achievement == null || !achievement.unlocked)
+                continue;
+
+            string id = ResolveAchievementId(achievement);
+            if (!string.IsNullOrEmpty(id))
+                ids.Add(id);
+        }
+
+        return new List<string>(ids);
+    }
+
+    /// <summary>
+    /// Applique une liste d'IDs sauvegardés et reconstruit les listes internes.
+    /// </summary>
+    public void ApplyUnlockedAchievementIds(IEnumerable<string> ids)
+    {
+        var idSet = new HashSet<string>(ids ?? System.Array.Empty<string>(), System.StringComparer.OrdinalIgnoreCase);
+
+        var locked = new List<AchievementSO>();
+        var unlocked = new List<AchievementSO>();
+
+        foreach (var achievement in GetAllAchievements())
+        {
+            if (achievement == null)
+                continue;
+
+            string id = ResolveAchievementId(achievement);
+            bool shouldUnlock = !string.IsNullOrEmpty(id) && idSet.Contains(id);
+            achievement.unlocked = shouldUnlock;
+
+            if (shouldUnlock)
+                unlocked.Add(achievement);
+            else
+                locked.Add(achievement);
+        }
+
+        achievements = locked;
+        unlockedAchievements = unlocked;
+    }
+
+    private IEnumerable<AchievementSO> GetAllAchievements()
+    {
+        var unique = new HashSet<AchievementSO>();
+
+        if (achievements != null)
+        {
+            foreach (var achievement in achievements)
+            {
+                if (achievement != null && unique.Add(achievement))
+                    yield return achievement;
+            }
+        }
+
+        if (unlockedAchievements != null)
+        {
+            foreach (var achievement in unlockedAchievements)
+            {
+                if (achievement != null && unique.Add(achievement))
+                    yield return achievement;
+            }
+        }
+    }
+
+    private static string ResolveAchievementId(AchievementSO achievement)
+    {
+        if (achievement == null)
+            return string.Empty;
+
+        if (!string.IsNullOrWhiteSpace(achievement.id))
+            return achievement.id;
+
+        // Fallback: utiliser le nom d'asset si l'ID n'a pas été renseigné.
+        return achievement.name;
     }
 }

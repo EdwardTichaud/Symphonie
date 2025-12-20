@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -9,6 +8,7 @@ using UnityEngine;
 /// peut désormais appliquer un buff ou un débuff sans connaître la structure interne
 /// de l'inventaire. Le composant se charge également de remettre l'unité dans son état
 /// initial lorsque l'effet arrive à expiration ou que l'objet est désactivé.
+/// Les durées sont exprimées en tours afin de rester cohérentes avec le gameplay.
 /// </summary>
 [DisallowMultipleComponent]
 [RequireComponent(typeof(CharacterUnit))]
@@ -24,9 +24,8 @@ public class CharacterStatusEffectController : MonoBehaviour
     {
         public BuffStatType stat;
         public float value;
-        public float remainingDuration;
+        public int remainingTurns;
         public bool isInfinite;
-        public Coroutine routine;
     }
 
     private CharacterUnit owner;
@@ -157,17 +156,18 @@ public class CharacterStatusEffectController : MonoBehaviour
     /// </summary>
     private void ExtendEffectDurationsInternal(float additionalDuration)
     {
-        if (additionalDuration <= 0f)
+        int additionalTurns = NormalizeTurns(additionalDuration);
+        if (additionalTurns <= 0)
             return;
 
         foreach (var modifier in activeModifiers)
         {
             if (!modifier.isInfinite)
-                modifier.remainingDuration += additionalDuration;
+                modifier.remainingTurns += additionalTurns;
         }
 
         if (owner != null && owner.interceptionImmunityTurns > 0)
-            owner.interceptionImmunityTurns += Mathf.RoundToInt(additionalDuration);
+            owner.interceptionImmunityTurns += additionalTurns;
     }
 
     private void ApplySleepInternal(int turns)
@@ -224,40 +224,22 @@ public class CharacterStatusEffectController : MonoBehaviour
         if (Mathf.Approximately(value, 0f))
             return;
 
+        int durationTurns = NormalizeTurns(duration);
         var modifier = new ActiveModifier
         {
             stat = stat,
             value = value,
-            remainingDuration = Mathf.Max(0f, duration),
-            isInfinite = duration <= 0f
+            remainingTurns = durationTurns,
+            isInfinite = durationTurns <= 0
         };
 
         activeModifiers.Add(modifier);
         ModifyStat(stat, value);
-
-        if (!modifier.isInfinite)
-            modifier.routine = StartCoroutine(ModifierLifetime(modifier));
-    }
-
-    private IEnumerator ModifierLifetime(ActiveModifier modifier)
-    {
-        while (modifier.remainingDuration > 0f)
-        {
-            yield return null;
-            modifier.remainingDuration -= Time.deltaTime;
-        }
-
-        FinalizeModifier(modifier);
     }
 
     private void FinalizeModifier(ActiveModifier modifier)
     {
         ModifyStat(modifier.stat, -modifier.value);
-        if (modifier.routine != null)
-        {
-            StopCoroutine(modifier.routine);
-            modifier.routine = null;
-        }
 
         activeModifiers.Remove(modifier);
     }
@@ -267,14 +249,30 @@ public class CharacterStatusEffectController : MonoBehaviour
         for (int i = activeModifiers.Count - 1; i >= 0; i--)
         {
             var modifier = activeModifiers[i];
-            if (modifier.routine != null)
-            {
-                StopCoroutine(modifier.routine);
-                modifier.routine = null;
-            }
 
             ModifyStat(modifier.stat, -modifier.value);
             activeModifiers.RemoveAt(i);
+        }
+    }
+
+    /// <summary>
+    /// Décrémentation en fin de tour des buffs/débuffs actifs.
+    /// Les durées sont exprimées en tours pour rester cohérentes avec le gameplay.
+    /// </summary>
+    public void TickTurn()
+    {
+        if (activeModifiers.Count == 0)
+            return;
+
+        for (int i = activeModifiers.Count - 1; i >= 0; i--)
+        {
+            var modifier = activeModifiers[i];
+            if (modifier.isInfinite)
+                continue;
+
+            modifier.remainingTurns = Mathf.Max(0, modifier.remainingTurns - 1);
+            if (modifier.remainingTurns <= 0)
+                FinalizeModifier(modifier);
         }
     }
 
@@ -314,6 +312,19 @@ public class CharacterStatusEffectController : MonoBehaviour
             BuffStatType.MaxHP => owner.Data.baseHP + owner.currentVitality,
             _ => 0f,
         };
+    }
+
+    /// <summary>
+    /// Normalise une durée saisie dans l'éditeur en un nombre de tours.
+    /// Les valeurs fractionnaires sont arrondies à l'entier supérieur pour éviter
+    /// des effets qui expirent plus tôt que prévu. Une durée <= 0 signifie "infini".
+    /// </summary>
+    private static int NormalizeTurns(float duration)
+    {
+        if (duration <= 0f)
+            return 0;
+
+        return Mathf.Max(1, Mathf.CeilToInt(duration));
     }
 
     #endregion

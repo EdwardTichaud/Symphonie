@@ -117,14 +117,45 @@ public class QTEBar : MonoBehaviour
     /// </summary>
     public bool IsNoteInValidationZone(Image note)
     {
+        return IsNoteInValidationZone(note, 0f);
+    }
+
+    /// <summary>
+    /// Indique si la note est dans la zone de validation, avec une marge supplémentaire.
+    /// La marge est exprimée en pixels UI pour améliorer l'accessibilité.
+    /// </summary>
+    public bool IsNoteInValidationZone(Image note, float padding)
+    {
         if (note == null || validationZone == null)
             return false;
 
         RectTransform noteRect = note.GetComponent<RectTransform>();
-        float zoneMin = validationZone.anchoredPosition.x - validationZone.rect.width / 2f;
-        float zoneMax = validationZone.anchoredPosition.x + validationZone.rect.width / 2f;
+        float halfWidth = validationZone.rect.width / 2f;
+        float zoneMin = validationZone.anchoredPosition.x - halfWidth - padding;
+        float zoneMax = validationZone.anchoredPosition.x + halfWidth + padding;
         float x = noteRect.anchoredPosition.x;
         return x >= zoneMin && x <= zoneMax;
+    }
+
+    /// <summary>
+    /// Renvoie la distance signée entre la note et le centre de la zone de validation.
+    /// Utile pour déterminer un feedback "trop tôt" / "trop tard".
+    /// </summary>
+    public float GetSignedDistanceToValidationCenter(Image note)
+    {
+        if (note == null || validationZone == null)
+            return 0f;
+
+        RectTransform noteRect = note.GetComponent<RectTransform>();
+        return noteRect.anchoredPosition.x - validationZone.anchoredPosition.x;
+    }
+
+    /// <summary>
+    /// Renvoie la demi-largeur de la zone de validation (en pixels UI).
+    /// </summary>
+    public float GetValidationHalfWidth()
+    {
+        return validationZone != null ? validationZone.rect.width / 2f : 0f;
     }
 
     private void Update()

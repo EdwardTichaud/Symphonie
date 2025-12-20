@@ -74,22 +74,48 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private PlayableDirector battleDirector;
 
     #region Gestion des sets personnalisés
+    // Les index de sets actifs sont stockés ici pour éviter toute mutation des ScriptableObjects.
+    private int currentMusicalMoveSetIndex = -1;
+    private int currentItemSetIndex = -1;
+
     /// <summary>
     /// Renvoie le set d'attaques musicales actuellement actif pour cette unité.
     /// </summary>
-    public CharacterMusicalMoveSet ActiveMusicalMoveSet => Data?.GetActiveMusicalMoveSet();
+    public CharacterMusicalMoveSet ActiveMusicalMoveSet => GetActiveMusicalMoveSet();
 
     /// <summary>
     /// Renvoie le set d'objets actuellement actif pour cette unité.
     /// </summary>
-    public CharacterItemSet ActiveItemSet => Data?.GetActiveItemSet();
+    public CharacterItemSet ActiveItemSet => GetActiveItemSet();
 
     /// <summary>
     /// Active un set d'attaques musicales spécifique en fonction de son nom.
     /// </summary>
     public void ActivateMusicalMoveSet(string setName)
     {
-        Data?.SetActiveMusicalMoveSet(setName);
+        if (Data == null)
+            return;
+
+        if (Data.musicalMoveSets == null || Data.musicalMoveSets.Count == 0)
+        {
+            currentMusicalMoveSetIndex = -1;
+            return;
+        }
+
+        for (int i = 0; i < Data.musicalMoveSets.Count; i++)
+        {
+            var set = Data.musicalMoveSets[i];
+            if (set == null)
+                continue;
+
+            if (string.Equals(set.setName, setName, StringComparison.OrdinalIgnoreCase))
+            {
+                currentMusicalMoveSetIndex = i;
+                return;
+            }
+        }
+
+        currentMusicalMoveSetIndex = NormalizeSetIndex(Data.musicalMoveSets, 0);
     }
 
     /// <summary>
@@ -97,7 +123,29 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void ActivateItemSet(string setName)
     {
-        Data?.SetActiveItemSet(setName);
+        if (Data == null)
+            return;
+
+        if (Data.itemSets == null || Data.itemSets.Count == 0)
+        {
+            currentItemSetIndex = -1;
+            return;
+        }
+
+        for (int i = 0; i < Data.itemSets.Count; i++)
+        {
+            var set = Data.itemSets[i];
+            if (set == null)
+                continue;
+
+            if (string.Equals(set.setName, setName, StringComparison.OrdinalIgnoreCase))
+            {
+                currentItemSetIndex = i;
+                return;
+            }
+        }
+
+        currentItemSetIndex = NormalizeSetIndex(Data.itemSets, 0);
     }
 
     /// <summary>
@@ -108,9 +156,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (baseMoves == null)
             return new List<MusicalMoveSO>();
 
-        return Data != null
-            ? Data.ApplyMusicalSetOrdering(baseMoves)
-            : new List<MusicalMoveSO>(baseMoves);
+        return ApplyMusicalSetOrdering(baseMoves);
     }
 
     /// <summary>
@@ -121,9 +167,131 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (availableItems == null)
             return new List<ItemData>();
 
-        return Data != null
-            ? Data.ApplyItemSetOrdering(availableItems)
-            : new List<ItemData>(availableItems);
+        return ApplyItemSetOrdering(availableItems);
+    }
+
+    private CharacterMusicalMoveSet GetActiveMusicalMoveSet()
+    {
+        if (Data == null || Data.musicalMoveSets == null || Data.musicalMoveSets.Count == 0)
+            return null;
+
+        if (currentMusicalMoveSetIndex < 0 || currentMusicalMoveSetIndex >= Data.musicalMoveSets.Count)
+            currentMusicalMoveSetIndex = NormalizeSetIndex(Data.musicalMoveSets, 0);
+
+        return currentMusicalMoveSetIndex >= 0 ? Data.musicalMoveSets[currentMusicalMoveSetIndex] : null;
+    }
+
+    private CharacterItemSet GetActiveItemSet()
+    {
+        if (Data == null || Data.itemSets == null || Data.itemSets.Count == 0)
+            return null;
+
+        if (currentItemSetIndex < 0 || currentItemSetIndex >= Data.itemSets.Count)
+            currentItemSetIndex = NormalizeSetIndex(Data.itemSets, 0);
+
+        return currentItemSetIndex >= 0 ? Data.itemSets[currentItemSetIndex] : null;
+    }
+
+    private List<MusicalMoveSO> ApplyMusicalSetOrdering(IList<MusicalMoveSO> availableMoves)
+    {
+        var result = new List<MusicalMoveSO>();
+        if (availableMoves == null)
+            return result;
+
+        var activeSet = GetActiveMusicalMoveSet();
+        if (activeSet != null && activeSet.prioritizedMoves != null)
+        {
+            foreach (var prioritized in activeSet.prioritizedMoves)
+            {
+                if (prioritized == null)
+                    continue;
+
+                for (int i = 0; i < availableMoves.Count; i++)
+                {
+                    var candidate = availableMoves[i];
+                    if (candidate == null || candidate != prioritized)
+                        continue;
+
+                    if (!result.Contains(candidate))
+                        result.Add(candidate);
+                    break;
+                }
+            }
+        }
+
+        foreach (var move in availableMoves)
+        {
+            if (move == null)
+                continue;
+
+            if (!result.Contains(move))
+                result.Add(move);
+        }
+
+        return result;
+    }
+
+    private List<ItemData> ApplyItemSetOrdering(IList<ItemData> availableItems)
+    {
+        var result = new List<ItemData>();
+        if (availableItems == null)
+            return result;
+
+        var activeSet = GetActiveItemSet();
+        if (activeSet != null && activeSet.prioritizedItems != null)
+        {
+            foreach (var prioritized in activeSet.prioritizedItems)
+            {
+                if (prioritized == null)
+                    continue;
+
+                for (int i = 0; i < availableItems.Count; i++)
+                {
+                    var candidate = availableItems[i];
+                    if (candidate == null || candidate != prioritized)
+                        continue;
+
+                    if (!result.Contains(candidate))
+                        result.Add(candidate);
+                    break;
+                }
+            }
+        }
+
+        foreach (var item in availableItems)
+        {
+            if (item == null)
+                continue;
+
+            if (!result.Contains(item))
+                result.Add(item);
+        }
+
+        return result;
+    }
+
+    private void InitializeLoadoutSets()
+    {
+        if (Data == null)
+        {
+            currentMusicalMoveSetIndex = -1;
+            currentItemSetIndex = -1;
+            return;
+        }
+
+        currentMusicalMoveSetIndex = NormalizeSetIndex(Data.musicalMoveSets, Data.defaultMusicalMoveSetIndex);
+        currentItemSetIndex = NormalizeSetIndex(Data.itemSets, Data.defaultItemSetIndex);
+    }
+
+    private static int NormalizeSetIndex<T>(IList<T> sets, int desiredIndex)
+    {
+        if (sets == null || sets.Count == 0)
+            return -1;
+
+        if (desiredIndex < 0 || desiredIndex >= sets.Count)
+            return sets.Count > 0 ? 0 : -1;
+
+        return desiredIndex;
     }
     #endregion
 
@@ -820,6 +988,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         Data = characterData;
         Data.owner = this;
 
+        InitializeLoadoutSets();
+
         // Initialisation des stats
         currentPower = Data.basePower;
         currentStability = Data.baseStability;
@@ -1481,6 +1651,10 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     private void TickPersistentStatusComponents()
     {
+        // Les buffs/débuffs sont décrémentés en tours via le contrôleur dédié.
+        if (TryGetComponent(out CharacterStatusEffectController statusController))
+            statusController.TickTurn();
+
         var sleep = GetComponent<SleepStatus>();
         sleep?.TickTurn();
 
@@ -1496,20 +1670,21 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public void ApplyBuff(float value)
     {
-
+        // Cette interface est conservée pour compatibilité rétroactive.
+        // Utiliser CharacterStatusEffectController pour appliquer un buff ciblé.
     }
     public void RemoveBuff(float value)
     {
-
+        // Voir ApplyBuff : l'API principale passe par CharacterStatusEffectController.
     }
 
     public void ApplyDebuff(float value)
     {
-
+        // Voir ApplyBuff : l'API principale passe par CharacterStatusEffectController.
     }
     public void RemoveDebuff(float value)
     {
-
+        // Voir ApplyBuff : l'API principale passe par CharacterStatusEffectController.
     }
 
     /// <summary>
@@ -2049,10 +2224,17 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (Data == null)
             return 0f;
 
-        float damage = Mathf.Max(0f, Data.basePower);
-        damage = ApplyDamageModifiers(damage);
-        damage *= GetAttackMultiplier();
-        return damage;
+        float baseValue = Mathf.Max(0f, Data.basePower);
+        return CombatPipeline.ResolveDamageValue(this, baseValue, new CombatPipeline.DamageOptions
+        {
+            includePower = false,
+            applyAttackMultiplier = true,
+            applyModifiers = true,
+            clampToBaseValue = false,
+            registerDamage = false,
+            allowRedirect = true,
+            valueMultiplier = 1f
+        });
     }
 
     public float GetAttackMultiplier()

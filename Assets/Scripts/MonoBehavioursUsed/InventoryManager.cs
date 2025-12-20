@@ -32,6 +32,10 @@ public class InventoryManager : MonoBehaviour
     [Tooltip("Sceaux actuellement équipés. Ils modulent la difficulté et sont pris en compte lors des combats.")]
     [SerializeField] private List<SceauSO> equippedSeals = new();
 
+    [Header("Répertoire des Sceaux disponibles")]
+    [Tooltip("Liste de référence utilisée pour restaurer les Sceaux via leurs IDs de sauvegarde.")]
+    [SerializeField] private List<SceauSO> registeredSeals = new();
+
     /// <summary>
     /// Permet de consulter la liste des Sceaux débloqués sans exposer la liste modifiable.
     /// </summary>
@@ -211,6 +215,10 @@ public class InventoryManager : MonoBehaviour
         // Les Sceaux suivent la même logique : on nettoie les données, on reconstruit les caches
         // et on impose une hiérarchie déterministe pour l'interface et les sauvegardes.
         InitializeSealCollections();
+
+        // Applique l'état chargé si une sauvegarde a déjà été lue.
+        if (GameManager.Instance != null && GameManager.Instance.gameData != null)
+            GameManager.Instance.gameData.ApplySealsTo(this);
 
         // On prépare l'état visuel initial de l'inventaire (ouvert ou fermé).
         InitializeInventoryUI();
@@ -1511,5 +1519,129 @@ public class InventoryManager : MonoBehaviour
         string aName = a != null ? a.sealName : string.Empty;
         string bName = b != null ? b.sealName : string.Empty;
         return string.Compare(aName, bName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Construit la liste des IDs des Sceaux débloqués pour la sauvegarde.
+    /// </summary>
+    public List<string> BuildUnlockedSealIds()
+    {
+        var ids = new HashSet<string>();
+        foreach (var seal in unlockedSeals)
+        {
+            string id = ResolveSealId(seal);
+            if (!string.IsNullOrEmpty(id))
+                ids.Add(id);
+        }
+
+        return new List<string>(ids);
+    }
+
+    /// <summary>
+    /// Construit la liste des IDs des Sceaux équipés pour la sauvegarde.
+    /// </summary>
+    public List<string> BuildEquippedSealIds()
+    {
+        var ids = new HashSet<string>();
+        foreach (var seal in equippedSeals)
+        {
+            string id = ResolveSealId(seal);
+            if (!string.IsNullOrEmpty(id))
+                ids.Add(id);
+        }
+
+        return new List<string>(ids);
+    }
+
+    /// <summary>
+    /// Applique l'état des Sceaux à partir des IDs sauvegardés.
+    /// </summary>
+    public void ApplySealIds(IEnumerable<string> unlockedIds, IEnumerable<string> equippedIds)
+    {
+        var unlockedSet = new HashSet<string>(unlockedIds ?? System.Array.Empty<string>(), System.StringComparer.OrdinalIgnoreCase);
+        var equippedSet = new HashSet<string>(equippedIds ?? System.Array.Empty<string>(), System.StringComparer.OrdinalIgnoreCase);
+        var lookup = BuildSealLookup();
+
+        unlockedSeals.Clear();
+        equippedSeals.Clear();
+
+        foreach (var id in unlockedSet)
+        {
+            if (string.IsNullOrEmpty(id))
+                continue;
+
+            if (lookup.TryGetValue(id, out var seal))
+                unlockedSeals.Add(seal);
+            else
+                Debug.LogWarning($"[Inventory] Sceau introuvable pour l'ID '{id}'.");
+        }
+
+        foreach (var id in equippedSet)
+        {
+            if (string.IsNullOrEmpty(id))
+                continue;
+
+            if (!lookup.TryGetValue(id, out var seal))
+            {
+                Debug.LogWarning($"[Inventory] Sceau équipé introuvable pour l'ID '{id}'.");
+                continue;
+            }
+
+            // On s'assure que tout Sceau équipé est aussi débloqué.
+            if (!unlockedSeals.Contains(seal))
+                unlockedSeals.Add(seal);
+
+            equippedSeals.Add(seal);
+        }
+
+        InitializeSealCollections();
+    }
+
+    private Dictionary<string, SceauSO> BuildSealLookup()
+    {
+        var lookup = new Dictionary<string, SceauSO>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (var seal in GetSealRegistry())
+        {
+            string id = ResolveSealId(seal);
+            if (string.IsNullOrEmpty(id))
+                continue;
+
+            if (!lookup.ContainsKey(id))
+                lookup.Add(id, seal);
+        }
+
+        return lookup;
+    }
+
+    private IEnumerable<SceauSO> GetSealRegistry()
+    {
+        var unique = new HashSet<SceauSO>();
+
+        if (registeredSeals != null)
+        {
+            foreach (var seal in registeredSeals)
+            {
+                if (seal != null && unique.Add(seal))
+                    yield return seal;
+            }
+        }
+
+        if (unlockedSeals != null)
+        {
+            foreach (var seal in unlockedSeals)
+            {
+                if (seal != null && unique.Add(seal))
+                    yield return seal;
+            }
+        }
+    }
+
+    private static string ResolveSealId(SceauSO seal)
+    {
+        if (seal == null)
+            return string.Empty;
+
+        // L'asset name sert d'ID stable tant qu'il ne change pas.
+        return seal.name;
     }
 }

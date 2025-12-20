@@ -29,8 +29,8 @@ Chaque `CharacterData` expose deux nouvelles listes :
    - `prioritizedItems` : liste ordonnée des `ItemData` favoris.
    - `defaultItemSetIndex` suit la même logique que pour les attaques.
 
-Les champs `currentMusicalMoveSetIndex` et `currentItemSetIndex` sont gérés
-automatiquement au lancement d'un combat.
+Les index de sets actifs sont gérés automatiquement au lancement d'un combat
+par chaque `CharacterUnit` (ils ne sont plus stockés dans les ScriptableObjects).
 
 ## Utilisation en jeu
 

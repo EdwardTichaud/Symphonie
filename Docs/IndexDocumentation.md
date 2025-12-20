@@ -11,6 +11,8 @@ Ce document décrit l'organisation thématique des fichiers de `Docs/` afin de r
 ## Thèmes gameplay
 - `LimitesUtilisationActions.md` : paramétrage des limites d'utilisation pour les MusicalMoves et Items.
 - `PreparationMusicalMoves.md` : configuration des phases de charge et de leurs risques.
+- `DureesEffets.md` : règles de durée des buffs/débuffs et statuts (tours, arrondis, durée infinie).
+- `AccessibiliteQTE.md` : réglages d'accessibilité et feedback pour les QTE.
 - `TypageHarmoniques.md` : consommation et génération d'harmoniques par move.
 - `ConditionsAltitude.md` : contraintes de hauteur pour les compétences.
 - `MoveTypeAlteration.md` : description du MoveType Altération.
@@ -27,3 +29,5 @@ Ce document décrit l'organisation thématique des fichiers de `Docs/` afin de r
 - `Ash_Bark_Veins.md` : description du matériau organique spécifique.
 - `VolumetricRays.md` : recette pour configurer les rayons volumétriques.
 - `OptimisationsPerformance.md` : actions pour réduire les draw calls.
+- `SauvegardesPersistances.md` : contenu persisté (succès, codex, sceaux) et versioning.
+- `ValidationScriptableObjects.md` : contrôles automatiques des ScriptableObjects en éditeur.

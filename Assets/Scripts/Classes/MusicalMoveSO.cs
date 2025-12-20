@@ -391,6 +391,8 @@ public class MusicalMoveSO : ScriptableObject
         // multi-tour : deux garde-fous sont ajoutés ou mis à jour pour garantir que
         // des dégâts colossaux ou une interruption explicite stoppe bien la charge.
         EnsureDefaultPreparationFailureConditions();
+
+        ValidateConfiguration();
     }
 
     private static bool IsDurationBasedEffect(MusicalEffectType type)
@@ -425,6 +427,83 @@ public class MusicalMoveSO : ScriptableObject
             return 10;
 
         return 2000;
+    }
+
+    private void ValidateConfiguration()
+    {
+        bool dirty = false;
+
+        if (string.IsNullOrWhiteSpace(moveName))
+            Debug.LogWarning("[MusicalMoveSO] moveName est vide.", this);
+        if (moveIcon == null)
+            Debug.LogWarning($"[MusicalMoveSO] moveIcon manquant pour '{name}'.", this);
+
+        if (fatigueCost < 0f)
+        {
+            fatigueCost = 0f;
+            dirty = true;
+            Debug.LogWarning($"[MusicalMoveSO] fatigueCost negatif corrige pour '{name}'.", this);
+        }
+        if (harmonicCost < 0)
+        {
+            harmonicCost = 0;
+            dirty = true;
+            Debug.LogWarning($"[MusicalMoveSO] harmonicCost negatif corrige pour '{name}'.", this);
+        }
+        if (maxUsesPerTurn < 0)
+        {
+            maxUsesPerTurn = 0;
+            dirty = true;
+            Debug.LogWarning($"[MusicalMoveSO] maxUsesPerTurn negatif corrige pour '{name}'.", this);
+        }
+        if (maxUsesPerBattle < 0)
+        {
+            maxUsesPerBattle = 0;
+            dirty = true;
+            Debug.LogWarning($"[MusicalMoveSO] maxUsesPerBattle negatif corrige pour '{name}'.", this);
+        }
+
+        if (targetTypes == null)
+        {
+            targetTypes = new List<TargetType>();
+            dirty = true;
+        }
+        if (targetTypes.Count == 0)
+        {
+            targetTypes.Add(defaultTargetType);
+            dirty = true;
+            Debug.LogWarning($"[MusicalMoveSO] targetTypes vide, ajout du defaultTargetType pour '{name}'.", this);
+        }
+        else if (!targetTypes.Contains(defaultTargetType))
+        {
+            targetTypes.Add(defaultTargetType);
+            dirty = true;
+            Debug.LogWarning($"[MusicalMoveSO] defaultTargetType manquant dans targetTypes pour '{name}'.", this);
+        }
+
+        if (requiresPreparationBeforeExecution)
+        {
+            if (preparationTurnCount <= 0)
+                Debug.LogWarning($"[MusicalMoveSO] preparationTurnCount <= 0 alors que la preparation est active pour '{name}'.", this);
+            if (preparingTimeline == null)
+                Debug.LogWarning($"[MusicalMoveSO] preparingTimeline manquante pour '{name}'.", this);
+        }
+
+        if (castDistance < 0f)
+        {
+            castDistance = 0f;
+            dirty = true;
+            Debug.LogWarning($"[MusicalMoveSO] castDistance negatif corrige pour '{name}'.", this);
+        }
+        if (travelTime < 0f)
+        {
+            travelTime = 0f;
+            dirty = true;
+            Debug.LogWarning($"[MusicalMoveSO] travelTime negatif corrige pour '{name}'.", this);
+        }
+
+        if (dirty)
+            EditorUtility.SetDirty(this);
     }
 #endif
 
@@ -616,37 +695,32 @@ public class MusicalMoveSO : ScriptableObject
         CharacterUnit target, int baseValue, float fatigueToApply, bool doubleValue, bool ignoreFatigue,
         bool skipDamageRegistration, bool applyFatigue)
     {
-        float finalValue = baseValue;
-        if (caster != null)
-        {
-            float powerToUse = caster.currentPower;
-            if (typeToUse == MusicalEffectType.Heal)
-                powerToUse = Mathf.Max(caster.currentSagacity, caster.currentPower);
-
-            finalValue += powerToUse;
-            finalValue *= caster.GetAttackMultiplier();
-
-            if (typeToUse == MusicalEffectType.Damage)
-                finalValue = caster.ApplyDamageModifiers(finalValue);
-            else if (typeToUse == MusicalEffectType.Heal)
-                finalValue = caster.ApplyHealingModifiers(finalValue);
-        }
-
-        // Ancien comportement : simple multiplicateur si aucune variante
-        if (doubleValue)
-            finalValue *= 2f;
-
         if (typeToUse == MusicalEffectType.Damage)
         {
-            float damage = Mathf.Max(baseValue, finalValue);
-            target.TakeDamage(damage, caster != null ? caster.transform : null);
-            if (!skipDamageRegistration)
-                NewBattleManager.Instance?.RegisterDamage(caster, damage);
+            float multiplier = doubleValue ? 2f : 1f;
+            CombatPipeline.ApplyDamage(caster, target, baseValue, new CombatPipeline.DamageOptions
+            {
+                includePower = true,
+                applyAttackMultiplier = true,
+                applyModifiers = true,
+                clampToBaseValue = true,
+                registerDamage = !skipDamageRegistration,
+                allowRedirect = true,
+                valueMultiplier = multiplier
+            });
         }
         else if (typeToUse == MusicalEffectType.Heal)
         {
-            float heal = Mathf.Max(baseValue, finalValue);
-            target.Heal(heal);
+            float multiplier = doubleValue ? 2f : 1f;
+            CombatPipeline.ApplyHealing(caster, target, baseValue, new CombatPipeline.HealOptions
+            {
+                includePower = true,
+                useSagacity = true,
+                applyAttackMultiplier = true,
+                applyModifiers = true,
+                clampToBaseValue = true,
+                valueMultiplier = multiplier
+            });
         }
         else if (typeToUse == MusicalEffectType.Sleep)
         {

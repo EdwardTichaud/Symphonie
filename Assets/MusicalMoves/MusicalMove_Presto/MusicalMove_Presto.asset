@@ -30,8 +30,11 @@ MonoBehaviour:
   harmonicGeneration: 0
   consumedHarmonicType: 0
   generatedHarmonicType: 0
-  effectType: 10
-  effectValue: 0
+  effects:
+  - type: 10
+    value: 10
+  legacyEffectType: 10
+  legacyEffectValue: 0
   passiveEffectPrefab: {fileID: 1144090914521784546, guid: f066fb66a808fc448b02dcc7477eeeb5, type: 3}
   passiveEffectVerticalOffset: 0
   buffStat: 0
@@ -42,6 +45,7 @@ MonoBehaviour:
   debuffAmount: 0
   debuffDuration: 0
   debuffIsPercentage: 0
+  previousEffectType: 10
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -54,7 +58,7 @@ MonoBehaviour:
   altitudeCondition: 2
   targetType: 0
   defaultTargetType: 0
-  targetTypes: 05000000
+  targetTypes: 0500000000000000
   travelTime: 0.05
   legacyMoveSpeed: 20
   legacyMoveSpeedConverted: 1
@@ -69,6 +73,9 @@ MonoBehaviour:
   tpSFx_Start: {fileID: 0}
   tpSFx_End: {fileID: 0}
   warningClip: {fileID: 0}
+  requiresPreparationBeforeExecution: 0
+  preparationTurnCount: 0
+  preparationFailureConditions: []
   startDelay: 0
   enterAwake: 0
   preparingAnimation: {fileID: 0}
