@@ -36,6 +36,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private SpriteRenderer spriteRenderer;
     private AudioSource audioSource;
     [HideInInspector] public Animator animator;
+    private ConcentrationSystem concentrationSystem;
     // Indicateur évitant les multiples avertissements lorsque l'Animator enfant est introuvable.
     private bool hasLoggedMissingChildAnimator;
     // Indicateur évitant de répéter les avertissements lorsqu'on détecte plusieurs Animator valides chez les enfants.
@@ -838,6 +839,14 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // Les timelines sont déclenchées manuellement, on désactive donc toute
         // lecture automatique pour éviter une répétition non désirée en scène.
         battleDirector.playOnAwake = false;
+
+        CacheConcentrationSystem();
+    }
+
+    private void CacheConcentrationSystem()
+    {
+        if (concentrationSystem == null)
+            TryGetComponent(out concentrationSystem);
     }
 
     public CharacterType characterType => Data.characterType;
@@ -1021,6 +1030,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         animator = GetCasterAnimator(forceRefresh: true);
         awakeState = GetComponent<AwakeState>();
         isIdleActive = false; // L'unité n'est pas encore en Idle : permet de jouer le son d'entrée lors du premier appel.
+        CacheConcentrationSystem();
 
         // Setup graphique
         if (spriteRenderer != null && Data.portrait != null)
@@ -1032,7 +1042,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         if (customBar != null)
         {
-            var concentration = GetComponent<ConcentrationSystem>();
+            var concentration = concentrationSystem;
             if (concentration != null)
             {
                 customBar.SetMaxValue(concentration.maxConcentration);
@@ -1372,7 +1382,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         if (customBar != null)
         {
-            var concentration = GetComponent<ConcentrationSystem>();
+            CacheConcentrationSystem();
+            var concentration = concentrationSystem;
             if (concentration != null)
                 customBar.SetValue(concentration.currentConcentration);
             else
@@ -1471,7 +1482,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // Lance l'animation de blessure adaptée à la direction de l'attaquant
         PlayHurtAnimation(attacker);
         GetComponent<SleepStatus>()?.OnDamageTaken();
-        GetComponent<ConcentrationSystem>()?.OnDamageTaken(amount);
+        CacheConcentrationSystem();
+        concentrationSystem?.OnDamageTaken(amount);
         if (Data != null && Data.gameplayType == GameplayType.Rage)
         {
             GetComponent<RageSystem>()?.AddRage(amount);
