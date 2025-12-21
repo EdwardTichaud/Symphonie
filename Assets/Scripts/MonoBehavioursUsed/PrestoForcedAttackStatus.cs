@@ -121,7 +121,7 @@ public class PrestoForcedAttackStatus : MonoBehaviour
         {
             // Lorsque le BattleManager n'est pas disponible (cas extrêmes en dehors d'un combat standard),
             // on applique directement l'effet du move tout en ignorant la fatigue pour respecter le design de Presto.
-            basicMove.ApplyEffect(owner, forcedTarget, false, ignoreFatigue: true, skipDamageRegistration: false);
+            MusicalMoveExecutor.ApplyEffect(basicMove, owner, forcedTarget, false, ignoreFatigue: true, skipDamageRegistration: false);
             attackTriggered = true;
         }
         else

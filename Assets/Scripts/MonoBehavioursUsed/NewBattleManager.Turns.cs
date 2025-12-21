@@ -494,7 +494,7 @@ public partial class NewBattleManager
             ActionUIDisplayManager.Instance?.DisplayCriticalHit();
         if (bypassInventory)
         {
-            item.ApplyEffect(caster, target, crit);
+            ItemEffectExecutor.ApplyEffect(item, caster, target, crit);
         }
         else
         {
@@ -838,7 +838,7 @@ public partial class NewBattleManager
             ActionUIDisplayManager.Instance.DisplayActionMessage(interceptor.Data.characterName, move.moveName, caster.Data.characterName);
             yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, interceptor, caster);
             if (move.notes == null || move.notes.Count == 0)
-                move.ApplyEffect(interceptor, caster);
+                MusicalMoveExecutor.ApplyEffect(move, interceptor, caster);
         }
     }
 

@@ -136,6 +136,12 @@ public class MusicalMoveSO : ScriptableObject
         return effects[0];
     }
 
+    public IReadOnlyList<EffectDefinition> GetEffects()
+    {
+        EnsureEffectsInitialized();
+        return effects;
+    }
+
     public bool HasEffect(MusicalEffectType type)
     {
         EnsureEffectsInitialized();
@@ -631,193 +637,7 @@ public class MusicalMoveSO : ScriptableObject
         return 0f;
     }
 
-    public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
-    {
-        // Les appels historiques utilisent cette surcharge sans paramètre :
-        // on délègue au noyau commun avec les options par défaut pour conserver
-        // un comportement identique.
-        ApplyEffectInternal(caster, target, false, ignoreFatigue: false, skipDamageRegistration: false);
-    }
 
-    public void ApplyEffect(CharacterUnit caster, CharacterUnit target, bool isCritical)
-    {
-        // Variante utilisée par les QTE classiques : aucune fatigue ignorée et
-        // enregistrement des dégâts actif.
-        ApplyEffectInternal(caster, target, isCritical, ignoreFatigue: false, skipDamageRegistration: false);
-    }
-
-    /// <summary>
-    ///     Nouvelle surcharge dédiée aux déclenchements automatisés (Presto, scripts narratifs...).
-    ///     Elle permet d'ignorer la fatigue ou l'enregistrement des dégâts lorsque la logique
-    ///     existante le nécessite sans dupliquer la formule de résolution.
-    /// </summary>
-    public void ApplyEffect(CharacterUnit caster, CharacterUnit target, bool isCritical, bool ignoreFatigue,
-        bool skipDamageRegistration)
-    {
-        ApplyEffectInternal(caster, target, isCritical, ignoreFatigue, skipDamageRegistration);
-    }
-
-    /// <summary>
-    ///     Point d'entrée commun à toutes les surcharges d'application d'effet.
-    ///     L'ajout des paramètres <paramref name="ignoreFatigue"/> et <paramref name="skipDamageRegistration"/>
-    ///     évite de multiplier les embranchements tout en gardant un comportement clair pour la maintenance.
-    /// </summary>
-    private void ApplyEffectInternal(CharacterUnit caster, CharacterUnit target, bool isCritical, bool ignoreFatigue,
-        bool skipDamageRegistration)
-    {
-        EnsureEffectsInitialized();
-
-        bool shouldDoubleBaseEffects = isCritical && !useCriticalVariant;
-        for (int i = 0; i < effects.Count; i++)
-        {
-            var effect = effects[i];
-            if (effect == null)
-                continue;
-
-            bool applyFatigue = i == 0;
-            ApplySingleEffect(effect.type, caster, target, effect.value, fatigueCost, shouldDoubleBaseEffects,
-                ignoreFatigue, skipDamageRegistration, applyFatigue);
-        }
-
-        // Ajoute l'effet critique si nécessaire
-        if (isCritical && useCriticalVariant)
-        {
-            ApplySingleEffect(criticalEffectType, caster, target, criticalEffectValue, criticalFatigueCost, false,
-                ignoreFatigue, skipDamageRegistration, true);
-        }
-    }
-
-    /// <summary>
-    /// Applique un effet unique en tenant compte de la puissance du lanceur et
-    /// du système de fatigue éventuel.
-    /// </summary>
-    private void ApplySingleEffect(MusicalEffectType typeToUse, CharacterUnit caster,
-        CharacterUnit target, int baseValue, float fatigueToApply, bool doubleValue, bool ignoreFatigue,
-        bool skipDamageRegistration, bool applyFatigue)
-    {
-        if (typeToUse == MusicalEffectType.Damage)
-        {
-            float multiplier = doubleValue ? 2f : 1f;
-            CombatPipeline.ApplyDamage(caster, target, baseValue, new CombatPipeline.DamageOptions
-            {
-                includePower = true,
-                applyAttackMultiplier = true,
-                applyModifiers = true,
-                clampToBaseValue = true,
-                registerDamage = !skipDamageRegistration,
-                allowRedirect = true,
-                valueMultiplier = multiplier
-            });
-        }
-        else if (typeToUse == MusicalEffectType.Heal)
-        {
-            float multiplier = doubleValue ? 2f : 1f;
-            CombatPipeline.ApplyHealing(caster, target, baseValue, new CombatPipeline.HealOptions
-            {
-                includePower = true,
-                useSagacity = true,
-                applyAttackMultiplier = true,
-                applyModifiers = true,
-                clampToBaseValue = true,
-                valueMultiplier = multiplier
-            });
-        }
-        else if (typeToUse == MusicalEffectType.Sleep)
-        {
-            CharacterStatusEffectController.ApplySleep(target, Mathf.Max(1, baseValue));
-        }
-        else if (typeToUse == MusicalEffectType.WakeUpAll)
-        {
-            foreach (var unit in NewBattleManager.Instance.activeCharacterUnits)
-            {
-                CharacterStatusEffectController.RemoveSleep(unit);
-            }
-        }
-        else if (typeToUse == MusicalEffectType.LoyaltyMark)
-        {
-            var mark = target.GetComponent<LoyaltyMark>();
-            if (mark == null)
-                mark = target.gameObject.AddComponent<LoyaltyMark>();
-            mark.SetProtector(caster, passiveEffectPrefab, passiveEffectVerticalOffset, Mathf.Max(1, baseValue));
-        }
-        else if (typeToUse == MusicalEffectType.LinkMark)
-        {
-            var mark = target.GetComponent<LinkMark>();
-            if (mark == null)
-                mark = target.gameObject.AddComponent<LinkMark>();
-            mark.ApplyDuration(Mathf.Max(1, baseValue));
-        }
-        else if (typeToUse == MusicalEffectType.AnchorGround)
-        {
-            int turns = Mathf.Max(1, baseValue);
-            target.EnsureAltitudeOverrideStatus().AnchorToGround(turns);
-        }
-        else if (typeToUse == MusicalEffectType.SuspendAir)
-        {
-            int turns = Mathf.Max(1, baseValue);
-            target.EnsureAltitudeOverrideStatus().SuspendInAir(turns);
-        }
-        else if (typeToUse == MusicalEffectType.PrestoForcedAttack)
-        {
-            int turns = Mathf.Max(1, baseValue);
-            PrestoForcedAttackSystem.ApplyStatus(target, caster, passiveEffectPrefab, passiveEffectVerticalOffset, turns);
-        }
-        else if (typeToUse == MusicalEffectType.Stun)
-        {
-            CharacterStatusEffectController.ApplyStun(target, Mathf.Max(1, baseValue));
-        }
-        // Les effets visuels comme la création ou la suppression de sol sont
-        // désormais entièrement gérés par la timeline, aucune instanciation
-        // de prefab n'est nécessaire ici.
-        if (applyFatigue && !ignoreFatigue && caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
-        {
-            caster.GetComponent<FatigueSystem>()?.OnActionPerformed(fatigueToApply);
-        }
-
-        if (typeToUse == MusicalEffectType.IncreaseDamage)
-        {
-            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Strength, baseValue, buffDuration, buffIsPercentage);
-        }
-        else if (typeToUse == MusicalEffectType.DecreaseDamage)
-        {
-            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Strength, baseValue, debuffDuration, debuffIsPercentage);
-        }
-        else if (typeToUse == MusicalEffectType.IncreaseDefense)
-        {
-            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Defense, baseValue, buffDuration, buffIsPercentage);
-        }
-        else if (typeToUse == MusicalEffectType.DecreaseDefense)
-        {
-            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Defense, baseValue, debuffDuration, debuffIsPercentage);
-        }
-        else if (typeToUse == MusicalEffectType.IncreaseInitiative)
-        {
-            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.Initiative, baseValue, buffDuration, buffIsPercentage);
-        }
-        else if (typeToUse == MusicalEffectType.DecreaseInitiative)
-        {
-            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.Initiative, baseValue, debuffDuration, debuffIsPercentage);
-        }
-        else if (typeToUse == MusicalEffectType.IncreaseMaxHP)
-        {
-            CharacterStatusEffectController.ApplyBuff(target, BuffStatType.MaxHP, baseValue, buffDuration, buffIsPercentage);
-        }
-        else if (typeToUse == MusicalEffectType.DecreaseMaxHP)
-        {
-            CharacterStatusEffectController.ApplyDebuff(target, DebuffStatType.MaxHP, baseValue, debuffDuration, debuffIsPercentage);
-        }
-
-        // Applique ensuite les éventuels effets secondaires définis plus haut.
-        if (buffStat != BuffStatType.None)
-        {
-            CharacterStatusEffectController.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
-        }
-
-        if (debuffStat != DebuffStatType.None)
-        {
-            CharacterStatusEffectController.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
-        }
-    }
 }
 
 /// <summary>

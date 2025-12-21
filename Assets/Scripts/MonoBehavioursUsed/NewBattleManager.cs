@@ -12,18 +12,6 @@ using UnityEngine.Timeline;
 using Unity.Cinemachine;
 using UnityEngine.EventSystems;
 
-#region TargetType
-public enum TargetType
-{
-    Self,
-    SingleEnemy,
-    AllEnemies,
-    SingleAlly,
-    AllAllies,
-    All
-}
-#endregion
-
 #region BattleState
 public enum BattleState
 {
@@ -2768,7 +2756,7 @@ public partial class NewBattleManager : MonoBehaviour
         PlayBaseAttackVoice(attacker); // doit précéder la timeline Performing du move
         bool ignoreFatigue = !applyFatigue;
         bool skipDamageRegistration = !registerStats;
-        basicMove.ApplyEffect(attacker, target, false, ignoreFatigue, skipDamageRegistration);
+        MusicalMoveExecutor.ApplyEffect(basicMove, attacker, target, false, ignoreFatigue, skipDamageRegistration);
 
         return true;
     }

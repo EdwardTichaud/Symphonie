@@ -4,13 +4,6 @@ using TMPro;
 using System.Collections;
 using System.Collections.Generic;
 
-[System.Serializable]
-public struct DialogueLine
-{
-    public string speakerName;
-    public string text;
-}
-
 /// <summary>
 /// DialogueManager complet :
 /// - Lecture manuelle et auto-avance

@@ -34,10 +34,10 @@ public class AnimationEventsManager : MonoBehaviour
         {
             CharacterUnit caster = transform.GetComponentInParent<CharacterUnit>();
             // En supprimant le champ "power", toutes les animations se fient désormais
-            // à la résolution centralisée de MusicalMoveSO.ApplyEffect pour appliquer
-            // les dégâts, soins ou effets spéciaux. Cela garantit que l'on profite
-            // d'EffectValue, des multiplicateurs et des éventuels statuts associés.
-            move.ApplyEffect(caster, target);
+            // à la résolution centralisée des effets pour appliquer les dégâts, soins
+            // ou effets spéciaux. Cela garantit que l'on profite d'EffectValue, des
+            // multiplicateurs et des éventuels statuts associés.
+            MusicalMoveExecutor.ApplyEffect(move, caster, target);
         }
     }
 

@@ -512,7 +512,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         if (pendingNotes == 0)
         {
-            move.ApplyEffect(caster, target);
+            MusicalMoveExecutor.ApplyEffect(move, caster, target);
         }
         else
         {
@@ -1284,7 +1284,7 @@ public class RhythmQTEManager : MonoBehaviour
             // Si l'ennemi est marqué comme inévitable, aucun QTE défensif n'est proposé
             if (currentCaster.Data.avoidable)
             {
-                currentMove.ApplyEffect(currentCaster, currentTarget);
+                MusicalMoveExecutor.ApplyEffect(currentMove, currentCaster, currentTarget);
                 pendingNotes = Mathf.Max(0, pendingNotes - 1);
             }
             else
@@ -1301,7 +1301,7 @@ public class RhythmQTEManager : MonoBehaviour
                             currentTarget.TakeDodge();
                             break;
                         default:
-                            currentMove.ApplyEffect(currentCaster, currentTarget);
+                            MusicalMoveExecutor.ApplyEffect(currentMove, currentCaster, currentTarget);
                             break;
                     }
 
@@ -1314,7 +1314,7 @@ public class RhythmQTEManager : MonoBehaviour
             // Pas d'icône spécifique pour les notes, on passe null
             StartCoroutine(WaitForQTE(note.rhythm, null, Vector2.zero, success =>
             {
-                currentMove.ApplyEffect(currentCaster, currentTarget, success);
+                MusicalMoveExecutor.ApplyEffect(currentMove, currentCaster, currentTarget, success);
                 successResults.Add(success);
                 pendingNotes = Mathf.Max(0, pendingNotes - 1);
             }));

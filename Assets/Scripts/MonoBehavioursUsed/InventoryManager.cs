@@ -317,7 +317,7 @@ public class InventoryManager : MonoBehaviour
 
         Debug.Log($"[Inventory] Utilisation de l'objet : {item.itemName} sur {target.Data.characterName}");
 
-        item.ApplyEffect(caster, target, isCritical);
+        ItemEffectExecutor.ApplyEffect(item, caster, target, isCritical);
         RegisterItemUse(item);
     }
 
@@ -327,7 +327,7 @@ public class InventoryManager : MonoBehaviour
     public void PreviewItemEffect(ItemData item, CharacterUnit target)
     {
         Debug.Log($"[Inventory] Aperçu de l'effet de {item.itemName} sur {target.Data.characterName}");
-        item.ApplyEffect(null, target, false);
+        ItemEffectExecutor.ApplyEffect(item, null, target, false);
     }
 
     // ------------------------------------------------------------------

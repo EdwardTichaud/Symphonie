@@ -73,6 +73,12 @@ public class ItemData : ScriptableObject
         return effects[0];
     }
 
+    public IReadOnlyList<EffectDefinition> GetEffects()
+    {
+        EnsureEffectsInitialized();
+        return effects;
+    }
+
     public bool HasEffect(ItemEffectType type)
     {
         EnsureEffectsInitialized();
@@ -349,170 +355,7 @@ public class ItemData : ScriptableObject
     [Header("Notes avec Variantes Sonores")]
     public List<NoteVariant> notes;
 
-    public void ApplyEffect(CharacterUnit caster, CharacterUnit target)
-    {
-        ApplyEffect(caster, target, false);
-    }
 
-    public void ApplyEffect(CharacterUnit caster, CharacterUnit target, bool isCritical)
-    {
-        EnsureEffectsInitialized();
-
-        // Applique l'ensemble des effets configurés
-        foreach (var effect in effects)
-        {
-            if (effect == null)
-                continue;
-
-            ApplySingleEffect(effect.type, caster, target, effect.value);
-        }
-
-        // Ajoute l'effet critique si nécessaire
-        if (isCritical && useCriticalVariant)
-        {
-            ApplySingleEffect(criticalEffectType, caster, target, criticalEffectValue);
-        }
-    }
-
-    /// <summary>
-    /// Applique un effet unique selon son type.
-    /// </summary>
-    private void ApplySingleEffect(ItemEffectType type, CharacterUnit caster, CharacterUnit target, float value = 0f)
-    {
-        switch (type)
-        {
-            case ItemEffectType.Heal:
-                ApplyHeal(target);
-                break;
-            case ItemEffectType.Revive:
-                ApplyRevive(target);
-                break;
-            case ItemEffectType.Buff:
-                ApplyBuff(target);
-                break;
-            case ItemEffectType.Debuff:
-                ApplyDebuff(target);
-                break;
-            case ItemEffectType.BoostTiming:
-                Debug.Log("[ItemData] Effet BoostTiming non implémenté.");
-                break;
-            case ItemEffectType.Damage:
-                ApplyDamage(caster, target, value);
-                break;
-            case ItemEffectType.IncreaseRange:
-                ApplyIncreaseRange(target, value);
-                break;
-            case ItemEffectType.PreventInterception:
-                ApplyInterceptionImmunity(target);
-                break;
-            case ItemEffectType.ExtendEffects:
-                ApplyExtendEffects(target);
-                break;
-            case ItemEffectType.Sleep:
-                ApplySleep(target, value);
-                break;
-            case ItemEffectType.Stun:
-                ApplyStun(target, value);
-                break;
-            case ItemEffectType.WakeUp:
-                ApplyWakeUp(target);
-                break;
-            default:
-                Debug.LogWarning($"[ItemData] Type d'effet inconnu : {effectType}");
-                break;
-        }
-    }
-
-    private void ApplyHeal(CharacterUnit target)
-    {
-        if (target == null)
-            return;
-
-        float amount = healIsPercentage
-            ? (target.Data.baseHP + target.currentVitality) * healAmount / 100f
-            : healAmount;
-
-        CombatPipeline.ApplyHealing(null, target, amount, new CombatPipeline.HealOptions
-        {
-            includePower = false,
-            useSagacity = false,
-            applyAttackMultiplier = false,
-            applyModifiers = false,
-            clampToBaseValue = false,
-            valueMultiplier = 1f
-        });
-    }
-
-    private void ApplyRevive(CharacterUnit target)
-    {
-        if (target == null || target.currentHP > 0)
-            return;
-
-        float maxHP = target.Data.baseHP + target.currentVitality;
-        float amount = maxHP * revivePercentage / 100f;
-        target.currentHP = Mathf.Clamp(amount, 0f, maxHP);
-        if (target.hpBar != null)
-            target.hpBar.SetValue(target.currentHP);
-    }
-
-    private void ApplyBuff(CharacterUnit target)
-    {
-        CharacterStatusEffectController.ApplyBuff(target, buffStat, buffAmount, buffDuration, buffIsPercentage);
-    }
-
-    private void ApplyDebuff(CharacterUnit target)
-    {
-        // Utilise les champs dédiés aux débuffs pour éviter toute confusion
-        CharacterStatusEffectController.ApplyDebuff(target, debuffStat, debuffAmount, debuffDuration, debuffIsPercentage);
-    }
-
-    private void ApplyDamage(CharacterUnit caster, CharacterUnit target, float value)
-    {
-        if (target == null)
-            return;
-
-        CombatPipeline.ApplyDamage(caster, target, value, new CombatPipeline.DamageOptions
-        {
-            includePower = false,
-            applyAttackMultiplier = caster != null,
-            applyModifiers = false,
-            clampToBaseValue = false,
-            registerDamage = false,
-            allowRedirect = true,
-            valueMultiplier = 1f
-        });
-    }
-
-    private void ApplyIncreaseRange(CharacterUnit target, float value)
-    {
-        if (target != null)
-            target.currentRange += value;
-    }
-
-    private void ApplyInterceptionImmunity(CharacterUnit target)
-    {
-        CharacterStatusEffectController.ApplyInterceptionImmunity(target, Mathf.RoundToInt(buffDuration));
-    }
-
-    private void ApplyExtendEffects(CharacterUnit target)
-    {
-        CharacterStatusEffectController.ExtendEffectDurations(target, buffDuration);
-    }
-
-    private void ApplySleep(CharacterUnit target, float value)
-    {
-        CharacterStatusEffectController.ApplySleep(target, Mathf.Max(1, Mathf.RoundToInt(value)));
-    }
-
-    private void ApplyStun(CharacterUnit target, float value)
-    {
-        CharacterStatusEffectController.ApplyStun(target, Mathf.Max(1, Mathf.RoundToInt(value)));
-    }
-
-    private void ApplyWakeUp(CharacterUnit target)
-    {
-        CharacterStatusEffectController.RemoveSleep(target);
-    }
 }
 
 public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange, PreventInterception, ExtendEffects, Sleep, WakeUp, Stun }
