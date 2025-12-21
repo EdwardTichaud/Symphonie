@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class DamagePopupManager : MonoBehaviour
@@ -19,6 +20,9 @@ public class DamagePopupManager : MonoBehaviour
     }
 
     [SerializeField] private GameObject damagePopupPrefab;
+    [SerializeField] private int prewarmCount = 10;
+
+    private readonly Queue<DamagePopup> popupPool = new();
 
     void Awake()
     {
@@ -35,6 +39,61 @@ public class DamagePopupManager : MonoBehaviour
 
         // S'assure que l'objet ne possède pas d'échelle étrange héritée d'un prefab
         transform.localScale = Vector3.one;
+
+        PrewarmPool();
+    }
+
+    private void PrewarmPool()
+    {
+        if (damagePopupPrefab == null || prewarmCount <= 0)
+            return;
+
+        for (int i = popupPool.Count; i < prewarmCount; i++)
+        {
+            DamagePopup popup = CreatePopupInstance();
+            if (popup == null)
+                break;
+
+            popup.gameObject.SetActive(false);
+            popupPool.Enqueue(popup);
+        }
+    }
+
+    private DamagePopup CreatePopupInstance()
+    {
+        if (damagePopupPrefab == null)
+            return null;
+
+        GameObject popupObject = Instantiate(damagePopupPrefab, transform, true);
+        DamagePopup popupScript = popupObject.GetComponent<DamagePopup>();
+        if (popupScript == null)
+        {
+            Debug.LogError("[DamagePopupManager] Le prefab ne contient pas de composant DamagePopup.");
+            Destroy(popupObject);
+            return null;
+        }
+
+        popupScript.SetOwner(this);
+        popupObject.SetActive(false);
+        return popupScript;
+    }
+
+    private DamagePopup GetPopup()
+    {
+        if (popupPool.Count > 0)
+            return popupPool.Dequeue();
+
+        return CreatePopupInstance();
+    }
+
+    public void ReleasePopup(DamagePopup popup)
+    {
+        if (popup == null)
+            return;
+
+        popup.gameObject.SetActive(false);
+        popup.transform.SetParent(transform, true);
+        popupPool.Enqueue(popup);
     }
 
     /// <summary>
@@ -50,19 +109,13 @@ public class DamagePopupManager : MonoBehaviour
             return;
         }
 
-        // Instancie le prefab comme enfant du gestionnaire tout en conservant
-        // la même échelle que dans le prefab pour éviter qu'elle ne soit
-        // multipliée par celle du parent.
-        GameObject popup = Instantiate(damagePopupPrefab, transform, true);
-
-        // Vérifie la présence du composant requis avant initialisation
-        DamagePopup popupScript = popup.GetComponent<DamagePopup>();
+        DamagePopup popupScript = GetPopup();
         if (popupScript == null)
-        {
-            Debug.LogError("[DamagePopupManager] Le prefab ne contient pas de composant DamagePopup.");
-            Destroy(popup);
             return;
-        }
+
+        popupScript.transform.SetParent(transform, true);
+        popupScript.gameObject.SetActive(true);
+        popupScript.SetOwner(this);
 
         // Initialisation avec la cible initiale (paramètre conservé pour compatibilité)
         // et le montant de dégâts à afficher. Le DamagePopup se chargera ensuite de se

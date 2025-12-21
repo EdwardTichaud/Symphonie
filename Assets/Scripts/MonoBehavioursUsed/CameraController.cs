@@ -41,7 +41,7 @@ public class CameraController : MonoBehaviour
 
     private Transform forcedLookTarget;         // Cible privilégiée (Point_Chest) si disponible
     private Camera activeCamera;
-    private Camera worldCamera; // Référence directe à la WorldCamera
+    [SerializeField] private Camera worldCamera; // Référence directe à la WorldCamera
     private Transform worldCameraParent;       // Parent direct de la WorldCamera (utilisé pour le forçage)
 
     // Sauvegarde de la WorldCamera pour assurer la continuité après combats ou timelines
@@ -62,7 +62,7 @@ public class CameraController : MonoBehaviour
     [Tooltip("Autorise l'effet de respiration sur la BattleCamera. À couper si la caméra est gérée par Cinemachine.")]
     [SerializeField] private bool enableBattleCameraBreathing = true;
 
-    private GameObject battleCamera;               // Référence directe à la BattleCamera
+    [SerializeField] private GameObject battleCamera;               // Référence directe à la BattleCamera
     private Transform battleCameraParent;      // Parent direct de la BattleCamera (utilisé pour le forçage)
     private bool battleCameraSupportsBreathing; // Indique si l'effet de respiration peut être appliqué sans perturber Cinemachine.
     private float worldBreathOffset;           // Dernier décalage appliqué à la WorldCamera elle-même
@@ -103,8 +103,9 @@ public class CameraController : MonoBehaviour
     public float forcedCamMaxPitch = 65f;
 
     private string cameraTargetName;
-    private Transform player;
-    private EventsManager eventsManager;
+    [SerializeField] private Transform player;
+    [SerializeField] private EventsManager eventsManager;
+    private readonly Dictionary<string, Transform> namedTransformCache = new();
 
     private float forcedCamYaw = 180f;     // 180° = caméra positionnée derrière le joueur au démarrage
     private float forcedCamPitch = 20f;
@@ -136,11 +137,11 @@ public class CameraController : MonoBehaviour
         }
 
         Instance = this;
-        player = GameObject.FindGameObjectWithTag("Player")?.transform;
+        player ??= GameObject.FindGameObjectWithTag("Player")?.transform;
         if (player == null) Debug.LogError("[CameraController] Player not found!");
 
         // Récupération de la WorldCamera pour pouvoir la forcer indépendamment de la MainCamera
-        worldCamera = GameObject.FindGameObjectWithTag("WorldCamera")?.GetComponent<Camera>();
+        worldCamera ??= GameObject.FindGameObjectWithTag("WorldCamera")?.GetComponent<Camera>();
         if (worldCamera == null) Debug.LogWarning("[CameraController] WorldCamera introuvable !");
         // Récupère le parent pour appliquer les déplacements forcés (suivi, transitions...)
         worldCameraParent = worldCamera != null && worldCamera.transform.parent != null
@@ -168,7 +169,7 @@ public class CameraController : MonoBehaviour
         }
 
         // Recherche de la BattleCamera et de son parent pour gérer séparément forçage et respiration
-        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+        battleCamera ??= GameObject.FindGameObjectWithTag("BattleCamera");
         if (battleCamera == null)
         {
             Debug.LogWarning("[CameraController] BattleCamera introuvable !");
@@ -207,7 +208,7 @@ public class CameraController : MonoBehaviour
 
         forcedLookTarget = FindChildRecursive(player, "Point_Chest");
         cameraTargetName = forcedLookTarget?.name;
-        eventsManager = FindFirstObjectByType<EventsManager>();
+        eventsManager ??= FindFirstObjectByType<EventsManager>();
 
         RecalculateThirdPersonOffset();
         FindManagedCameras();
@@ -272,10 +273,6 @@ public class CameraController : MonoBehaviour
 
         if (isPaused)
             return; // Aucun suivi tant que la pause est active.
-
-        // Mise à jour des références dynamiques (player, eventsManager)
-        player ??= GameObject.FindGameObjectWithTag("Player")?.transform;
-        eventsManager ??= FindFirstObjectByType<EventsManager>();
 
         // 🔁 Mise à jour de l'orbite ou suivi classique selon l'état courant
         if (currentWorldCameraState == WorldCameraState.OrbitAround && orbitTarget != null && activeCamera != null)
@@ -405,6 +402,21 @@ public class CameraController : MonoBehaviour
         managedCameras.AddRange(allCams);
     }
 
+    private Transform ResolveNamedTransform(string objectName)
+    {
+        if (string.IsNullOrEmpty(objectName))
+            return null;
+
+        if (namedTransformCache.TryGetValue(objectName, out Transform cached) && cached != null)
+            return cached;
+
+        Transform found = GameObject.Find(objectName)?.transform;
+        if (found != null)
+            namedTransformCache[objectName] = found;
+
+        return found;
+    }
+
     /// <summary>
     /// Déplace la caméra principale vers la position et la rotation cibles avec interpolation.
     /// Peut interférer avec ForceCam si celui-ci est actif.
@@ -413,8 +425,8 @@ public class CameraController : MonoBehaviour
     {
         StopOrbit();
 
-        Transform pos = GameObject.Find(positionName)?.transform;
-        Transform look = GameObject.Find(lookAtName)?.transform;
+        Transform pos = ResolveNamedTransform(positionName);
+        Transform look = ResolveNamedTransform(lookAtName);
 
         if (pos == null || look == null)
         {

@@ -339,7 +339,7 @@ public partial class NewBattleManager : MonoBehaviour
     // Caméra
     [Header("Caméra de combat")]
     // On mémorise l'objet caméra pour éviter de le rechercher à chaque frame
-    private GameObject battleCamera;
+    [SerializeField] private GameObject battleCamera;
     public float cameraSmoothSpeed = 5f;
     private BattleState lastCameraEvaluatedState = BattleState.None;
 
@@ -1540,6 +1540,19 @@ public partial class NewBattleManager : MonoBehaviour
     {
         if (battleCameraRig != null)
             return battleCameraRig;
+
+        if (battleCamera != null)
+        {
+            Camera[] cameras = battleCamera.GetComponentsInChildren<Camera>(true);
+            foreach (Camera cam in cameras)
+            {
+                if (cam != null && cam.name == "BattleCamera_Cam")
+                {
+                    battleCameraRig = cam.transform;
+                    return battleCameraRig;
+                }
+            }
+        }
 
         var cameraGO = GameObject.Find("BattleCamera_Cam");
         if (cameraGO == null)
@@ -3299,15 +3312,7 @@ public partial class NewBattleManager : MonoBehaviour
             return; // Une référence manuelle a peut-être été fournie dans l'inspecteur.
         }
 
-        // Première tentative : recherche directe par nom, adaptée aux scènes déjà configurées.
-        GameObject canvasGO = GameObject.Find("BattleCameraCanvas");
-        if (canvasGO != null)
-        {
-            battleCameraCanvasTransform = canvasGO.transform;
-            return;
-        }
-
-        // Deuxième tentative : on exploite la hiérarchie de la BattleCamera si elle est connue.
+        // Première tentative : on exploite la hiérarchie de la BattleCamera si elle est connue.
         if (battleCamera == null)
         {
             EnsureBattleCamera();
@@ -3324,6 +3329,14 @@ public partial class NewBattleManager : MonoBehaviour
                     return;
                 }
             }
+        }
+
+        // Deuxième tentative : recherche directe par nom, adaptée aux scènes déjà configurées.
+        GameObject canvasGO = GameObject.Find("BattleCameraCanvas");
+        if (canvasGO != null)
+        {
+            battleCameraCanvasTransform = canvasGO.transform;
+            return;
         }
 
         Debug.LogWarning("[NewBattleManager] Impossible de localiser 'BattleCameraCanvas'. L'indicateur de portée ne sera pas instancié.");

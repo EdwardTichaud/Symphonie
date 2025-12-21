@@ -17,6 +17,12 @@ public class DamagePopup : MonoBehaviour
     private RectTransform rectTransform; // Accès rapide au RectTransform pour manipuler l'overlay
     private Vector2 baseAnchoredPosition; // Position de référence (en pixels) par rapport au centre du Canvas
     private Vector3 baseWorldPosition;    // Fallback si le popup est utilisé hors Canvas (World Space par exemple)
+    private DamagePopupManager owner;
+
+    public void SetOwner(DamagePopupManager manager)
+    {
+        owner = manager;
+    }
 
     /// <summary>
     /// Initialise le popup avec un montant et la cible à suivre.
@@ -26,7 +32,7 @@ public class DamagePopup : MonoBehaviour
     public void Initialize(int amount, Transform followTarget)
     {
         textMesh.text = amount.ToString();
-        canvasGroup = GetComponent<CanvasGroup>();
+        canvasGroup ??= GetComponent<CanvasGroup>();
         if (canvasGroup == null)
         {
             // Assure une valeur cohérente même si le prefab n'a pas de CanvasGroup ; dans ce cas on
@@ -34,7 +40,7 @@ public class DamagePopup : MonoBehaviour
             Debug.LogWarning("[DamagePopup] Aucun CanvasGroup détecté, le fondu sera désactivé.");
         }
 
-        rectTransform = GetComponent<RectTransform>();
+        rectTransform ??= GetComponent<RectTransform>();
         if (rectTransform != null)
         {
             // Mémorise la position initiale afin de pouvoir y revenir si l'on souhaite modifier
@@ -51,6 +57,11 @@ public class DamagePopup : MonoBehaviour
             baseWorldPosition = Vector3.zero;
             transform.localPosition = baseWorldPosition + new Vector3(offset.x, offset.y, offset.z);
         }
+
+        elapsed = 0f;
+        floatOffset = 0f;
+        if (canvasGroup != null)
+            canvasGroup.alpha = 1f;
 
         // Position initiale avant la première mise à jour (indispensable pour appliquer l'offset).
         UpdatePosition();
@@ -78,7 +89,7 @@ public class DamagePopup : MonoBehaviour
 
             // Lorsque l'opacité a disparu (ou qu'aucun CanvasGroup n'est présent), on détruit le popup.
             if (canvasGroup == null || canvasGroup.alpha <= 0f)
-                Destroy(gameObject);
+                Release();
         }
     }
 
@@ -102,5 +113,13 @@ public class DamagePopup : MonoBehaviour
             Vector3 worldOffset = new Vector3(offset.x, offset.y + floatOffset, offset.z);
             transform.localPosition = baseWorldPosition + worldOffset;
         }
+    }
+
+    private void Release()
+    {
+        if (owner != null)
+            owner.ReleasePopup(this);
+        else
+            Destroy(gameObject);
     }
 }

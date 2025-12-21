@@ -42,7 +42,12 @@ public class BattleTransitionManager : MonoBehaviour
     /// </summary>
     private Coroutine transitionAudioCoroutine;
 
-    private GameObject battleCamera;
+    [SerializeField] private GameObject battleCamera;
+    [SerializeField] private Camera battleCameraCam;
+    [SerializeField] private GameObject battleSceneTransitionCanvas;
+    [SerializeField] private Transform enemyPosition01;
+    [SerializeField] private GameObject playerRoot;
+    private Transform battleSceneTransitionPanel;
     private CharacterController cachedPlayerController;
 
     /// <summary>
@@ -79,7 +84,7 @@ public class BattleTransitionManager : MonoBehaviour
     [SerializeField] private GameObject gameOverScreen;
 
     // Mise en cache du rendu Versus pour l'effet de verre brisé
-    private Camera versusCamera;
+    [SerializeField] private Camera versusCamera;
     private RenderTexture versusRenderTexture;
     private RenderTexture frozenVersusFrame;
     private Renderer[] brokenGlassRenderers = Array.Empty<Renderer>();
@@ -214,8 +219,10 @@ public class BattleTransitionManager : MonoBehaviour
 
         worldFadeOverlay ??= GameObject.Find("WorldFadeOverlayPanel")?.GetComponent<Image>();
         playerDetection ??= FindFirstObjectByType<PlayerDetection>();
-        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
-        versusCamera = GameObject.FindGameObjectWithTag("VersusCamera")?.GetComponent<Camera>();
+        ResolveBattleCamera();
+        ResolveVersusCamera();
+        ResolveTransitionCanvas();
+        ResolveBattleCameraCam();
         versusRenderTexture = versusCamera != null ? versusCamera.targetTexture : null;
         if (brokenGlass != null)
         {
@@ -350,6 +357,8 @@ public class BattleTransitionManager : MonoBehaviour
         // ✅ Sécurité supplémentaire : s'assure qu'aucune timeline ne
         // continue pendant la transition de combat.
         TimelineManager.Instance?.StopTimeline();
+
+        ResolveBattleCamera();
 
         // Sauvegarde la position actuelle de la WorldCamera pour la restituer après le combat
         CameraController.Instance?.SaveWorldCameraTransform();
@@ -532,7 +541,8 @@ public class BattleTransitionManager : MonoBehaviour
 
                 // Dès l'apparition du plan d'introduction, on déclenche son travelling le long de l'axe Z.
                 // Le point de mire est volontairement fixé à l'origine mondiale pour cadrer la scène de combat.
-                Vector3 middleEnemyPos = GameObject.Find("EnemyPosition_01").transform.position + new Vector3(0f, 1f, 0f);
+                Transform enemyPosition = ResolveEnemyPosition01();
+                Vector3 middleEnemyPos = enemyPosition.position + new Vector3(0f, 1f, 0f);
                 BattleCameraManager.Instance.StartBattleIntroCameraTravel(1f, middleEnemyPos);
 
             }
@@ -641,7 +651,7 @@ public class BattleTransitionManager : MonoBehaviour
         else
             Debug.LogWarning("[BattleTransitionManager] worldScene n'est pas assigné, la scène d'exploration risque de rester masquée.");
 
-        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        GameObject playerObject = ResolvePlayerRoot();
         CharacterController cC = ResolvePlayerController();
         if (cC != null)
             cC.gameObject.SetActive(true);
@@ -746,28 +756,26 @@ public class BattleTransitionManager : MonoBehaviour
         versusCameraCanvas.SetActive(false);
 
         // Le canvas de transition est désactivé pour éviter tout résidu visuel
-        GameObject.Find("BattleScene_TransitionCanvas")?.transform.GetChild(0).gameObject.SetActive(false);
+        ResolveTransitionCanvas();
+        if (battleSceneTransitionPanel != null)
+            battleSceneTransitionPanel.gameObject.SetActive(false);
     }
 
     void SetupBattleCameraAndUI()
     {
+        ResolveBattleCamera();
+        ResolveBattleCameraCam();
+        ResolveTransitionCanvas();
+
         // Active la hiérarchie caméra
         battleCamera.SetActive(true);
         foreach (Transform child in battleCamera.transform)
             child.gameObject.SetActive(true);
 
         // Récupère la Camera Unity via son GameObject "BattleCamera_Cam"
-        GameObject camObj = GameObject.Find("BattleCamera_Cam");
-        if (camObj == null)
+        if (battleCameraCam == null)
         {
-            Debug.LogError("Impossible de trouver BattleCamera_Cam dans la scène.");
-            return;
-        }
-
-        Camera unityCam = camObj.GetComponent<Camera>();
-        if (unityCam == null)
-        {
-            Debug.LogError("BattleCamera_Cam n’a pas de composant Camera.");
+            Debug.LogError("Impossible de trouver BattleCamera_Cam ou son composant Camera.");
             return;
         }
 
@@ -777,12 +785,12 @@ public class BattleTransitionManager : MonoBehaviour
 
         if (battleUICanvas != null)
         {
-            battleUICanvas.worldCamera = unityCam;
+            battleUICanvas.worldCamera = battleCameraCam;
         }
 
         // Active le premier enfant du TransitionCanvas si trouvé
-        GameObject.Find("BattleScene_TransitionCanvas")
-            ?.transform.GetChild(0).gameObject.SetActive(true);
+        if (battleSceneTransitionPanel != null)
+            battleSceneTransitionPanel.gameObject.SetActive(true);
     }
 
     public IEnumerator SlowTimeScale(float to, float speed)
@@ -912,6 +920,72 @@ public class BattleTransitionManager : MonoBehaviour
         return instance;
     }
 
+    private void ResolveBattleCamera()
+    {
+        if (battleCamera == null)
+            battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+    }
+
+    private void ResolveVersusCamera()
+    {
+        if (versusCamera == null)
+            versusCamera = GameObject.FindGameObjectWithTag("VersusCamera")?.GetComponent<Camera>();
+    }
+
+    private void ResolveBattleCameraCam()
+    {
+        if (battleCameraCam != null)
+            return;
+
+        if (battleCamera != null)
+        {
+            Camera[] cameras = battleCamera.GetComponentsInChildren<Camera>(true);
+            foreach (Camera cam in cameras)
+            {
+                if (cam != null && cam.name == "BattleCamera_Cam")
+                {
+                    battleCameraCam = cam;
+                    return;
+                }
+            }
+        }
+
+        GameObject camObj = GameObject.Find("BattleCamera_Cam");
+        if (camObj != null)
+            battleCameraCam = camObj.GetComponent<Camera>();
+    }
+
+    private void ResolveTransitionCanvas()
+    {
+        if (battleSceneTransitionCanvas == null)
+            battleSceneTransitionCanvas = GameObject.Find("BattleScene_TransitionCanvas");
+
+        if (battleSceneTransitionPanel == null && battleSceneTransitionCanvas != null)
+        {
+            Transform root = battleSceneTransitionCanvas.transform;
+            if (root.childCount > 0)
+                battleSceneTransitionPanel = root.GetChild(0);
+        }
+    }
+
+    private Transform ResolveEnemyPosition01()
+    {
+        if (enemyPosition01 != null)
+            return enemyPosition01;
+
+        enemyPosition01 = GameObject.Find("EnemyPosition_01")?.transform;
+        return enemyPosition01;
+    }
+
+    private GameObject ResolvePlayerRoot()
+    {
+        if (playerRoot != null)
+            return playerRoot;
+
+        playerRoot = GameObject.FindGameObjectWithTag("Player");
+        return playerRoot;
+    }
+
     private CharacterController ResolvePlayerController()
     {
         if (cachedPlayerController != null)
@@ -921,7 +995,7 @@ public class BattleTransitionManager : MonoBehaviour
         if (cachedPlayerController != null)
             return cachedPlayerController;
 
-        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        GameObject playerObject = ResolvePlayerRoot();
         if (playerObject != null)
             cachedPlayerController = playerObject.GetComponent<CharacterController>();
 

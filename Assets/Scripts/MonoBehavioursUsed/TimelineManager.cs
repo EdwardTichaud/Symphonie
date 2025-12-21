@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Collections.Generic;
 using UnityEngine.Playables;
 using UnityEngine.Timeline; // Gestion des TimelineAsset et bindings
 using UnityEngine.InputSystem; // Nécessaire pour manipuler les InputAction du joueur
@@ -63,14 +64,14 @@ public class TimelineManager : MonoBehaviour
     /// Référence vers le Canvas dédié à l'affichage des informations de Timeline.
     /// Ce Canvas doit rester inactif lorsque aucune Timeline ne tourne ou qu'elle a été passée.
     /// </summary>
-    private GameObject timelineCanvas;
+    [SerializeField] private GameObject timelineCanvas;
 
     /// <summary>
     /// Bouton permettant de passer la cinématique. Il est rendu visible uniquement
     /// lorsque qu'une Timeline est en cours de lecture afin d'éviter toute
     /// interaction inutile en dehors des cinématiques.
     /// </summary>
-    private GameObject passButton;
+    [SerializeField] private GameObject passButton;
 
     /// <summary>
     /// Vrai si la timeline a été accélérée via maintien de Cancel.
@@ -102,6 +103,8 @@ public class TimelineManager : MonoBehaviour
     /// (préparation/attaque/repli) sans repositionnement brusque de la caméra.
     /// </summary>
     private bool autoRestore = true;
+
+    private readonly Dictionary<string, GameObject> cameraTagCache = new();
 
     [Header("Audio")]
     [Tooltip("Musique de fond à jouer pendant les timelines.")]
@@ -358,19 +361,24 @@ public class TimelineManager : MonoBehaviour
             }
 
             // Recherche et désactivation du Canvas de gestion des timelines
-            timelineCanvas = GameObject.Find("TimelineManagerCanvas");
+            if (timelineCanvas == null)
+            {
+                timelineCanvas = GameObject.Find("TimelineManagerCanvas");
+            }
             if (timelineCanvas != null)
             {
                 // Le Canvas ne doit pas être visible tant qu'aucune Timeline n'est jouée
                 timelineCanvas.SetActive(false);
 
                 // Récupère le bouton "Passer" pour le contrôler dynamiquement
-                var passTransform = timelineCanvas.transform.Find("Passer");
-                if (passTransform != null)
+                if (passButton == null)
                 {
-                    passButton = passTransform.gameObject;
-                    passButton.SetActive(false); // caché par défaut hors cinématique
+                    var passTransform = timelineCanvas.transform.Find("Passer");
+                    if (passTransform != null)
+                        passButton = passTransform.gameObject;
                 }
+                if (passButton != null)
+                    passButton.SetActive(false); // caché par défaut hors cinématique
 
                 // Recherche automatique de l'image de remplissage si elle n'est pas assignée dans l'inspecteur
                 if (skipFillImage == null)
@@ -414,6 +422,21 @@ public class TimelineManager : MonoBehaviour
     public void SetAutoRestore(bool restore)
     {
         autoRestore = restore;
+    }
+
+    private GameObject ResolveCameraByTag(string cameraTag)
+    {
+        if (string.IsNullOrEmpty(cameraTag))
+            return null;
+
+        if (cameraTagCache.TryGetValue(cameraTag, out GameObject cached) && cached != null)
+            return cached;
+
+        GameObject found = GameObject.FindGameObjectWithTag(cameraTag);
+        if (found != null)
+            cameraTagCache[cameraTag] = found;
+
+        return found;
     }
 
     /// <summary>
@@ -501,7 +524,7 @@ public class TimelineManager : MonoBehaviour
 
         if (!string.IsNullOrEmpty(cameraTag))
         {
-            cameraGO = GameObject.FindGameObjectWithTag(cameraTag);
+            cameraGO = ResolveCameraByTag(cameraTag);
             cameraParent = cameraGO != null ? cameraGO.transform.parent : null;
 
             if (requiresWorldCamera)
