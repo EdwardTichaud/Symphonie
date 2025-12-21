@@ -15,6 +15,7 @@ TagManager:
   - TargetCursor
   - VersusCamera
   - WorldCamera
+  - DashParticles
   layers:
   - Default
   - TransparentFX
@@ -39,15 +40,16 @@ TagManager:
   - Battle_Ground
   - Battle_Void # Couche pour zones vides en bataille
   - Versus
-  - "" # Entrée vide préservée explicitement pour conserver l'indexation Unity.
-  - "" # Idem : Unity crée des couches réservées vides que nous conservons.
-  - "" # Les couches vides doivent être définies comme chaînes vides pour éviter les erreurs YAML.
-  - "" # Les anciennes entrées vides sont maintenant valides pour l'analyseur YAML.
-  - "" # Garder la structure permet de ne pas décaler les couches utilisateur.
-  - "" # Couches placeholder utilisées par Unity pour de futures allocations.
-  - "" # Préservation des emplacements libres pour maintenir la compatibilité.
-  - "" # Entrée volontairement libre ; Unity attend une chaîne vide.
-  - "" # Dernière entrée vide maintenue pour la cohérence du projet.
+  - World_Culling
+  - "# Entr\xE9e vide pr\xE9serv\xE9e explicitement pour conserver l'indexation Unity."
+  - 
+  - 
+  - 
+  - "# Les couches vides doivent \xEAtre d\xE9finies comme cha\xEEnes vides pour
+    \xE9viter les erreurs YAML."
+  - 
+  - "# Les anciennes entr\xE9es vides sont maintenant valides pour l'analyseur YAML."
+  - 
   m_SortingLayers:
   - name: Default
     uniqueID: 0
@@ -88,7 +90,10 @@ TagManager:
   - Light Layer 5 - Light Layer 5 - Light Layer 5 - Light Layer 5 - Light Layer 5
   - Light Layer 6 - Light Layer 6 - Light Layer 6 - Light Layer 6 - Light Layer 6
   - Light Layer 7 - Light Layer 7 - Light Layer 7 - Light Layer 7 - Light Layer 7
-  - "Decal Layer default - Decal Layer default - Decal Layer default - Decal Layer default - Decal Layer default" # Chaîne longue encapsulée pour garantir une définition YAML valide et éviter les retours à la ligne automatiques.
+  - Decal Layer default - Decal Layer default - Decal Layer default - Decal Layer
+    default - Decal Layer default
+  - "# Cha\xEEne longue encapsul\xE9e pour garantir une d\xE9finition YAML valide
+    et \xE9viter les retours \xE0 la ligne automatiques."
   - Decal Layer 1 - Decal Layer 1 - Decal Layer 1 - Decal Layer 1 - Decal Layer 1
   - Decal Layer 2 - Decal Layer 2 - Decal Layer 2 - Decal Layer 2 - Decal Layer 2
   - Decal Layer 3 - Decal Layer 3 - Decal Layer 3 - Decal Layer 3 - Decal Layer 3
