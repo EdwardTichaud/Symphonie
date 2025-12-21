@@ -59,8 +59,19 @@ public class GameManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        if (gameData != null)
-            gameData = Instantiate(gameData);
+        EnsureGameData();
+    }
+
+    private void EnsureGameData()
+    {
+        if (gameData == null)
+        {
+            Debug.LogWarning("[GameManager] GameData manquant, creation d'une instance runtime.");
+            gameData = ScriptableObject.CreateInstance<GameData>();
+            return;
+        }
+
+        gameData = Instantiate(gameData);
     }
 
     private void Start()
@@ -86,12 +97,24 @@ public class GameManager : MonoBehaviour
 
     public void AddXPToSquad(int xp)
     {
+        if (gameData == null)
+        {
+            Debug.LogWarning("[GameManager] GameData manquant, ajout d'XP ignore.");
+            return;
+        }
+
         gameData.squadXP += xp;
         Debug.Log($"Added {xp} XP to squad. Total XP: {gameData.squadXP}");
     }
 
     public void AddSquadLevel(int level)
     {
+        if (gameData == null)
+        {
+            Debug.LogWarning("[GameManager] GameData manquant, ajout de niveau ignore.");
+            return;
+        }
+
         gameData.squadLevel += level;
         Debug.Log($"Added {level} to squad level. Total Level: {gameData.squadLevel}");
     }
@@ -117,6 +140,12 @@ public class GameManager : MonoBehaviour
 
     public void MarkEnemyAsDefeated(int enemyID)
     {
+        if (gameData == null)
+        {
+            Debug.LogWarning("[GameManager] GameData manquant, ennemi non enregistre.");
+            return;
+        }
+
         if (!gameData.defeatedEnemies.Contains(enemyID))
         {
             gameData.defeatedEnemies.Add(enemyID);
@@ -126,12 +155,24 @@ public class GameManager : MonoBehaviour
 
     public void IncrementEnemiesDefeated()
     {
+        if (gameData == null)
+        {
+            Debug.LogWarning("[GameManager] GameData manquant, compteur non incremente.");
+            return;
+        }
+
         gameData.enemiesDefeatedCount++;
         Debug.Log($"[GameManager] Ennemis vaincus : {gameData.enemiesDefeatedCount}");
     }
 
     public void ResetEnemiesDefeatedCount()
     {
+        if (gameData == null)
+        {
+            Debug.LogWarning("[GameManager] GameData manquant, compteur non reinitialise.");
+            return;
+        }
+
         gameData.enemiesDefeatedCount = 0;
         Debug.Log("[GameManager] Compteur d'ennemis vaincus réinitialisé.");
     }

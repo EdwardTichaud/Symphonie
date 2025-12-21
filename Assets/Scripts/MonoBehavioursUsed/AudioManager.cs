@@ -4,9 +4,6 @@ using System.Collections.Generic;
 
 public class AudioManager : MonoBehaviour
 {
-    public AudioClipSO[] musicTracks;
-    public AudioClipSO[] soundEffects;
-    public AudioClipSO[] voiceEffects;
 
     // Règles sonores par défaut imposées par la documentation de production.
     private const float DefaultVolume = 0.8f;
@@ -34,10 +31,9 @@ public class AudioManager : MonoBehaviour
     }
 
     [Header("Audio Sources")]
-    // Tableaux de sources permettant de jouer plusieurs pistes simultanément
+    // Sources utilisées comme gabarits (mixer group, spatialisation, etc.).
     public AudioSource[] musicSources = new AudioSource[3];
     public AudioSource[] sfxSources = new AudioSource[3];
-    public AudioSource[] voiceSources = new AudioSource[3];
     // Source modèle facultative dédiée aux sons d'avertissement.
     // ⚠️ Aucun son ne doit être joué directement via cette référence :
     // elle sert uniquement de gabarit pour copier les réglages (mixer group,
@@ -64,11 +60,7 @@ public class AudioManager : MonoBehaviour
 
     public static AudioManager Instance { get; private set; }
 
-    // Indices des pistes musicales utilisées pour la lecture/crossfade
-    private int currentMusicIndex;
-    private int nextMusicIndex;
-    private AudioSource CurrentMusicSource => musicSources[currentMusicIndex];
-    private AudioSource NextMusicSource => musicSources[nextMusicIndex];
+    private AudioSource CurrentMusicSource => currentMusicHandle != null ? currentMusicHandle.Source : null;
 
     private Coroutine crossfadeRoutine;
     // Coroutine dédiée aux fondus de volume lorsque l'on entre ou sort d'une timeline
@@ -100,7 +92,7 @@ public class AudioManager : MonoBehaviour
     private AudioClipSO overrideMusicAsset;
     private float? overrideCustomVolume;
     private Coroutine musicOverrideWatcher;
-    private bool[] pausedMusicStates;
+    private List<AudioSource> pausedMusicSources;
 
     /// <summary>
     /// Classe interne dédiée au suivi des AudioSource créées dynamiquement pour les SFX/voix.
@@ -116,6 +108,10 @@ public class AudioManager : MonoBehaviour
     // Listes des instances dynamiques actuellement en cours de lecture.
     private readonly List<DynamicAudioHandle> activeSfxHandles = new List<DynamicAudioHandle>();
     private readonly List<DynamicAudioHandle> activeVoiceHandles = new List<DynamicAudioHandle>();
+    private readonly List<DynamicAudioHandle> activeMusicHandles = new List<DynamicAudioHandle>();
+
+    private DynamicAudioHandle currentMusicHandle;
+    private DynamicAudioHandle fadingMusicHandle;
 
     // Compteur pour nommer clairement les AudioSource engendrées dynamiquement.
     private int dynamicSourceCounter = 0;
@@ -132,7 +128,6 @@ public class AudioManager : MonoBehaviour
     // Sauvegardes temporaires des volumes pendant la lecture d'un avertissement.
     private float[] cachedWarningMusicVolumes;
     private float[] cachedWarningSfxVolumes;
-    private float[] cachedWarningVoiceVolumes;
 
     /// <summary>
     /// Met à jour le volume de la source d'avertissement en fonction de la musique.
@@ -144,60 +139,97 @@ public class AudioManager : MonoBehaviour
         warningBaseVolume = musicVolume * 2f;
     }
 
+    private void PrepareTemplateSources(AudioSource[] sources)
+    {
+        if (sources == null)
+            return;
+
+        foreach (var source in sources)
+        {
+            if (source == null)
+                continue;
+
+            if (!source.transform.IsChildOf(transform))
+                continue;
+
+            source.playOnAwake = false;
+            if (source.isPlaying)
+                source.Stop();
+        }
+    }
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
-            return;
+            if (!Instance.isActiveAndEnabled && gameObject.activeInHierarchy && enabled)
+            {
+                Destroy(Instance.gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+                return;
+            }
         }
 
+        if (gameObject.activeInHierarchy && enabled)
+            RegisterInstance();
+    }
+
+    private void OnEnable()
+    {
+        if (Instance == null || !Instance.isActiveAndEnabled)
+        {
+            if (Instance != null && Instance != this)
+                Destroy(Instance.gameObject);
+
+            RegisterInstance();
+        }
+    }
+
+    private void OnTransformParentChanged()
+    {
+        if (Instance == this && transform.parent != null)
+            transform.SetParent(null, true);
+    }
+
+    private void RegisterInstance()
+    {
         Instance = this;
         DontDestroyOnLoad(gameObject);
+        if (transform.parent != null)
+            transform.SetParent(null, true);
+    }
+
+    private bool EnsureActive(string context)
+    {
+        if (gameObject.activeInHierarchy && enabled)
+            return true;
+
+        if (transform.parent != null)
+            transform.SetParent(null, true);
+
+        if (!gameObject.activeSelf)
+            gameObject.SetActive(true);
+
+        if (!enabled)
+            enabled = true;
+
+        if (!gameObject.activeInHierarchy || !enabled)
+        {
+            Debug.LogWarning($"[AudioManager] AudioManager inactif ({context}), lecture annulee.");
+            return false;
+        }
+
+        return true;
     }
 
     private void Start()
     {
-        // Configuration des trois pistes musicales
-        for (int i = 0; i < musicSources.Length; i++)
-        {
-            if (musicSources[i] == null)
-            {
-                // Création automatique si la source n'est pas assignée dans le prefab
-                GameObject go = new GameObject($"AudioSource_Music_{i + 1}");
-                go.transform.SetParent(transform);
-                musicSources[i] = go.AddComponent<AudioSource>();
-            }
-            musicSources[i].loop = true;
-        }
-
-        // Les deux premiers indices servent au crossfade, le troisième reste disponible
-        currentMusicIndex = 0;
-        nextMusicIndex = 1;
-
-        // Configuration des sources d'effets sonores
-        for (int i = 0; i < sfxSources.Length; i++)
-        {
-            if (sfxSources[i] == null)
-            {
-                GameObject go = new GameObject($"AudioSource_Sfx_{i + 1}");
-                go.transform.SetParent(transform);
-                sfxSources[i] = go.AddComponent<AudioSource>();
-            }
-            sfxSources[i].playOnAwake = false;
-        }
-
-        // Configuration des sources de voix
-        for (int i = 0; i < voiceSources.Length; i++)
-        {
-            if (voiceSources[i] == null)
-            {
-                GameObject go = new GameObject($"AudioSource_Voice_{i + 1}");
-                go.transform.SetParent(transform);
-                voiceSources[i] = go.AddComponent<AudioSource>();
-            }
-            voiceSources[i].playOnAwake = false;
-        }
+        PrepareTemplateSources(musicSources);
+        PrepareTemplateSources(sfxSources);
+        // Les sources vocales utilisent désormais le gabarit SFX.
 
         // Source dédiée aux avertissements
         if (warningClipTemplate != null)
@@ -205,6 +237,8 @@ public class AudioManager : MonoBehaviour
             // Sécurise l'éventuel gabarit renseigné dans l'inspecteur pour éviter
             // toute lecture intempestive lors de l'initialisation.
             warningClipTemplate.playOnAwake = false;
+            if (warningClipTemplate.isPlaying)
+                warningClipTemplate.Stop();
         }
 
         SetMusicVolume(musicVolume);
@@ -247,13 +281,7 @@ public class AudioManager : MonoBehaviour
     public void SetMusicVolume(float value)
     {
         musicVolume = Mathf.Clamp01(value);
-        // Applique le volume sur toutes les pistes musicales
-        foreach (var source in musicSources)
-        {
-            if (source == null) continue;
-            float factor = GetNormalizationFactor(source.clip);
-            source.volume = musicVolume * factor;
-        }
+        RefreshMusicVolumes();
         UpdateWarningVolume();
 
         if (musicOverrideSource != null && musicOverrideSource.isPlaying && musicOverrideSource.clip != null)
@@ -280,53 +308,35 @@ public class AudioManager : MonoBehaviour
 
     #region 🎼 Gestion des musiques instantanées
 
-    private void EnsureMusicOverrideSource()
-    {
-        if (musicOverrideSource != null)
-            return;
-
-        var go = new GameObject("AudioSource_Music_Override");
-        go.transform.SetParent(transform);
-        musicOverrideSource = go.AddComponent<AudioSource>();
-        musicOverrideSource.playOnAwake = false;
-        musicOverrideSource.loop = false;
-
-        if (musicSources != null && musicSources.Length > 0 && musicSources[0] != null)
-            CopySourceSettings(musicSources[0], musicOverrideSource);
-    }
-
     private void PauseMainMusic()
     {
-        if (pausedMusicStates != null)
+        if (pausedMusicSources != null)
             return;
 
-        if (musicSources == null || musicSources.Length == 0)
-            return;
-
-        pausedMusicStates = new bool[musicSources.Length];
-        for (int i = 0; i < musicSources.Length; i++)
+        pausedMusicSources = new List<AudioSource>();
+        for (int i = activeMusicHandles.Count - 1; i >= 0; i--)
         {
-            var source = musicSources[i];
+            var source = activeMusicHandles[i]?.Source;
             if (source != null && source.isPlaying)
             {
                 source.Pause();
-                pausedMusicStates[i] = true;
+                pausedMusicSources.Add(source);
             }
         }
     }
 
     private void ResumeMainMusic()
     {
-        if (pausedMusicStates == null)
+        if (pausedMusicSources == null)
             return;
 
-        for (int i = 0; i < musicSources.Length && i < pausedMusicStates.Length; i++)
+        foreach (var source in pausedMusicSources)
         {
-            if (pausedMusicStates[i] && musicSources[i] != null)
-                musicSources[i].UnPause();
+            if (source != null)
+                source.UnPause();
         }
 
-        pausedMusicStates = null;
+        pausedMusicSources = null;
     }
 
     private void StopMusicOverride(bool resumeMainMusic = true)
@@ -338,7 +348,11 @@ public class AudioManager : MonoBehaviour
         }
 
         if (musicOverrideSource != null)
+        {
             musicOverrideSource.Stop();
+            Destroy(musicOverrideSource.gameObject);
+            musicOverrideSource = null;
+        }
 
         overrideMusicAsset = null;
         overrideCustomVolume = null;
@@ -357,6 +371,9 @@ public class AudioManager : MonoBehaviour
 
     public void PlayMusicOverride(AudioClipSO clipAsset, float? customVolume = null)
     {
+        if (!EnsureActive(nameof(PlayMusicOverride)))
+            return;
+
         if (clipAsset == null)
             return;
 
@@ -366,10 +383,10 @@ public class AudioManager : MonoBehaviour
 
         StopMusicOverride(resumeMainMusic: false);
         PauseMainMusic();
-        EnsureMusicOverrideSource();
+        AudioSource template = GetTemplateSource(musicSources);
+        musicOverrideSource = CreateManagedSource("Music_Override", template, ResolveLoop(clipAsset));
 
         musicOverrideSource.clip = clip;
-        musicOverrideSource.loop = clipAsset.Loop;
 
         float normalization = GetNormalizationFactor(clip);
         float volumeFactor = customVolume.HasValue
@@ -395,6 +412,9 @@ public class AudioManager : MonoBehaviour
 
     public void PlayExplorationMusic(AudioClipSO newExplorationClip)
     {
+        if (!EnsureActive(nameof(PlayExplorationMusic)))
+            return;
+
         AudioClip clip = ResolveClip(newExplorationClip);
         if (clip == null)
             return;
@@ -414,6 +434,9 @@ public class AudioManager : MonoBehaviour
 
     public void TransitionToNewExplorationZone(AudioClipSO newExplorationClip)
     {
+        if (!EnsureActive(nameof(TransitionToNewExplorationZone)))
+            return;
+
         AudioClip clip = ResolveClip(newExplorationClip);
         if (clip == null)
             return;
@@ -421,7 +444,7 @@ public class AudioManager : MonoBehaviour
         if (isInCombat || isInTimeline || currentMusicAsset == newExplorationClip)
             return;
 
-        if (!isInCombat && currentMusicAsset != null && CurrentMusicSource.clip != null)
+        if (!isInCombat && currentMusicAsset != null && CurrentMusicSource != null && CurrentMusicSource.clip != null)
         {
             explorationPlaybackPositions[currentMusicAsset] = CurrentMusicSource.time;
         }
@@ -437,6 +460,9 @@ public class AudioManager : MonoBehaviour
 
     public void TransitionToCombat(AudioClipSO combatClip)
     {
+        if (!EnsureActive(nameof(TransitionToCombat)))
+            return;
+
         AudioClip clip = ResolveClip(combatClip);
         if (clip == null)
             return;
@@ -460,12 +486,13 @@ public class AudioManager : MonoBehaviour
                 timelineFadeRoutine = null;
             }
 
-            CurrentMusicSource.UnPause();
+            if (CurrentMusicSource != null)
+                CurrentMusicSource.UnPause();
         }
         else if (currentMusicAsset != null)
         {
             lastExplorationClip = currentMusicAsset;
-            lastExplorationTime = CurrentMusicSource.time;
+            lastExplorationTime = CurrentMusicSource != null ? CurrentMusicSource.time : 0f;
         }
 
         isInCombat = true;
@@ -474,6 +501,9 @@ public class AudioManager : MonoBehaviour
 
     public void ReturnFromBattle()
     {
+        if (!EnsureActive(nameof(ReturnFromBattle)))
+            return;
+
         if (!isInCombat || lastExplorationClip == null)
             return;
 
@@ -488,12 +518,15 @@ public class AudioManager : MonoBehaviour
     /// <param name="timelineClip">Musique à jouer durant la cinématique.</param>
     public void TransitionToTimeline(AudioClipSO timelineClip)
     {
+        if (!EnsureActive(nameof(TransitionToTimeline)))
+            return;
+
         if (isInTimeline)
             return;
 
         wasInCombatBeforeTimeline = isInCombat;
         clipBeforeTimeline = currentMusicAsset;
-        timeBeforeTimeline = CurrentMusicSource.time;
+        timeBeforeTimeline = CurrentMusicSource != null ? CurrentMusicSource.time : 0f;
 
         isInTimeline = true;
         isInCombat = false;
@@ -515,6 +548,9 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void ReturnFromTimeline()
     {
+        if (!EnsureActive(nameof(ReturnFromTimeline)))
+            return;
+
         if (!isInTimeline)
             return;
 
@@ -532,7 +568,8 @@ public class AudioManager : MonoBehaviour
         {
             if (timelineFadeRoutine != null)
                 StopCoroutine(timelineFadeRoutine);
-            CurrentMusicSource.UnPause();
+            if (CurrentMusicSource != null)
+                CurrentMusicSource.UnPause();
             timelineFadeRoutine = StartCoroutine(FadeInCurrentMusic());
         }
     }
@@ -544,6 +581,12 @@ public class AudioManager : MonoBehaviour
     private IEnumerator FadeOutCurrentMusic()
     {
         AudioSource source = CurrentMusicSource;
+        if (source == null)
+        {
+            timelineFadeRoutine = null;
+            yield break;
+        }
+
         float startVolume = source.volume;
         float t = 0f;
 
@@ -567,7 +610,13 @@ public class AudioManager : MonoBehaviour
     private IEnumerator FadeInCurrentMusic()
     {
         AudioSource source = CurrentMusicSource;
-        float targetVolume = musicVolume * GetNormalizationFactor(source.clip);
+        if (source == null || currentMusicHandle == null)
+        {
+            timelineFadeRoutine = null;
+            yield break;
+        }
+
+        float targetVolume = Mathf.Clamp01(musicVolume * currentMusicHandle.BaseFactor);
         source.volume = 0f;
         float t = 0f;
 
@@ -584,14 +633,64 @@ public class AudioManager : MonoBehaviour
         timelineFadeRoutine = null;
     }
 
+    private DynamicAudioHandle CreateMusicHandle(AudioClip clip, AudioClipSO clipAsset, float startTime, bool loop)
+    {
+        if (clip == null)
+            return null;
+
+        AudioSource template = GetTemplateSource(musicSources);
+        AudioSource source = CreateManagedSource("Music", template, loop);
+        source.clip = clip;
+        float clampedStart = Mathf.Clamp(startTime, 0f, clip.length > 0f ? clip.length : 0f);
+        source.time = clampedStart;
+
+        DynamicAudioHandle handle = new DynamicAudioHandle
+        {
+            Source = source,
+            BaseFactor = GetNormalizationFactor(clip) * ResolveVolume(clipAsset, DefaultVolume)
+        };
+
+        activeMusicHandles.Add(handle);
+        return handle;
+    }
+
+    private void DestroyMusicHandle(DynamicAudioHandle handle)
+    {
+        if (handle == null)
+            return;
+
+        activeMusicHandles.Remove(handle);
+
+        if (handle.Source != null)
+        {
+            if (handle.Source.isPlaying)
+                handle.Source.Stop();
+            Destroy(handle.Source.gameObject);
+        }
+    }
+
+    private void StopCrossfadeRoutine()
+    {
+        if (crossfadeRoutine != null)
+        {
+            StopCoroutine(crossfadeRoutine);
+            crossfadeRoutine = null;
+        }
+
+        if (fadingMusicHandle != null)
+        {
+            DestroyMusicHandle(fadingMusicHandle);
+            fadingMusicHandle = null;
+        }
+    }
+
     private void StartCrossfade(AudioClipSO newClip, float startTime)
     {
         StopMusicOverride();
         currentMusicAsset = newClip;
         AnnounceMusic(newClip);
 
-        if (crossfadeRoutine != null)
-            StopCoroutine(crossfadeRoutine);
+        StopCrossfadeRoutine();
 
         crossfadeRoutine = StartCoroutine(CrossfadeMusic(newClip, startTime));
     }
@@ -602,34 +701,19 @@ public class AudioManager : MonoBehaviour
         currentMusicAsset = newClip;
         AnnounceMusic(newClip);
 
-        if (crossfadeRoutine != null)
-            StopCoroutine(crossfadeRoutine);
+        StopCrossfadeRoutine();
+        DestroyMusicHandle(currentMusicHandle);
+        currentMusicHandle = null;
 
-        CurrentMusicSource.Stop();
-
-        int temp = currentMusicIndex;
-        currentMusicIndex = nextMusicIndex;
-        nextMusicIndex = temp;
-
-        AudioSource source = CurrentMusicSource;
         AudioClip clip = ResolveClip(newClip);
 
         if (clip == null)
-        {
-            source.clip = null;
-            source.loop = ResolveLoop(newClip);
-            source.volume = 0f;
             return;
-        }
 
-        source.clip = clip;
-        source.loop = ResolveLoop(newClip);
-        source.time = 0f;
-
-        float normalization = GetNormalizationFactor(clip);
-        float volumeFactor = ResolveVolume(newClip, DefaultVolume);
-        source.volume = musicVolume * normalization * volumeFactor;
-        source.Play();
+        DynamicAudioHandle handle = CreateMusicHandle(clip, newClip, 0f, ResolveLoop(newClip));
+        ApplyMusicVolume(handle);
+        handle.Source.Play();
+        currentMusicHandle = handle;
     }
 
     /// <summary>
@@ -645,47 +729,43 @@ public class AudioManager : MonoBehaviour
 
     private IEnumerator CrossfadeMusic(AudioClipSO newClip, float startTime)
     {
-        AudioSource fromSource = CurrentMusicSource;
-        float fromInitialVolume = fromSource.volume;
-        float fromFactor = GetNormalizationFactor(fromSource.clip);
-        float baseVolume = Mathf.Max(0.0001f, musicVolume * fromFactor);
-        float previousVolumeFactor = baseVolume > 0f ? Mathf.Clamp01(fromInitialVolume / baseVolume) : 1f;
-
-        int toIndex = (currentMusicIndex + 1) % musicSources.Length;
-        AudioSource toSource = musicSources[toIndex];
+        DynamicAudioHandle fromHandle = currentMusicHandle;
+        AudioSource fromSource = fromHandle != null ? fromHandle.Source : null;
+        float fromInitialVolume = fromSource != null ? fromSource.volume : 0f;
 
         AudioClip clip = ResolveClip(newClip);
         if (clip == null)
         {
-            float t = 0f;
-            // 🎵 Même logique : on s'appuie sur le temps non-scalé pour que
-            // le fondu reste actif si la timeline fige le gameplay.
-            while (t < fadeDuration)
+            if (fromSource != null)
             {
-                t += Time.unscaledDeltaTime;
-                float progress = t / fadeDuration;
-                fromSource.volume = Mathf.Lerp(fromInitialVolume, 0f, progress);
-                yield return null;
+                float t = 0f;
+                // 🎵 Même logique : on s'appuie sur le temps non-scalé pour que
+                // le fondu reste actif si la timeline fige le gameplay.
+                while (t < fadeDuration)
+                {
+                    t += Time.unscaledDeltaTime;
+                    float progress = t / fadeDuration;
+                    fromSource.volume = Mathf.Lerp(fromInitialVolume, 0f, progress);
+                    yield return null;
+                }
             }
 
-            fromSource.Stop();
-            fromSource.volume = musicVolume * fromFactor * previousVolumeFactor;
+            if (fromHandle != null)
+                DestroyMusicHandle(fromHandle);
+
+            currentMusicHandle = null;
             crossfadeRoutine = null;
             yield break;
         }
 
-        toSource.clip = clip;
-        toSource.loop = ResolveLoop(newClip);
-        float clampedStart = Mathf.Clamp(startTime, 0f, clip.length > 0f ? clip.length : 0f);
-        toSource.time = clampedStart;
-        float toFactor = GetNormalizationFactor(clip);
-        float toVolumeFactor = ResolveVolume(newClip, DefaultVolume);
-        float targetVolume = musicVolume * toFactor * toVolumeFactor;
+        DynamicAudioHandle toHandle = CreateMusicHandle(clip, newClip, startTime, ResolveLoop(newClip));
+        AudioSource toSource = toHandle.Source;
+        float targetVolume = Mathf.Clamp01(musicVolume * toHandle.BaseFactor);
         toSource.volume = 0f;
         toSource.Play();
 
-        currentMusicIndex = toIndex;
-        nextMusicIndex = (toIndex + 1) % musicSources.Length;
+        currentMusicHandle = toHandle;
+        fadingMusicHandle = fromHandle;
 
         float tCrossfade = 0f;
 
@@ -697,13 +777,16 @@ public class AudioManager : MonoBehaviour
             float progress = tCrossfade / fadeDuration;
 
             toSource.volume = Mathf.Lerp(0f, targetVolume, progress);
-            fromSource.volume = Mathf.Lerp(fromInitialVolume, 0f, progress);
+            if (fromSource != null)
+                fromSource.volume = Mathf.Lerp(fromInitialVolume, 0f, progress);
             yield return null;
         }
 
-        fromSource.Stop();
-        fromSource.volume = musicVolume * fromFactor * previousVolumeFactor;
+        if (fromHandle != null)
+            DestroyMusicHandle(fromHandle);
+
         toSource.volume = targetVolume;
+        fadingMusicHandle = null;
 
         crossfadeRoutine = null;
     }
@@ -718,6 +801,9 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     private AudioSource GetTemplateSource(AudioSource[] sources)
     {
+        if (sources == null)
+            return null;
+
         foreach (var src in sources)
         {
             if (src != null)
@@ -786,6 +872,35 @@ public class AudioManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Applique le volume global sur une source musicale dynamique.
+    /// </summary>
+    private void ApplyMusicVolume(DynamicAudioHandle handle)
+    {
+        if (handle?.Source == null)
+            return;
+
+        handle.Source.volume = Mathf.Clamp01(musicVolume * handle.BaseFactor);
+    }
+
+    /// <summary>
+    /// Réactualise le volume de toutes les sources musicales actives.
+    /// </summary>
+    private void RefreshMusicVolumes()
+    {
+        for (int i = activeMusicHandles.Count - 1; i >= 0; i--)
+        {
+            DynamicAudioHandle handle = activeMusicHandles[i];
+            if (handle?.Source == null)
+            {
+                activeMusicHandles.RemoveAt(i);
+                continue;
+            }
+
+            ApplyMusicVolume(handle);
+        }
+    }
+
+    /// <summary>
     /// Réactualise le volume de toutes les sources dynamiques d'une catégorie.
     /// </summary>
     private void RefreshDynamicVolumes(List<DynamicAudioHandle> handles, float globalVolume)
@@ -802,6 +917,29 @@ public class AudioManager : MonoBehaviour
 
             ApplyVolume(handle, globalVolume);
         }
+    }
+
+    private void ReleaseManagedSource(AudioSource source, List<DynamicAudioHandle> registry)
+    {
+        if (source == null)
+            return;
+
+        if (registry != null)
+        {
+            for (int i = registry.Count - 1; i >= 0; i--)
+            {
+                if (registry[i]?.Source == source)
+                {
+                    registry.RemoveAt(i);
+                    break;
+                }
+            }
+        }
+
+        if (source.isPlaying)
+            source.Stop();
+
+        Destroy(source.gameObject);
     }
 
     /// <summary>
@@ -870,30 +1008,13 @@ public class AudioManager : MonoBehaviour
             }
         }
 
-        if (cachedWarningVoiceVolumes != null)
-        {
-            for (int i = 0; i < voiceSources.Length && i < cachedWarningVoiceVolumes.Length; i++)
-            {
-                if (voiceSources[i] != null)
-                    voiceSources[i].volume = cachedWarningVoiceVolumes[i];
-            }
-        }
-
         cachedWarningMusicVolumes = null;
         cachedWarningSfxVolumes = null;
-        cachedWarningVoiceVolumes = null;
 
         currentWarningAttenuation = 1f;
+        RefreshMusicVolumes();
         RefreshDynamicVolumes(activeSfxHandles, sfxVolume);
         RefreshDynamicVolumes(activeVoiceHandles, voiceVolume);
-    }
-
-    public void PlaySfx(int index)
-    {
-        if (soundEffects == null || index < 0 || index >= soundEffects.Length)
-            return;
-
-        PlaySfx(soundEffects[index]);
     }
 
     /// <summary>
@@ -916,13 +1037,16 @@ public class AudioManager : MonoBehaviour
     /// <summary>
     /// Joue un effet sonore arbitraire en réutilisant les paramètres globaux du gestionnaire.
     /// Cette surcharge simplifie l'utilisation d'effets dédiés (menus, dash, etc.) sans
-    /// imposer de réserver un slot dans <see cref="soundEffects"/>.
+    /// dépendre d'une liste globale de clips.
     /// </summary>
     /// <param name="clip">Clip à jouer immédiatement.</param>
     /// <param name="volume">Facteur multiplicatif optionnel (1 = volume par défaut).</param>
     /// <param name="loop">Lecture en boucle ?</param>
     public void PlaySfx(AudioClip clip, float volume = DefaultVolume, bool loop = DefaultLoop)
     {
+        if (!EnsureActive(nameof(PlaySfx)))
+            return;
+
         if (clip == null)
             return; // Rien à jouer : on quitte proprement.
 
@@ -944,12 +1068,51 @@ public class AudioManager : MonoBehaviour
             StartCoroutine(DestroySourceWhenFinished(src, activeSfxHandles, handle));
     }
 
-    public void PlayVoice(int index, float volume = DefaultVolume)
+    /// <summary>
+    /// Joue un effet sonore en boucle et renvoie la source pour un arrêt manuel.
+    /// </summary>
+    public AudioSource PlayLoopingSfx(AudioClipSO clipAsset, bool forceLoop = true)
     {
-        if (voiceEffects == null || index < 0 || index >= voiceEffects.Length)
-            return;
+        if (!EnsureActive(nameof(PlayLoopingSfx)))
+            return null;
 
-        PlayVoice(voiceEffects[index], volume);
+        if (clipAsset == null)
+            return null;
+
+        if (clipAsset.type == AudioClipSO.AudioClipType.Music)
+        {
+            PlayMusicOverride(clipAsset);
+            return null;
+        }
+
+        AudioClip clip = ResolveClip(clipAsset);
+        if (clip == null)
+            return null;
+
+        bool loop = forceLoop || ResolveLoop(clipAsset);
+        AudioSource template = GetTemplateSource(sfxSources);
+        AudioSource src = CreateManagedSource("SFX_Loop", template, loop);
+
+        DynamicAudioHandle handle = new DynamicAudioHandle
+        {
+            Source = src,
+            BaseFactor = Mathf.Clamp01(ResolveVolume(clipAsset, DefaultVolume)) * GetNormalizationFactor(clip)
+        };
+        activeSfxHandles.Add(handle);
+
+        src.clip = clip;
+        ApplyVolume(handle, sfxVolume);
+        src.Play();
+
+        return src;
+    }
+
+    /// <summary>
+    /// Stoppe et détruit une AudioSource issue des SFX gérés.
+    /// </summary>
+    public void StopLoopingSfx(AudioSource source)
+    {
+        ReleaseManagedSource(source, activeSfxHandles);
     }
 
     /// <summary>
@@ -967,9 +1130,12 @@ public class AudioManager : MonoBehaviour
 
     public void PlayVoice(AudioClip clip, float volume = DefaultVolume, bool loop = DefaultLoop)
     {
+        if (!EnsureActive(nameof(PlayVoice)))
+            return;
+
         if (clip == null) return;
 
-        AudioSource template = GetTemplateSource(voiceSources);
+        AudioSource template = GetTemplateSource(sfxSources);
         AudioSource src = CreateManagedSource("Voice", template, loop);
 
         DynamicAudioHandle handle = new DynamicAudioHandle
@@ -992,6 +1158,9 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void PlayWarningClip(AudioClipSO clipAsset)
     {
+        if (!EnsureActive(nameof(PlayWarningClip)))
+            return;
+
         AudioClip clip = ResolveClip(clipAsset);
         if (clip == null) return;
 

@@ -3,9 +3,8 @@ using UnityEngine;
 /// <summary>
 /// Permet de jouer un son soit automatiquement au démarrage,
 /// soit sur demande (notamment depuis une Timeline).
-/// Utilise l'<see cref="AudioManager"/> s'il est disponible pour garder
-/// une gestion centralisée du volume, sinon se rabat sur une
-/// <see cref="AudioSource"/> locale.
+/// Utilise l'<see cref="AudioManager"/> pour garder
+/// une gestion centralisée du volume.
 /// </summary>
 public class PlaySound : MonoBehaviour
 {
@@ -14,14 +13,6 @@ public class PlaySound : MonoBehaviour
 
     [Tooltip("Active la lecture automatique de 'soundClip' au Start.")]
     public bool playAtStart = false; // Contrôle la lecture au Start
-
-    public AudioSource _audioSource; // Référence éventuelle à l'AudioSource locale
-
-    private void Awake()
-    {
-        // Mémorise l'AudioSource pour éviter de l'obtenir à chaque lecture
-        _audioSource = GetComponent<AudioSource>();
-    }
 
     private void Start()
     {
@@ -33,9 +24,7 @@ public class PlaySound : MonoBehaviour
     }
 
     /// <summary>
-    /// Joue un clip audio en utilisant l'AudioManager s'il existe,
-    /// sinon via l'AudioSource locale. Cette méthode est privée pour
-    /// centraliser la logique de lecture.
+    /// Joue un clip audio via l'AudioManager.
     /// </summary>
     /// <param name="clipAsset">Le clip audio à jouer.</param>
     private void PlaySoundClip(AudioClipSO clipAsset)
@@ -45,23 +34,16 @@ public class PlaySound : MonoBehaviour
             Debug.LogWarning("[PlaySound] Aucun clip fourni pour la lecture.");
             return;
         }
-        if (AudioManager.Instance != null)
+        if (AudioManager.Instance == null)
         {
-            if (clipAsset.type == AudioClipSO.AudioClipType.Music)
-                AudioManager.Instance.PlayMusicOverride(clipAsset);
-            else
-                AudioManager.Instance.PlaySfx(clipAsset);
+            Debug.LogWarning("[PlaySound] AudioManager absent, impossible de jouer le clip.");
             return;
         }
 
-        if (_audioSource != null)
-        {
-            // Fallback local (scènes de test) : on applique malgré tout le volume conseillé par le designer.
-            _audioSource.PlayOneShot(clipAsset.Clip, clipAsset.Volume);
-            return;
-        }
-
-        Debug.LogWarning("[PlaySound] AudioManager absent et aucune AudioSource trouvée sur l'objet.");
+        if (clipAsset.type == AudioClipSO.AudioClipType.Music)
+            AudioManager.Instance.PlayMusicOverride(clipAsset);
+        else
+            AudioManager.Instance.PlaySfx(clipAsset);
     }
 
     /// <summary>

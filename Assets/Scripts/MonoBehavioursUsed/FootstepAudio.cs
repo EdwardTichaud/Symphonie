@@ -26,10 +26,6 @@ public class FootstepAudio : MonoBehaviour
         public AudioClipSO[] runClips;
     }
 
-    [Header("Références")]
-    [Tooltip("Source audio locale si l'AudioManager n'est pas disponible.")]
-    [SerializeField] private AudioSource fallbackSource;
-
     [Header("Bruits de pas")]
     [Tooltip("Configuration des sons pour chaque type de surface.")]
     [SerializeField] private SurfaceClips[] surfaceClips;
@@ -49,13 +45,11 @@ public class FootstepAudio : MonoBehaviour
 
     // Indique si un clip est actuellement en cours de lecture en boucle.
     private bool _isLoopPlaying = false;
+    private AudioSource loopSource;
 
     void Awake()
     {
         movement = GetComponent<ThirdPersonPlayerController>();
-
-        if (fallbackSource == null)
-            fallbackSource = GetComponent<AudioSource>();
 
         // Construire un index pour retrouver vite les surfaces par tag
         _surfaceMap.Clear();
@@ -78,6 +72,13 @@ public class FootstepAudio : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        if (AudioManager.Instance == null)
+        {
+            if (_isLoopPlaying)
+                StopLoop();
+            return;
+        }
+
         bool running = IsRunning();
         string groundTag = NormalizeTag(GetGroundTag());
 
@@ -125,14 +126,13 @@ public class FootstepAudio : MonoBehaviour
     {
         // Choisir un clip (aléatoire) correspondant à la surface.
         AudioClipSO clipAsset = GetRandomClip(groundTag, running);
-        if (clipAsset == null || clipAsset.Clip == null || fallbackSource == null)
+        if (clipAsset == null || clipAsset.Clip == null)
             return;
 
-        // Préparation de la source pour la lecture en tenant compte des paramètres designers.
-        fallbackSource.loop = clipAsset.Loop;
-        fallbackSource.clip = clipAsset.Clip;
-        fallbackSource.volume = clipAsset.Volume;
-        fallbackSource.Play();
+        StopLoop();
+        loopSource = AudioManager.Instance.PlayLoopingSfx(clipAsset, forceLoop: true);
+        if (loopSource == null)
+            return;
 
         _isLoopPlaying = true;
         _currentGroundTag = NormalizeTag(groundTag);
@@ -143,13 +143,18 @@ public class FootstepAudio : MonoBehaviour
     /// </summary>
     private void StopLoop()
     {
-        if (fallbackSource != null)
+        if (loopSource != null)
         {
-            fallbackSource.Stop();
-            fallbackSource.clip = null;
+            AudioManager.Instance?.StopLoopingSfx(loopSource);
+            loopSource = null;
         }
 
         _isLoopPlaying = false;
+    }
+
+    private void OnDisable()
+    {
+        StopLoop();
     }
 
     /// <summary>

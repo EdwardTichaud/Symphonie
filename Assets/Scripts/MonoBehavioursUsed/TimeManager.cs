@@ -9,6 +9,11 @@ public class TimeManager : MonoBehaviour
     public float fixedDeltaTimeNormal = 0.02f;
     public float transitionDuration = 0.5f;
 
+    [Header("Audio")]
+    [SerializeField] private AudioClipSO slowMotionStartClip;
+    [SerializeField] private AudioClipSO slowMotionSustainClip;
+    [SerializeField] private AudioClipSO normalTimeClip;
+
     [Header("Inputs")]
     [SerializeField] private InputAction pauseAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/p");
     [SerializeField] private InputAction logTimeScaleAction = new InputAction(type: InputActionType.Button, binding: "<Keyboard>/t");
@@ -64,8 +69,8 @@ public class TimeManager : MonoBehaviour
         float elapsedTime = 0f;
         float startTimeScale = Time.timeScale;
 
-        AudioManager.Instance?.PlaySfx(10);
-        AudioManager.Instance?.PlaySfx(11);
+        AudioManager.Instance?.PlaySfx(slowMotionStartClip);
+        AudioManager.Instance?.PlaySfx(slowMotionSustainClip);
 
         while (elapsedTime < transitionDuration)
         {
@@ -83,7 +88,7 @@ public class TimeManager : MonoBehaviour
         float elapsedTime = 0f;
         float startTimeScale = Time.timeScale;
 
-        AudioManager.Instance?.PlaySfx(12);
+        AudioManager.Instance?.PlaySfx(normalTimeClip);
 
         while (elapsedTime < transitionDuration)
         {

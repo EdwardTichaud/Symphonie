@@ -6,8 +6,6 @@ public class SleepStatus : MonoBehaviour
     public bool IsAsleep => isAsleep;
     private int remainingTurns = -1;
 
-    private AudioSource audioSource;
-
     [Header("Effets visuels")]
     [SerializeField] private GameObject sleepPrefab;
     [SerializeField] private GameObject wakeUpPrefab;
@@ -19,11 +17,6 @@ public class SleepStatus : MonoBehaviour
 
     private GameObject currentSleepEffect;
 
-    private void Awake()
-    {
-        audioSource = GetComponent<AudioSource>();
-    }
-
     public void Sleep(int turns = -1)
     {
         if (isAsleep && turns < 0)
@@ -32,8 +25,8 @@ public class SleepStatus : MonoBehaviour
         isAsleep = true;
         remainingTurns = turns;
 
-        if (sleepClip != null && sleepClip.Clip != null && audioSource != null)
-            audioSource.PlayOneShot(sleepClip.Clip, sleepClip.Volume);
+        if (sleepClip != null)
+            AudioManager.Instance?.PlaySfx(sleepClip);
 
         if (sleepPrefab != null && currentSleepEffect == null)
         {
@@ -50,8 +43,8 @@ public class SleepStatus : MonoBehaviour
         isAsleep = false;
         remainingTurns = -1;
 
-        if (wakeUpClip != null && wakeUpClip.Clip != null && audioSource != null)
-            audioSource.PlayOneShot(wakeUpClip.Clip, wakeUpClip.Volume);
+        if (wakeUpClip != null)
+            AudioManager.Instance?.PlaySfx(wakeUpClip);
 
         if (currentSleepEffect != null)
         {

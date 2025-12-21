@@ -1,6 +1,5 @@
 using UnityEngine;
 
-[RequireComponent(typeof(AudioSource))]
 [RequireComponent(typeof(Animator))]
 public class UnitStateEffects : MonoBehaviour
 {
@@ -20,20 +19,18 @@ public class UnitStateEffects : MonoBehaviour
     [Header("Camera")]
     public OrbitAroundTriggerSO cameraPath;
 
-    protected AudioSource audioSource;
     protected Animator animator;
     private GameObject currentEffect;
 
     protected virtual void Awake()
     {
-        audioSource = GetComponent<AudioSource>();
         animator = GetComponent<Animator>();
     }
 
     public void EnterState()
     {
-        if (enterClip != null && enterClip.Clip != null)
-            audioSource?.PlayOneShot(enterClip.Clip, enterClip.Volume);
+        if (enterClip != null)
+            AudioManager.Instance?.PlaySfx(enterClip);
         if (enterAnimation != null)
             animator?.Play(enterAnimation.name);
         cameraPath?.StartOrbit();
@@ -43,8 +40,8 @@ public class UnitStateEffects : MonoBehaviour
 
     public void ExitState()
     {
-        if (exitClip != null && exitClip.Clip != null)
-            audioSource?.PlayOneShot(exitClip.Clip, exitClip.Volume);
+        if (exitClip != null)
+            AudioManager.Instance?.PlaySfx(exitClip);
         if (exitAnimation != null)
             animator?.Play(exitAnimation.name);
         cameraPath?.StopOrbit();

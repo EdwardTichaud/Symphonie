@@ -12,7 +12,8 @@ public partial class NewBattleManager
         unitsInBattle.RemoveAll(u => u == null);
 
         // Si des unités valides existent encore, on évite de doubler le spawn
-        if (activeCharacterUnits.Count > 0 || unitsInBattle.Count > 0)
+        bool hasLiveUnits = unitsInBattle.Exists(u => u != null && u.gameObject.activeInHierarchy);
+        if (hasLiveUnits || activeCharacterUnits.Exists(u => u != null && u.gameObject.activeInHierarchy))
         {
             Debug.LogWarning("[NewBattleManager] SpawnAll déjà exécuté ou unités déjà présentes.");
             return;

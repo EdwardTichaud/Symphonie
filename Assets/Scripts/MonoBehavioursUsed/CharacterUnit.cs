@@ -34,7 +34,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public AnimationClip interceptionAnimation;
 
     private SpriteRenderer spriteRenderer;
-    private AudioSource audioSource;
     [HideInInspector] public Animator animator;
     private ConcentrationSystem concentrationSystem;
     // Indicateur évitant les multiples avertissements lorsque l'Animator enfant est introuvable.
@@ -1025,7 +1024,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         }
 
         spriteRenderer = GetComponent<SpriteRenderer>();
-        audioSource = GetComponent<AudioSource>();
         // Recherche proactive de l'Animator dédié aux timelines dans les enfants (même inactifs).
         animator = GetCasterAnimator(forceRefresh: true);
         awakeState = GetComponent<AwakeState>();
@@ -1706,16 +1704,13 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// <param name="isDevastating">True si le coup est dévastateur.</param>
     public void PlayHitSound(bool isDevastating = false)
     {
-        if (audioSource == null)
-            return;
-
         // Sélection du clip approprié
         AudioClipSO clip = (isDevastating && Data.criticalHitSound != null)
             ? Data.criticalHitSound
             : Data.hitSound;
 
-        if (clip != null && clip.Clip != null)
-            audioSource.PlayOneShot(clip.Clip, clip.Volume);
+        if (clip != null)
+            AudioManager.Instance?.PlaySfx(clip);
     }
 
     /// <summary>
@@ -1723,8 +1718,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void PlayInterceptedSound()
     {
-        if (Data.interceptedSound != null && Data.interceptedSound.Clip != null && audioSource != null)
-            audioSource.PlayOneShot(Data.interceptedSound.Clip, Data.interceptedSound.Volume);
+        if (Data.interceptedSound != null)
+            AudioManager.Instance?.PlaySfx(Data.interceptedSound);
     }
 
     /// <summary>
@@ -1733,8 +1728,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void PlayInterceptionSound()
     {
-        if (Data.interceptionSound != null && Data.interceptionSound.Clip != null && audioSource != null)
-            audioSource.PlayOneShot(Data.interceptionSound.Clip, Data.interceptionSound.Volume);
+        if (Data.interceptionSound != null)
+            AudioManager.Instance?.PlaySfx(Data.interceptionSound);
     }
 
     public void PlayMoveStartSound()
@@ -2313,10 +2308,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     private void PlayStateClip(AudioClipSO clip)
     {
-        if (clip == null || clip.Clip == null || audioSource == null)
-            return;
-
-        audioSource.PlayOneShot(clip.Clip, clip.Volume);
+        if (clip != null)
+            AudioManager.Instance?.PlaySfx(clip);
     }
 
     #endregion
