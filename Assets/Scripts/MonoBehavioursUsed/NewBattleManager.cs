@@ -124,8 +124,11 @@ public partial class NewBattleManager : MonoBehaviour
     public RenderTexture GameOverScreenImage;
 
     [Header("Défaite")]
-    [Tooltip("Si vrai, une défaite renvoie directement au menu principal.")]
+    [Tooltip("Si vrai, une defaite quitte directement le combat (respawn au checkpoint) sans ecran Game Over.")]
     public bool gameOverOnDefeat = false;
+
+    [HideInInspector] public bool respawnAtCheckpointOnExit = false;
+    public bool ShouldRespawnAtCheckpoint => respawnAtCheckpointOnExit;
 
     [Header("Timelines post-combat")]
     [Tooltip("Timeline jouée automatiquement après une victoire, si définie.")]
@@ -1195,6 +1198,7 @@ public partial class NewBattleManager : MonoBehaviour
 
             if (defeatTimeline != null)
             {
+                respawnAtCheckpointOnExit = false;
                 // Aucune interface de Game Over, on quitte directement le combat
                 if (BattleTransitionManager.Instance != null)
                     BattleTransitionManager.Instance.StartCoroutine(
@@ -1204,21 +1208,18 @@ public partial class NewBattleManager : MonoBehaviour
             }
             else if (gameOverOnDefeat)
             {
-                // Passage direct au menu principal
-                CleanupAllSpawnedUnits();
-                if (GameManager.Instance != null)
-                {
-                    // Utilisation du GameManager pour charger le menu principal
-                    GameManager.Instance.TriggerGameOver();
-                }
+                // Passage direct a l'exploration avec respawn au checkpoint
+                respawnAtCheckpointOnExit = true;
+                if (BattleTransitionManager.Instance != null)
+                    BattleTransitionManager.Instance.StartCoroutine(
+                        BattleTransitionManager.Instance.ExitVictoryScreenAndBattle());
                 else
-                {
-                    Debug.LogWarning("[BattleTurnManager] GameManager absent, impossible de charger le menu principal.");
-                }
+                    Debug.LogWarning("[BattleTurnManager] BattleTransitionManager introuvable pour quitter le combat.");
             }
             else
             {
                 // Affichage du panneau Game Over permettant de continuer la partie
+                respawnAtCheckpointOnExit = true;
                 ChangeBattleState(BattleState.GameOverScreen_Await);
                 StartCoroutine(ShowGameOverPanel());
             }
@@ -1320,12 +1321,14 @@ public partial class NewBattleManager : MonoBehaviour
 
         // 3️⃣ Demande officiellement la caméra de victoire afin de lancer le travelling.
         ChangeBattleState(BattleState.VictoryScreen_Await);
+        battleIntroMenusLocked = false;
 
         // 4️⃣ Patiente jusqu'à la fin du blend Cinemachine pour que le plan soit parfaitement cadré.
         yield return WaitForVictoryCameraToSettle();
 
         // 5️⃣ L'interface de victoire peut maintenant se superposer au plan stabilisé.
         victoryScreen.SetActive(true);
+        ForceUnscaledAnimators(victoryScreen.transform);
         Transform victoryPanel = victoryScreen.transform.GetChild(0);
         Animator victoryAnim = victoryPanel.GetComponent<Animator>();
         if (victoryAnim != null)
@@ -1333,6 +1336,8 @@ public partial class NewBattleManager : MonoBehaviour
             victoryAnim.updateMode = AnimatorUpdateMode.UnscaledTime;
         }
         victoryPanel.gameObject.SetActive(true);
+
+        InputsManager.Instance?.playerInputs?.Battle.Confirm.Enable();
 
         // 6️⃣ Distribution des récompenses avant de les afficher sur le panneau.
         GameManager.Instance?.AddXPToSquad(rewardXP);
@@ -1460,6 +1465,19 @@ public partial class NewBattleManager : MonoBehaviour
         }
     }
 
+    private static void ForceUnscaledAnimators(Transform root)
+    {
+        if (root == null)
+            return;
+
+        var animators = root.GetComponentsInChildren<Animator>(true);
+        foreach (var animator in animators)
+        {
+            if (animator != null)
+                animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+        }
+    }
+
     /// <summary>
     /// Callback déclenché par le bouton "Continuer" de l'écran de victoire.
     /// Permet d'appliquer exactement la même logique que la touche de validation.
@@ -1504,6 +1522,9 @@ public partial class NewBattleManager : MonoBehaviour
         if (anim != null)
             anim.updateMode = AnimatorUpdateMode.UnscaledTime;
         panel.gameObject.SetActive(true);
+        ForceUnscaledAnimators(gameOverScreen.transform);
+        battleIntroMenusLocked = false;
+        InputsManager.Instance?.playerInputs?.Battle.Confirm.Enable();
 
         CleanupAllSpawnedUnits();
 
@@ -3568,6 +3589,7 @@ public partial class NewBattleManager : MonoBehaviour
         victoryTimeline = null;
         defeatTimeline = null;
         lastBattleOutcome = BattleOutcome.None;
+        respawnAtCheckpointOnExit = false;
 
         // Réinitialise le curseur cible si existant
         if (targetCursor != null)

@@ -180,7 +180,7 @@ public class MusicalMoveSO : ScriptableObject
     public int effectValue => PrimaryEffectValue;
 
     [Header("Effets spécifiques")]
-    [Tooltip("Prefab générique instancié pour représenter un effet passif appliqué à la cible (marque de loyauté, lien, etc.).")]
+    [Tooltip("Prefab visuel utilise par certains effets passifs (LoyaltyMark, PrestoForcedAttack). Laisser vide si inutile.")]
     public GameObject passiveEffectPrefab;
     [Tooltip("Décalage vertical supplémentaire pour positionner le prefab passif sans chevaucher la cible.")]
     public float passiveEffectVerticalOffset = 0.5f;

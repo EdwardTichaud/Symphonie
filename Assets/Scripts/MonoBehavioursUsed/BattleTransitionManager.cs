@@ -343,6 +343,10 @@ public class BattleTransitionManager : MonoBehaviour
 
         ResolveBattleCamera();
 
+        GameObject playerObject = ResolvePlayerRoot();
+        if (playerObject != null)
+            GameManager.Instance?.EnsureCheckpointInitialized(playerObject.transform);
+
         // Sauvegarde la position actuelle de la WorldCamera pour la restituer après le combat
         CameraController.Instance?.SaveWorldCameraTransform();
 
@@ -491,8 +495,8 @@ public class BattleTransitionManager : MonoBehaviour
         yield return new WaitUntil(() => confirmAction.triggered);
         confirmAction.Disable();
 
-        // Capture la frame du Versus avant de masquer la transition pour l'effet de verre brisé.
-        CaptureVersusFrameForGlass();
+        // Capture la frame du Versus avant de masquer la transition pour l'effet de verre brise.
+        yield return CaptureVersusFrameForGlass();
 
         versusTransition.SetActive(false);
         brokenGlass.SetActive(true);
@@ -587,6 +591,9 @@ public class BattleTransitionManager : MonoBehaviour
     {
         CombatSkyboxManager.Instance?.RestoreDefaultSkybox();
 
+        bool shouldRespawnAtCheckpoint = NewBattleManager.Instance != null
+            && NewBattleManager.Instance.ShouldRespawnAtCheckpoint;
+
         //yield return FadeToBlack(2f);
 
         // Nous récupérons ici le composant PlayerDetection afin de pouvoir
@@ -603,6 +610,9 @@ public class BattleTransitionManager : MonoBehaviour
             Debug.LogWarning("[BattleTransitionManager] PlayerDetection introuvable lors de la sortie de combat.");
         }
 
+        bool removeWorldEnemies = NewBattleManager.Instance != null
+            && NewBattleManager.Instance.lastBattleOutcome == BattleOutcome.Victory;
+
         // Suppression des ennemis vaincus présents dans le monde
         // La liste enemiesInFight contient déjà uniquement les ennemis engagés
         if (playerDetection != null)
@@ -614,7 +624,7 @@ public class BattleTransitionManager : MonoBehaviour
                 playerDetection.enemiesInFight.Remove(enemy);
                 // Destruction complète de l'objet ennemi dans le World pour
                 // éviter qu'il ne persiste après la victoire du joueur
-                if (enemy != null)
+                if (removeWorldEnemies && enemy != null)
                     Destroy(enemy.transform.parent.gameObject);
             }
 
@@ -642,6 +652,9 @@ public class BattleTransitionManager : MonoBehaviour
             Debug.LogWarning("[BattleTransitionManager] Impossible de localiser le joueur lors de la sortie de combat.");
         else
             Debug.LogWarning("[BattleTransitionManager] Aucun CharacterController trouvé sur l'objet Player lors de la sortie de combat.");
+
+        if (shouldRespawnAtCheckpoint && GameManager.Instance != null && playerObject != null)
+            GameManager.Instance.RespawnPlayerAtCheckpoint(playerObject);
 
         // Retour à l'exploration : seule la WorldCam doit être active
         CameraActivationManager.Instance?.ActivateWorldCamera();
@@ -1082,10 +1095,13 @@ public class BattleTransitionManager : MonoBehaviour
     private void HideVictoryPanel() => NewBattleManager.Instance.victoryScreen?.transform.GetChild(0).gameObject.SetActive(false);
     private void HideGameOverPanel() => NewBattleManager.Instance.gameOverScreen?.transform.GetChild(0).gameObject.SetActive(false);
 
-    private void CaptureVersusFrameForGlass()
+    private IEnumerator CaptureVersusFrameForGlass()
     {
+        if (versusCamera != null)
+            versusRenderTexture = versusCamera.targetTexture;
+
         if (versusRenderTexture == null)
-            return;
+            yield break;
 
         if (frozenVersusFrame == null)
         {
@@ -1096,8 +1112,16 @@ public class BattleTransitionManager : MonoBehaviour
             };
         }
 
-        if (versusCamera != null && versusCamera.enabled)
-            versusCamera.Render();
+        if (!versusRenderTexture.IsCreated())
+            versusRenderTexture.Create();
+
+        bool wasEnabled = versusCamera != null && versusCamera.enabled;
+        if (versusCamera != null && !wasEnabled)
+            versusCamera.enabled = true;
+
+        // Attend une frame complete pour laisser HDRP rendre la VersusCam sans appel imbrique.
+        yield return null;
+        yield return new WaitForEndOfFrame();
 
         Graphics.Blit(versusRenderTexture, frozenVersusFrame);
         ApplyGlassTexture(frozenVersusFrame);

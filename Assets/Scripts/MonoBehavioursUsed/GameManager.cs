@@ -37,6 +37,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private TMP_InputField nameInputField; // Champ de saisie du nom
     [SerializeField] private string defaultMuninName = "Munin"; // Nom par défaut si aucun n'est choisi
 
+    [Header("Checkpoint")]
+    [SerializeField] private bool hasCheckpoint = false;
+    [SerializeField] private Vector3 lastCheckpointPosition;
+    [SerializeField] private Vector3 lastCheckpointEuler;
+
     public GameState CurrentState
     {
         get => currentState;
@@ -175,6 +180,71 @@ public class GameManager : MonoBehaviour
 
         gameData.enemiesDefeatedCount = 0;
         Debug.Log("[GameManager] Compteur d'ennemis vaincus réinitialisé.");
+    }
+
+    public void SetCheckpoint(Transform checkpoint)
+    {
+        if (checkpoint == null)
+        {
+            Debug.LogWarning("[GameManager] Checkpoint null, mise a jour ignoree.");
+            return;
+        }
+
+        lastCheckpointPosition = checkpoint.position;
+        lastCheckpointEuler = checkpoint.rotation.eulerAngles;
+        hasCheckpoint = true;
+
+        Debug.Log($"[GameManager] Checkpoint mis a jour : {checkpoint.name}");
+    }
+
+    public void EnsureCheckpointInitialized(Transform fallbackTransform)
+    {
+        if (hasCheckpoint || fallbackTransform == null)
+            return;
+
+        lastCheckpointPosition = fallbackTransform.position;
+        lastCheckpointEuler = fallbackTransform.rotation.eulerAngles;
+        hasCheckpoint = true;
+    }
+
+    public bool RespawnPlayerAtCheckpoint(GameObject player)
+    {
+        if (player == null)
+        {
+            Debug.LogWarning("[GameManager] Joueur introuvable pour le respawn.");
+            return false;
+        }
+
+        if (!TryGetLastCheckpoint(out Vector3 position, out Quaternion rotation))
+        {
+            Debug.LogWarning("[GameManager] Aucun checkpoint disponible pour le respawn.");
+            return false;
+        }
+
+        var controller = player.GetComponent<CharacterController>();
+        if (controller != null)
+            controller.enabled = false;
+
+        player.transform.SetPositionAndRotation(position, rotation);
+
+        if (controller != null)
+            controller.enabled = true;
+
+        return true;
+    }
+
+    private bool TryGetLastCheckpoint(out Vector3 position, out Quaternion rotation)
+    {
+        if (!hasCheckpoint)
+        {
+            position = default;
+            rotation = default;
+            return false;
+        }
+
+        position = lastCheckpointPosition;
+        rotation = Quaternion.Euler(lastCheckpointEuler);
+        return true;
     }
 
     /// <summary>
