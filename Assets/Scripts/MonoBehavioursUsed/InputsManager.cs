@@ -56,6 +56,9 @@ public class InputsManager : MonoBehaviour
     /// </summary>
     private bool ignorerProchaineValidation = false;
 
+    private InputSettings.UpdateMode? previousInputUpdateMode;
+    private bool forcedDynamicInputUpdate = false;
+
     #region Initialisation
     /// <summary>
     /// Instancie l'asset d'inputs et configure le singleton.
@@ -320,6 +323,33 @@ public class InputsManager : MonoBehaviour
 
         battleActionsDisabledDuringIntro.Clear();
         battleIntroRestrictionActive = false;
+    }
+
+    public void ForceDynamicInputUpdate()
+    {
+        if (forcedDynamicInputUpdate)
+            return;
+
+        if (InputSystem.settings == null)
+            return;
+
+        previousInputUpdateMode = InputSystem.settings.updateMode;
+        if (previousInputUpdateMode != InputSettings.UpdateMode.ProcessEventsInDynamicUpdate)
+            InputSystem.settings.updateMode = InputSettings.UpdateMode.ProcessEventsInDynamicUpdate;
+
+        forcedDynamicInputUpdate = true;
+    }
+
+    public void RestoreInputUpdateMode()
+    {
+        if (!forcedDynamicInputUpdate)
+            return;
+
+        if (InputSystem.settings != null && previousInputUpdateMode.HasValue)
+            InputSystem.settings.updateMode = previousInputUpdateMode.Value;
+
+        previousInputUpdateMode = null;
+        forcedDynamicInputUpdate = false;
     }
 
     #endregion

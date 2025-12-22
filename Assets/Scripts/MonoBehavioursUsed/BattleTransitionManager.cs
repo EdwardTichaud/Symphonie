@@ -49,6 +49,7 @@ public class BattleTransitionManager : MonoBehaviour
     /// joueur matraque la touche de validation pendant l'écran de victoire.
     /// </summary>
     private bool exitBattleRoutineRunning = false;
+    private Coroutine dissolveResetRoutine = null;
 
     [Header("Scenes")]
     [SerializeField] private GameObject worldScene; // GameObject racine de la scène du monde à désactiver pendant les combats
@@ -667,8 +668,8 @@ public class BattleTransitionManager : MonoBehaviour
             maskRingParticles.Play();
         }
 
-        // Réinitialise les effets de dissolve ayant pu rester figés après le combat
-        ResetDissolveShaderValues();
+        // Réinitialise les effets de dissolve ayant pu rester figes apres le combat
+        StartDissolveReset(2f);
 
         HideVictoryPanel();
         HideGameOverPanel();
@@ -695,6 +696,7 @@ public class BattleTransitionManager : MonoBehaviour
         // Une fois l'UI fermée et les inputs réactivés, on peut relancer le temps de jeu.
         yield return StartCoroutine(RestoreTimeScale(0f, 1f, 2f));
         Time.fixedDeltaTime = 0.02f; // Garantit la valeur par défaut même si le RestoreTimeScale a été interrompu.
+        InputsManager.Instance?.RestoreInputUpdateMode();
 
         if (Application.isPlaying && !Application.isEditor && SaveAndLoadManager.Instance != null)
         {
@@ -827,16 +829,24 @@ public class BattleTransitionManager : MonoBehaviour
         Time.fixedDeltaTime = 0.02f;
     }
 
-    /// <summary>
-    /// Parcourt tous les renderers présents dans la scène afin de remettre à zéro la propriété
-    /// de dissolve utilisée durant les transitions de combat. Sans cette étape, certains éléments
-    /// restaient visuellement désintégrés après le retour à l'exploration.
-    /// </summary>
-    private void ResetDissolveShaderValues()
+    private void StartDissolveReset(float duration)
     {
-        // Inclut les renderers inactifs car certains décors peuvent être masqués pendant le combat
+        if (dissolveResetRoutine != null)
+            StopCoroutine(dissolveResetRoutine);
+
+        dissolveResetRoutine = StartCoroutine(ResetDissolveShaderValues(duration));
+    }
+
+    /// <summary>
+    /// Parcourt tous les renderers presents dans la scene afin de remettre a zero la propriete
+    /// de dissolve utilisee durant les transitions de combat. La transition se fait en temps reel.
+    /// </summary>
+    private IEnumerator ResetDissolveShaderValues(float duration)
+    {
+        // Inclut les renderers inactifs car certains decors peuvent etre masques pendant le combat
         Renderer[] renderers = FindObjectsOfType<Renderer>(true);
         var propertyBlock = new MaterialPropertyBlock();
+        var targets = new List<(Renderer renderer, int index, float startValue)>();
 
         foreach (Renderer renderer in renderers)
         {
@@ -850,21 +860,60 @@ public class BattleTransitionManager : MonoBehaviour
             for (int i = 0; i < materials.Length; i++)
             {
                 Material material = materials[i];
-                bool materialSupportsDissolve = material != null && material.HasProperty(DissolveStrengthId);
+                bool supportsDissolve = material != null && material.HasProperty(DissolveStrengthId);
 
-                // On récupère la valeur courante stockée dans le MaterialPropertyBlock
                 propertyBlock.Clear();
                 renderer.GetPropertyBlock(propertyBlock, i);
-                float currentBlockValue = propertyBlock.GetFloat(DissolveStrengthId);
+                float startValue = propertyBlock.GetFloat(DissolveStrengthId);
 
-                if (!materialSupportsDissolve && Mathf.Approximately(currentBlockValue, 0f))
-                    continue; // Rien à réinitialiser sur ce sous-matériau
+                if (!supportsDissolve && Mathf.Approximately(startValue, 0f))
+                    continue;
 
-                // Remet à zéro le MPB (et donc la valeur effective affichée par le renderer)
-                propertyBlock.SetFloat(DissolveStrengthId, 0f);
-                renderer.SetPropertyBlock(propertyBlock, i);
+                if (Mathf.Approximately(startValue, 0f) && supportsDissolve)
+                    startValue = material.GetFloat(DissolveStrengthId);
+
+                targets.Add((renderer, i, startValue));
             }
         }
+
+        if (targets.Count == 0)
+        {
+            dissolveResetRoutine = null;
+            yield break;
+        }
+
+        float elapsed = 0f;
+        float safeDuration = Mathf.Max(0.01f, duration);
+
+        while (elapsed < safeDuration)
+        {
+            float t = Mathf.Clamp01(elapsed / safeDuration);
+            foreach (var target in targets)
+            {
+                if (target.renderer == null)
+                    continue;
+
+                float value = Mathf.Lerp(target.startValue, 0f, t);
+                target.renderer.GetPropertyBlock(propertyBlock, target.index);
+                propertyBlock.SetFloat(DissolveStrengthId, value);
+                target.renderer.SetPropertyBlock(propertyBlock, target.index);
+            }
+
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        foreach (var target in targets)
+        {
+            if (target.renderer == null)
+                continue;
+
+            target.renderer.GetPropertyBlock(propertyBlock, target.index);
+            propertyBlock.SetFloat(DissolveStrengthId, 0f);
+            target.renderer.SetPropertyBlock(propertyBlock, target.index);
+        }
+
+        dissolveResetRoutine = null;
     }
 
     /// <summary>

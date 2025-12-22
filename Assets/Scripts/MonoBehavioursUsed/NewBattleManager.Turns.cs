@@ -902,6 +902,16 @@ public partial class NewBattleManager
 
     public void AfterMusicalMove(MusicalMoveSO move, CharacterUnit caster, bool wasCritical)
     {
+        if (lastBattleOutcome != BattleOutcome.None
+            || victorySequenceInProgress
+            || currentBattleState == BattleState.VictoryScreen_Await
+            || currentBattleState == BattleState.VictoryScreen_CanContinue
+            || currentBattleState == BattleState.GameOverScreen_Await
+            || currentBattleState == BattleState.GameOverScreen_CanContinue)
+        {
+            return;
+        }
+
         // Affiche un message si toutes les notes du QTE ont été réussies
         if (wasCritical)
             ActionUIDisplayManager.Instance?.DisplayCriticalHit();

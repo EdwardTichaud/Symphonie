@@ -1283,6 +1283,9 @@ public partial class NewBattleManager : MonoBehaviour
         }
 
         // On redirige la sortie de la caméra vers la RenderTexture demandée.
+        if (!VictoryScreenImage.IsCreated())
+            VictoryScreenImage.Create();
+
         RenderTexture previousTarget = screenshotCamera.targetTexture;
         screenshotCamera.targetTexture = VictoryScreenImage;
 
@@ -1303,7 +1306,10 @@ public partial class NewBattleManager : MonoBehaviour
     {
         victorySequenceInProgress = true; // 🔒 Bloque tout nouveau déclenchement pendant la séquence.
 
-        // 1️⃣ Ralentit progressivement le temps jusqu'à l'arrêt complet pour figer la scène.
+        // 1️⃣ Capture la dernière image du combat au moment de la victoire.
+        yield return CaptureVictoryScreenshotBeforeCameraSwap();
+
+        // 2️⃣ Ralentit progressivement le temps jusqu'à l'arrêt complet pour figer la scène.
         if (BattleTransitionManager.Instance != null)
         {
             yield return BattleTransitionManager.Instance.StartCoroutine(
@@ -1316,9 +1322,6 @@ public partial class NewBattleManager : MonoBehaviour
 
         Time.fixedDeltaTime = 0f; // Les physiques sont également gelées.
 
-        // 2️⃣ Capture la dernière image du combat avant tout mouvement de caméra.
-        yield return CaptureVictoryScreenshotBeforeCameraSwap();
-
         // 3️⃣ Demande officiellement la caméra de victoire afin de lancer le travelling.
         ChangeBattleState(BattleState.VictoryScreen_Await);
         battleIntroMenusLocked = false;
@@ -1329,6 +1332,7 @@ public partial class NewBattleManager : MonoBehaviour
         // 5️⃣ L'interface de victoire peut maintenant se superposer au plan stabilisé.
         victoryScreen.SetActive(true);
         ForceUnscaledAnimators(victoryScreen.transform);
+        InputsManager.Instance?.ForceDynamicInputUpdate();
         Transform victoryPanel = victoryScreen.transform.GetChild(0);
         Animator victoryAnim = victoryPanel.GetComponent<Animator>();
         if (victoryAnim != null)
@@ -1349,16 +1353,8 @@ public partial class NewBattleManager : MonoBehaviour
         int totalEnemies = GameManager.Instance != null ? GameManager.Instance.gameData.enemiesDefeatedCount : 0;
         panel?.DisplayVictory(rewardXP, rewardItems, totalEnemies, duration, mvpUnit, maxTurnDamage);
 
-        // 7️⃣ Applique la capture sur le fond du panneau pour figer la dernière image du combat.
-        RawImage img = victoryScreen.transform.GetChild(0).GetComponent<RawImage>();
-        if (img != null)
-        {
-            img.texture = VictoryScreenImage;
-        }
-        else
-        {
-            Debug.LogWarning("Pas de RawImage sur le VictoryScreen child(0)");
-        }
+        // 7️⃣ Applique la capture sur le panneau de victoire.
+        ApplyVictoryScreenTexture(VictoryScreenImage);
 
         Transform continueButtonTransform = FindChildRecursive(victoryScreen.transform.GetChild(0), "BattleScene_UI_VictoryPanel_Continue");
 
@@ -1390,11 +1386,10 @@ public partial class NewBattleManager : MonoBehaviour
             }
         }
 
-        // Les unités restent désormais en place durant l'écran de victoire afin
-        // que le joueur puisse admirer le champ de bataille tel qu'il était au
-        // moment de la victoire. Leur suppression se fera plus tard, au retour
-        // dans le monde.
+        // Le champ de bataille doit disparaitre des l'affichage de la victoire.
         ChangeBattleState(BattleState.VictoryScreen_CanContinue);
+
+        HideBattlefieldVisualsOnVictory();
 
         victorySequenceInProgress = false;
     }
@@ -1476,6 +1471,56 @@ public partial class NewBattleManager : MonoBehaviour
             if (animator != null)
                 animator.updateMode = AnimatorUpdateMode.UnscaledTime;
         }
+
+        var pulses = root.GetComponentsInChildren<Pulse>(true);
+        foreach (var pulse in pulses)
+        {
+            if (pulse != null)
+                pulse.forceUnscaledTime = true;
+        }
+    }
+
+    private void ApplyVictoryScreenTexture(RenderTexture texture)
+    {
+        if (texture == null || victoryScreen == null)
+            return;
+
+        Transform panel = FindChildRecursive(victoryScreen.transform, "BattleScene_UI_VictoryScreen_Panel");
+        RawImage img = panel != null ? panel.GetComponent<RawImage>() : null;
+
+        if (img == null)
+            img = victoryScreen.GetComponentInChildren<RawImage>(true);
+
+        if (img != null)
+            img.texture = texture;
+        else
+            Debug.LogWarning("[BattleTurnManager] RawImage introuvable pour le fond de l'ecran de victoire.");
+    }
+
+    private void HideBattlefieldVisualsOnVictory()
+    {
+        BattlefieldManager.Instance?.SetBattlefieldVisible(false);
+
+        foreach (var unit in unitsInBattle)
+        {
+            if (unit == null)
+                continue;
+
+            ToggleUnitRenderers(unit, false);
+        }
+    }
+
+    private static void ToggleUnitRenderers(CharacterUnit unit, bool visible)
+    {
+        if (unit == null)
+            return;
+
+        var renderers = unit.GetComponentsInChildren<Renderer>(true);
+        foreach (var renderer in renderers)
+        {
+            if (renderer != null)
+                renderer.enabled = visible;
+        }
     }
 
     /// <summary>
@@ -1523,6 +1568,7 @@ public partial class NewBattleManager : MonoBehaviour
             anim.updateMode = AnimatorUpdateMode.UnscaledTime;
         panel.gameObject.SetActive(true);
         ForceUnscaledAnimators(gameOverScreen.transform);
+        InputsManager.Instance?.ForceDynamicInputUpdate();
         battleIntroMenusLocked = false;
         InputsManager.Instance?.playerInputs?.Battle.Confirm.Enable();
 

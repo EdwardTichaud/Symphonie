@@ -121,6 +121,12 @@ public class BattlefieldManager : MonoBehaviour
         }
     }
 
+    public void SetBattlefieldVisible(bool visible)
+    {
+        if (currentBattlefield != null)
+            currentBattlefield.SetActive(visible);
+    }
+
     /// <summary>
     /// Applique récursivement un <c>Layer</c> Unity à un <see cref="GameObject"/> et à tous ses enfants.
     /// Utilisé ici pour que toutes les positions de combat héritent du layer "Battle_Unit".
