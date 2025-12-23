@@ -105,6 +105,8 @@ public class TimelineManager : MonoBehaviour
     private bool autoRestore = true;
 
     private readonly Dictionary<string, GameObject> cameraTagCache = new();
+    private bool overrideDirectorWrapMode;
+    private DirectorWrapMode storedDirectorWrapMode;
 
     [Header("Audio")]
     [Tooltip("Musique de fond à jouer pendant les timelines.")]
@@ -475,6 +477,13 @@ public class TimelineManager : MonoBehaviour
         {
             RequestWorldCameraControl();
         }
+        overrideDirectorWrapMode = false;
+        if (requiresWorldCamera)
+        {
+            storedDirectorWrapMode = newDirector.extrapolationMode;
+            newDirector.extrapolationMode = DirectorWrapMode.None;
+            overrideDirectorWrapMode = true;
+        }
 
         // Enregistre les préférences de lecture pour cette timeline.
         useFade = withFade;
@@ -820,6 +829,12 @@ public class TimelineManager : MonoBehaviour
         IsTimelinePlaying = false;
         currentDirector = null;
 
+        if (overrideDirectorWrapMode && pd != null)
+        {
+            pd.extrapolationMode = storedDirectorWrapMode;
+            overrideDirectorWrapMode = false;
+        }
+
         // Restauration optionnelle : certains enchaînements de timelines doivent
         // conserver le contrôle caméra pour éviter des transitions brutales.
         if (autoRestore)
@@ -860,6 +875,10 @@ public class TimelineManager : MonoBehaviour
     private Transform storedPlayerTransform;
     private Quaternion storedPlayerRotation;
     private bool hasStoredPlayerRotation;
+    private Transform storedPlayerModelTransform;
+    private Vector3 storedPlayerModelLocalPosition;
+    private Quaternion storedPlayerModelLocalRotation;
+    private bool hasStoredPlayerModelPose;
 
     private void RequestWorldCameraControl()
     {
@@ -933,6 +952,26 @@ public class TimelineManager : MonoBehaviour
         storedPlayerTransform = player.transform;
         storedPlayerRotation = storedPlayerTransform.rotation;
         hasStoredPlayerRotation = true;
+
+        if (!hasStoredPlayerModelPose)
+        {
+            Transform modelRoot = FindPlayerModelRoot(storedPlayerTransform);
+
+            if (modelRoot == null)
+            {
+                var playerAnimator = player.GetComponentInChildren<Animator>();
+                if (playerAnimator != null && playerAnimator.transform != storedPlayerTransform)
+                    modelRoot = playerAnimator.transform;
+            }
+
+            if (modelRoot != null)
+            {
+                storedPlayerModelTransform = modelRoot;
+                storedPlayerModelLocalPosition = storedPlayerModelTransform.localPosition;
+                storedPlayerModelLocalRotation = storedPlayerModelTransform.localRotation;
+                hasStoredPlayerModelPose = true;
+            }
+        }
     }
 
     private void RestorePlayerRotation()
@@ -945,6 +984,37 @@ public class TimelineManager : MonoBehaviour
 
         storedPlayerTransform = null;
         hasStoredPlayerRotation = false;
+
+        if (hasStoredPlayerModelPose && storedPlayerModelTransform != null)
+        {
+            storedPlayerModelTransform.localPosition = storedPlayerModelLocalPosition;
+            storedPlayerModelTransform.localRotation = storedPlayerModelLocalRotation;
+        }
+
+        storedPlayerModelTransform = null;
+        hasStoredPlayerModelPose = false;
+    }
+
+    private Transform FindPlayerModelRoot(Transform playerRoot)
+    {
+        if (playerRoot == null)
+            return null;
+
+        var skinnedMeshes = playerRoot.GetComponentsInChildren<SkinnedMeshRenderer>(includeInactive: true);
+        foreach (var skinned in skinnedMeshes)
+        {
+            if (skinned == null)
+                continue;
+
+            Transform candidate = skinned.transform;
+            while (candidate != null && candidate.parent != playerRoot)
+                candidate = candidate.parent;
+
+            if (candidate != null && candidate != playerRoot)
+                return candidate;
+        }
+
+        return null;
     }
 
     /// <summary>

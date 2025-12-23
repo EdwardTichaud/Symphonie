@@ -63,6 +63,12 @@ public class AudioManager : MonoBehaviour
     private AudioSource CurrentMusicSource => currentMusicHandle != null ? currentMusicHandle.Source : null;
 
     private Coroutine crossfadeRoutine;
+    private enum FadingHandleAction
+    {
+        None,
+        Pause,
+        Destroy
+    }
     // Coroutine dédiée aux fondus de volume lorsque l'on entre ou sort d'une timeline
     // ne possédant pas de musique propre. Permet d'interrompre proprement un fondu
     // si une autre timeline démarre immédiatement après la précédente.
@@ -84,7 +90,11 @@ public class AudioManager : MonoBehaviour
     private float timeBeforeTimeline;               // → position de lecture de cette musique
 
     private readonly Dictionary<AudioClipSO, float> explorationPlaybackPositions = new Dictionary<AudioClipSO, float>();
+    private readonly Dictionary<AudioClipSO, DynamicAudioHandle> explorationHandles = new Dictionary<AudioClipSO, DynamicAudioHandle>();
     private AudioClipSO currentMusicAsset;
+    private DynamicAudioHandle lastExplorationHandle;
+    private DynamicAudioHandle handleBeforeTimeline;
+    private DynamicAudioHandle timelineMusicHandle;
     private Dictionary<AudioClip, float> normalizationCache = new Dictionary<AudioClip, float>();
 
     // Gestion des musiques déclenchées à la volée (timelines, scripts, etc.).
@@ -103,6 +113,8 @@ public class AudioManager : MonoBehaviour
     {
         public AudioSource Source;
         public float BaseFactor;
+        public AudioClipSO ClipAsset;
+        public bool IsPersistent;
     }
 
     // Listes des instances dynamiques actuellement en cours de lecture.
@@ -112,6 +124,7 @@ public class AudioManager : MonoBehaviour
 
     private DynamicAudioHandle currentMusicHandle;
     private DynamicAudioHandle fadingMusicHandle;
+    private FadingHandleAction fadingHandleAction = FadingHandleAction.None;
 
     // Compteur pour nommer clairement les AudioSource engendrées dynamiquement.
     private int dynamicSourceCounter = 0;
@@ -415,20 +428,37 @@ public class AudioManager : MonoBehaviour
         if (!EnsureActive(nameof(PlayExplorationMusic)))
             return;
 
-        AudioClip clip = ResolveClip(newExplorationClip);
-        if (clip == null)
+        if (newExplorationClip == null)
             return;
 
-        if (isInCombat || isInTimeline || currentMusicAsset == newExplorationClip)
+        if (isInCombat || isInTimeline)
             return;
-
-        lastExplorationClip = newExplorationClip;
 
         float resumeTime = explorationPlaybackPositions.TryGetValue(newExplorationClip, out float savedTime)
             ? savedTime
             : 0f;
 
-        StartCrossfade(newExplorationClip, resumeTime);
+        DynamicAudioHandle toHandle = GetOrCreateExplorationHandle(newExplorationClip, resumeTime);
+        if (toHandle == null)
+            return;
+
+        if (currentMusicHandle == toHandle && toHandle.Source != null && toHandle.Source.isPlaying)
+            return;
+
+        if (currentMusicHandle != null && currentMusicHandle.Source != null && currentMusicHandle.ClipAsset != null)
+            explorationPlaybackPositions[currentMusicHandle.ClipAsset] = currentMusicHandle.Source.time;
+
+        lastExplorationClip = newExplorationClip;
+        lastExplorationHandle = toHandle;
+
+        currentMusicAsset = newExplorationClip;
+        AnnounceMusic(newExplorationClip);
+
+        if (currentMusicHandle == toHandle)
+            StartCrossfade(null, toHandle, FadingHandleAction.None);
+        else
+            StartCrossfade(currentMusicHandle, toHandle, FadingHandleAction.Pause);
+
         isInCombat = false;
     }
 
@@ -437,25 +467,36 @@ public class AudioManager : MonoBehaviour
         if (!EnsureActive(nameof(TransitionToNewExplorationZone)))
             return;
 
-        AudioClip clip = ResolveClip(newExplorationClip);
-        if (clip == null)
+        if (newExplorationClip == null)
             return;
 
-        if (isInCombat || isInTimeline || currentMusicAsset == newExplorationClip)
+        if (isInCombat || isInTimeline)
             return;
-
-        if (!isInCombat && currentMusicAsset != null && CurrentMusicSource != null && CurrentMusicSource.clip != null)
-        {
-            explorationPlaybackPositions[currentMusicAsset] = CurrentMusicSource.time;
-        }
-
-        lastExplorationClip = newExplorationClip;
 
         float resumeTime = explorationPlaybackPositions.TryGetValue(newExplorationClip, out float savedTime)
             ? savedTime
             : 0f;
 
-        StartCrossfade(newExplorationClip, resumeTime);
+        DynamicAudioHandle toHandle = GetOrCreateExplorationHandle(newExplorationClip, resumeTime);
+        if (toHandle == null)
+            return;
+
+        if (currentMusicHandle == toHandle && toHandle.Source != null && toHandle.Source.isPlaying)
+            return;
+
+        if (currentMusicHandle != null && currentMusicHandle.Source != null && currentMusicHandle.ClipAsset != null)
+            explorationPlaybackPositions[currentMusicHandle.ClipAsset] = currentMusicHandle.Source.time;
+
+        lastExplorationClip = newExplorationClip;
+        lastExplorationHandle = toHandle;
+
+        currentMusicAsset = newExplorationClip;
+        AnnounceMusic(newExplorationClip);
+
+        if (currentMusicHandle == toHandle)
+            StartCrossfade(null, toHandle, FadingHandleAction.None);
+        else
+            StartCrossfade(currentMusicHandle, toHandle, FadingHandleAction.Pause);
     }
 
     public void TransitionToCombat(AudioClipSO combatClip)
@@ -463,8 +504,7 @@ public class AudioManager : MonoBehaviour
         if (!EnsureActive(nameof(TransitionToCombat)))
             return;
 
-        AudioClip clip = ResolveClip(combatClip);
-        if (clip == null)
+        if (ResolveClip(combatClip) == null)
             return;
 
         if (isInCombat)
@@ -478,22 +518,21 @@ public class AudioManager : MonoBehaviour
             {
                 lastExplorationClip = clipBeforeTimeline;
                 lastExplorationTime = timeBeforeTimeline;
+                lastExplorationHandle = handleBeforeTimeline;
             }
 
-            if (timelineFadeRoutine != null)
-            {
-                StopCoroutine(timelineFadeRoutine);
-                timelineFadeRoutine = null;
-            }
-
-            if (CurrentMusicSource != null)
-                CurrentMusicSource.UnPause();
+            timelineMusicHandle = null;
+            handleBeforeTimeline = null;
         }
         else if (currentMusicAsset != null)
         {
             lastExplorationClip = currentMusicAsset;
             lastExplorationTime = CurrentMusicSource != null ? CurrentMusicSource.time : 0f;
+            lastExplorationHandle = currentMusicHandle;
         }
+
+        if (lastExplorationHandle != null && lastExplorationHandle.Source != null && lastExplorationHandle.ClipAsset != null)
+            explorationPlaybackPositions[lastExplorationHandle.ClipAsset] = lastExplorationHandle.Source.time;
 
         isInCombat = true;
         SwitchImmediately(combatClip);
@@ -507,7 +546,26 @@ public class AudioManager : MonoBehaviour
         if (!isInCombat || lastExplorationClip == null)
             return;
 
-        StartCrossfade(lastExplorationClip, lastExplorationTime);
+        DynamicAudioHandle toHandle = lastExplorationHandle;
+        if (toHandle == null || toHandle.Source == null)
+        {
+            float resumeTime = explorationPlaybackPositions.TryGetValue(lastExplorationClip, out float savedTime)
+                ? savedTime
+                : lastExplorationTime;
+            toHandle = GetOrCreateExplorationHandle(lastExplorationClip, resumeTime);
+        }
+
+        if (toHandle != null)
+            lastExplorationHandle = toHandle;
+
+        currentMusicAsset = lastExplorationClip;
+        AnnounceMusic(lastExplorationClip);
+
+        if (toHandle != null)
+            StartCrossfade(currentMusicHandle, toHandle, FadingHandleAction.Destroy);
+        else
+            StartCrossfade(currentMusicHandle, null, FadingHandleAction.Destroy);
+
         isInCombat = false;
     }
 
@@ -527,19 +585,31 @@ public class AudioManager : MonoBehaviour
         wasInCombatBeforeTimeline = isInCombat;
         clipBeforeTimeline = currentMusicAsset;
         timeBeforeTimeline = CurrentMusicSource != null ? CurrentMusicSource.time : 0f;
+        handleBeforeTimeline = currentMusicHandle;
+
+        if (handleBeforeTimeline != null && handleBeforeTimeline.Source != null && handleBeforeTimeline.ClipAsset != null)
+            explorationPlaybackPositions[handleBeforeTimeline.ClipAsset] = handleBeforeTimeline.Source.time;
 
         isInTimeline = true;
         isInCombat = false;
 
-        if (ResolveClip(timelineClip) != null)
+        AudioClip clip = ResolveClip(timelineClip);
+        if (clip != null)
         {
-            StartCrossfade(timelineClip, 0f);
+            DynamicAudioHandle toHandle = CreateMusicHandle(clip, timelineClip, 0f, ResolveLoop(timelineClip));
+            if (toHandle == null)
+                return;
+
+            timelineMusicHandle = toHandle;
+            currentMusicAsset = timelineClip;
+            AnnounceMusic(timelineClip);
+
+            StartCrossfade(handleBeforeTimeline, toHandle, FadingHandleAction.Pause);
         }
         else
         {
-            if (timelineFadeRoutine != null)
-                StopCoroutine(timelineFadeRoutine);
-            timelineFadeRoutine = StartCoroutine(FadeOutCurrentMusic());
+            timelineMusicHandle = null;
+            StartCrossfade(handleBeforeTimeline, null, FadingHandleAction.Pause);
         }
     }
 
@@ -557,21 +627,42 @@ public class AudioManager : MonoBehaviour
         isInCombat = wasInCombatBeforeTimeline;
         isInTimeline = false;
 
-        if (clipBeforeTimeline == null)
-            return;
+        DynamicAudioHandle resumeHandle = handleBeforeTimeline;
+        AudioClipSO resumeClip = clipBeforeTimeline;
 
-        if (currentMusicAsset != clipBeforeTimeline)
+        if (resumeHandle == null && resumeClip != null)
         {
-            StartCrossfade(clipBeforeTimeline, timeBeforeTimeline);
+            float resumeTime = timeBeforeTimeline;
+            if (!wasInCombatBeforeTimeline)
+            {
+                if (explorationPlaybackPositions.TryGetValue(resumeClip, out float savedTime))
+                    resumeTime = savedTime;
+
+                resumeHandle = GetOrCreateExplorationHandle(resumeClip, resumeTime);
+            }
+            else
+            {
+                AudioClip combatClip = ResolveClip(resumeClip);
+                if (combatClip != null)
+                    resumeHandle = CreateMusicHandle(combatClip, resumeClip, resumeTime, ResolveLoop(resumeClip));
+            }
         }
-        else
+
+        currentMusicAsset = resumeHandle != null ? (resumeHandle.ClipAsset ?? resumeClip) : resumeClip;
+        if (currentMusicAsset != null)
+            AnnounceMusic(currentMusicAsset);
+
+        if (timelineMusicHandle != null)
         {
-            if (timelineFadeRoutine != null)
-                StopCoroutine(timelineFadeRoutine);
-            if (CurrentMusicSource != null)
-                CurrentMusicSource.UnPause();
-            timelineFadeRoutine = StartCoroutine(FadeInCurrentMusic());
+            StartCrossfade(timelineMusicHandle, resumeHandle, FadingHandleAction.Destroy);
+            timelineMusicHandle = null;
         }
+        else if (resumeHandle != null)
+        {
+            StartCrossfade(null, resumeHandle, FadingHandleAction.None);
+        }
+
+        handleBeforeTimeline = null;
     }
 
     /// <summary>
@@ -624,12 +715,19 @@ public class AudioManager : MonoBehaviour
         // aux ralentis ou arrêts complets provoqués par les timelines.
         while (t < fadeDuration)
         {
+            if (source == null || currentMusicHandle == null || currentMusicHandle.Source == null)
+            {
+                timelineFadeRoutine = null;
+                yield break;
+            }
+
             t += Time.unscaledDeltaTime;
             source.volume = Mathf.Lerp(0f, targetVolume, t / fadeDuration);
             yield return null;
         }
 
-        source.volume = targetVolume;
+        if (source != null && currentMusicHandle != null && currentMusicHandle.Source != null)
+            source.volume = targetVolume;
         timelineFadeRoutine = null;
     }
 
@@ -647,17 +745,96 @@ public class AudioManager : MonoBehaviour
         DynamicAudioHandle handle = new DynamicAudioHandle
         {
             Source = source,
-            BaseFactor = GetNormalizationFactor(clip) * ResolveVolume(clipAsset, DefaultVolume)
+            BaseFactor = GetNormalizationFactor(clip) * ResolveVolume(clipAsset, DefaultVolume),
+            ClipAsset = clipAsset
         };
 
         activeMusicHandles.Add(handle);
         return handle;
     }
 
+    private DynamicAudioHandle GetOrCreateExplorationHandle(AudioClipSO clipAsset, float startTime)
+    {
+        if (clipAsset == null)
+            return null;
+
+        if (explorationHandles.TryGetValue(clipAsset, out DynamicAudioHandle existing))
+        {
+            if (existing?.Source != null)
+                return existing;
+
+            explorationHandles.Remove(clipAsset);
+        }
+
+        AudioClip clip = ResolveClip(clipAsset);
+        if (clip == null)
+            return null;
+
+        DynamicAudioHandle handle = CreateMusicHandle(clip, clipAsset, startTime, ResolveLoop(clipAsset));
+        if (handle == null)
+            return null;
+
+        handle.IsPersistent = true;
+        explorationHandles[clipAsset] = handle;
+        return handle;
+    }
+
+    private void FinalizeFadingHandle(DynamicAudioHandle handle, FadingHandleAction action)
+    {
+        if (handle == null)
+            return;
+
+        if (action == FadingHandleAction.None)
+        {
+            if (handle.Source == null)
+            {
+                activeMusicHandles.Remove(handle);
+                if (handle.IsPersistent && handle.ClipAsset != null)
+                    explorationHandles.Remove(handle.ClipAsset);
+            }
+            return;
+        }
+
+        if (handle.Source == null)
+        {
+            activeMusicHandles.Remove(handle);
+            if (handle.IsPersistent && handle.ClipAsset != null)
+                explorationHandles.Remove(handle.ClipAsset);
+            return;
+        }
+
+        handle.Source.volume = 0f;
+
+        if (action == FadingHandleAction.Pause)
+        {
+            handle.Source.Pause();
+        }
+        else if (action == FadingHandleAction.Destroy)
+        {
+            DestroyMusicHandle(handle);
+        }
+    }
+
     private void DestroyMusicHandle(DynamicAudioHandle handle)
     {
         if (handle == null)
             return;
+
+        if (handle.IsPersistent)
+        {
+            if (handle.Source == null)
+            {
+                activeMusicHandles.Remove(handle);
+                if (handle.ClipAsset != null)
+                    explorationHandles.Remove(handle.ClipAsset);
+                return;
+            }
+
+            handle.Source.volume = 0f;
+            if (handle.Source.isPlaying)
+                handle.Source.Pause();
+            return;
+        }
 
         activeMusicHandles.Remove(handle);
 
@@ -679,20 +856,24 @@ public class AudioManager : MonoBehaviour
 
         if (fadingMusicHandle != null)
         {
-            DestroyMusicHandle(fadingMusicHandle);
+            FinalizeFadingHandle(fadingMusicHandle, fadingHandleAction);
             fadingMusicHandle = null;
+            fadingHandleAction = FadingHandleAction.None;
         }
     }
 
-    private void StartCrossfade(AudioClipSO newClip, float startTime)
+    private void StartCrossfade(DynamicAudioHandle fromHandle, DynamicAudioHandle toHandle, FadingHandleAction actionAfterFade)
     {
         StopMusicOverride();
-        currentMusicAsset = newClip;
-        AnnounceMusic(newClip);
-
         StopCrossfadeRoutine();
 
-        crossfadeRoutine = StartCoroutine(CrossfadeMusic(newClip, startTime));
+        if (fromHandle == null && toHandle == null)
+            return;
+
+        if (fromHandle == null)
+            actionAfterFade = FadingHandleAction.None;
+
+        crossfadeRoutine = StartCoroutine(CrossfadeMusic(fromHandle, toHandle, actionAfterFade));
     }
 
     private void SwitchImmediately(AudioClipSO newClip)
@@ -702,7 +883,23 @@ public class AudioManager : MonoBehaviour
         AnnounceMusic(newClip);
 
         StopCrossfadeRoutine();
-        DestroyMusicHandle(currentMusicHandle);
+
+        if (currentMusicHandle != null)
+        {
+            if (currentMusicHandle.IsPersistent)
+            {
+                if (currentMusicHandle.Source != null)
+                {
+                    currentMusicHandle.Source.volume = 0f;
+                    currentMusicHandle.Source.Pause();
+                }
+            }
+            else
+            {
+                DestroyMusicHandle(currentMusicHandle);
+            }
+        }
+
         currentMusicHandle = null;
 
         AudioClip clip = ResolveClip(newClip);
@@ -727,66 +924,77 @@ public class AudioManager : MonoBehaviour
         MusicInfoBoxUI.Instance.Show(clip);
     }
 
-    private IEnumerator CrossfadeMusic(AudioClipSO newClip, float startTime)
+    private IEnumerator CrossfadeMusic(DynamicAudioHandle fromHandle, DynamicAudioHandle toHandle, FadingHandleAction actionAfterFade)
     {
-        DynamicAudioHandle fromHandle = currentMusicHandle;
         AudioSource fromSource = fromHandle != null ? fromHandle.Source : null;
+        AudioSource toSource = toHandle != null ? toHandle.Source : null;
         float fromInitialVolume = fromSource != null ? fromSource.volume : 0f;
+        float targetVolume = toHandle != null ? Mathf.Clamp01(musicVolume * toHandle.BaseFactor) : 0f;
 
-        AudioClip clip = ResolveClip(newClip);
-        if (clip == null)
+        if (toSource != null)
         {
-            if (fromSource != null)
-            {
-                float t = 0f;
-                // 🎵 Même logique : on s'appuie sur le temps non-scalé pour que
-                // le fondu reste actif si la timeline fige le gameplay.
-                while (t < fadeDuration)
-                {
-                    t += Time.unscaledDeltaTime;
-                    float progress = t / fadeDuration;
-                    fromSource.volume = Mathf.Lerp(fromInitialVolume, 0f, progress);
-                    yield return null;
-                }
-            }
-
-            if (fromHandle != null)
-                DestroyMusicHandle(fromHandle);
-
-            currentMusicHandle = null;
-            crossfadeRoutine = null;
-            yield break;
+            toSource.volume = 0f;
+            toSource.UnPause();
+            if (!toSource.isPlaying)
+                toSource.Play();
         }
 
-        DynamicAudioHandle toHandle = CreateMusicHandle(clip, newClip, startTime, ResolveLoop(newClip));
-        AudioSource toSource = toHandle.Source;
-        float targetVolume = Mathf.Clamp01(musicVolume * toHandle.BaseFactor);
-        toSource.volume = 0f;
-        toSource.Play();
-
-        currentMusicHandle = toHandle;
-        fadingMusicHandle = fromHandle;
-
-        float tCrossfade = 0f;
-
-        // 🎚️ Crossfade piloté par le temps non-scalé afin de rester fluide
-        // pendant les cinématiques qui manipulent le timeScale global.
-        while (tCrossfade < fadeDuration)
+        if (toHandle != null)
         {
-            tCrossfade += Time.unscaledDeltaTime;
-            float progress = tCrossfade / fadeDuration;
-
-            toSource.volume = Mathf.Lerp(0f, targetVolume, progress);
-            if (fromSource != null)
-                fromSource.volume = Mathf.Lerp(fromInitialVolume, 0f, progress);
-            yield return null;
+            currentMusicHandle = toHandle;
+        }
+        else if (actionAfterFade == FadingHandleAction.Pause)
+        {
+            currentMusicHandle = fromHandle;
+        }
+        else if (actionAfterFade == FadingHandleAction.Destroy)
+        {
+            currentMusicHandle = null;
         }
 
         if (fromHandle != null)
-            DestroyMusicHandle(fromHandle);
+        {
+            fadingMusicHandle = fromHandle;
+            fadingHandleAction = actionAfterFade;
+        }
+        else
+        {
+            fadingMusicHandle = null;
+            fadingHandleAction = FadingHandleAction.None;
+        }
 
-        toSource.volume = targetVolume;
+        float duration = Mathf.Max(0f, fadeDuration);
+        if (duration > 0f)
+        {
+            float tCrossfade = 0f;
+
+            // 🎚️ Crossfade piloté par le temps non-scalé afin de rester fluide
+            // pendant les cinématiques qui manipulent le timeScale global.
+            while (tCrossfade < duration)
+            {
+                tCrossfade += Time.unscaledDeltaTime;
+                float progress = Mathf.Clamp01(tCrossfade / duration);
+
+                if (toSource != null)
+                    toSource.volume = Mathf.Lerp(0f, targetVolume, progress);
+                if (fromSource != null)
+                    fromSource.volume = Mathf.Lerp(fromInitialVolume, 0f, progress);
+
+                if ((toHandle != null && toHandle.Source == null) || (fromHandle != null && fromHandle.Source == null))
+                    break;
+
+                yield return null;
+            }
+        }
+
+        if (toSource != null)
+            toSource.volume = targetVolume;
+
+        if (fromHandle != null)
+            FinalizeFadingHandle(fromHandle, actionAfterFade);
+
         fadingMusicHandle = null;
+        fadingHandleAction = FadingHandleAction.None;
 
         crossfadeRoutine = null;
     }

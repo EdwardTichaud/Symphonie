@@ -102,6 +102,18 @@ public class CameraController : MonoBehaviour
     [Tooltip("Inclinaison maximale (en degrés). Valeur positive = regarder vers le haut.")]
     public float forcedCamMaxPitch = 65f;
 
+    [Header("World Camera Collision")]
+    [Tooltip("Active la protection pour éviter que la WorldCamera traverse le sol ou les murs.")]
+    [SerializeField] private bool worldCameraCollisionEnabled = true;
+    [Tooltip("Layers considérés comme obstacles pour la WorldCamera.")]
+    [SerializeField] private LayerMask worldCameraCollisionMask = ~0;
+    [Tooltip("Rayon de la sphère utilisée pour éviter les collisions caméra.")]
+    [SerializeField] private float worldCameraCollisionRadius = 0.2f;
+    [Tooltip("Marge appliquée entre l'obstacle et la caméra.")]
+    [SerializeField] private float worldCameraCollisionOffset = 0.1f;
+    [Tooltip("Distance minimale autorisée en cas de collision.")]
+    [SerializeField] private float worldCameraMinCollisionDistance = 0.25f;
+
     private string cameraTargetName;
     [SerializeField] private Transform player;
     [SerializeField] private EventsManager eventsManager;
@@ -111,9 +123,10 @@ public class CameraController : MonoBehaviour
     private float forcedCamPitch = 20f;
     private float forcedCamDistance = 5f;
     private Vector3 forcedCamOffset = Vector3.zero; // Décalage monde utilisé en mode TPS
+    private static readonly RaycastHit[] worldCameraCollisionHits = new RaycastHit[12];
 
-    // Toute la gestion des collisions avec le sol a été supprimée pour alléger le système.
-    // L'occlusion reste assurée par d'autres composants si un obstacle cache le joueur.
+    // La collision caméra est optionnelle et se limite à empêcher les placements
+    // impossibles (sol, murs) sans désactiver les comportements d'occlusion existants.
 
     [Header("Orbit Settings")]
     public Transform orbitTarget;
@@ -495,6 +508,7 @@ public class CameraController : MonoBehaviour
         Transform camOrigin = worldCameraParent != null ? worldCameraParent : worldCamera.transform;
         Vector3 focusPoint = GetThirdPersonFocusPoint();
         Vector3 desiredPos = focusPoint + forcedCamOffset;
+        desiredPos = ApplyWorldCameraCollision(focusPoint, desiredPos);
         Quaternion desiredRot = Quaternion.LookRotation(focusPoint - desiredPos, Vector3.up);
 
         // Conversion de la vitesse en facteur indépendant du framerate pour conserver une sensation constante.
@@ -602,6 +616,51 @@ public class CameraController : MonoBehaviour
         // Dès la prochaine Update, la caméra recalcule son offset et reprend
         // son suivi standard (TPS, orbite, etc.). Aucun autre traitement n'est
         // nécessaire ici : les méthodes existantes se chargeront du reste.
+    }
+
+    private Vector3 ApplyWorldCameraCollision(Vector3 focusPoint, Vector3 desiredPosition)
+    {
+        if (!worldCameraCollisionEnabled)
+            return desiredPosition;
+
+        Vector3 direction = desiredPosition - focusPoint;
+        float distance = direction.magnitude;
+        if (distance <= 0.0001f)
+            return desiredPosition;
+
+        direction /= distance;
+        int hitCount = Physics.SphereCastNonAlloc(
+            focusPoint,
+            worldCameraCollisionRadius,
+            direction,
+            worldCameraCollisionHits,
+            distance,
+            worldCameraCollisionMask,
+            QueryTriggerInteraction.Ignore);
+
+        if (hitCount <= 0)
+            return desiredPosition;
+
+        float nearestDistance = float.MaxValue;
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider hitCollider = worldCameraCollisionHits[i].collider;
+            if (hitCollider == null)
+                continue;
+
+            if (player != null && hitCollider.transform.IsChildOf(player))
+                continue;
+
+            if (worldCameraCollisionHits[i].distance < nearestDistance)
+                nearestDistance = worldCameraCollisionHits[i].distance;
+        }
+
+        if (nearestDistance == float.MaxValue)
+            return desiredPosition;
+
+        float safeDistance = Mathf.Max(worldCameraMinCollisionDistance, nearestDistance - worldCameraCollisionOffset);
+        safeDistance = Mathf.Min(safeDistance, distance);
+        return focusPoint + direction * safeDistance;
     }
 
     private void RegisterExternalCameraDirectors()
