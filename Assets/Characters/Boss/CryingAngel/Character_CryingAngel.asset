@@ -35,7 +35,7 @@ MonoBehaviour:
   baseSagacity: 0
   baseInitiative: 1
   baseRange: 2
-  baseHP: 100
+  baseHP: 10000
   baseStrength: 1
   baseDefense: 1
   baseSpeed: 0
@@ -45,6 +45,7 @@ MonoBehaviour:
   rageDamageMultiplier: 0
   baseFatigue: 0
   maxFatigue: 0
+  basicAttack: []
   musicalAttacks:
   - {fileID: 11400000, guid: ec1327a205d9b39409a53c126d22f942, type: 2}
   specialMusicalMove: {fileID: 0}
@@ -52,31 +53,16 @@ MonoBehaviour:
   defaultMusicalMoveSetIndex: -1
   itemSets: []
   defaultItemSetIndex: -1
-  currentInitiative: 1
-  currentRange: 2
-  currentHP: 100
-  currentStrength: 1
-  currentDefense: 1
-  currentPower: 0
-  currentStability: 0
-  currentVitality: 0
-  currentSagacity: 0
   isPlayerControlled: 0
-  currentRage: 0
-  currentFatigue: 0
-  currentReflex: 0
-  currentMobility: 0
-  currentSpeed: 0
-  currentInterceptionRange: 0
-  currentInterceptionChance: 0
-  currentHarmonicCharge: 1
-  currentMusicalMoveSetIndex: -1
-  currentItemSetIndex: -1
+  turnStartVoiceline: {fileID: 0}
+  turnEndVoiceline: {fileID: 0}
+  baseAttackVoiceline: {fileID: 0}
   hitSound: {fileID: 0}
   criticalHitSound: {fileID: 0}
   interceptedSound: {fileID: 0}
   interceptionSound: {fileID: 0}
   prematureDeathTaunt: {fileID: 0}
+  loyaltyMarkTargetAlly: {fileID: 0}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   dashParticlesPrefab: {fileID: 6843868886689424030, guid: 39cd3db8310d9e045ad6b122b69635a7, type: 3}

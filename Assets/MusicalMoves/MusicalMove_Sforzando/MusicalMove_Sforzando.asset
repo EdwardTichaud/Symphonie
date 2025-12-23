@@ -16,9 +16,10 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Bond téléporté infligeant environ 20 000 dégâts et générant +1 Harmonie."
+  description: "Bond t\xE9l\xE9port\xE9 infligeant environ 20\u202F000 d\xE9g\xE2ts
+    et g\xE9n\xE9rant +1 Harmonie."
   inventoryCategory: MusicalMove
-  inventorySummary: "20 000 dégâts, téléporte et rend +1 Harmonie."
+  inventorySummary: "20\u202F000 d\xE9g\xE2ts, t\xE9l\xE9porte et rend +1 Harmonie."
   consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 1
@@ -28,8 +29,13 @@ MonoBehaviour:
   harmonicGeneration: 1
   consumedHarmonicType: 0
   generatedHarmonicType: 0
-  effectType: 0
-  effectValue: 20000
+  effects:
+  - type: 0
+    value: 200
+  legacyEffectType: 0
+  legacyEffectValue: 20000
+  passiveEffectPrefab: {fileID: 0}
+  passiveEffectVerticalOffset: 0.5
   buffStat: 0
   buffAmount: 0
   buffDuration: 0
@@ -38,6 +44,7 @@ MonoBehaviour:
   debuffAmount: 0
   debuffDuration: 0
   debuffIsPercentage: 0
+  previousEffectType: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -65,6 +72,9 @@ MonoBehaviour:
   tpSFx_Start: {fileID: 0}
   tpSFx_End: {fileID: 0}
   warningClip: {fileID: 0}
+  requiresPreparationBeforeExecution: 0
+  preparationTurnCount: 0
+  preparationFailureConditions: []
   startDelay: 0
   enterAwake: 0
   preparingAnimation: {fileID: 0}
