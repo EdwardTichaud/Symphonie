@@ -844,7 +844,7 @@ public class BattleTransitionManager : MonoBehaviour
     private IEnumerator ResetDissolveShaderValues(float duration)
     {
         // Inclut les renderers inactifs car certains decors peuvent etre masques pendant le combat
-        Renderer[] renderers = FindObjectsOfType<Renderer>(true);
+        Renderer[] renderers = FindObjectsByType<Renderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         var propertyBlock = new MaterialPropertyBlock();
         var targets = new List<(Renderer renderer, int index, float startValue)>();
 

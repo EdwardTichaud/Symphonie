@@ -665,7 +665,7 @@ public class CameraController : MonoBehaviour
 
     private void RegisterExternalCameraDirectors()
     {
-        var directors = FindObjectsOfType<PlayableDirector>(includeInactive: true);
+        var directors = FindObjectsByType<PlayableDirector>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var director in directors)
         {
             if (!DirectorUsesCameraTrack(director))
@@ -684,7 +684,7 @@ public class CameraController : MonoBehaviour
 
     private void UnregisterExternalCameraDirectors()
     {
-        var directors = FindObjectsOfType<PlayableDirector>(includeInactive: true);
+        var directors = FindObjectsByType<PlayableDirector>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var director in directors)
         {
             director.played -= OnExternalDirectorPlayed;

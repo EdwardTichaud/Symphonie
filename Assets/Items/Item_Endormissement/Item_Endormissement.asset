@@ -21,7 +21,11 @@ MonoBehaviour:
   inventorySummary: Endort une cible.
   consumeOnUse: 1
   recommendedMusicalMoves: []
-  effectValue: 0
+  effects:
+  - type: 10
+    value: 0
+  legacyEffectType: 10
+  legacyEffectValue: 0
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 500
@@ -33,7 +37,6 @@ MonoBehaviour:
   criticalEffectType: 6
   criticalEffectValue: 20
   stayInPlace: 1
-  effectType: 10
   healAmount: 0
   healIsPercentage: 0
   revivePercentage: 50

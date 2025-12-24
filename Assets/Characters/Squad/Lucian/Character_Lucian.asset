@@ -72,26 +72,7 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 370617c19b664f29839d25a4955dacf9, type: 2}
     - {fileID: 11400000, guid: fd8086605fb14e81a0e94c639309929f, type: 2}
   defaultItemSetIndex: -1
-  currentInitiative: 1
-  currentRange: 9.55
-  currentHP: 50
-  currentStrength: 1
-  currentDefense: 1
-  currentPower: 100
-  currentStability: 0
-  currentVitality: 0
-  currentSagacity: 0
   isPlayerControlled: 1
-  currentRage: 0
-  currentFatigue: 0
-  currentReflex: 0
-  currentMobility: 0
-  currentSpeed: 0
-  currentInterceptionRange: 0
-  currentInterceptionChance: 0
-  currentHarmonicCharge: 1
-  currentMusicalMoveSetIndex: 0
-  currentItemSetIndex: 0
   turnStartVoiceline: {fileID: 11400000, guid: 76a912fb92e3d0f42a5e578cd550b467, type: 2}
   turnEndVoiceline: {fileID: 11400000, guid: e1b5ee6140e537b45a734313b4d9d648, type: 2}
   baseAttackVoiceline: {fileID: 11400000, guid: 7c9a8dabb0acc9f44a4574c7e5f27bc6, type: 2}
@@ -116,6 +97,7 @@ MonoBehaviour:
   deathAnimation: {fileID: 7400000, guid: 7f67a9c1949f03342bd793ce58156a74, type: 2}
   TPAnimation_Start: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
   TPAnimation_Destination: {fileID: 0}
+  prepareToTargetAnimation: {fileID: -203655887218126122, guid: fedea3777cd99c44993664d822c06c3a, type: 3}
   prepareToUndergoAnimation: {fileID: 7400000, guid: 84ecef9b8267d434eb7be8dff9ecaec1, type: 2}
   awakenIdleAnimation: {fileID: 7400000, guid: a4eb069d620da524c961a54cc910a4af, type: 3}
   dissonantIdleAnimation: {fileID: 0}

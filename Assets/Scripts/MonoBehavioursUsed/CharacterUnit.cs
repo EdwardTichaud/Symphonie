@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.Playables; // 📽️ Gestion des timelines propres à l'unité
+using UnityEngine.Animations;
 using UnityEngine.Timeline;  // 🎼 Lecture des TimelineAsset assignés au PlayableDirector local
 using System.Collections;
 using System.Collections.Generic;
@@ -40,6 +41,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private bool hasLoggedMissingChildAnimator;
     // Indicateur évitant de répéter les avertissements lorsqu'on détecte plusieurs Animator valides chez les enfants.
     private bool hasLoggedMultipleChildAnimatorsWithController;
+    private PlayableGraph prepareToTargetGraph;
+    private AnimationClipPlayable prepareToTargetPlayable;
     private AwakeState awakeState; // Nouveau gestionnaire unifié des états Awake et dissonant.
 
     // Permet de suivre si l'unité joue actuellement son animation d'Idle pour déclencher les sons adéquats.
@@ -1829,6 +1832,60 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // Réutilise la méthode centralisée afin de bénéficier de tous les
         // garde-fous existants (vérification d'état mort, CrossFade, etc.).
         PlayAnimationClip(clip);
+    }
+
+    /// <summary>
+    /// Lance en boucle l'animation de preparation au ciblage definie sur le CharacterData.
+    /// Retourne true si un clip a effectivement ete lance.
+    /// </summary>
+    public bool StartPrepareToTargetAnimation()
+    {
+        AnimationClip clip = Data != null ? Data.prepareToTargetAnimation : null;
+        if (clip == null)
+            return false;
+
+        StopPrepareToTargetAnimation();
+
+        Animator casterAnimator = GetCasterAnimator(forceRefresh: true);
+        if (casterAnimator == null)
+            return false;
+
+        int stateHash = Animator.StringToHash(clip.name);
+        if (casterAnimator.HasState(0, stateHash))
+        {
+            PlayAnimationClip(clip);
+            return true;
+        }
+
+        StartPrepareToTargetPlayable(casterAnimator, clip);
+        return true;
+    }
+
+    /// <summary>
+    /// Arrete la preparation au ciblage si elle est active.
+    /// </summary>
+    public void StopPrepareToTargetAnimation()
+    {
+        if (prepareToTargetGraph.IsValid())
+            prepareToTargetGraph.Destroy();
+        prepareToTargetGraph = default;
+        prepareToTargetPlayable = default;
+    }
+
+    private void StartPrepareToTargetPlayable(Animator targetAnimator, AnimationClip clip)
+    {
+        if (targetAnimator == null || clip == null)
+            return;
+
+        prepareToTargetGraph = PlayableGraph.Create($"{name}_PrepareToTarget");
+        prepareToTargetGraph.SetTimeUpdateMode(DirectorUpdateMode.GameTime);
+        prepareToTargetPlayable = AnimationClipPlayable.Create(prepareToTargetGraph, clip);
+        prepareToTargetPlayable.SetApplyFootIK(true);
+        prepareToTargetPlayable.SetApplyPlayableIK(true);
+
+        var output = AnimationPlayableOutput.Create(prepareToTargetGraph, "PrepareToTarget", targetAnimator);
+        output.SetSourcePlayable(prepareToTargetPlayable);
+        prepareToTargetGraph.Play();
     }
 
     public void PlayHurtAnimation(Transform attacker = null)

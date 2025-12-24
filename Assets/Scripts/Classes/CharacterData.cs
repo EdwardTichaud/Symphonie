@@ -248,6 +248,10 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Animation jouée juste après la téléportation.")]
     public AnimationClip TPAnimation_Destination;
 
+    [Header("Animations de ciblage")]
+    [Tooltip("Animation utilisée pour montrer que le caster va cibler une cible.")]
+    public AnimationClip prepareToTargetAnimation;
+
     [Tooltip("Animation utilisée pour préparer la cible à subir un coup.")]
     public AnimationClip prepareToUndergoAnimation;
 

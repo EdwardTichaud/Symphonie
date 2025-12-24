@@ -21,7 +21,11 @@ MonoBehaviour:
   inventorySummary: "Soigne ~12\u202F000 PV."
   consumeOnUse: 1
   recommendedMusicalMoves: []
-  effectValue: 0
+  effects:
+  - type: 1
+    value: 0
+  legacyEffectType: 1
+  legacyEffectValue: 0
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
@@ -33,7 +37,6 @@ MonoBehaviour:
   criticalEffectType: 6
   criticalEffectValue: 20
   stayInPlace: 0
-  effectType: 1
   healAmount: 12000
   healIsPercentage: 0
   revivePercentage: 0

@@ -21,7 +21,11 @@ MonoBehaviour:
   inventorySummary: +2 tours sur tous les effets.
   consumeOnUse: 1
   recommendedMusicalMoves: []
-  effectValue: 0
+  effects:
+  - type: 9
+    value: 0
+  legacyEffectType: 9
+  legacyEffectValue: 0
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
@@ -33,7 +37,6 @@ MonoBehaviour:
   criticalEffectType: 6
   criticalEffectValue: 20
   stayInPlace: 0
-  effectType: 9
   healAmount: 0
   healIsPercentage: 0
   revivePercentage: 50

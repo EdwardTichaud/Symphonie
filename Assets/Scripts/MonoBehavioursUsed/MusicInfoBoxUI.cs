@@ -17,7 +17,7 @@ public class MusicInfoBoxUI : MonoBehaviour
         {
             if (instance == null)
             {
-                instance = FindObjectOfType<MusicInfoBoxUI>(true);
+                instance = FindFirstObjectByType<MusicInfoBoxUI>(FindObjectsInactive.Include);
                 if (instance == null)
                 {
                     var go = new GameObject("MusicInfoBoxUI");

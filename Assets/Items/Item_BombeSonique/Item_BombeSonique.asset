@@ -20,11 +20,15 @@ MonoBehaviour:
   inventorySummary: 
   consumeOnUse: 1
   recommendedMusicalMoves: []
-  effectValue: 15
+  effects:
+  - type: 6
+    value: 15
+  legacyEffectType: 6
+  legacyEffectValue: 15
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
-  requiresMovement: 1
+  requiresMovement: 0
   teleportDelay: 0
   maxUsesPerTurn: 0
   maxUsesPerBattle: 0
@@ -32,7 +36,6 @@ MonoBehaviour:
   criticalEffectType: 6
   criticalEffectValue: 20
   stayInPlace: 0
-  effectType: 6
   healAmount: 0
   healIsPercentage: 0
   revivePercentage: 0

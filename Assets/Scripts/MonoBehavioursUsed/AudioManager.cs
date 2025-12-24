@@ -69,10 +69,6 @@ public class AudioManager : MonoBehaviour
         Pause,
         Destroy
     }
-    // Coroutine dédiée aux fondus de volume lorsque l'on entre ou sort d'une timeline
-    // ne possédant pas de musique propre. Permet d'interrompre proprement un fondu
-    // si une autre timeline démarre immédiatement après la précédente.
-    private Coroutine timelineFadeRoutine;
     // Coroutine gérant l'atténuation temporaire lors de la lecture d'un warning
     private Coroutine warningRoutine;
     private AudioClipSO lastExplorationClip;
@@ -674,7 +670,6 @@ public class AudioManager : MonoBehaviour
         AudioSource source = CurrentMusicSource;
         if (source == null)
         {
-            timelineFadeRoutine = null;
             yield break;
         }
 
@@ -692,7 +687,6 @@ public class AudioManager : MonoBehaviour
 
         source.volume = 0f;
         source.Pause();
-        timelineFadeRoutine = null;
     }
 
     /// <summary>
@@ -703,7 +697,6 @@ public class AudioManager : MonoBehaviour
         AudioSource source = CurrentMusicSource;
         if (source == null || currentMusicHandle == null)
         {
-            timelineFadeRoutine = null;
             yield break;
         }
 
@@ -717,7 +710,6 @@ public class AudioManager : MonoBehaviour
         {
             if (source == null || currentMusicHandle == null || currentMusicHandle.Source == null)
             {
-                timelineFadeRoutine = null;
                 yield break;
             }
 
@@ -728,7 +720,6 @@ public class AudioManager : MonoBehaviour
 
         if (source != null && currentMusicHandle != null && currentMusicHandle.Source != null)
             source.volume = targetVolume;
-        timelineFadeRoutine = null;
     }
 
     private DynamicAudioHandle CreateMusicHandle(AudioClip clip, AudioClipSO clipAsset, float startTime, bool loop)

@@ -14,13 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   itemID: AntiInterception
   itemName: Anti-Interception
-  description: "Tisse un champ harmonique qui prot\xE8ge un alli\xE9 de toute interception\n    pendant deux tours."
+  description: "Tisse un champ harmonique qui prot\xE8ge un alli\xE9 de toute interception\n   
+    pendant deux tours."
+  itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
   inventoryCategory: Consommable
   inventorySummary: "Immunit\xE9 interception (2 tours)."
   consumeOnUse: 1
   recommendedMusicalMoves: []
-  itemIcon: {fileID: 21300000, guid: 108ca3e7dda90d945b0914bf9259ec94, type: 3}
-  effectValue: 0
+  effects:
+  - type: 8
+    value: 0
+  legacyEffectType: 8
+  legacyEffectValue: 0
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
@@ -32,7 +37,6 @@ MonoBehaviour:
   criticalEffectType: 6
   criticalEffectValue: 20
   stayInPlace: 0
-  effectType: 8
   healAmount: 0
   healIsPercentage: 0
   revivePercentage: 50
@@ -57,8 +61,8 @@ MonoBehaviour:
   performingTimeline: {fileID: 11400000, guid: f7714b3b704f3c74f98ee23bcd7f4b23, type: 2}
   retreatTimeline: {fileID: 0}
   preparingCameraRole: 2
-  preparingToPerformingCameraDelay: 0
   performingCameraRole: 2
   retreatCameraRole: 4
+  preparingToPerformingCameraDelay: 0
   beatPattern: []
   notes: []

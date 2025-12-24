@@ -21,7 +21,11 @@ MonoBehaviour:
   inventorySummary: "+15 port\xE9e (1 tour)."
   consumeOnUse: 1
   recommendedMusicalMoves: []
-  effectValue: 15
+  effects:
+  - type: 7
+    value: 15
+  legacyEffectType: 7
+  legacyEffectValue: 15
   isUsableInBattle: 1
   moveSpeed: 0
   castDistance: 0
@@ -33,7 +37,6 @@ MonoBehaviour:
   criticalEffectType: 6
   criticalEffectValue: 20
   stayInPlace: 0
-  effectType: 7
   healAmount: 0
   healIsPercentage: 0
   revivePercentage: 0

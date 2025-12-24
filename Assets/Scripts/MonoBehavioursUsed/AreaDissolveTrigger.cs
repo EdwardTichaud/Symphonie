@@ -161,14 +161,14 @@ public class AreaDissolveTrigger : MonoBehaviour
 
         // On parcourt tous les renderers (inclure inactifs si demandé)
         var renderers = includeInactive
-            ? Resources.FindObjectsOfTypeAll<Renderer>()   // inclut assets editor ; filtre plus bas
-            : FindObjectsOfType<Renderer>(false);
+            ? FindObjectsByType<Renderer>(FindObjectsInactive.Include, FindObjectsSortMode.None)
+            : FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
 
         foreach (var r in renderers)
         {
             if (r == null) continue;
 
-            // Filtre éditeur pour Resources.FindObjectsOfTypeAll
+            // Editor safety: ignore objects not in a scene.
             if (includeInactive)
             {
                 // ignorer ceux pas dans la scène

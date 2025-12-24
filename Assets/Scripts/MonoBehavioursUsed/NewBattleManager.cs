@@ -2557,13 +2557,13 @@ public partial class NewBattleManager : MonoBehaviour
         else
             ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
 
-        // Dès que le joueur bascule en mode ciblage, on synchronise l'Animator
-        // du lanceur avec l'animation de préparation définie sur la compétence.
-        // Ce feedback immédiat renforce la lisibilité pour les débutants tout en
-        // soulignant l'intention tactique du move pour les joueurs chevronnés.
+        // Des l'entree en mode ciblage, on lance la boucle de preparation
+        // definie sur le CharacterData du lanceur. Si elle est absente, on
+        // garde le fallback sur l'animation specifique au move.
         if (currentCharacterUnit != null)
         {
-            currentCharacterUnit.PlayPreparingAnimation(move?.preparingAnimation);
+            if (!currentCharacterUnit.StartPrepareToTargetAnimation())
+                currentCharacterUnit.PlayPreparingAnimation(move?.preparingAnimation);
         }
     }
 
@@ -3320,8 +3320,11 @@ public partial class NewBattleManager : MonoBehaviour
 
     public void ChangeBattleState(BattleState newState)
     {
+        BattleState previousState = currentBattleState;
         currentBattleState = newState;
         Debug.Log("Nouvel état de combat: " + newState);
+        if (IsTargetSelectionState(previousState) && !IsTargetSelectionState(newState))
+            currentCharacterUnit?.StopPrepareToTargetAnimation();
         UpdateCameraBehaviour(newState);
     }
 
