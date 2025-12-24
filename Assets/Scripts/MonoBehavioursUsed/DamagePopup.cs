@@ -5,8 +5,11 @@ public class DamagePopup : MonoBehaviour
 {
     [Header("Animation")]
     public float floatSpeed = 1f;
-    public float duration = 1.5f;
+    public float duration = 1f;
     public Vector3 offset = new Vector3(0, 2f, 0);
+    [SerializeField] private float bounceHeight = 0.35f;
+    [SerializeField] private float bounceFrequency = 2f;
+    [SerializeField] private float bounceScale = 0.2f;
 
     [Header("Références")]
     public TextMeshProUGUI textMesh; // Référence au texte affichant le montant
@@ -18,6 +21,9 @@ public class DamagePopup : MonoBehaviour
     private Transform target;
     private CharacterUnit targetUnit;
     private Camera battleCamera;
+    private Canvas popupCanvas;
+    private RectTransform rectTransform;
+    private RectTransform textRect;
 
     public void SetOwner(DamagePopupManager manager)
     {
@@ -46,6 +52,8 @@ public class DamagePopup : MonoBehaviour
 
         textMesh.text = text;
         textMesh.color = textColor;
+        textRect ??= textMesh.rectTransform;
+        textRect.localScale = Vector3.one;
 
         target = followTarget;
         if (target == null)
@@ -65,6 +73,31 @@ public class DamagePopup : MonoBehaviour
             return;
         }
 
+        rectTransform ??= GetComponent<RectTransform>();
+        if (rectTransform == null)
+        {
+            Debug.LogError("[DamagePopup] Aucun RectTransform disponible pour positionner le popup.");
+            Release();
+            return;
+        }
+
+        popupCanvas = GetComponent<Canvas>();
+        if (popupCanvas == null)
+            popupCanvas = GetComponentInParent<Canvas>();
+
+        if (popupCanvas == null)
+        {
+            Debug.LogWarning("[DamagePopup] Aucun Canvas trouvé pour positionner le popup.");
+            Release();
+            return;
+        }
+
+        if (popupCanvas.gameObject == gameObject)
+            popupCanvas.renderMode = RenderMode.ScreenSpaceCamera;
+
+        if (popupCanvas.renderMode == RenderMode.ScreenSpaceCamera)
+            popupCanvas.worldCamera = battleCamera;
+
         canvasGroup ??= GetComponent<CanvasGroup>();
         if (canvasGroup == null)
             canvasGroup = gameObject.AddComponent<CanvasGroup>();
@@ -79,28 +112,31 @@ public class DamagePopup : MonoBehaviour
 
     void Update()
     {
-        // Avancement de l'animation verticale
-        // Le popup doit flotter même lorsque le temps de jeu est figé (pause, ralenti).
-        floatOffset += floatSpeed * Time.unscaledDeltaTime;
+        if (duration <= 0f)
+        {
+            Release();
+            return;
+        }
 
-        // Met à jour la position à chaque frame
-        UpdatePosition();
-
-        // Fade out après 'duration'
         // Les effets d'interface utilisent le temps non-scalé pour rester visibles en pause.
         elapsed += Time.unscaledDeltaTime;
-        if (elapsed >= duration)
-        {
-            if (canvasGroup != null)
-            {
-                // Transition progressive vers la transparence afin d'éviter une disparition abrupte.
-                canvasGroup.alpha = Mathf.Lerp(1f, 0f, (elapsed - duration) / duration);
-            }
+        float t = Mathf.Clamp01(elapsed / duration);
 
-            // Lorsque l'opacité a disparu (ou qu'aucun CanvasGroup n'est présent), on détruit le popup.
-            if (canvasGroup == null || canvasGroup.alpha <= 0f)
-                Release();
-        }
+        float rise = floatSpeed * duration * t;
+        float bounce = Mathf.Sin(t * Mathf.PI * bounceFrequency) * bounceHeight * (1f - t);
+        floatOffset = rise + bounce;
+
+        if (textRect != null)
+            textRect.localScale = Vector3.one * (1f + bounceScale * Mathf.Sin(t * Mathf.PI));
+
+        // Met à jour la position à chaque frame.
+        UpdatePosition();
+
+        if (canvasGroup != null)
+            canvasGroup.alpha = Mathf.Clamp01(1f - t);
+
+        if (t >= 1f)
+            Release();
     }
 
     /// <summary>
@@ -108,7 +144,7 @@ public class DamagePopup : MonoBehaviour
     /// </summary>
     private void UpdatePosition()
     {
-        if (battleCamera == null || target == null)
+        if (battleCamera == null || target == null || popupCanvas == null)
             return;
 
         Vector3 anchor = target.position;
@@ -125,7 +161,12 @@ public class DamagePopup : MonoBehaviour
 
         screenPos.x = Mathf.Clamp(screenPos.x, 0f, Screen.width);
         screenPos.y = Mathf.Clamp(screenPos.y, 0f, Screen.height);
-        transform.position = screenPos;
+        RectTransform canvasRect = popupCanvas.transform as RectTransform;
+        if (canvasRect == null)
+            return;
+
+        if (RectTransformUtility.ScreenPointToWorldPointInRectangle(canvasRect, screenPos, popupCanvas.worldCamera, out Vector3 worldPoint))
+            rectTransform.position = worldPoint;
     }
 
     private void Release()
