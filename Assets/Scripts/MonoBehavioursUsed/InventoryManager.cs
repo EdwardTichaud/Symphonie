@@ -189,6 +189,42 @@ public class InventoryManager : MonoBehaviour
     private InputAction inventorySelectSubPanelLeftAction;
     private InputAction inventorySelectSubPanelRightAction;
     private InputAction inventoryNavigateAction;
+    private InputAction inventoryConfirmAction;
+    private InputAction inventoryCancelAction;
+
+    [Header("Inventaire - Colonnes et descriptions")]
+    [SerializeField] private string itemColumnSubPanelName = "Inventory_ItemSet_SubPanel";
+    [SerializeField] private string moveColumnSubPanelName = "Inventory_MusicalMovesSet_SubPanel";
+    [SerializeField] private string itemColumnTitle = "Items";
+    [SerializeField] private string moveColumnTitle = "Mouvements";
+    [SerializeField] private TMP_Text descriptionTitleText;
+    [SerializeField] private TMP_Text descriptionBodyText;
+    [SerializeField] private Image descriptionIcon;
+
+    private RectTransform itemSubPanelRect;
+    private RectTransform moveSubPanelRect;
+    private RectTransform itemContentRect;
+    private RectTransform moveContentRect;
+
+    private readonly Dictionary<RectTransform, InventoryEntry> slotEntries = new();
+    private readonly Dictionary<RectTransform, int> slotIndexByOwner = new();
+
+    private enum InventoryEntryType
+    {
+        Item,
+        Move
+    }
+
+    private struct InventoryEntry
+    {
+        public InventoryEntryType Type;
+        public ItemData Item;
+        public MusicalMoveSO Move;
+        public string DisplayName;
+        public string Description;
+        public Sprite Icon;
+        public int Quantity;
+    }
 
     private void Awake()
     {
@@ -291,6 +327,8 @@ public class InventoryManager : MonoBehaviour
 
         if (logAddition)
             Debug.Log($"[Inventory] Ajout de l'objet : {item.itemName} (x{quantity}).");
+
+        RefreshInventoryIfVisible();
     }
 
     /// <summary>
@@ -348,6 +386,7 @@ public class InventoryManager : MonoBehaviour
     public void RegisterItemUse(ItemData item)
     {
         inventoryData?.RegisterItemUse(item);
+        RefreshInventoryIfVisible();
     }
 
     /// <summary>
@@ -463,6 +502,8 @@ public class InventoryManager : MonoBehaviour
         inventorySelectSubPanelLeftAction = inventoryActions.SelectSubPanel_Left;
         inventorySelectSubPanelRightAction = inventoryActions.SelectSubPanel_Right;
         inventoryNavigateAction = inventoryActions.Navigate;
+        inventoryConfirmAction = inventoryActions.Confirm;
+        inventoryCancelAction = inventoryActions.Cancel;
 
         if (inventorySelectPanelLeftAction != null)
         {
@@ -504,6 +545,22 @@ public class InventoryManager : MonoBehaviour
                 inventoryNavigateAction.Enable();
 
             inventoryNavigateAction.performed += OnInventoryNavigate;
+        }
+
+        if (inventoryConfirmAction != null)
+        {
+            if (!inventoryConfirmAction.enabled)
+                inventoryConfirmAction.Enable();
+
+            inventoryConfirmAction.performed += OnInventoryConfirm;
+        }
+
+        if (inventoryCancelAction != null)
+        {
+            if (!inventoryCancelAction.enabled)
+                inventoryCancelAction.Enable();
+
+            inventoryCancelAction.performed += OnInventoryCancel;
         }
 
         inventoryActionsHooked = true;
@@ -555,6 +612,22 @@ public class InventoryManager : MonoBehaviour
             if (inventoryNavigateAction.enabled)
                 inventoryNavigateAction.Disable();
             inventoryNavigateAction = null;
+        }
+
+        if (inventoryConfirmAction != null)
+        {
+            inventoryConfirmAction.performed -= OnInventoryConfirm;
+            if (inventoryConfirmAction.enabled)
+                inventoryConfirmAction.Disable();
+            inventoryConfirmAction = null;
+        }
+
+        if (inventoryCancelAction != null)
+        {
+            inventoryCancelAction.performed -= OnInventoryCancel;
+            if (inventoryCancelAction.enabled)
+                inventoryCancelAction.Disable();
+            inventoryCancelAction = null;
         }
 
         inventoryActionsHooked = false;
@@ -647,27 +720,49 @@ public class InventoryManager : MonoBehaviour
         if (Time.unscaledTime < lastNavigationTime + navigationRepeatDelay)
             return;
 
-        int direction = 0;
-        if (Mathf.Abs(input.x) > Mathf.Abs(input.y))
+        bool horizontal = Mathf.Abs(input.x) > Mathf.Abs(input.y);
+        if (horizontal)
         {
             if (input.x > 0.5f)
-                direction = 1;
+                ChangeSubPanel(1);
             else if (input.x < -0.5f)
-                direction = -1;
+                ChangeSubPanel(-1);
+            else
+                return;
         }
         else
         {
             if (input.y > 0.5f)
-                direction = -1; // Vers le haut : slot précédent.
+                MoveSlotSelection(-1); // Vers le haut : slot précédent.
             else if (input.y < -0.5f)
-                direction = 1;  // Vers le bas : slot suivant.
+                MoveSlotSelection(1);  // Vers le bas : slot suivant.
+            else
+                return;
         }
 
-        if (direction == 0)
+        lastNavigationTime = Time.unscaledTime;
+    }
+
+    private void OnInventoryConfirm(InputAction.CallbackContext context)
+    {
+        if (!context.performed || !isInventoryVisible)
             return;
 
-        MoveSlotSelection(direction);
-        lastNavigationTime = Time.unscaledTime;
+        if (!TryGetEntryForSlot(currentSlotRect, out var entry))
+            return;
+
+        if (HasDescriptionUI())
+            return;
+
+        InfoBoxManager.Instance?.OpenInfoBox(entry.DisplayName, entry.Description, entry.Icon);
+    }
+
+    private void OnInventoryCancel(InputAction.CallbackContext context)
+    {
+        if (!context.performed || !isInventoryVisible)
+            return;
+
+        SetInventoryVisibility(false);
     }
 
     /// <summary>
@@ -752,6 +847,18 @@ public class InventoryManager : MonoBehaviour
         inventoryFadeRoutine = StartCoroutine(FadeInventoryCanvas(targetAlpha, visible));
     }
 
+    private void RefreshInventoryIfVisible()
+    {
+        if (!isInventoryVisible)
+            return;
+
+        RefreshInventoryColumns();
+        RebuildNavigationCaches();
+
+        if (currentPanelRect != null)
+            RefreshSlotSelection(true);
+    }
+
     /// <summary>
     /// Coroutine responsable de l'interpolation de l'alpha du CanvasGroup.
     /// </summary>
@@ -803,6 +910,7 @@ public class InventoryManager : MonoBehaviour
         currentSlotRect = null;
         lastNavigationTime = Time.unscaledTime - navigationRepeatDelay;
 
+        RefreshInventoryColumns();
         RebuildNavigationCaches();
 
         if (orderedPanels.Count == 0)
@@ -832,6 +940,9 @@ public class InventoryManager : MonoBehaviour
         orderedPanels.Clear();
         orderedSubPanels.Clear();
         orderedSlots.Clear();
+        slotEntries.Clear();
+        slotIndexByOwner.Clear();
+        ClearSelectionDetails();
 
         if (panelCursorRect != null)
             panelCursorRect.gameObject.SetActive(false);
@@ -885,6 +996,253 @@ public class InventoryManager : MonoBehaviour
                     orderedSlots[sub] = BuildSlotList(sub);
             }
         }
+    }
+
+    private void RefreshInventoryColumns()
+    {
+        EnsureColumnReferences();
+        slotEntries.Clear();
+
+        UpdateColumnTitle(itemSubPanelRect, itemColumnTitle);
+        UpdateColumnTitle(moveSubPanelRect, moveColumnTitle);
+
+        PopulateColumn(itemContentRect, BuildItemEntries());
+        PopulateColumn(moveContentRect, BuildMoveEntries());
+
+        orderedSlots.Clear();
+    }
+
+    private void EnsureColumnReferences()
+    {
+        if (!string.IsNullOrEmpty(itemColumnSubPanelName))
+            itemSubPanelRect ??= FindRectTransformInChildren(itemColumnSubPanelName);
+        if (!string.IsNullOrEmpty(moveColumnSubPanelName))
+            moveSubPanelRect ??= FindRectTransformInChildren(moveColumnSubPanelName);
+
+        itemContentRect ??= FindContentTransform(itemSubPanelRect);
+        moveContentRect ??= FindContentTransform(moveSubPanelRect);
+    }
+
+    private void UpdateColumnTitle(RectTransform subPanel, string title)
+    {
+        if (subPanel == null || string.IsNullOrEmpty(title))
+            return;
+
+        var titleTransform = subPanel.Find("IMM_Title");
+        if (titleTransform == null)
+            return;
+
+        if (titleTransform.TryGetComponent(out TMP_Text titleText))
+            titleText.text = title;
+    }
+
+    private List<InventoryEntry> BuildItemEntries()
+    {
+        var entries = new List<InventoryEntry>();
+        var stacks = ItemStacks ?? Array.Empty<InventoryItemStack>();
+
+        foreach (var stack in stacks)
+        {
+            if (stack == null || stack.item == null || stack.quantity <= 0)
+                continue;
+
+            string name = string.IsNullOrWhiteSpace(stack.item.itemName) ? stack.item.name : stack.item.itemName;
+            string display = stack.quantity > 1 ? $"{name} x{stack.quantity}" : name;
+
+            entries.Add(new InventoryEntry
+            {
+                Type = InventoryEntryType.Item,
+                Item = stack.item,
+                DisplayName = display,
+                Description = stack.item.description ?? string.Empty,
+                Icon = stack.item.itemIcon,
+                Quantity = stack.quantity
+            });
+        }
+
+        entries.Sort((a, b) => string.Compare(a.Item?.itemName ?? a.DisplayName, b.Item?.itemName ?? b.DisplayName, StringComparison.OrdinalIgnoreCase));
+        return entries;
+    }
+
+    private List<InventoryEntry> BuildMoveEntries()
+    {
+        var entries = new List<InventoryEntry>();
+        var codex = MusicalCodexManager.Instance;
+        var moves = codex != null ? codex.knownMoves : null;
+
+        if (moves != null)
+        {
+            var unique = new HashSet<MusicalMoveSO>();
+            foreach (var move in moves)
+            {
+                if (move == null || !unique.Add(move))
+                    continue;
+
+                string displayName = string.IsNullOrWhiteSpace(move.moveName) ? move.name : move.moveName;
+                entries.Add(new InventoryEntry
+                {
+                    Type = InventoryEntryType.Move,
+                    Move = move,
+                    DisplayName = displayName,
+                    Description = move.description ?? string.Empty,
+                    Icon = move.moveIcon
+                });
+            }
+        }
+
+        entries.Sort((a, b) => string.Compare(a.DisplayName, b.DisplayName, StringComparison.OrdinalIgnoreCase));
+        return entries;
+    }
+
+    private void PopulateColumn(RectTransform content, List<InventoryEntry> entries)
+    {
+        if (content == null)
+            return;
+
+        EnsureSlotCount(content, entries.Count);
+        var slots = GetSlotsFromContent(content);
+
+        for (int i = 0; i < slots.Count; i++)
+        {
+            var slot = slots[i];
+            if (slot == null)
+                continue;
+
+            if (i < entries.Count)
+            {
+                slot.gameObject.SetActive(true);
+                ApplySlotVisuals(slot, entries[i]);
+                slotEntries[slot] = entries[i];
+            }
+            else
+            {
+                slot.gameObject.SetActive(false);
+                slotEntries.Remove(slot);
+            }
+        }
+    }
+
+    private static List<RectTransform> GetSlotsFromContent(RectTransform content)
+    {
+        var slots = new List<RectTransform>();
+        if (content == null)
+            return slots;
+
+        for (int i = 0; i < content.childCount; i++)
+        {
+            if (content.GetChild(i) is RectTransform rect)
+                slots.Add(rect);
+        }
+
+        return slots;
+    }
+
+    private void EnsureSlotCount(RectTransform content, int required)
+    {
+        if (required <= 0 || content == null)
+            return;
+
+        var slots = GetSlotsFromContent(content);
+        if (slots.Count == 0)
+        {
+            Debug.LogWarning("[InventoryManager] Aucun slot disponible pour peupler l'inventaire.");
+            return;
+        }
+
+        var template = slots[0];
+        while (slots.Count < required)
+        {
+            var clone = Instantiate(template, content);
+            clone.name = $"{template.name}_{slots.Count}";
+            slots.Add(clone);
+        }
+    }
+
+    private void ApplySlotVisuals(RectTransform slot, InventoryEntry entry)
+    {
+        if (slot == null)
+            return;
+
+        var label = slot.GetComponentInChildren<TMP_Text>(true);
+        if (label != null)
+            label.text = entry.DisplayName;
+
+        var icon = FindSlotIcon(slot);
+        if (icon != null)
+        {
+            icon.sprite = entry.Icon;
+            icon.enabled = entry.Icon != null;
+        }
+    }
+
+    private static Image FindSlotIcon(RectTransform slot)
+    {
+        if (slot == null)
+            return null;
+
+        var images = slot.GetComponentsInChildren<Image>(true);
+        foreach (var image in images)
+        {
+            if (image == null)
+                continue;
+
+            if (image.gameObject.name.IndexOf("Icon", StringComparison.OrdinalIgnoreCase) >= 0)
+                return image;
+        }
+
+        return null;
+    }
+
+    private bool TryGetEntryForSlot(RectTransform slot, out InventoryEntry entry)
+    {
+        if (slot != null && slotEntries.TryGetValue(slot, out entry))
+            return true;
+
+        entry = default;
+        return false;
+    }
+
+    private bool HasDescriptionUI() =>
+        descriptionTitleText != null || descriptionBodyText != null || descriptionIcon != null;
+
+    private void UpdateSelectionDetails()
+    {
+        if (!TryGetEntryForSlot(currentSlotRect, out var entry))
+        {
+            ClearSelectionDetails();
+            return;
+        }
+
+        if (descriptionTitleText != null)
+            descriptionTitleText.text = entry.DisplayName ?? string.Empty;
+
+        if (descriptionBodyText != null)
+            descriptionBodyText.text = entry.Description ?? string.Empty;
+
+        if (descriptionIcon != null)
+        {
+            if (entry.Icon != null)
+            {
+                descriptionIcon.sprite = entry.Icon;
+                descriptionIcon.gameObject.SetActive(true);
+            }
+            else
+            {
+                descriptionIcon.gameObject.SetActive(false);
+            }
+        }
+    }
+
+    private void ClearSelectionDetails()
+    {
+        if (descriptionTitleText != null)
+            descriptionTitleText.text = string.Empty;
+
+        if (descriptionBodyText != null)
+            descriptionBodyText.text = string.Empty;
+
+        if (descriptionIcon != null)
+            descriptionIcon.gameObject.SetActive(false);
     }
 
     /// <summary>
@@ -955,8 +1313,28 @@ public class InventoryManager : MonoBehaviour
         }
 
         UpdateSubPanelCursor();
-        currentSlotIndex = 0;
-        RefreshSlotSelection(false);
+        RestoreSlotIndexForOwner(currentSubPanelRect);
+        RefreshSlotSelection(true);
+    }
+
+    private RectTransform GetCurrentSlotOwner() =>
+        currentSubPanelRect != null ? currentSubPanelRect : currentPanelRect;
+
+    private void StoreSlotIndexForOwner()
+    {
+        var owner = GetCurrentSlotOwner();
+        if (owner == null || currentSlotIndex < 0)
+            return;
+
+        slotIndexByOwner[owner] = currentSlotIndex;
+    }
+
+    private void RestoreSlotIndexForOwner(RectTransform owner)
+    {
+        if (owner != null && slotIndexByOwner.TryGetValue(owner, out int index))
+            currentSlotIndex = index;
+        else
+            currentSlotIndex = 0;
     }
 
     /// <summary>
@@ -967,6 +1345,7 @@ public class InventoryManager : MonoBehaviour
         if (orderedPanels.Count == 0)
             return;
 
+        StoreSlotIndexForOwner();
         currentPanelIndex = WrapIndex(currentPanelIndex + direction, orderedPanels.Count);
         currentPanelRect = orderedPanels[currentPanelIndex];
         UpdatePanelCursor();
@@ -984,11 +1363,12 @@ public class InventoryManager : MonoBehaviour
         if (!orderedSubPanels.TryGetValue(currentPanelRect, out var subPanels) || subPanels == null || subPanels.Count == 0)
             return;
 
+        StoreSlotIndexForOwner();
         currentSubPanelIndex = WrapIndex(currentSubPanelIndex + direction, subPanels.Count);
         currentSubPanelRect = subPanels[currentSubPanelIndex];
         UpdateSubPanelCursor();
-        currentSlotIndex = 0;
-        RefreshSlotSelection(false);
+        RestoreSlotIndexForOwner(currentSubPanelRect);
+        RefreshSlotSelection(true);
     }
 
     /// <summary>
@@ -1047,6 +1427,7 @@ public class InventoryManager : MonoBehaviour
             currentSlotRect = null;
             currentSlotIndex = -1;
             UpdateSlotCursor();
+            UpdateSelectionDetails();
             return;
         }
 
@@ -1056,6 +1437,8 @@ public class InventoryManager : MonoBehaviour
         currentSlotRect = slots[Mathf.Clamp(currentSlotIndex, 0, slots.Count - 1)];
         currentSlotIndex = Mathf.Clamp(currentSlotIndex, 0, slots.Count - 1);
         UpdateSlotCursor();
+        StoreSlotIndexForOwner();
+        UpdateSelectionDetails();
     }
 
     /// <summary>
@@ -1086,6 +1469,8 @@ public class InventoryManager : MonoBehaviour
         currentSlotIndex = WrapIndex(currentSlotIndex + direction, slots.Count);
         currentSlotRect = slots[currentSlotIndex];
         UpdateSlotCursor();
+        StoreSlotIndexForOwner();
+        UpdateSelectionDetails();
     }
 
     /// <summary>

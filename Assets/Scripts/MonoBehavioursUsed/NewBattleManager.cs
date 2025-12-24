@@ -2161,7 +2161,7 @@ public partial class NewBattleManager : MonoBehaviour
         if (unit == null || unit.Data == null || clip == null)
             return;
 
-        AudioManager.Instance?.PlayVoice(clip);
+        AudioManager.Instance?.PlayVoice(clip, unit.Data.characterName);
     }
 
     private void SetButtonAvailability(Transform slot, bool available, bool highlight = false)

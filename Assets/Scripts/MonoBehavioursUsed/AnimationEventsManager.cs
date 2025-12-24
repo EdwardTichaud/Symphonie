@@ -75,7 +75,9 @@ public class AnimationEventsManager : MonoBehaviour
     {
         if (audioClip != null)
         {
-            AudioManager.Instance?.PlayVoice(audioClip);
+            CharacterUnit speaker = GetComponentInParent<CharacterUnit>();
+            string speakerName = speaker != null && speaker.Data != null ? speaker.Data.characterName : null;
+            AudioManager.Instance?.PlayVoice(audioClip, speakerName);
         }
         else
         {

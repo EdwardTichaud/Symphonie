@@ -36,6 +36,10 @@ public class DialogueManager : MonoBehaviour
     private bool skipRequested = false;     // pour terminer instantanément la frappe en cours
     private bool nextRequested = false;     // pour passer à la ligne suivante (mode manuel) si pas en frappe
 
+    // Sous-titres de voix-off
+    private Coroutine subtitleRoutine;
+    private bool isSubtitleActive;
+
     // Singleton
     public static DialogueManager Instance { get; private set; }
 
@@ -133,6 +137,8 @@ public class DialogueManager : MonoBehaviour
         isTyping = false;
         skipRequested = false;
         nextRequested = false;
+        isSubtitleActive = false;
+        subtitleRoutine = null;
 
         // Réinitialise complètement les informations de séquence en cours.
         sequence.Clear();
@@ -154,6 +160,80 @@ public class DialogueManager : MonoBehaviour
         // Réutilise la logique centralisée afin de garantir que tous les
         // états internes et contrôles joueur sont correctement réinitialisés.
         ResetDialogueState();
+    }
+
+    //==============================================================
+    // API publique : SOUS-TITRES (VOIX-OFF)
+    //==============================================================
+
+    /// <summary>
+    /// Affiche un sous-titre temporaire sans bloquer les contrôles joueur.
+    /// </summary>
+    public void ShowSubtitle(string speakerName, string text, float duration, bool useUnscaledTime = true)
+    {
+        if (!Application.isPlaying)
+            return;
+
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        if (inSequence || (isOpen && !isSubtitleActive))
+            return;
+
+        if (subtitleRoutine != null)
+        {
+            StopCoroutine(subtitleRoutine);
+            subtitleRoutine = null;
+        }
+
+        subtitleRoutine = StartCoroutine(ShowSubtitleRoutine(speakerName, text, duration, useUnscaledTime));
+    }
+
+    public void CloseSubtitleIfActive()
+    {
+        if (!isSubtitleActive)
+            return;
+
+        if (subtitleRoutine != null)
+        {
+            StopCoroutine(subtitleRoutine);
+            subtitleRoutine = null;
+        }
+
+        GetComponentInChildren<Animator>()?.Play("DialogueBoxClose");
+        isOpen = false;
+        isSubtitleActive = false;
+        RestoreContinueButtonVisibility();
+    }
+
+    private IEnumerator ShowSubtitleRoutine(string speakerName, string text, float duration, bool useUnscaledTime)
+    {
+        isSubtitleActive = true;
+        GetComponentInChildren<Animator>()?.Play("DialogueBoxOpen");
+        isOpen = true;
+        SetContinueButtonVisibility(false);
+
+        yield return null;
+
+        nameText.text = ResolveTokens(speakerName ?? string.Empty);
+        dialogueText.text = ResolveTokens(text);
+
+        float targetDuration = Mathf.Max(0f, duration);
+        if (targetDuration <= 0f)
+            targetDuration = Mathf.Clamp((text?.Length ?? 0) * 0.04f, 0.5f, 4f);
+
+        float t = 0f;
+        while (t < targetDuration)
+        {
+            t += useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;
+            yield return null;
+        }
+
+        GetComponentInChildren<Animator>()?.Play("DialogueBoxClose");
+        isOpen = false;
+        isSubtitleActive = false;
+        subtitleRoutine = null;
+        RestoreContinueButtonVisibility();
     }
 
     //==============================================================

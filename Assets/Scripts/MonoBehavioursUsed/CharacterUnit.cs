@@ -1544,7 +1544,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (clip == null)
             return;
 
-        AudioManager.Instance?.PlayVoice(clip);
+        AudioManager.Instance?.PlayVoice(clip, Data.characterName);
     }
 
     /// <summary>
@@ -1617,7 +1617,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         CharacterUnit randomAlly = allies[UnityEngine.Random.Range(0, allies.Count)];
         AudioClipSO clip = GetWeepClip(randomAlly.Data, Data.characterName);
         if (clip != null)
-            AudioManager.Instance?.PlayVoice(clip);
+            AudioManager.Instance?.PlayVoice(clip, randomAlly.Data.characterName);
     }
 
     AudioClipSO GetWeepClip(CharacterData allyData, string deadName)
@@ -1638,7 +1638,12 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// </summary>
     public void Heal(float amount)
     {
+        float previousHP = currentHP;
         currentHP = Mathf.Min(currentHP + amount, Data.baseHP + currentVitality);
+
+        int healed = Mathf.RoundToInt(currentHP - previousHP);
+        if (healed > 0)
+            DamagePopupManager.Instance?.ShowHeal(transform, healed);
     }
 
     /// <summary>

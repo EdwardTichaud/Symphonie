@@ -104,6 +104,8 @@ public static class ItemEffectExecutor
         target.currentHP = Mathf.Clamp(amount, 0f, maxHP);
         if (target.hpBar != null)
             target.hpBar.SetValue(target.currentHP);
+
+        DamagePopupManager.Instance?.ShowHeal(target.transform, Mathf.RoundToInt(target.currentHP));
     }
 
     private static void ApplyBuff(ItemData item, CharacterUnit target)

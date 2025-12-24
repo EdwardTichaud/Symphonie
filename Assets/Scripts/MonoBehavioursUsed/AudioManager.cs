@@ -1319,12 +1319,23 @@ public class AudioManager : MonoBehaviour
     /// </summary>
     public void PlayVoice(AudioClipSO clipAsset, float volumeMultiplier = 1f)
     {
+        PlayVoice(clipAsset, null, volumeMultiplier);
+    }
+
+    public void PlayVoice(AudioClipSO clipAsset, string speakerName, float volumeMultiplier = 1f)
+    {
         if (clipAsset == null)
+            return;
+
+        AudioClip clip = ResolveClip(clipAsset);
+        if (clip == null)
             return;
 
         float baseVolume = ResolveVolume(clipAsset);
         float finalVolume = Mathf.Clamp01(baseVolume * Mathf.Clamp01(volumeMultiplier));
-        PlayVoice(ResolveClip(clipAsset), finalVolume, ResolveLoop(clipAsset));
+
+        TryShowVoiceOverSubtitles(clipAsset, speakerName);
+        PlayVoice(clip, finalVolume, ResolveLoop(clipAsset));
     }
 
     public void PlayVoice(AudioClip clip, float volume = DefaultVolume, bool loop = DefaultLoop)
@@ -1350,6 +1361,30 @@ public class AudioManager : MonoBehaviour
 
         if (!loop)
             StartCoroutine(DestroySourceWhenFinished(src, activeVoiceHandles, handle));
+    }
+
+    private void TryShowVoiceOverSubtitles(AudioClipSO clipAsset, string speakerName)
+    {
+        if (clipAsset == null)
+            return;
+
+        if (clipAsset.type != AudioClipSO.AudioClipType.VoiceOver)
+            return;
+
+        if (DialogueManager.Instance == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(clipAsset.subtitles))
+        {
+            DialogueManager.Instance.CloseSubtitleIfActive();
+            return;
+        }
+
+        float duration = clipAsset.Length;
+        if (duration <= 0f)
+            duration = Mathf.Clamp(clipAsset.subtitles.Length * 0.04f, 0.5f, 4f);
+
+        DialogueManager.Instance.ShowSubtitle(speakerName, clipAsset.subtitles, duration);
     }
 
     /// <summary>

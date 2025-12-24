@@ -24,6 +24,7 @@ public class InfoBoxManager : MonoBehaviour
     public bool? choix = null; // null = pas encore choisi, true = oui, false = non
 
     public static InfoBoxManager Instance { get; private set; }
+    private readonly List<InputActionMap> mapsBeforeInfoBox = new();
 
     private void Awake()
     {
@@ -57,7 +58,18 @@ public class InfoBoxManager : MonoBehaviour
             infoImage.gameObject.SetActive(false);
         }
 
-        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get(), InputsManager.Instance.playerInputs.InfoBox.Get());
+        var inputs = InputsManager.Instance;
+        if (inputs != null && inputs.playerInputs != null)
+        {
+            mapsBeforeInfoBox.Clear();
+            foreach (var map in inputs.playerInputs.asset.actionMaps)
+            {
+                if (map != null && map.enabled)
+                    mapsBeforeInfoBox.Add(map);
+            }
+
+            inputs.ActivateOnly(inputs.playerInputs.InfoBox.Get());
+        }
 
         var infoBox = InputsManager.Instance.playerInputs.InfoBox;
         infoBox.Confirm.canceled += OnConfirm;
@@ -69,7 +81,16 @@ public class InfoBoxManager : MonoBehaviour
         isOpen = false;
         animator?.SetBool("isOpen", false);
 
-        InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
+        var inputs = InputsManager.Instance;
+        if (inputs != null && inputs.playerInputs != null)
+        {
+            if (mapsBeforeInfoBox.Count > 0)
+                inputs.ActivateOnly(mapsBeforeInfoBox.ToArray());
+            else
+                inputs.ActivateOnly(inputs.playerInputs.World.Get());
+        }
+
+        mapsBeforeInfoBox.Clear();
 
         var infoBox = InputsManager.Instance.playerInputs.InfoBox;
         infoBox.Confirm.canceled -= OnConfirm;

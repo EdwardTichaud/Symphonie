@@ -110,7 +110,9 @@ public class PlayerDetection : MonoBehaviour
             AudioClipSO clip = firstDetectionVoices[UnityEngine.Random.Range(0, firstDetectionVoices.Count)];
 
             // Lecture du clip avec le volume choisi dans l'inspecteur
-            AudioManager.Instance?.PlayVoice(clip, firstDetectionVoiceVolume);
+            CharacterUnit speaker = GetComponentInParent<CharacterUnit>();
+            string speakerName = speaker != null && speaker.Data != null ? speaker.Data.characterName : null;
+            AudioManager.Instance?.PlayVoice(clip, speakerName, firstDetectionVoiceVolume);
 
             // On mémorise que la première détection a eu lieu afin de ne pas répéter la voix
             firstEnemyDetected = true;

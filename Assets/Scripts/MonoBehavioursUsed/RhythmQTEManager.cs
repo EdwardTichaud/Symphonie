@@ -382,7 +382,7 @@ public class RhythmQTEManager : MonoBehaviour
         {
             if (!tauntPlayed && isActive && caster != null)
             {
-                StartCoroutine(PlayTauntWithDelay(caster.Data.prematureDeathTaunt, 1f));
+                StartCoroutine(PlayTauntWithDelay(caster, caster.Data.prematureDeathTaunt, 1f));
                 tauntPlayed = true;
             }
         };
@@ -1703,10 +1703,11 @@ public class RhythmQTEManager : MonoBehaviour
         return first != null ? first.transform : null;
     }
 
-    private IEnumerator PlayTauntWithDelay(AudioClipSO clip, float delay)
+    private IEnumerator PlayTauntWithDelay(CharacterUnit caster, AudioClipSO clip, float delay)
     {
         yield return new WaitForSecondsRealtime(delay);
-        AudioManager.Instance?.PlayVoice(clip);
+        string speakerName = caster != null && caster.Data != null ? caster.Data.characterName : null;
+        AudioManager.Instance?.PlayVoice(clip, speakerName);
     }
 
     /// <summary>

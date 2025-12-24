@@ -126,6 +126,8 @@ public class CharacterStatusEffectController : MonoBehaviour
         float baseValue = GetBaseStat(stat);
         float delta = isPercentage ? baseValue * amount / 100f : amount;
         ApplyModifier(stat, delta, duration);
+
+        DamagePopupManager.Instance?.ShowBuff(owner.transform, stat, amount, isPercentage);
     }
 
     private void ApplyDebuffInternal(DebuffStatType stat, int amount, float duration, bool isPercentage)
@@ -137,6 +139,8 @@ public class CharacterStatusEffectController : MonoBehaviour
         float delta = isPercentage ? baseValue * amount / 100f : amount;
         // Un débuff est simplement un buff négatif : on applique la valeur inverse.
         ApplyModifier((BuffStatType)stat, -delta, duration);
+
+        DamagePopupManager.Instance?.ShowDebuff(owner.transform, stat, amount, isPercentage);
     }
 
     private void ApplyInterceptionImmunityInternal(int turns)
@@ -179,6 +183,8 @@ public class CharacterStatusEffectController : MonoBehaviour
         if (sleep == null)
             sleep = owner.gameObject.AddComponent<SleepStatus>();
         sleep.Sleep(turns);
+
+        DamagePopupManager.Instance?.ShowStatus(owner.transform, "Sommeil", false);
     }
 
     private void ApplyStunInternal(int turns)
@@ -190,6 +196,8 @@ public class CharacterStatusEffectController : MonoBehaviour
         if (stunned == null)
             stunned = owner.gameObject.AddComponent<StunnedStatus>();
         stunned.Stun(Mathf.Max(1, turns));
+
+        DamagePopupManager.Instance?.ShowStatus(owner.transform, "Etourdi", false);
     }
 
     private void RemoveSleepInternal()

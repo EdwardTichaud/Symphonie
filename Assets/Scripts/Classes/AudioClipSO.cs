@@ -24,6 +24,9 @@ public class AudioClipSO : ScriptableObject
     public string title;
     public string compositor;
 
+    [TextArea]
+    public string subtitles;
+
     [Header("Paramètres de lecture par défaut")]
     [Range(0f, 1f)]
     [Tooltip("Volume appliqué par défaut lorsque ce clip est joué.")]

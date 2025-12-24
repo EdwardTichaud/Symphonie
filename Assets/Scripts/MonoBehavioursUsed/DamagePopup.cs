@@ -12,12 +12,12 @@ public class DamagePopup : MonoBehaviour
     public TextMeshProUGUI textMesh; // Référence au texte affichant le montant
 
     private float elapsed = 0f;        // Temps écoulé depuis l'initialisation pour piloter le fondu
-    private float floatOffset = 0f;    // Décalage vertical cumulé appliqué au centre de l'écran
+    private float floatOffset = 0f;    // Décalage vertical cumulé appliqué au-dessus de la cible
     private CanvasGroup canvasGroup;   // Permet de faire disparaître progressivement le popup
-    private RectTransform rectTransform; // Accès rapide au RectTransform pour manipuler l'overlay
-    private Vector2 baseAnchoredPosition; // Position de référence (en pixels) par rapport au centre du Canvas
-    private Vector3 baseWorldPosition;    // Fallback si le popup est utilisé hors Canvas (World Space par exemple)
     private DamagePopupManager owner;
+    private Transform target;
+    private CharacterUnit targetUnit;
+    private Camera battleCamera;
 
     public void SetOwner(DamagePopupManager manager)
     {
@@ -25,43 +25,53 @@ public class DamagePopup : MonoBehaviour
     }
 
     /// <summary>
-    /// Initialise le popup avec un montant et la cible à suivre.
+    /// Initialise le popup avec un texte et la cible à suivre.
     /// </summary>
-    /// <param name="amount">Montant de dégâts à afficher.</param>
-    /// <param name="followTarget">Transform de l'unité concernée (désormais ignoré car l'affichage est centré).</param>
-    public void Initialize(int amount, Transform followTarget)
+    /// <param name="text">Texte à afficher (dégâts, soins, buff...).</param>
+    /// <param name="followTarget">Transform de l'unité concernée.</param>
+    /// <param name="cameraOverride">Caméra utilisée pour la conversion Monde/Ecran.</param>
+    /// <param name="textColor">Couleur du texte.</param>
+    public void Initialize(string text, Transform followTarget, Camera cameraOverride, Color textColor)
     {
-        textMesh.text = amount.ToString();
-        canvasGroup ??= GetComponent<CanvasGroup>();
-        if (canvasGroup == null)
+        if (textMesh == null)
         {
-            // Assure une valeur cohérente même si le prefab n'a pas de CanvasGroup ; dans ce cas on
-            // ne fera qu'afficher/supprimer le popup sans fondu.
-            Debug.LogWarning("[DamagePopup] Aucun CanvasGroup détecté, le fondu sera désactivé.");
+            textMesh = GetComponentInChildren<TextMeshProUGUI>();
+            if (textMesh == null)
+            {
+                Debug.LogError("[DamagePopup] Aucun TextMeshProUGUI trouvé sur le prefab.");
+                Release();
+                return;
+            }
         }
 
-        rectTransform ??= GetComponent<RectTransform>();
-        if (rectTransform != null)
+        textMesh.text = text;
+        textMesh.color = textColor;
+
+        target = followTarget;
+        if (target == null)
         {
-            // Mémorise la position initiale afin de pouvoir y revenir si l'on souhaite modifier
-            // dynamiquement la mise en page depuis l'éditeur. En pratique, nous centrons le popup
-            // sur l'écran pour obtenir un vrai overlay.
-            baseAnchoredPosition = Vector2.zero;
-            rectTransform.anchoredPosition = baseAnchoredPosition + new Vector2(offset.x, offset.y);
-            rectTransform.localScale = Vector3.one; // Garantit l'absence de distorsion héritée du parent.
+            Debug.LogWarning("[DamagePopup] Cible manquante, affichage annulé.");
+            Release();
+            return;
         }
-        else
+
+        targetUnit = target.GetComponent<CharacterUnit>() ?? target.GetComponentInParent<CharacterUnit>();
+
+        battleCamera = cameraOverride != null ? cameraOverride : ResolveBattleCamera();
+        if (battleCamera == null)
         {
-            // Cas de secours si le prefab est encore utilisé dans un contexte "World Space".
-            // On se base alors sur la position locale de l'objet pour assurer un centrage relatif.
-            baseWorldPosition = Vector3.zero;
-            transform.localPosition = baseWorldPosition + new Vector3(offset.x, offset.y, offset.z);
+            Debug.LogWarning("[DamagePopup] Aucune caméra disponible pour positionner le popup.");
+            Release();
+            return;
         }
+
+        canvasGroup ??= GetComponent<CanvasGroup>();
+        if (canvasGroup == null)
+            canvasGroup = gameObject.AddComponent<CanvasGroup>();
 
         elapsed = 0f;
         floatOffset = 0f;
-        if (canvasGroup != null)
-            canvasGroup.alpha = 1f;
+        canvasGroup.alpha = 1f;
 
         // Position initiale avant la première mise à jour (indispensable pour appliquer l'offset).
         UpdatePosition();
@@ -98,21 +108,24 @@ public class DamagePopup : MonoBehaviour
     /// </summary>
     private void UpdatePosition()
     {
-        if (rectTransform != null)
+        if (battleCamera == null || target == null)
+            return;
+
+        Vector3 anchor = target.position;
+        if (targetUnit != null)
         {
-            // En mode Overlay (Canvas en Screen Space), on applique un décalage vertical progressif
-            // afin de donner une impression de mouvement vers le haut tout en restant au centre.
-            Vector2 verticalDisplacement = new Vector2(0f, floatOffset);
-            Vector2 staticOffset = new Vector2(offset.x, offset.y);
-            rectTransform.anchoredPosition = baseAnchoredPosition + staticOffset + verticalDisplacement;
+            Bounds bounds = targetUnit.GetVisualBounds();
+            anchor = bounds.center + Vector3.up * bounds.extents.y;
         }
-        else
-        {
-            // Fallback pour les anciens prefabs en World Space : on reproduit un comportement
-            // similaire en manipulant la position locale sans dépendre d'une caméra.
-            Vector3 worldOffset = new Vector3(offset.x, offset.y + floatOffset, offset.z);
-            transform.localPosition = baseWorldPosition + worldOffset;
-        }
+
+        Vector3 worldPos = anchor + offset + Vector3.up * floatOffset;
+        Vector3 screenPos = battleCamera.WorldToScreenPoint(worldPos);
+        if (screenPos.z < 0f)
+            return;
+
+        screenPos.x = Mathf.Clamp(screenPos.x, 0f, Screen.width);
+        screenPos.y = Mathf.Clamp(screenPos.y, 0f, Screen.height);
+        transform.position = screenPos;
     }
 
     private void Release()
@@ -121,5 +134,14 @@ public class DamagePopup : MonoBehaviour
             owner.ReleasePopup(this);
         else
             Destroy(gameObject);
+    }
+
+    private Camera ResolveBattleCamera()
+    {
+        GameObject battleCameraGO = GameObject.FindGameObjectWithTag("BattleCamera");
+        if (battleCameraGO != null)
+            return battleCameraGO.GetComponent<Camera>();
+
+        return Camera.main;
     }
 }
