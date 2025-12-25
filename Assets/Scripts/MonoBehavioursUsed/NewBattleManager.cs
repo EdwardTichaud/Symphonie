@@ -2505,18 +2505,13 @@ public partial class NewBattleManager : MonoBehaviour
         currentMove = move;
         currentItem = null; // on annule la sélection d'item précédente
         currentMoveIsBasicAttack = isBasicAttack;
-        move.targetType = move.defaultTargetType;
-        // Détermine s'il est possible de changer de groupe de cibles
-        bool canTargetEnemies = move.targetTypes.Contains(TargetType.SingleEnemy)
-                               || move.targetTypes.Contains(TargetType.AllEnemies)
-                               || move.targetTypes.Contains(TargetType.All);
-        bool canTargetAllies = move.targetTypes.Contains(TargetType.SingleAlly)
-                              || move.targetTypes.Contains(TargetType.AllAllies)
-                              || move.targetTypes.Contains(TargetType.All);
-        bool allowGroupSwitch = canTargetEnemies && canTargetAllies;
+        bool allowGroupSwitch = false;
+        TargetType selectionType = move != null ? move.targetType : TargetType.SingleEnemy;
+        TargetType defaultType = move != null ? move.defaultTargetType : selectionType;
+        CharacterUnit defaultTarget = ResolveDefaultMoveTarget(currentCharacterUnit, selectionType, defaultType);
         // Feedback audio unique pour signifier le passage en mode ciblage.
         PlayMenuClip(targetSelectionClip);
-        switch (move.defaultTargetType)
+        switch (selectionType)
         {
             case TargetType.Self:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
@@ -2525,38 +2520,34 @@ public partial class NewBattleManager : MonoBehaviour
 
             case TargetType.SingleEnemy:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill);
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
+                currentTargetCharacter = defaultTarget;
                 break;
 
             case TargetType.AllEnemies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
+                currentTargetCharacter = defaultTarget;
                 break;
 
             case TargetType.SingleAlly:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetCharacter = defaultTarget;
                 break;
 
             case TargetType.AllAllies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetCharacter = defaultTarget;
                 break;
 
             case TargetType.All:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
-                currentTargetCharacter = activeCharacterUnits.FirstOrDefault(u => u.currentHP > 0);
+                currentTargetCharacter = defaultTarget ?? activeCharacterUnits.FirstOrDefault(u => u.currentHP > 0);
                 break;
 
             default:
-                Debug.LogWarning($"[BattleTurnManager] Type de cible par défaut non géré : {move.defaultTargetType}");
+                Debug.LogWarning($"[BattleTurnManager] Type de cible non géré : {selectionType}");
                 return;
         }
-        currentTargetIndex = 0;
+        SyncCurrentTargetIndex(currentTargetCharacter);
 
         // Affiche l'instruction adaptée selon qu'on peut ou non changer de groupe
         if (allowGroupSwitch)
@@ -3606,6 +3597,73 @@ public partial class NewBattleManager : MonoBehaviour
         currentTargetIndex = 0;
         currentTargetCharacter = activeCharacterUnits
             .FirstOrDefault(u => u.characterType == type && u.currentHP > 0);
+    }
+
+    private CharacterUnit GetFirstActiveUnit(CharacterType type)
+    {
+        return activeCharacterUnits.FirstOrDefault(u => u.characterType == type && u.currentHP > 0);
+    }
+
+    private CharacterUnit ResolveDefaultMoveTarget(CharacterUnit caster, TargetType allowedType, TargetType defaultType)
+    {
+        if (caster == null)
+            return null;
+
+        switch (allowedType)
+        {
+            case TargetType.Self:
+                return caster;
+            case TargetType.SingleEnemy:
+            case TargetType.AllEnemies:
+                return GetFirstActiveUnit(CharacterType.EnemyUnit);
+            case TargetType.SingleAlly:
+            case TargetType.AllAllies:
+                if (defaultType == TargetType.Self && caster.currentHP > 0f)
+                    return caster;
+                return GetFirstActiveUnit(CharacterType.SquadUnit);
+            case TargetType.All:
+                if (defaultType == TargetType.Self && caster.currentHP > 0f)
+                    return caster;
+                if (defaultType == TargetType.SingleEnemy || defaultType == TargetType.AllEnemies)
+                    return GetFirstActiveUnit(CharacterType.EnemyUnit)
+                        ?? GetFirstActiveUnit(CharacterType.SquadUnit)
+                        ?? caster;
+                if (defaultType == TargetType.SingleAlly || defaultType == TargetType.AllAllies)
+                    return GetFirstActiveUnit(CharacterType.SquadUnit)
+                        ?? GetFirstActiveUnit(CharacterType.EnemyUnit)
+                        ?? caster;
+                return GetFirstActiveUnit(CharacterType.EnemyUnit)
+                    ?? GetFirstActiveUnit(CharacterType.SquadUnit)
+                    ?? caster;
+            default:
+                return GetFirstActiveUnit(CharacterType.EnemyUnit);
+        }
+    }
+
+    private void SyncCurrentTargetIndex(CharacterUnit target)
+    {
+        if (target == null)
+        {
+            currentTargetIndex = 0;
+            return;
+        }
+
+        int index = 0;
+        foreach (var unit in activeCharacterUnits)
+        {
+            if (unit == null || unit.currentHP <= 0 || unit.characterType != target.characterType)
+                continue;
+
+            if (unit == target)
+            {
+                currentTargetIndex = index;
+                return;
+            }
+
+            index++;
+        }
+
+        currentTargetIndex = 0;
     }
 
     public void ResetBattleInfos()

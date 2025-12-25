@@ -232,12 +232,10 @@ public class MusicalMoveSO : ScriptableObject
     [Header("Conditions de ciblage")]
     [Tooltip("Détermine si le move est utilisable lorsque la cible est au sol, en l'air ou dans les deux cas")]
     public AltitudeCondition altitudeCondition = AltitudeCondition.GroundOrAir; // Par défaut: aucune restriction
-    [Tooltip("Type de cible actuellement sélectionné pour ce move")]
+    [Tooltip("Type de cible autorisé pour ce move.")]
     public TargetType targetType = TargetType.SingleEnemy;
-    [Tooltip("Type de cible attribué par défaut lors de l'initialisation")]
+    [Tooltip("Type de cible utilisé pour positionner le curseur au début de la sélection.")]
     public TargetType defaultTargetType = TargetType.SingleEnemy;
-    [Tooltip("Liste de tous les ciblages possibles pour ce move")]
-    public List<TargetType> targetTypes = new List<TargetType>() { TargetType.SingleEnemy };
 
     [Header("Déplacement")]
     // La gestion des effets visuels est désormais confiée à la timeline,
@@ -470,24 +468,6 @@ public class MusicalMoveSO : ScriptableObject
             maxUsesPerBattle = 0;
             dirty = true;
             Debug.LogWarning($"[MusicalMoveSO] maxUsesPerBattle negatif corrige pour '{name}'.", this);
-        }
-
-        if (targetTypes == null)
-        {
-            targetTypes = new List<TargetType>();
-            dirty = true;
-        }
-        if (targetTypes.Count == 0)
-        {
-            targetTypes.Add(defaultTargetType);
-            dirty = true;
-            Debug.LogWarning($"[MusicalMoveSO] targetTypes vide, ajout du defaultTargetType pour '{name}'.", this);
-        }
-        else if (!targetTypes.Contains(defaultTargetType))
-        {
-            targetTypes.Add(defaultTargetType);
-            dirty = true;
-            Debug.LogWarning($"[MusicalMoveSO] defaultTargetType manquant dans targetTypes pour '{name}'.", this);
         }
 
         if (requiresPreparationBeforeExecution)

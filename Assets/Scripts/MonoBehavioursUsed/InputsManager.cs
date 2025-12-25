@@ -996,31 +996,15 @@ public class InputsManager : MonoBehaviour
             return;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad)
         {
-            TargetType desired = TargetType.SingleEnemy;
             bool allowed = false;
             if (bm.currentMove != null)
             {
-                if (bm.currentMove.targetTypes.Contains(TargetType.SingleEnemy))
-                {
-                    desired = TargetType.SingleEnemy;
-                    allowed = true;
-                }
-                else if (bm.currentMove.targetTypes.Contains(TargetType.AllEnemies))
-                {
-                    desired = TargetType.AllEnemies;
-                    allowed = true;
-                }
-                else if (bm.currentMove.targetTypes.Contains(TargetType.All))
-                {
-                    desired = TargetType.All;
-                    allowed = true;
-                }
-
-                if (allowed)
-                    bm.currentMove.targetType = desired;
+                allowed = bm.currentMove.targetType == TargetType.SingleEnemy
+                          || bm.currentMove.targetType == TargetType.AllEnemies;
             }
             if (bm.currentItem != null)
             {
+                TargetType desired = TargetType.SingleEnemy;
                 bool itemAllowed = false;
                 if (bm.currentItem.targetTypes.Contains(TargetType.SingleEnemy))
                 {
@@ -1057,31 +1041,15 @@ public class InputsManager : MonoBehaviour
             return;
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
         {
-            TargetType desired = TargetType.SingleAlly;
             bool allowed = false;
             if (bm.currentMove != null)
             {
-                if (bm.currentMove.targetTypes.Contains(TargetType.SingleAlly))
-                {
-                    desired = TargetType.SingleAlly;
-                    allowed = true;
-                }
-                else if (bm.currentMove.targetTypes.Contains(TargetType.AllAllies))
-                {
-                    desired = TargetType.AllAllies;
-                    allowed = true;
-                }
-                else if (bm.currentMove.targetTypes.Contains(TargetType.All))
-                {
-                    desired = TargetType.All;
-                    allowed = true;
-                }
-
-                if (allowed)
-                    bm.currentMove.targetType = desired;
+                allowed = bm.currentMove.targetType == TargetType.SingleAlly
+                          || bm.currentMove.targetType == TargetType.AllAllies;
             }
             if (bm.currentItem != null)
             {
+                TargetType desired = TargetType.SingleAlly;
                 bool itemAllowed = false;
                 if (bm.currentItem.targetTypes.Contains(TargetType.SingleAlly))
                 {

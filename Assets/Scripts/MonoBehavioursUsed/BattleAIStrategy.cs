@@ -702,11 +702,7 @@ public static class BattleAIStrategy
         if (move == null)
             return TargetType.SingleEnemy;
 
-        TargetType type = move.defaultTargetType;
-        if (move.targetTypes != null && move.targetTypes.Count > 0 && !move.targetTypes.Contains(type))
-            type = move.targetTypes[0];
-
-        return type;
+        return move.targetType;
     }
 
     private static TargetType ResolveTargetType(ItemData item)

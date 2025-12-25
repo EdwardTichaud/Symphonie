@@ -358,7 +358,7 @@ public partial class NewBattleManager
         if (move == null)
             return enemy.SelectTargetFromSquad();
 
-        switch (move.defaultTargetType)
+        switch (move.targetType)
         {
             case TargetType.Self:
                 return enemy;

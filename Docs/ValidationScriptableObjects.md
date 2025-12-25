@@ -8,7 +8,7 @@ incohérentes qui provoquent des erreurs en jeu.
 Contrôles principaux :
 - `moveName`/`moveIcon` renseignés.
 - Coûts et limites non négatifs.
-- `targetTypes` non vide et contenant `defaultTargetType`.
+- `targetType` défini (le `defaultTargetType` sert à positionner le curseur initial).
 - Si préparation multi-tour : `preparationTurnCount > 0` et `preparingTimeline` renseignée.
 - Distances/temps de déplacement non négatifs.
 
