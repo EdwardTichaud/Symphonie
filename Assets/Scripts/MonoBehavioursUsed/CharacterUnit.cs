@@ -853,22 +853,43 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public CharacterType characterType => Data.characterType;
 
-    private float _currentHP;
-    private float _currentRage;
-    private float _currentStrength;
-    private float _currentDefense;
+    #region Statistiques runtime (alignées sur CharacterData)
     private float _currentReflex;
     private float _currentMobility;
+    private float _currentVitality;
     private float _currentPower;
     private float _currentStability;
-    private float _currentVitality;
     private float _currentSagacity;
+
+    private float _currentHP;
+    private float _currentStrength;
+    private float _currentDefense;
+    private float _currentSpeed;
     private float _currentRange;
-    private float _currentFatigue;
     private float _currentInitiative;
     private float _currentInterceptionRange;
     private float _currentInterceptionChance;
+
+    private float _currentRage;
+    private float _currentFatigue;
     private int _currentHarmonicCharge;
+    #endregion
+
+    public float currentReflex { get => _currentReflex; set => _currentReflex = value; }
+    public float currentMobility { get => _currentMobility; set => _currentMobility = value; }
+    public float currentVitality
+    {
+        get => _currentVitality;
+        set
+        {
+            _currentVitality = value;
+            // La vitalité influence directement les PV max : on rafraîchit l'affichage et l'événement.
+            NotifyHealthChanged(refreshMax: true);
+        }
+    }
+    public float currentPower { get => _currentPower; set => _currentPower = value; }
+    public float currentStability { get => _currentStability; set => _currentStability = value; }
+    public float currentSagacity { get => _currentSagacity; set => _currentSagacity = value; }
 
     public float currentHP
     {
@@ -893,30 +914,19 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             }
         }
     }
-    public float currentMP;
-    public float currentRage { get => _currentRage; set => _currentRage = value; }
-
     public float currentStrength { get => _currentStrength; set => _currentStrength = value; }
     public float currentDefense { get => _currentDefense; set => _currentDefense = value; }
-    public float currentReflex { get => _currentReflex; set => _currentReflex = value; }
-    public float currentMobility { get => _currentMobility; set => _currentMobility = value; }
-    public float currentPower { get => _currentPower; set => _currentPower = value; }
-    public float currentStability { get => _currentStability; set => _currentStability = value; }
-    public float currentVitality
-    {
-        get => _currentVitality;
-        set
-        {
-            _currentVitality = value;
-            // La vitalité influence directement les PV max : on rafraîchit l'affichage et l'événement.
-            NotifyHealthChanged(refreshMax: true);
-        }
-    }
-    public float currentSagacity { get => _currentSagacity; set => _currentSagacity = value; }
+    public float currentSpeed { get => _currentSpeed; set => _currentSpeed = value; }
     public float currentRange { get => _currentRange; set => _currentRange = value; }
+    public float currentInitiative { get => _currentInitiative; set => _currentInitiative = value; }
     public float currentInterceptionRange { get => _currentInterceptionRange; set => _currentInterceptionRange = value; }
     public float currentInterceptionChance { get => _currentInterceptionChance; set => _currentInterceptionChance = value; }
 
+    public float currentRage { get => _currentRage; set => _currentRage = value; }
+    public float currentFatigue { get => _currentFatigue; set => _currentFatigue = value; }
+
+    // Ressources runtime
+    public float currentMP;
     public float currentMusicalGauge;
     // Nouvelle réserve d'harmoniques par type
     public Dictionary<HarmonicType, int> harmonicReserve = new();
@@ -925,10 +935,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     // Clé : move, Valeur : nombre d'utilisations
     public Dictionary<MusicalMoveSO, int> moveUsesThisTurn = new();
     public Dictionary<MusicalMoveSO, int> moveUsesThisBattle = new();
-    public float currentFatigue { get => _currentFatigue; set => _currentFatigue = value; }
 
-    // Gestion de l'initiative
-    public float currentInitiative { get => _currentInitiative; set => _currentInitiative = value; }
+    // Gestion de l'ATB
     public float currentATB = 0f;
     public float ATBMax = 100f;
     public bool IsReady => currentATB >= ATBMax && currentHP > 0;
@@ -1002,20 +1010,21 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         InitializeLoadoutSets();
 
         // Initialisation des stats
-        currentPower = Data.basePower;
-        currentStability = Data.baseStability;
-        currentVitality = Data.baseVitality;
-        currentSagacity = Data.baseSagacity;
-        currentHP = Data.baseHP + currentVitality;
-        currentRage = Data.baseRage;
-        currentInitiative = Data.baseInitiative;
-        currentStrength = Data.baseStrength;
-        currentDefense = Data.baseDefense;
         currentReflex = Data.baseReflex;
         currentMobility = Data.baseMobility;
+        currentVitality = Data.baseVitality;
+        currentPower = Data.basePower;
+        currentStability = Data.baseStability;
+        currentSagacity = Data.baseSagacity;
+        currentHP = Data.baseHP + currentVitality;
+        currentStrength = Data.baseStrength;
+        currentDefense = Data.baseDefense;
+        currentSpeed = Data.baseSpeed;
         currentRange = Data.baseRange;
+        currentInitiative = Data.baseInitiative;
         currentInterceptionRange = Data.baseInterceptionRange;
         currentInterceptionChance = 0f;
+        currentRage = Data.baseRage;
         currentFatigue = Data.baseFatigue;
 
         harmonicReserve.Clear();

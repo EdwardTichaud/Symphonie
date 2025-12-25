@@ -90,12 +90,6 @@ public class CharacterData : ScriptableObject, ITargetable
     public float baseSagacity;
 
     [Header("Paramètres communs")]
-    [Tooltip("Initiative de départ utilisée dans la timeline de combat.")]
-    public float baseInitiative;
-
-    [Tooltip("Portée moyenne des attaques physiques.")]
-    public float baseRange;
-
     [Tooltip("Points de vie de base hors bonus narratifs.")]
     public float baseHP;
 
@@ -107,6 +101,12 @@ public class CharacterData : ScriptableObject, ITargetable
 
     [Tooltip("Vitesse de déplacement et d'exécution de base.")]
     public float baseSpeed;
+
+    [Tooltip("Portée moyenne des attaques physiques.")]
+    public float baseRange;
+
+    [Tooltip("Initiative de départ utilisée dans la timeline de combat.")]
+    public float baseInitiative;
 
     [Tooltip("Portée d'interception utilisée pour stopper une action adverse.")]
     public float baseInterceptionRange;
