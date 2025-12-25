@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using TMPro;
@@ -142,6 +143,11 @@ public partial class NewBattleManager : MonoBehaviour
     [Header("Récompenses")]
     public List<ItemData> rewardItems = new();
     public int rewardXP = 0;
+
+    [Header("Consultation des harmoniques")]
+    [Tooltip("Pénalité de score appliquée à chaque consultation du menu d'harmoniques en combat.")]
+    [SerializeField] private int harmonicMenuScorePenalty = 5;
+    private int harmonicMenuConsultCount = 0;
 
     private float battleStartTime = 0f;
     private int currentTurnDamage = 0;
@@ -1344,14 +1350,15 @@ public partial class NewBattleManager : MonoBehaviour
         InputsManager.Instance?.playerInputs?.Battle.Confirm.Enable();
 
         // 6️⃣ Distribution des récompenses avant de les afficher sur le panneau.
-        GameManager.Instance?.AddXPToSquad(rewardXP);
+        int adjustedXP = ApplyHarmonicMenuPenalty(rewardXP);
+        GameManager.Instance?.AddXPToSquad(adjustedXP);
         GameManager.Instance?.AddItemsToInventory(rewardItems);
 
         var panel = victoryScreen.GetComponentInChildren<VictoryPanelManager>();
 
         float duration = Time.time - battleStartTime;
         int totalEnemies = GameManager.Instance != null ? GameManager.Instance.gameData.enemiesDefeatedCount : 0;
-        panel?.DisplayVictory(rewardXP, rewardItems, totalEnemies, duration, mvpUnit, maxTurnDamage);
+        panel?.DisplayVictory(adjustedXP, rewardItems, totalEnemies, duration, mvpUnit, maxTurnDamage);
 
         // 7️⃣ Applique la capture sur le panneau de victoire.
         ApplyVictoryScreenTexture(VictoryScreenImage);
@@ -1884,7 +1891,7 @@ public partial class NewBattleManager : MonoBehaviour
             {
                 UpdateButton(basicSlot, basicAttackMoveChoice.moveName, basicAttackMoveChoice.moveIcon, basicAttackMoveChoice.description);
 
-                bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(basicAttackMoveChoice.consumedHarmonicType) >= basicAttackMoveChoice.harmonicCost;
+                bool enoughHarmonic = currentCharacterUnit.GetAvailableHarmonicsForCost(basicAttackMoveChoice.consumedHarmonicType) >= basicAttackMoveChoice.harmonicCost;
                 bool resonanceOk = !basicAttackMoveChoice.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.awakeHarmonicThreshold;
                 bool usageOk = currentCharacterUnit.CanUseMove(basicAttackMoveChoice);
                 bool cooldownOk = !currentCharacterUnit.IsMoveOnCooldown(basicAttackMoveChoice);
@@ -1931,7 +1938,7 @@ public partial class NewBattleManager : MonoBehaviour
                 var move = skillChoices[globalIndex];
                 UpdateButton(slot, move.moveName, move.moveIcon, move.description);
 
-                bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(move.consumedHarmonicType) >= move.harmonicCost;
+                bool enoughHarmonic = currentCharacterUnit.GetAvailableHarmonicsForCost(move.consumedHarmonicType) >= move.harmonicCost;
                 bool resonanceOk = !move.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.awakeHarmonicThreshold;
                 bool usageOk = currentCharacterUnit.CanUseMove(move);
                 bool available = enoughHarmonic && resonanceOk && usageOk;
@@ -1953,7 +1960,7 @@ public partial class NewBattleManager : MonoBehaviour
         {
             UpdateButton(currentSkillsMenuSlots[specialSlotIndex], specialMoveChoice.moveName, specialMoveChoice.moveIcon, specialMoveChoice.description);
 
-            bool enoughHarmonic = currentCharacterUnit.GetHarmonicCount(specialMoveChoice.consumedHarmonicType) >= specialMoveChoice.harmonicCost;
+            bool enoughHarmonic = currentCharacterUnit.GetAvailableHarmonicsForCost(specialMoveChoice.consumedHarmonicType) >= specialMoveChoice.harmonicCost;
             bool resonanceOk = !specialMoveChoice.enterAwake || currentCharacterUnit.GetHarmonicCount(currentCharacterUnit.Data.harmonicType) >= currentCharacterUnit.Data.awakeHarmonicThreshold;
             bool usageOk = currentCharacterUnit.CanUseMove(specialMoveChoice);
             bool available = enoughHarmonic && resonanceOk && usageOk;
@@ -2679,7 +2686,7 @@ public partial class NewBattleManager : MonoBehaviour
         }
 
         // Vérifie les coûts et limitations avant de masquer les menus.
-        if (caster.GetHarmonicCount(basicMove.consumedHarmonicType) < basicMove.harmonicCost)
+        if (caster.GetAvailableHarmonicsForCost(basicMove.consumedHarmonicType) < basicMove.harmonicCost)
         {
             ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
             return false;
@@ -3620,6 +3627,7 @@ public partial class NewBattleManager : MonoBehaviour
 
         rewardItems.Clear();
         rewardXP = 0;
+        harmonicMenuConsultCount = 0;
 
         battleStartTime = 0f;
         maxTurnDamage = 0;
@@ -3648,4 +3656,76 @@ public partial class NewBattleManager : MonoBehaviour
         }
     }
     #endregion
+
+    public void ShowHarmonicStatusMenu()
+    {
+        if (InfoBoxManager.Instance == null)
+        {
+            ActionUIDisplayManager.Instance?.DisplayInstruction("Consultation des harmoniques indisponible.");
+            return;
+        }
+
+        if (InfoBoxManager.Instance.isOpen)
+            return;
+
+        string message = BuildHarmonicStatusMessage();
+        if (string.IsNullOrWhiteSpace(message))
+            message = "Aucune unité en combat.";
+
+        InfoBoxManager.Instance.OpenInfoBox("Harmoniques en combat", message, null);
+        RegisterHarmonicMenuConsult();
+    }
+
+    private void RegisterHarmonicMenuConsult()
+    {
+        harmonicMenuConsultCount++;
+    }
+
+    private int GetHarmonicMenuScorePenalty()
+    {
+        if (harmonicMenuConsultCount <= 0 || harmonicMenuScorePenalty <= 0)
+            return 0;
+
+        return harmonicMenuConsultCount * harmonicMenuScorePenalty;
+    }
+
+    private int ApplyHarmonicMenuPenalty(int baseValue)
+    {
+        int penalty = GetHarmonicMenuScorePenalty();
+        if (penalty <= 0)
+            return baseValue;
+
+        return Mathf.Max(0, baseValue - penalty);
+    }
+
+    private string BuildHarmonicStatusMessage()
+    {
+        var units = activeCharacterUnits.Count > 0 ? activeCharacterUnits : unitsInBattle;
+        if (units == null || units.Count == 0)
+            return string.Empty;
+
+        var ordered = units
+            .Where(u => u != null && u.Data != null)
+            .OrderBy(u => u.Data.characterType)
+            .ThenBy(u => u.Data.characterName);
+
+        var builder = new StringBuilder();
+        foreach (var unit in ordered)
+        {
+            builder.Append(unit.Data.characterName).Append(" : ");
+
+            bool showSeparator = false;
+            foreach (HarmonicType type in System.Enum.GetValues(typeof(HarmonicType)))
+            {
+                if (showSeparator)
+                    builder.Append(" | ");
+                showSeparator = true;
+                builder.Append(type).Append(' ').Append(unit.GetHarmonicCount(type));
+            }
+
+            builder.AppendLine();
+        }
+
+        return builder.ToString().TrimEnd();
+    }
 }

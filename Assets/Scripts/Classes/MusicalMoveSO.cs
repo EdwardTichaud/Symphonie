@@ -345,7 +345,7 @@ public class MusicalMoveSO : ScriptableObject
     // tout le projet. Cette méthode est uniquement exécutée dans l'éditeur
     // afin d'éviter toute dépendance aux fichiers lors du build final.
     private const string RHAPSODIE_PATH =
-        "Assets/MusicalMoves/MusicalMove_Rhapsodie/MusicalMove_Rhapsodie.asset";
+        "Assets/MusicalMoves/MusicalMove_Rhapsodie_Lumiere/MusicalMove_Rhapsodie_Lumiere.asset";
 
     private void OnValidate()
     {
@@ -426,6 +426,9 @@ public class MusicalMoveSO : ScriptableObject
 
     private static int ResolveDefaultEffectValue(MusicalEffectType type)
     {
+        if (type == MusicalEffectType.FillATB)
+            return 100;
+
         if (IsDurationBasedEffect(type))
             return 2;
 
@@ -672,7 +675,8 @@ public enum MusicalEffectType
     DecreaseInitiative,
     IncreaseMaxHP,
     DecreaseMaxHP,
-    Stun
+    Stun,
+    FillATB
 }
 
 public enum RelativePosition { Front, Back, Left, Right , NC}

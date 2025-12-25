@@ -608,6 +608,15 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": false
+                },
+                {
+                    ""name"": ""Menu"",
+                    ""type"": ""Button"",
+                    ""id"": ""3eaa1cfd-ab92-42d4-8c0e-d84c70e75468"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false
                 }
             ],
             ""bindings"": [
@@ -993,6 +1002,28 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""groups"": """",
                     ""action"": ""BaseAttack"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""bdcc9fd3-02ba-4203-ba4b-1dba0aa6bdf8"",
+                    ""path"": ""<Gamepad>/start"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Menu"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""b28281ce-5d67-4de2-855d-9bf4da0cc369"",
+                    ""path"": ""<Keyboard>/semicolon"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Menu"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -1460,6 +1491,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         m_Battle_LeftShoulder = m_Battle.FindAction("LeftShoulder", throwIfNotFound: true);
         m_Battle_RightShoulder = m_Battle.FindAction("RightShoulder", throwIfNotFound: true);
         m_Battle_BaseAttack = m_Battle.FindAction("BaseAttack", throwIfNotFound: true);
+        m_Battle_Menu = m_Battle.FindAction("Menu", throwIfNotFound: true);
         // InfoBox
         m_InfoBox = asset.FindActionMap("InfoBox", throwIfNotFound: true);
         m_InfoBox_Cancel = m_InfoBox.FindAction("Cancel", throwIfNotFound: true);
@@ -1793,6 +1825,7 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
     private readonly InputAction m_Battle_LeftShoulder;
     private readonly InputAction m_Battle_RightShoulder;
     private readonly InputAction m_Battle_BaseAttack;
+    private readonly InputAction m_Battle_Menu;
     /// <summary>
     /// Provides access to input actions defined in input action map "Battle".
     /// </summary>
@@ -1861,6 +1894,10 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// </summary>
         public InputAction @BaseAttack => m_Wrapper.m_Battle_BaseAttack;
         /// <summary>
+        /// Provides access to the underlying input action "Battle/Menu".
+        /// </summary>
+        public InputAction @Menu => m_Wrapper.m_Battle_Menu;
+        /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
         public InputActionMap Get() { return m_Wrapper.m_Battle; }
@@ -1928,6 +1965,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @BaseAttack.started += instance.OnBaseAttack;
             @BaseAttack.performed += instance.OnBaseAttack;
             @BaseAttack.canceled += instance.OnBaseAttack;
+            @Menu.started += instance.OnMenu;
+            @Menu.performed += instance.OnMenu;
+            @Menu.canceled += instance.OnMenu;
         }
 
         /// <summary>
@@ -1981,6 +2021,9 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
             @BaseAttack.started -= instance.OnBaseAttack;
             @BaseAttack.performed -= instance.OnBaseAttack;
             @BaseAttack.canceled -= instance.OnBaseAttack;
+            @Menu.started -= instance.OnMenu;
+            @Menu.performed -= instance.OnMenu;
+            @Menu.canceled -= instance.OnMenu;
         }
 
         /// <summary>
@@ -2598,6 +2641,13 @@ public partial class @PlayerInputs: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnBaseAttack(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Menu" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnMenu(InputAction.CallbackContext context);
     }
     /// <summary>
     /// Interface to implement callback methods for all input action callbacks associated with input actions defined by "InfoBox" which allows adding and removing callbacks.

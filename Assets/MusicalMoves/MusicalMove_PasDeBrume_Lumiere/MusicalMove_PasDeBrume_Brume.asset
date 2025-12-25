@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8caee409dd862bf429bf43fff5538c9f, type: 3}
+  m_Name: MusicalMove_PasDeBrume_Brume
+  m_EditorClassIdentifier: 
+  moveName: Pas de Brume
+  moveType: 4
+  onlyAwake: 0
+  moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
+  description: "T\xE9l\xE9porte l\u2019alli\xE9 cibl\xE9 sur la case adjacente libre
+    la plus proche pour clarifier les trajectoires."
+  inventoryCategory: MusicalMove
+  inventorySummary: "T\xE9l\xE9porte un alli\xE9 adjacent."
+  consumeOnUse: 0
+  recommendedMusicalMoves: []
+  stayFaceToTarget: 1
+  notes: []
+  fatigueCost: 1
+  harmonicCost: 0
+  harmonicGeneration: 0
+  consumedHarmonicType: 1
+  generatedHarmonicType: 1
+  effects:
+  - type: 2
+    value: 2
+  legacyEffectType: 2
+  legacyEffectValue: 0
+  passiveEffectPrefab: {fileID: 0}
+  passiveEffectVerticalOffset: 0.5
+  buffStat: 0
+  buffAmount: 0
+  buffDuration: 0
+  buffIsPercentage: 0
+  debuffStat: 0
+  debuffAmount: 0
+  debuffDuration: 0
+  debuffIsPercentage: 0
+  previousEffectType: 2
+  useCriticalVariant: 0
+  criticalEffectType: 0
+  criticalEffectValue: 20
+  criticalFatigueCost: 1
+  criticalHarmonicCost: 1
+  criticalHarmonicGeneration: 0
+  cooldown: 0
+  maxUsesPerTurn: 0
+  maxUsesPerBattle: 0
+  altitudeCondition: 2
+  targetType: 3
+  defaultTargetType: 3
+  targetTypes: 03000000
+  travelTime: 0
+  legacyMoveSpeed: 0
+  legacyMoveSpeedConverted: 1
+  castDistance: 0
+  requiresMovement: 0
+  teleportDelay: 0.2
+  stayInPlace: 0
+  interceptable: 1
+  relativePosition: 0
+  tpVfx_Start: {fileID: 0}
+  tpVfx_End: {fileID: 0}
+  tpSFx_Start: {fileID: 0}
+  tpSFx_End: {fileID: 0}
+  warningClip: {fileID: 0}
+  requiresPreparationBeforeExecution: 0
+  preparationTurnCount: 0
+  preparationFailureConditions: []
+  startDelay: 0
+  enterAwake: 0
+  preparingAnimation: {fileID: 0}
+  preparingTimeline: {fileID: 0}
+  performingTimeline: {fileID: 0}
+  retreatTimeline: {fileID: 0}
+  preparingCameraRole: 5
+  preparingToPerformingCameraDelay: 0
+  performingCameraRole: 2
+  retreatCameraRole: 3

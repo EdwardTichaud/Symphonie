@@ -115,6 +115,14 @@ public static class MusicalMoveExecutor
         {
             CharacterStatusEffectController.ApplyStun(target, Mathf.Max(1, baseValue));
         }
+        else if (typeToUse == MusicalEffectType.FillATB)
+        {
+            if (target != null)
+            {
+                target.currentATB = target.ATBMax;
+                NewBattleManager.Instance?.ForceNextUnit(target);
+            }
+        }
 
         if (applyFatigue && !ignoreFatigue && caster != null && caster.Data.gameplayType == GameplayType.Fatigue)
         {

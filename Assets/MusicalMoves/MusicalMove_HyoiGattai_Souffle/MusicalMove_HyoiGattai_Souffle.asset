@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8caee409dd862bf429bf43fff5538c9f, type: 3}
+  m_Name: MusicalMove_HyoiGattai_Souffle
+  m_EditorClassIdentifier: 
+  moveName: Hyoi Gattai
+  moveType: 2
+  onlyAwake: 0
+  moveIcon: {fileID: 0}
+  description: "Fusionne l'\xE2me du lanceur avec celui de son ange gardien."
+  stayFaceToTarget: 1
+  notes: []
+  fatigueCost: 1
+  harmonicCost: 1
+  harmonicGeneration: 0
+  consumedHarmonicType: Souffle
+  generatedHarmonicType: Souffle
+  cooldown: 0
+  targetType: 0
+  defaultTargetType: 0
+  targetTypes: 00000000
+  effectType: 2
+  effectValue: 0
+  moveSpeed: 0
+  castDistance: 0
+  stayInPlace: 0
+  interceptable: 0
+  relativePosition: 4
+  useTeleportation: 1
+  teleportStartVFXPrefab: {fileID: 0}
+  teleportEndVFXPrefab: {fileID: 0}
+  startDelay: 2
+  preparingTimeline: {fileID: 11400000, guid: bf24ccfc01c240be9102828e2d11a7d1, type: 2}
+  performingTimeline: {fileID: 0}
+  enterAwake: 1

@@ -130,6 +130,7 @@ public class InputsManager : MonoBehaviour
         battle.Select3.performed += OnSelect3;
         battle.Awake.performed += OnAwake; // Appui sur la touche d'éveil
         battle.BaseAttack.performed += OnBaseAttack; // Attaque de base directe depuis le SkillsMenu
+        battle.Menu.performed += OnMenu;
         battle.Back.started += OnBackStarted;
         battle.Back.performed += OnBackInput;
         battle.Back.canceled += OnBackCanceled;
@@ -159,6 +160,7 @@ public class InputsManager : MonoBehaviour
         battle.Select3.performed -= OnSelect3;
         battle.Awake.performed -= OnAwake; // Désabonnement de la touche d'éveil
         battle.BaseAttack.performed -= OnBaseAttack; // Retire le binding de l'attaque basique
+        battle.Menu.performed -= OnMenu;
         battle.Back.started -= OnBackStarted;
         battle.Back.performed -= OnBackInput;
         battle.Back.canceled -= OnBackCanceled;
@@ -734,7 +736,7 @@ public class InputsManager : MonoBehaviour
         HarmonicType requiredType = selectedMove.consumedHarmonicType;
 
         // Validation des ressources : on vérifie d'abord la quantité d'harmoniques disponible.
-        if (bm.currentCharacterUnit.GetHarmonicCount(requiredType) < selectedMove.harmonicCost)
+        if (bm.currentCharacterUnit.GetAvailableHarmonicsForCost(requiredType) < selectedMove.harmonicCost)
         {
             ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
             return false;
@@ -941,6 +943,20 @@ public class InputsManager : MonoBehaviour
         // Vérifie que l'interface de passage de tour existe toujours
         // avant de tenter de réinitialiser sa progression.
         PassTurnUI.Instance?.ResetProgressSmooth();
+    }
+
+    private void OnMenu(InputAction.CallbackContext ctx)
+    {
+        if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
+            return;
+
+        if (bm.currentBattleState == BattleState.VictoryScreen_Await
+            || bm.currentBattleState == BattleState.VictoryScreen_CanContinue
+            || bm.currentBattleState == BattleState.GameOverScreen_Await
+            || bm.currentBattleState == BattleState.GameOverScreen_CanContinue)
+            return;
+
+        bm.ShowHarmonicStatusMenu();
     }
 
     private IEnumerator PassTurnRoutine()

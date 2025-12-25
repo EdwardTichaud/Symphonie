@@ -7,9 +7,33 @@ using UnityEngine.InputSystem;
 
 public partial class NewBattleManager
 {
+    private CharacterUnit forcedNextUnit;
+
+    public void ForceNextUnit(CharacterUnit unit)
+    {
+        if (unit == null || unit.currentHP <= 0)
+            return;
+
+        if (!activeCharacterUnits.Contains(unit))
+            return;
+
+        forcedNextUnit = unit;
+    }
+
     #region Gestion des tours de combat
     private CharacterUnit CalculateNextUnit()
     {
+        if (forcedNextUnit != null)
+        {
+            var candidate = forcedNextUnit;
+            forcedNextUnit = null;
+            if (candidate != null && candidate.currentHP > 0 && activeCharacterUnits.Contains(candidate))
+            {
+                candidate.currentATB = candidate.ATBMax;
+                return candidate;
+            }
+        }
+
         while (true)
         {
             foreach (var unit in activeCharacterUnits)
@@ -989,7 +1013,7 @@ public partial class NewBattleManager
         bool hasSkill = availableMoves.Any(m =>
             (!m.onlyAwake || caster.IsAwake) &&
             (!m.enterAwake || !caster.IsAwake) &&
-            caster.GetHarmonicCount(m.consumedHarmonicType) >= m.harmonicCost &&
+            caster.GetAvailableHarmonicsForCost(m.consumedHarmonicType) >= m.harmonicCost &&
             (!m.enterAwake || caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.awakeHarmonicThreshold) &&
             !caster.IsMoveOnCooldown(m));
         bool hasItem = InventoryManager.Instance.GetUsableItems(caster).Count > 0;

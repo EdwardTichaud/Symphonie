@@ -137,8 +137,8 @@ public class BattleTimelineUnit : MonoBehaviour
         if (boundUnit == null || harmonicsText == null)
             return;
 
-        // Affiche en permanence la réserve d'harmoniques du type principal du personnage.
-        int count = boundUnit.GetHarmonicCount(boundUnit.Data.harmonicType);
+        // Affiche en permanence le total d'harmoniques disponibles.
+        int count = boundUnit.GetTotalHarmonicCount();
         harmonicsText.text = count.ToString();
     }
 

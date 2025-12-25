@@ -19,6 +19,7 @@ MonoBehaviour:
   characterType: 0
   gameplayType: 0
   harmonicType: 2
+  intelligenceLevel: 1
   characterWorldModel: {fileID: 0}
   characterBattleModel: {fileID: 901204007372340786, guid: 516a13f5ad90e764ca16beb19bf08c5d, type: 3}
   battlefieldIndex: 0
@@ -33,7 +34,7 @@ MonoBehaviour:
   baseStability: 0
   baseSagacity: 0
   baseInitiative: 1
-  baseRange: 5
+  baseRange: 50
   baseHP: 50
   baseStrength: 1
   baseDefense: 1
@@ -47,34 +48,16 @@ MonoBehaviour:
   basicAttack:
   - {fileID: 11400000, guid: 0514bf9ea21792441935664a65892ea6, type: 2}
   musicalAttacks:
-  - {fileID: 11400000, guid: 569e2f6c75b54c48a2168cd683ef5a5b, type: 2}
-  - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
-  - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
+  - {fileID: 11400000, guid: 42bdcb917feb4cff9432f2d6f6efa990, type: 2}
   specialMusicalMove: {fileID: 0}
   musicalMoveSets: []
   defaultMusicalMoveSetIndex: -1
   itemSets: []
   defaultItemSetIndex: -1
-  currentInitiative: 1
-  currentRange: 5
-  currentHP: 50
-  currentStrength: 1
-  currentDefense: 1
-  currentPower: 0
-  currentStability: 0
-  currentVitality: 0
-  currentSagacity: 0
   isPlayerControlled: 1
-  currentRage: 0
-  currentFatigue: 0
-  currentReflex: 0
-  currentMobility: 0
-  currentSpeed: 0
-  currentInterceptionRange: 1
-  currentInterceptionChance: 0
-  currentHarmonicCharge: 1
-  currentMusicalMoveSetIndex: -1
-  currentItemSetIndex: -1
+  turnStartVoiceline: {fileID: 0}
+  turnEndVoiceline: {fileID: 0}
+  baseAttackVoiceline: {fileID: 0}
   hitSound: {fileID: 0}
   criticalHitSound: {fileID: 0}
   interceptedSound: {fileID: 0}
@@ -84,7 +67,7 @@ MonoBehaviour:
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   dashParticlesPrefab: {fileID: 6843868886689424030, guid: 39cd3db8310d9e045ad6b122b69635a7, type: 3}
-  dashSoundClip: {fileID: 8300000, guid: 888110618ab90bd47b2835044d68f9c0, type: 3}
+  dashSoundClip: {fileID: 0}
   awakenEffect_Start: {fileID: 0}
   awakenEffect_Loop: {fileID: 0}
   awakenEffect_End: {fileID: 0}
@@ -96,6 +79,7 @@ MonoBehaviour:
   deathAnimation: {fileID: 0}
   TPAnimation_Start: {fileID: 0}
   TPAnimation_Destination: {fileID: 0}
+  prepareToTargetAnimation: {fileID: 0}
   prepareToUndergoAnimation: {fileID: 7400000, guid: 84ecef9b8267d434eb7be8dff9ecaec1, type: 2}
   awakenIdleAnimation: {fileID: 0}
   dissonantIdleAnimation: {fileID: 0}

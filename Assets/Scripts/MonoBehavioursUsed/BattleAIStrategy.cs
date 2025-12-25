@@ -645,7 +645,7 @@ public static class BattleAIStrategy
         if (move.enterAwake && caster.GetHarmonicCount(caster.Data.harmonicType) < caster.Data.awakeHarmonicThreshold)
             return false;
 
-        if (caster.GetHarmonicCount(move.consumedHarmonicType) < move.harmonicCost)
+        if (caster.GetAvailableHarmonicsForCost(move.consumedHarmonicType) < move.harmonicCost)
             return false;
 
         if (caster.IsMoveOnCooldown(move))

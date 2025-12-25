@@ -2038,7 +2038,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
                 bool canUse = (!move.onlyAwake || IsAwake)
                               && (!move.enterAwake || !IsAwake)
                               && (!move.enterAwake || GetHarmonicCount(Data.harmonicType) >= Data.awakeHarmonicThreshold)
-                              && GetHarmonicCount(move.consumedHarmonicType) >= move.harmonicCost
+                              && GetAvailableHarmonicsForCost(move.consumedHarmonicType) >= move.harmonicCost
                               && !IsMoveOnCooldown(move);
 
                 if (!canUse)
@@ -2105,11 +2105,45 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public bool ConsumeHarmonic(HarmonicType type, int amount = 1)
     {
-        if (!harmonicReserve.ContainsKey(type) || harmonicReserve[type] < amount)
+        if (amount <= 0)
+            return true;
+
+        if (type == HarmonicType.Lumiere)
+        {
+            if (!harmonicReserve.ContainsKey(type) || harmonicReserve[type] < amount)
+                return false;
+
+            harmonicReserve[type] -= amount;
+            if (Data != null && type == Data.harmonicType)
+                _currentHarmonicCharge = harmonicReserve[type];
+            CheckDissonance();
+            return true;
+        }
+
+        int availableType = GetHarmonicCount(type);
+        int availableLumiere = GetHarmonicCount(HarmonicType.Lumiere);
+        if (availableType + availableLumiere < amount)
             return false;
-        harmonicReserve[type] -= amount;
-        if (Data != null && type == Data.harmonicType)
-            _currentHarmonicCharge = harmonicReserve[type];
+
+        if (!harmonicReserve.ContainsKey(type))
+            harmonicReserve[type] = 0;
+        if (!harmonicReserve.ContainsKey(HarmonicType.Lumiere))
+            harmonicReserve[HarmonicType.Lumiere] = 0;
+
+        int fromType = Mathf.Min(availableType, amount);
+        harmonicReserve[type] -= fromType;
+        int remaining = amount - fromType;
+        if (remaining > 0)
+            harmonicReserve[HarmonicType.Lumiere] -= remaining;
+
+        if (Data != null)
+        {
+            if (type == Data.harmonicType)
+                _currentHarmonicCharge = harmonicReserve[type];
+            else if (Data.harmonicType == HarmonicType.Lumiere)
+                _currentHarmonicCharge = harmonicReserve[HarmonicType.Lumiere];
+        }
+
         CheckDissonance();
         return true;
     }
@@ -2117,6 +2151,22 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public int GetHarmonicCount(HarmonicType type)
     {
         return harmonicReserve.ContainsKey(type) ? harmonicReserve[type] : 0;
+    }
+
+    public int GetAvailableHarmonicsForCost(HarmonicType type)
+    {
+        int count = GetHarmonicCount(type);
+        if (type != HarmonicType.Lumiere)
+            count += GetHarmonicCount(HarmonicType.Lumiere);
+        return count;
+    }
+
+    public int GetTotalHarmonicCount()
+    {
+        int total = 0;
+        foreach (var entry in harmonicReserve)
+            total += entry.Value;
+        return total;
     }
 
     public void ClearAllHarmonics()
