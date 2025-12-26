@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8caee409dd862bf429bf43fff5538c9f, type: 3}
-  m_Name: MusicalMove_AttaqueBasique_Lumiere
+  m_Name: MusicalMove_AttaqueBasique_Brume
   m_EditorClassIdentifier: 
   moveName: Attaque basique
   moveType: 1
@@ -26,8 +26,8 @@ MonoBehaviour:
   fatigueCost: 0
   harmonicCost: 0
   harmonicGeneration: 1
-  consumedHarmonicType: 0
-  generatedHarmonicType: 0
+  consumedHarmonicType: 1
+  generatedHarmonicType: 1
   effects:
   - type: 0
     value: 100
