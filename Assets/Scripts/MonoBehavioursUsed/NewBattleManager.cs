@@ -286,6 +286,14 @@ public partial class NewBattleManager : MonoBehaviour
     /// l'on quitte une phase de ciblage.
     /// </summary>
     private bool isTargetCursorCinemachineActive;
+    /// <summary>
+    /// Indique si le recadrage multi-cibles est actif pour la Cinemachine de ciblage.
+    /// </summary>
+    private bool isMultiTargetCursorCinemachineActive;
+    /// <summary>
+    /// Mémorise la dernière caméra utilisée pour le recadrage multi-cibles.
+    /// </summary>
+    private string lastMultiTargetCameraName;
     private int currentTargetIndex = 0;
     private float navigationCooldown = 0.3f;
     private float lastNavTime = 0f;
@@ -385,6 +393,7 @@ public partial class NewBattleManager : MonoBehaviour
     [HideInInspector] public List<ItemData> itemChoices = new List<ItemData>();
     [HideInInspector] public MusicalMoveSO currentMove;
     [HideInInspector] public ItemData currentItem;
+    [HideInInspector] public TargetType currentMoveTargetType;
     [HideInInspector] public TargetType currentItemTargetType;
     public int currentMenuIndex;
     // Index de la page actuellement affichée dans le SkillsMenu.
@@ -2306,7 +2315,7 @@ public partial class NewBattleManager : MonoBehaviour
         if (!isSkillTargeting && !isItemTargeting)
             return;
 
-        TargetType type = isSkillTargeting ? currentMove.targetType : currentItemTargetType;
+        TargetType type = isSkillTargeting ? currentMoveTargetType : currentItemTargetType;
 
         if (type == TargetType.Self)
         {
@@ -2393,29 +2402,18 @@ public partial class NewBattleManager : MonoBehaviour
             HideMultiTargetCursors();
             UpdateTargetCursorColor(true);
             DeactivateTargetCursorCinemachine();
+            DeactivateMultiTargetCursorCinemachine();
             return;
         }
 
-        TargetType type = isSkillTargeting ? currentMove.targetType : currentItemTargetType;
+        TargetType type = isSkillTargeting ? currentMoveTargetType : currentItemTargetType;
 
         if (type == TargetType.AllEnemies || type == TargetType.AllAllies || type == TargetType.All)
         {
             targetCursor?.SetActive(false);
 
             // Filtre manuel des cibles pour éviter les allocations LINQ à chaque frame
-            multiTargetUnits.Clear();
-            foreach (var unit in activeCharacterUnits)
-            {
-                if (unit.currentHP <= 0) continue; // On ignore les unités KO
-
-                // On conserve uniquement les types d'unités attendus
-                if (type == TargetType.AllEnemies && unit.characterType != CharacterType.EnemyUnit)
-                    continue;
-                if (type == TargetType.AllAllies && unit.characterType != CharacterType.SquadUnit)
-                    continue;
-
-                multiTargetUnits.Add(unit);
-            }
+            CollectMultiTargetUnits(type, multiTargetUnits);
 
             // S'assure qu'il existe assez de curseurs pour toutes les cibles
             EnsureMultiTargetCursors(multiTargetUnits.Count);
@@ -2434,10 +2432,11 @@ public partial class NewBattleManager : MonoBehaviour
                 }
             }
 
-            DeactivateTargetCursorCinemachine();
+            UpdateMultiTargetCursorCinemachine(multiTargetUnits);
         }
         else
         {
+            DeactivateMultiTargetCursorCinemachine();
             HideMultiTargetCursors();
 
             if (targetCursor != null && currentTargetCharacter != null)
@@ -2505,21 +2504,26 @@ public partial class NewBattleManager : MonoBehaviour
         currentMove = move;
         currentItem = null; // on annule la sélection d'item précédente
         currentMoveIsBasicAttack = isBasicAttack;
-        bool allowGroupSwitch = false;
-        TargetType selectionType = move != null ? move.targetType : TargetType.SingleEnemy;
-        TargetType defaultType = move != null ? move.defaultTargetType : selectionType;
-        CharacterUnit defaultTarget = ResolveDefaultMoveTarget(currentCharacterUnit, selectionType, defaultType);
+        TargetType allowedType = move != null ? move.targetType : TargetType.SingleEnemy;
+        TargetType defaultType = move != null ? move.defaultTargetType : allowedType;
+        bool allowGroupSwitch = AllowsMoveGroupSwitch(allowedType);
+        currentMoveTargetType = ResolveInitialMoveTargetType(allowedType, defaultType);
+        CharacterUnit defaultTarget = ResolveDefaultMoveTarget(currentCharacterUnit, currentMoveTargetType, defaultType);
         // Feedback audio unique pour signifier le passage en mode ciblage.
         PlayMenuClip(targetSelectionClip);
-        switch (selectionType)
+        switch (currentMoveTargetType)
         {
             case TargetType.Self:
-                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
+                ChangeBattleState(allowGroupSwitch
+                    ? BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
+                    : BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
                 currentTargetCharacter = currentCharacterUnit;
                 break;
 
             case TargetType.SingleEnemy:
-                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill);
+                ChangeBattleState(allowGroupSwitch
+                    ? BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies
+                    : BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill);
                 currentTargetCharacter = defaultTarget;
                 break;
 
@@ -2529,7 +2533,9 @@ public partial class NewBattleManager : MonoBehaviour
                 break;
 
             case TargetType.SingleAlly:
-                ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
+                ChangeBattleState(allowGroupSwitch
+                    ? BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
+                    : BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
                 currentTargetCharacter = defaultTarget;
                 break;
 
@@ -2544,7 +2550,7 @@ public partial class NewBattleManager : MonoBehaviour
                 break;
 
             default:
-                Debug.LogWarning($"[BattleTurnManager] Type de cible non géré : {selectionType}");
+                Debug.LogWarning($"[BattleTurnManager] Type de cible non géré : {currentMoveTargetType}");
                 return;
         }
         SyncCurrentTargetIndex(currentTargetCharacter);
@@ -2644,7 +2650,18 @@ public partial class NewBattleManager : MonoBehaviour
         // prochaine Update, ce qui pouvait laisser la caméra précédente active une frame de trop. En
         // centralisant le rafraîchissement ici, on garantit que la caméra se cale instantanément sur
         // « CMVPoint_OrbitAroundUnit » tout en laissant la timeline de préparation continuer à se jouer.
-        UpdateTargetCursorCinemachine(currentTargetCharacter);
+        if (currentItemTargetType == TargetType.AllEnemies
+            || currentItemTargetType == TargetType.AllAllies
+            || currentItemTargetType == TargetType.All)
+        {
+            CollectMultiTargetUnits(currentItemTargetType, multiTargetUnits);
+            UpdateMultiTargetCursorCinemachine(multiTargetUnits);
+        }
+        else
+        {
+            DeactivateMultiTargetCursorCinemachine();
+            UpdateTargetCursorCinemachine(currentTargetCharacter);
+        }
     }
 
     /// <summary>
@@ -3496,6 +3513,22 @@ public partial class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Libère le recadrage multi-cibles afin de revenir aux ancres standards.
+    /// </summary>
+    private void DeactivateMultiTargetCursorCinemachine()
+    {
+        if (!isMultiTargetCursorCinemachineActive)
+            return;
+
+        isMultiTargetCursorCinemachineActive = false;
+        lastMultiTargetCameraName = null;
+
+        var manager = BattleCameraManager.Instance;
+        if (manager != null)
+            manager.ClearMultiTargetFraming();
+    }
+
+    /// <summary>
     /// Informe la <see cref="BattleCameraManager"/> de la cible suivie par le
     /// curseur afin que la Cinemachine adaptée prenne le relais et encadre la
     /// scène. Les multiples garde-fous évitent les appels redondants coûteux.
@@ -3555,6 +3588,36 @@ public partial class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Synchronise la caméra de ciblage pour les sélections multi-cibles.
+    /// </summary>
+    private void UpdateMultiTargetCursorCinemachine(IReadOnlyList<CharacterUnit> targets)
+    {
+        var manager = BattleCameraManager.Instance;
+        if (manager == null)
+            return;
+
+        string expectedCameraName = ResolveTargetSelectionCameraName(currentBattleState);
+
+        if (!isMultiTargetCursorCinemachineActive
+            || !string.Equals(lastMultiTargetCameraName, expectedCameraName, System.StringComparison.OrdinalIgnoreCase))
+        {
+            isMultiTargetCursorCinemachineActive = true;
+            lastMultiTargetCameraName = expectedCameraName;
+            isTargetCursorCinemachineActive = false;
+            lastTargetCursorCameraTarget = null;
+            lastTargetCursorAnchor = null;
+
+            manager.ConfigureActionTargets(currentCharacterUnit, null);
+            manager.SetCurrentTarget(null);
+
+            if (IsTargetSelectionState(currentBattleState))
+                RequestCamera(expectedCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
+        }
+
+        manager.SetMultiTargetFraming(targets, expectedCameraName);
+    }
+
+    /// <summary>
     /// Indique si l'état donné correspond à une phase de sélection de cible.
     /// Permet de conditionner certains comportements (orientation, caméra...).
     /// </summary>
@@ -3592,6 +3655,23 @@ public partial class NewBattleManager : MonoBehaviour
             : TargetSelectionCameraName;
     }
 
+    private void CollectMultiTargetUnits(TargetType type, List<CharacterUnit> buffer)
+    {
+        buffer.Clear();
+        foreach (var unit in activeCharacterUnits)
+        {
+            if (unit.currentHP <= 0) continue; // On ignore les unités KO
+
+            // On conserve uniquement les types d'unités attendus
+            if (type == TargetType.AllEnemies && unit.characterType != CharacterType.EnemyUnit)
+                continue;
+            if (type == TargetType.AllAllies && unit.characterType != CharacterType.SquadUnit)
+                continue;
+
+            buffer.Add(unit);
+        }
+    }
+
     public void SetCurrentTargetToFirst(CharacterType type)
     {
         currentTargetIndex = 0;
@@ -3599,17 +3679,60 @@ public partial class NewBattleManager : MonoBehaviour
             .FirstOrDefault(u => u.characterType == type && u.currentHP > 0);
     }
 
+    public void ApplyMoveTargetSelection(TargetType selectionType)
+    {
+        currentMoveTargetType = selectionType;
+        if (currentMove == null)
+            return;
+
+        currentTargetCharacter = ResolveDefaultMoveTarget(currentCharacterUnit, selectionType, currentMove.defaultTargetType);
+        SyncCurrentTargetIndex(currentTargetCharacter);
+    }
+
     private CharacterUnit GetFirstActiveUnit(CharacterType type)
     {
         return activeCharacterUnits.FirstOrDefault(u => u.characterType == type && u.currentHP > 0);
     }
 
-    private CharacterUnit ResolveDefaultMoveTarget(CharacterUnit caster, TargetType allowedType, TargetType defaultType)
+    private bool AllowsMoveGroupSwitch(TargetType allowedType)
+    {
+        return allowedType == TargetType.SingleAllyOrEnemy
+               || allowedType == TargetType.AllEnemies
+               || allowedType == TargetType.AllAllies;
+    }
+
+    private TargetType ResolveInitialMoveTargetType(TargetType allowedType, TargetType defaultType)
+    {
+        switch (allowedType)
+        {
+            case TargetType.SingleAllyOrEnemy:
+                if (defaultType == TargetType.SingleAlly || defaultType == TargetType.AllAllies || defaultType == TargetType.Self)
+                    return TargetType.SingleAlly;
+                if (defaultType == TargetType.SingleEnemy || defaultType == TargetType.AllEnemies)
+                    return TargetType.SingleEnemy;
+                return TargetType.SingleEnemy;
+            case TargetType.AllEnemies:
+            case TargetType.AllAllies:
+                if (defaultType == TargetType.AllEnemies || defaultType == TargetType.AllAllies)
+                    return defaultType;
+                if (defaultType == TargetType.SingleEnemy)
+                    return TargetType.AllEnemies;
+                if (defaultType == TargetType.SingleAlly || defaultType == TargetType.Self)
+                    return TargetType.AllAllies;
+                return allowedType;
+            case TargetType.All:
+                return TargetType.All;
+            default:
+                return allowedType;
+        }
+    }
+
+    private CharacterUnit ResolveDefaultMoveTarget(CharacterUnit caster, TargetType selectionType, TargetType defaultType)
     {
         if (caster == null)
             return null;
 
-        switch (allowedType)
+        switch (selectionType)
         {
             case TargetType.Self:
                 return caster;

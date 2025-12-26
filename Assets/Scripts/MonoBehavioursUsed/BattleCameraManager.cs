@@ -119,6 +119,19 @@ public class BattleCameraManager : MonoBehaviour
     [Tooltip("Offset vertical maximal autorisé pour éviter de quitter la zone jouable.")]
     [SerializeField] private float maxFocusHeight = 6f;
 
+    [Header("Cadrage multi-cibles")] // 🎯 Ajustements dynamiques lors des sélections de groupe
+    [Tooltip("Active le recadrage dynamique lors des sélections AllAllies / AllEnemies / All.")]
+    [SerializeField] private bool enableMultiTargetFraming = true;
+
+    [Tooltip("Marge (en mètres) ajoutée autour du groupe pour éviter qu'il colle au cadre.")]
+    [SerializeField] private float multiTargetPadding = 0.6f;
+
+    [Tooltip("Multiplicateur appliqué à la distance calculée pour élargir légèrement le plan.")]
+    [SerializeField] private float multiTargetDistanceMultiplier = 1.1f;
+
+    [Tooltip("Distance minimale entre la caméra et le centre du groupe.")]
+    [SerializeField] private float multiTargetMinimumDistance = 3f;
+
     /// <summary>Référence de la caméra d'introduction pour gérer son travelling manuel.</summary>
     private Transform introCameraTransform;
 
@@ -148,6 +161,21 @@ public class BattleCameraManager : MonoBehaviour
 
     /// <summary>Ancre explicite fournie lors d'une configuration de cibles (target).</summary>
     private Transform targetAnchorOverride;
+
+    /// <summary>Indique si un recadrage multi-cibles est actif.</summary>
+    private bool hasMultiTargetFraming;
+
+    /// <summary>Bounds agrégés correspondant au groupe actuellement sélectionné.</summary>
+    private Bounds multiTargetBounds;
+
+    /// <summary>Nom de la caméra concernée par le recadrage multi-cibles.</summary>
+    private string multiTargetCameraName;
+
+    /// <summary>Point de focus synthétique utilisé pour verrouiller le regard sur le groupe.</summary>
+    private Transform multiTargetFocusProxy;
+
+    /// <summary>Référence mémorisée vers la caméra Unity afin d'accéder au FOV/aspect.</summary>
+    private Camera cachedBattleCamera;
 
     /// <summary>Ensemble des points manquants déjà signalés pour ne pas inonder la console.</summary>
     private readonly HashSet<string> missingAnchorWarnings = new(StringComparer.OrdinalIgnoreCase);
@@ -582,6 +610,14 @@ public class BattleCameraManager : MonoBehaviour
         // Dès qu'une cible légitime est retrouvée, on annule l'éventuelle interpolation en cours
         // afin que la caméra recolle immédiatement à l'ancre prévue par les artistes.
         ResetOrbitReturnStateIfNeeded(cameraName);
+
+        if (TryApplyMultiTargetFraming(camera, cameraName, ownerUnit, config))
+        {
+            ApplyMenuRecoil(camera, cameraName);
+            ApplyBreathingMotion(camera, cameraName);
+            ApplyDamageShake(camera, cameraName);
+            return;
+        }
 
         Transform anchor = ResolveAnchorTransform(ownerUnit, config);
         if (anchor == null)
@@ -1296,6 +1332,62 @@ public class BattleCameraManager : MonoBehaviour
         RefreshAllCameraPlacements();
     }
 
+    /// <summary>
+    /// Active un recadrage dynamique afin d'englober toutes les cibles sélectionnées.
+    /// </summary>
+    public void SetMultiTargetFraming(IReadOnlyList<CharacterUnit> targets, string cameraName)
+    {
+        if (!enableMultiTargetFraming || targets == null || targets.Count == 0)
+        {
+            ClearMultiTargetFraming();
+            return;
+        }
+
+        bool hasBounds = false;
+        Bounds aggregated = default;
+
+        foreach (CharacterUnit unit in targets)
+        {
+            if (unit == null)
+                continue;
+
+            Bounds unitBounds = unit.GetVisualBounds();
+            if (!hasBounds)
+            {
+                aggregated = unitBounds;
+                hasBounds = true;
+            }
+            else
+            {
+                aggregated.Encapsulate(unitBounds);
+            }
+        }
+
+        if (!hasBounds || string.IsNullOrEmpty(cameraName))
+        {
+            ClearMultiTargetFraming();
+            return;
+        }
+
+        float padding = Mathf.Max(0f, multiTargetPadding);
+        if (padding > 0f)
+            aggregated.Expand(Vector3.one * (padding * 2f));
+
+        multiTargetBounds = aggregated;
+        multiTargetCameraName = cameraName;
+        hasMultiTargetFraming = true;
+    }
+
+    /// <summary>
+    /// Désactive le recadrage multi-cibles et rend la main aux ancres classiques.
+    /// </summary>
+    public void ClearMultiTargetFraming()
+    {
+        hasMultiTargetFraming = false;
+        multiTargetCameraName = null;
+        multiTargetBounds = default;
+    }
+
     /// <summary>Efface les informations associées au move en cours.</summary>
     public void ClearRigTargets()
     {
@@ -1305,6 +1397,142 @@ public class BattleCameraManager : MonoBehaviour
         currentTarget = null;
 
         RefreshAllCameraPlacements();
+    }
+
+    /// <summary>
+    /// Applique un cadrage dynamique si un groupe de cibles est défini.
+    /// </summary>
+    private bool TryApplyMultiTargetFraming(
+        CinemachineCamera camera,
+        string cameraName,
+        CharacterUnit ownerUnit,
+        CameraBindingConfig config)
+    {
+        if (!enableMultiTargetFraming || !hasMultiTargetFraming)
+            return false;
+
+        if (string.IsNullOrEmpty(cameraName) || !string.Equals(cameraName, multiTargetCameraName, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (camera == null)
+            return false;
+
+        Bounds bounds = multiTargetBounds;
+        if (bounds.size.sqrMagnitude < 0.0001f)
+            return false;
+
+        Transform baseAnchor = ResolveAnchorTransform(ownerUnit, config);
+        Vector3 forward = baseAnchor != null ? baseAnchor.forward : Vector3.forward;
+        if (forward.sqrMagnitude < 0.0001f)
+            forward = ownerUnit != null && ownerUnit.transform.forward.sqrMagnitude > 0.0001f
+                ? ownerUnit.transform.forward.normalized
+                : Vector3.forward;
+        forward.Normalize();
+
+        Quaternion baseRotation = Quaternion.LookRotation(forward, Vector3.up);
+        float distance = ResolveMultiTargetDistance(bounds, baseRotation, baseAnchor);
+        Vector3 focus = bounds.center;
+        Vector3 position = focus - forward * distance;
+        Quaternion rotation = Quaternion.LookRotation(focus - position, Vector3.up);
+
+        camera.transform.SetPositionAndRotation(position, rotation);
+
+        Transform focusProxy = EnsureMultiTargetFocusProxy();
+        if (focusProxy != null)
+        {
+            focusProxy.position = focus;
+            focusProxy.rotation = rotation;
+
+            var targetSettings = camera.Target;
+            targetSettings.CustomLookAtTarget = true;
+            targetSettings.LookAtTarget = focusProxy;
+            camera.Target = targetSettings;
+        }
+        else
+        {
+            var targetSettings = camera.Target;
+            targetSettings.CustomLookAtTarget = false;
+            targetSettings.LookAtTarget = null;
+            camera.Target = targetSettings;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Calcule la distance nécessaire pour englober un groupe de cibles dans le champ de la caméra.
+    /// </summary>
+    private float ResolveMultiTargetDistance(Bounds bounds, Quaternion rotation, Transform baseAnchor)
+    {
+        Camera viewCamera = ResolveBattleCamera();
+        float verticalFov = viewCamera != null ? viewCamera.fieldOfView : 45f;
+        float aspect = viewCamera != null ? viewCamera.aspect : (16f / 9f);
+
+        verticalFov = Mathf.Clamp(verticalFov, 1f, 179f);
+        aspect = Mathf.Max(0.1f, aspect);
+
+        float halfVerticalFov = Mathf.Deg2Rad * verticalFov * 0.5f;
+        float halfHorizontalFov = Mathf.Atan(Mathf.Tan(halfVerticalFov) * aspect);
+
+        Vector3 extents = bounds.extents;
+        Vector3 right = rotation * Vector3.right;
+        Vector3 up = rotation * Vector3.up;
+
+        float halfWidth = Mathf.Abs(right.x) * extents.x + Mathf.Abs(right.y) * extents.y + Mathf.Abs(right.z) * extents.z;
+        float halfHeight = Mathf.Abs(up.x) * extents.x + Mathf.Abs(up.y) * extents.y + Mathf.Abs(up.z) * extents.z;
+
+        float distanceByHeight = halfHeight / Mathf.Tan(halfVerticalFov);
+        float distanceByWidth = halfWidth / Mathf.Tan(halfHorizontalFov);
+        float distance = Mathf.Max(distanceByHeight, distanceByWidth);
+
+        if (baseAnchor != null)
+            distance = Mathf.Max(distance, Vector3.Distance(baseAnchor.position, bounds.center));
+
+        distance = Mathf.Max(distance, multiTargetMinimumDistance);
+        distance *= Mathf.Max(0.01f, multiTargetDistanceMultiplier);
+        return distance;
+    }
+
+    /// <summary>
+    /// Assure la disponibilité d'un point de focus dédié aux cadrages multi-cibles.
+    /// </summary>
+    private Transform EnsureMultiTargetFocusProxy()
+    {
+        if (multiTargetFocusProxy != null)
+            return multiTargetFocusProxy;
+
+        if (focusProxyRoot == null)
+        {
+            GameObject root = new GameObject("BattleCamera_FocusRoot");
+            root.hideFlags = HideFlags.HideInHierarchy;
+            focusProxyRoot = root.transform;
+            focusProxyRoot.SetParent(transform, worldPositionStays: false);
+        }
+
+        GameObject proxyGO = new GameObject("FocusPoint_MultiTarget");
+        proxyGO.hideFlags = HideFlags.HideInHierarchy;
+        multiTargetFocusProxy = proxyGO.transform;
+        multiTargetFocusProxy.SetParent(focusProxyRoot, worldPositionStays: false);
+        return multiTargetFocusProxy;
+    }
+
+    /// <summary>
+    /// Retourne la caméra Unity de référence afin de récupérer le FOV et l'aspect.
+    /// </summary>
+    private Camera ResolveBattleCamera()
+    {
+        if (cachedBattleCamera != null)
+            return cachedBattleCamera;
+
+        GameObject tagged = GameObject.FindGameObjectWithTag("BattleCamera");
+        if (tagged != null && tagged.TryGetComponent(out Camera found))
+        {
+            cachedBattleCamera = found;
+            return cachedBattleCamera;
+        }
+
+        cachedBattleCamera = Camera.main;
+        return cachedBattleCamera;
     }
 
     /// <summary>Active une caméra via son rôle cinématique.</summary>

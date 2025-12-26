@@ -5,5 +5,6 @@ public enum TargetType
     AllEnemies,
     SingleAlly,
     AllAllies,
-    All
+    All,
+    SingleAllyOrEnemy
 }

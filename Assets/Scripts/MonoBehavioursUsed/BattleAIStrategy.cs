@@ -665,6 +665,7 @@ public static class BattleAIStrategy
 
         return type == TargetType.SingleAlly
                || type == TargetType.AllAllies
+               || type == TargetType.SingleAllyOrEnemy
                || type == TargetType.All;
     }
 
@@ -686,6 +687,7 @@ public static class BattleAIStrategy
     {
         return type == TargetType.SingleEnemy
                || type == TargetType.AllEnemies
+               || type == TargetType.SingleAllyOrEnemy
                || type == TargetType.All;
     }
 
@@ -693,6 +695,7 @@ public static class BattleAIStrategy
     {
         return type == TargetType.SingleAlly
                || type == TargetType.AllAllies
+               || type == TargetType.SingleAllyOrEnemy
                || type == TargetType.All
                || type == TargetType.Self;
     }
@@ -901,6 +904,7 @@ public static class BattleAIStrategy
             TargetType.Self => target == caster,
             TargetType.SingleEnemy or TargetType.AllEnemies or TargetType.All => targetIsEnemy,
             TargetType.SingleAlly or TargetType.AllAllies => !targetIsEnemy,
+            TargetType.SingleAllyOrEnemy => true,
             _ => false
         };
 

@@ -999,8 +999,17 @@ public class InputsManager : MonoBehaviour
             bool allowed = false;
             if (bm.currentMove != null)
             {
-                allowed = bm.currentMove.targetType == TargetType.SingleEnemy
-                          || bm.currentMove.targetType == TargetType.AllEnemies;
+                if (bm.currentMove.targetType == TargetType.SingleAllyOrEnemy)
+                {
+                    bm.ApplyMoveTargetSelection(TargetType.SingleEnemy);
+                    allowed = true;
+                }
+                else if (bm.currentMove.targetType == TargetType.AllEnemies
+                         || bm.currentMove.targetType == TargetType.AllAllies)
+                {
+                    bm.ApplyMoveTargetSelection(TargetType.AllEnemies);
+                    allowed = true;
+                }
             }
             if (bm.currentItem != null)
             {
@@ -1029,7 +1038,8 @@ public class InputsManager : MonoBehaviour
                 return;
 
             bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
-            bm.SetCurrentTargetToFirst(CharacterType.EnemyUnit);
+            if (bm.currentMove == null)
+                bm.SetCurrentTargetToFirst(CharacterType.EnemyUnit);
 
         }
     }
@@ -1044,8 +1054,17 @@ public class InputsManager : MonoBehaviour
             bool allowed = false;
             if (bm.currentMove != null)
             {
-                allowed = bm.currentMove.targetType == TargetType.SingleAlly
-                          || bm.currentMove.targetType == TargetType.AllAllies;
+                if (bm.currentMove.targetType == TargetType.SingleAllyOrEnemy)
+                {
+                    bm.ApplyMoveTargetSelection(TargetType.SingleAlly);
+                    allowed = true;
+                }
+                else if (bm.currentMove.targetType == TargetType.AllEnemies
+                         || bm.currentMove.targetType == TargetType.AllAllies)
+                {
+                    bm.ApplyMoveTargetSelection(TargetType.AllAllies);
+                    allowed = true;
+                }
             }
             if (bm.currentItem != null)
             {
@@ -1074,7 +1093,8 @@ public class InputsManager : MonoBehaviour
                 return;
 
             bm.ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
-            bm.SetCurrentTargetToFirst(CharacterType.SquadUnit);
+            if (bm.currentMove == null)
+                bm.SetCurrentTargetToFirst(CharacterType.SquadUnit);
 
         }
     }

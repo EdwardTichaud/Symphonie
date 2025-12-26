@@ -368,6 +368,15 @@ public partial class NewBattleManager
                     u != null &&
                     u.Data.characterType == enemy.Data.characterType &&
                     u.currentHP > 0);
+            case TargetType.SingleAllyOrEnemy:
+                if (move.defaultTargetType == TargetType.Self)
+                    return enemy;
+                if (move.defaultTargetType == TargetType.SingleAlly || move.defaultTargetType == TargetType.AllAllies)
+                    return activeCharacterUnits.FirstOrDefault(u =>
+                        u != null &&
+                        u.Data.characterType == enemy.Data.characterType &&
+                        u.currentHP > 0);
+                return enemy.SelectTargetFromSquad();
             default:
                 return enemy.SelectTargetFromSquad();
         }
