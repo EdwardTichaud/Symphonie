@@ -62,6 +62,9 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Motif actuellement actif.</summary>
     private CameraMotifSO activeMotif;
 
+    /// <summary>Motif actuellement appliqué par le gestionnaire.</summary>
+    private CameraMotifSO currentCameraMotif;
+
     /// <summary>Motif précédent pour permettre un blend progressif.</summary>
     private CameraMotifSO previousMotif;
 
@@ -345,6 +348,7 @@ public class BattleCameraManager : MonoBehaviour
 
         previousMotif = activeMotif;
         activeMotif = motif;
+        currentCameraMotif = motif;
 
         float resolvedDuration = blendDuration >= 0f
             ? blendDuration
@@ -721,4 +725,7 @@ public class BattleCameraManager : MonoBehaviour
 
     /// <summary>Indique si une Cinemachine possède la priorité dans le <see cref="CinemachineBrain"/>.</summary>
     public bool HasActiveCinemachineCamera => blendSwitcher && blendSwitcher.HasActiveCamera;
+
+    /// <summary>Expose le motif actuellement appliqué par le gestionnaire.</summary>
+    public CameraMotifSO CurrentCameraMotif => currentCameraMotif;
 }

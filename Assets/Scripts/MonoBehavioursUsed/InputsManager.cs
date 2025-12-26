@@ -483,18 +483,30 @@ public class InputsManager : MonoBehaviour
             bm.StartCoroutine(bm.ExecuteMoveOnTarget(bm.currentMove, bm.currentCharacterUnit, bm.currentTargetCharacter));
             bm.ToggleMenuContainers(false, false, false);
         }
-        else if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem
-            || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForItem)
+        else if (IsItemTargetSelectionState(bm.currentBattleState))
         {
-            if (!bm.IsTargetInRange(bm.currentCharacterUnit, bm.currentTargetCharacter, bm.currentItem))
+            if (bm.currentItem == null || bm.currentCharacterUnit == null)
+                return;
+
+            var targets = bm.ResolveItemTargetsForCurrentSelection();
+            if (targets.Count == 0)
+            {
+                ActionUIDisplayManager.Instance.DisplayInstruction("Aucune cible valide");
+                return;
+            }
+
+            CharacterUnit rangeTarget = bm.currentTargetCharacter ?? targets[0];
+            if (!bm.IsTargetInRange(bm.currentCharacterUnit, rangeTarget, bm.currentItem))
             {
                 ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
                 return;
             }
 
-
             bm.ChangeBattleState(BattleState.SquadUnit_Item_Use);
-            bm.StartCoroutine(bm.UseItemOnTarget(bm.currentItem, bm.currentCharacterUnit, bm.currentTargetCharacter));
+            if (bm.IsCurrentItemMultiTargetSelection())
+                bm.StartCoroutine(bm.UseItemOnTargets(bm.currentItem, bm.currentCharacterUnit, targets));
+            else
+                bm.StartCoroutine(bm.UseItemOnTarget(bm.currentItem, bm.currentCharacterUnit, rangeTarget));
             bm.ToggleMenuContainers(false, false, false);
         }
 

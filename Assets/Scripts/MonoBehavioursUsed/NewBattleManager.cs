@@ -1029,7 +1029,9 @@ public partial class NewBattleManager : MonoBehaviour
 
         CharacterUnit targetUnit = null;
 
-        if (unit == currentCharacterUnit && currentTargetCharacter != null && currentTargetCharacter.currentHP > 0)
+        if (unit == currentCharacterUnit && currentTargetCharacter != null && currentTargetCharacter.currentHP > 0
+            && currentTargetCharacter.Data != null
+            && currentTargetCharacter.Data.isPlayerControlled != unit.Data.isPlayerControlled)
         {
             targetUnit = currentTargetCharacter;
         }
@@ -1074,7 +1076,9 @@ public partial class NewBattleManager : MonoBehaviour
             // Recherche de l'adversaire le plus proche en réutilisant la logique de ciblage.
             CharacterUnit targetUnit = null;
 
-            if (unit == currentCharacterUnit && currentTargetCharacter != null && currentTargetCharacter.currentHP > 0)
+            if (unit == currentCharacterUnit && currentTargetCharacter != null && currentTargetCharacter.currentHP > 0
+                && currentTargetCharacter.Data != null
+                && currentTargetCharacter.Data.isPlayerControlled != unit.Data.isPlayerControlled)
             {
                 targetUnit = currentTargetCharacter;
             }
@@ -2649,6 +2653,9 @@ public partial class NewBattleManager : MonoBehaviour
         else
             ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
 
+        if (itemTargetSelectionCameraMotif != null)
+            BattleCameraManager.Instance?.SetCameraMotif(itemTargetSelectionCameraMotif);
+
         // Force immédiatement la synchronisation de la Cinemachine de ciblage avec la cible présélectionnée.
         // Sans ce rappel explicite, la priorité de la caméra de sélection n'était effective qu'après la
         // prochaine Update, ce qui pouvait laisser la caméra précédente active une frame de trop.
@@ -3380,6 +3387,55 @@ public partial class NewBattleManager : MonoBehaviour
         currentTargetIndex = 0;
         currentTargetCharacter = activeCharacterUnits
             .FirstOrDefault(u => u.characterType == type && u.currentHP > 0);
+    }
+
+    public bool IsCurrentItemMultiTargetSelection()
+    {
+        return currentItemTargetType == TargetType.AllEnemies
+               || currentItemTargetType == TargetType.AllAllies
+               || currentItemTargetType == TargetType.All;
+    }
+
+    public List<CharacterUnit> ResolveItemTargetsForCurrentSelection()
+    {
+        List<CharacterUnit> targets = new();
+
+        if (currentItem == null)
+            return targets;
+
+        if (IsCurrentItemMultiTargetSelection())
+        {
+            CollectMultiTargetUnits(currentItemTargetType, targets);
+            return targets;
+        }
+
+        CharacterUnit target = currentTargetCharacter;
+        if (target == null || target.currentHP <= 0)
+        {
+            switch (currentItemTargetType)
+            {
+                case TargetType.Self:
+                    target = currentCharacterUnit;
+                    break;
+                case TargetType.SingleEnemy:
+                    target = GetFirstActiveUnit(CharacterType.EnemyUnit);
+                    break;
+                case TargetType.SingleAlly:
+                    target = GetFirstActiveUnit(CharacterType.SquadUnit);
+                    break;
+                case TargetType.SingleAllyOrEnemy:
+                    target = GetFirstActiveUnit(CharacterType.EnemyUnit) ?? GetFirstActiveUnit(CharacterType.SquadUnit);
+                    break;
+                case TargetType.All:
+                    target = GetFirstActiveUnit(CharacterType.EnemyUnit) ?? GetFirstActiveUnit(CharacterType.SquadUnit);
+                    break;
+            }
+        }
+
+        if (target != null && target.currentHP > 0)
+            targets.Add(target);
+
+        return targets;
     }
 
     public void ApplyMoveTargetSelection(TargetType selectionType)

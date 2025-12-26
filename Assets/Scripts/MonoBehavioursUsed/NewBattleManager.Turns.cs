@@ -549,6 +549,74 @@ public partial class NewBattleManager
         ShowMainMenu();
     }
 
+    public IEnumerator UseItemOnTargets(ItemData item, CharacterUnit caster, IReadOnlyList<CharacterUnit> targets,
+        bool bypassInventory = false)
+    {
+        if (item == null || caster == null || targets == null || targets.Count == 0)
+            yield break;
+
+        if (!bypassInventory)
+        {
+            if (!InventoryManager.Instance.CanUseItem(item))
+            {
+                ActionUIDisplayManager.Instance.DisplayInstruction("Limite d'utilisation atteinte");
+                yield break;
+            }
+        }
+
+        CharacterUnit rangeTarget = targets.FirstOrDefault(t => t != null && t.currentHP > 0);
+        if (rangeTarget == null)
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction("Aucune cible valide");
+            yield break;
+        }
+
+        if (!IsTargetInRange(caster, rangeTarget, item))
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
+            yield break;
+        }
+
+        OrientUnitTowardTarget(caster, rangeTarget);
+
+        // Animation ou Timeline d'utilisation (jouée une seule fois).
+        yield return RhythmQTEManager.Instance.ItemRoutine(item, caster, rangeTarget);
+
+        bool crit = RhythmQTEManager.Instance.LastItemSuccess;
+        if (crit)
+            ActionUIDisplayManager.Instance?.DisplayCriticalHit();
+
+        int appliedTargets = 0;
+        foreach (var target in targets)
+        {
+            if (target == null || target.currentHP <= 0)
+                continue;
+
+            ItemEffectExecutor.ApplyEffect(item, caster, target, crit);
+
+            appliedTargets++;
+        }
+
+        if (!bypassInventory && appliedTargets > 0)
+            InventoryManager.Instance.RegisterItemUse(item);
+
+        // Calcule les dégâts totaux infligés par l'objet.
+        float dmgVal = 0f;
+        if (item.HasEffect(ItemEffectType.Damage))
+            dmgVal += item.GetTotalEffectValue(ItemEffectType.Damage);
+        if (crit && item.useCriticalVariant && item.criticalEffectType == ItemEffectType.Damage)
+            dmgVal += item.criticalEffectValue;
+
+        if (dmgVal > 0f && appliedTargets > 0)
+            RegisterDamage(caster, dmgVal * appliedTargets);
+
+        caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
+        yield return null;
+
+        // Retour au menu principal pour choisir une autre action
+        ShowMainMenu();
+    }
+
     /// <summary>
     /// Vérifie si l'emplacement relatif requis par le mouvement est libre.
     /// Retourne faux si une autre unité (hors lanceur et cible) occupe déjà la zone.
