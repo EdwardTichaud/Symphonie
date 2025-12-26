@@ -422,7 +422,7 @@ public class RhythmQTEManager : MonoBehaviour
         {
             CancelPendingMotifSwitch();
             if (move.cameraMotif != null)
-                BattleCameraManager.Instance?.SetCameraMotif(move.cameraMotif);
+                BattleCameraManager.Instance?.LockCameraMotif(move.cameraMotif);
             else
                 BattleCameraManager.Instance?.ClearCameraMotif();
         }
@@ -540,6 +540,8 @@ public class RhythmQTEManager : MonoBehaviour
             true,
             initialRotation);
         yield return WaitForTimelinePhase(move.retreatTimeline, useOverlay, caster);
+
+        BattleCameraManager.Instance?.UnlockCameraMotif();
 
         isActive = false;
         NewBattleManager.Instance.AfterMusicalMove(move, caster, critical);

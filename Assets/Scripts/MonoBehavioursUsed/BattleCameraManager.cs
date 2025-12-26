@@ -65,6 +65,9 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Motif précédent pour permettre un blend progressif.</summary>
     private CameraMotifSO previousMotif;
 
+    /// <summary>Indique si le motif courant est verrouillé pour la durée d'un move.</summary>
+    private bool motifLocked;
+
     /// <summary>Timer de blend entre motifs.</summary>
     private float motifBlendTimer;
 
@@ -88,6 +91,10 @@ public class BattleCameraManager : MonoBehaviour
         public float OrbitPhaseOffset;
         public float OrbitSpeed;
         public CameraMotifSO.ReferencePoint OrbitReferencePoint;
+        public Transform ReferenceTransform;
+        public CameraMotifSO.ReferencePoint ReferencePoint;
+        public float ReferenceDelay;
+        public List<ReferenceSample> ReferenceSamples;
     }
 
     private struct MotifTuning
@@ -96,11 +103,19 @@ public class BattleCameraManager : MonoBehaviour
         public Vector3 ReferenceOffsetPosition;
         public Vector3 ReferenceOffsetRotation;
         public float ReferenceOffsetSmoothTime;
+        public float ReferenceOffsetDelay;
         public bool OrbitEnabled;
         public CameraMotifSO.ReferencePoint OrbitReferencePoint;
         public float OrbitSpeed;
         public bool LookAtEnabled;
         public CameraMotifSO.ReferencePoint LookAtReferencePoint;
+    }
+
+    private struct ReferenceSample
+    {
+        public float Time;
+        public Vector3 Position;
+        public Quaternion Rotation;
     }
 
     /// <summary>Style de blend homogène imposé par le <see cref="CinemachineBlendSwitcher"/>.</summary>
@@ -219,13 +234,17 @@ public class BattleCameraManager : MonoBehaviour
 
         Transform referenceTransform = referenceUnit.transform;
 
-        Vector3 offsetWorld = referenceTransform.TransformVector(tuning.ReferenceOffsetPosition);
-        Vector3 desiredPosition = referenceTransform.position + offsetWorld;
-        Quaternion desiredRotation = referenceTransform.rotation * Quaternion.Euler(tuning.ReferenceOffsetRotation);
-
         CameraState state = GetOrCreateCameraState(cameraName);
         if (state == null)
             return false;
+
+        Vector3 referencePosition = referenceTransform.position;
+        Quaternion referenceRotation = referenceTransform.rotation;
+        ResolveDelayedReference(state, referenceTransform, tuning.ReferencePoint, tuning.ReferenceOffsetDelay, ref referencePosition, ref referenceRotation);
+
+        Vector3 offsetWorld = referenceRotation * tuning.ReferenceOffsetPosition;
+        Vector3 desiredPosition = referencePosition + offsetWorld;
+        Quaternion desiredRotation = referenceRotation * Quaternion.Euler(tuning.ReferenceOffsetRotation);
 
         bool orbitApplied = false;
         if (tuning.OrbitEnabled && Mathf.Abs(tuning.OrbitSpeed) > 0.0001f)
@@ -318,6 +337,9 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Active un motif pour modifier le comportement de la caméra.</summary>
     public void SetCameraMotif(CameraMotifSO motif, float blendDuration = -1f)
     {
+        if (motifLocked && motif != activeMotif)
+            return;
+
         if (motif == activeMotif && !motifBlendActive)
             return;
 
@@ -339,6 +361,21 @@ public class BattleCameraManager : MonoBehaviour
         SetCameraMotif(null, blendDuration);
     }
 
+    /// <summary>Active et verrouille un motif jusqu'à la fin explicite d'un move.</summary>
+    public void LockCameraMotif(CameraMotifSO motif, float blendDuration = -1f)
+    {
+        if (motif != null)
+            SetCameraMotif(motif, blendDuration);
+
+        motifLocked = motif != null;
+    }
+
+    /// <summary>Déverrouille le motif pour autoriser un changement explicite.</summary>
+    public void UnlockCameraMotif()
+    {
+        motifLocked = false;
+    }
+
     /// <summary>Calcule les réglages finaux en tenant compte du motif actif.</summary>
     private MotifTuning ResolveMotifTuning()
     {
@@ -348,6 +385,7 @@ public class BattleCameraManager : MonoBehaviour
             ReferenceOffsetPosition = Vector3.zero,
             ReferenceOffsetRotation = Vector3.zero,
             ReferenceOffsetSmoothTime = 0.25f,
+            ReferenceOffsetDelay = 0f,
             OrbitEnabled = false,
             OrbitReferencePoint = CameraMotifSO.ReferencePoint.Caster,
             OrbitSpeed = 0f,
@@ -381,6 +419,7 @@ public class BattleCameraManager : MonoBehaviour
         baseTuning.ReferenceOffsetPosition += motif.referenceOffsetPosition;
         if (motif.referenceOffsetSmoothTime >= 0f)
             baseTuning.ReferenceOffsetSmoothTime = motif.referenceOffsetSmoothTime;
+        baseTuning.ReferenceOffsetDelay = Mathf.Max(0f, motif.referenceOffsetDelay);
         baseTuning.ReferenceOffsetRotation += motif.referenceOffsetRotation;
         baseTuning.OrbitEnabled = motif.orbitEnabled;
         baseTuning.OrbitReferencePoint = motif.orbitReferencePoint;
@@ -399,6 +438,7 @@ public class BattleCameraManager : MonoBehaviour
             ReferenceOffsetPosition = Vector3.Lerp(from.ReferenceOffsetPosition, to.ReferenceOffsetPosition, t),
             ReferenceOffsetRotation = Vector3.Lerp(from.ReferenceOffsetRotation, to.ReferenceOffsetRotation, t),
             ReferenceOffsetSmoothTime = Mathf.Lerp(from.ReferenceOffsetSmoothTime, to.ReferenceOffsetSmoothTime, t),
+            ReferenceOffsetDelay = Mathf.Lerp(from.ReferenceOffsetDelay, to.ReferenceOffsetDelay, t),
             OrbitEnabled = t < 0.5f ? from.OrbitEnabled : to.OrbitEnabled,
             OrbitReferencePoint = t < 0.5f ? from.OrbitReferencePoint : to.OrbitReferencePoint,
             OrbitSpeed = Mathf.Lerp(from.OrbitSpeed, to.OrbitSpeed, t),
@@ -473,7 +513,8 @@ public class BattleCameraManager : MonoBehaviour
             state = new CameraState
             {
                 SmoothedPosition = Vector3.zero,
-                SmoothedRotation = Quaternion.identity
+                SmoothedRotation = Quaternion.identity,
+                ReferenceSamples = new List<ReferenceSample>(32)
             };
             cameraStates[cameraName] = state;
         }
@@ -488,6 +529,83 @@ public class BattleCameraManager : MonoBehaviour
 
         if (cameraStates.TryGetValue(cameraName, out var state) && state != null)
             state.Initialized = false;
+    }
+
+    private static void ResolveDelayedReference(
+        CameraState state,
+        Transform referenceTransform,
+        CameraMotifSO.ReferencePoint referencePoint,
+        float delay,
+        ref Vector3 position,
+        ref Quaternion rotation)
+    {
+        delay = Mathf.Max(0f, delay);
+        if (delay <= 0f)
+        {
+            if (state.ReferenceSamples != null && state.ReferenceSamples.Count > 0)
+                state.ReferenceSamples.Clear();
+            state.ReferenceTransform = referenceTransform;
+            state.ReferencePoint = referencePoint;
+            state.ReferenceDelay = delay;
+            return;
+        }
+
+        bool resetBuffer = state.ReferenceTransform != referenceTransform
+            || state.ReferencePoint != referencePoint;
+
+        if (state.ReferenceSamples == null)
+            state.ReferenceSamples = new List<ReferenceSample>(32);
+
+        if (resetBuffer)
+        {
+            state.ReferenceSamples.Clear();
+            state.ReferenceTransform = referenceTransform;
+            state.ReferencePoint = referencePoint;
+        }
+        state.ReferenceDelay = delay;
+
+        float now = Time.time;
+        state.ReferenceSamples.Add(new ReferenceSample
+        {
+            Time = now,
+            Position = position,
+            Rotation = rotation
+        });
+
+        float targetTime = now - delay;
+        while (state.ReferenceSamples.Count >= 2 && state.ReferenceSamples[1].Time <= targetTime)
+            state.ReferenceSamples.RemoveAt(0);
+
+        if (state.ReferenceSamples.Count == 0)
+            return;
+
+        if (state.ReferenceSamples.Count == 1)
+        {
+            position = state.ReferenceSamples[0].Position;
+            rotation = state.ReferenceSamples[0].Rotation;
+            return;
+        }
+
+        ReferenceSample sampleA = state.ReferenceSamples[0];
+        ReferenceSample sampleB = state.ReferenceSamples[1];
+
+        if (targetTime <= sampleA.Time)
+        {
+            position = sampleA.Position;
+            rotation = sampleA.Rotation;
+            return;
+        }
+
+        if (targetTime >= sampleB.Time)
+        {
+            position = sampleB.Position;
+            rotation = sampleB.Rotation;
+            return;
+        }
+
+        float t = Mathf.InverseLerp(sampleA.Time, sampleB.Time, targetTime);
+        position = Vector3.Lerp(sampleA.Position, sampleB.Position, t);
+        rotation = Quaternion.Slerp(sampleA.Rotation, sampleB.Rotation, t);
     }
 
     private CharacterUnit ResolveReferenceUnit(CameraMotifSO.ReferencePoint referencePoint)

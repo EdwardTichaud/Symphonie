@@ -95,6 +95,9 @@ public partial class NewBattleManager : MonoBehaviour
     [Tooltip("Durée maximale pendant laquelle l'introduction de combat bloque le démarrage des tours.")]
     [SerializeField] private float battleIntroLockDuration = 2f;
 
+    [Tooltip("Motif de caméra joué pendant l'entrée en combat.")]
+    [SerializeField] private CameraMotifSO battleEntranceCameraMotif;
+
     /// <summary>
     /// Indique si la mise en scène d'introduction verrouille temporairement les menus.
     /// Ce drapeau est consulté par l'InputsManager pour ignorer toute interaction
@@ -151,6 +154,10 @@ public partial class NewBattleManager : MonoBehaviour
 
     [Header("Timeline d'objets")]
     public TimelineAsset itemPreparingTimeline;
+    [Tooltip("Motif joué pendant la sélection d'objet dans le menu.")]
+    public CameraMotifSO itemPreparingCameraMotif;
+    [Tooltip("Motif joué pendant la sélection de cible d'un objet.")]
+    public CameraMotifSO itemTargetSelectionCameraMotif;
     private bool itemMenuTimelineActive = false;
 
     /// <summary>
@@ -666,6 +673,25 @@ public partial class NewBattleManager : MonoBehaviour
         CharacterUnit upcomingFirstPlayer = ReturnFirstStrikeCharacter();
         PrimeMainMenuCameraForFirstUnit(upcomingFirstPlayer);
 
+        // 🎬 Active le motif d'entrée en combat en se basant sur la SquadUnit_0.
+        BattleCameraManager cameraManager = BattleCameraManager.Instance;
+        bool entranceMotifActive = false;
+        if (cameraManager != null && battleEntranceCameraMotif != null)
+        {
+            CharacterUnit entranceReferenceUnit = ResolveBattleEntranceReferenceUnit();
+            if (entranceReferenceUnit != null)
+            {
+                cameraManager.ConfigureActionTargets(entranceReferenceUnit, null);
+            }
+            else
+            {
+                Debug.LogWarning("[BattleTurnManager] SquadUnit_0 introuvable pour la caméra d'entrée en combat.");
+            }
+
+            cameraManager.SetCameraMotif(battleEntranceCameraMotif);
+            entranceMotifActive = true;
+        }
+
         //6 Intro Camera
         // Lance la séquence d'introduction des caméras avant de débuter les tours.
         // On verrouille explicitement les menus pendant toute la durée de la cinématique
@@ -674,6 +700,13 @@ public partial class NewBattleManager : MonoBehaviour
         yield return PlayIntroCameraSequence();
         // Les introductions sont terminées : les menus peuvent à présent accepter les entrées.
         battleIntroMenusLocked = false;
+
+        if (entranceMotifActive && cameraManager != null)
+        {
+            cameraManager.ClearCameraMotif();
+            if (upcomingFirstPlayer != null)
+                cameraManager.ConfigureActionTargets(upcomingFirstPlayer, null);
+        }
 
         // ✅ Les actions de combat redeviennent disponibles une fois la cinématique bouclée.
         //    Cette remise à zéro intervient immédiatement après le déverrouillage logique des menus.
@@ -746,6 +779,17 @@ public partial class NewBattleManager : MonoBehaviour
         manager.SetTurnOwner(candidate);
         manager.SetCurrentTarget(null);
         manager.SwitchToCamera(MainMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
+    }
+
+    private CharacterUnit ResolveBattleEntranceReferenceUnit()
+    {
+        CharacterUnit squadUnitZero = unitsInBattle.FirstOrDefault(unit =>
+            unit != null && string.Equals(unit.gameObject.name, "SquadUnit_0", StringComparison.Ordinal));
+
+        if (squadUnitZero != null)
+            return squadUnitZero;
+
+        return unitsInBattle.FirstOrDefault(unit => unit != null && unit.Data != null && unit.Data.isPlayerControlled);
     }
 
     //7 Démarre la boucle de tours
@@ -2177,7 +2221,13 @@ public partial class NewBattleManager : MonoBehaviour
         }
 
         // Confie la priorité caméra à la Cinemachine dédiée à l'attente d'objet.
-        BattleCameraManager.Instance?.ConfigureActionTargets(currentCharacterUnit, null);
+        var cameraManager = BattleCameraManager.Instance;
+        if (cameraManager != null)
+        {
+            cameraManager.ConfigureActionTargets(currentCharacterUnit, null);
+            if (itemPreparingCameraMotif != null)
+                cameraManager.SetCameraMotif(itemPreparingCameraMotif);
+        }
         // 🛠️ Important : on force explicitement la Cinemachine du menu d'objets. Auparavant, la timeline
         // d'attente rappelait la caméra "MainMenu" via un rôle générique (MainMenuIdle), ce qui volait la
         // priorité à « CMV_ItemsMenu » juste après le changement d'état. En réutilisant le même pipeline
@@ -2211,8 +2261,14 @@ public partial class NewBattleManager : MonoBehaviour
             return;
 
         // On redonne la priorité à la Cinemachine dédiée aux items pour la suite des actions.
-        BattleCameraManager.Instance?.SwitchToCamera(ItemsMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
-        BattleCameraManager.Instance?.ClearRigTargets();
+        var cameraManager = BattleCameraManager.Instance;
+        if (cameraManager != null)
+        {
+            cameraManager.SwitchToCamera(ItemsMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
+            if (itemPreparingCameraMotif != null)
+                cameraManager.ClearCameraMotif();
+            cameraManager.ClearRigTargets();
+        }
 
         if (currentCharacterUnit != null)
         {
@@ -2888,6 +2944,8 @@ public partial class NewBattleManager : MonoBehaviour
                     // des attaques classiques.
                     string cameraName = ResolveTargetSelectionCameraName(newState);
                     RequestCamera(cameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
+                    if (IsItemTargetSelectionState(newState) && itemTargetSelectionCameraMotif != null)
+                        manager.SetCameraMotif(itemTargetSelectionCameraMotif);
                 }
                 break;
 

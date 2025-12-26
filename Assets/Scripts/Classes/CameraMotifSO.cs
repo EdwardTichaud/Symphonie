@@ -27,6 +27,9 @@ public class CameraMotifSO : ScriptableObject
     [FormerlySerializedAs("casterOffsetSmoothTime")]
     [Tooltip("Temps de lissage (en secondes) pour suivre l'offset de référence. -1 = conserver la valeur de base.")]
     public float referenceOffsetSmoothTime = -1f;
+    [Min(0f)]
+    [Tooltip("Délai (en secondes) avant que la caméra suive le point de référence.")]
+    public float referenceOffsetDelay = 0f;
     [FormerlySerializedAs("casterOffsetRotationEuler")]
     [FormerlySerializedAs("casterOffsetRotation")]
     [Tooltip("Rotation (en degrés) appliquée à la caméra, dans l'espace local du point de référence.")]

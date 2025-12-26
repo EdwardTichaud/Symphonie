@@ -367,6 +367,36 @@ public class MusicalMoveSO : ScriptableObject
             legacyMoveSpeedConverted = true;
         }
 
+        if (cameraMotif == null)
+        {
+            var serialized = new SerializedObject(this);
+            serialized.Update();
+            var performing = serialized.FindProperty("performingCameraMotif");
+            var preparing = serialized.FindProperty("preparingCameraMotif");
+            var retreat = serialized.FindProperty("retreatCameraMotif");
+
+            cameraMotif = performing != null && performing.objectReferenceValue != null
+                ? performing.objectReferenceValue as CameraMotifSO
+                : preparing != null && preparing.objectReferenceValue != null
+                    ? preparing.objectReferenceValue as CameraMotifSO
+                    : retreat != null && retreat.objectReferenceValue != null
+                        ? retreat.objectReferenceValue as CameraMotifSO
+                        : cameraMotif;
+
+            if (cameraMotif != null)
+            {
+                if (performing != null)
+                    performing.objectReferenceValue = null;
+                if (preparing != null)
+                    preparing.objectReferenceValue = null;
+                if (retreat != null)
+                    retreat.objectReferenceValue = null;
+
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(this);
+            }
+        }
+
         // Charge le ScriptableObject de référence. Si le fichier est déplacé
         // ou supprimé, aucune action n'est effectuée pour ne pas provoquer
         // d'erreur dans l'éditeur.

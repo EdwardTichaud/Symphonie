@@ -16,9 +16,10 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Enchaîne un motif classique infligeant environ 7 500 points de dégâts avant d'ajouter la puissance actuelle du lanceur."
+  description: "Encha\xEEne un motif classique infligeant environ 7\u202F500 points
+    de d\xE9g\xE2ts avant d'ajouter la puissance actuelle du lanceur."
   inventoryCategory: MusicalMove
-  inventorySummary: "Attaque ~7 500 dégâts + puissance du lanceur."
+  inventorySummary: "Attaque ~7\u202F500 d\xE9g\xE2ts + puissance du lanceur."
   consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 1
@@ -28,8 +29,13 @@ MonoBehaviour:
   harmonicGeneration: 0
   consumedHarmonicType: 0
   generatedHarmonicType: 0
-  effectType: 0
-  effectValue: 7500
+  effects:
+  - type: 0
+    value: 7500
+  legacyEffectType: 0
+  legacyEffectValue: 7500
+  passiveEffectPrefab: {fileID: 0}
+  passiveEffectVerticalOffset: 0.5
   buffStat: 0
   buffAmount: 0
   buffDuration: 0
@@ -38,6 +44,7 @@ MonoBehaviour:
   debuffAmount: 0
   debuffDuration: 0
   debuffIsPercentage: 0
+  previousEffectType: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -50,7 +57,6 @@ MonoBehaviour:
   altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
-  targetTypes: 01000000
   travelTime: 0
   legacyMoveSpeed: 0
   legacyMoveSpeedConverted: 1
@@ -65,13 +71,13 @@ MonoBehaviour:
   tpSFx_Start: {fileID: 0}
   tpSFx_End: {fileID: 0}
   warningClip: {fileID: 11400000, guid: fdb6bfb786458c7469dab751b0b786ac, type: 2}
+  requiresPreparationBeforeExecution: 0
+  preparationTurnCount: 0
+  preparationFailureConditions: []
   startDelay: 0
   enterAwake: 0
   preparingAnimation: {fileID: 0}
   preparingTimeline: {fileID: 11400000, guid: 4fa946d42fae10b48bc20bf37f9fc9eb, type: 2}
   performingTimeline: {fileID: 11400000, guid: 361e91e8ca92edc459ed5ed247a853bd, type: 2}
   retreatTimeline: {fileID: 11400000, guid: a1a472d5b77448c193281f60d340803e, type: 2}
-  preparingCameraRole: 5
-  preparingToPerformingCameraDelay: 0
-  performingCameraRole: 2
-  retreatCameraRole: 4
+  cameraMotif: {fileID: 11400000, guid: 97133ea71232b874697cc53aa5972364, type: 2}

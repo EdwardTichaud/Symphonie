@@ -16,8 +16,9 @@ MonoBehaviour:
   portrait: {fileID: 21300000, guid: 2db772b866712494da8b20c372bb9e92, type: 3}
   versusSprites: []
   characterType: 0
-  gameplayType: 1
+  gameplayType: 2
   harmonicType: 0
+  intelligenceLevel: 1
   characterWorldModel: {fileID: 23947754543557898, guid: 131ee47cd8164b341a40af7b2461abb4, type: 3}
   characterBattleModel: {fileID: 901204007372340786, guid: 48bc122d024634b4789a14a245e83484, type: 3}
   battlefieldIndex: 0
@@ -31,12 +32,12 @@ MonoBehaviour:
   basePower: 0
   baseStability: 0
   baseSagacity: 0
-  baseInitiative: 1
-  baseRange: 5
   baseHP: 50
   baseStrength: 1
   baseDefense: 1
   baseSpeed: 0
+  baseRange: 5
+  baseInitiative: 1
   baseInterceptionRange: 2
   baseRage: 0
   maxRage: 0
@@ -52,26 +53,10 @@ MonoBehaviour:
   defaultMusicalMoveSetIndex: -1
   itemSets: []
   defaultItemSetIndex: -1
-  currentInitiative: 1
-  currentRange: 5
-  currentHP: 50
-  currentStrength: 1
-  currentDefense: 1
-  currentPower: 0
-  currentStability: 0
-  currentVitality: 0
-  currentSagacity: 0
   isPlayerControlled: 1
-  currentRage: 0
-  currentFatigue: 0
-  currentReflex: 0
-  currentMobility: 0
-  currentSpeed: 0
-  currentInterceptionRange: 0
-  currentInterceptionChance: 0
-  currentHarmonicCharge: 1
-  currentMusicalMoveSetIndex: -1
-  currentItemSetIndex: -1
+  turnStartVoiceline: {fileID: 0}
+  turnEndVoiceline: {fileID: 0}
+  baseAttackVoiceline: {fileID: 0}
   hitSound: {fileID: 0}
   criticalHitSound: {fileID: 0}
   interceptedSound: {fileID: 0}
@@ -93,6 +78,7 @@ MonoBehaviour:
   deathAnimation: {fileID: 0}
   TPAnimation_Start: {fileID: 0}
   TPAnimation_Destination: {fileID: 0}
+  prepareToTargetAnimation: {fileID: 0}
   prepareToUndergoAnimation: {fileID: 0}
   awakenIdleAnimation: {fileID: 0}
   dissonantIdleAnimation: {fileID: 0}
