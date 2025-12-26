@@ -322,15 +322,16 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Timeline jouée lors du repli après l'exécution du move")]
     public TimelineAsset retreatTimeline;
 
-    [Header("Caméras par phase")]
-    [Tooltip("Plan cinématique utilisé durant la préparation (None = conserver la caméra courante, OverShoulderCasterLookTarget = ancre Camera_Shoulder_Stay, OverShoulderCasterToTarget = ancre Camera_Shoulder_Moving).")]
-    public BattleCameraRole preparingCameraRole = BattleCameraRole.WideEstablish;
-    [Tooltip("Temps (en secondes) durant lequel la caméra conserve le cadrage de préparation avant de basculer sur celui d'exécution.")]
-    public float preparingToPerformingCameraDelay = 0f;
-    [Tooltip("Plan cinématique utilisé durant l'exécution (None = conserver la caméra précédente).")]
-    public BattleCameraRole performingCameraRole = BattleCameraRole.OverShoulderCasterToTarget;
-    [Tooltip("Plan cinématique utilisé durant le repli (None = conserver la caméra précédente).")]
-    public BattleCameraRole retreatCameraRole = BattleCameraRole.ClosePushCaster;
+    [Header("Motifs de caméra")]
+    [Tooltip("Motif utilisé durant la préparation.")]
+    public CameraMotifSO preparingCameraMotif;
+    [Tooltip("Temps (en secondes) durant lequel le motif de préparation reste actif avant de passer au motif d'exécution.")]
+    [FormerlySerializedAs("preparingToPerformingCameraDelay")]
+    public float preparingToPerformingMotifDelay = 0f;
+    [Tooltip("Motif utilisé durant l'exécution.")]
+    public CameraMotifSO performingCameraMotif;
+    [Tooltip("Motif utilisé durant le repli.")]
+    public CameraMotifSO retreatCameraMotif;
 
 
 #if UNITY_EDITOR
@@ -383,12 +384,12 @@ public class MusicalMoveSO : ScriptableObject
             // celle de "MusicalMove_Rhapsodie". Les concepteurs peuvent ensuite
             // remplacer ces valeurs manuellement selon les besoins spécifiques
             // du nouveau move.
-            if (preparingCameraRole == BattleCameraRole.None)
-                preparingCameraRole = reference.preparingCameraRole;
-            if (performingCameraRole == BattleCameraRole.None)
-                performingCameraRole = reference.performingCameraRole;
-            if (retreatCameraRole == BattleCameraRole.None)
-                retreatCameraRole = reference.retreatCameraRole;
+            if (preparingCameraMotif == null)
+                preparingCameraMotif = reference.preparingCameraMotif;
+            if (performingCameraMotif == null)
+                performingCameraMotif = reference.performingCameraMotif;
+            if (retreatCameraMotif == null)
+                retreatCameraMotif = reference.retreatCameraMotif;
         }
 
         // Enfin, on sécurise la configuration des moves nécessitant une préparation

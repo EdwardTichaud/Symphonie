@@ -85,12 +85,6 @@ public partial class NewBattleManager : MonoBehaviour
     [SerializeField] private Transform enemySpawnRoot;
     public List<CharacterData> enemyTemplates = new List<CharacterData>();
 
-    [Header("Points de visée pour les caméras contextuelles")]
-    [Tooltip("Offset appliqué aux ancres CMVPoint_OverShoulder_CasterLookTarget générées pour chaque position de combat.")]
-    [SerializeField] private Vector3 overShoulderCasterLookPointPosition_SquadUnit = new(-1f, 1.4f, -2f);
-    [SerializeField] private Vector3 overShoulderCasterLookPointPosition_EnemyUnit = new(1f, 1.4f, 2f);
-    private Vector3 overShoulderCasterLookOffset = new(0f, 0f, 0f);
-
     [Header("Listes des unités en combat en fonction de leur état")]
     public List<CharacterUnit> unitsInBattle = new(); // Toutes les unités du combat quelque soit leur état
     public List<CharacterUnit> activeCharacterUnits = new List<CharacterUnit>(); // Unités actives en combat (HP > 0)
@@ -275,19 +269,13 @@ public partial class NewBattleManager : MonoBehaviour
     /// </summary>
     private CharacterUnit lastTargetCursorCameraTarget;
     /// <summary>
-    /// Conserve l'ancre utilisée pour guider le regard de la Cinemachine sur
-    /// la cible sélectionnée. Cette information est essentielle pour savoir si
-    /// l'on doit redemander une mise à jour du rig caméra.
-    /// </summary>
-    private Transform lastTargetCursorAnchor;
-    /// <summary>
     /// Indique si la Cinemachine dédiée au suivi du curseur est actuellement
     /// configurée. Cela permet de libérer proprement les overrides lorsque
     /// l'on quitte une phase de ciblage.
     /// </summary>
     private bool isTargetCursorCinemachineActive;
     /// <summary>
-    /// Indique si le recadrage multi-cibles est actif pour la Cinemachine de ciblage.
+    /// Indique si le mode multi-cibles est actif pour la Cinemachine de ciblage.
     /// </summary>
     private bool isMultiTargetCursorCinemachineActive;
     /// <summary>
@@ -345,39 +333,7 @@ public partial class NewBattleManager : MonoBehaviour
     [Header("Caméra de combat")]
     // On mémorise l'objet caméra pour éviter de le rechercher à chaque frame
     [SerializeField] private GameObject battleCamera;
-    public float cameraSmoothSpeed = 5f;
     private BattleState lastCameraEvaluatedState = BattleState.None;
-
-    [Header("Cinématique de début de tour joueur")]
-    [SerializeField, Tooltip("Durée du travelling inspiré de l'introduction de combat (en secondes).")]
-    private float firstTurnRailDuration = 2.75f;
-    [SerializeField, Tooltip("Distance en mètres séparant le point de départ du rail et l'ancre finale du joueur.")]
-    private float firstTurnRailDepartureDistance = 6.5f;
-    [SerializeField, Tooltip("Décalage latéral appliqué au rail pour rappeler le léger travelling sur rail.")]
-    private float firstTurnRailLateralOffset = 1.75f;
-    [SerializeField, Tooltip("Rehaussement vertical appliqué au rail afin de dominer légèrement la scène.")]
-    private float firstTurnRailHeightOffset = 1.35f;
-    [SerializeField, Tooltip("Distance de freinage avant l'arrivée sur l'ancre finale (en mètres).")]
-    private float firstTurnRailApproachOffset = 2.1f;
-    [SerializeField, Tooltip("Hauteur du point focal regardé pendant le travelling (en mètres).")]
-    private float firstTurnRailFocusHeight = 1.7f;
-    [SerializeField, Tooltip("Influence de la position actuelle de la caméra lors du calcul du point de départ. 0 = ignore la position actuelle, 1 = conserve la position actuelle.")]
-    [Range(0f, 1f)] private float firstTurnRailCurrentPositionBlend = 0.35f;
-    [SerializeField, Tooltip("Courbe d'asservissement utilisée pour lisser l'accélération et la décélération du rail.")]
-    private AnimationCurve firstTurnRailEase = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
-
-    // États runtime du travelling d'introduction
-    private bool hasPlayedFirstTurnCameraRail = false;
-    private bool isFirstTurnRailActive = false;
-    private float firstTurnRailTimer = 0f;
-    private Vector3 firstTurnRailStartPos;
-    private Vector3 firstTurnRailEndPos;
-    private Vector3 firstTurnRailControlPointA;
-    private Vector3 firstTurnRailControlPointB;
-    private Quaternion firstTurnRailStartRot;
-    private Quaternion firstTurnRailEndRot;
-    private Vector3 firstTurnRailFocusStart;
-    private Vector3 firstTurnRailFocusEnd;
 
     // Compétences et items disponibles pour l’unité qui joue
     // Garder en public
@@ -633,7 +589,7 @@ public partial class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Gère la caméra d'introduction en priorité orbitale, attend la fin des
+    /// Gère la caméra d'introduction, attend la fin des
     /// déplacements puis lance les timelines d'introduction des unités.
     /// </summary>
     private IEnumerator PlayIntroCameraSequence()
@@ -644,9 +600,6 @@ public partial class NewBattleManager : MonoBehaviour
         // 📷 Dès que les mises en scène sont terminées, on bascule vers la caméra dédiée au menu principal.
         const float introToMenuBlendDuration = 0.5f;
         BattleCameraManager.Instance?.SwitchToCamera(MainMenuCameraName, introToMenuBlendDuration);
-
-        // 🎞️ On laisse le travelling d'intro se terminer proprement, puis on replace la caméra à son point d'origine.
-        BattleCameraManager.Instance?.StopBattleIntroCameraTravel(introToMenuBlendDuration);
     }
     #endregion
 
@@ -775,7 +728,7 @@ public partial class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Pré-positionne la caméra de menu sur l'ancre de l'unité qui agira en premier.
+    /// Pré-positionne la caméra de menu sur l'unité qui agira en premier.
     /// </summary>
     /// <param name="candidate">Unité pressentie pour jouer en ouverture.</param>
     private void PrimeMainMenuCameraForFirstUnit(CharacterUnit candidate)
@@ -823,7 +776,7 @@ public partial class NewBattleManager : MonoBehaviour
     /// <param name="asset">Timeline à exécuter.</param>
     /// <param name="casterUnit">Unité propriétaire du PlayableDirector utilisé.</param>
     /// <param name="casterBinding">Objet de référence pour les bindings (Animator par exemple).</param>
-    /// La caméra n'est plus liée à la timeline : elle sera simplement repositionnée sur le lanceur.
+    /// La caméra n'est plus liée à la timeline : Munin gère le cadrage automatiquement.
     public void QueueConditionalTimeline(TimelineAsset asset, CharacterUnit casterUnit, GameObject casterBinding = null)
     {
         if (asset == null || casterUnit == null)
@@ -846,10 +799,6 @@ public partial class NewBattleManager : MonoBehaviour
         {
             var data = pendingTimelines.Dequeue();
             BattleTransitionManager.Instance?.HideBattleUI();
-
-            // Aligne la caméra de combat sur l'unité concernée avant la cinématique
-            if (data.casterBinding != null)
-                BattleTimelineManager.Instance?.AlignCameraToTarget(data.casterBinding, "BattleCamera");
 
             bool timelinePlayed = false;
 
@@ -1726,7 +1675,7 @@ public partial class NewBattleManager : MonoBehaviour
     /// <summary>
     /// Vérifie qu'une unité est bien renseignée pour les menus et essaie de la récupérer sinon.
     /// Cette méthode est indispensable pour garantir que les caméras Cinemachine (et notamment
-    /// « CMV_ItemsMenu ») disposent toujours d'une ancre valide lorsque l'on ouvre un menu.
+    /// « CMV_ItemsMenu ») disposent toujours d'une unité de référence valide lorsque l'on ouvre un menu.
     /// </summary>
     /// <param name="callerContext">Nom de la méthode appelante (utilisé dans les logs).</param>
     private bool EnsureCurrentCharacterUnitForMenus(string callerContext)
@@ -1766,7 +1715,7 @@ public partial class NewBattleManager : MonoBehaviour
         if (resolvedUnit == null)
         {
             Debug.LogError($"[{callerContext}] Impossible d'identifier l'unité active avant l'ouverture d'un menu. " +
-                           "La caméra ne peut donc pas se caler sur le CMVPoint approprié.");
+                           "La caméra ne peut donc pas se caler sur l'unité attendue.");
             return false;
         }
 
@@ -2228,16 +2177,7 @@ public partial class NewBattleManager : MonoBehaviour
         }
 
         // Confie la priorité caméra à la Cinemachine dédiée à l'attente d'objet.
-        Transform casterCameraAnchor = currentCharacterUnit != null
-            ? currentCharacterUnit.GetDefaultCameraAnchor(CharacterUnit.CameraAnchorPurpose.Caster)
-            : null;
-
-        BattleCameraManager.Instance?.ConfigureActionTargets(
-            currentCharacterUnit,
-            null,
-            null,
-            casterCameraAnchor,
-            null);
+        BattleCameraManager.Instance?.ConfigureActionTargets(currentCharacterUnit, null);
         // 🛠️ Important : on force explicitement la Cinemachine du menu d'objets. Auparavant, la timeline
         // d'attente rappelait la caméra "MainMenu" via un rôle générique (MainMenuIdle), ce qui volait la
         // priorité à « CMV_ItemsMenu » juste après le changement d'état. En réutilisant le même pipeline
@@ -2245,14 +2185,12 @@ public partial class NewBattleManager : MonoBehaviour
         // tant que le joueur consulte l'inventaire.
         RequestCamera(ItemsMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
 
-        // L'objet d'animation sert de point d'ancrage pour la timeline et l'alignement caméra.
+        // L'objet d'animation sert de point d'ancrage pour la timeline.
         GameObject animGO = casterAnimator != null ? casterAnimator.gameObject : currentCharacterUnit.GetCasterBindingTarget();
 
-        // Même si la timeline est optionnelle, on garde l'alignement pour replacer la BattleCamera sur le lanceur.
+        // Même si la timeline est optionnelle, on conserve l'exécution des signaux si elle existe.
         if (BattleTimelineManager.Instance != null && animGO != null)
         {
-            BattleTimelineManager.Instance.AlignCameraToTarget(animGO, "BattleCamera");
-
             // La timeline reste utile pour jouer les éventuels signaux ou effets complémentaires.
             if (itemPreparingTimeline != null)
                 BattleTimelineManager.Instance.PlayCasterTimeline(itemPreparingTimeline, currentCharacterUnit, animGO);
@@ -2272,8 +2210,8 @@ public partial class NewBattleManager : MonoBehaviour
         if (!itemMenuTimelineActive)
             return;
 
-        // On redonne la priorité à la BattleCamera classique pour la suite des actions.
-        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
+        // On redonne la priorité à la Cinemachine dédiée aux items pour la suite des actions.
+        BattleCameraManager.Instance?.SwitchToCamera(ItemsMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
         BattleCameraManager.Instance?.ClearRigTargets();
 
         if (currentCharacterUnit != null)
@@ -2645,11 +2583,9 @@ public partial class NewBattleManager : MonoBehaviour
         else
             ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
 
-        // Force immédiatement la synchronisation de la Cinemachine orbitale avec la cible présélectionnée.
-        // Sans ce rappel explicite, la priorité de « CMV_OrbitAroundUnit » n'était effective qu'après la
-        // prochaine Update, ce qui pouvait laisser la caméra précédente active une frame de trop. En
-        // centralisant le rafraîchissement ici, on garantit que la caméra se cale instantanément sur
-        // « CMVPoint_OrbitAroundUnit » tout en laissant la timeline de préparation continuer à se jouer.
+        // Force immédiatement la synchronisation de la Cinemachine de ciblage avec la cible présélectionnée.
+        // Sans ce rappel explicite, la priorité de la caméra de sélection n'était effective qu'après la
+        // prochaine Update, ce qui pouvait laisser la caméra précédente active une frame de trop.
         if (currentItemTargetType == TargetType.AllEnemies
             || currentItemTargetType == TargetType.AllAllies
             || currentItemTargetType == TargetType.All)
@@ -2876,21 +2812,6 @@ public partial class NewBattleManager : MonoBehaviour
         manager.SwitchToCamera(cameraName, blendDuration, blendStyle);
     }
 
-    /// <summary>
-    /// Demande un rôle caméra tout en évitant les transitions redondantes.
-    /// </summary>
-    private void RequestCamera(BattleCameraRole role, float blendDuration, CinemachineBlendDefinition.Styles blendStyle)
-    {
-        var manager = BattleCameraManager.Instance;
-        if (manager == null)
-            return;
-
-        if (role == BattleCameraRole.None && manager.CurrentCinemachineCameraName == null)
-            return;
-
-        manager.SwitchToCamera(role, blendDuration, blendStyle);
-    }
-
     public void UpdateCameraBehaviour(BattleState newState)
     {
         var manager = BattleCameraManager.Instance;
@@ -2904,6 +2825,14 @@ public partial class NewBattleManager : MonoBehaviour
         CharacterUnit target = currentTargetCharacter;
 
         UpdateCameraContext(caster, target);
+
+        bool isActionState = newState == BattleState.SquadUnit_PerformingMusicalMove
+                             || newState == BattleState.SquadUnit_PerformingBaseAttack
+                             || newState == BattleState.SquadUnit_Item_Use
+                             || newState == BattleState.EnemyUnit_PerformingMusicalMove
+                             || newState == BattleState.EnemyUnit_Item_Use;
+        if (stateChanged && !isActionState)
+            manager.ClearCameraMotif();
 
         switch (newState)
         {
@@ -2942,7 +2871,7 @@ public partial class NewBattleManager : MonoBehaviour
                 if (stateChanged)
                 {
                     // On active la Cinemachine appropriée en distinguant les cibles d'objet
-                    // (vue orbitale) des attaques classiques (vue épaule existante).
+                    // des attaques classiques.
                     string cameraName = ResolveTargetSelectionCameraName(newState);
                     RequestCamera(cameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
                 }
@@ -2974,202 +2903,13 @@ public partial class NewBattleManager : MonoBehaviour
 
             case BattleState.VictoryScreen_Await:
                 if (stateChanged)
-                    RequestCamera(BattleCameraRole.Victory, MenuCameraBlendDuration, MenuCameraBlendStyle);
+                    RequestCamera(VictoryCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
                 break;
 
             default:
                 if (stateChanged)
-                    RequestCamera(BattleCameraRole.None, ContextCameraBlendDuration, ContextCameraBlendStyle);
+                    RequestCamera(MainMenuCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
                 break;
-        }
-    }
-
-    /// <summary>
-    /// Prépare un travelling lent rappelant l'introduction de Clair Obscur avant le tout premier tour joueur.
-    /// Cette séquence met en valeur l'unité active via un mouvement sur rail progressif.
-    /// </summary>
-    /// <param name="unit">Unité qui s'apprête à jouer.</param>
-    private void TryLaunchFirstTurnCameraRail(CharacterUnit unit)
-    {
-        if (hasPlayedFirstTurnCameraRail)
-            return; // Le travelling ne doit être joué qu'une seule fois par combat.
-
-        if (unit == null || !unit.Data.isPlayerControlled)
-            return; // On ne déclenche l'effet que pour le premier tour du joueur.
-
-        EnsureBattleCamera();
-        if (battleCamera == null)
-            return; // Impossible d'animer une caméra inexistante.
-
-        Transform anchor = unit.GetCameraAnchor("CMVPoint_MainMenu");
-        if (anchor == null)
-        {
-            Debug.LogWarning("[BattleCameraManager] Aucun point 'CMVPoint_MainMenu' trouvé pour lancer le travelling introductif.");
-            hasPlayedFirstTurnCameraRail = true; // On évite de répéter l'avertissement si la configuration est manquante.
-            return;
-        }
-
-        hasPlayedFirstTurnCameraRail = true;
-
-        Transform camTransform = battleCamera.transform;
-
-        // On dérive la base du rail à partir de l'orientation de l'ancre finale afin de reproduire le mouvement "sur rail".
-        Vector3 anchorForward = anchor.forward.sqrMagnitude > 0.0001f
-            ? anchor.forward.normalized
-            : (unit.transform.forward.sqrMagnitude > 0.0001f ? unit.transform.forward.normalized : Vector3.forward);
-        Vector3 anchorRight = Vector3.Cross(Vector3.up, anchorForward).normalized;
-        if (anchorRight.sqrMagnitude < 0.0001f)
-            anchorRight = Vector3.Cross(anchorForward, Vector3.forward).normalized;
-        if (anchorRight.sqrMagnitude < 0.0001f)
-            anchorRight = Vector3.right;
-
-        Vector3 computedStart = anchor.position
-                                 - anchorForward * firstTurnRailDepartureDistance
-                                 + anchorRight * firstTurnRailLateralOffset
-                                 + Vector3.up * firstTurnRailHeightOffset;
-
-        // Mélange entre la position actuelle et le point de départ théorique pour éviter un cut trop brutal.
-        Vector3 startPos = Vector3.Lerp(computedStart, camTransform.position, Mathf.Clamp01(firstTurnRailCurrentPositionBlend));
-        Vector3 focusPoint = unit.transform.position + Vector3.up * firstTurnRailFocusHeight;
-
-        Vector3 directionToEnd = anchor.position - startPos;
-        if (directionToEnd.sqrMagnitude < 0.0001f)
-            directionToEnd = anchorForward;
-        Vector3 startForward = directionToEnd.normalized;
-        Vector3 startRight = Vector3.Cross(Vector3.up, startForward).normalized;
-        if (startRight.sqrMagnitude < 0.0001f)
-            startRight = Vector3.Cross(startForward, Vector3.forward).normalized;
-        if (startRight.sqrMagnitude < 0.0001f)
-            startRight = Vector3.right;
-
-        firstTurnRailStartPos = startPos;
-        firstTurnRailEndPos = anchor.position;
-        firstTurnRailControlPointA = startPos
-                                     + startForward * Mathf.Max(1f, firstTurnRailDepartureDistance * 0.5f)
-                                     + Vector3.up * (firstTurnRailHeightOffset * 0.5f)
-                                     + startRight * (firstTurnRailLateralOffset * 0.35f);
-        firstTurnRailControlPointB = anchor.position
-                                     - anchorForward * firstTurnRailApproachOffset
-                                     + anchorRight * firstTurnRailLateralOffset
-                                     + Vector3.up * (firstTurnRailHeightOffset * 0.8f);
-
-        firstTurnRailFocusStart = Vector3.Lerp(focusPoint + anchorRight * (firstTurnRailLateralOffset * 0.5f), focusPoint, 0.25f);
-        firstTurnRailFocusEnd = focusPoint;
-
-        Vector3 startLook = firstTurnRailFocusStart - startPos;
-        if (startLook.sqrMagnitude < 0.0001f)
-            startLook = startForward;
-        Vector3 endLook = firstTurnRailFocusEnd - firstTurnRailEndPos;
-        if (endLook.sqrMagnitude < 0.0001f)
-            endLook = anchorForward;
-
-        firstTurnRailStartRot = Quaternion.LookRotation(startLook.normalized, Vector3.up);
-        firstTurnRailEndRot = Quaternion.LookRotation(endLook.normalized, Vector3.up);
-
-        camTransform.SetPositionAndRotation(firstTurnRailStartPos, firstTurnRailStartRot);
-
-        firstTurnRailTimer = 0f;
-        isFirstTurnRailActive = firstTurnRailDuration > 0.0001f;
-
-        if (!isFirstTurnRailActive)
-        {
-            // En cas de durée nulle, on se place directement sur l'ancre finale.
-            camTransform.SetPositionAndRotation(firstTurnRailEndPos, firstTurnRailEndRot);
-        }
-    }
-
-    /// <summary>
-    /// Met à jour l'interpolation du travelling introductif à chaque frame.
-    /// </summary>
-    /// <param name="camTransform">Transform de la caméra de combat.</param>
-    private void UpdateFirstTurnCameraRail(Transform camTransform)
-    {
-        if (!isFirstTurnRailActive)
-            return;
-
-        if (firstTurnRailDuration <= 0.0001f)
-        {
-            camTransform.SetPositionAndRotation(firstTurnRailEndPos, firstTurnRailEndRot);
-            isFirstTurnRailActive = false;
-            return;
-        }
-
-        firstTurnRailTimer += Time.deltaTime;
-        float normalizedTime = Mathf.Clamp01(firstTurnRailTimer / firstTurnRailDuration);
-        float easedT = firstTurnRailEase != null ? firstTurnRailEase.Evaluate(normalizedTime) : normalizedTime;
-
-        Vector3 newPos = EvaluateCubicBezier(firstTurnRailStartPos, firstTurnRailControlPointA, firstTurnRailControlPointB, firstTurnRailEndPos, easedT);
-        camTransform.position = newPos;
-
-        Vector3 focus = Vector3.Lerp(firstTurnRailFocusStart, firstTurnRailFocusEnd, easedT);
-        Vector3 forward = focus - newPos;
-        if (forward.sqrMagnitude < 0.0001f)
-            forward = firstTurnRailEndRot * Vector3.forward;
-
-        Quaternion targetRotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
-        camTransform.rotation = Quaternion.Slerp(firstTurnRailStartRot, targetRotation, easedT);
-
-        if (normalizedTime >= 0.999f)
-        {
-            camTransform.SetPositionAndRotation(firstTurnRailEndPos, firstTurnRailEndRot);
-            isFirstTurnRailActive = false;
-        }
-    }
-
-    /// <summary>
-    /// Évalue une courbe de Bézier cubique utilisée pour générer le chemin du travelling.
-    /// </summary>
-    private static Vector3 EvaluateCubicBezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
-    {
-        t = Mathf.Clamp01(t);
-        float u = 1f - t;
-        float uu = u * u;
-        float uuu = uu * u;
-        float tt = t * t;
-        float ttt = tt * t;
-
-        return uuu * p0 + 3f * uu * t * p1 + 3f * u * tt * p2 + ttt * p3;
-    }
-
-    private void LateUpdate()
-    {
-        if (battleCamera == null)
-        {
-            return;
-        }
-
-        var manager = BattleCameraManager.Instance;
-        if (manager != null && manager.HasActiveCinemachineCamera)
-            return; // Cinemachine contrôle actuellement la vue.
-
-        // Si une Timeline globale ou une cinématique pilote la caméra, on ne la perturbe pas.
-        if (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
-            return;
-
-        Transform camTransform = battleCamera.transform;
-
-        if (isFirstTurnRailActive)
-        {
-            UpdateFirstTurnCameraRail(camTransform);
-            return;
-        }
-
-        if (itemMenuTimelineActive)
-            return;
-
-        bool targetCursorVisible = targetCursor != null && targetCursor.activeInHierarchy;
-        if (targetCursorVisible)
-        {
-            Vector3 toCursor = targetCursor.transform.position - camTransform.position;
-            if (toCursor.sqrMagnitude > 0.0001f)
-            {
-                Quaternion cursorRotation = Quaternion.LookRotation(toCursor.normalized, Vector3.up);
-                camTransform.rotation = Quaternion.Slerp(
-                    camTransform.rotation,
-                    cursorRotation,
-                    Time.deltaTime * cameraSmoothSpeed
-                );
-            }
         }
     }
 
@@ -3191,47 +2931,6 @@ public partial class NewBattleManager : MonoBehaviour
         return null;
     }
 
-    /// <summary>
-    /// Tente de récupérer l'ancre "Camera_TargetedPoint" d'une unité afin
-    /// d'offrir un point de vue stable durant la sélection de cible.
-    /// </summary>
-    /// <param name="unit">Unité pré-ciblée actuellement suivie par l'UI.</param>
-    /// <returns>
-    /// L'ancre dédiée si elle existe, sinon le transform racine de l'unité
-    /// pour garantir un focus caméra cohérent.
-    /// </returns>
-    private Transform GetTargetedAnchorOrFallback(CharacterUnit unit)
-    {
-        if (unit == null)
-        {
-            // Sécurité : sans unité, on ne peut pas proposer d'ancre valide.
-            return null;
-        }
-
-        // Recherche prioritaire de l'ancre spécifique prévue par les artistes.
-        // Lors d'un ciblage d'objet, on tente d'abord de récupérer le point orbital dédié
-        // afin que la Cinemachine se cale exactement sur "CMVPoint_OrbitAroundUnit".
-        if (IsItemTargetSelectionState(currentBattleState))
-        {
-            Transform orbitAnchor = unit.GetCameraAnchor("CMVPoint_OrbitAroundUnit");
-            if (orbitAnchor != null)
-                return orbitAnchor;
-        }
-
-        Transform targetedAnchor = unit.GetCameraAnchor("CMVPoint_TargetReaction");
-        if (targetedAnchor == null)
-            targetedAnchor = FindChildRecursive(unit.transform, "Camera_TargetedPoint");
-        if (targetedAnchor != null)
-        {
-            return targetedAnchor;
-        }
-
-        // Fallback : on renvoie la racine de l'unité pour conserver un focus
-        // immédiat. Sans cela, la caméra resterait sur sa position précédente
-        // jusqu'à ce que le joueur navigue manuellement entre les cibles.
-        return unit.transform;
-    }
-
     private Sprite GetInputSprite(int index)
     {
         return index switch
@@ -3241,59 +2940,6 @@ public partial class NewBattleManager : MonoBehaviour
             2 => inputSprite3,
             _ => null,
         };
-    }
-
-    /// <summary>
-    /// Calcule dynamiquement une position de caméra afin que le lanceur et la cible
-    /// soient visibles simultanément avec une marge de sécurité.
-    /// </summary>
-    /// <param name="position">Position désirée pour la caméra.</param>
-    /// <param name="rotation">Rotation correspondante à appliquer.</param>
-    /// <param name="caster">Transform du lanceur de l'action.</param>
-    /// <param name="target">Transform de la cible sélectionnée.</param>
-    private void ComputeTargetSelectionCamera(out Vector3 position, out Quaternion rotation, Transform caster, Transform target)
-    {
-        if (caster == null || target == null)
-        {
-            // Sécurité : on garde la position actuelle si une référence manque
-            position = battleCamera.transform.position;
-            rotation = battleCamera.transform.rotation;
-            return;
-        }
-
-        // Cas particulier : le lanceur se cible lui-même
-        if (caster == target)
-        {
-            // On recule la caméra dans l'axe opposé au regard pour ne pas être collé
-            float selfDistance = 3f;        // Distance d'éloignement par défaut
-            Vector3 backward = -target.forward * selfDistance;
-            Vector3 lateralOffset = target.right * 1.5f; // Décalage léger pour éviter d'être pile dessus
-            Vector3 heightOffset = Vector3.up * 2f;       // Légère prise de hauteur
-
-            position = target.position + backward + lateralOffset + heightOffset;
-            rotation = Quaternion.LookRotation(target.position - position, Vector3.up);
-            return;
-        }
-
-        // Point central entre le lanceur et la cible
-        Vector3 mid = (caster.position + target.position) * 0.5f;
-        Vector3 toTarget = target.position - caster.position;
-
-        // Direction latérale perpendiculaire pour éviter que l'un ne masque l'autre
-        Vector3 side = Vector3.Cross(Vector3.up, toTarget);
-        if (side == Vector3.zero)
-            side = Vector3.right; // Valeur par défaut si les deux sont alignés verticalement
-        side.Normalize();
-
-        float distance = toTarget.magnitude;
-        float distMultiplier = 1.2f;    // Marges pour ne pas coller aux bords
-        float heightMultiplier = 0.5f;  // Légère hauteur pour la lisibilité
-
-        // Position désirée à une distance proportionnelle à l'écart entre les deux
-        position = mid + side * distance * distMultiplier + Vector3.up * Mathf.Clamp(distance * heightMultiplier, 1f, 5f);
-
-        // Orientation vers le point central
-        rotation = Quaternion.LookRotation(mid - position, Vector3.up);
     }
 
     /// <summary>
@@ -3492,16 +3138,15 @@ public partial class NewBattleManager : MonoBehaviour
 
         // Si aucune Cinemachine de ciblage n'était configurée, on évite un
         // rafraîchissement coûteux et on sort immédiatement.
-        if (!isTargetCursorCinemachineActive && lastTargetCursorCameraTarget == null && lastTargetCursorAnchor == null)
+        if (!isTargetCursorCinemachineActive && lastTargetCursorCameraTarget == null)
             return;
 
         isTargetCursorCinemachineActive = false;
         lastTargetCursorCameraTarget = null;
-        lastTargetCursorAnchor = null;
 
         // ConfigureActionTargets remettra la cible à null tout en conservant
         // le lanceur actuel comme référence. Cela garantit que les caméras de
-        // menu continuent d'utiliser l'ancre du joueur actif.
+        // menu continuent d'utiliser l'unité active.
         if (currentCharacterUnit != null)
             manager.ConfigureActionTargets(currentCharacterUnit, null);
         else
@@ -3513,7 +3158,7 @@ public partial class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Libère le recadrage multi-cibles afin de revenir aux ancres standards.
+    /// Libère le mode multi-cibles afin de revenir au suivi standard.
     /// </summary>
     private void DeactivateMultiTargetCursorCinemachine()
     {
@@ -3523,9 +3168,6 @@ public partial class NewBattleManager : MonoBehaviour
         isMultiTargetCursorCinemachineActive = false;
         lastMultiTargetCameraName = null;
 
-        var manager = BattleCameraManager.Instance;
-        if (manager != null)
-            manager.ClearMultiTargetFraming();
     }
 
     /// <summary>
@@ -3548,32 +3190,23 @@ public partial class NewBattleManager : MonoBehaviour
             return;
         }
 
-        Transform targetAnchor = GetTargetedAnchorOrFallback(target);
-
-        // Si la Cinemachine suit déjà cette cible et que l'ancre n'a pas changé,
+        // Si la Cinemachine suit déjà cette cible,
         // il est inutile de déclencher un nouveau rafraîchissement.
         // On identifie la caméra de ciblage qui devrait être active (item ou compétence).
         string expectedCameraName = ResolveTargetSelectionCameraName(currentBattleState);
 
         bool alreadyTracking = isTargetCursorCinemachineActive
                                && lastTargetCursorCameraTarget == target
-                               && lastTargetCursorAnchor == targetAnchor
                                && string.Equals(manager.CurrentCinemachineCameraName, expectedCameraName, System.StringComparison.OrdinalIgnoreCase);
         if (alreadyTracking)
             return;
 
         lastTargetCursorCameraTarget = target;
-        lastTargetCursorAnchor = targetAnchor;
         isTargetCursorCinemachineActive = true;
 
-        // On délègue la configuration détaillée (caster, cible, éventuels overrides)
-        // au gestionnaire central pour que toutes les Cinemachine restent cohérentes.
-        manager.ConfigureActionTargets(
-            currentCharacterUnit,
-            target,
-            null,
-            null,
-            targetAnchor);
+        // On délègue la configuration caster/target au gestionnaire central
+        // pour que toutes les Cinemachine restent cohérentes.
+        manager.ConfigureActionTargets(currentCharacterUnit, target);
 
         // Mise à jour de la cible suivie pour les caméras qui n'utilisent pas
         // les overrides directs mais se basent sur le contexte courant.
@@ -3605,7 +3238,6 @@ public partial class NewBattleManager : MonoBehaviour
             lastMultiTargetCameraName = expectedCameraName;
             isTargetCursorCinemachineActive = false;
             lastTargetCursorCameraTarget = null;
-            lastTargetCursorAnchor = null;
 
             manager.ConfigureActionTargets(currentCharacterUnit, null);
             manager.SetCurrentTarget(null);
@@ -3614,7 +3246,6 @@ public partial class NewBattleManager : MonoBehaviour
                 RequestCamera(expectedCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
         }
 
-        manager.SetMultiTargetFraming(targets, expectedCameraName);
     }
 
     /// <summary>
@@ -3633,7 +3264,7 @@ public partial class NewBattleManager : MonoBehaviour
 
     /// <summary>
     /// Détermine si la sélection de cible actuelle est déclenchée par un objet.
-    /// Cette information permet de prioriser la Cinemachine orbitale adaptée.
+    /// Cette information permet de prioriser la Cinemachine de ciblage adaptée.
     /// </summary>
     private bool IsItemTargetSelectionState(BattleState state)
     {
@@ -3794,6 +3425,8 @@ public partial class NewBattleManager : MonoBehaviour
         // Réinitialise l’état du combat
         ChangeBattleState(BattleState.None);
 
+        BattleCameraManager.Instance?.ClearCameraMotif();
+
         // Supprime toute trace d'un éventuel verrou d'introduction pour la prochaine rencontre.
         battleIntroMenusLocked = false;
 
@@ -3814,11 +3447,6 @@ public partial class NewBattleManager : MonoBehaviour
         maxTurnDamage = 0;
         currentTurnDamage = 0;
         mvpUnit = null;
-
-        // Réinitialise les informations liées au travelling d'introduction pour la prochaine confrontation.
-        hasPlayedFirstTurnCameraRail = false;
-        isFirstTurnRailActive = false;
-        firstTurnRailTimer = 0f;
 
         // Réinitialisation de l'interface de timeline via le gestionnaire dédié
         BattleTimelineUIManager.Instance?.Clear();

@@ -1,29 +1,20 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using Unity.Cinemachine;
+using UnityEngine;
 
 /// <summary>
 /// Gère l'activation et le placement des caméras Cinemachine pendant les combats.
-/// Le système associe chaque "CMV_" à un point "CMVPoint_" exposé sur les <see cref="CharacterUnit"/>.
+/// Munin positionne la caméra autour d'un point de référence via un <see cref="CameraMotifSO"/>.
 /// </summary>
 public class BattleCameraManager : MonoBehaviour
 {
-    /// <summary>Nom de la caméra d'introduction explicitement référencé dans les scripts.</summary>
-    private const string IntroCameraName = "CMV_BattleIntro";
-
-    /// <summary>Seuil évitant un LookRotation instable lorsque le point visé est trop proche.</summary>
-    private const float IntroLookDirectionThreshold = 0.0001f;
-
     /// <summary>Accès global au gestionnaire de caméras de combat.</summary>
     public static BattleCameraManager Instance { get; private set; }
 
     /// <summary>
     /// Fournit un accès en lecture à l'unité actuellement propriétaire du tour.
-    /// Ce getter est principalement utilisé par le <see cref="NewBattleManager"/>
-    /// lorsque celui-ci doit reconstruire le contexte d'affichage des menus sans
-    /// perdre l'alignement des Cinemachine sur leurs ancres « CMVPoint_ ».
+    /// Ce getter est principalement utilisé par le <see cref="NewBattleManager"/>.
     /// </summary>
     public CharacterUnit CurrentTurnOwner => currentTurnOwner;
 
@@ -33,10 +24,10 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Accès direct aux CinemachineCamera par leur nom.</summary>
     private readonly Dictionary<string, CinemachineCamera> cameraByName = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>Liste des CinemachineCamera découvertes afin de proposer un fallback aléatoire.</summary>
-    private readonly List<CinemachineCamera> availableCameras = new();
+    /// <summary>État de lissage par caméra.</summary>
+    private readonly Dictionary<string, CameraState> cameraStates = new(StringComparer.OrdinalIgnoreCase);
 
-    [Header("Effet de respiration")] // 👉 regroupe les paramètres d'oscillation douce
+    [Header("Effet de respiration")]
     [Tooltip("Active ou non le léger flottement des caméras de combat pour éviter une image totalement fixe.")]
     [SerializeField] private bool enableBreathingMotion = true;
 
@@ -55,97 +46,9 @@ public class BattleCameraManager : MonoBehaviour
     [Tooltip("Amplitude de lacet (en degrés) appliquée à la caméra pendant l'oscillation.")]
     [SerializeField] private float breathingYawAmplitude = 0.4f;
 
-    [Header("Réaction aux dégâts")] // 👉 paramètres dédiés au tremblement déclenché par un impact
-    [Tooltip("Active un tremblement court lorsque les membres de l'escouade subissent une attaque.")]
-    [SerializeField] private bool enableDamageShake = true;
-
-    [Tooltip("Durée en secondes de l'impulsion de caméra appliquée après un coup.")]
-    [SerializeField] private float damageShakeDuration = 0.35f;
-
-    [Tooltip("Fréquence des oscillations appliquées pendant le tremblement.")]
-    [SerializeField] private float damageShakeFrequency = 18f;
-
-    [Tooltip("Amplitude maximale (en mètres) du déplacement de caméra généré par l'impact.")]
-    [SerializeField] private float damageShakePositionAmplitude = 0.08f;
-
-    [Tooltip("Amplitude maximale (en degrés) de la rotation de caméra générée par l'impact.")]
-    [SerializeField] private float damageShakeRotationAmplitude = 1.25f;
-
-    [Tooltip("Multiplicateur appliqué lorsque le coup est considéré comme dévastateur.")]
-    [SerializeField] private float damageShakeDevastatingMultiplier = 1.75f;
-
-    [Tooltip("Courbe définissant l'atténuation du tremblement (1 = départ fort, 0 = repos).")]
-    [SerializeField] private AnimationCurve damageShakeEnvelope = AnimationCurve.EaseInOut(0f, 1f, 1f, 0f);
-
-    [Header("Recul des menus")] // 🎚️ Paramétrage de l'impulsion lors du changement de menu
-    [Tooltip("Active un léger recul lorsque la caméra passe d'un menu de combat à un autre.")]
-    [SerializeField] private bool enableMenuRecoil = true;
-
-    [Tooltip("Distance maximale (en mètres) parcourue par la caméra pendant le recul.")]
-    [SerializeField] private float menuRecoilDistance = 0.4f;
-
-    [Tooltip("Durée minimale (en secondes) de l'effet, même si le blend est plus court.")]
-    [SerializeField] private float menuRecoilMinimumDuration = 0.2f;
-
-    [Tooltip("Courbe de modulation de l'intensité (pic à 0,5 pour marquer le milieu du déplacement).")]
-    [SerializeField] private AnimationCurve menuRecoilCurve = new(
-        new Keyframe(0f, 0f, 0f, 0f),
-        new Keyframe(0.5f, 1f, 0f, 0f),
-        new Keyframe(1f, 0f, 0f, 0f));
-
-    [Header("Compensation de taille")] // ⚖️ Ajustements permettant d'englober correctement les géants
-    [Tooltip("Active l'adaptation automatique des plans lorsque l'unité en cours est nettement plus grande que la moyenne.")]
-    [SerializeField] private bool enableUnitSizeCompensation = true;
-
-    [Tooltip("Hauteur de référence (en mètres) correspondant à un humain standard. Utilisé pour normaliser les ratios de taille.")]
-    [SerializeField] private float referenceUnitHeight = 2f;
-
-    [Tooltip("Facteur minimal appliqué à la distance caméra→unité afin d'éviter de trop compresser les très petites créatures.")]
-    [SerializeField] private float minDistanceScale = 0.85f;
-
-    [Tooltip("Facteur maximal appliqué à la distance caméra→unité lorsque le combattant est gigantesque.")]
-    [SerializeField] private float maxDistanceScale = 2.5f;
-
-    [Tooltip("Interpolation (0..1) indiquant la proportion de l'écart de taille réellement répercutée sur la distance caméra.")]
-    [Range(0f, 1f)]
-    [SerializeField] private float distanceScaleBlend = 0.75f;
-
-    [Tooltip("Fraction de la hauteur utilisée pour positionner le point de focus vertical.")]
-    [SerializeField] private float focusHeightRatio = 0.5f;
-
-    [Tooltip("Offset vertical minimal appliqué au point de focus (permet de viser légèrement au-dessus des pieds).")]
-    [SerializeField] private float minFocusHeight = 0.6f;
-
-    [Tooltip("Offset vertical maximal autorisé pour éviter de quitter la zone jouable.")]
-    [SerializeField] private float maxFocusHeight = 6f;
-
-    [Header("Cadrage multi-cibles")] // 🎯 Ajustements dynamiques lors des sélections de groupe
-    [Tooltip("Active le recadrage dynamique lors des sélections AllAllies / AllEnemies / All.")]
-    [SerializeField] private bool enableMultiTargetFraming = true;
-
-    [Tooltip("Marge (en mètres) ajoutée autour du groupe pour éviter qu'il colle au cadre.")]
-    [SerializeField] private float multiTargetPadding = 0.6f;
-
-    [Tooltip("Multiplicateur appliqué à la distance calculée pour élargir légèrement le plan.")]
-    [SerializeField] private float multiTargetDistanceMultiplier = 1.1f;
-
-    [Tooltip("Distance minimale entre la caméra et le centre du groupe.")]
-    [SerializeField] private float multiTargetMinimumDistance = 3f;
-
-    /// <summary>Référence de la caméra d'introduction pour gérer son travelling manuel.</summary>
-    private Transform introCameraTransform;
-
-    /// <summary>Position locale de base de la caméra d'introduction.</summary>
-    private Vector3 introCameraInitialLocalPosition;
-
-    /// <summary>Rotation locale de base de la caméra d'introduction.</summary>
-    private Quaternion introCameraInitialLocalRotation;
-
-    /// <summary>Routine de déplacement en cours pour la caméra d'introduction.</summary>
-    private Coroutine introCameraMoveRoutine;
-
-    /// <summary>Routine différée pour la remise en place de la caméra d'introduction.</summary>
-    private Coroutine introCameraResetRoutine;
+    [Header("Motif par défaut")]
+    [Tooltip("Motif appliqué en continu si aucun motif ponctuel n'est actif.")]
+    [SerializeField] private CameraMotifSO defaultMotif;
 
     /// <summary>Unité actuellement en train de jouer son tour.</summary>
     private CharacterUnit currentTurnOwner;
@@ -156,199 +59,49 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Unité ciblée par l'action en cours ou par la sélection.</summary>
     private CharacterUnit currentTarget;
 
-    /// <summary>Ancre explicite fournie lors d'une configuration de cibles (caster).</summary>
-    private Transform casterAnchorOverride;
+    /// <summary>Motif actuellement actif.</summary>
+    private CameraMotifSO activeMotif;
 
-    /// <summary>Ancre explicite fournie lors d'une configuration de cibles (target).</summary>
-    private Transform targetAnchorOverride;
+    /// <summary>Motif précédent pour permettre un blend progressif.</summary>
+    private CameraMotifSO previousMotif;
 
-    /// <summary>Indique si un recadrage multi-cibles est actif.</summary>
-    private bool hasMultiTargetFraming;
+    /// <summary>Timer de blend entre motifs.</summary>
+    private float motifBlendTimer;
 
-    /// <summary>Bounds agrégés correspondant au groupe actuellement sélectionné.</summary>
-    private Bounds multiTargetBounds;
+    /// <summary>Durée retenue pour la transition de motif.</summary>
+    private float motifBlendDuration = 0.25f;
 
-    /// <summary>Nom de la caméra concernée par le recadrage multi-cibles.</summary>
-    private string multiTargetCameraName;
+    /// <summary>Indique si une transition de motif est en cours.</summary>
+    private bool motifBlendActive;
 
-    /// <summary>Point de focus synthétique utilisé pour verrouiller le regard sur le groupe.</summary>
-    private Transform multiTargetFocusProxy;
-
-    /// <summary>Référence mémorisée vers la caméra Unity afin d'accéder au FOV/aspect.</summary>
-    private Camera cachedBattleCamera;
-
-    /// <summary>Ensemble des points manquants déjà signalés pour ne pas inonder la console.</summary>
-    private readonly HashSet<string> missingAnchorWarnings = new(StringComparer.OrdinalIgnoreCase);
-
-    /// <summary>Nom de la caméra actuellement prioritaire.</summary>
-    private string currentCameraName;
-
-    /// <summary>Nom de la caméra actuellement secouée par un impact.</summary>
-    private string damageShakeCameraName;
-
-    /// <summary>Durée réellement utilisée pour la secousse en cours.</summary>
-    private float damageShakeDurationCurrent;
-
-    /// <summary>Temps écoulé depuis le début de la secousse en cours.</summary>
-    private float damageShakeElapsed;
-
-    /// <summary>Intensité globale de la secousse (1 par défaut, >1 pour un coup dévastateur).</summary>
-    private float damageShakeIntensity = 1f;
-
-    /// <summary>Décalage positionnel calculé pour la frame courante.</summary>
-    private Vector3 damageShakeOffset = Vector3.zero;
-
-    /// <summary>Rotation additive calculée pour la frame courante.</summary>
-    private Quaternion damageShakeRotationOffset = Quaternion.identity;
-
-    /// <summary>Direction latérale privilégiée pour l'oscillation de la caméra.</summary>
-    private Vector3 damageShakeRight = Vector3.right;
-
-    /// <summary>Direction verticale utilisée pour générer l'effet de secousse.</summary>
-    private Vector3 damageShakeUp = Vector3.up;
-
-    /// <summary>Phase initiale de l'onde principale du tremblement.</summary>
-    private float damageShakePrimaryPhase;
-
-    /// <summary>Phase initiale de l'onde secondaire (composante verticale).</summary>
-    private float damageShakeSecondaryPhase;
-
-    /// <summary>
-    /// Décalages de phase uniques par caméra afin que les oscillations ne soient pas synchronisées.
-    /// Cela garantit un rendu plus naturel : chaque Cinemachine vibre légèrement mais avec un décalage
-    /// propre, ce qui évite un mouvement collectif artificiel.
-    /// </summary>
+    /// <summary>Décalages de phase uniques par caméra pour l'effet de respiration.</summary>
     private readonly Dictionary<string, float> breathingPhaseOffsets = new(StringComparer.OrdinalIgnoreCase);
 
-    /// <summary>
-    /// Transform parent masqué regroupant tous les points de focus synthétiques créés pour les unités.
-    /// </summary>
-    private Transform focusProxyRoot;
-
-    /// <summary>
-    /// Associe chaque unité à un point de focus dynamique afin que Cinemachine puisse viser le centre de
-    /// masse réel plutôt que la racine (souvent située aux pieds).
-    /// </summary>
-    private readonly Dictionary<CharacterUnit, Transform> focusPointByUnit = new();
-
-    /// <summary>
-    /// Buffer temporaire utilisé pour purger proprement les entrées invalides du cache de focus.
-    /// </summary>
-    private readonly List<CharacterUnit> focusPruneBuffer = new();
-
-    /// <summary>Rôle logique actuellement prioritaire.</summary>
-    private BattleCameraRole currentRole = BattleCameraRole.None;
-
-    /// <summary>Indique si un recul de menu est en cours d'interpolation.</summary>
-    private bool menuRecoilActive;
-
-    /// <summary>Temps écoulé depuis le déclenchement de l'impulsion de menu.</summary>
-    private float menuRecoilTimer;
-
-    /// <summary>Durée totale retenue pour l'effet de recul courant.</summary>
-    private float menuRecoilDuration;
-
-    /// <summary>Intensité instantanée de l'effet (0 = repos, 1 = pic de recul).</summary>
-    private float menuRecoilCurrentStrength;
-
-    /// <summary>Modes d'association entre une caméra Cinemachine et un CharacterUnit.</summary>
-    private enum CameraAnchorOwner
+    /// <summary>État interne utilisé pour lisser chaque caméra.</summary>
+    private sealed class CameraState
     {
-        Manual,
-        TurnOwner,
-        Caster,
-        Target
+        public bool Initialized;
+        public Vector3 PositionVelocity;
+        public Vector3 SmoothedPosition;
+        public Quaternion SmoothedRotation;
+        public bool OrbitActive;
+        public float OrbitPhaseOffset;
+        public float OrbitSpeed;
+        public CameraMotifSO.ReferencePoint OrbitReferencePoint;
     }
 
-    /// <summary>Description complète de l'association entre une Cinemachine et un point "CMVPoint_".</summary>
-    private struct CameraBindingConfig
+    private struct MotifTuning
     {
-        public CameraAnchorOwner Owner;
-        public string Suffix;
-        public bool LooksAtTarget;
-
-        public CameraBindingConfig(CameraAnchorOwner owner, string suffix, bool looksAtTarget)
-        {
-            Owner = owner;
-            Suffix = suffix;
-            LooksAtTarget = looksAtTarget;
-        }
+        public CameraMotifSO.ReferencePoint ReferencePoint;
+        public Vector3 ReferenceOffsetPosition;
+        public Vector3 ReferenceOffsetRotation;
+        public float ReferenceOffsetSmoothTime;
+        public bool OrbitEnabled;
+        public CameraMotifSO.ReferencePoint OrbitReferencePoint;
+        public float OrbitSpeed;
+        public bool LookAtEnabled;
+        public CameraMotifSO.ReferencePoint LookAtReferencePoint;
     }
-
-    /// <summary>Nom de la Cinemachine orbitale utilisée lors du ciblage d'objet.</summary>
-    private const string OrbitAroundCameraName = "CMV_OrbitAroundUnit";
-
-    /// <summary>
-    /// Durée souhaitée (en secondes) pour le retour en douceur de la caméra orbitale
-    /// vers la position par défaut du lanceur. La valeur est volontairement exposée
-    /// comme constante afin de conserver un comportement homogène sur l'ensemble du
-    /// projet et d'éviter les ajustements manuels au cas par cas.
-    /// </summary>
-    private const float OrbitReturnDurationSeconds = 5f;
-
-    /// <summary>
-    /// Indique si une interpolation de retour est en cours pour « CMV_OrbitAroundUnit ».
-    /// Ce flag évite de réinitialiser les valeurs de départ à chaque LateUpdate alors que
-    /// la transition est déjà lancée.
-    /// </summary>
-    private bool orbitReturnInProgress;
-
-    /// <summary>Temps écoulé depuis le lancement de l'interpolation de retour.</summary>
-    private float orbitReturnElapsed;
-
-    /// <summary>Position d'origine mémorisée afin de produire une interpolation fluide.</summary>
-    private Vector3 orbitReturnStartPosition;
-
-    /// <summary>Rotation d'origine mémorisée pour un retour sans à-coups.</summary>
-    private Quaternion orbitReturnStartRotation;
-
-    /// <summary>
-    /// Transform cible utilisé durant l'interpolation. On le mémorise afin de redéclencher
-    /// correctement la transition si la référence venait à changer (nouveau caster, cinématique...).
-    /// </summary>
-    private Transform orbitReturnTarget;
-
-    /// <summary>
-    /// Configuration déclarative de toutes les caméras "CMV_" présentes dans la scène.
-    /// 📸 Le système a été simplifié : toutes les CMV (hors cas manuels) se calent désormais
-    /// directement sur les « CMVPoint_… » de l'unité qui joue son tour. Cela garantit une
-    /// lecture instantanée et cohérente sans passer par les notions historiques de caster/target.
-    /// </summary>
-    private static readonly Dictionary<string, CameraBindingConfig> CameraBindings = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["CMV_MainMenu"] = new(CameraAnchorOwner.TurnOwner, "MainMenu", false),
-        ["CMV_SkillsMenu"] = new(CameraAnchorOwner.TurnOwner, "SkillsMenu", false),
-        ["CMV_ItemsMenu"] = new(CameraAnchorOwner.TurnOwner, "ItemsMenu", false),
-        ["CMV_OrbitAroundUnit"] = new(CameraAnchorOwner.TurnOwner, "OrbitAroundUnit", false),
-        ["CMV_TargetReaction"] = new(CameraAnchorOwner.TurnOwner, "TargetReaction", false),
-        ["CMV_Projectile_Flyby"] = new(CameraAnchorOwner.TurnOwner, "Projectile_Flyby", false),
-        ["CMV_OverShoulder_CasterLookTarget"] = new(CameraAnchorOwner.TurnOwner, "OverShoulder_CasterLookTarget", false),
-        ["CMV_OverShoulder_CasterToTarget"] = new(CameraAnchorOwner.TurnOwner, "OverShoulder_CasterToTarget", false),
-        ["CMV_OverHead_CasterLookTarget"] = new(CameraAnchorOwner.TurnOwner, "OverHead_CasterLookTarget", false),
-        ["CMV_BattleIntro"] = new(CameraAnchorOwner.Manual, "BattleIntro", false),
-        ["CMV_Victory"] = new(CameraAnchorOwner.Manual, "Victory", false)
-    };
-
-    /// <summary>Association par défaut entre les rôles historiques et les nouvelles caméras "CMV_".</summary>
-    private static readonly Dictionary<BattleCameraRole, string> DefaultRoleToCameraName = new()
-    {
-        { BattleCameraRole.MainMenuIdle, "CMV_MainMenu" },
-        { BattleCameraRole.OverShoulderCasterToTarget, "CMV_OverShoulder_CasterToTarget" },
-        { BattleCameraRole.OverShoulderCasterLookTarget, "CMV_OverShoulder_CasterLookTarget" },
-        { BattleCameraRole.ClosePushCaster, "CMV_OverShoulder_CasterLookTarget" },
-        { BattleCameraRole.TargetReaction, "CMV_TargetReaction" },
-        { BattleCameraRole.WideEstablish, "CMV_OverHead_CasterLookTarget" },
-        { BattleCameraRole.ProjectileFlyby, "CMV_Projectile_Flyby" },
-        { BattleCameraRole.Victory, "CMV_Victory" }
-    };
-
-    /// <summary>Référence rapide des caméras considérées comme des menus de combat.</summary>
-    private static readonly HashSet<string> MenuCameraNames = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "CMV_MainMenu",
-        "CMV_SkillsMenu",
-        "CMV_ItemsMenu"
-    };
 
     /// <summary>Style de blend homogène imposé par le <see cref="CinemachineBlendSwitcher"/>.</summary>
     public CinemachineBlendDefinition.Styles SmoothBlendStyle =>
@@ -358,7 +111,7 @@ public class BattleCameraManager : MonoBehaviour
     public float SmoothBlendDuration =>
         blendSwitcher ? blendSwitcher.SmoothBlendDuration : CinemachineBlendSwitcher.GlobalSmoothBlendDurationSeconds;
 
-    void Awake()
+    private void Awake()
     {
         if (Instance != null && Instance != this)
         {
@@ -373,52 +126,24 @@ public class BattleCameraManager : MonoBehaviour
 
         RefreshCameraCache();
 
-        // Par défaut, les rôles pointent sur l'association statique décrite plus haut.
-        foreach (var kvp in DefaultRoleToCameraName)
-        {
-            if (!cameraByName.ContainsKey(kvp.Value))
-                Debug.LogWarning($"[BattleCameraManager] La caméra '{kvp.Value}' est introuvable pour le rôle {kvp.Key}.");
-        }
-
-        // Retour immédiat sur la caméra Unity de base au lancement.
+        // Active une Cinemachine par défaut pour éviter tout retour vers la caméra Unity brute.
         if (blendSwitcher)
-            blendSwitcher.DisplayCamera(null, SmoothBlendDuration);
+            SwitchToCamera("CMV_MainMenu", SmoothBlendDuration);
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
         if (Instance == this)
             Instance = null;
 
-        // 🧽 Lorsque le gestionnaire disparaît (changement de scène, arrêt du mode Play), on détruit
-        //     également les points de focus synthétiques générés à la volée pour éviter de laisser
-        //     des GameObjects orphelins dans la hiérarchie d'édition.
-        if (focusProxyRoot != null)
-        {
-            if (Application.isPlaying)
-                Destroy(focusProxyRoot.gameObject);
-            else
-                DestroyImmediate(focusProxyRoot.gameObject);
-
-            focusProxyRoot = null;
-        }
-
-        focusPointByUnit.Clear();
-        focusPruneBuffer.Clear();
+        cameraByName.Clear();
+        cameraStates.Clear();
+        breathingPhaseOffsets.Clear();
     }
 
-    void LateUpdate()
+    private void LateUpdate()
     {
-        // 🎢 Met à jour l'effet de secousse avant de replacer les caméras sur leurs ancres.
-        UpdateDamageShakeState();
-
-        // 💨 Actualise le recul des menus pour que l'intensité corresponde au blend en cours.
-        UpdateMenuRecoilState();
-
-        // 🗑️ On nettoie au passage les points de focus dont l'unité a été détruite depuis la frame précédente.
-        PruneInvalidFocusProxies();
-
-        // Les caméras doivent coller en permanence aux points "CMVPoint_".
+        UpdateMotifBlend();
         RefreshAllCameraPlacements();
     }
 
@@ -426,548 +151,291 @@ public class BattleCameraManager : MonoBehaviour
     private void RefreshCameraCache()
     {
         cameraByName.Clear();
-        availableCameras.Clear();
-
-        // Utilisation de la nouvelle API FindObjectsByType pour éviter l'appel obsolète FindObjectsOfType
-        // ⚠️ Nous n'avons pas besoin d'un tri spécifique ici car la collection est ensuite stockée dans un dictionnaire.
         foreach (var cam in FindObjectsByType<CinemachineCamera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
         {
             if (cam == null)
                 continue;
 
             string name = cam.gameObject.name;
-
             if (!cameraByName.ContainsKey(name))
                 cameraByName.Add(name, cam);
-
-            availableCameras.Add(cam);
         }
 
-        CacheIntroCameraReference();
+        PruneCameraStates();
+    }
+
+    /// <summary>Supprime les états associés à des caméras disparues.</summary>
+    private void PruneCameraStates()
+    {
+        if (cameraStates.Count == 0)
+            return;
+
+        List<string> staleKeys = null;
+        foreach (var kvp in cameraStates)
+        {
+            if (!cameraByName.ContainsKey(kvp.Key))
+            {
+                staleKeys ??= new List<string>();
+                staleKeys.Add(kvp.Key);
+            }
+        }
+
+        if (staleKeys == null)
+            return;
+
+        foreach (string key in staleKeys)
+            cameraStates.Remove(key);
     }
 
     /// <summary>Replace toutes les caméras "CMV_" sur leurs points d'ancrage respectifs.</summary>
     private void RefreshAllCameraPlacements()
     {
-        foreach (var kvp in CameraBindings)
-            RefreshCameraPlacement(kvp.Key, kvp.Value);
-    }
-
-    /// <summary>
-    /// Met à jour le tremblement déclenché lors d'un impact et prépare les offsets appliqués
-    /// au prochain rafraîchissement de caméra.
-    /// </summary>
-    private void UpdateDamageShakeState()
-    {
-        if (!enableDamageShake || damageShakeDurationCurrent <= 0f)
-        {
-            // Sans effet actif, on s'assure que la caméra reste strictement calée à son ancre.
-            damageShakeOffset = Vector3.zero;
-            damageShakeRotationOffset = Quaternion.identity;
-            damageShakeCameraName = null;
+        if (!blendSwitcher || !blendSwitcher.HasActiveCamera)
             return;
-        }
 
-        damageShakeElapsed += Time.deltaTime;
-
-        // Normalisation du temps écoulé pour interroger la courbe d'atténuation.
-        float normalizedTime = Mathf.Clamp01(damageShakeElapsed / Mathf.Max(damageShakeDurationCurrent, 0.0001f));
-        float envelope = damageShakeEnvelope != null && damageShakeEnvelope.length > 0
-            ? Mathf.Max(0f, damageShakeEnvelope.Evaluate(normalizedTime))
-            : 1f - normalizedTime;
-
-        if (envelope <= 0f)
-        {
-            // L'enveloppe est retombée à zéro : on annule toute transformation résiduelle.
-            damageShakeDurationCurrent = 0f;
-            damageShakeOffset = Vector3.zero;
-            damageShakeRotationOffset = Quaternion.identity;
-            damageShakeCameraName = null;
+        string cameraName = blendSwitcher.CurrentCameraName;
+        if (string.IsNullOrEmpty(cameraName))
             return;
-        }
 
-        float angularFrequency = Mathf.Max(damageShakeFrequency, 0.0001f) * Mathf.PI * 2f;
-        float mainAngle = damageShakePrimaryPhase + (damageShakeElapsed * angularFrequency);
-        float secondaryAngle = damageShakeSecondaryPhase + (damageShakeElapsed * angularFrequency * 1.35f);
-
-        float intensity = damageShakeIntensity * envelope;
-        float positionAmplitude = damageShakePositionAmplitude * intensity;
-        float rotationAmplitude = damageShakeRotationAmplitude * intensity;
-
-        // Oscillation principale (latérale) + secondaire (verticale) pour un effet plus organique.
-        float horizontal = Mathf.Sin(mainAngle);
-        float vertical = Mathf.Sin(secondaryAngle);
-        damageShakeOffset = (damageShakeRight * horizontal + damageShakeUp * vertical) * positionAmplitude;
-
-        // On combine une légère rotation de lacet (autour de l'axe vertical) et de tangage.
-        Quaternion yawRotation = Quaternion.AngleAxis(Mathf.Sin(mainAngle * 0.5f) * rotationAmplitude, damageShakeUp);
-        Quaternion pitchRotation = Quaternion.AngleAxis(Mathf.Cos(secondaryAngle * 0.5f) * rotationAmplitude * 0.5f, damageShakeRight);
-        damageShakeRotationOffset = yawRotation * pitchRotation;
-
-        if (damageShakeElapsed >= damageShakeDurationCurrent)
-        {
-            // Arrive en fin de secousse : la prochaine frame remettra la caméra sur son ancre exacte.
-            damageShakeDurationCurrent = 0f;
-            damageShakeCameraName = null;
-        }
-    }
-
-    /// <summary>
-    /// Met à jour la courbe d'intensité du recul appliqué lors du passage d'un menu à l'autre.
-    /// L'utilisation d'un timer indépendant du TimeScale garantit un rendu stable même en pause.
-    /// </summary>
-    private void UpdateMenuRecoilState()
-    {
-        if (!enableMenuRecoil)
-        {
-            // Effet désactivé : on annule toute valeur résiduelle pour ne pas fausser la pose des caméras.
-            menuRecoilActive = false;
-            menuRecoilCurrentStrength = 0f;
-            return;
-        }
-
-        if (!menuRecoilActive)
-        {
-            // Aucun recul en cours : on force l'intensité à zéro et on quitte immédiatement.
-            menuRecoilCurrentStrength = 0f;
-            return;
-        }
-
-        menuRecoilTimer += Time.unscaledDeltaTime; // 🕒 On se base sur le temps non-scalé pour rester fluide en pause.
-
-        float duration = Mathf.Max(menuRecoilDuration, 0.0001f);
-        float normalizedTime = Mathf.Clamp01(menuRecoilTimer / duration);
-
-        if (menuRecoilCurve != null && menuRecoilCurve.length > 0)
-            menuRecoilCurrentStrength = Mathf.Max(0f, menuRecoilCurve.Evaluate(normalizedTime));
-        else
-        {
-            // Par sécurité, on retombe sur une courbe triangulaire (montée puis descente) si la courbe n'est pas définie.
-            menuRecoilCurrentStrength = normalizedTime <= 0.5f
-                ? Mathf.Lerp(0f, 1f, normalizedTime / 0.5f)
-                : Mathf.Lerp(1f, 0f, (normalizedTime - 0.5f) / 0.5f);
-        }
-
-        if (menuRecoilTimer >= duration)
-        {
-            // Une fois la durée écoulée, on désactive l'effet et on réinitialise la force appliquée.
-            menuRecoilActive = false;
-            menuRecoilCurrentStrength = 0f;
-        }
-    }
-
-    /// <summary>
-    /// Initialise l'effet de recul avec la durée fournie afin qu'il suive le blend en cours.
-    /// Si l'effet est désactivé ou si l'amplitude est nulle, l'état est immédiatement purgé.
-    /// </summary>
-    private void TriggerMenuRecoil(float resolvedDuration)
-    {
-        if (!enableMenuRecoil || Mathf.Abs(menuRecoilDistance) <= 0.0001f)
-        {
-            // Rien à jouer : on réinitialise l'état pour éviter une valeur résiduelle.
-            menuRecoilActive = false;
-            menuRecoilCurrentStrength = 0f;
-            return;
-        }
-
-        menuRecoilActive = true;
-        menuRecoilTimer = 0f;
-        menuRecoilDuration = Mathf.Max(resolvedDuration, 0.0001f);
-        menuRecoilCurrentStrength = 0f; // L'intensité repart systématiquement de zéro.
-    }
-
-    /// <summary>
-    /// Calcule la durée retenue pour l'effet de recul en tenant compte du blend demandé et du minimum imposé.
-    /// </summary>
-    private float ResolveMenuBlendDuration(float requestedBlendTime)
-    {
-        float duration = requestedBlendTime >= 0f ? requestedBlendTime : SmoothBlendDuration;
-        return Mathf.Max(duration, menuRecoilMinimumDuration);
-    }
-
-    /// <summary>Replace une caméra donnée sur son point d'ancrage.</summary>
-    private void RefreshCameraPlacement(string cameraName, CameraBindingConfig config)
-    {
         if (!TryGetCameraByName(cameraName, out var camera) || camera == null)
             return;
 
-        if (config.Owner == CameraAnchorOwner.Manual)
-            return; // Caméras positionnées manuellement via l'inspecteur.
-
-        CharacterUnit ownerUnit = ResolveAnchorOwner(config.Owner);
-        if (ownerUnit == null)
-        {
-            // 🌀 Cas particulier : lorsque la caméra orbitale perd sa cible (sortie du mode
-            // de sélection d'objet, interruption d'une action…), elle se raccroche par défaut
-            // au Transform du lanceur avec une translation instantanée. Pour éviter ce retour
-            // trop brusque, on déclenche une interpolation contrôlée sur deux secondes.
-            if (string.Equals(cameraName, OrbitAroundCameraName, StringComparison.OrdinalIgnoreCase))
-                UpdateOrbitReturn(camera);
-
-            return;
-        }
-
-        // Dès qu'une cible légitime est retrouvée, on annule l'éventuelle interpolation en cours
-        // afin que la caméra recolle immédiatement à l'ancre prévue par les artistes.
-        ResetOrbitReturnStateIfNeeded(cameraName);
-
-        if (TryApplyMultiTargetFraming(camera, cameraName, ownerUnit, config))
-        {
-            ApplyMenuRecoil(camera, cameraName);
+        if (ApplyMotifPlacement(camera, cameraName))
             ApplyBreathingMotion(camera, cameraName);
-            ApplyDamageShake(camera, cameraName);
-            return;
+    }
+
+    /// <summary>
+    /// Applique le motif actif pour positionner et orienter la caméra autour du point de référence.
+    /// </summary>
+    private bool ApplyMotifPlacement(CinemachineCamera camera, string cameraName)
+    {
+        if (camera == null)
+            return false;
+
+        MotifTuning tuning = ResolveMotifTuning();
+        CharacterUnit referenceUnit = ResolveReferenceUnit(tuning.ReferencePoint);
+        if (referenceUnit == null)
+            return false;
+
+        Transform referenceTransform = referenceUnit.transform;
+
+        Vector3 offsetWorld = referenceTransform.TransformVector(tuning.ReferenceOffsetPosition);
+        Vector3 desiredPosition = referenceTransform.position + offsetWorld;
+        Quaternion desiredRotation = referenceTransform.rotation * Quaternion.Euler(tuning.ReferenceOffsetRotation);
+
+        CameraState state = GetOrCreateCameraState(cameraName);
+        if (state == null)
+            return false;
+
+        bool orbitApplied = false;
+        if (tuning.OrbitEnabled && Mathf.Abs(tuning.OrbitSpeed) > 0.0001f)
+        {
+            CharacterUnit orbitUnit = ResolveReferenceUnit(tuning.OrbitReferencePoint);
+            if (orbitUnit != null)
+            {
+                bool orbitConfigChanged = !state.OrbitActive
+                    || state.OrbitReferencePoint != tuning.OrbitReferencePoint
+                    || Mathf.Abs(state.OrbitSpeed - tuning.OrbitSpeed) > 0.0001f;
+
+                if (orbitConfigChanged)
+                {
+                    state.OrbitPhaseOffset = -Time.time * tuning.OrbitSpeed;
+                    state.OrbitSpeed = tuning.OrbitSpeed;
+                    state.OrbitReferencePoint = tuning.OrbitReferencePoint;
+                    state.OrbitActive = true;
+                }
+
+                float orbitAngle = Time.time * tuning.OrbitSpeed + state.OrbitPhaseOffset;
+                Vector3 pivot = orbitUnit.transform.position;
+                Vector3 axis = orbitUnit.transform.up;
+                Vector3 toCamera = desiredPosition - pivot;
+                if (toCamera.sqrMagnitude > 0.0001f)
+                {
+                    Quaternion orbitRotation = Quaternion.AngleAxis(orbitAngle, axis);
+                    desiredPosition = pivot + orbitRotation * toCamera;
+                }
+
+                orbitApplied = true;
+            }
+        }
+        if (!orbitApplied)
+        {
+            state.OrbitActive = false;
         }
 
-        Transform anchor = ResolveAnchorTransform(ownerUnit, config);
-        if (anchor == null)
-            return;
-
-        Vector3 desiredPosition = anchor.position;
-        desiredPosition = ApplyUnitSizeCompensation(ownerUnit, desiredPosition);
-        camera.transform.position = desiredPosition;
-        Vector3 cameraPosition = camera.transform.position;
-
-        if (config.LooksAtTarget)
+        if (tuning.LookAtEnabled)
         {
-            // 🧭 On dissocie désormais l'orientation manuelle (rotation de la caméra)
-            //     de la cible fournie à Cinemachine. Cela nous permet de continuer à
-            //     exploiter les ancres de mise en scène définies par les artistes pour
-            //     calculer le vecteur "forward", tout en garantissant que Cinemachine
-            //     pointe explicitement vers l'unité (caster/target) suivie par le gameplay.
-            Transform orientationAnchor = ResolveLookAtOrientationAnchor();
-            Transform lookTarget = ResolveLookAtUnitTarget(orientationAnchor);
-
-            Transform rotationReference = orientationAnchor != null ? orientationAnchor : lookTarget;
-
-            // Lorsque la taille est compensée, on privilégie le point de focus corrigé pour déterminer
-            // la direction du regard si l'ancre d'orientation appartient à l'unité suivie.
-            if (enableUnitSizeCompensation && lookTarget != null && orientationAnchor != null)
+            CharacterUnit lookAtUnit = ResolveReferenceUnit(tuning.LookAtReferencePoint);
+            if (lookAtUnit != null)
             {
-                CharacterUnit anchorOwner = orientationAnchor.GetComponentInParent<CharacterUnit>();
-                if (anchorOwner != null && (anchorOwner == currentTarget || anchorOwner == currentCaster))
-                    rotationReference = lookTarget;
-            }
-
-            if (rotationReference != null)
-            {
-                Vector3 forward = rotationReference.position - cameraPosition;
+                Vector3 lookAtPosition = lookAtUnit.transform.position;
+                Vector3 forward = lookAtPosition - desiredPosition;
                 if (forward.sqrMagnitude > 0.0001f)
-                    camera.transform.rotation = Quaternion.LookRotation(forward.normalized, Vector3.up);
-
-                // 🎯 En parallèle de la rotation manuelle, on informe explicitement Cinemachine de la cible à viser.
-                //     La cible est toujours une unité de gameplay (currentTarget ou currentCaster) lorsque disponible,
-                //     ce qui évite que Cinemachine ne se verrouille sur un point d'ancrage auxiliaire tel que
-                //     « CMVPoint_TargetReaction ».
-                var targetSettings = camera.Target;
-                targetSettings.CustomLookAtTarget = true;
-                targetSettings.LookAtTarget = lookTarget != null ? lookTarget : rotationReference;
-                camera.Target = targetSettings;
+                    desiredRotation = Quaternion.LookRotation(forward, Vector3.up) * Quaternion.Euler(tuning.ReferenceOffsetRotation);
             }
-            else
-            {
-                camera.transform.rotation = anchor.rotation;
+        }
 
-                // 🧭 Aucun point de regard valable : on désactive la redirection forcée pour éviter un résidu d'état.
-                var targetSettings = camera.Target;
-                targetSettings.CustomLookAtTarget = false;
-                targetSettings.LookAtTarget = null;
-                camera.Target = targetSettings;
-            }
+        float smoothTime = Mathf.Max(0f, tuning.ReferenceOffsetSmoothTime);
+        if (!state.Initialized || smoothTime <= 0.0001f)
+        {
+            state.SmoothedPosition = desiredPosition;
+            state.SmoothedRotation = desiredRotation;
+            state.PositionVelocity = Vector3.zero;
+            state.Initialized = true;
         }
         else
         {
-            camera.transform.rotation = anchor.rotation;
+            state.SmoothedPosition = Vector3.SmoothDamp(
+                state.SmoothedPosition,
+                desiredPosition,
+                ref state.PositionVelocity,
+                smoothTime);
 
-            // 🔁 Les caméras qui ne suivent pas une cible doivent s'appuyer uniquement sur leur rotation locale.
-            // On nettoie donc toute instruction précédente d'orientation transmise au CinemachineCamera.
-            var targetSettings = camera.Target;
-            targetSettings.CustomLookAtTarget = false;
-            targetSettings.LookAtTarget = null;
-            camera.Target = targetSettings;
+            float rotationBlend = 1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(0.0001f, smoothTime));
+            state.SmoothedRotation = Quaternion.Slerp(state.SmoothedRotation, desiredRotation, rotationBlend);
         }
 
-        // 🔫 Injecte éventuellement l'effet de recul demandé lors de la navigation entre les menus.
-        ApplyMenuRecoil(camera, cameraName);
-
-        // 🎥 Finalise la pose en ajoutant un très léger flottement « respirant » pour bannir les plans figés.
-        ApplyBreathingMotion(camera, cameraName);
-
-        // 💥 Superpose éventuellement une secousse ponctuelle déclenchée lors d'un coup subi.
-        ApplyDamageShake(camera, cameraName);
+        camera.transform.SetPositionAndRotation(state.SmoothedPosition, state.SmoothedRotation);
+        return true;
     }
 
-    /// <summary>Identifie l'unité responsable d'une caméra donnée.</summary>
-    private CharacterUnit ResolveAnchorOwner(CameraAnchorOwner owner)
+    /// <summary>Met à jour l'interpolation entre deux motifs actifs.</summary>
+    private void UpdateMotifBlend()
     {
-        // 🎯 Les caméras de combat suivent désormais exclusivement l'unité qui joue son tour.
-        // Même si l'API historique mentionne « caster » ou « target », nous renvoyons systématiquement
-        // le tour actif afin de conserver une compatibilité ascendante avec les appels existants.
-        return owner == CameraAnchorOwner.Manual ? null : currentTurnOwner;
-    }
-
-    /// <summary>Récupère l'ancre "CMVPoint_" appropriée sur l'unité fournie.</summary>
-    private Transform ResolveAnchorTransform(CharacterUnit unit, CameraBindingConfig config)
-    {
-        if (unit == null || string.IsNullOrEmpty(config.Suffix))
-            return null;
-
-        Transform anchorOverride = null;
-        if (config.Owner == CameraAnchorOwner.Caster)
-            anchorOverride = casterAnchorOverride;
-        else if (config.Owner == CameraAnchorOwner.Target)
-            anchorOverride = targetAnchorOverride;
-
-        if (anchorOverride != null)
-            return anchorOverride;
-
-        string pointName = $"CMVPoint_{config.Suffix}";
-        Transform anchor = null;
-
-        // 🎯 Cas particulier : la caméra "CMV_OverShoulder_CasterLookTarget" doit se caler sur
-        // le point généré directement sous le parent du CharacterUnit (PlayerPosition_X / EnemyPosition_X).
-        // Les artistes ajustent ce repère pour garantir une composition identique quel que soit le
-        // modèle instancié ; on force donc cette recherche avant de retomber sur la logique standard.
-        if (ShouldUseParentCasterLookTarget(config))
-            anchor = ResolveParentCasterLookTargetAnchor(unit);
-
-        // 🧭 Si aucune ancre spécifique au parent n'a été trouvée, on revient au comportement par défaut
-        // en interrogeant les points « CMVPoint_… » directement disponibles sur l'unité.
-        anchor ??= unit.GetCameraAnchor(pointName);
-        if (anchor == null && missingAnchorWarnings.Add(pointName))
-            Debug.LogWarning($"[BattleCameraManager] Point '{pointName}' introuvable sur '{unit.name}'.");
-
-        return anchor;
-    }
-
-    /// <summary>
-    /// Détermine si la configuration de caméra doit privilégier le point placé sur le parent
-    /// du CharacterUnit plutôt que sur l'unité elle-même.
-    /// </summary>
-    private static bool ShouldUseParentCasterLookTarget(CameraBindingConfig config)
-    {
-        // 🔁 Même si toutes les caméras se basent désormais sur le tour actif, nous devons
-        // conserver ce traitement particulier : le point « OverShoulder_CasterLookTarget »
-        // est instancié directement sous le parent du CharacterUnit (PlayerPosition_X / EnemyPosition_X).
-        // Sans cette recherche explicite, la Cinemachine ne retomberait pas sur le repère
-        // parfaitement aligné défini par les level designers.
-        return !string.IsNullOrEmpty(config.Suffix)
-            && string.Equals(config.Suffix, "OverShoulder_CasterLookTarget", StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    /// Recherche le point « CMVPoint_OverShoulder_CasterLookTarget » placé sur le parent du personnage.
-    /// </summary>
-    private static Transform ResolveParentCasterLookTargetAnchor(CharacterUnit unit)
-    {
-        if (unit == null)
-            return null;
-
-        const string anchorName = "CMVPoint_OverShoulder_CasterLookTarget";
-
-        Transform parent = unit.transform.parent;
-        if (parent == null)
-            return null;
-
-        // 🎬 Priorité au child direct : c'est la configuration privilégiée par le BattleManager.
-        Transform directChild = parent.Find(anchorName);
-        if (directChild != null)
-            return directChild;
-
-        // 🔄 Certains environnements peuvent regrouper le point dans une sous-hiérarchie.
-        // On balaie donc l'ensemble des enfants du parent (hors unité actuelle) pour couvrir ces variantes.
-        foreach (Transform sibling in parent.GetComponentsInChildren<Transform>(includeInactive: true))
-        {
-            if (sibling == null || sibling == unit.transform)
-                continue;
-
-            if (string.Equals(sibling.name, anchorName, StringComparison.OrdinalIgnoreCase))
-                return sibling;
-        }
-
-        return null;
-    }
-
-    /// <summary>Détermine le Transform à regarder lorsque la caméra doit suivre la cible.</summary>
-    private Transform ResolveLookAtOrientationAnchor()
-    {
-        if (targetAnchorOverride != null)
-            return targetAnchorOverride;
-
-        // 🎥 Tentative 1 : exploiter les points globaux « CMVPoint_OverShoulderLookTarget_* » générés
-        //     sur le parent des unités. Ils offrent un repère stable lorsque la cible bouge rapidement
-        //     (ex : esquives, téléportations), évitant ainsi des oscillations brusques de la caméra.
-        Transform sharedLookAnchor = ResolveSharedLookTargetAnchor(currentTarget);
-        if (sharedLookAnchor == null)
-            sharedLookAnchor = ResolveSharedLookTargetAnchor(currentCaster);
-        if (sharedLookAnchor != null)
-            return sharedLookAnchor;
-
-        // 🎬 Repli : on privilégie le point « TargetReaction » de la cible si disponible afin de conserver
-        //     un cadrage cohérent avec les animations prévues par l'équipe artistique.
-        if (currentTarget != null)
-        {
-            Transform reactionPoint = currentTarget.GetCameraAnchor("CMVPoint_TargetReaction");
-            if (reactionPoint != null)
-                return reactionPoint;
-        }
-
-        // 🧍 Dernier recours : si la cible n'existe plus (multi-cible, AoE, etc.), on s'appuie sur le caster.
-        if (currentCaster != null)
-        {
-            Transform casterReaction = currentCaster.GetCameraAnchor("CMVPoint_TargetReaction");
-            if (casterReaction != null)
-                return casterReaction;
-
-            return currentCaster.transform;
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Détermine quel transform fournir à Cinemachine comme cible de regard.
-    /// </summary>
-    private Transform ResolveLookAtUnitTarget(Transform orientationAnchor)
-    {
-        // 🎯 Priorité absolue : suivre la cible de gameplay lorsque celle-ci est définie.
-        if (currentTarget != null)
-            return enableUnitSizeCompensation ? GetFocusPoint(currentTarget) : currentTarget.transform;
-
-        // 🛡️ Aucun target explicite : on se rabat sur le lanceur de l'action.
-        if (currentCaster != null)
-            return enableUnitSizeCompensation ? GetFocusPoint(currentCaster) : currentCaster.transform;
-
-        // 🧩 Si l'override ou l'ancre d'orientation pointe vers un objet spécifique (timeline, FX…),
-        //     on tente d'en extraire l'unité parent pour conserver un regard cohérent.
-        if (orientationAnchor != null)
-        {
-            CharacterUnit owner = orientationAnchor.GetComponentInParent<CharacterUnit>();
-            if (owner != null)
-                return enableUnitSizeCompensation ? GetFocusPoint(owner) : owner.transform;
-
-            return orientationAnchor; // Fallback : l'ancre peut être un proxy hors CharacterUnit (ex : décor animé).
-        }
-
-        if (targetAnchorOverride != null)
-        {
-            CharacterUnit owner = targetAnchorOverride.GetComponentInParent<CharacterUnit>();
-            if (owner != null)
-                return enableUnitSizeCompensation ? GetFocusPoint(owner) : owner.transform;
-
-            return targetAnchorOverride;
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    /// Met à jour l'interpolation de retour douce pour « CMV_OrbitAroundUnit » lorsque la caméra
-    /// n'a plus de cible explicite. L'objectif est d'éviter un snap immédiat vers la position locale
-    /// (0,0,0) du lanceur et de conserver une transition lisible pour le joueur.
-    /// </summary>
-    private void UpdateOrbitReturn(CinemachineCamera camera)
-    {
-        if (camera == null)
+        if (!motifBlendActive)
             return;
 
-        Transform fallbackAnchor = ResolveOrbitReturnAnchor();
-        if (fallbackAnchor == null)
+        float duration = Mathf.Max(0.0001f, motifBlendDuration);
+        motifBlendTimer += Time.unscaledDeltaTime;
+        if (motifBlendTimer >= duration)
         {
-            // Sans ancre de secours, on annule purement et simplement le lissage afin de ne pas
-            // laisser l'état actif indéfiniment. La caméra reste alors sur sa dernière position connue.
-            orbitReturnInProgress = false;
-            orbitReturnTarget = null;
-            return;
-        }
-
-        // Si la référence change (nouveau caster, Timeline spécifique, etc.), on relance l'interpolation
-        // avec la nouvelle destination afin d'éviter un saut visuel.
-        bool targetChanged = orbitReturnTarget != fallbackAnchor;
-        if (!orbitReturnInProgress || targetChanged)
-        {
-            orbitReturnInProgress = true;
-            orbitReturnElapsed = 0f;
-            orbitReturnTarget = fallbackAnchor;
-            orbitReturnStartPosition = camera.transform.position;
-            orbitReturnStartRotation = camera.transform.rotation;
-        }
-
-        orbitReturnElapsed += Time.deltaTime;
-
-        float duration = Mathf.Max(OrbitReturnDurationSeconds, 0.0001f);
-        float t = Mathf.Clamp01(orbitReturnElapsed / duration);
-
-        // Interpolation de type Lerp/Slerp pour une transition douce et déterministe.
-        camera.transform.position = Vector3.Lerp(orbitReturnStartPosition, fallbackAnchor.position, t);
-        camera.transform.rotation = Quaternion.Slerp(orbitReturnStartRotation, fallbackAnchor.rotation, t);
-
-        if (orbitReturnElapsed >= duration)
-        {
-            // Une fois la transition terminée, on s'aligne définitivement sur l'ancre cible et on
-            // libère l'état afin de permettre une future interpolation si nécessaire.
-            camera.transform.SetPositionAndRotation(fallbackAnchor.position, fallbackAnchor.rotation);
-            orbitReturnInProgress = false;
+            motifBlendTimer = duration;
+            motifBlendActive = false;
+            previousMotif = activeMotif;
         }
     }
 
-    /// <summary>
-    /// Réinitialise les informations de retour orbital lorsque la caméra retrouve une cible classique.
-    /// Sans cette étape, la prochaine perte de cible ne déclencherait pas correctement l'interpolation.
-    /// </summary>
-    private void ResetOrbitReturnStateIfNeeded(string cameraName)
+    /// <summary>Active un motif pour modifier le comportement de la caméra.</summary>
+    public void SetCameraMotif(CameraMotifSO motif, float blendDuration = -1f)
     {
-        if (!string.Equals(cameraName, OrbitAroundCameraName, StringComparison.OrdinalIgnoreCase))
+        if (motif == activeMotif && !motifBlendActive)
             return;
 
-        orbitReturnInProgress = false;
-        orbitReturnTarget = null;
-        orbitReturnElapsed = 0f;
+        previousMotif = activeMotif;
+        activeMotif = motif;
+
+        float resolvedDuration = blendDuration >= 0f
+            ? blendDuration
+            : (motif != null ? motif.blendDuration : 0.25f);
+
+        motifBlendDuration = Mathf.Max(0.0001f, resolvedDuration);
+        motifBlendTimer = 0f;
+        motifBlendActive = true;
     }
 
-    /// <summary>
-    /// Ajoute un recul temporaire aux caméras de menu pour dynamiser les transitions.
-    /// L'offset est appliqué dans l'axe "forward" de la caméra afin de conserver le cadrage.
-    /// </summary>
-    private void ApplyMenuRecoil(CinemachineCamera camera, string cameraName)
+    /// <summary>Désactive le motif courant.</summary>
+    public void ClearCameraMotif(float blendDuration = -1f)
     {
-        if (!enableMenuRecoil || !menuRecoilActive || camera == null)
-            return; // Aucun effet si la fonctionnalité est coupée ou si aucun recul n'est en cours.
+        SetCameraMotif(null, blendDuration);
+    }
 
-        if (menuRecoilCurrentStrength <= 0f)
-            return; // L'enveloppe est retombée à zéro : inutile de modifier la position.
+    /// <summary>Calcule les réglages finaux en tenant compte du motif actif.</summary>
+    private MotifTuning ResolveMotifTuning()
+    {
+        MotifTuning baseTuning = new MotifTuning
+        {
+            ReferencePoint = CameraMotifSO.ReferencePoint.Caster,
+            ReferenceOffsetPosition = Vector3.zero,
+            ReferenceOffsetRotation = Vector3.zero,
+            ReferenceOffsetSmoothTime = 0.25f,
+            OrbitEnabled = false,
+            OrbitReferencePoint = CameraMotifSO.ReferencePoint.Caster,
+            OrbitSpeed = 0f,
+            LookAtEnabled = false,
+            LookAtReferencePoint = CameraMotifSO.ReferencePoint.Caster
+        };
 
-        if (!IsMenuCamera(cameraName))
-            return; // On limite strictement l'effet aux caméras de menus pour préserver les autres plans.
+        if (defaultMotif != null)
+            baseTuning = ApplyMotif(baseTuning, defaultMotif);
 
-        if (Mathf.Abs(menuRecoilDistance) <= 0.0001f)
-            return; // Distance négligeable : on évite un calcul superflu.
+        MotifTuning from = ApplyMotif(baseTuning, previousMotif);
+        MotifTuning to = ApplyMotif(baseTuning, activeMotif);
+        float t = ResolveMotifBlend();
+        return LerpMotifTuning(from, to, t);
+    }
 
-        float displacement = menuRecoilDistance * menuRecoilCurrentStrength;
+    private float ResolveMotifBlend()
+    {
+        if (!motifBlendActive || motifBlendDuration <= 0.0001f)
+            return 1f;
 
-        // 🛑 Le recul correspond à un léger pas en arrière le long du forward actuel.
-        camera.transform.position -= camera.transform.forward * displacement;
+        return Mathf.Clamp01(motifBlendTimer / motifBlendDuration);
+    }
+
+    private static MotifTuning ApplyMotif(MotifTuning baseTuning, CameraMotifSO motif)
+    {
+        if (motif == null)
+            return baseTuning;
+
+        baseTuning.ReferencePoint = motif.referencePoint;
+        baseTuning.ReferenceOffsetPosition += motif.referenceOffsetPosition;
+        if (motif.referenceOffsetSmoothTime >= 0f)
+            baseTuning.ReferenceOffsetSmoothTime = motif.referenceOffsetSmoothTime;
+        baseTuning.ReferenceOffsetRotation += motif.referenceOffsetRotation;
+        baseTuning.OrbitEnabled = motif.orbitEnabled;
+        baseTuning.OrbitReferencePoint = motif.orbitReferencePoint;
+        baseTuning.OrbitSpeed = motif.orbitSpeed;
+        baseTuning.LookAtEnabled = motif.lookAtEnabled;
+        baseTuning.LookAtReferencePoint = motif.lookAtReferencePoint;
+        return baseTuning;
+    }
+
+    private static MotifTuning LerpMotifTuning(MotifTuning from, MotifTuning to, float t)
+    {
+        t = Mathf.Clamp01(t);
+        return new MotifTuning
+        {
+            ReferencePoint = t < 0.5f ? from.ReferencePoint : to.ReferencePoint,
+            ReferenceOffsetPosition = Vector3.Lerp(from.ReferenceOffsetPosition, to.ReferenceOffsetPosition, t),
+            ReferenceOffsetRotation = Vector3.Lerp(from.ReferenceOffsetRotation, to.ReferenceOffsetRotation, t),
+            ReferenceOffsetSmoothTime = Mathf.Lerp(from.ReferenceOffsetSmoothTime, to.ReferenceOffsetSmoothTime, t),
+            OrbitEnabled = t < 0.5f ? from.OrbitEnabled : to.OrbitEnabled,
+            OrbitReferencePoint = t < 0.5f ? from.OrbitReferencePoint : to.OrbitReferencePoint,
+            OrbitSpeed = Mathf.Lerp(from.OrbitSpeed, to.OrbitSpeed, t),
+            LookAtEnabled = t < 0.5f ? from.LookAtEnabled : to.LookAtEnabled,
+            LookAtReferencePoint = t < 0.5f ? from.LookAtReferencePoint : to.LookAtReferencePoint
+        };
+    }
+
+    /// <summary>Indique si le nom fourni correspond à une phase stable de respiration.</summary>
+    private float ResolveBreathingPhase(string cameraName)
+    {
+        if (string.IsNullOrEmpty(cameraName))
+            return 0f;
+
+        if (breathingPhaseOffsets.TryGetValue(cameraName, out float cachedPhase))
+            return cachedPhase;
+
+        int hash = Animator.StringToHash(cameraName);
+        float phase = (hash & 0xFFFF) / 65535f * Mathf.PI * 2f;
+        breathingPhaseOffsets[cameraName] = phase;
+        return phase;
     }
 
     /// <summary>
     /// Applique un léger mouvement sinusoïdal à la caméra sélectionnée afin de simuler une respiration.
-    /// L'effet agit à la fois sur la position (verticale + latérale) et sur une micro-rotation
-    /// (tangage + lacet). Les paramètres sont volontairement faibles pour conserver un cadrage lisible
-    /// tout en ajoutant de la vie au plan.
     /// </summary>
     private void ApplyBreathingMotion(CinemachineCamera camera, string cameraName)
     {
         if (!enableBreathingMotion || camera == null)
-            return; // 🛑 On ne modifie rien si l'effet est désactivé ou si la caméra n'existe pas.
+            return;
 
-        // 🕒 On convertit la fréquence (en oscillations par seconde) vers un angle en radians.
         float frequency = Mathf.Max(breathingFrequency, 0.0001f);
         float baseAngle = (Time.time * frequency * Mathf.PI * 2f) + ResolveBreathingPhase(cameraName);
 
-        float sin = Mathf.Sin(baseAngle); // Valeur principale pour le mouvement vertical + tangage.
-        float cos = Mathf.Cos(baseAngle); // Décalage en quadrature pour le mouvement latéral + lacet.
+        float sin = Mathf.Sin(baseAngle);
+        float cos = Mathf.Cos(baseAngle);
 
-        // 🚶‍♀️ Translation douce selon les axes locaux (up/right) pour simuler le thorax qui se soulève.
         if (Mathf.Abs(breathingVerticalAmplitude) > 0.0001f || Mathf.Abs(breathingHorizontalAmplitude) > 0.0001f)
         {
             Vector3 offset = Vector3.zero;
@@ -981,7 +449,6 @@ public class BattleCameraManager : MonoBehaviour
             camera.transform.position += offset;
         }
 
-        // 🔄 Micro-rotation pour accompagner la translation et éviter un mouvement purement rigide.
         if (Mathf.Abs(breathingPitchAmplitude) > 0.0001f || Mathf.Abs(breathingYawAmplitude) > 0.0001f)
         {
             Quaternion rotationOffset = Quaternion.identity;
@@ -996,315 +463,64 @@ public class BattleCameraManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Applique le décalage de tremblement précédemment calculé si la caméra correspond à celle touchée.
-    /// </summary>
-    private void ApplyDamageShake(CinemachineCamera camera, string cameraName)
-    {
-        if (!enableDamageShake || damageShakeDurationCurrent <= 0f || camera == null)
-            return;
-
-        if (!string.Equals(cameraName, damageShakeCameraName, StringComparison.OrdinalIgnoreCase))
-            return; // ✅ Une autre caméra est active : on n'injecte aucune secousse ici.
-
-        camera.transform.position += damageShakeOffset;
-        camera.transform.rotation = damageShakeRotationOffset * camera.transform.rotation;
-    }
-
-    /// <summary>
-    /// Calcule la position idéale de la caméra en tenant compte de la taille réelle de l'unité suivie.
-    /// L'objectif est de conserver le cadrage imaginé par les artistes tout en reculant légèrement le
-    /// plan lorsque le personnage dépasse largement la hauteur de référence.
-    /// </summary>
-    private Vector3 ApplyUnitSizeCompensation(CharacterUnit unit, Vector3 initialPosition)
-    {
-        if (!enableUnitSizeCompensation || unit == null)
-            return initialPosition;
-
-        Bounds bounds = unit.GetVisualBounds();
-        float height = Mathf.Max(bounds.size.y, 0.001f);
-        float reference = Mathf.Max(referenceUnitHeight, 0.001f);
-
-        // 📏 Ratio de taille comparé à un humain standard (ex : 1 = humain, 4 = géant colossal).
-        float rawScale = height / reference;
-        float blendedScale = Mathf.Lerp(1f, rawScale, Mathf.Clamp01(distanceScaleBlend));
-        blendedScale = Mathf.Clamp(blendedScale, Mathf.Min(minDistanceScale, maxDistanceScale), Mathf.Max(minDistanceScale, maxDistanceScale));
-
-        Vector3 unitOrigin = unit.transform.position;
-        Vector3 offsetFromUnit = initialPosition - unitOrigin;
-
-        if (offsetFromUnit.sqrMagnitude > 0.0001f)
-        {
-            float baseDistance = offsetFromUnit.magnitude;
-            Vector3 direction = offsetFromUnit / baseDistance;
-            float scaledDistance = baseDistance * blendedScale;
-            offsetFromUnit = direction * scaledDistance;
-            initialPosition = unitOrigin + offsetFromUnit;
-        }
-
-        // 🪜 On relève légèrement la caméra si le plan reste trop bas par rapport au centre du personnage.
-        float desiredHeight = EvaluateDesiredFocusHeight(bounds);
-        float currentHeight = initialPosition.y - unitOrigin.y;
-        float heightDelta = desiredHeight - currentHeight;
-        if (heightDelta > 0f)
-            initialPosition += Vector3.up * heightDelta;
-
-        return initialPosition;
-    }
-
-    /// <summary>
-    /// Convertit la hauteur d'un personnage en offset vertical souhaité pour le focus caméra.
-    /// </summary>
-    private float EvaluateDesiredFocusHeight(Bounds bounds)
-    {
-        float height = Mathf.Max(bounds.size.y, referenceUnitHeight);
-        float offset = height * Mathf.Clamp01(focusHeightRatio);
-        offset = Mathf.Max(offset, minFocusHeight);
-        offset = Mathf.Min(offset, maxFocusHeight);
-        return offset;
-    }
-
-    /// <summary>
-    /// Renvoie (et met à jour) le point de focus dynamique associé à une unité.
-    /// </summary>
-    private Transform GetFocusPoint(CharacterUnit unit)
-    {
-        if (!enableUnitSizeCompensation || unit == null)
-            return unit != null ? unit.transform : null;
-
-        if (focusPointByUnit.TryGetValue(unit, out Transform proxy) && proxy != null)
-        {
-            UpdateFocusProxy(proxy, unit);
-            return proxy;
-        }
-
-        Transform createdProxy = CreateFocusProxy(unit);
-        UpdateFocusProxy(createdProxy, unit);
-        focusPointByUnit[unit] = createdProxy;
-        return createdProxy;
-    }
-
-    /// <summary>
-    /// Repositionne le point de focus pour qu'il vise le centre visuel de l'unité.
-    /// </summary>
-    private void UpdateFocusProxy(Transform proxy, CharacterUnit unit)
-    {
-        if (proxy == null || unit == null)
-            return;
-
-        Bounds bounds = unit.GetVisualBounds();
-        float desiredHeight = EvaluateDesiredFocusHeight(bounds);
-
-        Vector3 focusPosition = bounds.center;
-        focusPosition.x = bounds.center.x;
-        focusPosition.z = bounds.center.z;
-        focusPosition.y = Mathf.Max(bounds.center.y, bounds.min.y + desiredHeight);
-
-        proxy.position = focusPosition;
-        proxy.rotation = unit.transform.rotation;
-    }
-
-    /// <summary>
-    /// Crée (si nécessaire) un point de focus dédié à une unité.
-    /// </summary>
-    private Transform CreateFocusProxy(CharacterUnit unit)
-    {
-        if (unit == null)
-            return null;
-
-        if (focusProxyRoot == null)
-        {
-            GameObject root = new GameObject("BattleCamera_FocusRoot");
-            root.hideFlags = HideFlags.HideInHierarchy;
-            focusProxyRoot = root.transform;
-            focusProxyRoot.SetParent(transform, worldPositionStays: false);
-        }
-
-        GameObject proxyGO = new GameObject($"FocusPoint_{unit.name}");
-        proxyGO.hideFlags = HideFlags.HideInHierarchy;
-        Transform proxy = proxyGO.transform;
-        proxy.SetParent(focusProxyRoot, worldPositionStays: false);
-        return proxy;
-    }
-
-    /// <summary>
-    /// Supprime les points de focus associés à des unités détruites afin d'éviter toute fuite mémoire.
-    /// </summary>
-    private void PruneInvalidFocusProxies()
-    {
-        if (focusPointByUnit.Count == 0)
-            return;
-
-        focusPruneBuffer.Clear();
-
-        foreach (var kvp in focusPointByUnit)
-        {
-            bool unitMissing = kvp.Key == null;
-            bool proxyMissing = kvp.Value == null;
-            if (unitMissing || proxyMissing)
-                focusPruneBuffer.Add(kvp.Key);
-        }
-
-        foreach (CharacterUnit unit in focusPruneBuffer)
-        {
-            if (focusPointByUnit.TryGetValue(unit, out Transform proxy) && proxy != null)
-            {
-                if (Application.isPlaying)
-                    Destroy(proxy.gameObject);
-                else
-                    DestroyImmediate(proxy.gameObject);
-            }
-
-            focusPointByUnit.Remove(unit);
-        }
-
-        focusPruneBuffer.Clear();
-    }
-
-    /// <summary>
-    /// Calcule et mémorise un décalage de phase propre à chaque caméra pour l'effet de respiration.
-    /// On se base sur le hash Unity du nom afin d'obtenir une valeur déterministe entre les sessions.
-    /// </summary>
-    private float ResolveBreathingPhase(string cameraName)
+    private CameraState GetOrCreateCameraState(string cameraName)
     {
         if (string.IsNullOrEmpty(cameraName))
-            return 0f; // 🧭 Sans nom, on se replie sur une phase neutre.
-
-        if (breathingPhaseOffsets.TryGetValue(cameraName, out float cachedPhase))
-            return cachedPhase; // ✅ Valeur déjà connue : on la réutilise immédiatement.
-
-        // 🔢 On réutilise Animator.StringToHash (rapide et déterministe) pour produire une graine.
-        int hash = Animator.StringToHash(cameraName);
-
-        // Le hash est converti en angle [0 ; 2π] afin d'introduire un décalage de phase stable.
-        float phase = (hash & 0xFFFF) / 65535f * Mathf.PI * 2f;
-
-        breathingPhaseOffsets[cameraName] = phase;
-        return phase;
-    }
-
-    /// <summary>
-    /// Indique si le nom fourni correspond à l'une des caméras dédiées aux menus de combat.
-    /// </summary>
-    private static bool IsMenuCamera(string cameraName)
-    {
-        return !string.IsNullOrEmpty(cameraName) && MenuCameraNames.Contains(cameraName);
-    }
-
-    /// <summary>
-    /// Détermine l'ancre vers laquelle la caméra orbitale doit revenir lorsque aucune cible n'est suivie.
-    /// On privilégie les overrides explicites configurés par le gameplay (casterAnchorOverride) avant de
-    /// retomber sur l'ancre standard « CMVPoint_OrbitAroundUnit » du lanceur, puis sur son transform racine.
-    /// </summary>
-    private Transform ResolveOrbitReturnAnchor()
-    {
-        if (targetAnchorOverride != null)
-            return targetAnchorOverride;
-
-        if (casterAnchorOverride != null)
-            return casterAnchorOverride;
-
-        CharacterUnit fallbackUnit = currentCaster ?? currentTurnOwner;
-        if (fallbackUnit == null)
             return null;
 
-        Transform casterOrbitAnchor = fallbackUnit.GetCameraAnchor("CMVPoint_OrbitAroundUnit");
-        if (casterOrbitAnchor != null)
-            return casterOrbitAnchor;
-
-        return fallbackUnit.transform;
-    }
-
-    /// <summary>
-    /// Recherche les ancres communes "CMVPoint_OverShoulderLookTarget_*".
-    /// </summary>
-    /// <remarks>
-    /// Ces points sont placés sur le parent contenant l'ensemble des combattants d'un camp.
-    /// Ils permettent d'orienter la caméra épaulière vers un repère stable même lorsque la
-    /// cible se déplace ou disparaît momentanément. Chaque point est suffixé par un indice
-    /// (01 à 03) correspondant à la position de l'unité dans la hiérarchie.
-    /// </remarks>
-    private Transform ResolveSharedLookTargetAnchor(CharacterUnit referenceUnit)
-    {
-        if (referenceUnit == null)
-            return null;
-
-        Transform parent = referenceUnit.transform != null ? referenceUnit.transform.parent : null;
-        if (parent == null)
-            return null;
-
-        bool isPlayer = referenceUnit.Data != null && referenceUnit.Data.isPlayerControlled;
-
-        // On détermine l'indice de l'unité à l'intérieur de son groupe (1..N) afin de sélectionner
-        // l'ancre dédiée. L'ordre est simplement basé sur la hiérarchie des enfants du parent commun.
-        int slotIndex = ResolveUnitSlotIndex(referenceUnit, parent, isPlayer);
-        if (slotIndex <= 0)
-            return null;
-
-        string prefix = isPlayer
-            ? "CMVPoint_OverShoulderLookTarget_Player_"
-            : "CMVPoint_OverShoulderLookTarget_Enemy_";
-        string anchorName = prefix + slotIndex.ToString("00");
-
-        // Les ancres peuvent être nichées à n'importe quel niveau sous le parent : on parcourt
-        // récursivement la hiérarchie en incluant les objets désactivés pour couvrir tous les cas.
-        foreach (var child in parent.GetComponentsInChildren<Transform>(includeInactive: true))
+        if (!cameraStates.TryGetValue(cameraName, out var state) || state == null)
         {
-            if (child == null)
-                continue;
-
-            if (string.Equals(child.name, anchorName, StringComparison.OrdinalIgnoreCase))
-                return child;
+            state = new CameraState
+            {
+                SmoothedPosition = Vector3.zero,
+                SmoothedRotation = Quaternion.identity
+            };
+            cameraStates[cameraName] = state;
         }
+
+        return state;
+    }
+
+    private void ResetCameraState(string cameraName)
+    {
+        if (string.IsNullOrEmpty(cameraName))
+            return;
+
+        if (cameraStates.TryGetValue(cameraName, out var state) && state != null)
+            state.Initialized = false;
+    }
+
+    private CharacterUnit ResolveReferenceUnit(CameraMotifSO.ReferencePoint referencePoint)
+    {
+        if (referencePoint == CameraMotifSO.ReferencePoint.Target)
+        {
+            if (currentTarget != null)
+                return currentTarget;
+            if (currentCaster != null)
+                return currentCaster;
+        }
+        else
+        {
+            if (currentCaster != null)
+                return currentCaster;
+            if (currentTarget != null)
+                return currentTarget;
+        }
+
+        if (currentTurnOwner != null)
+            return currentTurnOwner;
 
         return null;
-    }
-
-    /// <summary>
-    /// Calcule la position (1..N) de l'unité au sein de son groupe afin de choisir l'ancre adaptée.
-    /// </summary>
-    private static int ResolveUnitSlotIndex(CharacterUnit referenceUnit, Transform groupParent, bool isPlayer)
-    {
-        if (referenceUnit == null || groupParent == null)
-            return -1;
-
-        int index = 0;
-        foreach (Transform child in groupParent)
-        {
-            if (child == null)
-                continue;
-
-            CharacterUnit childUnit = child.GetComponent<CharacterUnit>();
-            if (childUnit == null || childUnit.Data == null)
-                continue;
-
-            if (childUnit.Data.isPlayerControlled != isPlayer)
-                continue; // On ignore les unités appartenant au camp opposé.
-
-            index++;
-
-            if (childUnit == referenceUnit)
-                return index;
-        }
-
-        return -1;
     }
 
     /// <summary>Enregistre l'unité actuellement active (tour en cours).</summary>
     public void SetTurnOwner(CharacterUnit unit, bool alsoSetAsCaster = true)
     {
-        // ♻️ Avant de repositionner toutes les caméras, on remet à zéro le cache des ancres
-        // de l'unité qui entame son tour. Cela évite les références obsolètes lorsque les artistes
-        // ont ajusté un « CMVPoint_… » pendant l'exécution (changement de posture, animation spéciale…).
         currentTurnOwner = unit;
-        currentTurnOwner?.RefreshCameraAnchorCache();
         if (alsoSetAsCaster && unit != null)
             currentCaster = unit;
 
-        // 🎨 Synchronise immédiatement le filtre d'urgence pour refléter l'état de santé
-        // de la SquadUnit active. L'appel est sécurisé si aucun filtre n'est présent.
         BattleCameraDamageFilter.Instance?.SetActiveUnit(unit);
-
         RefreshAllCameraPlacements();
     }
 
@@ -1312,251 +528,23 @@ public class BattleCameraManager : MonoBehaviour
     public void SetCurrentTarget(CharacterUnit target)
     {
         currentTarget = target;
-
         RefreshAllCameraPlacements();
     }
 
     /// <summary>Configure le contexte complet d'un move ou d'un item.</summary>
-    public void ConfigureActionTargets(
-        CharacterUnit caster,
-        CharacterUnit target,
-        Vector3? midpoint = null,
-        Transform casterAnchor = null,
-        Transform targetAnchor = null)
+    public void ConfigureActionTargets(CharacterUnit caster, CharacterUnit target)
     {
         currentCaster = caster ?? currentCaster;
         currentTarget = target;
-        casterAnchorOverride = casterAnchor;
-        targetAnchorOverride = targetAnchor;
-
         RefreshAllCameraPlacements();
-    }
-
-    /// <summary>
-    /// Active un recadrage dynamique afin d'englober toutes les cibles sélectionnées.
-    /// </summary>
-    public void SetMultiTargetFraming(IReadOnlyList<CharacterUnit> targets, string cameraName)
-    {
-        if (!enableMultiTargetFraming || targets == null || targets.Count == 0)
-        {
-            ClearMultiTargetFraming();
-            return;
-        }
-
-        bool hasBounds = false;
-        Bounds aggregated = default;
-
-        foreach (CharacterUnit unit in targets)
-        {
-            if (unit == null)
-                continue;
-
-            Bounds unitBounds = unit.GetVisualBounds();
-            if (!hasBounds)
-            {
-                aggregated = unitBounds;
-                hasBounds = true;
-            }
-            else
-            {
-                aggregated.Encapsulate(unitBounds);
-            }
-        }
-
-        if (!hasBounds || string.IsNullOrEmpty(cameraName))
-        {
-            ClearMultiTargetFraming();
-            return;
-        }
-
-        float padding = Mathf.Max(0f, multiTargetPadding);
-        if (padding > 0f)
-            aggregated.Expand(Vector3.one * (padding * 2f));
-
-        multiTargetBounds = aggregated;
-        multiTargetCameraName = cameraName;
-        hasMultiTargetFraming = true;
-    }
-
-    /// <summary>
-    /// Désactive le recadrage multi-cibles et rend la main aux ancres classiques.
-    /// </summary>
-    public void ClearMultiTargetFraming()
-    {
-        hasMultiTargetFraming = false;
-        multiTargetCameraName = null;
-        multiTargetBounds = default;
     }
 
     /// <summary>Efface les informations associées au move en cours.</summary>
     public void ClearRigTargets()
     {
-        casterAnchorOverride = null;
-        targetAnchorOverride = null;
         currentCaster = null;
         currentTarget = null;
-
         RefreshAllCameraPlacements();
-    }
-
-    /// <summary>
-    /// Applique un cadrage dynamique si un groupe de cibles est défini.
-    /// </summary>
-    private bool TryApplyMultiTargetFraming(
-        CinemachineCamera camera,
-        string cameraName,
-        CharacterUnit ownerUnit,
-        CameraBindingConfig config)
-    {
-        if (!enableMultiTargetFraming || !hasMultiTargetFraming)
-            return false;
-
-        if (string.IsNullOrEmpty(cameraName) || !string.Equals(cameraName, multiTargetCameraName, StringComparison.OrdinalIgnoreCase))
-            return false;
-
-        if (camera == null)
-            return false;
-
-        Bounds bounds = multiTargetBounds;
-        if (bounds.size.sqrMagnitude < 0.0001f)
-            return false;
-
-        Transform baseAnchor = ResolveAnchorTransform(ownerUnit, config);
-        Vector3 forward = baseAnchor != null ? baseAnchor.forward : Vector3.forward;
-        if (forward.sqrMagnitude < 0.0001f)
-            forward = ownerUnit != null && ownerUnit.transform.forward.sqrMagnitude > 0.0001f
-                ? ownerUnit.transform.forward.normalized
-                : Vector3.forward;
-        forward.Normalize();
-
-        Quaternion baseRotation = Quaternion.LookRotation(forward, Vector3.up);
-        float distance = ResolveMultiTargetDistance(bounds, baseRotation, baseAnchor);
-        Vector3 focus = bounds.center;
-        Vector3 position = focus - forward * distance;
-        Quaternion rotation = Quaternion.LookRotation(focus - position, Vector3.up);
-
-        camera.transform.SetPositionAndRotation(position, rotation);
-
-        Transform focusProxy = EnsureMultiTargetFocusProxy();
-        if (focusProxy != null)
-        {
-            focusProxy.position = focus;
-            focusProxy.rotation = rotation;
-
-            var targetSettings = camera.Target;
-            targetSettings.CustomLookAtTarget = true;
-            targetSettings.LookAtTarget = focusProxy;
-            camera.Target = targetSettings;
-        }
-        else
-        {
-            var targetSettings = camera.Target;
-            targetSettings.CustomLookAtTarget = false;
-            targetSettings.LookAtTarget = null;
-            camera.Target = targetSettings;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// Calcule la distance nécessaire pour englober un groupe de cibles dans le champ de la caméra.
-    /// </summary>
-    private float ResolveMultiTargetDistance(Bounds bounds, Quaternion rotation, Transform baseAnchor)
-    {
-        Camera viewCamera = ResolveBattleCamera();
-        float verticalFov = viewCamera != null ? viewCamera.fieldOfView : 45f;
-        float aspect = viewCamera != null ? viewCamera.aspect : (16f / 9f);
-
-        verticalFov = Mathf.Clamp(verticalFov, 1f, 179f);
-        aspect = Mathf.Max(0.1f, aspect);
-
-        float halfVerticalFov = Mathf.Deg2Rad * verticalFov * 0.5f;
-        float halfHorizontalFov = Mathf.Atan(Mathf.Tan(halfVerticalFov) * aspect);
-
-        Vector3 extents = bounds.extents;
-        Vector3 right = rotation * Vector3.right;
-        Vector3 up = rotation * Vector3.up;
-
-        float halfWidth = Mathf.Abs(right.x) * extents.x + Mathf.Abs(right.y) * extents.y + Mathf.Abs(right.z) * extents.z;
-        float halfHeight = Mathf.Abs(up.x) * extents.x + Mathf.Abs(up.y) * extents.y + Mathf.Abs(up.z) * extents.z;
-
-        float distanceByHeight = halfHeight / Mathf.Tan(halfVerticalFov);
-        float distanceByWidth = halfWidth / Mathf.Tan(halfHorizontalFov);
-        float distance = Mathf.Max(distanceByHeight, distanceByWidth);
-
-        if (baseAnchor != null)
-            distance = Mathf.Max(distance, Vector3.Distance(baseAnchor.position, bounds.center));
-
-        distance = Mathf.Max(distance, multiTargetMinimumDistance);
-        distance *= Mathf.Max(0.01f, multiTargetDistanceMultiplier);
-        return distance;
-    }
-
-    /// <summary>
-    /// Assure la disponibilité d'un point de focus dédié aux cadrages multi-cibles.
-    /// </summary>
-    private Transform EnsureMultiTargetFocusProxy()
-    {
-        if (multiTargetFocusProxy != null)
-            return multiTargetFocusProxy;
-
-        if (focusProxyRoot == null)
-        {
-            GameObject root = new GameObject("BattleCamera_FocusRoot");
-            root.hideFlags = HideFlags.HideInHierarchy;
-            focusProxyRoot = root.transform;
-            focusProxyRoot.SetParent(transform, worldPositionStays: false);
-        }
-
-        GameObject proxyGO = new GameObject("FocusPoint_MultiTarget");
-        proxyGO.hideFlags = HideFlags.HideInHierarchy;
-        multiTargetFocusProxy = proxyGO.transform;
-        multiTargetFocusProxy.SetParent(focusProxyRoot, worldPositionStays: false);
-        return multiTargetFocusProxy;
-    }
-
-    /// <summary>
-    /// Retourne la caméra Unity de référence afin de récupérer le FOV et l'aspect.
-    /// </summary>
-    private Camera ResolveBattleCamera()
-    {
-        if (cachedBattleCamera != null)
-            return cachedBattleCamera;
-
-        GameObject tagged = GameObject.FindGameObjectWithTag("BattleCamera");
-        if (tagged != null && tagged.TryGetComponent(out Camera found))
-        {
-            cachedBattleCamera = found;
-            return cachedBattleCamera;
-        }
-
-        cachedBattleCamera = Camera.main;
-        return cachedBattleCamera;
-    }
-
-    /// <summary>Active une caméra via son rôle cinématique.</summary>
-    public void SwitchToCamera(
-        BattleCameraRole role,
-        float blendTime = -1f,
-        CinemachineBlendDefinition.Styles? overrideStyle = null)
-    {
-        if (role == BattleCameraRole.None)
-        {
-            currentRole = BattleCameraRole.None;
-            currentCameraName = null;
-            DisplayCameraWithBlend(null, blendTime, overrideStyle);
-            return;
-        }
-
-        if (!DefaultRoleToCameraName.TryGetValue(role, out string cameraName))
-        {
-            Debug.LogWarning($"[BattleCameraManager] Aucun GameObject associé au rôle caméra {role}.");
-            return;
-        }
-
-        currentRole = role;
-        SwitchToCamera(cameraName, blendTime, overrideStyle);
     }
 
     /// <summary>Active la caméra correspondant au nom fourni.</summary>
@@ -1570,45 +558,12 @@ public class BattleCameraManager : MonoBehaviour
 
         if (string.IsNullOrEmpty(cameraName))
         {
-            currentCameraName = null;
             DisplayCameraWithBlend(null, blendTime, overrideStyle);
             return;
         }
 
-        // 🎯 Stocke la caméra précédente avant de déclencher le blend pour déterminer si un recul doit être joué.
-        string previousCameraName = currentCameraName;
-
-        // 🚀 Déclenche l'effet de recul uniquement lorsqu'on navigue entre deux menus distincts.
-        if (enableMenuRecoil
-            && IsMenuCamera(cameraName)
-            && IsMenuCamera(previousCameraName)
-            && !string.Equals(cameraName, previousCameraName, StringComparison.OrdinalIgnoreCase))
-        {
-            TriggerMenuRecoil(ResolveMenuBlendDuration(blendTime));
-        }
-
-        RefreshCameraPlacement(cameraName, CameraBindings.TryGetValue(cameraName, out var config)
-            ? config
-            : new CameraBindingConfig(CameraAnchorOwner.Caster, cameraName.Replace("CMV_", string.Empty), false));
-
-        currentCameraName = cameraName;
+        ResetCameraState(cameraName);
         DisplayCameraWithBlend(cameraName, blendTime, overrideStyle);
-    }
-
-    /// <summary>Replace la caméra ciblée avant de lui donner la priorité.</summary>
-    public void SwitchToCameraAndAlign(
-        string cameraName,
-        Transform anchor,
-        float blendTime = -1f,
-        CinemachineBlendDefinition.Styles? overrideStyle = null)
-    {
-        // Les ancres manuelles appartiennent à l'ancien système : on déclenche simplement un rafraîchissement automatique.
-        if (!string.IsNullOrEmpty(cameraName) && CameraBindings.TryGetValue(cameraName, out var config))
-            RefreshCameraPlacement(cameraName, config);
-        else if (anchor != null && TryGetCameraByName(cameraName, out var manualCamera))
-            manualCamera.transform.SetPositionAndRotation(anchor.position, anchor.rotation);
-
-        SwitchToCamera(cameraName, blendTime, overrideStyle);
     }
 
     /// <summary>Active la caméra indiquée en respectant la durée/ le style de blend global.</summary>
@@ -1648,195 +603,4 @@ public class BattleCameraManager : MonoBehaviour
 
     /// <summary>Indique si une Cinemachine possède la priorité dans le <see cref="CinemachineBrain"/>.</summary>
     public bool HasActiveCinemachineCamera => blendSwitcher && blendSwitcher.HasActiveCamera;
-
-    /// <summary>
-    /// Déclenche une secousse de caméra lorsque l'escouade reçoit un coup, afin de renforcer l'impact.
-    /// </summary>
-    /// <param name="damagedUnit">Unité blessée afin de déterminer l'orientation de l'effet.</param>
-    /// <param name="devastatingHit">Indique si le coup est considéré comme particulièrement violent.</param>
-    /// <param name="attacker">Transform de l'assaillant pour accentuer la direction de l'onde.</param>
-    public void TriggerDamageShake(CharacterUnit damagedUnit, bool devastatingHit, Transform attacker = null)
-    {
-        if (!enableDamageShake || damagedUnit == null || !blendSwitcher || !blendSwitcher.HasActiveCamera)
-            return;
-
-        string activeCameraName = blendSwitcher.CurrentCameraName;
-        if (string.IsNullOrEmpty(activeCameraName))
-            return;
-
-        damageShakeCameraName = activeCameraName;
-        damageShakeDurationCurrent = Mathf.Max(damageShakeDuration, 0.01f);
-        damageShakeElapsed = 0f;
-        damageShakeIntensity = devastatingHit ? damageShakeDevastatingMultiplier : 1f;
-        damageShakeOffset = Vector3.zero;
-        damageShakeRotationOffset = Quaternion.identity;
-        damageShakePrimaryPhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-        damageShakeSecondaryPhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
-
-        damageShakeRight = ResolveDamageShakeLateralAxis(damagedUnit, attacker, activeCameraName);
-        damageShakeUp = Vector3.up;
-    }
-
-    /// <summary>
-    /// Détermine l'axe horizontal privilégié pour le tremblement en combinant direction d'attaque
-    /// et orientation de la caméra active.
-    /// </summary>
-    private Vector3 ResolveDamageShakeLateralAxis(CharacterUnit damagedUnit, Transform attacker, string cameraName)
-    {
-        if (damagedUnit == null)
-            return Vector3.right;
-
-        // 1️⃣ Tentative : utiliser la direction d'impact afin de retranscrire la poussée du coup.
-        if (attacker != null)
-        {
-            Vector3 attackDirection = damagedUnit.transform.position - attacker.position;
-            if (attackDirection.sqrMagnitude > 0.0001f)
-            {
-                Vector3 lateral = Vector3.Cross(Vector3.up, attackDirection.normalized);
-                if (lateral.sqrMagnitude > 0.0001f)
-                    return lateral.normalized;
-            }
-        }
-
-        // 2️⃣ Fallback : se baser sur la position de la caméra active pour conserver une lecture cohérente.
-        if (!string.IsNullOrEmpty(cameraName) && TryGetCameraByName(cameraName, out var camera) && camera != null)
-        {
-            Vector3 toCamera = camera.transform.position - damagedUnit.transform.position;
-            if (toCamera.sqrMagnitude > 0.0001f)
-            {
-                Vector3 lateral = Vector3.Cross(Vector3.up, toCamera.normalized);
-                if (lateral.sqrMagnitude > 0.0001f)
-                    return lateral.normalized;
-            }
-
-            Vector3 cameraRight = camera.transform.right;
-            if (cameraRight.sqrMagnitude > 0.0001f)
-                return cameraRight.normalized;
-        }
-
-        // 3️⃣ Dernier recours : axe monde fixe afin de garantir un comportement déterministe.
-        return Vector3.right;
-    }
-
-    /// <summary>Garantit que la caméra d'introduction est bien référencée.</summary>
-    private bool EnsureIntroCameraReference()
-    {
-        if (introCameraTransform != null)
-            return true;
-
-        if (!TryGetCameraByName(IntroCameraName, out var camera) || camera == null)
-            return false;
-
-        introCameraTransform = camera.transform;
-        introCameraInitialLocalPosition = introCameraTransform.localPosition;
-        introCameraInitialLocalRotation = introCameraTransform.localRotation;
-        return true;
-    }
-
-    /// <summary>Mémorise la position de base de la caméra d'introduction dès que possible.</summary>
-    private void CacheIntroCameraReference()
-    {
-        if (!TryGetCameraByName(IntroCameraName, out var camera) || camera == null)
-        {
-            introCameraTransform = null;
-            return;
-        }
-
-        introCameraTransform = camera.transform;
-        introCameraInitialLocalPosition = introCameraTransform.localPosition;
-        introCameraInitialLocalRotation = introCameraTransform.localRotation;
-    }
-
-    /// <summary>Démarre le travelling linéaire de la caméra d'introduction.</summary>
-    public void StartBattleIntroCameraTravel(float moveSpeed = 1f, Vector3? lookAtPoint = null)
-    {
-        if (!EnsureIntroCameraReference())
-            return;
-
-        if (introCameraMoveRoutine != null)
-        {
-            StopCoroutine(introCameraMoveRoutine);
-            introCameraMoveRoutine = null;
-        }
-
-        if (introCameraResetRoutine != null)
-        {
-            StopCoroutine(introCameraResetRoutine);
-            introCameraResetRoutine = null;
-        }
-
-        introCameraTransform.localPosition = introCameraInitialLocalPosition;
-        introCameraTransform.localRotation = introCameraInitialLocalRotation;
-
-        Vector3 targetPoint = lookAtPoint ?? Vector3.zero;
-        Vector3 lookDirection = targetPoint - introCameraTransform.position;
-        if (lookDirection.sqrMagnitude > IntroLookDirectionThreshold)
-            introCameraTransform.rotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
-
-        introCameraMoveRoutine = StartCoroutine(IntroCameraTravelRoutine(moveSpeed, targetPoint));
-    }
-
-    /// <summary>Stoppe le travelling de la caméra d'introduction et programme sa remise en place.</summary>
-    public void StopBattleIntroCameraTravel(float delayBeforeReset = 0f)
-    {
-        if (introCameraMoveRoutine != null)
-        {
-            StopCoroutine(introCameraMoveRoutine);
-            introCameraMoveRoutine = null;
-        }
-
-        if (introCameraTransform == null)
-            return;
-
-        if (introCameraResetRoutine != null)
-        {
-            StopCoroutine(introCameraResetRoutine);
-            introCameraResetRoutine = null;
-        }
-
-        if (delayBeforeReset <= 0f)
-        {
-            introCameraTransform.localPosition = introCameraInitialLocalPosition;
-            introCameraTransform.localRotation = introCameraInitialLocalRotation;
-        }
-        else
-        {
-            introCameraResetRoutine = StartCoroutine(ResetIntroCameraAfterDelay(delayBeforeReset));
-        }
-    }
-
-    /// <summary>Coroutine appliquant le déplacement linéaire tout en gardant un point de mire fixe.</summary>
-    private IEnumerator IntroCameraTravelRoutine(float moveSpeed, Vector3 lookAtPoint)
-    {
-        while (true)
-        {
-            if (introCameraTransform == null)
-                yield break;
-
-            float delta = Time.unscaledDeltaTime;
-            Vector3 worldPosition = introCameraTransform.position;
-            worldPosition += Vector3.forward * moveSpeed * delta;
-            introCameraTransform.position = worldPosition;
-
-            Vector3 lookDirection = lookAtPoint - worldPosition;
-            if (lookDirection.sqrMagnitude > IntroLookDirectionThreshold)
-                introCameraTransform.rotation = Quaternion.LookRotation(lookDirection.normalized, Vector3.up);
-
-            yield return null;
-        }
-    }
-
-    /// <summary>Ramène la caméra d'introduction sur ses coordonnées d'origine après un fondu.</summary>
-    private IEnumerator ResetIntroCameraAfterDelay(float delay)
-    {
-        yield return new WaitForSecondsRealtime(Mathf.Max(0f, delay));
-
-        if (introCameraTransform != null)
-        {
-            introCameraTransform.localPosition = introCameraInitialLocalPosition;
-            introCameraTransform.localRotation = introCameraInitialLocalRotation;
-        }
-
-        introCameraResetRoutine = null;
-    }
 }

@@ -58,9 +58,6 @@ public partial class NewBattleManager
             if (child != null)
             {
                 playerSpawnPoints.Add(child);
-
-                // Crée (ou recycle) le point de visée utilisé par la caméra épaulière.
-                EnsureCasterLookTargetAnchor_SquadUnit(child);
             }
         }
 
@@ -111,10 +108,6 @@ public partial class NewBattleManager
             if (child != null)
             {
                 enemySpawnPoints.Add(child);
-
-                // Génère également le point de visée pour les ennemis afin que les items/moves
-                // puissent demander une caméra épaulière même si la position est vide au départ.
-                EnsureCasterLookTargetAnchor_EnemyUnit(child);
             }
         }
 
@@ -147,109 +140,5 @@ public partial class NewBattleManager
         }
     }
     #endregion
-
-    /// <summary>
-    /// S'assure qu'un point "CMVPoint_OverShoulder_CasterLookTarget" existe sur un emplacement donné
-    /// afin que les caméras contextuelles puissent viser automatiquement la cible active.
-    /// </summary>
-    /// <param name="spawnPoint">Transform représentant PlayerPosition_X ou EnemyPosition_X.</param>
-    /// <returns>Le transform correspondant au point de visée.</returns>
-    private Transform EnsureCasterLookTargetAnchor_SquadUnit(Transform spawnPoint)
-    {
-        if (spawnPoint == null)
-            return null;
-
-        const string anchorName = "CMVPoint_OverShoulder_CasterLookTarget";
-
-        // Vérifie si un point existe déjà (scène, prefab ou précédent spawn) pour éviter les doublons.
-        Transform existingAnchor = null;
-        foreach (Transform child in spawnPoint.GetComponentsInChildren<Transform>(includeInactive: true))
-        {
-            if (child == null)
-                continue;
-
-            if (string.Equals(child.name, anchorName, StringComparison.OrdinalIgnoreCase))
-            {
-                existingAnchor = child;
-                break;
-            }
-        }
-
-        if (existingAnchor != null)
-        {
-            // Met à jour/ajoute le composant responsable d'orienter l'ancre vers la cible courante.
-            EnsureLookAtComponent(existingAnchor);
-            return existingAnchor;
-        }
-
-        // Aucun point n'existait : on instancie un nouvel objet utilitaire dédié au guidage caméra.
-        GameObject anchorGO = new(anchorName);
-        anchorGO.transform.SetParent(spawnPoint, worldPositionStays: false);
-        anchorGO.transform.localPosition = overShoulderCasterLookPointPosition_SquadUnit;
-        anchorGO.transform.localRotation = Quaternion.identity;
-
-        // Lie systématiquement l'ancre à la cible actuelle afin que les caméras épaulières cadrent
-        // correctement la scène, quel que soit le modèle visuel du personnage.
-        EnsureLookAtComponent(anchorGO.transform);
-
-        return anchorGO.transform;
-    }
-    private Transform EnsureCasterLookTargetAnchor_EnemyUnit(Transform spawnPoint)
-    {
-        if (spawnPoint == null)
-            return null;
-
-        const string anchorName = "CMVPoint_OverShoulder_CasterLookTarget";
-
-        // Vérifie si un point existe déjà (scène, prefab ou précédent spawn) pour éviter les doublons.
-        Transform existingAnchor = null;
-        foreach (Transform child in spawnPoint.GetComponentsInChildren<Transform>(includeInactive: true))
-        {
-            if (child == null)
-                continue;
-
-            if (string.Equals(child.name, anchorName, StringComparison.OrdinalIgnoreCase))
-            {
-                existingAnchor = child;
-                break;
-            }
-        }
-
-        if (existingAnchor != null)
-        {
-            // Garantit que le point continue d'orienter la caméra vers la cible active, même
-            // lorsqu'il a été placé manuellement dans la scène.
-            EnsureLookAtComponent(existingAnchor);
-            return existingAnchor;
-        }
-
-        // Aucun point n'existait : on instancie un nouvel objet utilitaire dédié au guidage caméra.
-        GameObject anchorGO = new(anchorName);
-        anchorGO.transform.SetParent(spawnPoint, worldPositionStays: false);
-        anchorGO.transform.localPosition = overShoulderCasterLookPointPosition_EnemyUnit;
-        anchorGO.transform.localRotation = Quaternion.identity;
-
-        EnsureLookAtComponent(anchorGO.transform);
-
-        return anchorGO.transform;
-    }
-
-    /// <summary>
-    /// S'assure qu'un composant <see cref="LookAtBattleTarget"/> est présent et configuré sur l'ancre donnée.
-    /// </summary>
-    /// <param name="anchor">Transform de l'ancre à valider.</param>
-    private void EnsureLookAtComponent(Transform anchor)
-    {
-        if (anchor == null)
-            return;
-
-        // 🔄 Réutilise le composant existant lorsqu'il est déjà en place pour préserver les réglages
-        // manuels éventuels, tout en rafraîchissant l'offset commun à toutes les ancres générées.
-        LookAtBattleTarget lookAt = anchor.GetComponent<LookAtBattleTarget>();
-        if (lookAt == null)
-            lookAt = anchor.gameObject.AddComponent<LookAtBattleTarget>();
-
-        lookAt.offset = overShoulderCasterLookOffset;
-    }
 
 }

@@ -54,8 +54,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private const float IdleCrossFadeDurationSeconds = 0.1f;
 
     // Mise en cache des ancres caméra pour éviter de reparcourir toute la hiérarchie à chaque requête.
-    private readonly Dictionary<string, Transform> cachedCameraAnchors = new(StringComparer.OrdinalIgnoreCase);
-
     /// <summary>
     /// Volume visuel approximatif de l'unité (mesh, colliders…), mis en cache afin
     /// d'éviter un recalcul systématique lorsque les caméras ont besoin d'estimer
@@ -642,163 +640,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             return false;
 
         return renderer is MeshRenderer || renderer is SkinnedMeshRenderer || renderer is SpriteRenderer;
-    }
-
-    /// <summary>
-    /// Recherche (et met en cache) une ancre caméra particulière sur le CharacterUnit.
-    /// </summary>
-    /// <param name="anchorName">Nom exact du point de caméra recherché.</param>
-    /// <param name="includeInactive">
-    /// Vrai pour parcourir également les objets désactivés (utile lorsque certains repères sont masqués dans l'éditeur).
-    /// </param>
-    /// <returns>La transform correspondant à l'ancre ou <c>null</c> si elle est introuvable.</returns>
-    public Transform GetCameraAnchor(string anchorName, bool includeInactive = true, bool logWarning = true)
-    {
-        if (string.IsNullOrEmpty(anchorName))
-            return null;
-
-        if (cachedCameraAnchors.TryGetValue(anchorName, out var cached))
-        {
-            // Si l'ancre existe encore, on la renvoie directement.
-            if (cached != null)
-                return cached;
-
-            // Une valeur nulle indique que l'ancre est introuvable : on évite un nouveau parcours coûteux.
-            return null;
-        }
-
-        Transform located = LocateCameraAnchor(anchorName, includeInactive);
-        cachedCameraAnchors[anchorName] = located;
-
-        if (located == null && logWarning)
-        {
-            Debug.LogWarning($"[CharacterUnit] Ancre caméra '{anchorName}' introuvable sur '{name}'.");
-        }
-
-        return located;
-    }
-
-    /// <summary>
-    /// Vide explicitement le cache des ancres « CMVPoint_… » afin de forcer un recalcul complet.
-    /// Cette méthode est utilisée par le <see cref="BattleCameraManager"/> à chaque début de tour
-    /// pour garantir que la caméra épouse bien les derniers ajustements effectués dans l'éditeur.
-    /// </summary>
-    public void RefreshCameraAnchorCache()
-    {
-        cachedCameraAnchors.Clear();
-        // 🧹 On invalide également le cache des bounds visuels afin que les prochains
-        //     calculs prennent en compte les éventuelles modifications de posture
-        //     (ex : Timeline qui change l'échelle d'un mesh, activation d'un accessoire, etc.).
-        hasCachedVisualBounds = false;
-    }
-
-    /// <summary>
-    /// Rôle principal associé au point caméra recherché lorsqu'on souhaite
-    /// fournir un override explicite au <see cref="BattleCameraManager"/>.
-    /// </summary>
-    public enum CameraAnchorPurpose
-    {
-        /// <summary>L'ancre doit suivre le lanceur de l'action.</summary>
-        Caster,
-        /// <summary>L'ancre doit suivre la cible de l'action.</summary>
-        Target
-    }
-
-    /// <summary>
-    /// Détermine un point caméra pertinent pour l'unité selon le rôle
-    /// souhaité (lanceur ou cible). Les ancres déclarées via les GameObjects
-    /// « CMVPoint_… » sont privilégiées afin de reproduire les cadrages
-    /// définis par les artistes, puis un repli progressif est appliqué vers
-    /// l'Animator de binding et, en dernier recours, vers le transform racine.
-    /// </summary>
-    /// <param name="purpose">Indique si l'on cherche un point côté lanceur ou côté cible.</param>
-    /// <param name="includeInactive">
-    /// Vrai pour considérer également les ancres désactivées dans la hiérarchie.
-    /// </param>
-    /// <returns>
-    /// Le transform de l'ancre dédiée, celui de l'Animator utilisé pour les bindings,
-    /// ou, à défaut, le transform racine de l'unité.
-    /// </returns>
-    public Transform GetDefaultCameraAnchor(CameraAnchorPurpose purpose, bool includeInactive = true)
-    {
-        // ⚖️ Liste de priorité différente selon le rôle recherché :
-        //     * côté lanceur -> on privilégie les points « OverShoulder » pour cadrer l'action.
-        //     * côté cible   -> on vise d'abord la réaction puis les autres plans utiles.
-        string[] preferredAnchors = purpose == CameraAnchorPurpose.Caster
-            ? new[]
-            {
-                "CMVPoint_OverShoulder_CasterToTarget",
-                "CMVPoint_OverShoulder_CasterLookTarget",
-                "CMVPoint_TargetReaction",
-                "CMVPoint_OrbitAroundUnit"
-            }
-            : new[]
-            {
-                "CMVPoint_TargetReaction",
-                "CMVPoint_OverShoulder_CasterLookTarget",
-                "CMVPoint_OverShoulder_CasterToTarget",
-                "CMVPoint_OrbitAroundUnit"
-            };
-
-        foreach (string anchorName in preferredAnchors)
-        {
-            Transform anchor = GetCameraAnchor(anchorName, includeInactive, logWarning: false);
-            if (anchor != null)
-                return anchor;
-        }
-
-        // 🎭 Aucun point spécifique n'est présent : on retombe sur l'Animator qui
-        // sert déjà aux timelines, garantissant un pivot cohérent pour la caméra.
-        Animator bindingAnimator = GetCasterAnimator();
-        if (bindingAnimator != null)
-            return bindingAnimator.transform;
-
-        // 🔚 Dernier recours : le transform racine pour ne jamais renvoyer null.
-        return transform;
-    }
-
-    /// <summary>
-    /// Parcourt récursivement la hiérarchie pour trouver une ancre caméra.
-    /// </summary>
-    private Transform LocateCameraAnchor(string anchorName, bool includeInactive)
-    {
-        Transform[] children = GetComponentsInChildren<Transform>(includeInactive);
-        foreach (var child in children)
-        {
-            if (string.Equals(child.name, anchorName, StringComparison.OrdinalIgnoreCase))
-                return child;
-        }
-
-        // 🧭 Les points générés sur le parent (PlayerPosition_X / EnemyPosition_X) ne doivent
-        // être considérés que pour l'ancre "OverShoulder_CasterLookTarget". Contrairement
-        // aux autres points, celui-ci est fixé relativement au point de spawn et non au
-        // CharacterUnit lui-même ; il faut donc explicitement interroger le parent.
-        const string spawnRelativeAnchor = "CMVPoint_OverShoulder_CasterLookTarget";
-        if (string.Equals(anchorName, spawnRelativeAnchor, StringComparison.OrdinalIgnoreCase))
-        {
-            Transform parent = transform.parent;
-            if (parent != null)
-            {
-                // 🧿 On vérifie d'abord la présence d'un enfant direct sur le parent, ce qui
-                // correspond au cas nominal généré par le NewBattleManager.
-                Transform parentAnchor = parent.Find(anchorName);
-                if (parentAnchor != null)
-                    return parentAnchor;
-
-                // 🔍 En dernier recours, on balaye les autres enfants du parent pour capturer
-                // d'éventuelles variantes ajoutées manuellement dans l'éditeur.
-                foreach (Transform sibling in parent.GetComponentsInChildren<Transform>(includeInactive))
-                {
-                    if (sibling == null || sibling == transform)
-                        continue;
-
-                    if (string.Equals(sibling.name, anchorName, StringComparison.OrdinalIgnoreCase))
-                        return sibling;
-                }
-            }
-        }
-
-        return null;
     }
 
     /// <summary>
@@ -1470,10 +1311,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         // Affiche le nombre de dégâts au-dessus de cette unité
         DamagePopupManager.Instance?.ShowDamage(transform, Mathf.RoundToInt(amount));
         PlayDamageFeedback(devastating);
-
-        // 🎥 Déclenche un tremblement de caméra court lorsque l'unité touchée appartient à l'escouade.
-        if (Data != null && Data.characterType == CharacterType.SquadUnit)
-            BattleCameraManager.Instance?.TriggerDamageShake(this, devastating, attacker);
 
         // Message indiquant la gravité des dégâts subis
         if (ActionUIDisplayManager.Instance != null)

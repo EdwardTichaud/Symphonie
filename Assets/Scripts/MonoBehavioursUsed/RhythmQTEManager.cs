@@ -28,7 +28,7 @@ public class RhythmQTEManager : MonoBehaviour
     // Coroutine responsable d'un éventuel changement différé de caméra.
     // Permet de conserver le cadrage de préparation pendant un court instant
     // lorsque l'on enchaîne avec la phase de performing.
-    private Coroutine pendingCameraSwitch;
+    private Coroutine pendingMotifSwitch;
 
     private float defaultFixedDeltaTime;
 
@@ -75,7 +75,6 @@ public class RhythmQTEManager : MonoBehaviour
     [SerializeField] private AudioClipSO defaultDashSound;
 
     // Tag de la caméra de combat à utiliser pour toutes les timelines
-    private const string battleCameraTag = "BattleCamera";
 
     // QTE Effect
     public AudioClipSO successSFX;
@@ -199,13 +198,16 @@ public class RhythmQTEManager : MonoBehaviour
         GameObject cameraTarget,
         bool autoRestore,
         Quaternion initialRotation,
-        BattleCameraRole cameraRole = BattleCameraRole.None,
-        float cameraSwitchDelay = 0f)
+        CameraMotifSO motif = null,
+        float motifSwitchDelay = 0f)
     {
-        if (timeline == null || BattleTimelineManager.Instance == null || caster == null)
+        if (caster == null)
             return;
 
-        ConfigureCameraForPhase(caster, animatorGO, cameraTarget, initialRotation, cameraRole, cameraSwitchDelay);
+        ConfigureCameraForPhase(caster, animatorGO, cameraTarget, initialRotation, motif, motifSwitchDelay);
+
+        if (timeline == null || BattleTimelineManager.Instance == null)
+            return;
 
         // Lecture de la timeline via le PlayableDirector de l'unité concernée.
         GameObject defaultCasterTarget = caster.GetCasterBindingTarget();
@@ -222,12 +224,16 @@ public class RhythmQTEManager : MonoBehaviour
         GameObject animatorGO,
         GameObject cameraTarget,
         Quaternion initialRotation,
-        BattleCameraRole cameraRole = BattleCameraRole.None)
+        CameraMotifSO motif = null)
     {
-        if (timeline == null || BattleTimelineManager.Instance == null || caster == null)
+        if (caster == null)
             return;
 
-        ConfigureCameraForPhase(caster, animatorGO, cameraTarget, initialRotation, cameraRole, 0f);
+        ConfigureCameraForPhase(caster, animatorGO, cameraTarget, initialRotation, motif, 0f);
+
+        if (timeline == null || BattleTimelineManager.Instance == null)
+            return;
+
         BattleTimelineManager.Instance.ResumeCasterTimeline(caster);
     }
 
@@ -239,47 +245,42 @@ public class RhythmQTEManager : MonoBehaviour
         GameObject animatorGO,
         GameObject cameraTarget,
         Quaternion initialRotation,
-        BattleCameraRole cameraRole,
-        float cameraSwitchDelay)
+        CameraMotifSO motif,
+        float motifSwitchDelay)
     {
         if (caster == null)
             return;
 
-        if (cameraRole != BattleCameraRole.None)
+        if (motif != null)
         {
-            CancelPendingCameraSwitch();
+            CancelPendingMotifSwitch();
 
-            if (cameraSwitchDelay <= 0f)
-                BattleCameraManager.Instance?.SwitchToCamera(cameraRole);
+            if (motifSwitchDelay <= 0f)
+                BattleCameraManager.Instance?.SetCameraMotif(motif);
             else
-                pendingCameraSwitch = StartCoroutine(SwitchCameraAfterDelay(cameraRole, cameraSwitchDelay));
+                pendingMotifSwitch = StartCoroutine(SwitchMotifAfterDelay(motif, motifSwitchDelay));
         }
 
-        GameObject defaultCasterTarget = caster.GetCasterBindingTarget();
-        BattleTimelineManager.Instance.AlignCameraToTarget(
-            cameraTarget ?? animatorGO ?? defaultCasterTarget,
-            battleCameraTag,
-            initialRotation);
     }
 
     /// <summary>
-    /// Interrompt la coroutine responsable d'un changement de caméra différé.
+    /// Interrompt la coroutine responsable d'un changement de motif différé.
     /// </summary>
-    private void CancelPendingCameraSwitch()
+    private void CancelPendingMotifSwitch()
     {
-        if (pendingCameraSwitch == null)
+        if (pendingMotifSwitch == null)
             return;
 
-        StopCoroutine(pendingCameraSwitch);
-        pendingCameraSwitch = null;
+        StopCoroutine(pendingMotifSwitch);
+        pendingMotifSwitch = null;
     }
 
     /// <summary>
-    /// Active un rôle de caméra après un délai personnalisé.
+    /// Active un motif de caméra après un délai personnalisé.
     /// </summary>
-    /// <param name="role">Rôle de caméra à activer.</param>
+    /// <param name="motif">Motif à activer.</param>
     /// <param name="delay">Durée à attendre avant le basculement.</param>
-    private IEnumerator SwitchCameraAfterDelay(BattleCameraRole role, float delay)
+    private IEnumerator SwitchMotifAfterDelay(CameraMotifSO motif, float delay)
     {
         // On attend patiemment la durée configurée afin que la phase en cours
         // puisse démarrer tout en conservant le cadrage précédent.
@@ -287,10 +288,10 @@ public class RhythmQTEManager : MonoBehaviour
 
         // Si un autre StartTimelinePhase a été appelé durant l'attente, la coroutine
         // aura été stoppée et n'atteindra jamais ce point, évitant ainsi tout conflit.
-        BattleCameraManager.Instance?.SwitchToCamera(role);
+        BattleCameraManager.Instance?.SetCameraMotif(motif);
 
         // Le champ est libéré pour accepter un nouveau délai si nécessaire.
-        pendingCameraSwitch = null;
+        pendingMotifSwitch = null;
     }
 
     /// <summary>
@@ -405,46 +406,16 @@ public class RhythmQTEManager : MonoBehaviour
         }
         GameObject casterAnimatorGO = caster.GetCasterBindingTarget();
 
-        // 🎯 Préparation des points d'ancrage caméra : on privilégie toujours
-        //     les « CMVPoint_… » dédiés pour éviter que la caméra ne retombe sur
-        //     les pieds de l'unité lorsque seul l'Animator racine est disponible
-        //     (cas fréquent sur certains ennemis comme CryingAngel).
-        Transform casterCameraAnchor = caster != null
-            ? caster.GetDefaultCameraAnchor(CharacterUnit.CameraAnchorPurpose.Caster)
-            : null;
-        GameObject casterCameraTarget = casterCameraAnchor != null
-            ? casterCameraAnchor.gameObject
-            : (casterAnimatorGO ?? (caster != null ? caster.gameObject : null));
-
-        Transform performingCameraAnchor = null;
-        GameObject performingCameraTarget = null;
-        if (target != null)
-        {
-            performingCameraAnchor = target.GetDefaultCameraAnchor(CharacterUnit.CameraAnchorPurpose.Target);
-            performingCameraTarget = performingCameraAnchor != null
-                ? performingCameraAnchor.gameObject
-                : (target.GetCasterBindingTarget() ?? target.gameObject);
-            if (performingCameraTarget != null && performingCameraAnchor == null)
-                performingCameraAnchor = performingCameraTarget.transform; // Garantit un transform valide pour l'override.
-        }
-        else
-        {
-            performingCameraAnchor = casterCameraAnchor ?? (casterAnimatorGO != null
-                ? casterAnimatorGO.transform
-                : (caster != null ? caster.transform : null));
-            performingCameraTarget = performingCameraAnchor != null ? performingCameraAnchor.gameObject : null;
-        }
+        GameObject casterCameraTarget = casterAnimatorGO ?? (caster != null ? caster.gameObject : null);
+        GameObject performingCameraTarget = target != null
+            ? (target.GetCasterBindingTarget() ?? target.gameObject)
+            : casterCameraTarget;
         // Détermine si une timeline caméra couvrant toute l'action est disponible.
         // Ce système est remplacé par l'utilisation de caméras Cinemachine dédiées.
         bool useOverlay = false;
 
         // Configure le rig caméra avec les cibles du move avant de démarrer la mise en scène.
-        BattleCameraManager.Instance?.ConfigureActionTargets(
-            caster,
-            target,
-            null,
-            casterCameraAnchor,
-            performingCameraAnchor);
+        BattleCameraManager.Instance?.ConfigureActionTargets(caster, target);
 
         // Éventuel délai de pré-animation.
         // 🔄 Cette attente se produit désormais AVANT toute timeline
@@ -468,7 +439,7 @@ public class RhythmQTEManager : MonoBehaviour
             casterCameraTarget,
             move.performingTimeline == null && move.retreatTimeline == null,
             initialRotation,
-            move.preparingCameraRole);
+            move.preparingCameraMotif);
         yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay, caster);
 
         // 🎬 Si une timeline de préparation vient de s'achever, on enchaîne maintenant
@@ -497,7 +468,7 @@ public class RhythmQTEManager : MonoBehaviour
         // --- Phase d'exécution ---
         TimelineAsset performingTimeline = move.performingTimeline;
 
-        // Le délai passé en paramètre différera uniquement la bascule de caméra,
+        // Le délai passé en paramètre différera uniquement la bascule de motif,
         // laissant la timeline de performing démarrer immédiatement.
         StartTimelinePhase(
             performingTimeline,
@@ -507,8 +478,8 @@ public class RhythmQTEManager : MonoBehaviour
             performingCameraTarget,
             move.retreatTimeline == null,
             initialRotation,
-            move.performingCameraRole,
-            move.preparingToPerformingCameraDelay);
+            move.performingCameraMotif,
+            move.preparingToPerformingMotifDelay);
 
         if (pendingNotes == 0)
         {
@@ -562,7 +533,7 @@ public class RhythmQTEManager : MonoBehaviour
             casterCameraTarget,
             true,
             initialRotation,
-            move.retreatCameraRole);
+            move.retreatCameraMotif);
         yield return WaitForTimelinePhase(move.retreatTimeline, useOverlay, caster);
 
         isActive = false;
@@ -579,8 +550,8 @@ public class RhythmQTEManager : MonoBehaviour
         // Restaure la caméra par défaut en fin de move.
         // Avant de restaurer la caméra par défaut, on s'assure qu'aucun délai
         // en attente ne viendra réactiver un rôle précédent inopinément.
-        CancelPendingCameraSwitch();
-        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
+        CancelPendingMotifSwitch();
+        BattleCameraManager.Instance?.ClearCameraMotif();
         BattleCameraManager.Instance?.ClearRigTargets();
 
         // Nettoie la barre de QTE une fois la séquence terminée
@@ -625,42 +596,16 @@ public class RhythmQTEManager : MonoBehaviour
         Animator animator = caster.GetCasterAnimator();
         GameObject casterAnimatorGO = animator != null ? animator.gameObject : null;
 
-        // 🎯 Même logique que pour les MusicalMoves : on favorise les ancres
-        //     déclarées pour garantir un cadrage cohérent entre Squads et Ennemis.
-        Transform casterCameraAnchor = caster.GetDefaultCameraAnchor(CharacterUnit.CameraAnchorPurpose.Caster);
-        GameObject casterCameraTarget = casterCameraAnchor != null
-            ? casterCameraAnchor.gameObject
-            : (casterAnimatorGO ?? caster.gameObject);
-
-        Transform performingCameraAnchor = null;
-        GameObject performingCameraTarget = null;
-        if (target != null)
-        {
-            performingCameraAnchor = target.GetDefaultCameraAnchor(CharacterUnit.CameraAnchorPurpose.Target);
-            performingCameraTarget = performingCameraAnchor != null
-                ? performingCameraAnchor.gameObject
-                : (target.GetCasterBindingTarget() ?? target.gameObject);
-            if (performingCameraTarget != null && performingCameraAnchor == null)
-                performingCameraAnchor = performingCameraTarget.transform;
-        }
-        else
-        {
-            performingCameraAnchor = casterCameraAnchor ?? (casterAnimatorGO != null
-                ? casterAnimatorGO.transform
-                : caster.transform);
-            performingCameraTarget = performingCameraAnchor != null ? performingCameraAnchor.gameObject : null;
-        }
+        GameObject casterCameraTarget = casterAnimatorGO ?? caster.gameObject;
+        GameObject performingCameraTarget = target != null
+            ? (target.GetCasterBindingTarget() ?? target.gameObject)
+            : casterCameraTarget;
 
         // L'ancien système de timeline caméra est remplacé par les caméras Cinemachine.
         bool useOverlay = false;
         // Lancement de timeline globale désactivé.
 
-        BattleCameraManager.Instance?.ConfigureActionTargets(
-            caster,
-            target,
-            null,
-            casterCameraAnchor,
-            performingCameraAnchor);
+        BattleCameraManager.Instance?.ConfigureActionTargets(caster, target);
 
         // --- Phase de préparation ---
         StartTimelinePhase(
@@ -671,7 +616,7 @@ public class RhythmQTEManager : MonoBehaviour
             casterCameraTarget,
             item.performingTimeline == null && item.retreatTimeline == null,
             initialRotation,
-            item.preparingCameraRole);
+            item.preparingCameraMotif);
         yield return WaitForTimelinePhase(item.preparingTimeline, useOverlay, caster);
 
         // Les objets se jouent désormais sur place : on n'exécute plus de déplacement vers la cible.
@@ -689,7 +634,7 @@ public class RhythmQTEManager : MonoBehaviour
 
         // --- Phase d'utilisation ---
         // Comme pour les MusicalMoves, le délai fourni retarde uniquement le changement
-        // de caméra sans bloquer l'exécution de la timeline principale.
+        // de motif sans bloquer l'exécution de la timeline principale.
         TimelineAsset itemPerformingTimeline = item.performingTimeline;
 
         StartTimelinePhase(
@@ -700,8 +645,8 @@ public class RhythmQTEManager : MonoBehaviour
             performingCameraTarget,
             item.retreatTimeline == null,
             initialRotation,
-            item.performingCameraRole,
-            item.preparingToPerformingCameraDelay);
+            item.performingCameraMotif,
+            item.preparingToPerformingMotifDelay);
 
         // QTE associé à l'objet durant l'utilisation.
         LastItemSuccess = true;
@@ -738,7 +683,7 @@ public class RhythmQTEManager : MonoBehaviour
             casterCameraTarget,
             true,
             initialRotation,
-            item.retreatCameraRole);
+            item.retreatCameraMotif);
         yield return WaitForTimelinePhase(item.retreatTimeline, useOverlay, caster);
 
         isActive = false;
@@ -752,8 +697,8 @@ public class RhythmQTEManager : MonoBehaviour
         // Retour à la caméra par défaut.
         // Comme pour les MusicalMoves, on neutralise toute attente résiduelle avant
         // de rendre la main à la caméra principale.
-        CancelPendingCameraSwitch();
-        BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.None);
+        CancelPendingMotifSwitch();
+        BattleCameraManager.Instance?.ClearCameraMotif();
         BattleCameraManager.Instance?.ClearRigTargets();
     }
 

@@ -527,16 +527,12 @@ public class BattleTransitionManager : MonoBehaviour
                 // fournie par le BlendSwitcher plutôt que d'imposer un cut immédiat.
                 BattleCameraManager.Instance.SwitchToCamera("CMV_BattleIntro");
 
-                // Dès l'apparition du plan d'introduction, on déclenche son travelling le long de l'axe Z.
-                // Le point de mire est volontairement fixé à l'origine mondiale pour cadrer la scène de combat.
-                Transform enemyPosition = ResolveEnemyPosition01();
-                Vector3 middleEnemyPos = enemyPosition.position + new Vector3(0f, 1f, 0f);
-                BattleCameraManager.Instance.StartBattleIntroCameraTravel(1f, middleEnemyPos);
+                // Munin pilote désormais la dynamique de la caméra d'introduction.
 
             }
             else
             {
-                BattleCameraManager.Instance?.SwitchToCamera(BattleCameraRole.WideEstablish);
+                BattleCameraManager.Instance?.SwitchToCamera("CMV_OverHead_CasterLookTarget");
             }
         }
         else

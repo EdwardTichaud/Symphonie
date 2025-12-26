@@ -206,18 +206,19 @@ public class ItemData : ScriptableObject
     [Tooltip("Timeline jouée lors du repli après utilisation")]
     public TimelineAsset retreatTimeline;
 
-    [Header("Caméras par phase")]
-    [Tooltip("Plan cinématique utilisé lors de la préparation (None = conserver la vue actuelle, OverShoulderCasterLookTarget = ancre Camera_Shoulder_Stay, OverShoulderCasterToTarget = ancre Camera_Shoulder_Moving).")]
-    public BattleCameraRole preparingCameraRole = BattleCameraRole.MainMenuIdle;
-    [Tooltip("Plan cinématique utilisé pendant l'utilisation (None = conserver la caméra précédente).")]
-    public BattleCameraRole performingCameraRole = BattleCameraRole.OverShoulderCasterToTarget;
-    [Tooltip("Plan cinématique utilisé lors du repli (None = conserver la caméra précédente).")]
-    public BattleCameraRole retreatCameraRole = BattleCameraRole.TargetReaction;
+    [Header("Motifs de caméra")]
+    [Tooltip("Motif utilisé lors de la préparation de l'item.")]
+    public CameraMotifSO preparingCameraMotif;
+    [Tooltip("Motif utilisé pendant l'utilisation de l'item.")]
+    public CameraMotifSO performingCameraMotif;
+    [Tooltip("Motif utilisé lors du repli après utilisation.")]
+    public CameraMotifSO retreatCameraMotif;
 
-    [Header("Transitions de caméra")]
+    [Header("Transitions de motif")]
     [Min(0f)]
-    [Tooltip("Durée (en secondes) durant laquelle la caméra reste sur le cadrage de préparation avant de se déplacer vers celui d'utilisation.")]
-    public float preparingToPerformingCameraDelay = 0f;
+    [Tooltip("Durée (en secondes) durant laquelle le motif de préparation reste actif avant de passer au motif d'utilisation.")]
+    [FormerlySerializedAs("preparingToPerformingCameraDelay")]
+    public float preparingToPerformingMotifDelay = 0f;
 
 #if UNITY_EDITOR
     // ------------------------------------------------------------------
@@ -239,12 +240,12 @@ public class ItemData : ScriptableObject
         if (reference != null)
         {
             // Applique les valeurs par défaut uniquement si les champs sont vides.
-            if (preparingCameraRole == BattleCameraRole.None)
-                preparingCameraRole = reference.preparingCameraRole;
-            if (performingCameraRole == BattleCameraRole.None)
-                performingCameraRole = reference.performingCameraRole;
-            if (retreatCameraRole == BattleCameraRole.None)
-                retreatCameraRole = reference.retreatCameraRole;
+            if (preparingCameraMotif == null)
+                preparingCameraMotif = reference.preparingCameraMotif;
+            if (performingCameraMotif == null)
+                performingCameraMotif = reference.performingCameraMotif;
+            if (retreatCameraMotif == null)
+                retreatCameraMotif = reference.retreatCameraMotif;
         }
 
         ValidateConfiguration();
