@@ -417,6 +417,16 @@ public class RhythmQTEManager : MonoBehaviour
         // Configure le rig caméra avec les cibles du move avant de démarrer la mise en scène.
         BattleCameraManager.Instance?.ConfigureActionTargets(caster, target);
 
+        // Active le motif dès le début de la séquence (utile aussi pour les moves IA sans sélection préalable).
+        if (move != null)
+        {
+            CancelPendingMotifSwitch();
+            if (move.cameraMotif != null)
+                BattleCameraManager.Instance?.SetCameraMotif(move.cameraMotif);
+            else
+                BattleCameraManager.Instance?.ClearCameraMotif();
+        }
+
         // Éventuel délai de pré-animation.
         // 🔄 Cette attente se produit désormais AVANT toute timeline
         //     afin d'éviter un à-coup juste avant la téléportation.
@@ -438,8 +448,7 @@ public class RhythmQTEManager : MonoBehaviour
             casterAnimatorGO,
             casterCameraTarget,
             move.performingTimeline == null && move.retreatTimeline == null,
-            initialRotation,
-            move.preparingCameraMotif);
+            initialRotation);
         yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay, caster);
 
         // 🎬 Si une timeline de préparation vient de s'achever, on enchaîne maintenant
@@ -468,8 +477,7 @@ public class RhythmQTEManager : MonoBehaviour
         // --- Phase d'exécution ---
         TimelineAsset performingTimeline = move.performingTimeline;
 
-        // Le délai passé en paramètre différera uniquement la bascule de motif,
-        // laissant la timeline de performing démarrer immédiatement.
+        // La timeline d'exécution démarre immédiatement après la préparation.
         StartTimelinePhase(
             performingTimeline,
             useOverlay,
@@ -477,9 +485,7 @@ public class RhythmQTEManager : MonoBehaviour
             casterAnimatorGO,
             performingCameraTarget,
             move.retreatTimeline == null,
-            initialRotation,
-            move.performingCameraMotif,
-            move.preparingToPerformingMotifDelay);
+            initialRotation);
 
         if (pendingNotes == 0)
         {
@@ -532,8 +538,7 @@ public class RhythmQTEManager : MonoBehaviour
             casterAnimatorGO,
             casterCameraTarget,
             true,
-            initialRotation,
-            move.retreatCameraMotif);
+            initialRotation);
         yield return WaitForTimelinePhase(move.retreatTimeline, useOverlay, caster);
 
         isActive = false;
@@ -547,11 +552,6 @@ public class RhythmQTEManager : MonoBehaviour
         currentTarget = null;
         delayTargetPreparationAnimationForCurrentMove = false; // ✅ Réinitialisation du drapeau de report
 
-        // Restaure la caméra par défaut en fin de move.
-        // Avant de restaurer la caméra par défaut, on s'assure qu'aucun délai
-        // en attente ne viendra réactiver un rôle précédent inopinément.
-        CancelPendingMotifSwitch();
-        BattleCameraManager.Instance?.ClearCameraMotif();
         BattleCameraManager.Instance?.ClearRigTargets();
 
         // Nettoie la barre de QTE une fois la séquence terminée

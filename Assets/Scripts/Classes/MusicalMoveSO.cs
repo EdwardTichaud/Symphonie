@@ -322,24 +322,17 @@ public class MusicalMoveSO : ScriptableObject
     [Tooltip("Timeline jouée lors du repli après l'exécution du move")]
     public TimelineAsset retreatTimeline;
 
-    [Header("Motifs de caméra")]
-    [Tooltip("Motif utilisé durant la préparation.")]
-    public CameraMotifSO preparingCameraMotif;
-    [Tooltip("Temps (en secondes) durant lequel le motif de préparation reste actif avant de passer au motif d'exécution.")]
-    [FormerlySerializedAs("preparingToPerformingCameraDelay")]
-    public float preparingToPerformingMotifDelay = 0f;
-    [Tooltip("Motif utilisé durant l'exécution.")]
-    public CameraMotifSO performingCameraMotif;
-    [Tooltip("Motif utilisé durant le repli.")]
-    public CameraMotifSO retreatCameraMotif;
+    [Header("Motif de caméra")]
+    [Tooltip("Motif utilisé dès la sélection du move et conservé jusqu'à un changement explicite.")]
+    public CameraMotifSO cameraMotif;
 
 
 #if UNITY_EDITOR
     // ------------------------------------------------------------------
     // Références par défaut
     // ------------------------------------------------------------------
-    // Lorsque l'on crée un nouveau MusicalMove, les trois champs de caméra
-    // doivent automatiquement reprendre les valeurs de l'exemple
+    // Lorsque l'on crée un nouveau MusicalMove, le motif de caméra
+    // doit automatiquement reprendre la valeur de l'exemple
     // "MusicalMove_Rhapsodie" afin d'assurer une cohérence visuelle dans
     // tout le projet. Cette méthode est uniquement exécutée dans l'éditeur
     // afin d'éviter toute dépendance aux fichiers lors du build final.
@@ -384,12 +377,8 @@ public class MusicalMoveSO : ScriptableObject
             // celle de "MusicalMove_Rhapsodie". Les concepteurs peuvent ensuite
             // remplacer ces valeurs manuellement selon les besoins spécifiques
             // du nouveau move.
-            if (preparingCameraMotif == null)
-                preparingCameraMotif = reference.preparingCameraMotif;
-            if (performingCameraMotif == null)
-                performingCameraMotif = reference.performingCameraMotif;
-            if (retreatCameraMotif == null)
-                retreatCameraMotif = reference.retreatCameraMotif;
+            if (cameraMotif == null)
+                cameraMotif = reference.cameraMotif;
         }
 
         // Enfin, on sécurise la configuration des moves nécessitant une préparation

@@ -2442,6 +2442,16 @@ public partial class NewBattleManager : MonoBehaviour
         currentMove = move;
         currentItem = null; // on annule la sélection d'item précédente
         currentMoveIsBasicAttack = isBasicAttack;
+
+        var cameraManager = BattleCameraManager.Instance;
+        if (cameraManager != null)
+        {
+            if (move != null && move.cameraMotif != null)
+                cameraManager.SetCameraMotif(move.cameraMotif);
+            else
+                cameraManager.ClearCameraMotif();
+        }
+
         TargetType allowedType = move != null ? move.targetType : TargetType.SingleEnemy;
         TargetType defaultType = move != null ? move.defaultTargetType : allowedType;
         bool allowGroupSwitch = AllowsMoveGroupSwitch(allowedType);
@@ -2832,7 +2842,11 @@ public partial class NewBattleManager : MonoBehaviour
                              || newState == BattleState.EnemyUnit_PerformingMusicalMove
                              || newState == BattleState.EnemyUnit_Item_Use;
         if (stateChanged && !isActionState)
-            manager.ClearCameraMotif();
+        {
+            bool keepMoveMotif = currentMove != null && currentMove.cameraMotif != null;
+            if (!keepMoveMotif)
+                manager.ClearCameraMotif();
+        }
 
         switch (newState)
         {
