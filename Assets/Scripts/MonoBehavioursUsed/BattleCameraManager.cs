@@ -80,6 +80,18 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Indique si une transition de motif est en cours.</summary>
     private bool motifBlendActive;
 
+    /// <summary>Timestamp de départ pour l'animation du motif actif.</summary>
+    private float activeMotifStartTime;
+
+    /// <summary>Temps d'animation figé pour le motif précédent lors d'un blend.</summary>
+    private float previousMotifElapsed;
+
+    /// <summary>Timestamp de départ pour l'animation du motif par défaut.</summary>
+    private float defaultMotifStartTime;
+
+    /// <summary>Derniere valeur appliquee pour le flou de bordure.</summary>
+    private float lastEdgeBlurAmount = -1f;
+
     /// <summary>Décalages de phase uniques par caméra pour l'effet de respiration.</summary>
     private readonly Dictionary<string, float> breathingPhaseOffsets = new(StringComparer.OrdinalIgnoreCase);
 
@@ -98,6 +110,9 @@ public class BattleCameraManager : MonoBehaviour
         public CameraMotifSO.ReferencePoint ReferencePoint;
         public float ReferenceDelay;
         public List<ReferenceSample> ReferenceSamples;
+        public bool HasBaseFov;
+        public float BaseFov;
+        public bool WasCompensatingFov;
     }
 
     private struct MotifTuning
@@ -112,6 +127,9 @@ public class BattleCameraManager : MonoBehaviour
         public float OrbitSpeed;
         public bool LookAtEnabled;
         public CameraMotifSO.ReferencePoint LookAtReferencePoint;
+        public float EdgeBlurAmount;
+        public bool CompensateReferenceSize;
+        public float MaxCompensationFovIncrease;
     }
 
     private struct ReferenceSample
@@ -120,6 +138,21 @@ public class BattleCameraManager : MonoBehaviour
         public Vector3 Position;
         public Quaternion Rotation;
     }
+
+    private static readonly Vector3[] BoundsCornerSigns =
+    {
+        new Vector3(-1f, -1f, -1f),
+        new Vector3(-1f, -1f, 1f),
+        new Vector3(-1f, 1f, -1f),
+        new Vector3(-1f, 1f, 1f),
+        new Vector3(1f, -1f, -1f),
+        new Vector3(1f, -1f, 1f),
+        new Vector3(1f, 1f, -1f),
+        new Vector3(1f, 1f, 1f)
+    };
+    private const float DefaultCompensationFovIncrease = 12f;
+    private const float CompensationFovSpeed = 120f;
+    private const float CompensationFovEpsilon = 0.1f;
 
     /// <summary>Style de blend homogène imposé par le <see cref="CinemachineBlendSwitcher"/>.</summary>
     public CinemachineBlendDefinition.Styles SmoothBlendStyle =>
@@ -147,6 +180,10 @@ public class BattleCameraManager : MonoBehaviour
         // Active une Cinemachine par défaut pour éviter tout retour vers la caméra Unity brute.
         if (blendSwitcher)
             SwitchToCamera("CMV_MainMenu", SmoothBlendDuration);
+
+        float now = Time.unscaledTime;
+        activeMotifStartTime = now;
+        defaultMotifStartTime = now;
     }
 
     private void OnDestroy()
@@ -157,6 +194,7 @@ public class BattleCameraManager : MonoBehaviour
         cameraByName.Clear();
         cameraStates.Clear();
         breathingPhaseOffsets.Clear();
+        PostProcessManager.Instance?.SetEdgeBlur(0f);
     }
 
     private void LateUpdate()
@@ -230,16 +268,25 @@ public class BattleCameraManager : MonoBehaviour
         if (camera == null)
             return false;
 
-        MotifTuning tuning = ResolveMotifTuning();
-        CharacterUnit referenceUnit = ResolveReferenceUnit(tuning.ReferencePoint);
-        if (referenceUnit == null)
-            return false;
-
-        Transform referenceTransform = referenceUnit.transform;
-
-        CameraState state = GetOrCreateCameraState(cameraName);
+        CameraState state = GetOrCreateCameraState(cameraName, camera);
         if (state == null)
             return false;
+
+        MotifTuning tuning = ResolveMotifTuning();
+        ApplyEdgeBlur(tuning.EdgeBlurAmount);
+        CharacterUnit referenceUnit = ResolveReferenceUnit(tuning.ReferencePoint);
+        if (referenceUnit == null)
+        {
+            ApplyReferenceSizeCompensation(
+                camera,
+                state,
+                null,
+                false,
+                tuning.MaxCompensationFovIncrease);
+            return false;
+        }
+
+        Transform referenceTransform = referenceUnit.transform;
 
         Vector3 referencePosition = referenceTransform.position;
         Quaternion referenceRotation = referenceTransform.rotation;
@@ -291,6 +338,8 @@ public class BattleCameraManager : MonoBehaviour
             if (lookAtUnit != null)
             {
                 Vector3 lookAtPosition = lookAtUnit.transform.position;
+                if (tuning.CompensateReferenceSize)
+                    lookAtPosition = lookAtUnit.GetVisualBounds().center;
                 Vector3 forward = lookAtPosition - desiredPosition;
                 if (forward.sqrMagnitude > 0.0001f)
                     desiredRotation = Quaternion.LookRotation(forward, Vector3.up) * Quaternion.Euler(tuning.ReferenceOffsetRotation);
@@ -318,6 +367,12 @@ public class BattleCameraManager : MonoBehaviour
         }
 
         camera.transform.SetPositionAndRotation(state.SmoothedPosition, state.SmoothedRotation);
+        ApplyReferenceSizeCompensation(
+            camera,
+            state,
+            referenceUnit,
+            tuning.CompensateReferenceSize,
+            tuning.MaxCompensationFovIncrease);
         return true;
     }
 
@@ -346,9 +401,12 @@ public class BattleCameraManager : MonoBehaviour
         if (motif == activeMotif && !motifBlendActive)
             return;
 
+        previousMotifElapsed = ResolveMotifElapsed(activeMotif, activeMotifStartTime);
         previousMotif = activeMotif;
         activeMotif = motif;
         currentCameraMotif = motif;
+        if (activeMotif != previousMotif)
+            activeMotifStartTime = Time.unscaledTime;
 
         float resolvedDuration = blendDuration >= 0f
             ? blendDuration
@@ -394,14 +452,17 @@ public class BattleCameraManager : MonoBehaviour
             OrbitReferencePoint = CameraMotifSO.ReferencePoint.Caster,
             OrbitSpeed = 0f,
             LookAtEnabled = false,
-            LookAtReferencePoint = CameraMotifSO.ReferencePoint.Caster
+            LookAtReferencePoint = CameraMotifSO.ReferencePoint.Caster,
+            EdgeBlurAmount = 0f,
+            CompensateReferenceSize = false,
+            MaxCompensationFovIncrease = DefaultCompensationFovIncrease
         };
 
         if (defaultMotif != null)
-            baseTuning = ApplyMotif(baseTuning, defaultMotif);
+            baseTuning = ApplyMotif(baseTuning, defaultMotif, ResolveMotifElapsed(defaultMotif, defaultMotifStartTime));
 
-        MotifTuning from = ApplyMotif(baseTuning, previousMotif);
-        MotifTuning to = ApplyMotif(baseTuning, activeMotif);
+        MotifTuning from = ApplyMotif(baseTuning, previousMotif, previousMotifElapsed);
+        MotifTuning to = ApplyMotif(baseTuning, activeMotif, ResolveMotifElapsed(activeMotif, activeMotifStartTime));
         float t = ResolveMotifBlend();
         return LerpMotifTuning(from, to, t);
     }
@@ -414,7 +475,7 @@ public class BattleCameraManager : MonoBehaviour
         return Mathf.Clamp01(motifBlendTimer / motifBlendDuration);
     }
 
-    private static MotifTuning ApplyMotif(MotifTuning baseTuning, CameraMotifSO motif)
+    private static MotifTuning ApplyMotif(MotifTuning baseTuning, CameraMotifSO motif, float motifElapsed)
     {
         if (motif == null)
             return baseTuning;
@@ -430,7 +491,81 @@ public class BattleCameraManager : MonoBehaviour
         baseTuning.OrbitSpeed = motif.orbitSpeed;
         baseTuning.LookAtEnabled = motif.lookAtEnabled;
         baseTuning.LookAtReferencePoint = motif.lookAtReferencePoint;
+        baseTuning.CompensateReferenceSize = motif.compensateReferenceSize;
+        baseTuning.MaxCompensationFovIncrease = Mathf.Max(0f, motif.maxCompensationFovIncrease);
+        baseTuning.EdgeBlurAmount = Mathf.Clamp01(
+            baseTuning.EdgeBlurAmount + Mathf.Max(0f, motif.edgeBlurAmount));
+
+        if (TryResolveAnimationTime(motif, motifElapsed, out float animationTime))
+        {
+            baseTuning.ReferenceOffsetPosition += EvaluateVector3Curves(
+                motif.referenceOffsetPositionX,
+                motif.referenceOffsetPositionY,
+                motif.referenceOffsetPositionZ,
+                animationTime);
+            baseTuning.ReferenceOffsetRotation += EvaluateVector3Curves(
+                motif.referenceOffsetRotationX,
+                motif.referenceOffsetRotationY,
+                motif.referenceOffsetRotationZ,
+                animationTime);
+            baseTuning.ReferenceOffsetSmoothTime += EvaluateCurve(motif.referenceOffsetSmoothTimeCurve, animationTime);
+            baseTuning.ReferenceOffsetDelay = Mathf.Max(
+                0f,
+                baseTuning.ReferenceOffsetDelay + EvaluateCurve(motif.referenceOffsetDelayCurve, animationTime));
+            baseTuning.OrbitSpeed += EvaluateCurve(motif.orbitSpeedCurve, animationTime);
+            baseTuning.EdgeBlurAmount = Mathf.Clamp01(
+                baseTuning.EdgeBlurAmount + EvaluateCurve(motif.edgeBlurAmountCurve, animationTime));
+        }
         return baseTuning;
+    }
+
+    private static float ResolveMotifElapsed(CameraMotifSO motif, float startTime)
+    {
+        if (motif == null)
+            return 0f;
+
+        return Mathf.Max(0f, Time.unscaledTime - startTime);
+    }
+
+    private static bool TryResolveAnimationTime(CameraMotifSO motif, float motifElapsed, out float normalizedTime)
+    {
+        normalizedTime = 0f;
+        if (motif == null || !motif.animate || motif.animationDuration <= 0f)
+            return false;
+
+        float duration = motif.animationDuration;
+        float elapsed = motif.loopAnimation
+            ? Mathf.Repeat(motifElapsed, duration)
+            : Mathf.Min(motifElapsed, duration);
+        normalizedTime = duration > 0f ? elapsed / duration : 0f;
+        return true;
+    }
+
+    private static float EvaluateCurve(AnimationCurve curve, float t)
+    {
+        return curve != null && curve.length > 0 ? curve.Evaluate(t) : 0f;
+    }
+
+    private static Vector3 EvaluateVector3Curves(AnimationCurve xCurve, AnimationCurve yCurve, AnimationCurve zCurve, float t)
+    {
+        return new Vector3(
+            EvaluateCurve(xCurve, t),
+            EvaluateCurve(yCurve, t),
+            EvaluateCurve(zCurve, t));
+    }
+
+    private void ApplyEdgeBlur(float amount)
+    {
+        amount = Mathf.Clamp01(amount);
+        PostProcessManager postProcess = PostProcessManager.Instance;
+        if (postProcess == null)
+            return;
+
+        if (Mathf.Abs(amount - lastEdgeBlurAmount) < 0.001f)
+            return;
+
+        lastEdgeBlurAmount = amount;
+        postProcess.SetEdgeBlur(amount);
     }
 
     private static MotifTuning LerpMotifTuning(MotifTuning from, MotifTuning to, float t)
@@ -447,7 +582,10 @@ public class BattleCameraManager : MonoBehaviour
             OrbitReferencePoint = t < 0.5f ? from.OrbitReferencePoint : to.OrbitReferencePoint,
             OrbitSpeed = Mathf.Lerp(from.OrbitSpeed, to.OrbitSpeed, t),
             LookAtEnabled = t < 0.5f ? from.LookAtEnabled : to.LookAtEnabled,
-            LookAtReferencePoint = t < 0.5f ? from.LookAtReferencePoint : to.LookAtReferencePoint
+            LookAtReferencePoint = t < 0.5f ? from.LookAtReferencePoint : to.LookAtReferencePoint,
+            EdgeBlurAmount = Mathf.Lerp(from.EdgeBlurAmount, to.EdgeBlurAmount, t),
+            CompensateReferenceSize = t < 0.5f ? from.CompensateReferenceSize : to.CompensateReferenceSize,
+            MaxCompensationFovIncrease = Mathf.Lerp(from.MaxCompensationFovIncrease, to.MaxCompensationFovIncrease, t)
         };
     }
 
@@ -507,7 +645,128 @@ public class BattleCameraManager : MonoBehaviour
         }
     }
 
-    private CameraState GetOrCreateCameraState(string cameraName)
+    private void ApplyReferenceSizeCompensation(
+        CinemachineCamera camera,
+        CameraState state,
+        CharacterUnit referenceUnit,
+        bool compensate,
+        float maxIncreaseLimit)
+    {
+        if (camera == null || state == null)
+            return;
+
+        if (!state.HasBaseFov)
+        {
+            state.HasBaseFov = true;
+            state.BaseFov = camera.Lens.FieldOfView;
+        }
+
+        if (!compensate || referenceUnit == null)
+        {
+            if (state.WasCompensatingFov)
+                RestoreBaseFov(camera, state);
+            state.WasCompensatingFov = false;
+            return;
+        }
+
+        var lens = camera.Lens;
+        if (lens.Orthographic)
+        {
+            if (state.WasCompensatingFov)
+                RestoreBaseFov(camera, state);
+            state.WasCompensatingFov = false;
+            return;
+        }
+
+        Bounds bounds = referenceUnit.GetVisualBounds();
+        if (!TryComputeRequiredFov(camera.transform, bounds, lens.Aspect, out float requiredFov))
+        {
+            if (state.WasCompensatingFov)
+                RestoreBaseFov(camera, state);
+            state.WasCompensatingFov = false;
+            return;
+        }
+
+        float maxIncrease = Mathf.Max(0f, maxIncreaseLimit);
+        float maxFov = state.BaseFov + maxIncrease;
+        float targetFov = Mathf.Min(Mathf.Max(state.BaseFov, requiredFov), maxFov);
+
+        if (targetFov <= state.BaseFov + CompensationFovEpsilon)
+        {
+            if (state.WasCompensatingFov)
+                RestoreBaseFov(camera, state);
+            state.WasCompensatingFov = false;
+            return;
+        }
+
+        float newFov = Mathf.MoveTowards(lens.FieldOfView, targetFov, CompensationFovSpeed * Time.deltaTime);
+        if (Mathf.Abs(lens.FieldOfView - newFov) > 0.001f)
+        {
+            lens.FieldOfView = newFov;
+            camera.Lens = lens;
+        }
+        state.WasCompensatingFov = true;
+    }
+
+    private void RestoreBaseFov(CinemachineCamera camera, CameraState state)
+    {
+        if (camera == null || state == null || !state.HasBaseFov)
+            return;
+
+        var lens = camera.Lens;
+        float newFov = Mathf.MoveTowards(lens.FieldOfView, state.BaseFov, CompensationFovSpeed * Time.deltaTime);
+        if (Mathf.Abs(lens.FieldOfView - newFov) < 0.001f)
+            return;
+
+        lens.FieldOfView = newFov;
+        camera.Lens = lens;
+    }
+
+    private static bool TryComputeRequiredFov(
+        Transform cameraTransform,
+        Bounds bounds,
+        float aspect,
+        out float requiredFov)
+    {
+        requiredFov = 0f;
+        if (cameraTransform == null)
+            return false;
+
+        aspect = Mathf.Max(0.0001f, aspect);
+
+        float maxAngleX = 0f;
+        float maxAngleY = 0f;
+        int validPoints = 0;
+
+        Vector3 center = bounds.center;
+        Vector3 extents = bounds.extents;
+
+        for (int i = 0; i < BoundsCornerSigns.Length; i++)
+        {
+            Vector3 corner = center + Vector3.Scale(extents, BoundsCornerSigns[i]);
+            Vector3 local = cameraTransform.InverseTransformPoint(corner);
+            if (local.z <= 0.001f)
+                continue;
+
+            validPoints++;
+            float angleX = Mathf.Atan2(Mathf.Abs(local.x), local.z);
+            float angleY = Mathf.Atan2(Mathf.Abs(local.y), local.z);
+            if (angleX > maxAngleX)
+                maxAngleX = angleX;
+            if (angleY > maxAngleY)
+                maxAngleY = angleY;
+        }
+
+        if (validPoints == 0)
+            return false;
+
+        float halfFromX = Mathf.Atan(Mathf.Tan(maxAngleX) / aspect);
+        float requiredHalf = Mathf.Max(maxAngleY, halfFromX);
+        requiredFov = Mathf.Clamp(requiredHalf * 2f * Mathf.Rad2Deg, 1f, 179f);
+        return true;
+    }
+
+    private CameraState GetOrCreateCameraState(string cameraName, CinemachineCamera camera)
     {
         if (string.IsNullOrEmpty(cameraName))
             return null;
@@ -521,6 +780,12 @@ public class BattleCameraManager : MonoBehaviour
                 ReferenceSamples = new List<ReferenceSample>(32)
             };
             cameraStates[cameraName] = state;
+        }
+
+        if (camera != null && !state.HasBaseFov)
+        {
+            state.HasBaseFov = true;
+            state.BaseFov = camera.Lens.FieldOfView;
         }
 
         return state;

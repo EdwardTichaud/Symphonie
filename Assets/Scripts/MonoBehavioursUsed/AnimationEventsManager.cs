@@ -56,8 +56,19 @@ public class AnimationEventsManager : MonoBehaviour
         if (effect != null && targetChest != null)
         {
             GameObject instantiatedEffect = Instantiate(effect, targetChest.position, Quaternion.identity);
-            Destroy(instantiatedEffect, 3f); // Destroy after 5 seconds to clean up
+            Destroy(instantiatedEffect, 3f); // Destroy after 3 seconds to clean up
             Debug.Log("InstantiateHitEffectOnTarget called with effect: " + effect.name + " on " + targetChest);
+        }
+    }
+
+    public void InstantiateEffectOnTarget(GameObject effect)
+    {
+        Transform target = NewBattleManager.Instance.currentTargetCharacter.transform;
+        if (effect != null && target != null)
+        {
+            GameObject instantiatedEffect = Instantiate(effect, target.position, Quaternion.identity);
+            Destroy(instantiatedEffect, 3f); // Destroy after 3 seconds to clean up
+            Debug.Log("InstantiateEffectOnTarget called with effect: " + effect.name + " on " + target);
         }
     }
 

@@ -34,6 +34,7 @@ public class PostProcessManager : MonoBehaviour
     // Ambiance sombre
     private Vignette vignette;                    // vignette pour assombrir les bords de l'écran
     private float baseVignetteIntensity;          // intensité de vignette initiale
+    private EdgeBlur edgeBlur;                    // flou radial des bords
 
     // Effets supplémentaires
     private ScreenSpaceAmbientOcclusion ambientOcclusion;    // renforce les ombres locales
@@ -110,6 +111,15 @@ public class PostProcessManager : MonoBehaviour
                 baseVignetteIntensity = vignette.intensity.value;
                 vignette.smoothness.value = 0.8f;      // transition douce
                 vignette.color.value = Color.black;    // couleur sombre
+            }
+
+            // --- Edge Blur ---
+            if (!volume.profile.TryGet(out edgeBlur))
+                edgeBlur = volume.profile.Add<EdgeBlur>(false);
+            if (edgeBlur != null)
+            {
+                edgeBlur.active = true;
+                edgeBlur.edgeBlurAmount.overrideState = true;
             }
 
             // --- Ambient Occlusion ---
@@ -318,5 +328,18 @@ public class PostProcessManager : MonoBehaviour
             lensDistortion.intensity.value = baseLensIntensity;
         if (colorAdjustments != null)
             colorAdjustments.contrast.value = baseContrast;
+    }
+
+    /// <summary>
+    /// Applique un flou radial sur les bords de l'image.
+    /// </summary>
+    /// <param name="amount">0 = aucun flou, 1 = flou jusqu'au centre.</param>
+    public void SetEdgeBlur(float amount)
+    {
+        if (edgeBlur == null)
+            return;
+
+        edgeBlur.edgeBlurAmount.overrideState = true;
+        edgeBlur.edgeBlurAmount.value = Mathf.Clamp01(amount);
     }
 }

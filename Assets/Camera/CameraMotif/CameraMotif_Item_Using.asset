@@ -13,12 +13,79 @@ MonoBehaviour:
   m_Name: CameraMotif_Item_Using
   m_EditorClassIdentifier: Symphonie.Data::CameraMotifSO
   blendDuration: 0.25
-  referencePoint: 0
+  edgeBlurAmount: 0
+  animate: 0
+  animationDuration: 0
+  loopAnimation: 1
+  referenceOffsetPositionX:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetPositionY:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetPositionZ:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetRotationX:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetRotationY:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetRotationZ:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetSmoothTimeCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetDelayCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  orbitSpeedCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  edgeBlurAmountCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referencePoint: 1
+  compensateReferenceSize: 0
+  maxCompensationFovIncrease: 12
   referenceOffsetPosition: {x: 0, y: 3.2, z: -5.5}
   referenceOffsetSmoothTime: -1
+  referenceOffsetDelay: 0
   referenceOffsetRotation: {x: -10, y: -10, z: -8}
-  orbitEnabled: 1
-  orbitReferencePoint: 0
-  orbitSpeed: 20
+  orbitEnabled: 0
+  orbitReferencePoint: 1
+  orbitSpeed: 0
   lookAtEnabled: 1
-  lookAtReferencePoint: 0
+  lookAtReferencePoint: 1

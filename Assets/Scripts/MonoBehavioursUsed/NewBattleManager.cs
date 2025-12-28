@@ -97,6 +97,8 @@ public partial class NewBattleManager : MonoBehaviour
 
     [Tooltip("Motif de caméra joué pendant l'entrée en combat.")]
     [SerializeField] private CameraMotifSO battleEntranceCameraMotif;
+    [Tooltip("Motif de caméra joué lorsque le menu principal de combat est affiché.")]
+    [SerializeField] private CameraMotifSO battleMainMenuCameraMotif;
 
     /// <summary>
     /// Indique si la mise en scène d'introduction verrouille temporairement les menus.
@@ -159,6 +161,9 @@ public partial class NewBattleManager : MonoBehaviour
     [Tooltip("Motif joué pendant la sélection de cible d'un objet.")]
     public CameraMotifSO itemTargetSelectionCameraMotif;
     private bool itemMenuTimelineActive = false;
+    [Header("Ciblage de compétences")]
+    [Tooltip("Motif joué pendant la sélection de cible d'un MusicalMove.")]
+    public CameraMotifSO musicalMoveTargetSelectionCameraMotif;
 
     /// <summary>
     /// Empêche le lancement multiple de la séquence de victoire.
@@ -732,7 +737,7 @@ public partial class NewBattleManager : MonoBehaviour
     //3 Affecter currentTarget au premier ennemi de la liste
     private void SetDefaultCurrentTarget()
     {
-        currentTargetCharacter = activeCharacterUnits.FirstOrDefault(u => !u.Data.isPlayerControlled && u.currentHP > 0);
+        currentTargetCharacter = GetFirstActiveUnit(CharacterType.EnemyUnit);
 
         if (currentTargetCharacter == null)
         {
@@ -2294,6 +2299,115 @@ public partial class NewBattleManager : MonoBehaviour
     #endregion
 
     #region Gestion de la navigation dans les menus
+    private void BuildOrderedUnits(CharacterType requiredType, List<CharacterUnit> buffer, bool includeDeadUnits)
+    {
+        buffer.Clear();
+        IReadOnlyList<CharacterUnit> sourceUnits = includeDeadUnits ? unitsInBattle : activeCharacterUnits;
+        foreach (var unit in sourceUnits)
+        {
+            if (unit == null || unit.characterType != requiredType)
+                continue;
+
+            if (!includeDeadUnits && unit.currentHP <= 0)
+                continue;
+
+            buffer.Add(unit);
+        }
+
+        buffer.Sort(CompareTargetSelectionOrder);
+    }
+
+    private bool AllowsDeadUnitTargeting()
+    {
+        if (currentItem != null)
+            return currentItem.usableOnDeathUnits;
+        if (currentMove != null)
+            return currentMove.usableOnDeathUnits;
+        return false;
+    }
+
+    private int CompareTargetSelectionOrder(CharacterUnit a, CharacterUnit b)
+    {
+        int orderA = GetSelectionSlotOrder(a);
+        int orderB = GetSelectionSlotOrder(b);
+
+        if (orderA != orderB)
+            return orderA.CompareTo(orderB);
+
+        if (a == null || b == null)
+            return 0;
+
+        return a.transform.position.x.CompareTo(b.transform.position.x);
+    }
+
+    private int GetSelectionSlotOrder(CharacterUnit unit)
+    {
+        if (unit == null)
+            return int.MaxValue;
+
+        Transform parent = unit.transform.parent;
+        if (parent != null)
+        {
+            Transform root = parent.parent;
+            bool isSpawnSlot = parent.CompareTag("PlayerSpawn") || parent.CompareTag("EnemySpawn");
+            bool isSpawnRoot = root != null && (root.CompareTag("PlayerSpawn") || root.CompareTag("EnemySpawn"));
+            if (isSpawnSlot || isSpawnRoot)
+            {
+                if (TryGetSpawnIndexFromName(parent.name, out int spawnIndex))
+                {
+                    // selection order left->right: 2,1,3
+                    switch (spawnIndex)
+                    {
+                        case 2:
+                            return 0;
+                        case 1:
+                            return 1;
+                        case 3:
+                            return 2;
+                        default:
+                            return spawnIndex;
+                    }
+                }
+
+                return parent.GetSiblingIndex();
+            }
+        }
+
+        return int.MaxValue;
+    }
+
+    private static bool TryGetSpawnIndexFromName(string spawnName, out int spawnIndex)
+    {
+        spawnIndex = 0;
+        if (string.IsNullOrEmpty(spawnName))
+            return false;
+
+        int value = 0;
+        int multiplier = 1;
+        bool foundDigit = false;
+
+        for (int i = spawnName.Length - 1; i >= 0; i--)
+        {
+            char c = spawnName[i];
+            if (!char.IsDigit(c))
+            {
+                if (foundDigit)
+                    break;
+                continue;
+            }
+
+            foundDigit = true;
+            value += (c - '0') * multiplier;
+            multiplier *= 10;
+        }
+
+        if (!foundDigit)
+            return false;
+
+        spawnIndex = value;
+        return true;
+    }
+
     private void HandleTargetNavigation()
     {
         // Si les menus sont verrouillés par la BattleIntro, aucune navigation ne doit être traitée.
@@ -2324,17 +2438,8 @@ public partial class NewBattleManager : MonoBehaviour
         bool targetEnemies = type == TargetType.SingleEnemy || type == TargetType.AllEnemies;
         CharacterType requiredType = targetEnemies ? CharacterType.EnemyUnit : CharacterType.SquadUnit;
 
-        // On reconstruit la liste filtrée manuellement pour éviter les allocations
-        // liées à l'utilisation de LINQ chaque frame, ce qui générait des pics de GC
-        // responsables de chutes de FPS.
-        filteredUnits.Clear();
-        foreach (var unit in activeCharacterUnits)
-        {
-            if (unit.characterType == requiredType && unit.currentHP > 0)
-            {
-                filteredUnits.Add(unit);
-            }
-        }
+        bool includeDeadUnits = AllowsDeadUnitTargeting();
+        BuildOrderedUnits(requiredType, filteredUnits, includeDeadUnits);
 
         if (filteredUnits.Count == 0)
         {
@@ -2354,10 +2459,15 @@ public partial class NewBattleManager : MonoBehaviour
 
         if (direction == 0) return;
 
-        lastNavTime = Time.time;
-
         int count = filteredUnits.Count;
-        currentTargetIndex = (currentTargetIndex + direction + count) % count;
+        currentTargetIndex = Mathf.Clamp(currentTargetIndex, 0, count - 1);
+        int nextIndex = Mathf.Clamp(currentTargetIndex + direction, 0, count - 1);
+
+        if (nextIndex == currentTargetIndex)
+            return;
+
+        lastNavTime = Time.time;
+        currentTargetIndex = nextIndex;
         CharacterUnit previousTarget = currentTargetCharacter;
         currentTargetCharacter = filteredUnits[currentTargetIndex];
 
@@ -2405,13 +2515,14 @@ public partial class NewBattleManager : MonoBehaviour
         }
 
         TargetType type = isSkillTargeting ? currentMoveTargetType : currentItemTargetType;
+        bool includeDeadUnits = AllowsDeadUnitTargeting();
 
         if (type == TargetType.AllEnemies || type == TargetType.AllAllies || type == TargetType.All)
         {
             targetCursor?.SetActive(false);
 
             // Filtre manuel des cibles pour éviter les allocations LINQ à chaque frame
-            CollectMultiTargetUnits(type, multiTargetUnits);
+            CollectMultiTargetUnits(type, multiTargetUnits, includeDeadUnits);
 
             // S'assure qu'il existe assez de curseurs pour toutes les cibles
             EnsureMultiTargetCursors(multiTargetUnits.Count);
@@ -2503,20 +2614,12 @@ public partial class NewBattleManager : MonoBehaviour
         currentItem = null; // on annule la sélection d'item précédente
         currentMoveIsBasicAttack = isBasicAttack;
 
-        var cameraManager = BattleCameraManager.Instance;
-        if (cameraManager != null)
-        {
-            if (move != null && move.cameraMotif != null)
-                cameraManager.SetCameraMotif(move.cameraMotif);
-            else
-                cameraManager.ClearCameraMotif();
-        }
-
         TargetType allowedType = move != null ? move.targetType : TargetType.SingleEnemy;
         TargetType defaultType = move != null ? move.defaultTargetType : allowedType;
         bool allowGroupSwitch = AllowsMoveGroupSwitch(allowedType);
+        bool includeDeadUnits = move != null && move.usableOnDeathUnits;
         currentMoveTargetType = ResolveInitialMoveTargetType(allowedType, defaultType);
-        CharacterUnit defaultTarget = ResolveDefaultMoveTarget(currentCharacterUnit, currentMoveTargetType, defaultType);
+        CharacterUnit defaultTarget = ResolveDefaultMoveTarget(currentCharacterUnit, currentMoveTargetType, defaultType, includeDeadUnits);
         // Feedback audio unique pour signifier le passage en mode ciblage.
         PlayMenuClip(targetSelectionClip);
         switch (currentMoveTargetType)
@@ -2554,20 +2657,25 @@ public partial class NewBattleManager : MonoBehaviour
 
             case TargetType.All:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
-                currentTargetCharacter = defaultTarget ?? activeCharacterUnits.FirstOrDefault(u => u.currentHP > 0);
+                currentTargetCharacter = defaultTarget
+                    ?? GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits)
+                    ?? GetFirstSelectableUnit(CharacterType.SquadUnit, includeDeadUnits);
                 break;
 
             default:
                 Debug.LogWarning($"[BattleTurnManager] Type de cible non géré : {currentMoveTargetType}");
                 return;
         }
-        SyncCurrentTargetIndex(currentTargetCharacter);
+        SyncCurrentTargetIndex(currentTargetCharacter, includeDeadUnits);
 
         // Affiche l'instruction adaptée selon qu'on peut ou non changer de groupe
         if (allowGroupSwitch)
             ActionUIDisplayManager.Instance.DisplayInstruction_SelectGroup();
         else
             ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
+
+        if (musicalMoveTargetSelectionCameraMotif != null)
+            BattleCameraManager.Instance?.SetCameraMotif(musicalMoveTargetSelectionCameraMotif);
 
         // Des l'entree en mode ciblage, on lance la boucle de preparation
         // definie sur le CharacterData du lanceur. Si elle est absente, on
@@ -2589,6 +2697,7 @@ public partial class NewBattleManager : MonoBehaviour
         currentMove = null; // on annule la sélection de compétence précédente
         currentMoveIsBasicAttack = false; // Sélection d'objet : aucune logique spécifique à l'attaque basique.
         currentItemTargetType = item.defaultTargetType;
+        bool includeDeadUnits = item != null && item.usableOnDeathUnits;
 
         bool canTargetEnemies = item.targetTypes.Contains(TargetType.SingleEnemy) ||
                                item.targetTypes.Contains(TargetType.AllEnemies) ||
@@ -2612,14 +2721,12 @@ public partial class NewBattleManager : MonoBehaviour
                     ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
                 else
                     ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem);
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
+                currentTargetCharacter = GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits);
                 break;
 
             case TargetType.AllEnemies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.EnemyUnit && u.currentHP > 0);
+                currentTargetCharacter = GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits);
                 break;
 
             case TargetType.SingleAlly:
@@ -2627,19 +2734,18 @@ public partial class NewBattleManager : MonoBehaviour
                     ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
                 else
                     ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadForItem);
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetCharacter = GetFirstSelectableUnit(CharacterType.SquadUnit, includeDeadUnits);
                 break;
 
             case TargetType.AllAllies:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad);
-                currentTargetCharacter = activeCharacterUnits
-                    .FirstOrDefault(u => u.characterType == CharacterType.SquadUnit && u.currentHP > 0);
+                currentTargetCharacter = GetFirstSelectableUnit(CharacterType.SquadUnit, includeDeadUnits);
                 break;
 
             case TargetType.All:
                 ChangeBattleState(BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies);
-                currentTargetCharacter = activeCharacterUnits.FirstOrDefault(u => u.currentHP > 0);
+                currentTargetCharacter = GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits)
+                    ?? GetFirstSelectableUnit(CharacterType.SquadUnit, includeDeadUnits);
                 break;
 
             default:
@@ -2663,7 +2769,7 @@ public partial class NewBattleManager : MonoBehaviour
             || currentItemTargetType == TargetType.AllAllies
             || currentItemTargetType == TargetType.All)
         {
-            CollectMultiTargetUnits(currentItemTargetType, multiTargetUnits);
+            CollectMultiTargetUnits(currentItemTargetType, multiTargetUnits, includeDeadUnits);
             UpdateMultiTargetCursorCinemachine(multiTargetUnits);
         }
         else
@@ -2919,6 +3025,8 @@ public partial class NewBattleManager : MonoBehaviour
                     manager.SetCurrentTarget(null);
                     RequestCamera(MainMenuCameraName, MenuCameraBlendDuration, MenuCameraBlendStyle);
                 }
+                if (battleMainMenuCameraMotif != null)
+                    manager.SetCameraMotif(battleMainMenuCameraMotif);
                 break;
 
             case BattleState.SquadUnit_SkillsMenu:
@@ -2953,6 +3061,8 @@ public partial class NewBattleManager : MonoBehaviour
                     RequestCamera(cameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
                     if (IsItemTargetSelectionState(newState) && itemTargetSelectionCameraMotif != null)
                         manager.SetCameraMotif(itemTargetSelectionCameraMotif);
+                    else if (IsMusicalMoveTargetSelectionState(newState) && musicalMoveTargetSelectionCameraMotif != null)
+                        manager.SetCameraMotif(musicalMoveTargetSelectionCameraMotif);
                 }
                 break;
 
@@ -3356,6 +3466,20 @@ public partial class NewBattleManager : MonoBehaviour
     }
 
     /// <summary>
+    /// Détermine si la sélection de cible actuelle est déclenchée par un MusicalMove.
+    /// </summary>
+    private bool IsMusicalMoveTargetSelectionState(BattleState state)
+    {
+        if (state == BattleState.SquadUnit_TargetSelectionForBaseAttack)
+            return true;
+
+        return IsTargetSelectionState(state)
+               && !IsItemTargetSelectionState(state)
+               && currentMove != null
+               && currentItem == null;
+    }
+
+    /// <summary>
     /// Choisit dynamiquement la Cinemachine de ciblage à activer en fonction du contexte.
     /// </summary>
     private string ResolveTargetSelectionCameraName(BattleState state)
@@ -3365,12 +3489,29 @@ public partial class NewBattleManager : MonoBehaviour
             : TargetSelectionCameraName;
     }
 
-    private void CollectMultiTargetUnits(TargetType type, List<CharacterUnit> buffer)
+    private void CollectMultiTargetUnits(TargetType type, List<CharacterUnit> buffer, bool includeDeadUnits)
     {
-        buffer.Clear();
-        foreach (var unit in activeCharacterUnits)
+        if (type == TargetType.AllEnemies)
         {
-            if (unit.currentHP <= 0) continue; // On ignore les unités KO
+            BuildOrderedUnits(CharacterType.EnemyUnit, buffer, includeDeadUnits);
+            return;
+        }
+
+        if (type == TargetType.AllAllies)
+        {
+            BuildOrderedUnits(CharacterType.SquadUnit, buffer, includeDeadUnits);
+            return;
+        }
+
+        buffer.Clear();
+        IReadOnlyList<CharacterUnit> sourceUnits = includeDeadUnits ? unitsInBattle : activeCharacterUnits;
+        foreach (var unit in sourceUnits)
+        {
+            if (unit == null)
+                continue;
+
+            if (!includeDeadUnits && unit.currentHP <= 0)
+                continue;
 
             // On conserve uniquement les types d'unités attendus
             if (type == TargetType.AllEnemies && unit.characterType != CharacterType.EnemyUnit)
@@ -3385,8 +3526,8 @@ public partial class NewBattleManager : MonoBehaviour
     public void SetCurrentTargetToFirst(CharacterType type)
     {
         currentTargetIndex = 0;
-        currentTargetCharacter = activeCharacterUnits
-            .FirstOrDefault(u => u.characterType == type && u.currentHP > 0);
+        bool includeDeadUnits = AllowsDeadUnitTargeting();
+        currentTargetCharacter = GetFirstSelectableUnit(type, includeDeadUnits);
     }
 
     public bool IsCurrentItemMultiTargetSelection()
@@ -3403,14 +3544,16 @@ public partial class NewBattleManager : MonoBehaviour
         if (currentItem == null)
             return targets;
 
+        bool includeDeadUnits = currentItem.usableOnDeathUnits;
+
         if (IsCurrentItemMultiTargetSelection())
         {
-            CollectMultiTargetUnits(currentItemTargetType, targets);
+            CollectMultiTargetUnits(currentItemTargetType, targets, includeDeadUnits);
             return targets;
         }
 
         CharacterUnit target = currentTargetCharacter;
-        if (target == null || target.currentHP <= 0)
+        if (target == null || (!includeDeadUnits && target.currentHP <= 0))
         {
             switch (currentItemTargetType)
             {
@@ -3418,21 +3561,23 @@ public partial class NewBattleManager : MonoBehaviour
                     target = currentCharacterUnit;
                     break;
                 case TargetType.SingleEnemy:
-                    target = GetFirstActiveUnit(CharacterType.EnemyUnit);
+                    target = GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits);
                     break;
                 case TargetType.SingleAlly:
-                    target = GetFirstActiveUnit(CharacterType.SquadUnit);
+                    target = GetFirstSelectableUnit(CharacterType.SquadUnit, includeDeadUnits);
                     break;
                 case TargetType.SingleAllyOrEnemy:
-                    target = GetFirstActiveUnit(CharacterType.EnemyUnit) ?? GetFirstActiveUnit(CharacterType.SquadUnit);
+                    target = GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits)
+                        ?? GetFirstSelectableUnit(CharacterType.SquadUnit, includeDeadUnits);
                     break;
                 case TargetType.All:
-                    target = GetFirstActiveUnit(CharacterType.EnemyUnit) ?? GetFirstActiveUnit(CharacterType.SquadUnit);
+                    target = GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits)
+                        ?? GetFirstSelectableUnit(CharacterType.SquadUnit, includeDeadUnits);
                     break;
             }
         }
 
-        if (target != null && target.currentHP > 0)
+        if (target != null && (includeDeadUnits || target.currentHP > 0))
             targets.Add(target);
 
         return targets;
@@ -3444,13 +3589,21 @@ public partial class NewBattleManager : MonoBehaviour
         if (currentMove == null)
             return;
 
-        currentTargetCharacter = ResolveDefaultMoveTarget(currentCharacterUnit, selectionType, currentMove.defaultTargetType);
-        SyncCurrentTargetIndex(currentTargetCharacter);
+        bool includeDeadUnits = currentMove.usableOnDeathUnits;
+        currentTargetCharacter = ResolveDefaultMoveTarget(currentCharacterUnit, selectionType, currentMove.defaultTargetType, includeDeadUnits);
+        SyncCurrentTargetIndex(currentTargetCharacter, includeDeadUnits);
     }
 
     private CharacterUnit GetFirstActiveUnit(CharacterType type)
     {
-        return activeCharacterUnits.FirstOrDefault(u => u.characterType == type && u.currentHP > 0);
+        BuildOrderedUnits(type, filteredUnits, includeDeadUnits: false);
+        return filteredUnits.Count > 0 ? filteredUnits[0] : null;
+    }
+
+    private CharacterUnit GetFirstSelectableUnit(CharacterType type, bool includeDeadUnits)
+    {
+        BuildOrderedUnits(type, filteredUnits, includeDeadUnits);
+        return filteredUnits.Count > 0 ? filteredUnits[0] : null;
     }
 
     private bool AllowsMoveGroupSwitch(TargetType allowedType)
@@ -3486,7 +3639,8 @@ public partial class NewBattleManager : MonoBehaviour
         }
     }
 
-    private CharacterUnit ResolveDefaultMoveTarget(CharacterUnit caster, TargetType selectionType, TargetType defaultType)
+    private CharacterUnit ResolveDefaultMoveTarget(CharacterUnit caster, TargetType selectionType, TargetType defaultType,
+        bool includeDeadUnits)
     {
         if (caster == null)
             return null;
@@ -3497,32 +3651,32 @@ public partial class NewBattleManager : MonoBehaviour
                 return caster;
             case TargetType.SingleEnemy:
             case TargetType.AllEnemies:
-                return GetFirstActiveUnit(CharacterType.EnemyUnit);
+                return GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits);
             case TargetType.SingleAlly:
             case TargetType.AllAllies:
                 if (defaultType == TargetType.Self && caster.currentHP > 0f)
                     return caster;
-                return GetFirstActiveUnit(CharacterType.SquadUnit);
+                return GetFirstSelectableUnit(CharacterType.SquadUnit, includeDeadUnits);
             case TargetType.All:
                 if (defaultType == TargetType.Self && caster.currentHP > 0f)
                     return caster;
                 if (defaultType == TargetType.SingleEnemy || defaultType == TargetType.AllEnemies)
-                    return GetFirstActiveUnit(CharacterType.EnemyUnit)
-                        ?? GetFirstActiveUnit(CharacterType.SquadUnit)
+                    return GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits)
+                        ?? GetFirstSelectableUnit(CharacterType.SquadUnit, includeDeadUnits)
                         ?? caster;
                 if (defaultType == TargetType.SingleAlly || defaultType == TargetType.AllAllies)
-                    return GetFirstActiveUnit(CharacterType.SquadUnit)
-                        ?? GetFirstActiveUnit(CharacterType.EnemyUnit)
+                    return GetFirstSelectableUnit(CharacterType.SquadUnit, includeDeadUnits)
+                        ?? GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits)
                         ?? caster;
-                return GetFirstActiveUnit(CharacterType.EnemyUnit)
-                    ?? GetFirstActiveUnit(CharacterType.SquadUnit)
+                return GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits)
+                    ?? GetFirstSelectableUnit(CharacterType.SquadUnit, includeDeadUnits)
                     ?? caster;
             default:
-                return GetFirstActiveUnit(CharacterType.EnemyUnit);
+                return GetFirstSelectableUnit(CharacterType.EnemyUnit, includeDeadUnits);
         }
     }
 
-    private void SyncCurrentTargetIndex(CharacterUnit target)
+    private void SyncCurrentTargetIndex(CharacterUnit target, bool includeDeadUnits)
     {
         if (target == null)
         {
@@ -3530,19 +3684,14 @@ public partial class NewBattleManager : MonoBehaviour
             return;
         }
 
-        int index = 0;
-        foreach (var unit in activeCharacterUnits)
+        BuildOrderedUnits(target.characterType, filteredUnits, includeDeadUnits);
+        for (int i = 0; i < filteredUnits.Count; i++)
         {
-            if (unit == null || unit.currentHP <= 0 || unit.characterType != target.characterType)
-                continue;
-
-            if (unit == target)
+            if (filteredUnits[i] == target)
             {
-                currentTargetIndex = index;
+                currentTargetIndex = i;
                 return;
             }
-
-            index++;
         }
 
         currentTargetIndex = 0;

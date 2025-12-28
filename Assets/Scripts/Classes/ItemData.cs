@@ -185,6 +185,8 @@ public class ItemData : ScriptableObject
     [Header("Ciblage")]
     public TargetType defaultTargetType = TargetType.SingleAlly;
     public List<TargetType> targetTypes = new List<TargetType>() { TargetType.SingleAlly };
+    [Tooltip("Autorise la sélection d'unités KO (utile pour la résurrection).")]
+    public bool usableOnDeathUnits = false;
 
     [Header("Téléportation")]
     // Effet visuel déclenché au départ du téléport

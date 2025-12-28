@@ -347,11 +347,14 @@ public partial class NewBattleManager
 
     private CharacterUnit ResolveAIMoveTarget(CharacterUnit enemy, CharacterUnit candidate, MusicalMoveSO move)
     {
-        if (candidate != null && candidate.currentHP > 0)
+        bool allowDeadTargets = move != null && move.usableOnDeathUnits;
+        if (candidate != null && (allowDeadTargets || candidate.currentHP > 0))
             return candidate;
 
         if (move == null)
             return enemy.SelectTargetFromSquad();
+
+        IReadOnlyList<CharacterUnit> sourceUnits = allowDeadTargets ? unitsInBattle : activeCharacterUnits;
 
         switch (move.targetType)
         {
@@ -359,18 +362,18 @@ public partial class NewBattleManager
                 return enemy;
             case TargetType.SingleAlly:
             case TargetType.AllAllies:
-                return activeCharacterUnits.FirstOrDefault(u =>
+                return sourceUnits.FirstOrDefault(u =>
                     u != null &&
                     u.Data.characterType == enemy.Data.characterType &&
-                    u.currentHP > 0);
+                    (allowDeadTargets || u.currentHP > 0));
             case TargetType.SingleAllyOrEnemy:
                 if (move.defaultTargetType == TargetType.Self)
                     return enemy;
                 if (move.defaultTargetType == TargetType.SingleAlly || move.defaultTargetType == TargetType.AllAllies)
-                    return activeCharacterUnits.FirstOrDefault(u =>
+                    return sourceUnits.FirstOrDefault(u =>
                         u != null &&
                         u.Data.characterType == enemy.Data.characterType &&
-                        u.currentHP > 0);
+                        (allowDeadTargets || u.currentHP > 0));
                 return enemy.SelectTargetFromSquad();
             default:
                 return enemy.SelectTargetFromSquad();
@@ -379,11 +382,14 @@ public partial class NewBattleManager
 
     private CharacterUnit ResolveAIItemTarget(CharacterUnit enemy, CharacterUnit candidate, ItemData item)
     {
-        if (candidate != null && candidate.currentHP > 0)
+        bool allowDeadTargets = item != null && item.usableOnDeathUnits;
+        if (candidate != null && (allowDeadTargets || candidate.currentHP > 0))
             return candidate;
 
         if (item == null)
             return null;
+
+        IReadOnlyList<CharacterUnit> sourceUnits = allowDeadTargets ? unitsInBattle : activeCharacterUnits;
 
         switch (item.defaultTargetType)
         {
@@ -391,10 +397,10 @@ public partial class NewBattleManager
                 return enemy;
             case TargetType.SingleAlly:
             case TargetType.AllAllies:
-                return activeCharacterUnits.FirstOrDefault(u =>
+                return sourceUnits.FirstOrDefault(u =>
                     u != null &&
                     u.Data.characterType == enemy.Data.characterType &&
-                    u.currentHP > 0);
+                    (allowDeadTargets || u.currentHP > 0));
             default:
                 return enemy.SelectTargetFromSquad();
         }
@@ -408,6 +414,11 @@ public partial class NewBattleManager
         if (!caster.CanUseMove(move))
         {
             ActionUIDisplayManager.Instance.DisplayInstruction("Limite d'utilisation atteinte");
+            yield break;
+        }
+        if (target != null && target.currentHP <= 0f && !move.usableOnDeathUnits)
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction("Aucune cible valide");
             yield break;
         }
         if (!IsTargetInRange(caster, target, move))
@@ -497,6 +508,9 @@ public partial class NewBattleManager
 
     public IEnumerator UseItemOnTarget(ItemData item, CharacterUnit caster, CharacterUnit target, bool bypassInventory = false)
     {
+        if (item == null || caster == null || target == null)
+            yield break;
+
         if (!bypassInventory)
         {
             if (!InventoryManager.Instance.CanUseItem(item))
@@ -504,6 +518,11 @@ public partial class NewBattleManager
                 ActionUIDisplayManager.Instance.DisplayInstruction("Limite d'utilisation atteinte");
                 yield break;
             }
+        }
+        if (target.currentHP <= 0f && !item.usableOnDeathUnits)
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction("Aucune cible valide");
+            yield break;
         }
 
         if (!IsTargetInRange(caster, target, item))
@@ -564,7 +583,8 @@ public partial class NewBattleManager
             }
         }
 
-        CharacterUnit rangeTarget = targets.FirstOrDefault(t => t != null && t.currentHP > 0);
+        bool allowDeadTargets = item.usableOnDeathUnits;
+        CharacterUnit rangeTarget = targets.FirstOrDefault(t => t != null && (allowDeadTargets || t.currentHP > 0));
         if (rangeTarget == null)
         {
             ActionUIDisplayManager.Instance.DisplayInstruction("Aucune cible valide");
@@ -589,7 +609,7 @@ public partial class NewBattleManager
         int appliedTargets = 0;
         foreach (var target in targets)
         {
-            if (target == null || target.currentHP <= 0)
+            if (target == null || (!allowDeadTargets && target.currentHP <= 0))
                 continue;
 
             ItemEffectExecutor.ApplyEffect(item, caster, target, crit);

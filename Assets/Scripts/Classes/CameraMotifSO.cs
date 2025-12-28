@@ -15,9 +15,60 @@ public class CameraMotifSO : ScriptableObject
     [Tooltip("Durée de transition lorsque le motif devient actif.")]
     public float blendDuration = 0.25f;
 
+    [Header("Edge Blur")]
+    [Range(0f, 1f)]
+    [Tooltip("Etendue du flou depuis les bords (0 = bords uniquement, 1 = jusqu'au centre).")]
+    public float edgeBlurAmount = 0f;
+
+    [Header("Animation")]
+    [Tooltip("Active l'animation des paramètres via des courbes (temps normalisé 0..1).")]
+    public bool animate;
+    [Min(0f)]
+    [Tooltip("Durée (en secondes) utilisée pour parcourir les courbes. 0 = statique.")]
+    public float animationDuration = 0f;
+    [Tooltip("Boucle l'animation des courbes.")]
+    public bool loopAnimation = true;
+
+    [Header("Animation Curves - Reference Offset Position")]
+    [Tooltip("Décalage X additionnel (droite) appliqué via courbe.")]
+    public AnimationCurve referenceOffsetPositionX;
+    [Tooltip("Décalage Y additionnel (haut) appliqué via courbe.")]
+    public AnimationCurve referenceOffsetPositionY;
+    [Tooltip("Décalage Z additionnel (avant) appliqué via courbe.")]
+    public AnimationCurve referenceOffsetPositionZ;
+
+    [Header("Animation Curves - Reference Offset Rotation")]
+    [Tooltip("Rotation X additionnelle (pitch) appliquée via courbe.")]
+    public AnimationCurve referenceOffsetRotationX;
+    [Tooltip("Rotation Y additionnelle (yaw) appliquée via courbe.")]
+    public AnimationCurve referenceOffsetRotationY;
+    [Tooltip("Rotation Z additionnelle (roll) appliquée via courbe.")]
+    public AnimationCurve referenceOffsetRotationZ;
+
+    [Header("Animation Curves - Timing")]
+    [Tooltip("Variation additionnelle du smoothTime via courbe.")]
+    public AnimationCurve referenceOffsetSmoothTimeCurve;
+    [Tooltip("Variation additionnelle du délai de référence via courbe.")]
+    public AnimationCurve referenceOffsetDelayCurve;
+
+    [Header("Animation Curves - Orbit")]
+    [Tooltip("Variation additionnelle de la vitesse d'orbite via courbe.")]
+    public AnimationCurve orbitSpeedCurve;
+
+    [Header("Animation Curves - Edge Blur")]
+    [Tooltip("Variation additionnelle de l'etendue du flou via courbe.")]
+    public AnimationCurve edgeBlurAmountCurve;
+
     [Header("Reference")]
     [Tooltip("Point de référence utilisé pour positionner la caméra.")]
     public ReferencePoint referencePoint = ReferencePoint.Caster;
+
+    [Header("Size Compensation")]
+    [Tooltip("Ajuste le FOV si la cible de référence sort du cadre.")]
+    public bool compensateReferenceSize;
+    [Min(0f)]
+    [Tooltip("Limite d'augmentation du FOV (en degrés) lorsque la compensation est active.")]
+    public float maxCompensationFovIncrease = 12f;
 
     [Header("Reference Offset")]
     [FormerlySerializedAs("casterOffsetLocal")]

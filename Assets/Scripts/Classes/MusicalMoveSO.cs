@@ -236,6 +236,8 @@ public class MusicalMoveSO : ScriptableObject
     public TargetType targetType = TargetType.SingleEnemy;
     [Tooltip("Type de cible utilisé pour positionner le curseur au début de la sélection.")]
     public TargetType defaultTargetType = TargetType.SingleEnemy;
+    [Tooltip("Autorise la sélection d'unités KO (utile pour la résurrection).")]
+    public bool usableOnDeathUnits = false;
 
     [Header("Déplacement")]
     // La gestion des effets visuels est désormais confiée à la timeline,

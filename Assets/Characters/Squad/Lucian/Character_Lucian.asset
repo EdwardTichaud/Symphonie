@@ -34,12 +34,12 @@ MonoBehaviour:
   basePower: 100
   baseStability: 0
   baseSagacity: 0
-  baseInitiative: 1
-  baseRange: 9.55
   baseHP: 50
   baseStrength: 1
   baseDefense: 1
   baseSpeed: 0
+  baseRange: 9.55
+  baseInitiative: 1
   baseInterceptionRange: 2
   baseRage: 0
   maxRage: 100
@@ -72,6 +72,7 @@ MonoBehaviour:
     prioritizedItems:
     - {fileID: 11400000, guid: 370617c19b664f29839d25a4955dacf9, type: 2}
     - {fileID: 11400000, guid: fd8086605fb14e81a0e94c639309929f, type: 2}
+    - {fileID: 11400000, guid: 33a6359649a143aa8511bd15b809b38a, type: 2}
   defaultItemSetIndex: -1
   isPlayerControlled: 1
   turnStartVoiceline: {fileID: 11400000, guid: 76a912fb92e3d0f42a5e578cd550b467, type: 2}

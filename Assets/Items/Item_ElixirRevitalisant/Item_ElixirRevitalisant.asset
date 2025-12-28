@@ -52,6 +52,7 @@ MonoBehaviour:
   timingDuration: 0
   defaultTargetType: 3
   targetTypes: 03000000
+  usableOnDeathUnits: 1
   tpVfx_Start: {fileID: 0}
   tpVfx_End: {fileID: 0}
   tpSFx_Start: {fileID: 0}
@@ -59,9 +60,9 @@ MonoBehaviour:
   preparingTimeline: {fileID: 0}
   performingTimeline: {fileID: 11400000, guid: f7714b3b704f3c74f98ee23bcd7f4b23, type: 2}
   retreatTimeline: {fileID: 0}
-  preparingCameraRole: 1
-  performingCameraRole: 2
-  retreatCameraRole: 4
-  preparingToPerformingCameraDelay: 0
+  preparingCameraMotif: {fileID: 0}
+  performingCameraMotif: {fileID: 0}
+  retreatCameraMotif: {fileID: 0}
+  preparingToPerformingMotifDelay: 0
   beatPattern: []
   notes: []
