@@ -79,6 +79,12 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     private bool timelineSkipped = false;
 
+    // Empêche un double traitement de fin de Timeline (arrêt + fallback).
+    private bool endingTimeline = false;
+
+    // Distingue une pause manuelle (QTE) d'une fin naturelle en mode Hold.
+    private bool timelineManuallyPaused = false;
+
     /// <summary>
     /// Indique si la timeline en cours doit être entourée d'un fondu noir.
     /// Peut être désactivé pour certaines cinématiques courtes ou contextuelles.
@@ -107,6 +113,8 @@ public class TimelineManager : MonoBehaviour
     private readonly Dictionary<string, GameObject> cameraTagCache = new();
     private bool overrideDirectorWrapMode;
     private DirectorWrapMode storedDirectorWrapMode;
+
+    private const double k_TimelineEndTolerance = 0.05d;
 
     [Header("Audio")]
     [Tooltip("Musique de fond à jouer pendant les timelines.")]
@@ -400,6 +408,29 @@ public class TimelineManager : MonoBehaviour
         }
     }
 
+    private void Update()
+    {
+        if (!IsTimelinePlaying || endingTimeline)
+            return;
+
+        if (currentDirector == null)
+        {
+            endingTimeline = true;
+            StartCoroutine(HandleTimelineEnd(null));
+            return;
+        }
+
+        if (currentDirector.state != PlayState.Playing && !timelineManuallyPaused)
+        {
+            double duration = currentDirector.duration;
+            if (duration > 0d && currentDirector.time >= duration - k_TimelineEndTolerance)
+            {
+                endingTimeline = true;
+                StartCoroutine(HandleTimelineEnd(currentDirector));
+            }
+        }
+    }
+
     /// <summary>
     /// Assigne explicitement un <see cref="PlayableDirector"/> externe
     /// à utiliser pour la lecture des timelines.
@@ -472,6 +503,8 @@ public class TimelineManager : MonoBehaviour
         newDirector.stopped += OnStopped;
 
         currentDirector = newDirector;
+        endingTimeline = false;
+        timelineManuallyPaused = false;
 
         if (requiresWorldCamera)
         {
@@ -709,6 +742,7 @@ public class TimelineManager : MonoBehaviour
         currentDirector.Pause();
         // Stabilise l'état visuel/audio au frame exact de pause.
         currentDirector.Evaluate();
+        timelineManuallyPaused = true;
 
         // On reste en mode "cinématique" pendant la pause :
         // => on NE réactive PAS les déplacements ici.
@@ -725,6 +759,7 @@ public class TimelineManager : MonoBehaviour
         if (currentDirector.state != PlayState.Paused) return;
 
         currentDirector.Resume();
+        timelineManuallyPaused = false;
         Debug.Log("[TimelineManager] ResumeCurrentTimeline()");
     }
 
@@ -780,6 +815,10 @@ public class TimelineManager : MonoBehaviour
         if (currentDirector == pd)
         {
             // On délègue la fin de timeline à une coroutine afin de chaîner le fondu
+            if (endingTimeline)
+                return;
+
+            endingTimeline = true;
             StartCoroutine(HandleTimelineEnd(pd));
         }
     }
@@ -790,7 +829,8 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     private IEnumerator HandleTimelineEnd(PlayableDirector pd)
     {
-        Debug.Log($"[TimelineManager] Timeline stoppée : {pd.name}");
+        string directorName = pd != null ? pd.name : "Unknown";
+        Debug.Log($"[TimelineManager] Timeline stoppée : {directorName}");
         // On n'a plus besoin d'écouter l'input Cancel une fois la cinématique terminée.
         DisableTimelineSkip();
         allowSkip = true; // Réinitialise l'autorisation de passage pour les prochaines timelines
@@ -828,6 +868,7 @@ public class TimelineManager : MonoBehaviour
         // 2) La cinématique est terminée.
         IsTimelinePlaying = false;
         currentDirector = null;
+        timelineManuallyPaused = false;
 
         if (overrideDirectorWrapMode && pd != null)
         {
@@ -869,6 +910,7 @@ public class TimelineManager : MonoBehaviour
         autoRestore = true;
 
         ReleaseWorldCameraControl();
+        endingTimeline = false;
     }
 
     private bool worldCameraControlRequested;
