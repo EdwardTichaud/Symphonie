@@ -53,16 +53,17 @@ MonoBehaviour:
   defaultTargetType: 3
   targetTypes: 03000000
   usableOnDeathUnits: 1
-  tpVfx_Start: {fileID: 0}
-  tpVfx_End: {fileID: 0}
-  tpSFx_Start: {fileID: 0}
+  tpVfx: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
+  tpSFx_Start: {fileID: 11400000, guid: f1af91942dd63a04592a8b5811b7dc38, type: 2}
   tpSFx_End: {fileID: 0}
-  preparingTimeline: {fileID: 0}
-  performingTimeline: {fileID: 11400000, guid: f7714b3b704f3c74f98ee23bcd7f4b23, type: 2}
-  retreatTimeline: {fileID: 0}
-  preparingCameraMotif: {fileID: 0}
-  performingCameraMotif: {fileID: 0}
-  retreatCameraMotif: {fileID: 0}
-  preparingToPerformingMotifDelay: 0
+  legacyTpVfxStart: {fileID: 0}
+  legacyTpVfxEnd: {fileID: 0}
+  animation: {fileID: 7400000, guid: 54b4967fe108c6547b7de5165f598814, type: 2}
+  itemVFX: {fileID: 6712169537145002962, guid: dac140af173b4274fb32bbe1abbd8473, type: 3}
+  vfxDelay: 1
+  cameraMotif: {fileID: 11400000, guid: 30054d1a5a6ea874da139f191e01169e, type: 2}
+  legacyPreparingCameraMotif: {fileID: 0}
+  legacyPerformingCameraMotif: {fileID: 0}
+  legacyRetreatCameraMotif: {fileID: 0}
   beatPattern: []
   notes: []

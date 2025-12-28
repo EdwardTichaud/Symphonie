@@ -324,10 +324,8 @@ public partial class NewBattleManager : MonoBehaviour
                 // 🎯 Pendant les phases de sélection on relance toujours l'animation
                 // de préparation pour souligner la menace immédiate. En revanche,
                 // lorsque la séquence du MusicalMove est en cours et que la
-                // timeline de préparation du lanceur doit garder la priorité,
-                // on s'abstient de relancer l'animation pour éviter un doublon
-                // avant que RhythmQTEManager ne le fasse lui-même à la fin de
-                // ladite timeline.
+                // mise en scène doit garder la priorité, on s'abstient de
+                // relancer l'animation pour éviter un doublon.
                 bool isSelectionState = IsTargetSelectionState(currentBattleState);
                 bool shouldDelayDueToMove = RhythmQTEManager.Instance != null
                     && RhythmQTEManager.Instance.ShouldDelayTargetPreparationAnimation;

@@ -32,8 +32,8 @@ public class MusicalMoveSO : ScriptableObject
     public bool consumeOnUse = true;
     [Tooltip("Moves conseillés pour créer des combos efficaces avec cet objet.")]
     public List<MusicalMoveSO> recommendedMusicalMoves = new();
-    // L'animation de ciblage est désormais pilotée par la Timeline de préparation
-    [Tooltip("Si vrai, le lanceur garde constamment la cible en ligne de mire lors de la préparation.")]
+    // L'animation de ciblage est désormais pilotée par la Timeline du move
+    [Tooltip("Si vrai, le lanceur garde constamment la cible en ligne de mire lors du move.")]
     public bool stayFaceToTarget = true;
 
     [System.Serializable]
@@ -265,14 +265,17 @@ public class MusicalMoveSO : ScriptableObject
     public RelativePosition relativePosition = RelativePosition.Front;
 
     [Header("Téléportation")]
-    // Effet visuel déclenché au départ du téléport
-    public GameObject tpVfx_Start;
-    // Effet visuel déclenché à l'arrivée du téléport
-    public GameObject tpVfx_End;
+    // Effet visuel déclenché au départ et à l'arrivée du téléport
+    public GameObject tpVfx;
     // Son joué au départ du téléport
     public AudioClipSO tpSFx_Start;
     // Son joué à l'arrivée du téléport
     public AudioClipSO tpSFx_End;
+
+    [FormerlySerializedAs("tpVfx_Start")]
+    [SerializeField, HideInInspector] private GameObject legacyTpVfxStart;
+    [FormerlySerializedAs("tpVfx_End")]
+    [SerializeField, HideInInspector] private GameObject legacyTpVfxEnd;
 
     [Header("Effets sonores")]
     [Tooltip("Son d'avertissement joué avant l'attaque pour prévenir le joueur")]
@@ -301,11 +304,11 @@ public class MusicalMoveSO : ScriptableObject
     private const float DefaultDamageInterruptionThreshold = 20000f;
 
     [Header("Timing")]
-    // ⏱️ Délai ajouté avant toute timeline de préparation.
+    // ⏱️ Délai ajouté avant la timeline du move.
     //    Permet d'insérer un temps mort contrôlé (par exemple pour une
     //    annonce ou un effet visuel) avant que le move ne commence
     //    réellement.
-    [Tooltip("Temps en secondes à attendre AVANT de lancer la timeline de préparation du move")]
+    [Tooltip("Temps en secondes à attendre AVANT de lancer la timeline du move")]
     public float startDelay = 2f;
 
     [Header("Awake")]
@@ -315,14 +318,16 @@ public class MusicalMoveSO : ScriptableObject
     public AnimationClip preparingAnimation;
 
     [Header("Timeline")]
-    [Tooltip("Timeline jouée lors de la préparation du move")]
-    public TimelineAsset preparingTimeline;
     [Tooltip("Timeline d'exécution complète du move. Un Signal peut y être placé pour la mettre en pause en mode lent.")]
+    public TimelineAsset timeline;
+
+    [FormerlySerializedAs("preparingTimeline")]
+    [SerializeField, HideInInspector] private TimelineAsset legacyPreparingTimeline;
     [FormerlySerializedAs("performingTimelinePhase1")]
     [FormerlySerializedAs("performingTimeline")]
-    public TimelineAsset performingTimeline;
-    [Tooltip("Timeline jouée lors du repli après l'exécution du move")]
-    public TimelineAsset retreatTimeline;
+    [SerializeField, HideInInspector] private TimelineAsset legacyPerformingTimeline;
+    [FormerlySerializedAs("retreatTimeline")]
+    [SerializeField, HideInInspector] private TimelineAsset legacyRetreatTimeline;
 
     [Header("Motif de caméra")]
     [Tooltip("Motif utilisé dès la sélection du move et conservé jusqu'à un changement explicite.")]
@@ -343,6 +348,8 @@ public class MusicalMoveSO : ScriptableObject
 
     private void OnValidate()
     {
+        MigrateLegacyTimelines(markDirty: true);
+        MigrateLegacyTeleportVfx(markDirty: true);
         EnsureEffectsInitialized();
         var primaryEffect = GetPrimaryEffect();
         if (previousEffectType != primaryEffect.type)
@@ -496,8 +503,8 @@ public class MusicalMoveSO : ScriptableObject
         {
             if (preparationTurnCount <= 0)
                 Debug.LogWarning($"[MusicalMoveSO] preparationTurnCount <= 0 alors que la preparation est active pour '{name}'.", this);
-            if (preparingTimeline == null)
-                Debug.LogWarning($"[MusicalMoveSO] preparingTimeline manquante pour '{name}'.", this);
+            if (timeline == null)
+                Debug.LogWarning($"[MusicalMoveSO] timeline manquante pour '{name}'.", this);
         }
 
         if (castDistance < 0f)
@@ -517,6 +524,46 @@ public class MusicalMoveSO : ScriptableObject
             EditorUtility.SetDirty(this);
     }
 #endif
+
+    private void OnEnable()
+    {
+        MigrateLegacyTimelines(markDirty: false);
+        MigrateLegacyTeleportVfx(markDirty: false);
+    }
+
+    private void MigrateLegacyTimelines(bool markDirty)
+    {
+        if (timeline != null)
+            return;
+
+        timeline = legacyPerformingTimeline != null
+            ? legacyPerformingTimeline
+            : legacyPreparingTimeline != null
+                ? legacyPreparingTimeline
+                : legacyRetreatTimeline;
+
+#if UNITY_EDITOR
+        if (markDirty && timeline != null)
+            EditorUtility.SetDirty(this);
+#endif
+    }
+
+    private void MigrateLegacyTeleportVfx(bool markDirty)
+    {
+        if (tpVfx != null)
+            return;
+
+        tpVfx = legacyTpVfxStart != null ? legacyTpVfxStart : legacyTpVfxEnd;
+
+#if UNITY_EDITOR
+        if (markDirty && tpVfx != null)
+        {
+            legacyTpVfxStart = null;
+            legacyTpVfxEnd = null;
+            EditorUtility.SetDirty(this);
+        }
+#endif
+    }
 
     /// <summary>
     ///     Injecte automatiquement les conditions minimales d'échec de préparation.

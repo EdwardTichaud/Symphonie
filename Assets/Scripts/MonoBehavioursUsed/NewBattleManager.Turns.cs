@@ -262,9 +262,8 @@ public partial class NewBattleManager
         if (target == null)
             target = enemy.SelectTargetFromSquad();
 
-        // Anticipe le comportement d'animation de la cible : si le move
-        // dispose d'une timeline de préparation, on retarde sa posture
-        // défensive jusqu'à la fin de ladite timeline pour éviter un doublon.
+        // Anticipe le comportement d'animation de la cible pour éviter
+        // tout doublon pendant la mise en scène.
         RhythmQTEManager.Instance?.PrimeTargetPreparationAnimation(move);
 
         currentTargetCharacter = target;

@@ -16,9 +16,10 @@ MonoBehaviour:
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Déchaîne un final concentré infligeant environ 30 000 dégâts à une cible isolée."
+  description: "D\xE9cha\xEEne un final concentr\xE9 infligeant environ 30\u202F000
+    d\xE9g\xE2ts \xE0 une cible isol\xE9e."
   inventoryCategory: MusicalMove
-  inventorySummary: "Finisher ~30 000 dégâts (coût 2/2)."
+  inventorySummary: "Finisher ~30\u202F000 d\xE9g\xE2ts (co\xFBt 2/2)."
   consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 1
@@ -28,8 +29,13 @@ MonoBehaviour:
   harmonicGeneration: 0
   consumedHarmonicType: 0
   generatedHarmonicType: 0
-  effectType: 0
-  effectValue: 30000
+  effects:
+  - type: 0
+    value: 30000
+  legacyEffectType: 0
+  legacyEffectValue: 30000
+  passiveEffectPrefab: {fileID: 0}
+  passiveEffectVerticalOffset: 0.5
   buffStat: 0
   buffAmount: 0
   buffDuration: 0
@@ -38,6 +44,7 @@ MonoBehaviour:
   debuffAmount: 0
   debuffDuration: 0
   debuffIsPercentage: 0
+  previousEffectType: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 40
@@ -50,7 +57,7 @@ MonoBehaviour:
   altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
-  targetTypes: 01000000
+  usableOnDeathUnits: 0
   travelTime: 0
   legacyMoveSpeed: 0
   legacyMoveSpeedConverted: 1
@@ -60,17 +67,20 @@ MonoBehaviour:
   stayInPlace: 0
   interceptable: 1
   relativePosition: 0
-  tpVfx_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpSFx_Start: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
+  tpVfx: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
+  tpSFx_Start: {fileID: 11400000, guid: f1af91942dd63a04592a8b5811b7dc38, type: 2}
   tpSFx_End: {fileID: 0}
+  legacyTpVfxStart: {fileID: 0}
+  legacyTpVfxEnd: {fileID: 0}
   warningClip: {fileID: 0}
+  requiresPreparationBeforeExecution: 0
+  preparationTurnCount: 0
+  preparationFailureConditions: []
   startDelay: 0
   enterAwake: 0
-  preparingTimeline: {fileID: 11400000, guid: 8b121268222063b4989da9ded3770c89, type: 2}
-  performingTimeline: {fileID: 11400000, guid: b83f5d61e438b814f9280da6cf30b677, type: 2}
-  retreatTimeline: {fileID: 11400000, guid: 6437c7bb2b604fa4988c0e1be04bf1a1, type: 2}
-  preparingCameraRole: 5
-  preparingToPerformingCameraDelay: 0
-  performingCameraRole: 8
-  retreatCameraRole: 3
+  preparingAnimation: {fileID: 7400000, guid: 2e9a8743a906f2f4baf8f537e263eb05, type: 2}
+  timeline: {fileID: 11400000, guid: b83f5d61e438b814f9280da6cf30b677, type: 2}
+  legacyPreparingTimeline: {fileID: 11400000, guid: 8b121268222063b4989da9ded3770c89, type: 2}
+  legacyPerformingTimeline: {fileID: 11400000, guid: b83f5d61e438b814f9280da6cf30b677, type: 2}
+  legacyRetreatTimeline: {fileID: 11400000, guid: 6437c7bb2b604fa4988c0e1be04bf1a1, type: 2}
+  cameraMotif: {fileID: 11400000, guid: 97133ea71232b874697cc53aa5972364, type: 2}

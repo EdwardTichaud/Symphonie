@@ -26,8 +26,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1527689279322938828}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.73158675, z: -0, w: 0.68174845}
-  m_LocalPosition: {x: -4.987581, y: 1.4089999, z: 0.3521917}
+  m_LocalRotation: {x: -0, y: 0.98647463, z: -0, w: -0.1639145}
+  m_LocalPosition: {x: 1.616975, y: 1.4089999, z: 4.7313204}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -385,7 +385,7 @@ Animator:
   m_GameObject: {fileID: 7116927579078838884}
   m_Enabled: 1
   m_Avatar: {fileID: 0}
-  m_Controller: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: 02da9196e6724b143ad7eb2b90f67649, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
   m_ApplyRootMotion: 0
@@ -967,6 +967,18 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 1d1e3825f8c7283419be32e430926fdd, type: 2}
+    - target: {fileID: 7155491070153363530, guid: 4fa2d07fb903b884cbd61a57c5d40755, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 02da9196e6724b143ad7eb2b90f67649, type: 2}
+    - target: {fileID: 7155491070153363530, guid: 4fa2d07fb903b884cbd61a57c5d40755, type: 3}
+      propertyPath: m_WarningMessage
+      value: "\nBinding warning: Some generic clip(s) animate transforms that are
+        already bound by a Humanoid avatar. These transforms can only be changed
+        by Humanoid clips.\n\tTransform 'root'\n\tFrom animation clip 'Lucian_Resurection'\n\tFrom
+        animation clip 'Lucian_Death'\n\tFrom animation clip 'Lucian_Death'\n\tFrom
+        animation clip 'Lucian_Resurection'"
+      objectReference: {fileID: 0}
     - target: {fileID: 7490834768261205345, guid: 4fa2d07fb903b884cbd61a57c5d40755, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 

@@ -28,8 +28,11 @@ MonoBehaviour:
   harmonicGeneration: 0
   consumedHarmonicType: 0
   generatedHarmonicType: 0
-  effectType: 6
-  effectValue: 2
+  effects:
+  - type: 6
+    value: 2
+  legacyEffectType: 6
+  legacyEffectValue: 2
   passiveEffectPrefab: {fileID: 0}
   passiveEffectVerticalOffset: 0.5
   buffStat: 0
@@ -40,6 +43,7 @@ MonoBehaviour:
   debuffAmount: 0
   debuffDuration: 0
   debuffIsPercentage: 0
+  previousEffectType: 6
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 0
@@ -52,7 +56,7 @@ MonoBehaviour:
   altitudeCondition: 1
   targetType: 1
   defaultTargetType: 1
-  targetTypes: 01000000
+  usableOnDeathUnits: 0
   travelTime: 0
   legacyMoveSpeed: 0
   legacyMoveSpeedConverted: 1
@@ -62,18 +66,20 @@ MonoBehaviour:
   stayInPlace: 0
   interceptable: 1
   relativePosition: 0
-  tpVfx_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpSFx_Start: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
+  tpVfx: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
+  tpSFx_Start: {fileID: 11400000, guid: f1af91942dd63a04592a8b5811b7dc38, type: 2}
   tpSFx_End: {fileID: 0}
+  legacyTpVfxStart: {fileID: 0}
+  legacyTpVfxEnd: {fileID: 0}
   warningClip: {fileID: 0}
+  requiresPreparationBeforeExecution: 0
+  preparationTurnCount: 0
+  preparationFailureConditions: []
   startDelay: 0
   enterAwake: 0
-  preparingAnimation: {fileID: 0}
-  preparingTimeline: {fileID: 11400000, guid: 4fa946d42fae10b48bc20bf37f9fc9eb, type: 2}
-  performingTimeline: {fileID: 11400000, guid: 332f64de2f14fea46b6df0d3bc73ee75, type: 2}
-  retreatTimeline: {fileID: 11400000, guid: 6a4db7511b8746ba8691a69e98b72803, type: 2}
-  preparingCameraRole: 2
-  preparingToPerformingCameraDelay: 0
-  performingCameraRole: 2
-  retreatCameraRole: 4
+  preparingAnimation: {fileID: 7400000, guid: 2e9a8743a906f2f4baf8f537e263eb05, type: 2}
+  timeline: {fileID: 11400000, guid: 332f64de2f14fea46b6df0d3bc73ee75, type: 2}
+  legacyPreparingTimeline: {fileID: 11400000, guid: 4fa946d42fae10b48bc20bf37f9fc9eb, type: 2}
+  legacyPerformingTimeline: {fileID: 11400000, guid: 332f64de2f14fea46b6df0d3bc73ee75, type: 2}
+  legacyRetreatTimeline: {fileID: 11400000, guid: 6a4db7511b8746ba8691a69e98b72803, type: 2}
+  cameraMotif: {fileID: 11400000, guid: 97133ea71232b874697cc53aa5972364, type: 2}

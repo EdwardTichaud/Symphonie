@@ -11,14 +11,16 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8caee409dd862bf429bf43fff5538c9f, type: 3}
   m_Name: MusicalMove_FinaleDeLaFratrie_Lumiere
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: 
   moveName: Finale de la Fratrie
   moveType: 1
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Climax narratif infligeant ~28 000 dégâts à une cible, soigne 10 000 PV aux alliés et laisse +1 Harmonie durable."
+  description: "Climax narratif infligeant ~28\u202F000 d\xE9g\xE2ts \xE0 une cible,
+    soigne 10\u202F000 PV aux alli\xE9s et laisse +1 Harmonie durable."
   inventoryCategory: MusicalMove
-  inventorySummary: "28 000 dégâts + 10 000 soins d’équipe et +1 Harmonie."
+  inventorySummary: "28\u202F000 d\xE9g\xE2ts + 10\u202F000 soins d\u2019\xE9quipe
+    et +1 Harmonie."
   consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 1
@@ -28,8 +30,13 @@ MonoBehaviour:
   harmonicGeneration: 1
   consumedHarmonicType: 0
   generatedHarmonicType: 0
-  effectType: 0
-  effectValue: 28000
+  effects:
+  - type: 0
+    value: 28000
+  legacyEffectType: 0
+  legacyEffectValue: 28000
+  passiveEffectPrefab: {fileID: 0}
+  passiveEffectVerticalOffset: 0.5
   buffStat: 0
   buffAmount: 0
   buffDuration: 0
@@ -38,6 +45,7 @@ MonoBehaviour:
   debuffAmount: 0
   debuffDuration: 0
   debuffIsPercentage: 0
+  previousEffectType: 0
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -50,7 +58,7 @@ MonoBehaviour:
   altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
-  targetTypes: 01000000
+  usableOnDeathUnits: 0
   travelTime: 0
   legacyMoveSpeed: 0
   legacyMoveSpeedConverted: 1
@@ -60,18 +68,20 @@ MonoBehaviour:
   stayInPlace: 0
   interceptable: 1
   relativePosition: 0
-  tpVfx_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpSFx_Start: {fileID: 0}
+  tpVfx: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
+  tpSFx_Start: {fileID: 11400000, guid: f1af91942dd63a04592a8b5811b7dc38, type: 2}
   tpSFx_End: {fileID: 0}
+  legacyTpVfxStart: {fileID: 0}
+  legacyTpVfxEnd: {fileID: 0}
   warningClip: {fileID: 0}
+  requiresPreparationBeforeExecution: 0
+  preparationTurnCount: 0
+  preparationFailureConditions: []
   startDelay: 0
   enterAwake: 0
-  preparingAnimation: {fileID: 0}
-  preparingTimeline: {fileID: 0}
-  performingTimeline: {fileID: 0}
-  retreatTimeline: {fileID: 0}
-  preparingCameraRole: 5
-  preparingToPerformingCameraDelay: 0
-  performingCameraRole: 2
-  retreatCameraRole: 3
+  preparingAnimation: {fileID: 7400000, guid: 2e9a8743a906f2f4baf8f537e263eb05, type: 2}
+  timeline: {fileID: 0}
+  legacyPreparingTimeline: {fileID: 0}
+  legacyPerformingTimeline: {fileID: 0}
+  legacyRetreatTimeline: {fileID: 0}
+  cameraMotif: {fileID: 11400000, guid: 97133ea71232b874697cc53aa5972364, type: 2}

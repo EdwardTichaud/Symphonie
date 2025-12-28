@@ -19,6 +19,18 @@ using System.Linq;
 public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, IDebuffable
 {
     public CharacterData Data;
+    private const string DeathStateName = "Death";
+    private const string ResurectionStateName = "Resurection";
+    private const string HitFrontStateName = "Hit_Front";
+    private const string HitBackStateName = "Hit_Back";
+    private const string HitLeftStateName = "Hit_Left";
+    private const string HitRightStateName = "Hit_Right";
+    private static readonly int DeathStateShortHash = Animator.StringToHash(DeathStateName);
+    private static readonly int ResurectionStateShortHash = Animator.StringToHash(ResurectionStateName);
+    private static readonly int HitFrontStateShortHash = Animator.StringToHash(HitFrontStateName);
+    private static readonly int HitBackStateShortHash = Animator.StringToHash(HitBackStateName);
+    private static readonly int HitLeftStateShortHash = Animator.StringToHash(HitLeftStateName);
+    private static readonly int HitRightStateShortHash = Animator.StringToHash(HitRightStateName);
 
     [Header("UI Components")]
     /// <summary>
@@ -1426,7 +1438,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         Debug.Log(this + " handleDeath called, playing death animation.");
         if (animator != null)
         {
-            animator.Play("Death");
+            if (!TryPlayStateOnAllLayers(animator, DeathStateName, DeathStateShortHash))
+                Debug.LogWarning($"[CharacterUnit] Etat Animator '{DeathStateName}' introuvable pour {name}.");
         }
         NewBattleManager.Instance.RemoveFromTimeline(this);
         NewBattleManager.Instance.activeCharacterUnits.Remove(this); // facultatif
@@ -1450,6 +1463,44 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         }
 
         OnDeath?.Invoke(this);
+    }
+
+    public void PlayResurection()
+    {
+        Animator animator = GetCasterAnimator();
+        if (animator == null)
+            return;
+
+        if (!TryPlayStateOnAllLayers(animator, ResurectionStateName, ResurectionStateShortHash))
+            Debug.LogWarning($"[CharacterUnit] Etat Animator '{ResurectionStateName}' introuvable pour {name}.");
+    }
+
+    private bool TryPlayStateOnAllLayers(Animator animator, string stateName, int shortHash)
+    {
+        if (animator == null)
+            return false;
+
+        bool played = false;
+        int layerCount = animator.layerCount;
+        for (int layer = 0; layer < layerCount; layer++)
+        {
+            string layerName = animator.GetLayerName(layer);
+            int fullHash = Animator.StringToHash($"{layerName}.{stateName}");
+            if (animator.HasState(layer, fullHash))
+            {
+                animator.CrossFade(fullHash, 0.05f, layer, 0f);
+                played = true;
+                continue;
+            }
+
+            if (animator.HasState(layer, shortHash))
+            {
+                animator.CrossFade(shortHash, 0.05f, layer, 0f);
+                played = true;
+            }
+        }
+
+        return played;
     }
 
     void PlayAllyWeep()
@@ -1757,31 +1808,37 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             float angle = Vector3.SignedAngle(transform.forward, direction, Vector3.up);
 
             // Nom de l'état à jouer. Par défaut on considère une attaque de face.
-            string state = "Hit_F";
+            string state = HitFrontStateName;
+            int stateHash = HitFrontStateShortHash;
 
             // Avant : angle proche de 0°
             if (Mathf.Abs(angle) <= 45f)
             {
-                state = "Hit_F";
+                state = HitFrontStateName;
+                stateHash = HitFrontStateShortHash;
             }
             // Arrière : angle > 135° ou < -135°
             else if (Mathf.Abs(angle) > 135f)
             {
-                state = "Hit_B";
+                state = HitBackStateName;
+                stateHash = HitBackStateShortHash;
             }
             // Droite : angle positif (attaque venant de la droite)
             else if (angle > 0f)
             {
-                state = "Hit_R";
+                state = HitRightStateName;
+                stateHash = HitRightStateShortHash;
             }
             // Gauche : angle négatif
             else
             {
-                state = "Hit_L";
+                state = HitLeftStateName;
+                stateHash = HitLeftStateShortHash;
             }
 
-            // Lance l'animation correspondante dans l'Animator
-            animator.CrossFade(state, 0.05f);
+            // Lance l'animation correspondante dans l'Animator sur tous les layers
+            if (!TryPlayStateOnAllLayers(animator, state, stateHash))
+                Debug.LogWarning($"[CharacterUnit] Etat Animator '{state}' introuvable pour {name}.");
             return;
         }
 

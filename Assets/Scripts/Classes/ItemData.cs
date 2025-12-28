@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.Timeline;
 using UnityEngine.Serialization;
 using System.Collections.Generic;
 #if UNITY_EDITOR
@@ -189,38 +188,35 @@ public class ItemData : ScriptableObject
     public bool usableOnDeathUnits = false;
 
     [Header("Téléportation")]
-    // Effet visuel déclenché au départ du téléport
-    public GameObject tpVfx_Start;
-    // Effet visuel déclenché à l'arrivée du téléport
-    public GameObject tpVfx_End;
+    // Effet visuel déclenché au départ et à l'arrivée du téléport
+    public GameObject tpVfx;
     // Son joué au départ du téléport
     public AudioClipSO tpSFx_Start;
     // Son joué à l'arrivée du téléport
     public AudioClipSO tpSFx_End;
 
-    [Header("Timeline")]
-    [Tooltip("Timeline jouée lors de la préparation de l'item")]
-    public TimelineAsset preparingTimeline;
-    [Tooltip("Timeline complète d'utilisation. Un Signal peut y suspendre l'action en mode lent.")]
-    [FormerlySerializedAs("performingTimelinePhase1")]
-    [FormerlySerializedAs("performingTimeline")]
-    public TimelineAsset performingTimeline;
-    [Tooltip("Timeline jouée lors du repli après utilisation")]
-    public TimelineAsset retreatTimeline;
+    [FormerlySerializedAs("tpVfx_Start")]
+    [SerializeField, HideInInspector] private GameObject legacyTpVfxStart;
+    [FormerlySerializedAs("tpVfx_End")]
+    [SerializeField, HideInInspector] private GameObject legacyTpVfxEnd;
 
-    [Header("Motifs de caméra")]
-    [Tooltip("Motif utilisé lors de la préparation de l'item.")]
-    public CameraMotifSO preparingCameraMotif;
-    [Tooltip("Motif utilisé pendant l'utilisation de l'item.")]
-    public CameraMotifSO performingCameraMotif;
-    [Tooltip("Motif utilisé lors du repli après utilisation.")]
-    public CameraMotifSO retreatCameraMotif;
-
-    [Header("Transitions de motif")]
+    [Header("VFX")]
+    [Tooltip("VFX instancié lors de l'utilisation de l'item.")]
+    public GameObject itemVFX;
     [Min(0f)]
-    [Tooltip("Durée (en secondes) durant laquelle le motif de préparation reste actif avant de passer au motif d'utilisation.")]
-    [FormerlySerializedAs("preparingToPerformingCameraDelay")]
-    public float preparingToPerformingMotifDelay = 0f;
+    [Tooltip("Délai (en secondes) avant d'instancier le VFX après le début de l'animation.")]
+    public float vfxDelay = 0f;
+
+    [Header("Motif de caméra")]
+    [Tooltip("Motif utilisé pendant toute l'utilisation de l'item.")]
+    public CameraMotifSO cameraMotif;
+
+    [FormerlySerializedAs("preparingCameraMotif")]
+    [SerializeField, HideInInspector] private CameraMotifSO legacyPreparingCameraMotif;
+    [FormerlySerializedAs("performingCameraMotif")]
+    [SerializeField, HideInInspector] private CameraMotifSO legacyPerformingCameraMotif;
+    [FormerlySerializedAs("retreatCameraMotif")]
+    [SerializeField, HideInInspector] private CameraMotifSO legacyRetreatCameraMotif;
 
 #if UNITY_EDITOR
     // ------------------------------------------------------------------
@@ -235,19 +231,18 @@ public class ItemData : ScriptableObject
     private void OnValidate()
     {
         EnsureEffectsInitialized();
+        MigrateLegacyCameraMotif(markDirty: true);
+        MigrateLegacyTeleportVfx(markDirty: true);
 
         // Récupère l'Item de référence. Si introuvable, on ne fait rien pour
         // éviter les messages d'erreur intempestifs.
         var reference = AssetDatabase.LoadAssetAtPath<ItemData>(LONGUE_PORTEE_PATH);
         if (reference != null)
         {
+            reference.MigrateLegacyCameraMotif(markDirty: false);
             // Applique les valeurs par défaut uniquement si les champs sont vides.
-            if (preparingCameraMotif == null)
-                preparingCameraMotif = reference.preparingCameraMotif;
-            if (performingCameraMotif == null)
-                performingCameraMotif = reference.performingCameraMotif;
-            if (retreatCameraMotif == null)
-                retreatCameraMotif = reference.retreatCameraMotif;
+            if (cameraMotif == null)
+                cameraMotif = reference.cameraMotif;
         }
 
         ValidateConfiguration();
@@ -341,6 +336,51 @@ public class ItemData : ScriptableObject
             EditorUtility.SetDirty(this);
     }
 #endif
+
+    private void OnEnable()
+    {
+        MigrateLegacyCameraMotif(markDirty: false);
+        MigrateLegacyTeleportVfx(markDirty: false);
+    }
+
+    private void MigrateLegacyCameraMotif(bool markDirty)
+    {
+        if (cameraMotif != null)
+            return;
+
+        cameraMotif = legacyPerformingCameraMotif != null
+            ? legacyPerformingCameraMotif
+            : legacyPreparingCameraMotif != null
+                ? legacyPreparingCameraMotif
+                : legacyRetreatCameraMotif;
+
+#if UNITY_EDITOR
+        if (markDirty && cameraMotif != null)
+        {
+            legacyPreparingCameraMotif = null;
+            legacyPerformingCameraMotif = null;
+            legacyRetreatCameraMotif = null;
+            EditorUtility.SetDirty(this);
+        }
+#endif
+    }
+
+    private void MigrateLegacyTeleportVfx(bool markDirty)
+    {
+        if (tpVfx != null)
+            return;
+
+        tpVfx = legacyTpVfxStart != null ? legacyTpVfxStart : legacyTpVfxEnd;
+
+#if UNITY_EDITOR
+        if (markDirty && tpVfx != null)
+        {
+            legacyTpVfxStart = null;
+            legacyTpVfxEnd = null;
+            EditorUtility.SetDirty(this);
+        }
+#endif
+    }
 
     [Header("QTE Pattern")]
     public List<float> beatPattern;

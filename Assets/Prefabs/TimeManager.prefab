@@ -48,3 +48,57 @@ MonoBehaviour:
   slowMotionScale: 0.5
   fixedDeltaTimeNormal: 0.02
   transitionDuration: 0.5
+  slowMotionStartClip: {fileID: 0}
+  slowMotionSustainClip: {fileID: 0}
+  normalTimeClip: {fileID: 0}
+  pauseAction:
+    m_Name: Pause
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: bc2e6374-2eec-43e6-8569-dfd23632f97c
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 770c8dde-9012-4ed3-813a-e2abd97eca01
+      m_Path: <Keyboard>/p
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Pause
+      m_Flags: 0
+    m_Flags: 0
+  logTimeScaleAction:
+    m_Name: Log Time Scale
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: 6d32dde4-b0b5-4342-b27d-ae0e81dafc14
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 252eb579-d2cb-44c1-9b8b-e4d38e911041
+      m_Path: <Keyboard>/t
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Log Time Scale
+      m_Flags: 0
+    m_Flags: 0
+  slowMotionAction:
+    m_Name: Slow Motion
+    m_Type: 1
+    m_ExpectedControlType: 
+    m_Id: fa3c6899-bff8-4a97-abae-8eda32f4a117
+    m_Processors: 
+    m_Interactions: 
+    m_SingletonActionBindings:
+    - m_Name: 
+      m_Id: 394169c0-978e-4505-be27-3e123f1f4f90
+      m_Path: <Keyboard>/o
+      m_Interactions: 
+      m_Processors: 
+      m_Groups: 
+      m_Action: Slow Motion
+      m_Flags: 0
+    m_Flags: 0

@@ -16,9 +16,10 @@ MonoBehaviour:
   moveType: 4
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Appose le glyphe Presto : la cible lance une attaque basique après chaque tour jusqu'au retour du lanceur."
+  description: "Appose le glyphe Presto : la cible lance une attaque basique apr\xE8s
+    chaque tour jusqu'au retour du lanceur."
   inventoryCategory: MusicalMove
-  inventorySummary: "Glyphe Presto : attaques automatiques forcées."
+  inventorySummary: "Glyphe Presto : attaques automatiques forc\xE9es."
   consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 1
@@ -28,10 +29,13 @@ MonoBehaviour:
   harmonicGeneration: 0
   consumedHarmonicType: 0
   generatedHarmonicType: 0
-  effectType: 10
+  effects:
+  - type: 10
+    value: 10
+  legacyEffectType: 10
+  legacyEffectValue: 0
   passiveEffectPrefab: {fileID: 1144090914521784546, guid: f066fb66a808fc448b02dcc7477eeeb5, type: 3}
   passiveEffectVerticalOffset: 0
-  effectValue: 0
   buffStat: 0
   buffAmount: 0
   buffDuration: 0
@@ -40,6 +44,7 @@ MonoBehaviour:
   debuffAmount: 0
   debuffDuration: 0
   debuffIsPercentage: 0
+  previousEffectType: 10
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 20
@@ -52,7 +57,7 @@ MonoBehaviour:
   altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
-  targetTypes: 01000000
+  usableOnDeathUnits: 0
   travelTime: 0.05
   legacyMoveSpeed: 20
   legacyMoveSpeedConverted: 1
@@ -62,17 +67,20 @@ MonoBehaviour:
   stayInPlace: 0
   interceptable: 1
   relativePosition: 0
-  tpVfx_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpSFx_Start: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
+  tpVfx: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
+  tpSFx_Start: {fileID: 11400000, guid: f1af91942dd63a04592a8b5811b7dc38, type: 2}
   tpSFx_End: {fileID: 0}
+  legacyTpVfxStart: {fileID: 0}
+  legacyTpVfxEnd: {fileID: 0}
   warningClip: {fileID: 0}
+  requiresPreparationBeforeExecution: 0
+  preparationTurnCount: 0
+  preparationFailureConditions: []
   startDelay: 0
   enterAwake: 0
-  preparingTimeline: {fileID: 11400000, guid: b8a8c5b34bf64628b2b22362cedf92ee, type: 2}
-  performingTimeline: {fileID: 0}
-  retreatTimeline: {fileID: 11400000, guid: 546347c1bff444e590bf007d6660cb24, type: 2}
-  preparingCameraRole: 5
-  preparingToPerformingCameraDelay: 0
-  performingCameraRole: 2
-  retreatCameraRole: 4
+  preparingAnimation: {fileID: 7400000, guid: 2e9a8743a906f2f4baf8f537e263eb05, type: 2}
+  timeline: {fileID: 11400000, guid: b8a8c5b34bf64628b2b22362cedf92ee, type: 2}
+  legacyPreparingTimeline: {fileID: 11400000, guid: b8a8c5b34bf64628b2b22362cedf92ee, type: 2}
+  legacyPerformingTimeline: {fileID: 0}
+  legacyRetreatTimeline: {fileID: 11400000, guid: 546347c1bff444e590bf007d6660cb24, type: 2}
+  cameraMotif: {fileID: 11400000, guid: 97133ea71232b874697cc53aa5972364, type: 2}

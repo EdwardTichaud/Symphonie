@@ -106,6 +106,7 @@ public static class ItemEffectExecutor
             target.hpBar.SetValue(target.currentHP);
 
         DamagePopupManager.Instance?.ShowHeal(target.transform, Mathf.RoundToInt(target.currentHP));
+        target.PlayResurection();
     }
 
     private static void ApplyBuff(ItemData item, CharacterUnit target)

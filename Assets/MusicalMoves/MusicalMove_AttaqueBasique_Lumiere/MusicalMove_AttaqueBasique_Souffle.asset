@@ -56,6 +56,7 @@ MonoBehaviour:
   altitudeCondition: 0
   targetType: 1
   defaultTargetType: 1
+  usableOnDeathUnits: 0
   travelTime: 0.5
   legacyMoveSpeed: 0
   legacyMoveSpeedConverted: 1
@@ -65,18 +66,20 @@ MonoBehaviour:
   stayInPlace: 0
   interceptable: 1
   relativePosition: 0
-  tpVfx_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpSFx_Start: {fileID: 0}
+  tpVfx: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
+  tpSFx_Start: {fileID: 11400000, guid: f1af91942dd63a04592a8b5811b7dc38, type: 2}
   tpSFx_End: {fileID: 0}
+  legacyTpVfxStart: {fileID: 0}
+  legacyTpVfxEnd: {fileID: 0}
   warningClip: {fileID: 0}
   requiresPreparationBeforeExecution: 0
   preparationTurnCount: 0
   preparationFailureConditions: []
   startDelay: 0
   enterAwake: 0
-  preparingAnimation: {fileID: 7400000, guid: b7036298c1ee56c42b7235c2636f27c9, type: 3}
-  preparingTimeline: {fileID: 11400000, guid: cbb447e9d02d47e489dba80576f2f172, type: 2}
-  performingTimeline: {fileID: 0}
-  retreatTimeline: {fileID: 11400000, guid: 7941d1d99c644d648821c9923267c146, type: 2}
+  preparingAnimation: {fileID: 7400000, guid: 2e9a8743a906f2f4baf8f537e263eb05, type: 2}
+  timeline: {fileID: 11400000, guid: cbb447e9d02d47e489dba80576f2f172, type: 2}
+  legacyPreparingTimeline: {fileID: 11400000, guid: cbb447e9d02d47e489dba80576f2f172, type: 2}
+  legacyPerformingTimeline: {fileID: 0}
+  legacyRetreatTimeline: {fileID: 11400000, guid: 7941d1d99c644d648821c9923267c146, type: 2}
   cameraMotif: {fileID: 11400000, guid: 97133ea71232b874697cc53aa5972364, type: 2}

@@ -16,9 +16,10 @@ MonoBehaviour:
   moveType: 4
   onlyAwake: 0
   moveIcon: {fileID: 21300000, guid: ce91bdc56c840414db431f433e0d249a, type: 3}
-  description: "Force la cible à flotter pendant deux tours, exposant ses défenses au jeu aérien."
+  description: "Force la cible \xE0 flotter pendant deux tours, exposant ses d\xE9fenses
+    au jeu a\xE9rien."
   inventoryCategory: MusicalMove
-  inventorySummary: "Suspend un ennemi (2 tours)."
+  inventorySummary: Suspend un ennemi (2 tours).
   consumeOnUse: 0
   recommendedMusicalMoves: []
   stayFaceToTarget: 0
@@ -28,8 +29,13 @@ MonoBehaviour:
   harmonicGeneration: 0
   consumedHarmonicType: 0
   generatedHarmonicType: 0
-  effectType: 9
-  effectValue: 2
+  effects:
+  - type: 9
+    value: 10
+  legacyEffectType: 9
+  legacyEffectValue: 2
+  passiveEffectPrefab: {fileID: 0}
+  passiveEffectVerticalOffset: 0.5
   buffStat: 0
   buffAmount: 0
   buffDuration: 0
@@ -38,6 +44,7 @@ MonoBehaviour:
   debuffAmount: 0
   debuffDuration: 0
   debuffIsPercentage: 0
+  previousEffectType: 9
   useCriticalVariant: 0
   criticalEffectType: 0
   criticalEffectValue: 0
@@ -50,7 +57,7 @@ MonoBehaviour:
   altitudeCondition: 2
   targetType: 1
   defaultTargetType: 1
-  targetTypes: 01000000
+  usableOnDeathUnits: 0
   travelTime: 0.075
   legacyMoveSpeed: 20
   legacyMoveSpeedConverted: 1
@@ -60,17 +67,20 @@ MonoBehaviour:
   stayInPlace: 0
   interceptable: 1
   relativePosition: 0
-  tpVfx_Start: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpVfx_End: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
-  tpSFx_Start: {fileID: 8300000, guid: c013e2c53abacf64caa2b97855ff09da, type: 3}
+  tpVfx: {fileID: 6184656141151889893, guid: fd3bb88cc4cdc8948a3f71e9353dfec9, type: 3}
+  tpSFx_Start: {fileID: 11400000, guid: f1af91942dd63a04592a8b5811b7dc38, type: 2}
   tpSFx_End: {fileID: 0}
+  legacyTpVfxStart: {fileID: 0}
+  legacyTpVfxEnd: {fileID: 0}
   warningClip: {fileID: 0}
+  requiresPreparationBeforeExecution: 0
+  preparationTurnCount: 0
+  preparationFailureConditions: []
   startDelay: 0
   enterAwake: 0
-  preparingTimeline: {fileID: 11400000, guid: ed3f077916ed402aa8ab20f37f80a715, type: 2}
-  performingTimeline: {fileID: 0}
-  retreatTimeline: {fileID: 11400000, guid: 2e87898e803b459abd981f97ea7e1a69, type: 2}
-  preparingCameraRole: 5
-  preparingToPerformingCameraDelay: 0
-  performingCameraRole: 2
-  retreatCameraRole: 3
+  preparingAnimation: {fileID: 7400000, guid: 2e9a8743a906f2f4baf8f537e263eb05, type: 2}
+  timeline: {fileID: 11400000, guid: 332f64de2f14fea46b6df0d3bc73ee75, type: 2}
+  legacyPreparingTimeline: {fileID: 11400000, guid: ed3f077916ed402aa8ab20f37f80a715, type: 2}
+  legacyPerformingTimeline: {fileID: 0}
+  legacyRetreatTimeline: {fileID: 11400000, guid: 2e87898e803b459abd981f97ea7e1a69, type: 2}
+  cameraMotif: {fileID: 11400000, guid: 97133ea71232b874697cc53aa5972364, type: 2}

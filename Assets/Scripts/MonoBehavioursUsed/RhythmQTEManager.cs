@@ -67,6 +67,8 @@ public class RhythmQTEManager : MonoBehaviour
     // Durée par défaut utilisée si aucun délai n'est défini dans les données
     // Conserve l'ancien comportement en cas d'oubli de paramétrage
     private const float defaultTeleportDelay = 0.2f;
+    private const string ItemUseStateName = "Item_Use";
+    private static readonly int AnimatorStateItemUseShortHash = Animator.StringToHash(ItemUseStateName);
 
     [Header("Déplacements")]
     [Tooltip("Particules instanciées lors d'un déplacement classique afin d'accentuer la sensation de dash.")]
@@ -320,9 +322,9 @@ public class RhythmQTEManager : MonoBehaviour
 
     // Séquence du Musicalmove - Ajouter autant de méthodes que d'effets durant le move
     /// <summary>
-    /// Indique si l'animation « PrepareToUndergo » doit être retardée pour la cible
-    /// tant que la timeline de préparation du lanceur n'est pas terminée.
-    /// Cette information est exposée afin que les autres gestionnaires (comme
+    /// Indique si l'animation « PrepareToUndergo » doit être retardée pour la cible.
+    /// Avec une timeline unique, ce drapeau reste désactivé.
+    /// Cette information reste exposée afin que les autres gestionnaires (comme
     /// le NewBattleManager) puissent synchroniser leurs propres feedbacks visuels.
     /// </summary>
     public bool ShouldDelayTargetPreparationAnimation => delayTargetPreparationAnimationForCurrentMove;
@@ -334,13 +336,9 @@ public class RhythmQTEManager : MonoBehaviour
     /// <param name="upcomingMove">Move qui va être exécuté (peut être nul).</param>
     public void PrimeTargetPreparationAnimation(MusicalMoveSO upcomingMove)
     {
-        // On mémorise si l'animation « PrepareToUndergo » doit patienter
-        // jusqu'à la fin de la timeline de préparation du lanceur. Sans
-        // cette anticipation, la cible jouerait sa posture défensive dès
-        // l'assignation par le BattleManager, puis une seconde fois à la fin
-        // de ladite timeline, créant un doublon visuel.
-        bool shouldDelay = upcomingMove != null && upcomingMove.preparingTimeline != null;
-        delayTargetPreparationAnimationForCurrentMove = shouldDelay;
+        // Avec une timeline unique, l'animation de préparation peut rester
+        // immédiate : aucune phase préalable ne vient la décaler.
+        delayTargetPreparationAnimationForCurrentMove = false;
     }
 
     /// <summary>
@@ -363,9 +361,8 @@ public class RhythmQTEManager : MonoBehaviour
         successResults = new List<bool>();
 
         // Position et rotation initiales du lanceur avant tout déplacement.
-        // La rotation capturée ici (début de la phase de préparation) servira de
-        // référence pour la caméra jusqu'à la fin du move, quel que soit le
-        // nombre de timelines jouées.
+        // La rotation capturée ici (début de la séquence) servira de
+        // référence pour la caméra jusqu'à la fin du move.
         Vector3 originPosition = caster != null ? caster.transform.position : Vector3.zero;
         Quaternion initialRotation = caster != null ? caster.transform.rotation : Quaternion.identity;
 
@@ -387,22 +384,12 @@ public class RhythmQTEManager : MonoBehaviour
                 tauntPlayed = true;
             }
         };
-        // Lorsque l'on dispose d'une timeline de préparation, on retarde la posture
-        // défensive de la cible afin de ne pas parasiter la mise en scène du lanceur.
-        bool delayTargetPreparationAnimation = move != null && move.preparingTimeline != null;
-        delayTargetPreparationAnimationForCurrentMove = delayTargetPreparationAnimation;
+        // La posture défensive de la cible peut démarrer immédiatement avec la timeline unique.
+        delayTargetPreparationAnimationForCurrentMove = false;
         if (target != null)
         {
             target.OnDeath += deathHandler;
-
-            // 🛡️ Lorsque le lanceur ne dispose pas de timeline de préparation, on affiche
-            // immédiatement la posture défensive de la cible pour conserver un feedback
-            // réactif. Dans le cas contraire, l'animation sera déclenchée une fois la
-            // timeline terminée afin d'éviter un chevauchement visuel avec la mise en scène.
-            if (!delayTargetPreparationAnimation)
-            {
-                target.PlayPrepareToUndergoAnimation();
-            }
+            target.PlayPrepareToUndergoAnimation();
         }
         GameObject casterAnimatorGO = caster.GetCasterBindingTarget();
 
@@ -431,34 +418,14 @@ public class RhythmQTEManager : MonoBehaviour
         // 🔄 Cette attente se produit désormais AVANT toute timeline
         //     afin d'éviter un à-coup juste avant la téléportation.
         //     Elle laisse ainsi le temps de mettre en place des effets
-        //     ou des annonces avant même le début de la préparation.
+        //     ou des annonces avant même le début du move.
         if (move.startDelay > 0f)
         {
-            // Délai en temps réel afin que la préparation commence au bon moment même en pause.
+            // Délai en temps réel afin que la séquence commence au bon moment même en pause.
             yield return new WaitForSecondsRealtime(move.startDelay);
         }
 
         // L'ancienne timeline globale de caméra est désactivée.
-
-        // --- Phase de préparation ---
-        StartTimelinePhase(
-            move.preparingTimeline,
-            useOverlay,
-            caster,
-            casterAnimatorGO,
-            casterCameraTarget,
-            move.performingTimeline == null && move.retreatTimeline == null,
-            initialRotation);
-        yield return WaitForTimelinePhase(move.preparingTimeline, useOverlay, caster);
-
-        // 🎬 Si une timeline de préparation vient de s'achever, on enchaîne maintenant
-        // avec la posture « PrepareToUndergo » de la cible. Cela garantit que la
-        // mise en scène du lanceur reste prioritaire, tout en conservant un retour
-        // visuel clair pour l'unité qui s'apprête à subir l'attaque.
-        if (delayTargetPreparationAnimation && target != null)
-        {
-            target.PlayPrepareToUndergoAnimation();
-        }
 
         // Déplacement ou téléportation vers la cible si nécessaire.
         if (move.requiresMovement && caster != null && target != null)
@@ -474,17 +441,17 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = dir; // Applique uniquement la rotation horizontale
         }
 
-        // --- Phase d'exécution ---
-        TimelineAsset performingTimeline = move.performingTimeline;
+        // --- Timeline du move ---
+        TimelineAsset actionTimeline = move.timeline;
 
-        // La timeline d'exécution démarre immédiatement après la préparation.
+        // La timeline démarre immédiatement après le déplacement.
         StartTimelinePhase(
-            performingTimeline,
+            actionTimeline,
             useOverlay,
             caster,
             casterAnimatorGO,
             performingCameraTarget,
-            move.retreatTimeline == null,
+            true,
             initialRotation);
 
         if (pendingNotes == 0)
@@ -511,14 +478,14 @@ public class RhythmQTEManager : MonoBehaviour
             }
         }
 
-        yield return WaitForTimelinePhase(performingTimeline, useOverlay, caster);
+        yield return WaitForTimelinePhase(actionTimeline, useOverlay, caster);
 
         bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
 
-        bool performingPaused =
+        bool timelinePaused =
             BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePaused(caster);
 
-        if (performingPaused)
+        if (timelinePaused)
         {
             // 🚦 Une timeline peut encore être suspendue par des Signaux hérités de l'ancien mode lent ;
             //     nous la relançons donc immédiatement via le gestionnaire principal afin de prévenir
@@ -529,17 +496,6 @@ public class RhythmQTEManager : MonoBehaviour
         // --- Retour ou téléportation de repli ---
         if (move.requiresMovement && !move.stayInPlace && caster != null && target != null)
             yield return ReturnToInitialPosition(move, caster, target, originPosition);
-
-        // --- Phase de repli ---
-        StartTimelinePhase(
-            move.retreatTimeline,
-            useOverlay,
-            caster,
-            casterAnimatorGO,
-            casterCameraTarget,
-            true,
-            initialRotation);
-        yield return WaitForTimelinePhase(move.retreatTimeline, useOverlay, caster);
 
         BattleCameraManager.Instance?.UnlockCameraMotif();
 
@@ -578,7 +534,7 @@ public class RhythmQTEManager : MonoBehaviour
         isActive = true;
 
         // Position et rotation de départ du lanceur avant toute animation.
-        // La rotation enregistrée ici au tout début de la phase de préparation
+        // La rotation enregistrée ici au tout début de la séquence
         // est réutilisée pour l'intégralité de l'utilisation de l'objet afin de
         // conserver une orientation de caméra stable.
         Vector3 originPosition = caster != null ? caster.transform.position : Vector3.zero;
@@ -595,8 +551,8 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         
-        Animator animator = caster.GetCasterAnimator();
-        GameObject casterAnimatorGO = animator != null ? animator.gameObject : null;
+        Animator casterAnimator = caster.GetCasterAnimator();
+        GameObject casterAnimatorGO = casterAnimator != null ? casterAnimator.gameObject : null;
 
         GameObject casterCameraTarget = casterAnimatorGO ?? caster.gameObject;
         GameObject performingCameraTarget = target != null
@@ -608,18 +564,6 @@ public class RhythmQTEManager : MonoBehaviour
         // Lancement de timeline globale désactivé.
 
         BattleCameraManager.Instance?.ConfigureActionTargets(caster, target);
-
-        // --- Phase de préparation ---
-        StartTimelinePhase(
-            item.preparingTimeline,
-            useOverlay,
-            caster,
-            casterAnimatorGO,
-            casterCameraTarget,
-            item.performingTimeline == null && item.retreatTimeline == null,
-            initialRotation,
-            item.preparingCameraMotif);
-        yield return WaitForTimelinePhase(item.preparingTimeline, useOverlay, caster);
 
         // Les objets se jouent désormais sur place : on n'exécute plus de déplacement vers la cible.
         // On conserve uniquement l'orientation pour que la mise en scène reste cohérente.
@@ -634,21 +578,90 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = dir; // Applique la rotation uniquement sur le plan horizontal
         }
 
-        // --- Phase d'utilisation ---
-        // Comme pour les MusicalMoves, le délai fourni retarde uniquement le changement
-        // de motif sans bloquer l'exécution de la timeline principale.
-        TimelineAsset itemPerformingTimeline = item.performingTimeline;
-
+        // --- Animation d'utilisation ---
+        // Le motif reste unique pendant toute l'animation.
         StartTimelinePhase(
-            itemPerformingTimeline,
+            null,
             useOverlay,
             caster,
             casterAnimatorGO,
             performingCameraTarget,
-            item.retreatTimeline == null,
+            true,
             initialRotation,
-            item.performingCameraMotif,
-            item.preparingToPerformingMotifDelay);
+            item.cameraMotif);
+
+        float animationStartTime = 0f;
+        float animationDuration = 0f;
+        bool itemUsePlayed = false;
+        bool itemUseTriggered = false;
+        int[] itemUseFullHashes = null;
+        // L'animation d'item est toujours jouée sur le caster, même si le VFX cible une autre unité.
+        if (caster != null && !caster.IsDead && casterAnimator != null)
+        {
+            int layerCount = casterAnimator.layerCount;
+            itemUseFullHashes = new int[layerCount];
+            for (int layer = 0; layer < layerCount; layer++)
+            {
+                string layerName = casterAnimator.GetLayerName(layer);
+                int fullHash = Animator.StringToHash($"{layerName}.{ItemUseStateName}");
+                itemUseFullHashes[layer] = fullHash;
+
+                if (casterAnimator.HasState(layer, fullHash))
+                {
+                    casterAnimator.CrossFade(fullHash, 0.05f, layer, 0f);
+                    itemUsePlayed = true;
+                    continue;
+                }
+
+                if (casterAnimator.HasState(layer, AnimatorStateItemUseShortHash))
+                {
+                    casterAnimator.CrossFade(AnimatorStateItemUseShortHash, 0.05f, layer, 0f);
+                    itemUsePlayed = true;
+                }
+            }
+
+            foreach (var parameter in casterAnimator.parameters)
+            {
+                if (parameter.nameHash != AnimatorStateItemUseShortHash)
+                    continue;
+
+                if (parameter.type == AnimatorControllerParameterType.Trigger)
+                {
+                    casterAnimator.SetTrigger(parameter.nameHash);
+                    itemUseTriggered = true;
+                    itemUsePlayed = true;
+                }
+                break;
+            }
+        }
+
+        if (itemUsePlayed)
+        {
+            yield return null;
+            animationStartTime = Time.unscaledTime;
+            animationDuration = 0f;
+            int layerCount = casterAnimator.layerCount;
+            for (int layer = 0; layer < layerCount; layer++)
+            {
+                var stateInfo = casterAnimator.GetCurrentAnimatorStateInfo(layer);
+                int fullHash = itemUseFullHashes != null ? itemUseFullHashes[layer] : 0;
+                bool isItemUseState = stateInfo.shortNameHash == AnimatorStateItemUseShortHash
+                    || (fullHash != 0 && stateInfo.fullPathHash == fullHash);
+
+                if (!isItemUseState)
+                    continue;
+
+                if (stateInfo.length > animationDuration)
+                    animationDuration = stateInfo.length;
+            }
+        }
+        else if (caster != null && !itemUseTriggered)
+        {
+            Debug.LogWarning($"[ItemRoutine] Etat Animator 'Item_Use' introuvable pour {caster.name}.");
+        }
+
+        if (item.itemVFX != null)
+            StartCoroutine(SpawnItemVfxAfterDelay(item, target));
 
         // QTE associé à l'objet durant l'utilisation.
         LastItemSuccess = true;
@@ -664,29 +677,23 @@ public class RhythmQTEManager : MonoBehaviour
             LastItemSuccess = successResults.All(v => v);
         }
 
-        yield return WaitForTimelinePhase(itemPerformingTimeline, useOverlay, caster);
+        if (animationDuration > 0f)
+        {
+            float elapsed = Time.unscaledTime - animationStartTime;
+            float remaining = animationDuration - elapsed;
+            if (remaining > 0f)
+                yield return new WaitForSecondsRealtime(remaining);
+        }
 
-        bool performingPaused =
+        bool timelinePaused =
             BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePaused(caster);
 
-        if (performingPaused)
+        if (timelinePaused)
         {
             // 🎯 Même logique que pour les MusicalMoves : toute suspension résiduelle est levée
             //     immédiatement pour garantir une reprise fluide de la mise en scène.
             BattleTimelineManager.Instance?.ResumeCasterTimeline(caster);
         }
-
-        // --- Phase de repli ---
-        StartTimelinePhase(
-            item.retreatTimeline,
-            useOverlay,
-            caster,
-            casterAnimatorGO,
-            casterCameraTarget,
-            true,
-            initialRotation,
-            item.retreatCameraMotif);
-        yield return WaitForTimelinePhase(item.retreatTimeline, useOverlay, caster);
 
         isActive = false;
         // Protection en cas de destruction du lanceur avant la fin de la séquence
@@ -702,6 +709,26 @@ public class RhythmQTEManager : MonoBehaviour
         CancelPendingMotifSwitch();
         BattleCameraManager.Instance?.ClearCameraMotif();
         BattleCameraManager.Instance?.ClearRigTargets();
+    }
+
+    private IEnumerator SpawnItemVfxAfterDelay(ItemData item, CharacterUnit target)
+    {
+        if (item == null || item.itemVFX == null)
+            yield break;
+
+        float delay = Mathf.Max(0f, item.vfxDelay);
+        if (delay > 0f)
+            yield return new WaitForSecondsRealtime(delay);
+
+        if (target == null)
+            yield break;
+
+        Transform anchor = target.GetCasterBindingTarget()?.transform ?? target.transform;
+        if (anchor == null)
+            yield break;
+
+        GameObject instance = Instantiate(item.itemVFX, anchor.position, Quaternion.identity);
+        instance.transform.SetParent(anchor, worldPositionStays: true);
     }
 
     /// <summary>
@@ -831,8 +858,8 @@ public class RhythmQTEManager : MonoBehaviour
             // Lecture des effets de départ
             if (item.tpSFx_Start != null)
                 PlaySfx(item.tpSFx_Start);
-            if (item.tpVfx_Start != null)
-                Instantiate(item.tpVfx_Start, caster.transform.position, Quaternion.identity);
+            if (item.tpVfx != null)
+                Instantiate(item.tpVfx, caster.transform.position, Quaternion.identity);
 
             // Animation de déplacement
             if (!caster.IsDead)
@@ -854,8 +881,8 @@ public class RhythmQTEManager : MonoBehaviour
             if (visualRoot != null)
                 visualRoot.SetActive(true);
 
-            if (item.tpVfx_End != null)
-                Instantiate(item.tpVfx_End, destination, Quaternion.identity);
+            if (item.tpVfx != null)
+                Instantiate(item.tpVfx, destination, Quaternion.identity);
             if (item.tpSFx_End != null)
                 PlaySfx(item.tpSFx_End);
         }
@@ -914,8 +941,8 @@ public class RhythmQTEManager : MonoBehaviour
         {
             if (item.tpSFx_Start != null)
                 PlaySfx(item.tpSFx_Start);
-            if (item.tpVfx_Start != null)
-                Instantiate(item.tpVfx_Start, caster.transform.position, Quaternion.identity);
+            if (item.tpVfx != null)
+                Instantiate(item.tpVfx, caster.transform.position, Quaternion.identity);
 
             if (!caster.IsDead)
                 animator?.Play("Retreat_Battle");
@@ -935,8 +962,8 @@ public class RhythmQTEManager : MonoBehaviour
             if (visualRoot != null)
                 visualRoot.SetActive(true);
 
-            if (item.tpVfx_End != null)
-                Instantiate(item.tpVfx_End, origin, Quaternion.identity);
+            if (item.tpVfx != null)
+                Instantiate(item.tpVfx, origin, Quaternion.identity);
             if (item.tpSFx_End != null)
                 PlaySfx(item.tpSFx_End);
         }
@@ -1017,8 +1044,8 @@ public class RhythmQTEManager : MonoBehaviour
         {
             if (move.tpSFx_Start != null)
                 PlaySfx(move.tpSFx_Start);
-            if (move.tpVfx_Start != null)
-                Instantiate(move.tpVfx_Start, caster.transform.position, Quaternion.identity);
+            if (move.tpVfx != null)
+                Instantiate(move.tpVfx, caster.transform.position, Quaternion.identity);
 
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
@@ -1038,8 +1065,8 @@ public class RhythmQTEManager : MonoBehaviour
             if (visualRoot != null)
                 visualRoot.SetActive(true);
 
-            if (move.tpVfx_End != null)
-                Instantiate(move.tpVfx_End, targetPos, Quaternion.identity);
+            if (move.tpVfx != null)
+                Instantiate(move.tpVfx, targetPos, Quaternion.identity);
             if (move.tpSFx_End != null)
                 PlaySfx(move.tpSFx_End);
         }
@@ -1116,8 +1143,8 @@ public class RhythmQTEManager : MonoBehaviour
         {
             if (move.tpSFx_Start != null)
                 PlaySfx(move.tpSFx_Start);
-            if (move.tpVfx_Start != null)
-                Instantiate(move.tpVfx_Start, caster.transform.position, Quaternion.identity);
+            if (move.tpVfx != null)
+                Instantiate(move.tpVfx, caster.transform.position, Quaternion.identity);
 
             if (!caster.IsDead)
                 animator?.Play("Dash_Battle");
@@ -1143,8 +1170,8 @@ public class RhythmQTEManager : MonoBehaviour
             if (visualRoot != null)
                 visualRoot.SetActive(true);
 
-            if (move.tpVfx_End != null)
-                Instantiate(move.tpVfx_End, initialPosition, Quaternion.identity);
+            if (move.tpVfx != null)
+                Instantiate(move.tpVfx, initialPosition, Quaternion.identity);
             if (move.tpSFx_End != null)
                 PlaySfx(move.tpSFx_End);
         }
