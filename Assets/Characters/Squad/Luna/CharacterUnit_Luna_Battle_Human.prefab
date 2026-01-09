@@ -26,8 +26,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1527689279322938828}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.98647463, z: -0, w: -0.1639145}
-  m_LocalPosition: {x: 1.616975, y: 1.4089999, z: 4.7313204}
+  m_LocalRotation: {x: -0, y: 0.97799456, z: -0, w: 0.20863074}
+  m_LocalPosition: {x: -2.0403972, y: 1.4089999, z: 4.564733}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -472,6 +472,7 @@ MonoBehaviour:
   currentMusicalGauge: 0
   currentATB: 0
   ATBMax: 100
+  removeFromBattleOnKnockOut: 0
   isReadyToParry: 0
   isInterceptionImmune: 0
   interceptionImmunityTurns: 0
@@ -546,7 +547,6 @@ MonoBehaviour:
     - {fileID: 11400000, guid: d2a3c95ec1d914e4b93b460a997e16bc, type: 2}
     - {fileID: 11400000, guid: d08033fa8c2f6494c883a2e7a12961fb, type: 2}
     - {fileID: 11400000, guid: 22eab91728a8fe24ab0e7922abae23bb, type: 2}
-    - {fileID: 11400000, guid: 09247396915d5b8479289843955297a3, type: 2}
     m_Events:
     - m_PersistentCalls:
         m_Calls:
@@ -646,20 +646,6 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-    - m_PersistentCalls:
-        m_Calls:
-        - m_Target: {fileID: 2360667019723937597}
-          m_TargetAssemblyTypeName: PlayAudioClip, Assembly-CSharp
-          m_MethodName: PlayClipAsset
-          m_Mode: 2
-          m_Arguments:
-            m_ObjectArgument: {fileID: 11400000, guid: d91159fae3a07d74e9a47ee4acf7a6d7, type: 2}
-            m_ObjectArgumentAssemblyTypeName: AudioClipSO, Assembly-CSharp
-            m_IntArgument: 0
-            m_FloatArgument: 0
-            m_StringArgument: 
-            m_BoolArgument: 0
-          m_CallState: 1
 --- !u!82 &1002968367911773461
 AudioSource:
   m_ObjectHideFlags: 0
@@ -973,11 +959,7 @@ PrefabInstance:
       objectReference: {fileID: 9100000, guid: 02da9196e6724b143ad7eb2b90f67649, type: 2}
     - target: {fileID: 7155491070153363530, guid: 4fa2d07fb903b884cbd61a57c5d40755, type: 3}
       propertyPath: m_WarningMessage
-      value: "\nBinding warning: Some generic clip(s) animate transforms that are
-        already bound by a Humanoid avatar. These transforms can only be changed
-        by Humanoid clips.\n\tTransform 'root'\n\tFrom animation clip 'Lucian_Resurection'\n\tFrom
-        animation clip 'Lucian_Death'\n\tFrom animation clip 'Lucian_Death'\n\tFrom
-        animation clip 'Lucian_Resurection'"
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 7490834768261205345, guid: 4fa2d07fb903b884cbd61a57c5d40755, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
@@ -998,10 +980,31 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4532474244117106826, guid: 4fa2d07fb903b884cbd61a57c5d40755, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2839110391479844859}
   m_SourcePrefab: {fileID: 100100000, guid: 4fa2d07fb903b884cbd61a57c5d40755, type: 3}
 --- !u!4 &2572028593929044050 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3867824496249752112, guid: 4fa2d07fb903b884cbd61a57c5d40755, type: 3}
   m_PrefabInstance: {fileID: 1593407311857879650}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &2952811927312112360 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4532474244117106826, guid: 4fa2d07fb903b884cbd61a57c5d40755, type: 3}
+  m_PrefabInstance: {fileID: 1593407311857879650}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2839110391479844859
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2952811927312112360}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9f7114dc84a39647985932c3e43b422, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Symphonie.Runtime::AnimationEventsManager
+  windowDelay: 0.2

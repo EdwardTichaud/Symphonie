@@ -68,6 +68,27 @@ public class BattleTimelineUIManager : MonoBehaviour
         SortTimelineByATB();
     }
 
+    public void AddToTimeline(CharacterUnit unit)
+    {
+        if (unit == null || timelineContainer == null || timelineUnitPrefab == null)
+            return;
+
+        if (timelineUIObjects.Any(x => x != null && x.BoundUnit == unit))
+            return;
+
+        var slot = Instantiate(timelineUnitPrefab, timelineContainer);
+        var ui = slot.GetComponent<BattleTimelineUnit>();
+        if (ui == null)
+        {
+            Destroy(slot);
+            return;
+        }
+
+        ui.Initialize(unit);
+        timelineUIObjects.Add(ui);
+        SortTimelineByATB();
+    }
+
     /// <summary>
     /// Active ou désactive l'affichage de la timeline complète.
     /// </summary>

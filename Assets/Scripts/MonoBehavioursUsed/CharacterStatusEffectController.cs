@@ -304,6 +304,12 @@ public class CharacterStatusEffectController : MonoBehaviour
                 owner.currentVitality += delta;
                 owner.RefreshHealthDisplay(refreshMax: true);
                 break;
+            case BuffStatType.Power:
+                owner.AddBasePowerBonus(delta);
+                break;
+            case BuffStatType.CriticalRate:
+                owner.AddCriticalRateBonus(delta);
+                break;
         }
     }
 
@@ -318,6 +324,8 @@ public class CharacterStatusEffectController : MonoBehaviour
             BuffStatType.Defense => owner.Data.baseDefense,
             BuffStatType.Initiative => owner.Data.baseInitiative,
             BuffStatType.MaxHP => owner.Data.baseHP + owner.currentVitality,
+            BuffStatType.Power => owner.BasePower,
+            BuffStatType.CriticalRate => owner.CriticalRate,
             _ => 0f,
         };
     }

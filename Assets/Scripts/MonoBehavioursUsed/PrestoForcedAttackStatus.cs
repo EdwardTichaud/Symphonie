@@ -170,9 +170,9 @@ public class PrestoForcedAttackStatus : MonoBehaviour
         if (NewBattleManager.Instance == null || owner == null || owner.Data == null)
             return null;
 
-        bool ownerIsPlayer = owner.Data.isPlayerControlled;
+        bool ownerIsPlayer = owner.IsPlayerControlled;
         List<CharacterUnit> candidates = NewBattleManager.Instance.activeCharacterUnits
-            .Where(u => u != null && u != owner && u.Data != null && u.Data.isPlayerControlled != ownerIsPlayer && u.currentHP > 0)
+            .Where(u => u != null && u != owner && u.Data != null && u.IsPlayerControlled != ownerIsPlayer && u.currentHP > 0)
             .ToList();
 
         if (candidates.Count == 0)

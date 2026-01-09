@@ -29,6 +29,10 @@ public class DamagePopupManager : MonoBehaviour
     [SerializeField] private Color buffColor = new Color(0.4f, 0.75f, 1f, 1f);
     [SerializeField] private Color debuffColor = new Color(1f, 0.6f, 0.2f, 1f);
     [SerializeField] private Color statusColor = new Color(1f, 0.85f, 0.45f, 1f);
+    [Header("Interception")]
+    [SerializeField] private Color interceptionPositiveColor = new Color(0.3f, 1f, 0.4f, 1f);
+    [SerializeField] private Color interceptionNegativeColor = new Color(1f, 0.25f, 0.25f, 1f);
+    [SerializeField] private float interceptionPopupDuration = 2f;
 
     private readonly Queue<DamagePopup> popupPool = new();
 
@@ -174,7 +178,17 @@ public class DamagePopupManager : MonoBehaviour
         ShowPopup(target, label, isPositive ? buffColor : statusColor);
     }
 
-    private void ShowPopup(Transform target, string text, Color color)
+    public void ShowInterceptionOutcome(Transform target, string label, bool isPositive)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+            return;
+
+        Color color = isPositive ? interceptionPositiveColor : interceptionNegativeColor;
+        float duration = Mathf.Max(0.1f, interceptionPopupDuration);
+        ShowPopup(target, label, color, duration);
+    }
+
+    private void ShowPopup(Transform target, string text, Color color, float durationOverride = -1f)
     {
         if (damagePopupPrefab == null)
         {
@@ -194,7 +208,7 @@ public class DamagePopupManager : MonoBehaviour
         popupScript.transform.SetParent(transform, true);
         popupScript.gameObject.SetActive(true);
         popupScript.SetOwner(this);
-        popupScript.Initialize(text, target, battleCamera, color);
+        popupScript.Initialize(text, target, battleCamera, color, durationOverride);
     }
 
     private static string FormatStatName(BuffStatType stat)
@@ -205,6 +219,8 @@ public class DamagePopupManager : MonoBehaviour
             BuffStatType.Defense => "Defense",
             BuffStatType.Initiative => "Initiative",
             BuffStatType.MaxHP => "PV max",
+            BuffStatType.Power => "Puissance",
+            BuffStatType.CriticalRate => "Critique",
             _ => "Stat"
         };
     }

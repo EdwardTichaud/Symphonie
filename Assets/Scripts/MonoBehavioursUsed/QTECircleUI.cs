@@ -10,6 +10,7 @@ public class QTECircleUI : MonoBehaviour
 {
     [SerializeField] private Image delayFillImage; // cercle se remplissant
     [SerializeField] private Image inputIconImage; // icône de l'input au centre
+    [SerializeField] private RectTransform targetRing; // cercle cible fixe pour le timing
 
     /// <summary>
     /// Accès en lecture à l'image représentant la progression du QTE.
@@ -20,4 +21,9 @@ public class QTECircleUI : MonoBehaviour
     /// Accès en lecture à l'image de l'icône centrale.
     /// </summary>
     public Image InputIconImage => inputIconImage;
+
+    /// <summary>
+    /// Accès en lecture au cercle cible fixe.
+    /// </summary>
+    public RectTransform TargetRing => targetRing;
 }

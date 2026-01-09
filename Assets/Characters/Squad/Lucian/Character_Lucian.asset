@@ -34,7 +34,7 @@ MonoBehaviour:
   basePower: 100
   baseStability: 0
   baseSagacity: 0
-  baseHP: 50
+  baseHP: 5000
   baseStrength: 1
   baseDefense: 1
   baseSpeed: 0
@@ -61,14 +61,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 42bdcb917feb4cff9432f2d6f6efa990, type: 2}
   specialMusicalMove: {fileID: 11400000, guid: 857c2cb2a8614382b75615f4f5a589f6, type: 2}
   musicalMoveSets:
-  - setName: CryingAngel
+  - setName: Base
     prioritizedMoves:
     - {fileID: 11400000, guid: e5d7b6fc3f0d4cc095fd27160e6ef5e5, type: 2}
     - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
     - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
   defaultMusicalMoveSetIndex: -1
   itemSets:
-  - setName: CryingAngel
+  - setName: Base
     prioritizedItems:
     - {fileID: 11400000, guid: 370617c19b664f29839d25a4955dacf9, type: 2}
     - {fileID: 11400000, guid: fd8086605fb14e81a0e94c639309929f, type: 2}
@@ -107,9 +107,8 @@ MonoBehaviour:
   awakeExitAnimation: {fileID: 0}
   dissonanceEnterAnimation: {fileID: 0}
   dissonanceExitAnimation: {fileID: 0}
-  introTimeline: {fileID: 11400000, guid: 5f0dceeed3fcd914ebde5933df0b5223, type: 2}
-  moveStartClip: {fileID: 0}
-  moveEndClip: {fileID: 0}
+  moveStartClip: {fileID: 11400000, guid: 490fcbd9581321b4ebf1a1439be6b128, type: 2}
+  moveEndClip: {fileID: 11400000, guid: 211d90b0af76e0c4198c31a6908013d2, type: 2}
   menuSelectionClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
   awakeEnterClip: {fileID: 0}
   awakeExitClip: {fileID: 0}

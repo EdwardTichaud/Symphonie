@@ -23,6 +23,9 @@ public class QTESignalReceiver : MonoBehaviour
             Debug.LogWarning("[QTESignalReceiver] TriggerQTE appelé avec null.");
             return;
         }
-        RhythmQTEManager.Instance?.TriggerQTE(trigger.windowDelay, trigger.inputIcon, trigger.uiPosition);
+        if (trigger.qteInput != null)
+            RhythmQTEManager.Instance?.TriggerQTE(trigger.windowDelay, trigger.qteInput, trigger.uiPosition);
+        else
+            RhythmQTEManager.Instance?.TriggerQTE(trigger.windowDelay, trigger.inputIcon, trigger.uiPosition);
     }
 }

@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
@@ -20,6 +21,14 @@ public class TimelineHPBarAdapter : HPBar
     [SerializeField] private Color highHealthColor = Color.green; // Couleur utilisée lorsque la jauge est presque pleine.
     [SerializeField] private Color midHealthColor = Color.yellow; // Couleur d'avertissement pour une santé moyenne.
     [SerializeField] private Color lowHealthColor = new Color(0.75f, 0f, 0f); // Rouge légèrement assombri pour distinguer l'état critique.
+    [Header("Feedback PV max")]
+    [SerializeField] private bool showMaxHpFeedback = true;
+    [SerializeField] private bool showMaxHpDeltaText = true;
+    [SerializeField] private Color maxHpIncreaseColor = new Color(0.25f, 0.9f, 0.35f, 1f);
+    [SerializeField] private Color maxHpDecreaseColor = new Color(1f, 0.35f, 0.35f, 1f);
+    [SerializeField] private float maxHpPulseDuration = 0.12f;
+    [SerializeField] private float maxHpHoldDuration = 0.35f;
+    [SerializeField] private float maxHpPulseScale = 1.12f;
 
     /// <summary>Référence vers l'unité dont on suit les points de vie.</summary>
     private CharacterUnit owner;
@@ -27,6 +36,14 @@ public class TimelineHPBarAdapter : HPBar
     private float cachedMaxValue = 1f;
     /// <summary>Valeur courante retenue pour l'affichage.</summary>
     private float cachedCurrentValue = 1f;
+    private bool hasInitializedMax;
+    private bool maxHpFeedbackActive;
+    private Color maxHpFeedbackColor = Color.white;
+    private string maxHpFeedbackText;
+    private Coroutine maxHpFeedbackRoutine;
+    private int maxHpFeedbackToken;
+    private Vector3 hpTextBaseScale = Vector3.one;
+    private bool hasCachedTextScale;
 
     /// <summary>
     /// Configure l'adaptateur pour qu'il prenne le relais sur l'unité donnée.
@@ -46,6 +63,9 @@ public class TimelineHPBarAdapter : HPBar
         timelineHPText = hpLabel != null ? hpLabel : timelineHPText;
         aliveColor = alive;
         deadColor = dead;
+        hasInitializedMax = false;
+        ResetMaxHpFeedbackVisuals();
+        CacheTextScale();
 
         // --- Référence Slider ---------------------------------------------------------------
         // Certains prefabs n'assignent pas explicitement le Slider Unity utilisé par la barre de vie.
@@ -120,6 +140,10 @@ public class TimelineHPBarAdapter : HPBar
     {
         if (owner != null)
             owner.OnHealthChanged -= HandleOwnerHealthChanged;
+
+        if (maxHpFeedbackRoutine != null)
+            StopCoroutine(maxHpFeedbackRoutine);
+        ResetMaxHpFeedbackVisuals();
     }
 
     /// <summary>
@@ -133,19 +157,23 @@ public class TimelineHPBarAdapter : HPBar
 
         // Détermine la couleur adaptée avant d'appliquer les nouveaux ratios sur les éléments visuels.
         Color displayColor = DetermineHealthColor(ratio, current);
+        Color appliedColor = maxHpFeedbackActive ? maxHpFeedbackColor : displayColor;
 
         if (timelineFillImage != null)
         {
             timelineFillImage.fillAmount = ratio;
-            timelineFillImage.color = displayColor;
+            timelineFillImage.color = appliedColor;
         }
 
         if (timelineHPText != null)
         {
             int currentInt = Mathf.RoundToInt(current);
             int maxInt = Mathf.RoundToInt(cachedMaxValue);
-            timelineHPText.text = $"{currentInt}/{maxInt}";
-            timelineHPText.color = displayColor;
+            if (maxHpFeedbackActive && showMaxHpDeltaText && !string.IsNullOrEmpty(maxHpFeedbackText))
+                timelineHPText.text = maxHpFeedbackText;
+            else
+                timelineHPText.text = $"{currentInt}/{maxInt}";
+            timelineHPText.color = appliedColor;
         }
     }
 
@@ -191,11 +219,112 @@ public class TimelineHPBarAdapter : HPBar
         if (owner == null || unit != owner)
             return;
 
+        float previousMax = cachedMaxValue;
         cachedMaxValue = Mathf.Max(0f, max);
         cachedCurrentValue = Mathf.Clamp(current, 0f, cachedMaxValue > 0f ? cachedMaxValue : current);
 
         base.SetMaxValue(cachedMaxValue);
         base.SetValue(cachedCurrentValue);
         UpdateVisuals(cachedCurrentValue);
+
+        if (!hasInitializedMax)
+        {
+            hasInitializedMax = true;
+            return;
+        }
+
+        float delta = cachedMaxValue - previousMax;
+        if (Mathf.Abs(delta) > 0.01f)
+            TriggerMaxHpFeedback(delta);
+    }
+
+    private void TriggerMaxHpFeedback(float delta)
+    {
+        if (!showMaxHpFeedback)
+            return;
+
+        if (maxHpFeedbackRoutine != null)
+            StopCoroutine(maxHpFeedbackRoutine);
+
+        ResetMaxHpFeedbackVisuals();
+        maxHpFeedbackToken++;
+        maxHpFeedbackRoutine = StartCoroutine(MaxHpFeedbackRoutine(delta, maxHpFeedbackToken));
+    }
+
+    private IEnumerator MaxHpFeedbackRoutine(float delta, int token)
+    {
+        maxHpFeedbackActive = true;
+        maxHpFeedbackColor = delta > 0f ? maxHpIncreaseColor : maxHpDecreaseColor;
+        maxHpFeedbackText = BuildMaxHpFeedbackText(delta);
+
+        UpdateVisuals(cachedCurrentValue);
+        CacheTextScale();
+
+        float pulseDuration = Mathf.Max(0.05f, maxHpPulseDuration);
+        float holdDuration = Mathf.Max(0f, maxHpHoldDuration);
+        float scaleFactor = Mathf.Max(1f, maxHpPulseScale);
+
+        Vector3 baseScale = hpTextBaseScale;
+        Vector3 targetScale = baseScale * scaleFactor;
+
+        float timer = 0f;
+        while (timer < pulseDuration)
+        {
+            if (token != maxHpFeedbackToken)
+                yield break;
+
+            timer += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(timer / pulseDuration);
+            if (timelineHPText != null)
+                timelineHPText.transform.localScale = Vector3.Lerp(baseScale, targetScale, t);
+            yield return null;
+        }
+
+        if (holdDuration > 0f)
+            yield return new WaitForSecondsRealtime(holdDuration);
+
+        timer = 0f;
+        while (timer < pulseDuration)
+        {
+            if (token != maxHpFeedbackToken)
+                yield break;
+
+            timer += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(timer / pulseDuration);
+            if (timelineHPText != null)
+                timelineHPText.transform.localScale = Vector3.Lerp(targetScale, baseScale, t);
+            yield return null;
+        }
+
+        ResetMaxHpFeedbackVisuals();
+        UpdateVisuals(cachedCurrentValue);
+        maxHpFeedbackRoutine = null;
+    }
+
+    private string BuildMaxHpFeedbackText(float delta)
+    {
+        int currentInt = Mathf.RoundToInt(cachedCurrentValue);
+        int maxInt = Mathf.RoundToInt(cachedMaxValue);
+        int deltaInt = Mathf.RoundToInt(delta);
+        string deltaLabel = deltaInt > 0 ? $"+{deltaInt}" : deltaInt.ToString();
+        return $"{currentInt}/{maxInt} (MAX {deltaLabel})";
+    }
+
+    private void CacheTextScale()
+    {
+        if (timelineHPText == null || hasCachedTextScale)
+            return;
+
+        hpTextBaseScale = timelineHPText.transform.localScale;
+        hasCachedTextScale = true;
+    }
+
+    private void ResetMaxHpFeedbackVisuals()
+    {
+        maxHpFeedbackActive = false;
+        maxHpFeedbackText = null;
+        if (timelineHPText != null && hasCachedTextScale)
+            timelineHPText.transform.localScale = hpTextBaseScale;
+        maxHpFeedbackRoutine = null;
     }
 }

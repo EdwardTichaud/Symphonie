@@ -71,6 +71,7 @@ public class InstantiateGameObject : MonoBehaviour
         // d'un combat), on se rabat sur le GameObject porteur du script.
 
         Vector3 spawnPosition = transform.position; // Position par défaut : objet porteur
+        Quaternion spawnRotation = transform.rotation; // Rotation par défaut : objet porteur
 
         if (NewBattleManager.Instance != null)
         {
@@ -82,11 +83,13 @@ public class InstantiateGameObject : MonoBehaviour
             {
                 // Instanciation au niveau de la cible actuelle
                 spawnPosition = target.transform.position;
+                spawnRotation = target.transform.rotation;
             }
             else if (!spawnOnTarget && caster != null)
             {
                 // Instanciation au niveau du lanceur (par défaut)
                 spawnPosition = caster.transform.position;
+                spawnRotation = caster.transform.rotation;
             }
             else
             {
@@ -100,12 +103,24 @@ public class InstantiateGameObject : MonoBehaviour
         {
             // Pas de gestionnaire de combat : contexte non prévu (ex. cinématique).
             Debug.LogWarning("[InstantiateGameObject] NewBattleManager introuvable, instanciation sur le porteur de script.");
+            var playerController = FindFirstObjectByType<ThirdPersonPlayerController>();
+            if (playerController != null)
+            {
+                // Hors combat, on aligne la rotation sur le joueur si possible.
+                spawnRotation = playerController.transform.rotation;
+            }
+            else
+            {
+                var player = GameObject.FindGameObjectWithTag("Player");
+                if (player != null)
+                    spawnRotation = player.transform.rotation;
+            }
         }
 
         // Instancie finalement le prefab si fourni.
         if (gameObjectToInstantiate != null)
         {
-            Instantiate(gameObjectToInstantiate, spawnPosition, Quaternion.identity);
+            Instantiate(gameObjectToInstantiate, spawnPosition, spawnRotation);
         }
         else
         {

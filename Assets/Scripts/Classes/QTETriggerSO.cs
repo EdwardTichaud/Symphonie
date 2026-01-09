@@ -7,6 +7,7 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Symphonie/QTE Trigger")]
 public class QTETriggerSO : ScriptableObject
 {
+    [Tooltip("Définition complète de l'input QTE (sprite + input Battle).")] public QTEInputSO qteInput;
     [Tooltip("Icône de l'input à afficher")] public Sprite inputIcon;
     [Tooltip("Fenêtre de saisie en millisecondes")] public float windowDelay = 200f;
 

@@ -50,7 +50,7 @@ public static class BattleAIStrategy
                     if (unit == null || unit.Data == null || unit.currentHP <= 0)
                         continue;
 
-                    if (unit.Data.characterType == self.Data.characterType)
+                    if (unit.IsAllyOf(self))
                         Allies.Add(unit);
                     else
                         Opponents.Add(unit);
@@ -896,7 +896,7 @@ public static class BattleAIStrategy
         if (caster == null || caster.Data == null || target == null || target.Data == null || move == null)
             return false;
 
-        bool targetIsEnemy = caster.Data.characterType != target.Data.characterType;
+        bool targetIsEnemy = caster.IsEnemyOf(target);
         var targetType = ResolveTargetType(move);
 
         bool isValid = targetType switch
@@ -919,7 +919,7 @@ public static class BattleAIStrategy
         if (context.Self == null || target == null || item == null)
             return false;
 
-        bool targetIsEnemy = context.Self.Data.characterType != target.Data.characterType;
+        bool targetIsEnemy = context.Self.IsEnemyOf(target);
         var type = ResolveTargetType(item);
 
         bool isValid = type switch

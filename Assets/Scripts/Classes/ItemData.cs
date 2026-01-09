@@ -402,6 +402,6 @@ public class ItemData : ScriptableObject
 }
 
 public enum ItemEffectType { None, Heal, Revive, Buff, Debuff, BoostTiming, Damage, IncreaseRange, PreventInterception, ExtendEffects, Sleep, WakeUp, Stun }
-public enum BuffStatType { None, Strength, Defense, Initiative, MaxHP }
-public enum DebuffStatType { None, Strength, Defense, Initiative, MaxHP }
+public enum BuffStatType { None, Strength, Defense, Initiative, MaxHP, Power, CriticalRate }
+public enum DebuffStatType { None, Strength, Defense, Initiative, MaxHP, Power, CriticalRate }
 public enum TimingBoostType { None, ParryWindow, DodgeWindow }

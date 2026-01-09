@@ -38,11 +38,24 @@ public class BattleCameraDamageFilter : MonoBehaviour
     [Min(0f)]
     [SerializeField] private float fadeSpeed = 4f;
 
+    [Header("Critical flash")]
+    [Tooltip("Tint used when a critical hit affects the player.")]
+    [SerializeField] private Color criticalFlashColor = new Color(0.85f, 0.1f, 0.1f, 1f);
+
+    [Tooltip("Fade out duration for the critical flash (seconds).")]
+    [Min(0f)]
+    [SerializeField] private float criticalFlashDuration = 1f;
+
     /// <summary>Unité actuellement considérée comme propriétaire du tour.</summary>
     private CharacterUnit activeUnit;
 
     /// <summary>Opacité réellement affichée à l'image.</summary>
     private float displayedOpacity;
+
+    private float criticalFlashTimer;
+    private Color baseGraphicColor;
+    private Color baseSpriteColor;
+    private bool hasCachedBaseColors;
 
     /// <summary>Vrai si aucune référence visuelle n'a été trouvée.</summary>
     private bool hasLoggedMissingRenderer;
@@ -65,7 +78,8 @@ public class BattleCameraDamageFilter : MonoBehaviour
         if (spriteRenderer == null)
             spriteRenderer = GetComponent<SpriteRenderer>();
 
-        ApplyOpacityImmediate(0f); // On démarre l'effet totalement transparent.
+        CacheBaseColors();
+        ApplyOpacityImmediate(0f, 0f); // On démarre l'effet totalement transparent.
     }
 
     private void OnDestroy()
@@ -80,7 +94,10 @@ public class BattleCameraDamageFilter : MonoBehaviour
         // une sensation cohérente, même lors des cinématiques en slow motion.
         float targetOpacity = ComputeTargetOpacity();
         displayedOpacity = Mathf.MoveTowards(displayedOpacity, targetOpacity, Time.unscaledDeltaTime * fadeSpeed);
-        ApplyOpacityImmediate(displayedOpacity);
+        if (criticalFlashTimer > 0f)
+            criticalFlashTimer = Mathf.Max(0f, criticalFlashTimer - Time.unscaledDeltaTime);
+        float flashAlpha = ComputeCriticalFlashAlpha();
+        ApplyOpacityImmediate(displayedOpacity, flashAlpha);
     }
 
     /// <summary>
@@ -94,7 +111,22 @@ public class BattleCameraDamageFilter : MonoBehaviour
 
         // Mise à jour immédiate pour éviter tout clignotement entre deux tours.
         displayedOpacity = ComputeTargetOpacity();
-        ApplyOpacityImmediate(displayedOpacity);
+        ApplyOpacityImmediate(displayedOpacity, ComputeCriticalFlashAlpha());
+    }
+
+    public void TriggerCriticalFlash()
+    {
+        if (criticalFlashDuration <= 0f)
+            return;
+
+        criticalFlashTimer = Mathf.Max(criticalFlashTimer, criticalFlashDuration);
+    }
+
+    private float ComputeCriticalFlashAlpha()
+    {
+        if (criticalFlashDuration <= 0f || criticalFlashTimer <= 0f)
+            return 0f;
+        return Mathf.Clamp01(criticalFlashTimer / criticalFlashDuration);
     }
 
     /// <summary>
@@ -105,7 +137,7 @@ public class BattleCameraDamageFilter : MonoBehaviour
         if (activeUnit == null || activeUnit.Data == null)
             return 0f; // 🔇 Aucun propriétaire de tour : pas d'effet visuel.
 
-        if (!activeUnit.Data.isPlayerControlled)
+        if (!activeUnit.IsPlayerControlled)
             return 0f; // 🎯 L'effet ne concerne que les SquadUnits du joueur.
 
         float maxHP = Mathf.Max(0f, activeUnit.Data.baseHP + activeUnit.currentVitality);
@@ -127,7 +159,7 @@ public class BattleCameraDamageFilter : MonoBehaviour
     /// Applique immédiatement l'opacité calculée sur toutes les références connues.
     /// </summary>
     /// <param name="opacity">Opacité comprise entre 0 et 1.</param>
-    private void ApplyOpacityImmediate(float opacity)
+    private void ApplyOpacityImmediate(float opacity, float flashAlpha)
     {
         if (uiGraphic == null && spriteRenderer == null && !hasLoggedMissingRenderer)
         {
@@ -139,16 +171,31 @@ public class BattleCameraDamageFilter : MonoBehaviour
 
         if (uiGraphic != null)
         {
-            Color color = uiGraphic.color;
-            color.a = opacity;
+            if (!hasCachedBaseColors)
+                CacheBaseColors();
+
+            Color color = Color.Lerp(baseGraphicColor, criticalFlashColor, flashAlpha);
+            color.a = Mathf.Clamp01(Mathf.Max(opacity, flashAlpha));
             uiGraphic.color = color;
         }
 
         if (spriteRenderer != null)
         {
-            Color color = spriteRenderer.color;
-            color.a = opacity;
+            if (!hasCachedBaseColors)
+                CacheBaseColors();
+
+            Color color = Color.Lerp(baseSpriteColor, criticalFlashColor, flashAlpha);
+            color.a = Mathf.Clamp01(Mathf.Max(opacity, flashAlpha));
             spriteRenderer.color = color;
         }
+    }
+
+    private void CacheBaseColors()
+    {
+        if (uiGraphic != null)
+            baseGraphicColor = uiGraphic.color;
+        if (spriteRenderer != null)
+            baseSpriteColor = spriteRenderer.color;
+        hasCachedBaseColors = true;
     }
 }

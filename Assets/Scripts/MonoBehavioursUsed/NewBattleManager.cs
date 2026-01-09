@@ -12,6 +12,9 @@ using UnityEngine.Playables;
 using UnityEngine.Timeline;
 using Unity.Cinemachine;
 using UnityEngine.EventSystems;
+#if UNITY_EDITOR
+using UnityEditor.Animations;
+#endif
 
 #region BattleState
 public enum BattleState
@@ -71,6 +74,7 @@ public partial class NewBattleManager : MonoBehaviour
 
     [Header("État du combat")]
     public BattleState currentBattleState;
+    private int battleEventMenuLockCount;
 
     [Header("Apparition des SquadUnits")]
     public GameObject squadUnitRay;
@@ -231,6 +235,10 @@ public partial class NewBattleManager : MonoBehaviour
     /// La caméra n'étant plus animée via timeline, aucun tag n'est désormais nécessaire.
     /// </summary>
     private readonly Queue<PendingTimeline> pendingTimelines = new();
+    private bool pendingTimelineRoutineRunning;
+
+    [Header("Debug")]
+    [SerializeField] private bool debugPendingTimelines = false;
 
     /// <summary>
     /// Structure stockant les informations nécessaires pour jouer une timeline.
@@ -252,6 +260,23 @@ public partial class NewBattleManager : MonoBehaviour
             this.casterBinding = casterBinding;
         }
     }
+
+    private struct IntroAnimationPlayback
+    {
+        public Animator animator;
+        public int layer;
+
+        public IntroAnimationPlayback(Animator animator, int layer)
+        {
+            this.animator = animator;
+            this.layer = layer;
+        }
+    }
+
+    private const string BattleIntroStateName = "BattleIntro";
+    private const string BattleIntroIndexParameterName = "BattleIntroIndex";
+    private static readonly int BattleIntroStateHash = Animator.StringToHash(BattleIntroStateName);
+    private static readonly int BattleIntroIndexHash = Animator.StringToHash(BattleIntroIndexParameterName);
 
     private const float ATB_THRESHOLD = 100f;
     // Délai appliqué avant qu'un ennemi n'exécute réellement son attaque
@@ -487,29 +512,191 @@ public partial class NewBattleManager : MonoBehaviour
     {
         HandleTargetCursor();
         HandleTargetNavigation();
+        BattleEventTrigger.EvaluateAll(this);
     }
     #endregion
 
     #region Mise en scène de la scène de bataille
+    private static bool HasAnimatorParameter(Animator animator, int parameterHash)
+    {
+        if (animator == null)
+            return false;
+
+        foreach (var parameter in animator.parameters)
+        {
+            if (parameter.nameHash == parameterHash)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryResolveBattleIntroLayer(Animator animator, out int layer)
+    {
+        layer = 0;
+        if (animator == null)
+            return false;
+
+#if UNITY_EDITOR
+        if (TryGetBattleIntroState(animator, out _, out int editorLayer))
+        {
+            layer = editorLayer;
+            return true;
+        }
+#endif
+
+        int stateHash = BattleIntroStateHash;
+        for (int i = 0; i < animator.layerCount; i++)
+        {
+            if (animator.HasState(i, stateHash))
+            {
+                layer = i;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static int ResolveBattleIntroMotionCount(Animator animator)
+    {
+        if (animator == null)
+            return 0;
+
+#if UNITY_EDITOR
+        if (TryGetBattleIntroBlendTree(animator, out BlendTree blendTree))
+        {
+            int count = 0;
+            foreach (var child in blendTree.children)
+            {
+                if (child.motion != null)
+                    count++;
+            }
+
+            return count;
+        }
+#endif
+
+        RuntimeAnimatorController controller = animator.runtimeAnimatorController;
+        if (controller is AnimatorOverrideController overrideController)
+            controller = overrideController.runtimeAnimatorController;
+
+        if (controller == null)
+            return 0;
+
+        int fallbackCount = 0;
+        foreach (var clip in controller.animationClips)
+        {
+            if (clip == null)
+                continue;
+
+            if (clip.name.IndexOf(BattleIntroStateName, StringComparison.OrdinalIgnoreCase) >= 0)
+                fallbackCount++;
+        }
+
+        return fallbackCount;
+    }
+
+#if UNITY_EDITOR
+    private static AnimatorController ResolveAnimatorController(Animator animator)
+    {
+        if (animator == null)
+            return null;
+
+        RuntimeAnimatorController controller = animator.runtimeAnimatorController;
+        if (controller is AnimatorOverrideController overrideController)
+            controller = overrideController.runtimeAnimatorController;
+
+        return controller as AnimatorController;
+    }
+
+    private static bool TryGetBattleIntroState(Animator animator, out AnimatorState state, out int layerIndex)
+    {
+        state = null;
+        layerIndex = -1;
+
+        AnimatorController controller = ResolveAnimatorController(animator);
+        if (controller == null)
+            return false;
+
+        for (int i = 0; i < controller.layers.Length; i++)
+        {
+            if (TryFindState(controller.layers[i].stateMachine, BattleIntroStateName, out state))
+            {
+                layerIndex = i;
+                return true;
+            }
+        }
+
+        state = null;
+        return false;
+    }
+
+    private static bool TryGetBattleIntroBlendTree(Animator animator, out BlendTree blendTree)
+    {
+        blendTree = null;
+        if (!TryGetBattleIntroState(animator, out AnimatorState state, out _))
+            return false;
+
+        blendTree = state.motion as BlendTree;
+        return blendTree != null;
+    }
+
+    private static bool TryFindState(AnimatorStateMachine stateMachine, string stateName, out AnimatorState state)
+    {
+        state = null;
+        if (stateMachine == null)
+            return false;
+
+        foreach (var childState in stateMachine.states)
+        {
+            if (childState.state != null &&
+                string.Equals(childState.state.name, stateName, StringComparison.OrdinalIgnoreCase))
+            {
+                state = childState.state;
+                return true;
+            }
+        }
+
+        foreach (var childMachine in stateMachine.stateMachines)
+        {
+            if (TryFindState(childMachine.stateMachine, stateName, out state))
+                return true;
+        }
+
+        return false;
+    }
+#endif
+
     /// <summary>
-    /// Lance les timelines d'introduction pour chaque unité en appliquant
-    /// un effet de ralenti global. Toutes les timelines démarrent en parallèle
+    /// Lance les animations d'introduction pour chaque unité en appliquant
+    /// un effet de ralenti global. Toutes les animations démarrent en parallèle
     /// et la coroutine attend leur terminaison avant de poursuivre.
     /// </summary>
-    private IEnumerator PlayIntroTimelinesWithSlowTime()
+    private IEnumerator PlayIntroAnimationsWithSlowTime()
     {
         // Sauvegarde des paramètres temporels actuels pour les restaurer ensuite
         float initialTimeScale = Time.timeScale;
         float initialFixedDelta = Time.fixedDeltaTime;
 
-        // 🕵️‍♂️ Identifie les unités disposant réellement d'une timeline d'introduction
-        // pour éviter d'appliquer un délai inutile lorsqu'aucune scène n'est configurée.
-        var unitsWithIntro = unitsInBattle
-            .Where(u => u.Data.introTimeline != null)
-            .ToList();
+        // 🕵️‍♂️ Identifie les unités disposant réellement d'un BlendTree d'introduction
+        // pour éviter d'appliquer un délai inutile lorsqu'aucune intro n'est configurée.
+        List<IntroAnimationPlayback> introCandidates = new();
+        foreach (var unit in unitsInBattle)
+        {
+            if (unit == null)
+                continue;
 
-        // 🚀 Si aucune timeline n'est définie, on quitte immédiatement sans ralentir le jeu.
-        if (unitsWithIntro.Count == 0)
+            Animator introAnimator = unit.GetCasterAnimator(forceRefresh: true);
+            if (introAnimator == null)
+                continue;
+
+            if (TryResolveBattleIntroLayer(introAnimator, out int layer))
+                introCandidates.Add(new IntroAnimationPlayback(introAnimator, layer));
+        }
+
+        // 🚀 Si aucune intro n'est définie, on quitte immédiatement sans ralentir le jeu.
+        if (introCandidates.Count == 0)
             yield break;
 
         // Application du facteur de ralenti défini dans l'inspecteur uniquement
@@ -517,24 +704,30 @@ public partial class NewBattleManager : MonoBehaviour
         Time.timeScale = equipSlowMotionScale;
         Time.fixedDeltaTime = initialFixedDelta * Time.timeScale;
 
-        // Liste des PlayableDirector actifs pour surveiller la fin des timelines
-        List<PlayableDirector> activeDirectors = new();
-
-        // Déclenche les timelines d'introduction sur chaque unité concernée
-        foreach (var unit in unitsWithIntro)
+        // Déclenche les animations d'introduction sur chaque unité concernée
+        foreach (var intro in introCandidates)
         {
-            var timeline = unit.Data.introTimeline;
+            if (HasAnimatorParameter(intro.animator, BattleIntroIndexHash))
+            {
+                int motionCount = ResolveBattleIntroMotionCount(intro.animator);
+                float parameterValue;
+                if (motionCount > 1)
+                {
+                    int randomIndex = UnityEngine.Random.Range(0, motionCount);
+                    parameterValue = randomIndex / Mathf.Max(1f, motionCount - 1f);
+                }
+                else if (motionCount == 1)
+                {
+                    parameterValue = 0f;
+                }
+                else
+                {
+                    parameterValue = UnityEngine.Random.value;
+                }
+                intro.animator.SetFloat(BattleIntroIndexHash, parameterValue);
+            }
 
-            // Demande à la CharacterUnit de préparer les bindings "Root" et "Model" de sa timeline d'intro.
-            PlayableDirector director = unit.PrepareIntroTimeline(timeline);
-
-            // Si la préparation échoue (timeline incomplète, aucun PlayableDirector, etc.), on ignore simplement cette unité.
-            if (director == null)
-                continue;
-
-            // Lance la lecture de la timeline correctement configurée et l'ajoute à la liste de suivi.
-            director.Play();
-            activeDirectors.Add(director);
+            intro.animator.CrossFade(BattleIntroStateName, 0.05f, intro.layer, 0f);
         }
 
         // ⏱️ Calcule la durée d'attente maximale en temps réel. L'utilisation de l'unscaled delta
@@ -542,7 +735,7 @@ public partial class NewBattleManager : MonoBehaviour
         float waitDuration = Mathf.Max(0f, battleIntroLockDuration);
         float elapsedIntroTime = 0f;
 
-        // ⛔ On attend exactement la durée configurée, même si les timelines se terminent plus tôt.
+        // ⛔ On attend exactement la durée configurée, même si les animations se terminent plus tôt.
         //    Ainsi, les mises en scène longues n'empêchent plus le combat de démarrer : passé ce délai
         //    les tours commencent, tandis que les introductions continuent leur lecture en arrière-plan.
         while (elapsedIntroTime < waitDuration)
@@ -551,11 +744,11 @@ public partial class NewBattleManager : MonoBehaviour
             elapsedIntroTime += Time.unscaledDeltaTime;
         }
 
-        // 🧷 Toutefois, si une timeline poursuit encore sa lecture une fois le délai minimal écoulé,
+        // 🧷 Toutefois, si une animation poursuit encore sa lecture une fois le délai minimal écoulé,
         //    on maintient le verrouillage des menus jusqu'à ce que toutes les mises en scène soient
         //    effectivement terminées. Sans cette sécurité supplémentaire, les joueurs pouvaient
         //    sélectionner des compétences ou des objets pendant les dernières secondes des animations.
-        while (IsAnyIntroDirectorStillPlaying(activeDirectors))
+        while (IsAnyIntroAnimationStillPlaying(introCandidates))
         {
             yield return null;
         }
@@ -566,33 +759,39 @@ public partial class NewBattleManager : MonoBehaviour
         Time.fixedDeltaTime = initialFixedDelta;
 
         // 📌 Aucun yield supplémentaire n'est nécessaire : la boucle de tours peut démarrer dès
-        //     maintenant, les PlayableDirector poursuivent leur animation sans bloquer le gameplay.
+        //     maintenant, les Animator poursuivent leur animation sans bloquer le gameplay.
 
         // La gestion du changement de caméra est réalisée en dehors de cette
         // coroutine afin de laisser la main à l'appelant sur la transition.
     }
 
     /// <summary>
-    /// Détermine si au moins une des timelines d'introduction suit encore sa lecture.
+    /// Détermine si au moins une des animations d'introduction suit encore sa lecture.
     /// </summary>
-    /// <param name="directors">Liste des directeurs surveillés pendant l'introduction.</param>
-    /// <returns><c>true</c> tant qu'une timeline est en cours, <c>false</c> lorsque toutes sont stoppées.</returns>
-    private static bool IsAnyIntroDirectorStillPlaying(List<PlayableDirector> directors)
+    /// <param name="intros">Liste des animators surveillés pendant l'introduction.</param>
+    /// <returns><c>true</c> tant qu'une intro est en cours, <c>false</c> lorsque toutes sont stoppées.</returns>
+    private static bool IsAnyIntroAnimationStillPlaying(List<IntroAnimationPlayback> intros)
     {
-        if (directors == null || directors.Count == 0)
+        if (intros == null || intros.Count == 0)
             return false;
 
-        // Parcours l'ensemble des directeurs actifs pour vérifier leur état de lecture.
-        foreach (var director in directors)
+        // Parcours l'ensemble des animators actifs pour vérifier l'état du BlendTree d'intro.
+        foreach (var intro in intros)
         {
-            // Un directeur peut avoir été détruit en cours d'introduction (changement de scène, skip, etc.).
-            // On considère alors que cette timeline est naturellement terminée.
-            if (director == null)
+            if (intro.animator == null)
                 continue;
 
-            // Tant que le PlayableDirector reste en lecture, la cinématique est toujours en cours.
-            if (director.state == PlayState.Playing)
+            int layer = Mathf.Clamp(intro.layer, 0, Mathf.Max(0, intro.animator.layerCount - 1));
+            var stateInfo = intro.animator.GetCurrentAnimatorStateInfo(layer);
+            if (stateInfo.shortNameHash == BattleIntroStateHash && stateInfo.normalizedTime < 1f)
                 return true;
+
+            if (intro.animator.IsInTransition(layer))
+            {
+                var nextState = intro.animator.GetNextAnimatorStateInfo(layer);
+                if (nextState.shortNameHash == BattleIntroStateHash && nextState.normalizedTime < 1f)
+                    return true;
+            }
         }
 
         return false;
@@ -600,12 +799,12 @@ public partial class NewBattleManager : MonoBehaviour
 
     /// <summary>
     /// Gère la caméra d'introduction, attend la fin des
-    /// déplacements puis lance les timelines d'introduction des unités.
+    /// déplacements puis lance les animations d'introduction des unités.
     /// </summary>
     private IEnumerator PlayIntroCameraSequence()
     {
-        // 🎬 Lance les timelines d'introduction en mode ralenti et attend leur terminaison.
-        yield return PlayIntroTimelinesWithSlowTime();
+        // 🎬 Lance les animations d'introduction en mode ralenti et attend leur terminaison.
+        yield return PlayIntroAnimationsWithSlowTime();
 
         // 📷 Dès que les mises en scène sont terminées, on bascule vers la caméra dédiée au menu principal.
         const float introToMenuBlendDuration = 0.5f;
@@ -652,7 +851,7 @@ public partial class NewBattleManager : MonoBehaviour
             unit.ResetBattleMoveUsage();
         InventoryManager.Instance?.ResetBattleItemUsage();
 
-        foreach (var unit in activeCharacterUnits.Where(u => u.Data.isPlayerControlled))
+        foreach (var unit in activeCharacterUnits.Where(u => u.IsPlayerControlled))
         {
             if (!totalDamageDealt.ContainsKey(unit))
                 totalDamageDealt[unit] = 0;
@@ -752,11 +951,17 @@ public partial class NewBattleManager : MonoBehaviour
         }
     }
 
+    private void EvaluateInactiveBattleEventTriggers()
+    {
+        // Méthode conservée pour compatibilité ; l'évaluation est centralisée dans Update.
+        BattleEventTrigger.EvaluateAll(this);
+    }
+
     //5 Détermine quel joueur joue en premier
     public CharacterUnit ReturnFirstStrikeCharacter()
     {
         CharacterUnit firstPlayer = activeCharacterUnits
-            .Where(u => u.Data.isPlayerControlled)
+            .Where(u => u.IsPlayerControlled)
             .OrderByDescending(u => u.currentInitiative)
             .FirstOrDefault();
 
@@ -792,7 +997,7 @@ public partial class NewBattleManager : MonoBehaviour
         if (squadUnitZero != null)
             return squadUnitZero;
 
-        return unitsInBattle.FirstOrDefault(unit => unit != null && unit.Data != null && unit.Data.isPlayerControlled);
+        return unitsInBattle.FirstOrDefault(unit => unit != null && unit.Data != null && unit.IsPlayerControlled);
     }
 
     //7 Démarre la boucle de tours
@@ -808,7 +1013,7 @@ public partial class NewBattleManager : MonoBehaviour
 
             // Avant de démarrer le prochain tour, on joue toutes les timelines en attente
             if (pendingTimelines.Count > 0)
-                yield return PlayPendingTimelines();
+                yield return PlayPendingTimelinesIfNeeded();
 
             yield return ExecuteTurn(CalculateNextUnit());
             // Utilisation du temps non affecté par le timeScale pour ne pas bloquer
@@ -835,6 +1040,12 @@ public partial class NewBattleManager : MonoBehaviour
 
         // Stocke la timeline à jouer et le lanceur associé
         pendingTimelines.Enqueue(new PendingTimeline(asset, casterUnit, binding));
+        if (debugPendingTimelines)
+            Debug.Log($"[NewBattleManager] queued timeline={asset.name} unit={casterUnit.name}");
+
+        // Lance immédiatement la lecture si possible pour éviter d'attendre
+        // un retour en haut de boucle (cas des déclenchements en plein tour).
+        TryStartPendingTimelines();
     }
 
     /// <summary>
@@ -842,6 +1053,7 @@ public partial class NewBattleManager : MonoBehaviour
     /// </summary>
     private IEnumerator PlayPendingTimelines()
     {
+        pendingTimelineRoutineRunning = true;
         while (pendingTimelines.Count > 0)
         {
             var data = pendingTimelines.Dequeue();
@@ -851,6 +1063,8 @@ public partial class NewBattleManager : MonoBehaviour
 
             if (BattleTimelineManager.Instance != null && data.unit != null)
             {
+                if (debugPendingTimelines)
+                    Debug.Log($"[NewBattleManager] play timeline via BattleTimelineManager asset={data.asset?.name} unit={data.unit?.name}");
                 BattleTimelineManager.Instance.PlayCasterTimeline(data.asset, data.unit, data.casterBinding);
                 timelinePlayed = true;
 
@@ -860,10 +1074,12 @@ public partial class NewBattleManager : MonoBehaviour
             }
 
             // Fallback pour les situations de test où le BattleTimelineManager n'est pas présent
-            if (!timelinePlayed && TimelineManager.Instance != null)
+            if (!timelinePlayed && data.unit != null)
             {
-                TimelineManager.Instance.PlayTimeline(data.asset, data.casterBinding, null);
-                while (TimelineManager.Instance.IsTimelineActive)
+                if (debugPendingTimelines)
+                    Debug.Log($"[NewBattleManager] play timeline via fallback asset={data.asset?.name} unit={data.unit?.name}");
+                data.unit.PlayBattleTimeline(data.asset, data.casterBinding);
+                while (data.unit.IsBattleTimelinePlaying)
                     yield return null;
             }
 
@@ -871,6 +1087,23 @@ public partial class NewBattleManager : MonoBehaviour
             // Petite pause pour éviter les enchaînements brusques
             yield return new WaitForSecondsRealtime(0.1f);
         }
+        pendingTimelineRoutineRunning = false;
+    }
+
+    private IEnumerator PlayPendingTimelinesIfNeeded()
+    {
+        if (pendingTimelineRoutineRunning || pendingTimelines.Count == 0)
+            yield break;
+
+        yield return PlayPendingTimelines();
+    }
+
+    public void TryStartPendingTimelines()
+    {
+        if (pendingTimelineRoutineRunning || pendingTimelines.Count == 0)
+            return;
+
+        StartCoroutine(PlayPendingTimelines());
     }
     #endregion
 
@@ -912,11 +1145,11 @@ public partial class NewBattleManager : MonoBehaviour
             if (unit == null || unit.currentHP <= 0)
                 continue;
 
-            bool isPlayer = unit.Data.isPlayerControlled;
+            bool isPlayer = unit.IsPlayerControlled;
 
             // Trouve toutes les unités ennemies vivantes
             var enemies = unitsInBattle
-                .Where(u => u != null && u.currentHP > 0 && u.Data.isPlayerControlled != isPlayer)
+                .Where(u => u != null && u.currentHP > 0 && u.IsPlayerControlled != isPlayer)
                 .ToList();
 
             if (enemies.Count == 0)
@@ -964,7 +1197,7 @@ public partial class NewBattleManager : MonoBehaviour
             return;
 
         // Trouve tous les ennemis vivants (ou l'inverse si la cible est un ennemi)
-        var enemies = activeCharacterUnits.Where(u => u != null && !u.Data.isPlayerControlled).ToList();
+        var enemies = activeCharacterUnits.Where(u => u != null && !u.IsPlayerControlled).ToList();
 
         if (enemies.Count == 0)
             return;
@@ -1034,14 +1267,14 @@ public partial class NewBattleManager : MonoBehaviour
 
         if (unit == currentCharacterUnit && currentTargetCharacter != null && currentTargetCharacter.currentHP > 0
             && currentTargetCharacter.Data != null
-            && currentTargetCharacter.Data.isPlayerControlled != unit.Data.isPlayerControlled)
+            && currentTargetCharacter.IsPlayerControlled != unit.IsPlayerControlled)
         {
             targetUnit = currentTargetCharacter;
         }
         else
         {
             var enemies = unitsInBattle
-                .Where(u => u != null && u.currentHP > 0 && u.Data.isPlayerControlled != unit.Data.isPlayerControlled)
+                .Where(u => u != null && u.currentHP > 0 && u.IsPlayerControlled != unit.IsPlayerControlled)
                 .OrderBy(u => Vector3.Distance(unit.transform.position, u.transform.position));
 
             targetUnit = enemies.FirstOrDefault();
@@ -1081,14 +1314,14 @@ public partial class NewBattleManager : MonoBehaviour
 
             if (unit == currentCharacterUnit && currentTargetCharacter != null && currentTargetCharacter.currentHP > 0
                 && currentTargetCharacter.Data != null
-                && currentTargetCharacter.Data.isPlayerControlled != unit.Data.isPlayerControlled)
+                && currentTargetCharacter.IsPlayerControlled != unit.IsPlayerControlled)
             {
                 targetUnit = currentTargetCharacter;
             }
             else
             {
                 targetUnit = unitsInBattle
-                    .Where(u => u != null && u.currentHP > 0 && u.Data.isPlayerControlled != unit.Data.isPlayerControlled)
+                    .Where(u => u != null && u.currentHP > 0 && u.IsPlayerControlled != unit.IsPlayerControlled)
                     .OrderBy(u => Vector3.Distance(unit.transform.position, u.transform.position))
                     .FirstOrDefault();
             }
@@ -1116,6 +1349,54 @@ public partial class NewBattleManager : MonoBehaviour
                 continue;
 
             OrientUnitTowardClosestOpponent(unit, rotationSpeed);
+        }
+    }
+
+    public void HandleAllegianceChanged(CharacterUnit unit, bool wasPlayerControlled)
+    {
+        if (unit == null)
+            return;
+
+        if (unit.IsPlayerControlled)
+        {
+            if (!totalDamageDealt.ContainsKey(unit))
+                totalDamageDealt[unit] = 0;
+        }
+        else
+        {
+            totalDamageDealt.Remove(unit);
+        }
+
+        if (currentCharacterUnit == unit
+            && wasPlayerControlled
+            && !unit.IsPlayerControlled
+            && IsPlayerDecisionState(currentBattleState))
+        {
+            EndTurn(unit);
+            return;
+        }
+
+        BattleTimelineUIManager.Instance?.Refresh(currentCharacterUnit);
+        OrientAllUnitsTowardClosestOpponent();
+    }
+
+    private static bool IsPlayerDecisionState(BattleState state)
+    {
+        switch (state)
+        {
+            case BattleState.SquadUnit_MainMenu:
+            case BattleState.SquadUnit_SkillsMenu:
+            case BattleState.SquadUnit_ItemsMenu:
+            case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad:
+            case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies:
+            case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
+            case BattleState.SquadUnit_TargetSelectionAmongSquadForItem:
+            case BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill:
+            case BattleState.SquadUnit_TargetSelectionAmongEnemiesForItem:
+            case BattleState.SquadUnit_TargetSelectionForBaseAttack:
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -1189,12 +1470,12 @@ public partial class NewBattleManager : MonoBehaviour
 
         bool allEnemiesDead = unitsInBattle
             .Where(u => u != null)
-            .Where(u => u.Data.characterType == CharacterType.EnemyUnit)
+            .Where(u => u.characterType == CharacterType.EnemyUnit)
             .All(u => u.currentHP <= 0);
 
         bool allSquadDead = unitsInBattle
             .Where(u => u != null)
-            .Where(u => u.Data.characterType == CharacterType.SquadUnit)
+            .Where(u => u.characterType == CharacterType.SquadUnit)
             .All(u => u.currentHP <= 0);
 
         if (allEnemiesDead
@@ -1748,7 +2029,7 @@ public partial class NewBattleManager : MonoBehaviour
             resolvedUnit = activeCharacterUnits.FirstOrDefault(u =>
                 u != null &&
                 u.Data != null &&
-                u.Data.isPlayerControlled &&
+                u.IsPlayerControlled &&
                 u.currentHP > 0 &&
                 u.currentATB >= ATB_THRESHOLD);
         }
@@ -1759,7 +2040,7 @@ public partial class NewBattleManager : MonoBehaviour
             resolvedUnit = activeCharacterUnits.FirstOrDefault(u =>
                 u != null &&
                 u.Data != null &&
-                u.Data.isPlayerControlled &&
+                u.IsPlayerControlled &&
                 u.currentHP > 0);
         }
 
@@ -2067,6 +2348,12 @@ public partial class NewBattleManager : MonoBehaviour
 
     public void ToggleMenuContainers(bool showMain, bool showSkills, bool showItems)
     {
+        if (battleEventMenuLockCount > 0)
+        {
+            SetMenuContainersActive(false, false, false);
+            return;
+        }
+
         // Sécurité supplémentaire : on vérifie que l'unité courante et ses données sont valides
         if (currentCharacterUnit == null || currentCharacterUnit.Data == null)
         {
@@ -2082,9 +2369,46 @@ public partial class NewBattleManager : MonoBehaviour
         }
 
         // Activation/désactivation des différents menus selon les paramètres
-        currentMainMenuContainer.SetActive(showMain);
-        currentSkillsMenuContainer.SetActive(showSkills);
-        currentItemsMenuContainer.SetActive(showItems);
+        SetMenuContainersActive(showMain, showSkills, showItems);
+    }
+
+    private void SetMenuContainersActive(bool showMain, bool showSkills, bool showItems)
+    {
+        if (currentMainMenuContainer != null)
+            currentMainMenuContainer.SetActive(showMain);
+        if (currentSkillsMenuContainer != null)
+            currentSkillsMenuContainer.SetActive(showSkills);
+        if (currentItemsMenuContainer != null)
+            currentItemsMenuContainer.SetActive(showItems);
+    }
+
+    public void RegisterBattleEventStart()
+    {
+        battleEventMenuLockCount++;
+        SetMenuContainersActive(false, false, false);
+    }
+
+    public void RegisterBattleEventEnd()
+    {
+        if (battleEventMenuLockCount > 0)
+            battleEventMenuLockCount--;
+
+        if (battleEventMenuLockCount > 0)
+            return;
+
+        RefreshMenusAfterBattleEvent();
+    }
+
+    private void RefreshMenusAfterBattleEvent()
+    {
+        if (currentCharacterUnit == null || currentCharacterUnit.Data == null)
+            return;
+
+        bool showMain = currentBattleState == BattleState.SquadUnit_MainMenu;
+        bool showSkills = currentBattleState == BattleState.SquadUnit_SkillsMenu;
+        bool showItems = currentBattleState == BattleState.SquadUnit_ItemsMenu;
+
+        SetMenuContainersActive(showMain, showSkills, showItems);
     }
 
     private void UpdateButton(Transform slot, string label, Sprite icon, string description = null)
@@ -2303,7 +2627,7 @@ public partial class NewBattleManager : MonoBehaviour
         IReadOnlyList<CharacterUnit> sourceUnits = includeDeadUnits ? unitsInBattle : activeCharacterUnits;
         foreach (var unit in sourceUnits)
         {
-            if (unit == null || unit.characterType != requiredType)
+            if (unit == null || unit.IsPermanentlyDead || unit.characterType != requiredType)
                 continue;
 
             if (!includeDeadUnits && unit.currentHP <= 0)
@@ -3505,7 +3829,7 @@ public partial class NewBattleManager : MonoBehaviour
         IReadOnlyList<CharacterUnit> sourceUnits = includeDeadUnits ? unitsInBattle : activeCharacterUnits;
         foreach (var unit in sourceUnits)
         {
-            if (unit == null)
+            if (unit == null || unit.IsPermanentlyDead)
                 continue;
 
             if (!includeDeadUnits && unit.currentHP <= 0)
@@ -3790,7 +4114,7 @@ public partial class NewBattleManager : MonoBehaviour
 
         var ordered = units
             .Where(u => u != null && u.Data != null)
-            .OrderBy(u => u.Data.characterType)
+            .OrderBy(u => u.characterType)
             .ThenBy(u => u.Data.characterName);
 
         var builder = new StringBuilder();

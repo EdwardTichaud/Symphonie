@@ -1,7 +1,6 @@
 using System;
 using UnityEngine;
 using System.Collections.Generic; // Permet l'utilisation de listes génériques
-using UnityEngine.Timeline; // Référence aux timelines d'introduction
 using UnityEngine.Serialization; // Facilite la migration des anciens champs (par exemple resonancePoint).
 
 /// <summary>
@@ -232,9 +231,13 @@ public class CharacterData : ScriptableObject, ITargetable
 
     #endregion
 
-    #region Animations & Timeline
+    #region Animations
 
     [Header("Animations d'impact")]
+
+    [Tooltip("Animation jouée quand l'unité est interceptée.")]
+    public AnimationClip interceptedAnimation;
+
     [Tooltip("Animation jouée quand l'unité subit des dégâts.")]
     public AnimationClip hitAnimation;
 
@@ -273,10 +276,6 @@ public class CharacterData : ScriptableObject, ITargetable
 
     [Tooltip("Animation jouée lorsque la dissonance prend fin.")]
     public AnimationClip dissonanceExitAnimation;
-
-    [Header("Timeline d'introduction")]
-    [Tooltip("Timeline jouée lors de l'introduction du combat pour cette unité.")]
-    public TimelineAsset introTimeline;
 
     #endregion
 

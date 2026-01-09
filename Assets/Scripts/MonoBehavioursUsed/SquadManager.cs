@@ -26,6 +26,47 @@ public class SquadManager : MonoBehaviour
         squadCharacters = new List<CharacterData>(characters);
     }
 
+    public bool Contains(CharacterData data)
+    {
+        return data != null && squadCharacters.Contains(data);
+    }
+
+    public void AddToSquad(CharacterData data)
+    {
+        if (data == null || squadCharacters.Contains(data))
+            return;
+
+        squadCharacters.Add(data);
+    }
+
+    public void AddToSquadAt(CharacterData data, int index)
+    {
+        if (data == null || squadCharacters.Contains(data))
+            return;
+
+        if (index < 0 || index > squadCharacters.Count)
+        {
+            squadCharacters.Add(data);
+            return;
+        }
+
+        squadCharacters.Insert(index, data);
+    }
+
+    public bool TryRemoveFromSquad(CharacterData data, out int index)
+    {
+        index = -1;
+        if (data == null)
+            return false;
+
+        index = squadCharacters.IndexOf(data);
+        if (index < 0)
+            return false;
+
+        squadCharacters.RemoveAt(index);
+        return true;
+    }
+
     public void MoveCharacter(int fromIndex, int toIndex)
     {
         if (fromIndex < 0 || fromIndex >= squadCharacters.Count ||

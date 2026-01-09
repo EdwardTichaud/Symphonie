@@ -288,6 +288,8 @@ public class BattleTransitionManager : MonoBehaviour
             return;
         }
 
+        ApplyTimelineEnemyAllegiance(enemies);
+
         // Stocke les timelines post-combat directement dans le gestionnaire de combat
         if (NewBattleManager.Instance != null)
         {
@@ -331,6 +333,22 @@ public class BattleTransitionManager : MonoBehaviour
         // 4) Lancement de la transition de combat classique
         // ------------------------------------------------------------------
         StartCombatTransition();
+    }
+
+    private static void ApplyTimelineEnemyAllegiance(IEnumerable<CharacterData> enemies)
+    {
+        if (enemies == null)
+            return;
+
+        var allegianceManager = AllegianceManager.EnsureInstance();
+        foreach (var enemy in enemies)
+        {
+            if (enemy == null)
+                continue;
+
+            if (allegianceManager.GetEffectiveAllegiance(enemy) == AllegianceSide.Player)
+                allegianceManager.SetAllegiance(enemy, AllegianceSide.Enemy);
+        }
     }
 
     /// <summary>

@@ -96,7 +96,7 @@ public static class ItemEffectExecutor
 
     private static void ApplyRevive(ItemData item, CharacterUnit target)
     {
-        if (target == null || target.currentHP > 0)
+        if (target == null || target.currentHP > 0 || target.IsPermanentlyDead)
             return;
 
         float maxHP = target.Data.baseHP + target.currentVitality;

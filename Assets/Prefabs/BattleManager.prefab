@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2532479745881820963}
   - component: {fileID: 3242446044733657830}
   - component: {fileID: 7792622988747768174}
+  - component: {fileID: 3866917311187237371}
   m_Layer: 0
   m_Name: BattleManager
   m_TagString: Untagged
@@ -50,7 +51,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentBattleState: 0
   squadUnitRay: {fileID: 5627696518775099638, guid: 390cc74915d4a054bbd897e1885047a4, type: 3}
+  playerSpawnRoot: {fileID: 0}
   enemyUnitRay: {fileID: 5627696518775099638, guid: 00dd6efc06d3d904f8c54712b85f5042, type: 3}
+  enemySpawnRoot: {fileID: 0}
   enemyTemplates: []
   unitsInBattle: []
   activeCharacterUnits: []
@@ -64,16 +67,20 @@ MonoBehaviour:
   VictoryScreenImage: {fileID: 8400000, guid: 3c33ee4a0b457ed4fad4d2f9fc1598e7, type: 2}
   GameOverScreenImage: {fileID: 8400000, guid: 3c33ee4a0b457ed4fad4d2f9fc1598e7, type: 2}
   gameOverOnDefeat: 1
+  respawnAtCheckpointOnExit: 0
   victoryTimeline: {fileID: 0}
   defeatTimeline: {fileID: 0}
   lastBattleOutcome: 0
   rewardItems: []
   rewardXP: 0
+  harmonicMenuScorePenalty: 5
   itemPreparingTimeline: {fileID: 11400000, guid: e369e34d45f3da848b3c59c52443a3bb, type: 2}
   itemPreparingCameraMotif: {fileID: 11400000, guid: 00a8cddee598ad34aba135f6c177614c, type: 2}
   itemTargetSelectionCameraMotif: {fileID: 11400000, guid: fd233a8389a1de749b1ec0e3024ff5ab, type: 2}
   musicalMoveTargetSelectionCameraMotif: {fileID: 11400000, guid: ca7c9013354bf874c92a2ceac6cf7384, type: 2}
+  battleCameraRig: {fileID: 0}
   currentCharacterUnit: {fileID: 0}
+  debugPendingTimelines: 0
   inputSprite1: {fileID: 21300000, guid: 33cbbe0051549c14a8670101deea4c8c, type: 3}
   inputSprite2: {fileID: 21300000, guid: d4083608ba2cd6f43ad8bd262b380eac, type: 3}
   inputSprite3: {fileID: 21300000, guid: f450c5a75855c3e4e89f8acf1545fa52, type: 3}
@@ -83,47 +90,19 @@ MonoBehaviour:
   targetCursor: {fileID: 0}
   multiTargetCursors: []
   battleCameraCanvasTransform: {fileID: 0}
-  cameraSmoothSpeed: 5
-  firstTurnRailDuration: 2.75
-  firstTurnRailDepartureDistance: 6.5
-  firstTurnRailLateralOffset: 1.75
-  firstTurnRailHeightOffset: 1.35
-  firstTurnRailApproachOffset: 2.1
-  firstTurnRailFocusHeight: 1.7
-  firstTurnRailCurrentPositionBlend: 0.35
-  firstTurnRailEase:
-    serializedVersion: 2
-    m_Curve:
-    - serializedVersion: 3
-      time: 0
-      value: 0
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    - serializedVersion: 3
-      time: 1
-      value: 1
-      inSlope: 0
-      outSlope: 0
-      tangentMode: 0
-      weightedMode: 0
-      inWeight: 0
-      outWeight: 0
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
+  battleCamera: {fileID: 0}
   skillChoices: []
   specialMoveChoice: {fileID: 0}
+  basicAttackMoveChoice: {fileID: 0}
   itemChoices: []
   currentMove: {fileID: 0}
   currentItem: {fileID: 0}
+  currentMoveTargetType: 0
   currentItemTargetType: 0
   currentMenuIndex: 0
   currentSkillPageIndex: 0
   emptyMove: {fileID: 11400000, guid: 82b670c14d416ad4f94349c9ecb49cd3, type: 2}
+  defaultBasicAttackMove: {fileID: 0}
   currentMainMenuContainer: {fileID: 0}
   currentMainMenuSlots: []
   currentSkillsMenuContainer: {fileID: 0}
@@ -150,9 +129,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentMove: {fileID: 0}
-  qteCirclePrefab: {fileID: 8455065410536213309, guid: 86e0b5a2d15fd3f44b031a8529e62ba5, type: 3}
+  qteCirclePrefab: {fileID: 492345646903696854, guid: ce0d6892c2207ab4abe50e1425d978ff, type: 3}
   qteUIParent: {fileID: 0}
-  qteBarPrefab: {fileID: 492345646903696854, guid: ce0d6892c2207ab4abe50e1425d978ff, type: 3}
+  qteBarPrefab: {fileID: 0}
+  qteWindowScale: 1
+  qteValidationPadding: 0
+  qtePerfectThreshold: 0.35
+  showQteFeedback: 1
+  defenseWindowScale: 1
   dashParticlesPrefab: {fileID: 0}
   defaultDashSound: {fileID: 0}
   successSFX: {fileID: 8300000, guid: d87f65e269aa6cb4fbcd95be09d05c8f, type: 3}
@@ -172,7 +156,57 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2bd44512534fab0499c753ad8b0f2bd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  knownMoves: []
+  knownMoves:
+  - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
+  - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
+  - {fileID: 11400000, guid: e5d7b6fc3f0d4cc095fd27160e6ef5e5, type: 2}
+  registeredMoves:
+  - {fileID: 11400000, guid: ec1327a205d9b39409a53c126d22f942, type: 2}
+  - {fileID: 11400000, guid: 05a9257102a1a444fbc0f8652733139b, type: 2}
+  - {fileID: 11400000, guid: 12649e71a55b8f34d93c30d7cdbffd07, type: 2}
+  - {fileID: 11400000, guid: 2e2ee6af79574e63a41d11f5ce02f4c2, type: 2}
+  - {fileID: 11400000, guid: b6d24e932a8a41df848a08782c52992b, type: 2}
+  - {fileID: 11400000, guid: ad6fb7b628c0463d8117fa11e2d9dff2, type: 2}
+  - {fileID: 11400000, guid: 0514bf9ea21792441935664a65892ea6, type: 2}
+  - {fileID: 11400000, guid: 0787920ebc8c439daae667f5f3b773cf, type: 2}
+  - {fileID: 11400000, guid: b7ded82071314cb0983731d3fbb5e558, type: 2}
+  - {fileID: 11400000, guid: ce619d6bffe54b80b90db8d4de657451, type: 2}
+  - {fileID: 11400000, guid: 690d41f5c60d498eb7573c884527e373, type: 2}
+  - {fileID: 11400000, guid: 5d3d6b1488094d679b597c6c112c0a3e, type: 2}
+  - {fileID: 11400000, guid: c59e00f669ed4674bf04ce7266e99b40, type: 2}
+  - {fileID: 11400000, guid: 10abb95f7b0245ffab2fcdc4e5d0dc3d, type: 2}
+  - {fileID: 11400000, guid: c8084fd881a041ad8c9e27020309f6aa, type: 2}
+  - {fileID: 11400000, guid: 5c72eb4c303042c59b9f38381cee5be6, type: 2}
+  - {fileID: 11400000, guid: 857c2cb2a8614382b75615f4f5a589f6, type: 2}
+  - {fileID: 11400000, guid: 677d519fa2d243e48b26e669711c413e, type: 2}
+  - {fileID: 11400000, guid: 056fa00282444ed5922b42e8f67ffa55, type: 2}
+  - {fileID: 11400000, guid: 82b670c14d416ad4f94349c9ecb49cd3, type: 2}
+  - {fileID: 11400000, guid: 39900dadaa7c4225aea984dd59de23e8, type: 2}
+  - {fileID: 11400000, guid: 0d1c3b266c6340c2aaf508064fb45394, type: 2}
+  - {fileID: 11400000, guid: 497ef656e13f4c39a5adcb5c9c544358, type: 2}
+  - {fileID: 11400000, guid: d311eae2a31f4b50b3db75d5b1d34150, type: 2}
+  - {fileID: 11400000, guid: 7688069f85844b03afde7358497828eb, type: 2}
+  - {fileID: 11400000, guid: 4994e2b9562f4dc190223fbdc506d57a, type: 2}
+  - {fileID: 11400000, guid: 2f578df09bec4f95b6f2859f9a7f0179, type: 2}
+  - {fileID: 11400000, guid: 569e2f6c75b54c48a2168cd683ef5a5b, type: 2}
+  - {fileID: 11400000, guid: 80fbe24ed95f448d935675c0244fad5f, type: 2}
+  - {fileID: 11400000, guid: 5d42deee9aec4208b3e71fd9e2165c3f, type: 2}
+  - {fileID: 11400000, guid: 5730aa3c74324b59ae6137b4c633d186, type: 2}
+  - {fileID: 11400000, guid: e5d7b6fc3f0d4cc095fd27160e6ef5e5, type: 2}
+  - {fileID: 11400000, guid: ffffffff000000000000000000000001, type: 2}
+  - {fileID: 11400000, guid: 9afd83038c050e947b6abcd86f25869e, type: 2}
+  - {fileID: 11400000, guid: b6beb899df834f51b8ecc725c958975d, type: 2}
+  - {fileID: 11400000, guid: f1d5d3fa7fc5448e8dee6c85de4d135f, type: 2}
+  - {fileID: 11400000, guid: 5484cf63c83e443dba1230d85af0c199, type: 2}
+  - {fileID: 11400000, guid: aa3a8aa7524d80e48b7cbfff02d64f32, type: 2}
+  - {fileID: 11400000, guid: 78aaae75b3474affb44bc1dda235930a, type: 2}
+  - {fileID: 11400000, guid: a419a2508eee46b1a316528ed69bef65, type: 2}
+  - {fileID: 11400000, guid: b17825ad13b741fc88819d6733cb064a, type: 2}
+  - {fileID: 11400000, guid: 45f5c65a0c890d24abf6c97d0decfecd, type: 2}
+  - {fileID: 11400000, guid: f24e25ca8ff848a2a85b6f865e42c390, type: 2}
+  - {fileID: 11400000, guid: 013d521151694a8b9eeb795466190ddd, type: 2}
+  - {fileID: 11400000, guid: 7340a29c848f98838cf392beb2c0575e, type: 2}
+  - {fileID: 11400000, guid: e288b05a08df48ff904bc3b4766cdfbc, type: 2}
 --- !u!114 &3242446044733657830
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -198,3 +232,28 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   addHarmonicPrefab: {fileID: 5627696518775099638, guid: 86f54945d262c20478b368068c825708, type: 3}
+  battleCamera: {fileID: 0}
+  prewarmCount: 10
+--- !u!114 &3866917311187237371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8651676031145584698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 372a8caa032aa664fbb44227f059a3bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  units:
+  - unitData: {fileID: 11400000, guid: f0947ae5999fbfc4098035591fc542e6, type: 2}
+    thresholds:
+    - category: 1
+      hpRatio: 0
+      cameraMotif: {fileID: 11400000, guid: e4526b1d1d2af0e44889a8aef89cba2c, type: 2}
+      animationClip: {fileID: 7400000, guid: 745835b03392d1c4b86a5945332b3ffd, type: 2}
+      unlockMotifAfterAnimation: 1
+      triggered: 0
+  debugLogs: 0
+  debugInterval: 1

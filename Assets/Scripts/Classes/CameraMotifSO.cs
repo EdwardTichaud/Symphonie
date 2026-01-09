@@ -7,7 +7,9 @@ public class CameraMotifSO : ScriptableObject
     public enum ReferencePoint
     {
         Caster,
-        Target
+        Target,
+        [InspectorName("Last Unit Enemy")]
+        LastUnitEnemy
     }
 
     [Header("Blend")]
@@ -62,6 +64,10 @@ public class CameraMotifSO : ScriptableObject
     [Header("Reference")]
     [Tooltip("Point de référence utilisé pour positionner la caméra.")]
     public ReferencePoint referencePoint = ReferencePoint.Caster;
+    [Tooltip("Fige la position de référence lors de l'activation du motif.")]
+    public bool lockReferencePosition;
+    [Tooltip("Fige la rotation de référence lors de l'activation du motif.")]
+    public bool lockReferenceRotation;
 
     [Header("Size Compensation")]
     [Tooltip("Ajuste le FOV si la cible de référence sort du cadre.")]

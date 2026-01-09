@@ -63,10 +63,23 @@ public partial class NewBattleManager
 
         // Seuls les trois premiers membres de la squad peuvent participer au combat
         var squad = SquadManager.Instance != null ? SquadManager.Instance.SquadCharacters : new List<CharacterData>();
-        int maxSquadMembers = Mathf.Min(3, squad.Count);
+        var availableSquad = new List<CharacterData>();
+        var allegianceManager = AllegianceManager.Instance;
+        foreach (var member in squad)
+        {
+            if (member == null)
+                continue;
+
+            if (allegianceManager != null && allegianceManager.GetEffectiveAllegiance(member) == AllegianceSide.Enemy)
+                continue;
+
+            availableSquad.Add(member);
+        }
+
+        int maxSquadMembers = Mathf.Min(3, availableSquad.Count);
         for (int i = 0; i < maxSquadMembers && i < playerSpawnPoints.Count; i++)
         {
-            var pc = squad[i];
+            var pc = availableSquad[i];
             var spawnPoint = playerSpawnPoints[i];
 
             if (pc.characterBattleModel == null)
@@ -113,7 +126,8 @@ public partial class NewBattleManager
 
         for (int i = 0; i < enemyTemplates.Count && i < enemySpawnPoints.Count; i++)
         {
-            var enemyData = Instantiate(enemyTemplates[i]);
+            var template = enemyTemplates[i];
+            var enemyData = Instantiate(template);
             var spawnPoint = enemySpawnPoints[i];
 
             if (enemyData.characterBattleModel == null)
@@ -136,6 +150,14 @@ public partial class NewBattleManager
 
             var eu = unitGO.GetComponent<CharacterUnit>();
             eu.Initialize(enemyData);
+            var allegianceManager = AllegianceManager.Instance;
+            if (allegianceManager != null
+                && template != null
+                && allegianceManager.GetEffectiveAllegiance(template) == AllegianceSide.Enemy
+                && eu.IsPlayerControlled)
+            {
+                eu.ApplyAllegianceOverride(AllegianceSide.Enemy, notifyManagers: false, notifyBattle: false);
+            }
             unitsInBattle.Add(eu);
         }
     }

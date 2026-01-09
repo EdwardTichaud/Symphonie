@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Playables; // 📽️ Gestion des timelines propres à l'unité
 using UnityEngine.Animations;
 using UnityEngine.Timeline;  // 🎼 Lecture des TimelineAsset assignés au PlayableDirector local
@@ -704,7 +705,33 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             TryGetComponent(out concentrationSystem);
     }
 
-    public CharacterType characterType => Data.characterType;
+    private AllegianceSide? allegianceOverride;
+
+    public AllegianceSide EffectiveAllegiance => allegianceOverride ?? ResolveDefaultAllegiance();
+    public bool IsPlayerControlled => EffectiveAllegiance == AllegianceSide.Player;
+
+    public bool IsAllyOf(CharacterUnit other)
+    {
+        return other != null && EffectiveAllegiance == other.EffectiveAllegiance;
+    }
+
+    public bool IsEnemyOf(CharacterUnit other)
+    {
+        return other != null && EffectiveAllegiance != other.EffectiveAllegiance;
+    }
+
+    public CharacterType characterType => IsPlayerControlled ? CharacterType.SquadUnit : CharacterType.EnemyUnit;
+
+    private AllegianceSide ResolveDefaultAllegiance()
+    {
+        if (Data == null)
+            return AllegianceSide.Player;
+
+        if (Data.isPlayerControlled || Data.characterType == CharacterType.SquadUnit)
+            return AllegianceSide.Player;
+
+        return AllegianceSide.Enemy;
+    }
 
     #region Statistiques runtime (alignées sur CharacterData)
     private float _currentReflex;
@@ -727,6 +754,19 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private float _currentFatigue;
     private int _currentHarmonicCharge;
     #endregion
+
+    [Header("Critical Hit")]
+    [Tooltip("Base critical chance applied when a QTE is perfect (0-1).")]
+    [Range(0f, 1f)]
+    [SerializeField] private float baseCriticalChance = 0.01f;
+    [Tooltip("Base critical rate before power scaling.")]
+    [FormerlySerializedAs("baseCriticRate")]
+    [SerializeField] private float baseCriticalRate = 1f;
+    [Tooltip("Runtime bonus added directly to the critical rate.")]
+    [FormerlySerializedAs("criticRateBonus")]
+    [SerializeField] private float criticalRateBonus = 0f;
+    [Tooltip("Runtime bonus added to base power for critical rate scaling.")]
+    [SerializeField] private float basePowerBonus = 0f;
 
     public float currentReflex { get => _currentReflex; set => _currentReflex = value; }
     public float currentMobility { get => _currentMobility; set => _currentMobility = value; }
@@ -777,6 +817,21 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public float currentRage { get => _currentRage; set => _currentRage = value; }
     public float currentFatigue { get => _currentFatigue; set => _currentFatigue = value; }
+
+    public float BasePower => (Data != null ? Data.basePower : 0f) + basePowerBonus;
+    public float CriticalRate => Mathf.Max(0f, baseCriticalRate + Mathf.Floor(BasePower / 10f) + criticalRateBonus);
+    public float CriticalChance => Mathf.Clamp01(baseCriticalChance * CriticalRate);
+
+    public void AddBasePowerBonus(float delta)
+    {
+        basePowerBonus += delta;
+        currentPower += delta;
+    }
+
+    public void AddCriticalRateBonus(float delta)
+    {
+        criticalRateBonus += delta;
+    }
 
     // Ressources runtime
     public float currentMP;
@@ -833,12 +888,19 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         OnHealthChanged?.Invoke(this, clampedValue, maxHP);
     }
 
+    [Header("Etat de mort")]
+    [Tooltip("Si true, l'unité est retirée définitivement du combat lorsqu'elle tombe à 0 PV.")]
+    [SerializeField] private bool removeFromBattleOnKnockOut = false;
     private bool deathTriggered;
+    private bool permanentDeathTriggered;
     /// <summary>
     /// Indique si l'unité est définitivement morte
     /// </summary>
-    public bool IsDead => deathTriggered || currentHP <= 0f;
+    public bool IsDead => permanentDeathTriggered || deathTriggered || currentHP <= 0f;
+    public bool IsPermanentlyDead => permanentDeathTriggered;
+    public bool IsKnockedOut => currentHP <= 0f && !permanentDeathTriggered;
     public event System.Action<CharacterUnit> OnDeath;
+    public event System.Action<CharacterUnit, AllegianceSide> OnAllegianceChanged;
     public bool isReadyToParry;
     // Indique si l'unité est immunisée à l'interception. Visible pour faciliter
     // le débogage pendant le combat.
@@ -859,6 +921,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         Data = characterData;
         Data.owner = this;
+        AllegianceManager.Instance?.ApplyToUnit(this);
 
         InitializeLoadoutSets();
 
@@ -866,7 +929,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentReflex = Data.baseReflex;
         currentMobility = Data.baseMobility;
         currentVitality = Data.baseVitality;
-        currentPower = Data.basePower;
+        currentPower = BasePower;
         currentStability = Data.baseStability;
         currentSagacity = Data.baseSagacity;
         currentHP = Data.baseHP + currentVitality;
@@ -920,6 +983,41 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         // Vérifie immédiatement l'état harmonique pour déclencher Awake/Dissonant si nécessaire au lancement du combat.
         CheckDissonance();
+    }
+
+    /// <summary>
+    /// Change l'allégeance runtime de l'unité (utilisable par Timeline Signals).
+    /// </summary>
+    public void SetAllegiance(AllegianceSide side)
+    {
+        ApplyAllegianceOverride(side, notifyManagers: true, notifyBattle: true);
+    }
+
+    public void SetAllegianceToAlly()
+    {
+        SetAllegiance(AllegianceSide.Player);
+    }
+
+    public void SetAllegianceToEnemy()
+    {
+        SetAllegiance(AllegianceSide.Enemy);
+    }
+
+    internal void ApplyAllegianceOverride(AllegianceSide side, bool notifyManagers, bool notifyBattle)
+    {
+        if (Data == null)
+            return;
+
+        bool wasPlayerControlled = IsPlayerControlled;
+        allegianceOverride = side;
+
+        if (notifyManagers)
+            AllegianceManager.EnsureInstance().SetAllegiance(Data, side, this);
+
+        if (notifyBattle && wasPlayerControlled != IsPlayerControlled)
+            NewBattleManager.Instance?.HandleAllegianceChanged(this, wasPlayerControlled);
+
+        OnAllegianceChanged?.Invoke(this, side);
     }
 
     /// <summary>
@@ -1299,6 +1397,9 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     /// <param name="attacker">Transform de l'attaquant pour déterminer la direction.</param>
     public void TakeDamage(float amount, Transform attacker = null, bool allowRedirect = true)
     {
+        if (permanentDeathTriggered)
+            return;
+
         // Si autorisé, on vérifie la présence d'une marque de loyauté qui
         // pourrait rediriger les dégâts vers un protecteur.
         if (allowRedirect)
@@ -1395,7 +1496,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             return;
 
         // On vérifie que la victime et le protecteur appartiennent bien à la même équipe.
-        if (markProtector.Data.characterType != Data.characterType)
+        if (markProtector.characterType != characterType)
             return;
 
         AudioClipSO clip = Data.loyaltyMarkTargetAlly;
@@ -1444,13 +1545,13 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         NewBattleManager.Instance.RemoveFromTimeline(this);
         NewBattleManager.Instance.activeCharacterUnits.Remove(this); // facultatif
 
-        if (Data.characterType == CharacterType.EnemyUnit)
+        if (characterType == CharacterType.EnemyUnit)
         {
             GameManager.Instance?.IncrementEnemiesDefeated();
             NewBattleManager.Instance?.OnEnemyDefeated(this);
         }
 
-        if (Data.isPlayerControlled)
+        if (IsPlayerControlled)
         {
             PlayAllyWeep();
 
@@ -1462,17 +1563,51 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
             }
         }
 
+        if (removeFromBattleOnKnockOut)
+            FinalizeDeath();
+
         OnDeath?.Invoke(this);
+    }
+
+    public void MarkAsPermanentlyDead()
+    {
+        if (permanentDeathTriggered)
+            return;
+
+        if (!deathTriggered && currentHP > 0f)
+        {
+            currentHP = 0f;
+            PlayDeath();
+        }
+        else
+        {
+            FinalizeDeath();
+        }
     }
 
     public void PlayResurection()
     {
+        if (permanentDeathTriggered)
+            return;
+
+        deathTriggered = false;
+        NewBattleManager.Instance?.RestoreUnitToBattle(this);
+
         Animator animator = GetCasterAnimator();
         if (animator == null)
             return;
 
         if (!TryPlayStateOnAllLayers(animator, ResurectionStateName, ResurectionStateShortHash))
             Debug.LogWarning($"[CharacterUnit] Etat Animator '{ResurectionStateName}' introuvable pour {name}.");
+    }
+
+    private void FinalizeDeath()
+    {
+        if (permanentDeathTriggered)
+            return;
+
+        permanentDeathTriggered = true;
+        NewBattleManager.Instance?.RemoveFromBattle(this);
     }
 
     private bool TryPlayStateOnAllLayers(Animator animator, string stateName, int shortHash)
@@ -1506,7 +1641,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     void PlayAllyWeep()
     {
         var allies = NewBattleManager.Instance.activeCharacterUnits
-            .Where(u => u.Data.isPlayerControlled && u != this && u.currentHP > 0)
+            .Where(u => u.IsPlayerControlled && u != this && u.currentHP > 0)
             .ToList();
         if (allies.Count == 0)
             return;
@@ -1733,6 +1868,19 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         // Réutilise la méthode centralisée afin de bénéficier de tous les
         // garde-fous existants (vérification d'état mort, CrossFade, etc.).
+        PlayAnimationClip(clip);
+    }
+
+    /// <summary>
+    /// Lance l'animation principale d'exécution d'un move.
+    /// </summary>
+    /// <param name="clip">AnimationClip à jouer sur le caster.</param>
+    public void PlayPerformingAnimation(AnimationClip clip)
+    {
+        if (clip == null)
+            return;
+
+        GetCasterAnimator();
         PlayAnimationClip(clip);
     }
 
@@ -1970,7 +2118,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     public CharacterUnit SelectTargetFromSquad()
     {
         var squad = NewBattleManager.Instance.activeCharacterUnits
-            .Where(u => u.Data.isPlayerControlled && u.currentHP > 0)
+            .Where(u => u.IsPlayerControlled && u.currentHP > 0)
             .ToList();
 
         if (squad == null || squad.Count == 0)
@@ -2246,7 +2394,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         if (Data == null)
             return 0f;
 
-        float baseValue = Mathf.Max(0f, Data.basePower);
+        float baseValue = Mathf.Max(0f, BasePower);
         return CombatPipeline.ResolveDamageValue(this, baseValue, new CombatPipeline.DamageOptions
         {
             includePower = false,

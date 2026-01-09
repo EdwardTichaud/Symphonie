@@ -58,6 +58,12 @@ public class CharacterUnitEditor : Editor
                 EditorGUILayout.FloatField("Sagacité", unit.currentSagacity);
                 EditorGUI.indentLevel--;
 
+                EditorGUILayout.LabelField("Critical", EditorStyles.miniBoldLabel);
+                EditorGUI.indentLevel++;
+                EditorGUILayout.FloatField("Critical rate", unit.CriticalRate);
+                EditorGUILayout.FloatField("Critical chance", unit.CriticalChance);
+                EditorGUI.indentLevel--;
+
                 EditorGUILayout.LabelField("Paramètres communs", EditorStyles.miniBoldLabel);
                 EditorGUI.indentLevel++;
                 EditorGUILayout.FloatField("HP", unit.currentHP);

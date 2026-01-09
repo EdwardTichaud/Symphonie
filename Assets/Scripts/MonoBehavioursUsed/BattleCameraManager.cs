@@ -46,6 +46,19 @@ public class BattleCameraManager : MonoBehaviour
     [Tooltip("Amplitude de lacet (en degrés) appliquée à la caméra pendant l'oscillation.")]
     [SerializeField] private float breathingYawAmplitude = 0.4f;
 
+    [Header("Critical Shake")]
+    [Tooltip("Duration of the strong shake triggered by critical hits.")]
+    [SerializeField] private float criticalShakeDuration = 0.5f;
+
+    [Tooltip("Position amplitude of the strong shake triggered by critical hits.")]
+    [SerializeField] private float criticalShakeAmplitude = 0.6f;
+
+    [Tooltip("Noise frequency of the strong shake triggered by critical hits.")]
+    [SerializeField] private float criticalShakeFrequency = 24f;
+
+    [Tooltip("Rotation amplitude (degrees) of the strong shake triggered by critical hits.")]
+    [SerializeField] private float criticalShakeRotation = 2.5f;
+
     [Header("Motif par défaut")]
     [Tooltip("Motif appliqué en continu si aucun motif ponctuel n'est actif.")]
     [SerializeField] private CameraMotifSO defaultMotif;
@@ -63,13 +76,31 @@ public class BattleCameraManager : MonoBehaviour
     private CameraMotifSO activeMotif;
 
     /// <summary>Motif actuellement appliqué par le gestionnaire.</summary>
-    private CameraMotifSO currentCameraMotif;
+    public CameraMotifSO currentCameraMotif;
 
     /// <summary>Motif précédent pour permettre un blend progressif.</summary>
-    private CameraMotifSO previousMotif;
+    public CameraMotifSO previousMotif;
 
     /// <summary>Indique si le motif courant est verrouillé pour la durée d'un move.</summary>
-    private bool motifLocked;
+    public bool motifLocked;
+    public enum MotifLockPriority
+    {
+        Normal = 0,
+        High = 1
+    }
+
+    private struct MotifRequest
+    {
+        public CameraMotifSO Motif;
+        public MotifLockPriority Priority;
+        public bool IsLock;
+        public int Order;
+        public float BlendDuration;
+    }
+
+    private int motifRequestSequence;
+    private MotifLockPriority currentLockPriority = MotifLockPriority.Normal;
+    private readonly List<MotifRequest> motifRequests = new();
 
     /// <summary>Timer de blend entre motifs.</summary>
     private float motifBlendTimer;
@@ -95,6 +126,14 @@ public class BattleCameraManager : MonoBehaviour
     /// <summary>Décalages de phase uniques par caméra pour l'effet de respiration.</summary>
     private readonly Dictionary<string, float> breathingPhaseOffsets = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Etat interne du shake critique.</summary>
+    private float shakeTimer;
+    private float shakeDuration;
+    private float shakeAmplitude;
+    private float shakeFrequency;
+    private float shakeRotation;
+    private float shakeSeed;
+
     /// <summary>État interne utilisé pour lisser chaque caméra.</summary>
     private sealed class CameraState
     {
@@ -110,6 +149,12 @@ public class BattleCameraManager : MonoBehaviour
         public CameraMotifSO.ReferencePoint ReferencePoint;
         public float ReferenceDelay;
         public List<ReferenceSample> ReferenceSamples;
+        public bool HasLockedReferencePosition;
+        public bool HasLockedReferenceRotation;
+        public Vector3 LockedReferencePosition;
+        public Quaternion LockedReferenceRotation;
+        public Transform LockedReferenceTransform;
+        public CameraMotifSO.ReferencePoint LockedReferencePoint;
         public bool HasBaseFov;
         public float BaseFov;
         public bool WasCompensatingFov;
@@ -118,6 +163,8 @@ public class BattleCameraManager : MonoBehaviour
     private struct MotifTuning
     {
         public CameraMotifSO.ReferencePoint ReferencePoint;
+        public bool LockReferencePosition;
+        public bool LockReferenceRotation;
         public Vector3 ReferenceOffsetPosition;
         public Vector3 ReferenceOffsetRotation;
         public float ReferenceOffsetSmoothTime;
@@ -257,7 +304,10 @@ public class BattleCameraManager : MonoBehaviour
             return;
 
         if (ApplyMotifPlacement(camera, cameraName))
+        {
             ApplyBreathingMotion(camera, cameraName);
+            ApplyCameraShake(camera);
+        }
     }
 
     /// <summary>
@@ -291,6 +341,7 @@ public class BattleCameraManager : MonoBehaviour
         Vector3 referencePosition = referenceTransform.position;
         Quaternion referenceRotation = referenceTransform.rotation;
         ResolveDelayedReference(state, referenceTransform, tuning.ReferencePoint, tuning.ReferenceOffsetDelay, ref referencePosition, ref referenceRotation);
+        ApplyReferenceLock(state, tuning, referenceTransform, ref referencePosition, ref referenceRotation);
 
         Vector3 offsetWorld = referenceRotation * tuning.ReferenceOffsetPosition;
         Vector3 desiredPosition = referencePosition + offsetWorld;
@@ -388,17 +439,221 @@ public class BattleCameraManager : MonoBehaviour
         {
             motifBlendTimer = duration;
             motifBlendActive = false;
-            previousMotif = activeMotif;
         }
     }
 
     /// <summary>Active un motif pour modifier le comportement de la caméra.</summary>
-    public void SetCameraMotif(CameraMotifSO motif, float blendDuration = -1f)
+    public void SetCameraMotif(CameraMotifSO motif, float blendDuration = -1f, bool ignoreLock = false)
     {
-        if (motifLocked && motif != activeMotif)
+        if (ignoreLock)
+        {
+            ApplyCameraMotif(motif, blendDuration);
+            return;
+        }
+
+        if (motif == null)
+        {
+            ClearNonLockRequests();
+            UpdateActiveMotifFromRequests();
+            return;
+        }
+
+        RegisterMotifRequest(motif, MotifLockPriority.Normal, false, blendDuration);
+        UpdateActiveMotifFromRequests();
+    }
+
+    /// <summary>Désactive le motif courant.</summary>
+    public void ClearCameraMotif(float blendDuration = -1f)
+    {
+        SetCameraMotif(null, blendDuration);
+    }
+
+    /// <summary>Active et verrouille un motif jusqu'à la fin explicite d'un move.</summary>
+    public void LockCameraMotif(CameraMotifSO motif, float blendDuration = -1f, MotifLockPriority priority = MotifLockPriority.Normal)
+    {
+        if (motif == null)
             return;
 
-        if (motif == activeMotif && !motifBlendActive)
+        RegisterMotifRequest(motif, priority, true, blendDuration);
+        UpdateActiveMotifFromRequests();
+    }
+
+    /// <summary>Déverrouille le motif pour autoriser un changement explicite.</summary>
+    public void UnlockCameraMotif()
+    {
+        RemoveActiveLockRequest();
+        UpdateActiveMotifFromRequests();
+    }
+
+    public void UnlockCameraMotif(CameraMotifSO motif)
+    {
+        if (motif == null)
+            return;
+
+        RemoveLockRequestForMotif(motif);
+        UpdateActiveMotifFromRequests();
+    }
+
+    private void RegisterMotifRequest(
+        CameraMotifSO motif,
+        MotifLockPriority priority,
+        bool isLock,
+        float blendDuration)
+    {
+        if (motif == null)
+            return;
+
+        if (isLock)
+        {
+            for (int i = motifRequests.Count - 1; i >= 0; i--)
+            {
+                var request = motifRequests[i];
+                if (request.IsLock && request.Motif == motif && request.Priority == priority)
+                    motifRequests.RemoveAt(i);
+            }
+        }
+        else
+        {
+            ClearNonLockRequests();
+        }
+
+        motifRequests.Add(new MotifRequest
+        {
+            Motif = motif,
+            Priority = priority,
+            IsLock = isLock,
+            Order = ++motifRequestSequence,
+            BlendDuration = blendDuration
+        });
+    }
+
+    private void ClearNonLockRequests()
+    {
+        for (int i = motifRequests.Count - 1; i >= 0; i--)
+        {
+            if (!motifRequests[i].IsLock)
+                motifRequests.RemoveAt(i);
+        }
+    }
+
+    private void RemoveActiveLockRequest()
+    {
+        int index = FindActiveLockRequestIndex();
+        if (index >= 0)
+            motifRequests.RemoveAt(index);
+    }
+
+    private void RemoveLockRequestForMotif(CameraMotifSO motif)
+    {
+        int bestIndex = -1;
+        int bestOrder = -1;
+        for (int i = 0; i < motifRequests.Count; i++)
+        {
+            MotifRequest request = motifRequests[i];
+            if (!request.IsLock || request.Motif != motif)
+                continue;
+
+            if (request.Order > bestOrder)
+            {
+                bestOrder = request.Order;
+                bestIndex = i;
+            }
+        }
+
+        if (bestIndex >= 0)
+            motifRequests.RemoveAt(bestIndex);
+    }
+
+    private int FindActiveLockRequestIndex()
+    {
+        int bestIndex = -1;
+        MotifRequest best = default;
+        bool found = false;
+
+        for (int i = 0; i < motifRequests.Count; i++)
+        {
+            MotifRequest request = motifRequests[i];
+            if (!request.IsLock)
+                continue;
+
+            if (!found
+                || request.Priority > best.Priority
+                || (request.Priority == best.Priority && request.Order > best.Order))
+            {
+                best = request;
+                bestIndex = i;
+                found = true;
+            }
+        }
+
+        return bestIndex;
+    }
+
+    private void UpdateActiveMotifFromRequests()
+    {
+        if (TryGetActiveRequest(out MotifRequest request))
+        {
+            if (activeMotif != request.Motif)
+                ApplyCameraMotif(request.Motif, request.BlendDuration);
+
+            motifLocked = request.IsLock;
+            currentLockPriority = request.IsLock ? request.Priority : MotifLockPriority.Normal;
+            return;
+        }
+
+        if (activeMotif != null)
+            ApplyCameraMotif(null, -1f);
+
+        motifLocked = false;
+        currentLockPriority = MotifLockPriority.Normal;
+    }
+
+    private bool TryGetActiveRequest(out MotifRequest request)
+    {
+        bool found = false;
+        MotifRequest best = default;
+
+        foreach (var candidate in motifRequests)
+        {
+            if (!candidate.IsLock)
+                continue;
+
+            if (!found
+                || candidate.Priority > best.Priority
+                || (candidate.Priority == best.Priority && candidate.Order > best.Order))
+            {
+                best = candidate;
+                found = true;
+            }
+        }
+
+        if (found)
+        {
+            request = best;
+            return true;
+        }
+
+        foreach (var candidate in motifRequests)
+        {
+            if (candidate.IsLock)
+                continue;
+
+            if (!found
+                || candidate.Priority > best.Priority
+                || (candidate.Priority == best.Priority && candidate.Order > best.Order))
+            {
+                best = candidate;
+                found = true;
+            }
+        }
+
+        request = best;
+        return found;
+    }
+
+    private void ApplyCameraMotif(CameraMotifSO motif, float blendDuration)
+    {
+        if (motif == activeMotif)
             return;
 
         previousMotifElapsed = ResolveMotifElapsed(activeMotif, activeMotifStartTime);
@@ -417,33 +672,14 @@ public class BattleCameraManager : MonoBehaviour
         motifBlendActive = true;
     }
 
-    /// <summary>Désactive le motif courant.</summary>
-    public void ClearCameraMotif(float blendDuration = -1f)
-    {
-        SetCameraMotif(null, blendDuration);
-    }
-
-    /// <summary>Active et verrouille un motif jusqu'à la fin explicite d'un move.</summary>
-    public void LockCameraMotif(CameraMotifSO motif, float blendDuration = -1f)
-    {
-        if (motif != null)
-            SetCameraMotif(motif, blendDuration);
-
-        motifLocked = motif != null;
-    }
-
-    /// <summary>Déverrouille le motif pour autoriser un changement explicite.</summary>
-    public void UnlockCameraMotif()
-    {
-        motifLocked = false;
-    }
-
     /// <summary>Calcule les réglages finaux en tenant compte du motif actif.</summary>
     private MotifTuning ResolveMotifTuning()
     {
         MotifTuning baseTuning = new MotifTuning
         {
             ReferencePoint = CameraMotifSO.ReferencePoint.Caster,
+            LockReferencePosition = false,
+            LockReferenceRotation = false,
             ReferenceOffsetPosition = Vector3.zero,
             ReferenceOffsetRotation = Vector3.zero,
             ReferenceOffsetSmoothTime = 0.25f,
@@ -481,6 +717,8 @@ public class BattleCameraManager : MonoBehaviour
             return baseTuning;
 
         baseTuning.ReferencePoint = motif.referencePoint;
+        baseTuning.LockReferencePosition = motif.lockReferencePosition;
+        baseTuning.LockReferenceRotation = motif.lockReferenceRotation;
         baseTuning.ReferenceOffsetPosition += motif.referenceOffsetPosition;
         if (motif.referenceOffsetSmoothTime >= 0f)
             baseTuning.ReferenceOffsetSmoothTime = motif.referenceOffsetSmoothTime;
@@ -574,6 +812,8 @@ public class BattleCameraManager : MonoBehaviour
         return new MotifTuning
         {
             ReferencePoint = t < 0.5f ? from.ReferencePoint : to.ReferencePoint,
+            LockReferencePosition = t < 0.5f ? from.LockReferencePosition : to.LockReferencePosition,
+            LockReferenceRotation = t < 0.5f ? from.LockReferenceRotation : to.LockReferenceRotation,
             ReferenceOffsetPosition = Vector3.Lerp(from.ReferenceOffsetPosition, to.ReferenceOffsetPosition, t),
             ReferenceOffsetRotation = Vector3.Lerp(from.ReferenceOffsetRotation, to.ReferenceOffsetRotation, t),
             ReferenceOffsetSmoothTime = Mathf.Lerp(from.ReferenceOffsetSmoothTime, to.ReferenceOffsetSmoothTime, t),
@@ -642,6 +882,62 @@ public class BattleCameraManager : MonoBehaviour
                 rotationOffset = Quaternion.AngleAxis(cos * breathingYawAmplitude, camera.transform.up) * rotationOffset;
 
             camera.transform.rotation = rotationOffset * camera.transform.rotation;
+        }
+    }
+
+    public void TriggerCriticalFeedback(CharacterUnit target)
+    {
+        if (target == null)
+            return;
+
+        TriggerShake(criticalShakeDuration, criticalShakeAmplitude, criticalShakeFrequency, criticalShakeRotation);
+        if (target.IsPlayerControlled)
+            BattleCameraDamageFilter.Instance?.TriggerCriticalFlash();
+    }
+
+    public void TriggerShake(float duration, float amplitude, float frequency, float rotationAmplitude)
+    {
+        if (duration <= 0f || amplitude <= 0f)
+            return;
+
+        shakeDuration = Mathf.Max(shakeDuration, duration);
+        shakeTimer = Mathf.Max(shakeTimer, duration);
+        shakeAmplitude = Mathf.Max(shakeAmplitude, amplitude);
+        shakeFrequency = Mathf.Max(shakeFrequency, frequency);
+        shakeRotation = Mathf.Max(shakeRotation, rotationAmplitude);
+        shakeSeed = UnityEngine.Random.Range(0f, 10f);
+    }
+
+    private void ApplyCameraShake(CinemachineCamera camera)
+    {
+        if (camera == null || shakeTimer <= 0f || shakeDuration <= 0f)
+            return;
+
+        shakeTimer = Mathf.Max(0f, shakeTimer - Time.unscaledDeltaTime);
+        float normalized = 1f - (shakeTimer / shakeDuration);
+        float damper = 1f - Mathf.Clamp01(normalized);
+
+        float safeFrequency = Mathf.Max(0.0001f, shakeFrequency);
+        float time = (Time.unscaledTime + shakeSeed) * safeFrequency;
+        float noiseX = Mathf.PerlinNoise(time, 0.1f) * 2f - 1f;
+        float noiseY = Mathf.PerlinNoise(0.1f, time) * 2f - 1f;
+
+        Vector3 offset = (camera.transform.right * noiseX + camera.transform.up * noiseY) * (shakeAmplitude * damper);
+        camera.transform.position += offset;
+
+        if (Mathf.Abs(shakeRotation) > 0.0001f)
+        {
+            float rotNoise = Mathf.PerlinNoise(time, 0.5f) * 2f - 1f;
+            camera.transform.rotation =
+                Quaternion.AngleAxis(rotNoise * shakeRotation * damper, camera.transform.forward) * camera.transform.rotation;
+        }
+
+        if (shakeTimer <= 0f)
+        {
+            shakeDuration = 0f;
+            shakeAmplitude = 0f;
+            shakeFrequency = 0f;
+            shakeRotation = 0f;
         }
     }
 
@@ -800,6 +1096,55 @@ public class BattleCameraManager : MonoBehaviour
             state.Initialized = false;
     }
 
+    private static void ApplyReferenceLock(
+        CameraState state,
+        MotifTuning tuning,
+        Transform referenceTransform,
+        ref Vector3 position,
+        ref Quaternion rotation)
+    {
+        if (!tuning.LockReferencePosition && !tuning.LockReferenceRotation)
+        {
+            state.HasLockedReferencePosition = false;
+            state.HasLockedReferenceRotation = false;
+            return;
+        }
+
+        bool referenceChanged = state.LockedReferenceTransform != referenceTransform
+            || state.LockedReferencePoint != tuning.ReferencePoint;
+
+        if (tuning.LockReferencePosition)
+        {
+            if (!state.HasLockedReferencePosition || referenceChanged)
+            {
+                state.LockedReferencePosition = position;
+                state.HasLockedReferencePosition = true;
+            }
+            position = state.LockedReferencePosition;
+        }
+        else
+        {
+            state.HasLockedReferencePosition = false;
+        }
+
+        if (tuning.LockReferenceRotation)
+        {
+            if (!state.HasLockedReferenceRotation || referenceChanged)
+            {
+                state.LockedReferenceRotation = rotation;
+                state.HasLockedReferenceRotation = true;
+            }
+            rotation = state.LockedReferenceRotation;
+        }
+        else
+        {
+            state.HasLockedReferenceRotation = false;
+        }
+
+        state.LockedReferenceTransform = referenceTransform;
+        state.LockedReferencePoint = tuning.ReferencePoint;
+    }
+
     private static void ResolveDelayedReference(
         CameraState state,
         Transform referenceTransform,
@@ -879,6 +1224,9 @@ public class BattleCameraManager : MonoBehaviour
 
     private CharacterUnit ResolveReferenceUnit(CameraMotifSO.ReferencePoint referencePoint)
     {
+        if (referencePoint == CameraMotifSO.ReferencePoint.LastUnitEnemy)
+            return ResolveLastEnemyUnit();
+
         if (referencePoint == CameraMotifSO.ReferencePoint.Target)
         {
             if (currentTarget != null)
@@ -898,6 +1246,30 @@ public class BattleCameraManager : MonoBehaviour
             return currentTurnOwner;
 
         return null;
+    }
+
+    private static CharacterUnit ResolveLastEnemyUnit()
+    {
+        var battleManager = NewBattleManager.Instance;
+        if (battleManager == null || battleManager.unitsInBattle == null)
+            return null;
+
+        CharacterUnit lastEnemy = null;
+        foreach (var candidate in battleManager.unitsInBattle)
+        {
+            if (candidate == null || candidate.IsPermanentlyDead || candidate.IsPlayerControlled)
+                continue;
+
+            if (candidate.currentHP > 0f)
+            {
+                if (lastEnemy != null)
+                    return null;
+
+                lastEnemy = candidate;
+            }
+        }
+
+        return lastEnemy;
     }
 
     /// <summary>Enregistre l'unité actuellement active (tour en cours).</summary>

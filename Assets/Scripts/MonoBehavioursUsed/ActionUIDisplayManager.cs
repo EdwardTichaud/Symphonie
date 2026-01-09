@@ -22,6 +22,20 @@ public class ActionUIDisplayManager : MonoBehaviour
     public float displayDuration = 5f;  // Durée potentielle d'affichage (non utilisée pour l'instant)
     public float fadeDuration = 0.5f;    // Durée de fondu éventuel
 
+    [Header("QTE Feedback")]
+    [SerializeField] private bool pulseQteResult = true;
+    [SerializeField] private Color qteSuccessColor = new Color(0.25f, 0.9f, 0.35f, 1f);
+    [SerializeField] private Color qtePerfectColor = new Color(1f, 0.85f, 0.2f, 1f);
+    [SerializeField] private Color qteFailColor = new Color(1f, 0.35f, 0.35f, 1f);
+    [SerializeField] private float qtePulseDuration = 0.15f;
+    [SerializeField] private float qteHoldDuration = 0.35f;
+    [SerializeField] private float qtePulseScale = 1.15f;
+
+    private Color actionTextBaseColor = Color.white;
+    private Vector3 actionTextBaseScale = Vector3.one;
+    private Coroutine qteResultRoutine;
+    private int qteResultToken;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -33,6 +47,12 @@ public class ActionUIDisplayManager : MonoBehaviour
 
         if (displayGroup != null)
             displayGroup.alpha = 0f;
+
+        if (actionText != null)
+        {
+            actionTextBaseColor = actionText.color;
+            actionTextBaseScale = actionText.transform.localScale;
+        }
     }
 
     // Affiche simplement le nom d'une attaque
@@ -182,13 +202,35 @@ public class ActionUIDisplayManager : MonoBehaviour
 
     public void DisplayInterceptionResult(bool success)
     {
-        string message = success ? "Interception réussie !" : "Interception échouée";
-        ShowMessage(message);
+        DisplayInterceptionOutcome(null, success, allyWasInterceptor: true);
     }
 
     public void DisplayInterceptionAttempt()
     {
         ShowMessage("Tentative d'interception...");
+    }
+
+    public void DisplayInterceptionOutcome(bool success, bool allyWasInterceptor)
+    {
+        DisplayInterceptionOutcome(null, success, allyWasInterceptor);
+    }
+
+    public void DisplayInterceptionOutcome(Transform target, bool success, bool allyWasInterceptor)
+    {
+        string message;
+        if (allyWasInterceptor)
+            message = success ? "Interception réussie" : "Interception ratée";
+        else
+            message = success ? "Echappée ratée" : "Echapée réussie";
+
+        bool isPositive = allyWasInterceptor == success;
+        if (target != null && DamagePopupManager.Instance != null)
+        {
+            DamagePopupManager.Instance.ShowInterceptionOutcome(target, message, isPositive);
+            return;
+        }
+
+        ShowMessage(message);
     }
 
     /// <summary>
@@ -206,6 +248,7 @@ public class ActionUIDisplayManager : MonoBehaviour
         };
 
         ShowMessage(message);
+        PulseQteFeedback(feedback, message);
     }
 
     /// <summary>
@@ -214,11 +257,84 @@ public class ActionUIDisplayManager : MonoBehaviour
     /// </summary>
     private void ShowMessage(string message)
     {
+        if (qteResultRoutine != null)
+        {
+            StopCoroutine(qteResultRoutine);
+            qteResultRoutine = null;
+        }
+
         // Mise à jour immédiate du texte affiché
-        actionText.text = message;
+        if (actionText != null)
+        {
+            actionText.color = actionTextBaseColor;
+            actionText.transform.localScale = actionTextBaseScale;
+            actionText.text = message;
+        }
 
         // On s'assure que le groupe est visible
         if (displayGroup != null)
             displayGroup.alpha = 1f;
+    }
+
+    private void PulseQteFeedback(QTEFeedback feedback, string message)
+    {
+        if (!pulseQteResult || actionText == null)
+            return;
+
+        if (qteResultRoutine != null)
+            StopCoroutine(qteResultRoutine);
+
+        qteResultToken++;
+        qteResultRoutine = StartCoroutine(PulseQteFeedbackRoutine(feedback, qteResultToken, message));
+    }
+
+    private IEnumerator PulseQteFeedbackRoutine(QTEFeedback feedback, int token, string message)
+    {
+        Color targetColor = feedback switch
+        {
+            QTEFeedback.Perfect => qtePerfectColor,
+            QTEFeedback.Good => qteSuccessColor,
+            _ => qteFailColor
+        };
+
+        float pulseDuration = Mathf.Max(0.05f, qtePulseDuration);
+        float holdDuration = Mathf.Max(0f, qteHoldDuration);
+        float scaleFactor = Mathf.Max(1f, qtePulseScale);
+        Vector3 targetScale = actionTextBaseScale * scaleFactor;
+
+        float timer = 0f;
+        while (timer < pulseDuration)
+        {
+            if (token != qteResultToken || actionText.text != message)
+                yield break;
+
+            timer += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(timer / pulseDuration);
+            actionText.color = Color.Lerp(actionTextBaseColor, targetColor, t);
+            actionText.transform.localScale = Vector3.Lerp(actionTextBaseScale, targetScale, t);
+            yield return null;
+        }
+
+        if (holdDuration > 0f)
+            yield return new WaitForSecondsRealtime(holdDuration);
+
+        timer = 0f;
+        while (timer < pulseDuration)
+        {
+            if (token != qteResultToken || actionText.text != message)
+                yield break;
+
+            timer += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(timer / pulseDuration);
+            actionText.color = Color.Lerp(targetColor, actionTextBaseColor, t);
+            actionText.transform.localScale = Vector3.Lerp(targetScale, actionTextBaseScale, t);
+            yield return null;
+        }
+
+        if (token == qteResultToken && actionText.text == message)
+        {
+            actionText.color = actionTextBaseColor;
+            actionText.transform.localScale = actionTextBaseScale;
+        }
     }
 }

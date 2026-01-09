@@ -13,11 +13,79 @@ MonoBehaviour:
   m_Name: CameraMotif_MusicalMove_Rhapsodie
   m_EditorClassIdentifier: Symphonie.Data::CameraMotifSO
   blendDuration: 0.25
+  edgeBlurAmount: 0
+  animate: 0
+  animationDuration: 0
+  loopAnimation: 1
+  referenceOffsetPositionX:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetPositionY:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetPositionZ:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetRotationX:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetRotationY:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetRotationZ:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetSmoothTimeCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  referenceOffsetDelayCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  orbitSpeedCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  edgeBlurAmountCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   referencePoint: 0
-  referenceOffsetPosition: {x: 0.87, y: 2.89, z: -2.43}
+  lockReferencePosition: 0
+  lockReferenceRotation: 1
+  compensateReferenceSize: 0
+  maxCompensationFovIncrease: 12
+  referenceOffsetPosition: {x: 1.05, y: -0.1, z: -5}
   referenceOffsetSmoothTime: -1
   referenceOffsetDelay: 0.1
-  referenceOffsetRotation: {x: -0.76, y: 0, z: 0}
+  referenceOffsetRotation: {x: -10.1, y: -33.5, z: 0}
   orbitEnabled: 1
   orbitReferencePoint: 1
   orbitSpeed: -10

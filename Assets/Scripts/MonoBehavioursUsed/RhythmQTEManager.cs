@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
-using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using UnityEngine.Timeline; // Gestion des timelines de combat
+using UnityEngine.UI;
 
 public class RhythmQTEManager : MonoBehaviour
 {
@@ -19,9 +20,18 @@ public class RhythmQTEManager : MonoBehaviour
     public int CurrentBeatIndex => currentBeatIndex;
     private bool isActive = false;
     private List<bool> successResults;
+    private List<bool> perfectResults;
+    private int successfulNotes = 0;
+    private Coroutine scheduledNotesRoutine;
+    private bool ignoreAnimationNoteEvents;
+    private float noteScheduleLeadInSeconds;
+    private bool moveAppliedEffect;
+    private bool hasCriticalHitThisMove;
 
     // Dernier résultat enregistré pour un QTE d'objet
     public bool LastItemSuccess { get; private set; }
+    public bool LastItemCritical { get; private set; }
+    public bool LastMoveAppliedEffect { get; private set; }
 
     // QTE
     private Coroutine beatRoutine;
@@ -37,14 +47,7 @@ public class RhythmQTEManager : MonoBehaviour
     public Transform qteUIParent; // Parent dans le canvas (facultatif, sinon instancié en world space)
 
     [Header("QTE Barre")]
-    public GameObject qteBarPrefab; // Prefab de la barre façon Guitar Hero
-
-    // Instance actuellement affichée de la barre et file d'attente des notes
-    private QTEBar activeQTEBar;
-    private readonly Queue<Image> preparedNotes = new();
-
-    // Temps d'avance avec lequel une note est affichée avant la zone de validation
-    private const float noteAdvanceTime = 2f;
+    public GameObject qteBarPrefab; // Prefab legacy (conserve pour compat)
 
     [Header("Accessibilité QTE")]
     [Tooltip("Agrandit ou réduit la fenêtre temporelle des QTE (1 = valeur par défaut).")]
@@ -106,6 +109,10 @@ public class RhythmQTEManager : MonoBehaviour
     private CharacterUnit currentTarget;
     private int pendingNotes = 0;
     private bool qteActive = false;
+    private int activeQteCount = 0;
+    private readonly Dictionary<InputAction, int> qteActionUsage = new();
+    private readonly HashSet<InputAction> qteActionsEnabledByQte = new();
+    private readonly List<QTECircle> persistentQteCircles = new();
     /// <summary>
     /// Permet aux autres systèmes de connaître l'état d'activité d'un QTE en temps réel.
     /// </summary>
@@ -129,27 +136,17 @@ public class RhythmQTEManager : MonoBehaviour
     /// Prépare la barre de QTE en l'affichant et en créant toutes les notes à l'avance.
     /// </summary>
     /// <param name="notes">Liste des données de notes à afficher</param>
+    public void PrepareQTEBar(MusicalMoveSO move)
+    {
+        // QTE bar legacy: conservation des appels existants sans UI dédiée.
+    }
+
     public void PrepareQTEBar(IList<MusicalMoveSO.NoteData> notes)
     {
-        if (qteBarPrefab == null || notes == null || notes.Count == 0)
-            return;
+    }
 
-        // Nettoie une éventuelle barre précédente
-        ClearQTEBar();
-
-        var go = Instantiate(qteBarPrefab, qteUIParent);
-        activeQTEBar = go.GetComponent<QTEBar>();
-
-        preparedNotes.Clear();
-        float cumulative = 0f;
-        foreach (var n in notes)
-        {
-            cumulative += n.rhythm;
-            // Les notes apparaissent noteAdvanceTime secondes avant d'arriver dans la zone
-            float delay = Mathf.Max(0f, cumulative - noteAdvanceTime);
-            var img = activeQTEBar.ScheduleNote(n.noteInput, delay, noteAdvanceTime);
-            preparedNotes.Enqueue(img);
-        }
+    private void PrepareQTEBar(IList<MusicalMoveSO.NoteData> notes, MusicalMoveSO move)
+    {
     }
 
     /// <summary>
@@ -157,24 +154,6 @@ public class RhythmQTEManager : MonoBehaviour
     /// </summary>
     public void PrepareQTEBar(IList<float> beatPattern)
     {
-        if (qteBarPrefab == null || beatPattern == null || beatPattern.Count == 0)
-            return;
-
-        ClearQTEBar();
-        var go = Instantiate(qteBarPrefab, qteUIParent);
-        activeQTEBar = go.GetComponent<QTEBar>();
-
-        preparedNotes.Clear();
-
-        float cumulative = 0f;
-        // Notes anonymes, pas d'icône
-        for (int i = 0; i < beatPattern.Count; i++)
-        {
-            cumulative += beatPattern[i];
-            float delay = Mathf.Max(0f, cumulative - noteAdvanceTime);
-            var img = activeQTEBar.ScheduleNote(null, delay, noteAdvanceTime);
-            preparedNotes.Enqueue(img);
-        }
     }
 
     /// <summary>
@@ -182,11 +161,280 @@ public class RhythmQTEManager : MonoBehaviour
     /// </summary>
     public void ClearQTEBar()
     {
-        if (activeQTEBar != null)
-            Destroy(activeQTEBar.gameObject);
+        foreach (var circle in persistentQteCircles)
+        {
+            if (circle == null)
+                continue;
+            circle.ForceDestroy();
+        }
+        persistentQteCircles.Clear();
 
-        activeQTEBar = null;
-        preparedNotes.Clear();
+        Transform parent = ResolveQteUIParent();
+        FreeformLayoutGroup freeformLayout = parent != null ? parent.GetComponent<FreeformLayoutGroup>() : null;
+        if (freeformLayout != null)
+            freeformLayout.ClearRuntimeEntries();
+    }
+
+    private Transform ResolveQteUIParent()
+    {
+        if (qteUIParent != null)
+            return qteUIParent;
+
+        var freeformPanel = GameObject.Find("QTEPanel");
+        if (freeformPanel != null)
+        {
+            qteUIParent = freeformPanel.transform;
+            return qteUIParent;
+        }
+
+        var qtePanel = GameObject.Find("QTECirclesPanel");
+        if (qtePanel != null)
+        {
+            qteUIParent = qtePanel.transform;
+            return qteUIParent;
+        }
+
+        string[] preferredNames = { "Battle_UICanvas_BattleCamera", "BattleScene_UI_QTECircle", "BattleCameraCanvas" };
+        foreach (string name in preferredNames)
+        {
+            var go = GameObject.Find(name);
+            if (go != null)
+            {
+                qteUIParent = go.transform;
+                return qteUIParent;
+            }
+        }
+
+        Canvas canvas = FindObjectOfType<Canvas>(true);
+        if (canvas != null)
+        {
+            qteUIParent = canvas.transform;
+            return qteUIParent;
+        }
+
+        return qteUIParent;
+    }
+
+    private void RegisterQteStart()
+    {
+        activeQteCount = Mathf.Max(0, activeQteCount + 1);
+        qteActive = true;
+    }
+
+    private void RegisterQteEnd()
+    {
+        activeQteCount = Mathf.Max(0, activeQteCount - 1);
+        qteActive = activeQteCount > 0;
+    }
+
+    private void AcquireInputAction(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        qteActionUsage.TryGetValue(action, out int count);
+        qteActionUsage[action] = count + 1;
+
+        if (count == 0 && !action.enabled)
+        {
+            action.Enable();
+            qteActionsEnabledByQte.Add(action);
+        }
+    }
+
+    private void ReleaseInputAction(InputAction action)
+    {
+        if (action == null)
+            return;
+
+        if (!qteActionUsage.TryGetValue(action, out int count))
+            return;
+
+        count -= 1;
+        if (count <= 0)
+        {
+            qteActionUsage.Remove(action);
+            if (qteActionsEnabledByQte.Remove(action))
+                action.Disable();
+        }
+        else
+        {
+            qteActionUsage[action] = count;
+        }
+    }
+
+    private void EnsureQteBarForMove(MusicalMoveSO move)
+    {
+        // QTE bar legacy: aucun préchargement requis.
+    }
+
+    private void ApplyMoveEffect(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target, bool isCritical = false)
+    {
+        if (move == null)
+            return;
+
+        MusicalMoveExecutor.ApplyEffect(move, caster, target, isCritical);
+        if (isCritical)
+        {
+            hasCriticalHitThisMove = true;
+            BattleCameraManager.Instance?.TriggerCriticalFeedback(target);
+        }
+        moveAppliedEffect = true;
+    }
+
+    private bool RollCritical(CharacterUnit caster)
+    {
+        if (caster == null)
+            return false;
+
+        float chance = caster.CriticalChance;
+        if (chance <= 0f)
+            return false;
+
+        return UnityEngine.Random.value < chance;
+    }
+
+    private void SetupNoteScheduleTiming(MusicalMoveSO move)
+    {
+        noteScheduleLeadInSeconds = 0f;
+        if (move != null)
+            noteScheduleLeadInSeconds = Mathf.Max(0f, move.qteDelay);
+    }
+
+    private float ResolveNoteSpacingSeconds(float beatSpacing)
+    {
+        return Mathf.Max(0f, beatSpacing);
+    }
+
+    private float EstimateQteLifetimeSeconds(float responseDelaySeconds)
+    {
+        if (responseDelaySeconds <= 0f)
+            return 0f;
+
+        if (qteCirclePrefab == null)
+            return responseDelaySeconds;
+
+        var circle = qteCirclePrefab.GetComponent<QTECircle>();
+        if (circle == null)
+            return responseDelaySeconds;
+
+        return circle.EstimateLifetimeSeconds(responseDelaySeconds);
+    }
+
+    private void StartNoteSchedule(MusicalMoveSO move)
+    {
+        StopNoteSchedule();
+        if (move == null || move.notes == null || move.notes.Count == 0)
+            return;
+
+        ignoreAnimationNoteEvents = true;
+        SetupNoteScheduleTiming(move);
+        scheduledNotesRoutine = StartCoroutine(ScheduleMoveNotes(move));
+    }
+
+    private void StopNoteSchedule()
+    {
+        if (scheduledNotesRoutine != null)
+            StopCoroutine(scheduledNotesRoutine);
+
+        scheduledNotesRoutine = null;
+        ignoreAnimationNoteEvents = false;
+        noteScheduleLeadInSeconds = 0f;
+    }
+
+    private IEnumerator ScheduleMoveNotes(MusicalMoveSO move)
+    {
+        if (move == null || move.notes == null || move.notes.Count == 0)
+            yield break;
+
+        if (noteScheduleLeadInSeconds > 0f)
+            yield return new WaitForSecondsRealtime(noteScheduleLeadInSeconds);
+
+        for (int i = 0; i < move.notes.Count; i++)
+        {
+            if (!isActive || currentMove != move)
+                yield break;
+
+            var note = move.notes[i];
+            StartCoroutine(ResolveMoveNote(note));
+
+            float delay = ResolveNoteSpacingSeconds(note.beatSpacing);
+            if (delay > 0f)
+                yield return new WaitForSecondsRealtime(delay);
+        }
+    }
+
+    private IEnumerator ResolveMoveNote(MusicalMoveSO.NoteData note)
+    {
+        if (currentMove == null || currentCaster == null || currentTarget == null)
+            yield break;
+
+        if (currentCaster.characterType == CharacterType.EnemyUnit)
+        {
+            if (!currentCaster.Data.avoidable)
+            {
+                ApplyMoveEffect(currentMove, currentCaster, currentTarget);
+                pendingNotes = Mathf.Max(0, pendingNotes - 1);
+                yield break;
+            }
+
+            DefenseResult result = DefenseResult.Miss;
+            yield return WaitForDefenseQTE(r => result = r);
+            defenseResult = result;
+            switch (result)
+            {
+                case DefenseResult.Parry:
+                    currentTarget.TakeParry();
+                    break;
+                case DefenseResult.Dodge:
+                    currentTarget.TakeDodge();
+                    break;
+                default:
+                    ApplyMoveEffect(currentMove, currentCaster, currentTarget);
+                    break;
+            }
+
+            pendingNotes = Mathf.Max(0, pendingNotes - 1);
+            yield break;
+        }
+
+        float windowMs = Mathf.Max(1f, note.responseDelay * 1000f);
+        bool success = false;
+        QTEFeedback feedback = QTEFeedback.Miss;
+        yield return WaitForQTE(windowMs, note.qteInput, null, Vector2.zero, (s, f) =>
+        {
+            success = s;
+            feedback = f;
+        }, true);
+
+        bool isPerfect = feedback == QTEFeedback.Perfect;
+        bool isCritical = success && isPerfect && RollCritical(currentCaster);
+
+        if (success)
+        {
+            ApplyMoveEffect(currentMove, currentCaster, currentTarget, isCritical);
+            successfulNotes++;
+        }
+
+        successResults?.Add(success);
+        perfectResults?.Add(isPerfect);
+        pendingNotes = Mathf.Max(0, pendingNotes - 1);
+    }
+
+    private float GetTotalRhythmSeconds(MusicalMoveSO move)
+    {
+        if (move == null || move.notes == null)
+            return 0f;
+
+        float sum = noteScheduleLeadInSeconds;
+        float windowScale = Mathf.Max(0.1f, qteWindowScale);
+        foreach (var note in move.notes)
+        {
+            sum += EstimateQteLifetimeSeconds(note.responseDelay * windowScale);
+            sum += ResolveNoteSpacingSeconds(note.beatSpacing);
+        }
+
+        return sum;
     }
 
     // ------------------------------------------------------------------------------
@@ -359,13 +607,16 @@ public class RhythmQTEManager : MonoBehaviour
         Debug.Log("Début de la séquence du MusicalMove: " + move + " de " + casterName);
         isActive = true;
         successResults = new List<bool>();
+        perfectResults = new List<bool>();
+        successfulNotes = 0;
+        moveAppliedEffect = false;
+        hasCriticalHitThisMove = false;
+        LastMoveAppliedEffect = false;
 
         // Position et rotation initiales du lanceur avant tout déplacement.
         // La rotation capturée ici (début de la séquence) servira de
         // référence pour la caméra jusqu'à la fin du move.
         Vector3 originPosition = caster != null ? caster.transform.position : Vector3.zero;
-        Quaternion initialRotation = caster != null ? caster.transform.rotation : Quaternion.identity;
-
         // Prépare les variables globales avant toute animation ou téléportation.
         // Des événements d'animation peuvent survenir très tôt et doivent
         // pouvoir accéder à ces références immédiatement.
@@ -373,6 +624,7 @@ public class RhythmQTEManager : MonoBehaviour
         currentCaster = caster;
         currentTarget = target;
         pendingNotes = move.notes != null ? move.notes.Count : 0;
+        StartNoteSchedule(move);
 
         bool tauntPlayed = false;
         System.Action<CharacterUnit> deathHandler = null;
@@ -384,22 +636,13 @@ public class RhythmQTEManager : MonoBehaviour
                 tauntPlayed = true;
             }
         };
-        // La posture défensive de la cible peut démarrer immédiatement avec la timeline unique.
+        // La posture défensive de la cible peut démarrer immédiatement avec l'animation du move.
         delayTargetPreparationAnimationForCurrentMove = false;
         if (target != null)
         {
             target.OnDeath += deathHandler;
             target.PlayPrepareToUndergoAnimation();
         }
-        GameObject casterAnimatorGO = caster.GetCasterBindingTarget();
-
-        GameObject casterCameraTarget = casterAnimatorGO ?? (caster != null ? caster.gameObject : null);
-        GameObject performingCameraTarget = target != null
-            ? (target.GetCasterBindingTarget() ?? target.gameObject)
-            : casterCameraTarget;
-        // Détermine si une timeline caméra couvrant toute l'action est disponible.
-        // Ce système est remplacé par l'utilisation de caméras Cinemachine dédiées.
-        bool useOverlay = false;
 
         // Configure le rig caméra avec les cibles du move avant de démarrer la mise en scène.
         BattleCameraManager.Instance?.ConfigureActionTargets(caster, target);
@@ -415,14 +658,14 @@ public class RhythmQTEManager : MonoBehaviour
         }
 
         // Éventuel délai de pré-animation.
-        // 🔄 Cette attente se produit désormais AVANT toute timeline
+        // 🔄 Cette attente se produit désormais AVANT toute animation
         //     afin d'éviter un à-coup juste avant la téléportation.
         //     Elle laisse ainsi le temps de mettre en place des effets
         //     ou des annonces avant même le début du move.
-        if (move.startDelay > 0f)
+        if (move.animationDelay > 0f)
         {
             // Délai en temps réel afin que la séquence commence au bon moment même en pause.
-            yield return new WaitForSecondsRealtime(move.startDelay);
+            yield return new WaitForSecondsRealtime(move.animationDelay);
         }
 
         // L'ancienne timeline globale de caméra est désactivée.
@@ -441,28 +684,33 @@ public class RhythmQTEManager : MonoBehaviour
                 caster.transform.forward = dir; // Applique uniquement la rotation horizontale
         }
 
-        // --- Timeline du move ---
-        TimelineAsset actionTimeline = move.timeline;
-
-        // La timeline démarre immédiatement après le déplacement.
-        StartTimelinePhase(
-            actionTimeline,
-            useOverlay,
-            caster,
-            casterAnimatorGO,
-            performingCameraTarget,
-            true,
-            initialRotation);
+        // --- Animation du move ---
+        float animationStartTime = 0f;
+        float animationDuration = 0f;
+        EnsureQteBarForMove(move);
+        if (move != null && caster != null && !caster.IsDead)
+        {
+            if (move.performingAnimation != null)
+            {
+                caster.PlayPerformingAnimation(move.performingAnimation);
+                animationStartTime = Time.unscaledTime;
+                animationDuration = move.performingAnimation.length;
+            }
+            else
+            {
+                Debug.LogWarning($"[MusicalMoveRoutine] performingAnimation manquante pour {move.moveName}.");
+            }
+        }
 
         if (pendingNotes == 0)
         {
-            MusicalMoveExecutor.ApplyEffect(move, caster, target);
+            ApplyMoveEffect(move, caster, target);
         }
         else
         {
             while (pendingNotes > 0)
             {
-                float safeDelay = move.notes.Sum(n => n.rhythm);
+                float safeDelay = GetTotalRhythmSeconds(move);
                 float timer = 0f;
                 while (pendingNotes > 0 && timer < safeDelay)
                 {
@@ -476,35 +724,35 @@ public class RhythmQTEManager : MonoBehaviour
                     pendingNotes = 0;
                 }
             }
+
+            TryApplyPerfectQteBonus(move, caster, target);
         }
 
-        yield return WaitForTimelinePhase(actionTimeline, useOverlay, caster);
-
-        bool critical = successResults != null && successResults.Count > 0 && successResults.All(s => s);
-
-        bool timelinePaused =
-            BattleTimelineManager.Instance != null && BattleTimelineManager.Instance.IsCasterTimelinePaused(caster);
-
-        if (timelinePaused)
+        if (animationDuration > 0f)
         {
-            // 🚦 Une timeline peut encore être suspendue par des Signaux hérités de l'ancien mode lent ;
-            //     nous la relançons donc immédiatement via le gestionnaire principal afin de prévenir
-            //     tout blocage du combat.
-            BattleTimelineManager.Instance?.ResumeCasterTimeline(caster);
+            float elapsed = Time.unscaledTime - animationStartTime;
+            float remaining = animationDuration - elapsed;
+            if (remaining > 0f)
+                yield return new WaitForSecondsRealtime(remaining);
         }
+
+        bool critical = hasCriticalHitThisMove;
 
         // --- Retour ou téléportation de repli ---
         if (move.requiresMovement && !move.stayInPlace && caster != null && target != null)
             yield return ReturnToInitialPosition(move, caster, target, originPosition);
 
-        BattleCameraManager.Instance?.UnlockCameraMotif();
+        if (move != null && move.cameraMotif != null)
+            BattleCameraManager.Instance?.UnlockCameraMotif(move.cameraMotif);
 
         isActive = false;
         NewBattleManager.Instance.AfterMusicalMove(move, caster, critical);
+        LastMoveAppliedEffect = moveAppliedEffect;
 
         if (target != null)
             target.OnDeath -= deathHandler;
 
+        StopNoteSchedule();
         currentMove = null;
         currentCaster = null;
         currentTarget = null;
@@ -665,16 +913,27 @@ public class RhythmQTEManager : MonoBehaviour
 
         // QTE associé à l'objet durant l'utilisation.
         LastItemSuccess = true;
+        LastItemCritical = false;
         if (item.beatPattern != null && item.beatPattern.Count > 0)
         {
             successResults = new List<bool>();
+            List<bool> itemPerfectResults = new();
             foreach (float beat in item.beatPattern)
             {
                 bool s = false;
-                yield return WaitForQTE(beat, null, Vector2.zero, r => s = r);
+                QTEFeedback feedback = QTEFeedback.Miss;
+                yield return WaitForQTE(beat, null, Vector2.zero, (result, fb) =>
+                {
+                    s = result;
+                    feedback = fb;
+                });
                 successResults.Add(s);
+                itemPerfectResults.Add(feedback == QTEFeedback.Perfect);
             }
             LastItemSuccess = successResults.All(v => v);
+            bool allPerfect = itemPerfectResults.All(v => v);
+            if (allPerfect)
+                LastItemCritical = RollCritical(caster);
         }
 
         if (animationDuration > 0f)
@@ -1243,8 +1502,48 @@ public class RhythmQTEManager : MonoBehaviour
         Debug.Log("Toutes les animations sont terminées.");
     }
 
+    private void TryApplyPerfectQteBonus(MusicalMoveSO move, CharacterUnit caster, CharacterUnit target)
+    {
+        if (move == null || caster == null || target == null)
+            return;
+
+        if (move.notes == null || move.notes.Count != 4)
+            return;
+
+        if (successfulNotes != 4)
+            return;
+
+        if (!move.HasEffect(MusicalEffectType.Damage))
+            return;
+
+        int baseDamage = move.GetEffectValue(MusicalEffectType.Damage, move.PrimaryEffectValue);
+        if (baseDamage <= 0)
+            return;
+
+        var options = new CombatPipeline.DamageOptions
+        {
+            includePower = true,
+            applyAttackMultiplier = true,
+            applyModifiers = true,
+            clampToBaseValue = true,
+            registerDamage = false,
+            allowRedirect = true,
+            valueMultiplier = 1f
+        };
+
+        float singleHitDamage = CombatPipeline.ResolveDamageValue(caster, baseDamage, options);
+        float bonusDamage = singleHitDamage * successfulNotes * 0.2f;
+        if (bonusDamage <= 0f)
+            return;
+
+        target.TakeDamage(bonusDamage, caster.transform, allowRedirect: true);
+        NewBattleManager.Instance?.RegisterDamage(caster, bonusDamage);
+    }
+
     public void TriggerNote(int index)
     {
+        if (ignoreAnimationNoteEvents)
+            return;
         if (currentMove == null || currentCaster == null || currentTarget == null)
             return;
         if (currentMove.notes == null || index < 0 || index >= currentMove.notes.Count)
@@ -1253,12 +1552,12 @@ public class RhythmQTEManager : MonoBehaviour
         var note = currentMove.notes[index];
 
         // Si l'attaquant est un ennemi
-        if (currentCaster.Data.characterType == CharacterType.EnemyUnit)
+        if (currentCaster.characterType == CharacterType.EnemyUnit)
         {
             // Si l'ennemi est marqué comme inévitable, aucun QTE défensif n'est proposé
-            if (currentCaster.Data.avoidable)
+            if (!currentCaster.Data.avoidable)
             {
-                MusicalMoveExecutor.ApplyEffect(currentMove, currentCaster, currentTarget);
+                ApplyMoveEffect(currentMove, currentCaster, currentTarget);
                 pendingNotes = Mathf.Max(0, pendingNotes - 1);
             }
             else
@@ -1275,7 +1574,7 @@ public class RhythmQTEManager : MonoBehaviour
                             currentTarget.TakeDodge();
                             break;
                         default:
-                            MusicalMoveExecutor.ApplyEffect(currentMove, currentCaster, currentTarget);
+                            ApplyMoveEffect(currentMove, currentCaster, currentTarget);
                             break;
                     }
 
@@ -1285,20 +1584,38 @@ public class RhythmQTEManager : MonoBehaviour
         }
         else
         {
-            // Pas d'icône spécifique pour les notes, on passe null
-            StartCoroutine(WaitForQTE(note.rhythm, null, Vector2.zero, success =>
+            float windowMs = Mathf.Max(1f, note.responseDelay * 1000f);
+            StartCoroutine(WaitForQTE(windowMs, note.qteInput, null, Vector2.zero, (success, feedback) =>
             {
-                MusicalMoveExecutor.ApplyEffect(currentMove, currentCaster, currentTarget, success);
+                bool isPerfect = feedback == QTEFeedback.Perfect;
+                bool isCritical = success && isPerfect && RollCritical(currentCaster);
+
+                if (success)
+                {
+                    ApplyMoveEffect(currentMove, currentCaster, currentTarget, isCritical);
+                    successfulNotes++;
+                }
                 successResults.Add(success);
+                perfectResults?.Add(isPerfect);
                 pendingNotes = Mathf.Max(0, pendingNotes - 1);
-            }));
+            }, true));
         }
     }
 
     public void TriggerQTE(float windowDelay)
     {
         // Appel historique sans icône
-        StartCoroutine(WaitForQTE(windowDelay, null, Vector2.zero, _ => { }));
+        StartCoroutine(WaitForQTE(windowDelay, null, Vector2.zero, (_, __) => { }));
+    }
+
+    public void TriggerQTE(float windowDelay, QTEInputSO qteInput)
+    {
+        StartCoroutine(WaitForQTE(windowDelay, qteInput, null, Vector2.zero, (_, __) => { }));
+    }
+
+    public void TriggerQTE(float windowDelay, QTEInputSO qteInput, Vector2 position)
+    {
+        StartCoroutine(WaitForQTE(windowDelay, qteInput, null, position, (_, __) => { }));
     }
 
     /// <summary>
@@ -1308,7 +1625,7 @@ public class RhythmQTEManager : MonoBehaviour
     /// <param name="icon">Icône de l'input à afficher</param>
     public void TriggerQTE(float windowDelay, Sprite icon)
     {
-        StartCoroutine(WaitForQTE(windowDelay, icon, Vector2.zero, _ => { }));
+        StartCoroutine(WaitForQTE(windowDelay, icon, Vector2.zero, (_, __) => { }));
     }
 
     /// <summary>
@@ -1319,15 +1636,20 @@ public class RhythmQTEManager : MonoBehaviour
     /// <param name="position">Position du visuel dans le canvas</param>
     public void TriggerQTE(float windowDelay, Sprite icon, Vector2 position)
     {
-        StartCoroutine(WaitForQTE(windowDelay, icon, position, _ => { }));
+        StartCoroutine(WaitForQTE(windowDelay, icon, position, (_, __) => { }));
     }
 
-    private IEnumerator WaitForQTE(float windowDelay, Sprite icon, Vector2 position, System.Action<bool> callback)
+    private IEnumerator WaitForQTE(float windowDelay, Sprite icon, Vector2 position, System.Action<bool, QTEFeedback> callback, bool persistUntilMoveEnd = false)
     {
-        qteActive = true;
+        return WaitForQTE(windowDelay, null, icon, position, callback, persistUntilMoveEnd);
+    }
+
+    private IEnumerator WaitForQTE(float windowDelay, QTEInputSO qteInput, Sprite icon, Vector2 position, System.Action<bool, QTEFeedback> callback, bool persistUntilMoveEnd = false)
+    {
+        RegisterQteStart();
         float slowestTimeScale = 0f;
         float transitionDuration = 0.1f;
-        float holdDuration = (windowDelay / 1000f) * Mathf.Max(0.1f, qteWindowScale); // convertit en secondes
+        float holdDuration = (windowDelay / 1000f) * Mathf.Max(0.1f, qteWindowScale);
         float normalTimeScale = 1f;
 
         // 🔻 Ralentissement progressif uniquement en mode facile
@@ -1348,162 +1670,92 @@ public class RhythmQTEManager : MonoBehaviour
             Time.fixedDeltaTime = defaultFixedDeltaTime * slowestTimeScale;
         }
 
-        GameObject qteVisualGO;
-        QTEBar qteBar = null;
-        UnityEngine.UI.Image noteImage = null;
-        UnityEngine.UI.Image delayFillImage = null;
-        UnityEngine.UI.Image iconImage = null;
+        GameObject qteVisualGO = null;
+        QTECircle qteCircle = null;
 
-        // Préférence : utiliser la barre Guitar Hero si une barre est préparée ou un prefab fourni
-        if (activeQTEBar != null || qteBarPrefab != null)
+        if (qteCirclePrefab != null)
         {
-            qteBar = activeQTEBar;
-            if (qteBar == null)
+            Transform parent = ResolveQteUIParent();
+            qteVisualGO = Instantiate(qteCirclePrefab, parent);
+            qteVisualGO.transform.SetAsLastSibling();
+            var visualRect = qteVisualGO.GetComponent<RectTransform>();
+            FreeformLayoutGroup freeformLayout = parent != null ? parent.GetComponent<FreeformLayoutGroup>() : null;
+            bool parentHasLayout = parent != null && parent.GetComponent<LayoutGroup>() != null;
+            if (visualRect != null)
             {
-                qteVisualGO = Instantiate(qteBarPrefab, qteUIParent);
-                var rect = qteVisualGO.GetComponent<RectTransform>();
-                if (rect != null)
-                    rect.anchoredPosition = position;
+                bool applied = false;
+                if (freeformLayout != null)
+                    applied = freeformLayout.RegisterRuntimeChild(visualRect);
 
-                qteBar = qteVisualGO.GetComponent<QTEBar>();
-                activeQTEBar = qteBar;
+                if (!applied && (freeformLayout != null || !parentHasLayout))
+                    visualRect.anchoredPosition = position;
             }
-            else
+
+            qteCircle = qteVisualGO.GetComponent<QTECircle>();
+            if (qteCircle != null)
             {
-                qteVisualGO = qteBar.gameObject;
+                qteCircle.Initialize(qteInput, BattleInputType.Confirm, icon, holdDuration);
+                if (persistUntilMoveEnd)
+                {
+                    qteCircle.SetAutoDestroyAfterFade(false);
+                    persistentQteCircles.Add(qteCircle);
+                }
             }
+        }
 
-            if (preparedNotes.Count > 0)
-                noteImage = preparedNotes.Dequeue();
-            else if (qteBar != null)
-                noteImage = qteBar.ScheduleNote(icon, 0f, noteAdvanceTime);
+        BattleInputType requiredInput = qteInput != null ? qteInput.BattleInput : BattleInputType.Confirm;
+        InputAction requiredAction = null;
+        if (InputsManager.Instance != null)
+        {
+            var battle = InputsManager.Instance.playerInputs.Battle;
+            requiredAction = BattleInputResolver.Resolve(battle, requiredInput);
+            AcquireInputAction(requiredAction);
+        }
+
+        bool success = false;
+        QTEFeedback feedback = QTEFeedback.Miss;
+
+        if (qteCircle != null)
+        {
+            while (!qteCircle.IsResolved)
+                yield return null;
+
+            success = qteCircle.WasSuccessful;
+            feedback = qteCircle.Feedback;
         }
         else
         {
-            qteVisualGO = Instantiate(qteCirclePrefab, qteUIParent);
-            var visualRect = qteVisualGO.GetComponent<RectTransform>();
-            if (visualRect != null)
-                visualRect.anchoredPosition = position;
-
-            QTECircleUI qteVisual = qteVisualGO.GetComponent<QTECircleUI>();
-            if (qteVisual != null)
+            float elapsed = 0f;
+            while (elapsed < holdDuration)
             {
-                delayFillImage = qteVisual.DelayFillImage;
-                iconImage = qteVisual.InputIconImage;
-            }
-        }
-
-        // Valeur initiale à 0 pour remplir progressivement sur la durée du QTE.
-        if (delayFillImage != null)
-        {
-            delayFillImage.fillAmount = 0f;
-        }
-
-        // Pour le cercle historique, on applique l'icône manuellement
-        if (icon != null && qteBar == null)
-        {
-            if (iconImage != null)
-            {
-                iconImage.gameObject.SetActive(true);
-                iconImage.sprite = icon;
-            }
-            else
-            {
-                // Fallback si aucun Image n'est référencé
-                var iconGO = new GameObject("InputIcon", typeof(RectTransform), typeof(CanvasRenderer), typeof(UnityEngine.UI.Image));
-                iconGO.transform.SetParent(qteVisualGO.transform, false);
-                var rect = iconGO.GetComponent<RectTransform>();
-                rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-                rect.anchoredPosition = Vector2.zero;
-                rect.sizeDelta = new Vector2(64f, 64f);
-                var img = iconGO.GetComponent<UnityEngine.UI.Image>();
-                img.sprite = icon;
-                iconImage = img;
-            }
-        }
-
-        float elapsed = 0f;
-        bool success = false;
-        QTEFeedback feedback = QTEFeedback.Miss;
-        var confirm = InputsManager.Instance.playerInputs.Battle.Confirm;
-        confirm.Enable();
-
-        while (easyMode || elapsed < holdDuration)
-        {
-            float unscaledDelta = Time.unscaledDeltaTime;
-            elapsed += unscaledDelta;
-
-            float progress = Mathf.Clamp01(elapsed / holdDuration);
-
-            // Mise à jour du cercle historique
-            if (delayFillImage != null)
-            {
-                delayFillImage.fillAmount = progress;
-            }
-
-            if (confirm.triggered)
-            {
-                if (qteBar != null && noteImage != null)
-                {
-                    float offset = qteBar.GetSignedDistanceToValidationCenter(noteImage);
-                    float halfWidth = qteBar.GetValidationHalfWidth();
-                    float allowedHalfWidth = halfWidth + Mathf.Max(0f, qteValidationPadding);
-
-                    success = Mathf.Abs(offset) <= allowedHalfWidth;
-                    if (success)
-                    {
-                        float perfectWindow = halfWidth * Mathf.Clamp01(qtePerfectThreshold);
-                        feedback = Mathf.Abs(offset) <= perfectWindow ? QTEFeedback.Perfect : QTEFeedback.Good;
-                    }
-                    else
-                    {
-                        feedback = offset < 0f ? QTEFeedback.Late : QTEFeedback.Early;
-                    }
-                }
-                else
+                if (requiredAction != null && requiredAction.triggered)
                 {
                     success = true;
                     feedback = QTEFeedback.Good;
+                    break;
                 }
-                break;
+
+                elapsed += Time.unscaledDeltaTime;
+                yield return null;
             }
-
-            yield return null;
         }
 
-        confirm.Disable();
+        ReleaseInputAction(requiredAction);
 
-        // Évalue la position où afficher l'effet de réussite ou d'échec
-        Vector3 effectPosition = Vector3.zero;
-        if (activeQTEBar != null)
-        {
-            var zone = activeQTEBar.ValidationZone;
-            effectPosition = zone != null ? zone.position : activeQTEBar.transform.position;
-        }
-        else if (qteVisualGO != null)
-        {
-            effectPosition = qteVisualGO.transform.position;
-        }
+        Vector3 effectPosition = qteVisualGO != null ? qteVisualGO.transform.position : Vector3.zero;
 
-        // Détruit uniquement la barre si elle n'est pas réutilisée
-        if (qteVisualGO != null && (activeQTEBar == null || qteVisualGO != activeQTEBar.gameObject))
-            Destroy(qteVisualGO);
-
-        // Supprime la note utilisée pour libérer l'espace
-        if (noteImage != null)
-            Destroy(noteImage.gameObject);
-
-        callback?.Invoke(success);
+        callback?.Invoke(success, feedback);
 
         if (showQteFeedback)
             ActionUIDisplayManager.Instance?.DisplayQTEResult(feedback);
 
-        // Affichage visuel du résultat
-        GameObject effect = success ? successEffectPrefab : failEffectPrefab;
-        if (effect != null && effectPosition != Vector3.zero)
-            Instantiate(effect, effectPosition, Quaternion.identity, qteUIParent);
+        if (qteVisualGO == null)
+        {
+            GameObject effect = success ? successEffectPrefab : failEffectPrefab;
+            if (effect != null && effectPosition != Vector3.zero)
+                Instantiate(effect, effectPosition, Quaternion.identity, qteUIParent);
+        }
 
-        // Lecture du son de réussite ou d'échec si disponible
         if (success)
             AudioManager.Instance?.PlaySound(successSFX);
         else
@@ -1525,7 +1777,7 @@ public class RhythmQTEManager : MonoBehaviour
             Time.timeScale = normalTimeScale;
             Time.fixedDeltaTime = defaultFixedDeltaTime;
         }
-        qteActive = false;
+        RegisterQteEnd();
     }
 
     /// <summary>
@@ -1534,10 +1786,11 @@ public class RhythmQTEManager : MonoBehaviour
     /// </summary>
     private IEnumerator WaitForDefenseQTE(System.Action<DefenseResult> callback)
     {
-        qteActive = true;
+        RegisterQteStart();
         float windowScale = Mathf.Max(0.1f, defenseWindowScale);
-        float parryWindow = 0.1f * windowScale; // Temps pour une parade parfaite
-        float dodgeWindow = 0.2f * windowScale; // Temps total pour réussir une esquive
+        float parryWindow = 0.1f * windowScale;
+        float dodgeWindow = 0.2f * windowScale;
+        float parryRatio = dodgeWindow > 0f ? parryWindow / dodgeWindow : 0.5f;
 
         float slowestTimeScale = 0f;
         float transitionDuration = 0.1f;
@@ -1561,79 +1814,83 @@ public class RhythmQTEManager : MonoBehaviour
             Time.fixedDeltaTime = defaultFixedDeltaTime * slowestTimeScale;
         }
 
-        GameObject qteVisualGO;
-        QTEBar qteBar = null;
-        UnityEngine.UI.Image noteImage = null;
-        UnityEngine.UI.Image delayFillImage = null;
+        parryWindow = dodgeWindow * parryRatio;
 
-        if (activeQTEBar != null)
+        GameObject qteVisualGO = null;
+        QTECircle qteCircle = null;
+        if (qteCirclePrefab != null)
         {
-            qteBar = activeQTEBar;
-            qteVisualGO = qteBar.gameObject;
-            if (preparedNotes.Count > 0)
-                noteImage = preparedNotes.Dequeue();
-            else
-                noteImage = qteBar.ScheduleNote(null, 0f, noteAdvanceTime);
+            Transform parent = ResolveQteUIParent();
+            qteVisualGO = Instantiate(qteCirclePrefab, parent);
+            qteVisualGO.transform.SetAsLastSibling();
+            var visualRect = qteVisualGO.GetComponent<RectTransform>();
+            FreeformLayoutGroup freeformLayout = parent != null ? parent.GetComponent<FreeformLayoutGroup>() : null;
+            if (visualRect != null)
+                freeformLayout?.RegisterRuntimeChild(visualRect);
+
+            qteCircle = qteVisualGO.GetComponent<QTECircle>();
+            if (qteCircle != null)
+                qteCircle.Initialize(null, BattleInputType.Confirm, null, dodgeWindow);
+        }
+
+        InputAction confirm = null;
+        if (InputsManager.Instance != null)
+        {
+            confirm = InputsManager.Instance.playerInputs.Battle.Confirm;
+            AcquireInputAction(confirm);
+        }
+
+        DefenseResult result = DefenseResult.Miss;
+        QTEFeedback feedback = QTEFeedback.Miss;
+        if (qteCircle != null)
+        {
+            while (!qteCircle.IsResolved)
+                yield return null;
+
+            feedback = qteCircle.Feedback;
+            result = feedback switch
+            {
+                QTEFeedback.Perfect => DefenseResult.Parry,
+                QTEFeedback.Good => DefenseResult.Dodge,
+                _ => DefenseResult.Miss
+            };
         }
         else
         {
-            qteVisualGO = Instantiate(qteCirclePrefab, qteUIParent);
-            QTECircleUI qteVisual = qteVisualGO.GetComponent<QTECircleUI>();
-            delayFillImage = qteVisual != null ? qteVisual.DelayFillImage : null;
-            if (delayFillImage != null)
-                delayFillImage.fillAmount = 0f;
-        }
-
-        float elapsed = 0f;
-        bool pressed = false;
-        var confirm = InputsManager.Instance.playerInputs.Battle.Confirm;
-        confirm.Enable();
-
-        while (elapsed < dodgeWindow)
-        {
-            float unscaledDelta = Time.unscaledDeltaTime;
-            elapsed += unscaledDelta;
-
-            if (delayFillImage != null)
-                delayFillImage.fillAmount = Mathf.Clamp01(elapsed / dodgeWindow);
-                
-            if (confirm.triggered)
+            float elapsed = 0f;
+            bool pressed = false;
+            while (elapsed < dodgeWindow)
             {
-                pressed = true;
-                break;
+                elapsed += Time.unscaledDeltaTime;
+                if (confirm != null && confirm.triggered)
+                {
+                    pressed = true;
+                    break;
+                }
+                yield return null;
             }
 
-            yield return null;
-        }
+            if (!pressed)
+                result = DefenseResult.Miss;
+            else if (elapsed <= parryWindow)
+                result = DefenseResult.Parry;
+            else
+                result = DefenseResult.Dodge;
 
-        confirm.Disable();
-
-        if (qteVisualGO != null && (activeQTEBar == null || qteVisualGO != activeQTEBar.gameObject))
-            Destroy(qteVisualGO);
-
-        if (noteImage != null)
-            Destroy(noteImage.gameObject);
-
-        DefenseResult result;
-        if (!pressed)
-            result = DefenseResult.Miss;
-        else if (elapsed <= parryWindow)
-            result = DefenseResult.Parry;
-        else
-            result = DefenseResult.Dodge;
-
-        callback?.Invoke(result);
-
-        if (showQteFeedback)
-        {
-            QTEFeedback feedback = result switch
+            feedback = result switch
             {
                 DefenseResult.Parry => QTEFeedback.Perfect,
                 DefenseResult.Dodge => QTEFeedback.Good,
                 _ => QTEFeedback.Miss
             };
-            ActionUIDisplayManager.Instance?.DisplayQTEResult(feedback);
         }
+
+        ReleaseInputAction(confirm);
+
+        callback?.Invoke(result);
+
+        if (showQteFeedback)
+            ActionUIDisplayManager.Instance?.DisplayQTEResult(feedback);
 
         // 🔺 Retour au temps normal uniquement si le temps a été modifié
         if (easyMode)
@@ -1651,7 +1908,7 @@ public class RhythmQTEManager : MonoBehaviour
             Time.timeScale = normalTimeScale;
             Time.fixedDeltaTime = defaultFixedDeltaTime;
         }
-        qteActive = false;
+        RegisterQteEnd();
     }
 
     /// <summary>

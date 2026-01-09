@@ -16,6 +16,7 @@ public class DamagePopup : MonoBehaviour
 
     private float elapsed = 0f;        // Temps écoulé depuis l'initialisation pour piloter le fondu
     private float floatOffset = 0f;    // Décalage vertical cumulé appliqué au-dessus de la cible
+    private float defaultDuration = -1f;
     private CanvasGroup canvasGroup;   // Permet de faire disparaître progressivement le popup
     private DamagePopupManager owner;
     private Transform target;
@@ -37,8 +38,12 @@ public class DamagePopup : MonoBehaviour
     /// <param name="followTarget">Transform de l'unité concernée.</param>
     /// <param name="cameraOverride">Caméra utilisée pour la conversion Monde/Ecran.</param>
     /// <param name="textColor">Couleur du texte.</param>
-    public void Initialize(string text, Transform followTarget, Camera cameraOverride, Color textColor)
+    public void Initialize(string text, Transform followTarget, Camera cameraOverride, Color textColor, float durationOverride = -1f)
     {
+        if (defaultDuration <= 0f)
+            defaultDuration = duration;
+        duration = durationOverride > 0f ? durationOverride : defaultDuration;
+
         if (textMesh == null)
         {
             textMesh = GetComponentInChildren<TextMeshProUGUI>();

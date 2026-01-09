@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public partial class NewBattleManager
 {
@@ -75,14 +74,14 @@ public partial class NewBattleManager
         // Affiche un popup visuel pour indiquer le gain
         AddHarmonicPopupManager.Instance?.ShowAddHarmonic(characterUnit.transform, 1);
 
-        if (characterUnit.Data.characterType == CharacterType.SquadUnit)
+        if (characterUnit.characterType == CharacterType.SquadUnit)
             ChangeBattleState(BattleState.SquadUnit_MainMenu);
-        else if (characterUnit.Data.characterType == CharacterType.EnemyUnit)
+        else if (characterUnit.characterType == CharacterType.EnemyUnit)
             ChangeBattleState(BattleState.EnemyUnit_Reflexion);
 
         SetupCurrentUnitMenus(); // prépare les panels de l’unité
         ShowMainMenu(); // montre le menu principal
-        if (characterUnit.Data.isPlayerControlled)
+        if (characterUnit.IsPlayerControlled)
         {
             SetupCurrentUnitMenus(); // prépare les panels de l’unité
             ShowMainMenu(); // montre le menu principal
@@ -152,7 +151,7 @@ public partial class NewBattleManager
             // Petite pause avant l'exécution du tour, indépendante du timeScale
             yield return new WaitForSecondsRealtime(0.5f);
 
-        if (unit.Data.isPlayerControlled)
+        if (unit.IsPlayerControlled)
         {
             StartSquadUnitTurn(unit);
             yield return new WaitUntil(() => !isTurnResolving);
@@ -201,6 +200,29 @@ public partial class NewBattleManager
         BattleTimelineUIManager.Instance?.RemoveFromTimeline(deadUnit);
     }
 
+    public void RemoveFromBattle(CharacterUnit deadUnit)
+    {
+        if (deadUnit == null)
+            return;
+
+        RemoveFromTimeline(deadUnit);
+        unitsInBattle.Remove(deadUnit);
+    }
+
+    public void RestoreUnitToBattle(CharacterUnit unit)
+    {
+        if (unit == null || unit.IsPermanentlyDead)
+            return;
+
+        if (!unitsInBattle.Contains(unit))
+            unitsInBattle.Add(unit);
+
+        if (unit.currentHP > 0f && !activeCharacterUnits.Contains(unit))
+            activeCharacterUnits.Add(unit);
+
+        BattleTimelineUIManager.Instance?.AddToTimeline(unit);
+    }
+
     public void OnEnemyDefeated(CharacterUnit enemy)
     {
         rewardItems.AddRange(enemy.lootItems);
@@ -210,7 +232,7 @@ public partial class NewBattleManager
 
     public void RegisterDamage(CharacterUnit caster, float amount)
     {
-        if (caster == null || caster.Data.characterType != CharacterType.SquadUnit)
+        if (caster == null || !caster.IsPlayerControlled)
             return;
 
         int dmg = Mathf.RoundToInt(amount);
@@ -277,17 +299,13 @@ public partial class NewBattleManager
             yield break;
         }
 
-        // Interception possible uniquement si le move et l'attaquant l'autorisent
-        if (move.interceptable && enemy.Data.interceptable && !enemy.isInterceptionImmune)
-        {
-            yield return TryPlayerInterception(enemy, target, move);
-            if (interceptionSucceeded)
-                yield break;
-        }
-
         bool alreadyKnown = MusicalCodexManager.Instance != null && MusicalCodexManager.Instance.IsMelodyKnown(move);
         // Affiche le move que l'ennemi prépare
         ActionUIDisplayManager.Instance.DisplayEnemyPreparation(enemy.Data.characterName, alreadyKnown ? move.moveName : null);
+
+        yield return TryResolveInterception(enemy, target, move);
+        if (interceptionSucceeded)
+            yield break;
 
         // Joue un indice sonore associé à l'attaque pour prévenir le joueur
         // et calcule un délai suffisant pour laisser le clip se terminer
@@ -295,7 +313,7 @@ public partial class NewBattleManager
         if (move.warningClip != null)
         {
             // Affiche immédiatement la barre de QTE avec les notes
-            RhythmQTEManager.Instance?.PrepareQTEBar(move.notes);
+            RhythmQTEManager.Instance?.PrepareQTEBar(move);
             // Les indices sonores sont joués via la nouvelle source dédiée
             AudioManager.Instance?.PlayWarningClip(move.warningClip);
             // On attend au moins la durée du clip pour conserver la cohérence musicale
@@ -363,7 +381,7 @@ public partial class NewBattleManager
             case TargetType.AllAllies:
                 return sourceUnits.FirstOrDefault(u =>
                     u != null &&
-                    u.Data.characterType == enemy.Data.characterType &&
+                    u.characterType == enemy.characterType &&
                     (allowDeadTargets || u.currentHP > 0));
             case TargetType.SingleAllyOrEnemy:
                 if (move.defaultTargetType == TargetType.Self)
@@ -371,7 +389,7 @@ public partial class NewBattleManager
                 if (move.defaultTargetType == TargetType.SingleAlly || move.defaultTargetType == TargetType.AllAllies)
                     return sourceUnits.FirstOrDefault(u =>
                         u != null &&
-                        u.Data.characterType == enemy.Data.characterType &&
+                        u.characterType == enemy.characterType &&
                         (allowDeadTargets || u.currentHP > 0));
                 return enemy.SelectTargetFromSquad();
             default:
@@ -398,7 +416,7 @@ public partial class NewBattleManager
             case TargetType.AllAllies:
                 return sourceUnits.FirstOrDefault(u =>
                     u != null &&
-                    u.Data.characterType == enemy.Data.characterType &&
+                    u.characterType == enemy.characterType &&
                     (allowDeadTargets || u.currentHP > 0));
             default:
                 return enemy.SelectTargetFromSquad();
@@ -452,20 +470,13 @@ public partial class NewBattleManager
 
         OrientUnitTowardTarget(caster, target);
 
-        // Vérifie si le move et le lanceur peuvent être interceptés
-        if (move.interceptable && caster.Data.interceptable && !caster.isInterceptionImmune)
-        {
-            var interceptor = CheckForInterception(caster, target, caster.currentInterceptionRange);
-            if (interceptor != null)
-            {
-                yield return InterceptRoutine(interceptor, caster);
-                yield break;
-            }
-        }
+        yield return TryResolveInterception(caster, target, move);
+        if (interceptionSucceeded)
+            yield break;
         // Lecture d'un avertissement sonore si le mouvement en possède un
         if (move.warningClip != null)
         {
-            RhythmQTEManager.Instance?.PrepareQTEBar(move.notes);
+            RhythmQTEManager.Instance?.PrepareQTEBar(move);
             // Les indices sonores sont joués via la nouvelle source dédiée
             AudioManager.Instance?.PlayWarningClip(move.warningClip);
             // On attend la fin du clip pour conserver la cohérence musicale
@@ -475,9 +486,11 @@ public partial class NewBattleManager
 
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, caster, target);
 
+        bool moveAppliedEffect = RhythmQTEManager.Instance == null || RhythmQTEManager.Instance.LastMoveAppliedEffect;
+
         // Ajout du système de rage manuellement
         var rage = caster.GetComponent<RageSystem>();
-        if (rage != null && move.HasEffect(MusicalEffectType.Damage))
+        if (moveAppliedEffect && rage != null && move.HasEffect(MusicalEffectType.Damage))
         {
             float bonus = rage.CalculateBonusDamage();
             if (bonus > 0)
@@ -489,7 +502,7 @@ public partial class NewBattleManager
         }
 
         var concentration = caster.GetComponent<ConcentrationSystem>();
-        if (concentration != null && move.HasEffect(MusicalEffectType.Damage))
+        if (moveAppliedEffect && concentration != null && move.HasEffect(MusicalEffectType.Damage))
         {
             int baseDamage = move.GetEffectValue(MusicalEffectType.Damage, move.PrimaryEffectValue);
             float bonus = concentration.CalculateBonusDamage(baseDamage + caster.currentPower);
@@ -535,9 +548,7 @@ public partial class NewBattleManager
         // Animation ou Timeline d'utilisation
         yield return RhythmQTEManager.Instance.ItemRoutine(item, caster, target);
 
-        bool crit = RhythmQTEManager.Instance.LastItemSuccess;
-        if (crit)
-            ActionUIDisplayManager.Instance?.DisplayCriticalHit();
+        bool crit = RhythmQTEManager.Instance.LastItemCritical;
         if (bypassInventory)
         {
             ItemEffectExecutor.ApplyEffect(item, caster, target, crit);
@@ -545,6 +556,11 @@ public partial class NewBattleManager
         else
         {
             InventoryManager.Instance.UseItem(item, caster, target, crit);
+        }
+        if (crit)
+        {
+            ActionUIDisplayManager.Instance?.DisplayCriticalHit();
+            BattleCameraManager.Instance?.TriggerCriticalFeedback(target);
         }
 
         // Calcule les dégâts totaux infligés par l'objet
@@ -601,9 +617,7 @@ public partial class NewBattleManager
         // Animation ou Timeline d'utilisation (jouée une seule fois).
         yield return RhythmQTEManager.Instance.ItemRoutine(item, caster, rangeTarget);
 
-        bool crit = RhythmQTEManager.Instance.LastItemSuccess;
-        if (crit)
-            ActionUIDisplayManager.Instance?.DisplayCriticalHit();
+        bool crit = RhythmQTEManager.Instance.LastItemCritical;
 
         int appliedTargets = 0;
         foreach (var target in targets)
@@ -614,6 +628,14 @@ public partial class NewBattleManager
             ItemEffectExecutor.ApplyEffect(item, caster, target, crit);
 
             appliedTargets++;
+        }
+
+        if (crit)
+        {
+            ActionUIDisplayManager.Instance?.DisplayCriticalHit();
+            CharacterUnit feedbackTarget = targets.FirstOrDefault(t => t != null && t.IsPlayerControlled)
+                ?? targets.FirstOrDefault(t => t != null);
+            BattleCameraManager.Instance?.TriggerCriticalFeedback(feedbackTarget);
         }
 
         if (!bypassInventory && appliedTargets > 0)
@@ -823,117 +845,108 @@ public partial class NewBattleManager
         }
     }
 
-    private CharacterUnit CheckForInterception(CharacterUnit caster, CharacterUnit target, float range)
+    private IEnumerator TryResolveInterception(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
     {
-        if (caster != null && (!caster.Data.interceptable || caster.isInterceptionImmune))
-            return null; // Attaquant non interceptable
-        foreach (var unit in activeCharacterUnits)
+        interceptionSucceeded = false;
+
+        if (!CanAttemptInterception(caster, move) || target == null)
+            yield break;
+
+        var interceptor = FindBestInterceptor(caster, target);
+        if (interceptor == null)
+            yield break;
+
+        float interceptorChance = ResolveInterceptionChance(interceptor, caster);
+        float interceptableChance = ResolveInterceptionChance(caster, interceptor);
+        bool success = ResolveInterceptionOutcome(interceptor, interceptorChance, interceptableChance);
+
+        if (success)
         {
-            if (unit == null || unit == caster || unit == target) continue;
-            if (unit.Data.isPlayerControlled == caster.Data.isPlayerControlled) continue;
-
-            if (Vector3.Distance(unit.transform.position, caster.transform.position) <= range)
-            {
-                var conc = unit.GetComponent<ConcentrationSystem>();
-                if (conc != null && conc.IsFull)
-                    return unit;
-
-                float chance = unit.currentReflex / (unit.currentReflex + caster.currentReflex + 1f);
-                if (UnityEngine.Random.value < chance)
-                    return unit;
-            }
+            interceptionSucceeded = true;
+            yield return InterceptRoutine(interceptor, caster);
         }
-        return null;
+
+        bool allyWasInterceptor = interceptor.IsPlayerControlled;
+        CharacterUnit popupTarget = allyWasInterceptor ? interceptor : caster;
+        if (popupTarget == null)
+            popupTarget = interceptor ?? caster;
+        ActionUIDisplayManager.Instance?.DisplayInterceptionOutcome(popupTarget != null ? popupTarget.transform : null,
+            success, allyWasInterceptor);
     }
 
-    private CharacterUnit FindPlayerInterceptor(CharacterUnit caster, CharacterUnit target, float range)
+    private bool CanAttemptInterception(CharacterUnit caster, MusicalMoveSO move)
     {
-        if (caster != null && (!caster.Data.interceptable || caster.isInterceptionImmune))
-            return null; // Attaquant non interceptable
+        if (caster == null || move == null)
+            return false;
+
+        if (caster.Data == null)
+            return false;
+
+        return move.interceptable && caster.Data.interceptable && !caster.isInterceptionImmune;
+    }
+
+    private CharacterUnit FindBestInterceptor(CharacterUnit caster, CharacterUnit target)
+    {
+        if (caster == null)
+            return null;
+
         CharacterUnit best = null;
-        float bestChance = 0f;
+        float bestChance = -1f;
         foreach (var unit in activeCharacterUnits)
         {
-            if (unit == null || unit == caster || unit == target) continue;
-            if (!unit.Data.isPlayerControlled) continue;
+            if (unit == null || unit == caster || unit == target)
+                continue;
+            if (unit.IsPlayerControlled == caster.IsPlayerControlled)
+                continue;
 
-            if (Vector3.Distance(unit.transform.position, caster.transform.position) <= range)
+            float range = unit.currentInterceptionRange;
+            if (range <= 0f)
+                continue;
+
+            if (Vector3.Distance(unit.transform.position, caster.transform.position) > range)
+                continue;
+
+            var conc = unit.GetComponent<ConcentrationSystem>();
+            if (conc != null && conc.IsFull)
+                return unit;
+
+            float chance = ResolveInterceptionChance(unit, caster);
+            if (chance > bestChance)
             {
-                var conc = unit.GetComponent<ConcentrationSystem>();
-                if (conc != null && conc.IsFull)
-                    return unit;
-
-                float chance = unit.currentReflex / (unit.currentReflex + caster.currentReflex + 1f);
-                if (chance > bestChance)
-                {
-                    bestChance = chance;
-                    best = unit;
-                }
+                bestChance = chance;
+                best = unit;
             }
         }
         return best;
     }
 
-    private IEnumerator TryPlayerInterception(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
+    private float ResolveInterceptionChance(CharacterUnit interceptor, CharacterUnit interceptable)
     {
-        interceptionSucceeded = false;
-        if (caster != null && (!caster.Data.interceptable || caster.isInterceptionImmune))
-            yield break; // Impossible d'intercepter ce lanceur
-        var interceptor = FindPlayerInterceptor(caster, target, caster.currentInterceptionRange);
         if (interceptor == null)
-            yield break;
+            return 0f;
 
-        Debug.Log($"[Interception] {interceptor.name} tente d'intercepter {caster.name} ({move.moveName})");
-        ActionUIDisplayManager.Instance.DisplayInterceptionAttempt();
+        float interceptorReflex = Mathf.Max(0f, interceptor.currentReflex);
+        float interceptableReflex = interceptable != null ? Mathf.Max(0f, interceptable.currentReflex) : 0f;
+        float chance = interceptorReflex / (interceptorReflex + interceptableReflex + 1f);
 
-        var conc = interceptor.GetComponent<ConcentrationSystem>();
+        if (interceptor.currentInterceptionChance > 0f)
+            chance = Mathf.Clamp01(chance + interceptor.currentInterceptionChance);
+
+        return chance;
+    }
+
+    private bool ResolveInterceptionOutcome(CharacterUnit interceptor, float interceptorChance, float interceptableChance)
+    {
+        var conc = interceptor != null ? interceptor.GetComponent<ConcentrationSystem>() : null;
         if (conc != null && conc.IsFull)
-        {
-            yield return InterceptRoutine(interceptor, caster);
-            interceptionSucceeded = true;
-            Debug.Log("[Interception] Réussite automatique grâce à la concentration pleine.");
-            ActionUIDisplayManager.Instance.DisplayInterceptionResult(true);
-            yield break;
-        }
+            return true;
 
-        float chance = interceptor.currentReflex / (interceptor.currentReflex + caster.currentReflex + 1f);
-        float window = Mathf.Lerp(0.2f, 1.5f, chance);
+        if (interceptorChance <= 0f && interceptableChance <= 0f)
+            return false;
 
-        GameObject signalObj = null;
-        if (interceptionSignalPrefab != null)
-        {
-            signalObj = Instantiate(interceptionSignalPrefab, target.transform.position + Vector3.up * 2f, Quaternion.identity, target.transform);
-            var sig = signalObj.GetComponent<InterceptionSignal>();
-            if (sig != null)
-                sig.StartSignal(window);
-        }
-
-        var action = new InputAction(binding: "<Gamepad>/leftShoulder");
-        action.Enable();
-        bool pressed = false;
-        action.performed += _ => pressed = true;
-
-        float elapsed = 0f;
-        while (elapsed < window)
-        {
-            if (pressed)
-            {
-                if (signalObj != null) Destroy(signalObj);
-                action.Disable();
-                yield return InterceptRoutine(interceptor, caster);
-                interceptionSucceeded = true;
-                Debug.Log("[Interception] Interception réussie !");
-                ActionUIDisplayManager.Instance.DisplayInterceptionResult(true);
-                yield break;
-            }
-            elapsed += Time.unscaledDeltaTime;
-            yield return null;
-        }
-
-        if (signalObj != null) Destroy(signalObj);
-        action.Disable();
-        Debug.Log("[Interception] Interception échouée.");
-        ActionUIDisplayManager.Instance.DisplayInterceptionResult(false);
+        float total = interceptorChance + interceptableChance;
+        float roll = UnityEngine.Random.value * total;
+        return roll <= interceptorChance;
     }
 
     private IEnumerator InterceptRoutine(CharacterUnit interceptor, CharacterUnit caster)
@@ -985,7 +998,7 @@ public partial class NewBattleManager
             //     connaître les détails d'implémentation.
             endingUnit.ProcessEndOfTurnStatuses();
 
-            if (endingUnit.Data.characterType == CharacterType.SquadUnit && currentTurnDamage > maxTurnDamage)
+            if (endingUnit.IsPlayerControlled && currentTurnDamage > maxTurnDamage)
             {
                 maxTurnDamage = currentTurnDamage;
                 mvpUnit = endingUnit;
@@ -1013,6 +1026,9 @@ public partial class NewBattleManager
 
         // Cache la jauge si elle existe pour éviter les références invalides.
         PassTurnUI.Instance?.Hide(); // Bouclage
+
+        // Lance immédiatement les timelines conditionnelles si elles ont été mises en file pendant le tour.
+        TryStartPendingTimelines();
     }
 
     public void AfterMusicalMove(MusicalMoveSO move, CharacterUnit caster, bool wasCritical)
@@ -1085,7 +1101,7 @@ public partial class NewBattleManager
             return;
         }
 
-        if (!caster.Data.isPlayerControlled)
+        if (!caster.IsPlayerControlled)
         {
             EndTurn();
             return;

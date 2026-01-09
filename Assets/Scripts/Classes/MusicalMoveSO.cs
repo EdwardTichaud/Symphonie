@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Timeline;
 using UnityEngine.Serialization;
 using System.Collections.Generic;
 // Les directives UnityEditor sont réservées à l'éditeur et ne doivent pas
@@ -32,17 +31,22 @@ public class MusicalMoveSO : ScriptableObject
     public bool consumeOnUse = true;
     [Tooltip("Moves conseillés pour créer des combos efficaces avec cet objet.")]
     public List<MusicalMoveSO> recommendedMusicalMoves = new();
-    // L'animation de ciblage est désormais pilotée par la Timeline du move
+    // L'animation de ciblage est désormais pilotée par les AnimationEvents du move
     [Tooltip("Si vrai, le lanceur garde constamment la cible en ligne de mire lors du move.")]
     public bool stayFaceToTarget = true;
 
     [System.Serializable]
     public class NoteData
     {
-        [Tooltip("Input à utiliser pour réussir le QTE")]
-        public Sprite noteInput;
-        [Tooltip("Délai avant que la note se joue (par rapport au début ou à la note d'avant)")]
-        public float rhythm = 0.5f;
+        [Tooltip("Input à utiliser pour réussir le QTE (sprite + input Battle).")]
+        public QTEInputSO qteInput;
+        [Min(0f)]
+        [Tooltip("Écart d'apparition avec la note suivante (en secondes).")]
+        public float beatSpacing = 1f;
+        [Min(0f)]
+        [Tooltip("Temps de réponse avant que le cercle atteigne la scale 2 (en secondes).")]
+        [FormerlySerializedAs("rhythm")]
+        public float responseDelay = 0.5f;
     }
 
     [System.Serializable]
@@ -72,22 +76,37 @@ public class MusicalMoveSO : ScriptableObject
         public string designerNote;
     }
 
+    [Header("Timing")]
+    // ⏱️ Délai ajouté avant l'animation du move.
+    //    Permet d'insérer un temps mort contrôlé (par exemple pour une
+    //    annonce ou un effet visuel) avant que le move ne commence
+    //    réellement.
+    [Tooltip("Temps en secondes à attendre AVANT de lancer l'animation du move")]
+    [Min(0f)]
+    [FormerlySerializedAs("startDelay")]
+    public float animationDelay = 2f;
+    [Tooltip("Délai (en secondes) avant le lancement des QTE.")]
+    [Min(0f)]
+    public float qteDelay = 0f;
+
     [Header("Partition musicale")]
     [Tooltip("Suite des notes à jouer pour réussir le QTE du move.")]
     public List<NoteData> notes = new();
 
-    [Header("Ressources")]
-    [Tooltip("Coût en fatigue pour exécuter ce move.")]
-    public float fatigueCost = 1f;
-    [Tooltip("Coût en harmonie pour exécuter ce move.")]
-    public int harmonicCost = 1;
-    [Tooltip("Gain d'harmonie généré lors de l'utilisation du move.")]
-    public int harmonicGeneration = 0;
-    [Header("Flux Harmoniques")]
+    [Header("Ressources - Common")]
     [Tooltip("Type d'harmonique consommé pour payer le coût du move. Permet de guider les joueurs vers les bonnes synergies.")]
     public HarmonicType consumedHarmonicType = HarmonicType.Lumiere;
+    [Tooltip("Coût en harmonie pour exécuter ce move.")]
+    public int harmonicCost = 1;
+
     [Tooltip("Type d'harmonique ajouté à la réserve lorsqu'un gain est généré. Même si le gain est nul, cette information aide la lecture stratégique.")]
     public HarmonicType generatedHarmonicType = HarmonicType.Lumiere;
+    [Tooltip("Gain d'harmonie généré lors de l'utilisation du move.")]
+    public int harmonicGeneration = 0;
+
+    [Header("Ressources - Special")]
+    [Tooltip("Coût en fatigue pour exécuter ce move.")]
+    public float fatigueCost = 1f;
 
     [System.Serializable]
     public class EffectDefinition
@@ -240,7 +259,7 @@ public class MusicalMoveSO : ScriptableObject
     public bool usableOnDeathUnits = false;
 
     [Header("Déplacement")]
-    // La gestion des effets visuels est désormais confiée à la timeline,
+    // La gestion des effets visuels est désormais confiée aux AnimationEvents,
     // seul le déplacement reste paramétrable dans ce ScriptableObject.
     [Tooltip("Temps total (en secondes) pour atteindre la position cible. Mettre 0 pour une téléportation instantanée.")]
     public float travelTime = 0f;
@@ -303,31 +322,14 @@ public class MusicalMoveSO : ScriptableObject
     // concepteurs n'en décident autrement explicitement.
     private const float DefaultDamageInterruptionThreshold = 20000f;
 
-    [Header("Timing")]
-    // ⏱️ Délai ajouté avant la timeline du move.
-    //    Permet d'insérer un temps mort contrôlé (par exemple pour une
-    //    annonce ou un effet visuel) avant que le move ne commence
-    //    réellement.
-    [Tooltip("Temps en secondes à attendre AVANT de lancer la timeline du move")]
-    public float startDelay = 2f;
 
     [Header("Awake")]
     [Tooltip("Si vrai, ce move fait entrer le lanceur en mode Awake")] public bool enterAwake = false;
 
     [Header("Animation")]
     public AnimationClip preparingAnimation;
-
-    [Header("Timeline")]
-    [Tooltip("Timeline d'exécution complète du move. Un Signal peut y être placé pour la mettre en pause en mode lent.")]
-    public TimelineAsset timeline;
-
-    [FormerlySerializedAs("preparingTimeline")]
-    [SerializeField, HideInInspector] private TimelineAsset legacyPreparingTimeline;
-    [FormerlySerializedAs("performingTimelinePhase1")]
-    [FormerlySerializedAs("performingTimeline")]
-    [SerializeField, HideInInspector] private TimelineAsset legacyPerformingTimeline;
-    [FormerlySerializedAs("retreatTimeline")]
-    [SerializeField, HideInInspector] private TimelineAsset legacyRetreatTimeline;
+    [Tooltip("Animation principale jouée lors de l'exécution du move.")]
+    public AnimationClip performingAnimation;
 
     [Header("Motif de caméra")]
     [Tooltip("Motif utilisé dès la sélection du move et conservé jusqu'à un changement explicite.")]
@@ -348,7 +350,6 @@ public class MusicalMoveSO : ScriptableObject
 
     private void OnValidate()
     {
-        MigrateLegacyTimelines(markDirty: true);
         MigrateLegacyTeleportVfx(markDirty: true);
         EnsureEffectsInitialized();
         var primaryEffect = GetPrimaryEffect();
@@ -503,8 +504,8 @@ public class MusicalMoveSO : ScriptableObject
         {
             if (preparationTurnCount <= 0)
                 Debug.LogWarning($"[MusicalMoveSO] preparationTurnCount <= 0 alors que la preparation est active pour '{name}'.", this);
-            if (timeline == null)
-                Debug.LogWarning($"[MusicalMoveSO] timeline manquante pour '{name}'.", this);
+            if (performingAnimation == null)
+                Debug.LogWarning($"[MusicalMoveSO] performingAnimation manquante pour '{name}'.", this);
         }
 
         if (castDistance < 0f)
@@ -527,25 +528,7 @@ public class MusicalMoveSO : ScriptableObject
 
     private void OnEnable()
     {
-        MigrateLegacyTimelines(markDirty: false);
         MigrateLegacyTeleportVfx(markDirty: false);
-    }
-
-    private void MigrateLegacyTimelines(bool markDirty)
-    {
-        if (timeline != null)
-            return;
-
-        timeline = legacyPerformingTimeline != null
-            ? legacyPerformingTimeline
-            : legacyPreparingTimeline != null
-                ? legacyPreparingTimeline
-                : legacyRetreatTimeline;
-
-#if UNITY_EDITOR
-        if (markDirty && timeline != null)
-            EditorUtility.SetDirty(this);
-#endif
     }
 
     private void MigrateLegacyTeleportVfx(bool markDirty)

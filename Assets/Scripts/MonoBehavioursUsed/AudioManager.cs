@@ -62,6 +62,32 @@ public class AudioManager : MonoBehaviour
 
     private AudioSource CurrentMusicSource => currentMusicHandle != null ? currentMusicHandle.Source : null;
 
+    public bool TryGetActiveMusic(out AudioClipSO clipAsset, out float playbackTime)
+    {
+        clipAsset = null;
+        playbackTime = 0f;
+
+        if (musicOverrideSource != null && musicOverrideSource.isPlaying)
+        {
+            clipAsset = overrideMusicAsset;
+            playbackTime = musicOverrideSource.time;
+            return clipAsset != null;
+        }
+
+        if (currentMusicHandle != null && currentMusicHandle.Source != null && currentMusicHandle.Source.isPlaying)
+        {
+            clipAsset = currentMusicHandle.ClipAsset ?? currentMusicAsset;
+            playbackTime = currentMusicHandle.Source.time;
+            return clipAsset != null;
+        }
+
+        if (CurrentMusicSource != null)
+            playbackTime = CurrentMusicSource.time;
+
+        clipAsset = currentMusicAsset;
+        return clipAsset != null;
+    }
+
     private Coroutine crossfadeRoutine;
     private enum FadingHandleAction
     {

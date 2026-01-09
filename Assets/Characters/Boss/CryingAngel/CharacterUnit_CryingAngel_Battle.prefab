@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: -3209986247612668936}
   - component: {fileID: 3013038446078627597}
   - component: {fileID: 643257652111682297}
+  - component: {fileID: -5618447307437879949}
   m_Layer: 17
   m_Name: CharacterUnit_CryingAngel_Battle
   m_TagString: Player
@@ -67,6 +68,7 @@ MonoBehaviour:
   currentMusicalGauge: 0
   currentATB: 0
   ATBMax: 100
+  removeFromBattleOnKnockOut: 0
   isReadyToParry: 0
   isInterceptionImmune: 0
   interceptionImmunityTurns: 0
@@ -145,6 +147,12 @@ PlayableDirector:
     value: {fileID: 0}
   - key: {fileID: 360504957016893809, guid: 2685cb01e665faa428a61ed02811523b, type: 2}
     value: {fileID: 0}
+  - key: {fileID: 5381904953160897975, guid: e8681b04e96056c45bf5744c76120f83, type: 2}
+    value: {fileID: -3209986247612668936}
+  - key: {fileID: 8041543854922356360, guid: e8681b04e96056c45bf5744c76120f83, type: 2}
+    value: {fileID: 8270017127888679911}
+  - key: {fileID: 6396470403211636105, guid: e8681b04e96056c45bf5744c76120f83, type: 2}
+    value: {fileID: 0}
   m_ExposedReferences:
     m_References: []
 --- !u!114 &-3209986247612668936
@@ -160,8 +168,38 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Events:
-    m_Signals: []
-    m_Events: []
+    m_Signals:
+    - {fileID: 11400000, guid: 134e0015c0596464e9d0d67c2ae8fe83, type: 2}
+    - {fileID: 11400000, guid: c753c7df5b17fb944bf80664bb29f506, type: 2}
+    m_Events:
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: -5618447307437879949}
+          m_TargetAssemblyTypeName: CameraMotifSignalReceiver, Symphonie.Runtime
+          m_MethodName: SIG_LockCameraMotif
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
+    - m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: -5618447307437879949}
+          m_TargetAssemblyTypeName: CameraMotifSignalReceiver, Symphonie.Runtime
+          m_MethodName: SIG_UnlockCameraMotif
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 1
 --- !u!114 &3013038446078627597
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -198,6 +236,22 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &-5618447307437879949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 901204007372340786}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de0a9cec194f6624c8b3a85761967fc7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Symphonie.Runtime::CameraMotifSignalReceiver
+  setCameraMotifSignal: {fileID: 11400000, guid: 74469a55ff9cd6140a84fd9c43729739, type: 2}
+  lockCameraMotifSignal: {fileID: 11400000, guid: 134e0015c0596464e9d0d67c2ae8fe83, type: 2}
+  unlockCameraMotifSignal: {fileID: 11400000, guid: c753c7df5b17fb944bf80664bb29f506, type: 2}
+  cameraMotif: {fileID: 11400000, guid: e4526b1d1d2af0e44889a8aef89cba2c, type: 2}
 --- !u!1 &2092352699872086567
 GameObject:
   m_ObjectHideFlags: 0
@@ -420,8 +474,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6527799902802202830}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.3494004, z: -0, w: 0.9369735}
-  m_LocalPosition: {x: 3.2737894, y: 1.006, z: -3.7791932}
+  m_LocalRotation: {x: -0, y: -0.39463466, z: -0, w: 0.91883814}
+  m_LocalPosition: {x: 3.6260538, y: 1.006, z: -3.4426343}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
