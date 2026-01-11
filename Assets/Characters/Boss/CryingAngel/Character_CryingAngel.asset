@@ -33,12 +33,12 @@ MonoBehaviour:
   basePower: 0
   baseStability: 0
   baseSagacity: 0
-  baseInitiative: 1
-  baseRange: 2
   baseHP: 10000
   baseStrength: 1
   baseDefense: 1
   baseSpeed: 0
+  baseRange: 2
+  baseInitiative: 1
   baseInterceptionRange: 2
   baseRage: 0
   maxRage: 0
@@ -74,20 +74,23 @@ MonoBehaviour:
   dissonanceEffect_Loop: {fileID: 0}
   dissonanceEffect_End: {fileID: 0}
   awakeStatMultiplier: 1.5
+  interceptedAnimation: {fileID: 0}
   hitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
   deathAnimation: {fileID: 7400000, guid: 7f67a9c1949f03342bd793ce58156a74, type: 2}
   TPAnimation_Start: {fileID: 7400000, guid: 4326dd0ea3dda9a45b9c75e45eaf1931, type: 3}
   TPAnimation_Destination: {fileID: 7400000, guid: 4326dd0ea3dda9a45b9c75e45eaf1931, type: 3}
+  prepareToTargetAnimation: {fileID: 0}
   prepareToUndergoAnimation: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
+  movementAnimation: {fileID: 7400000, guid: 08462171d177eb5418f8dbe9131eb07a, type: 2}
   awakenIdleAnimation: {fileID: 0}
   dissonantIdleAnimation: {fileID: 0}
   awakeEnterAnimation: {fileID: 0}
   awakeExitAnimation: {fileID: 0}
   dissonanceEnterAnimation: {fileID: 0}
   dissonanceExitAnimation: {fileID: 0}
-  introTimeline: {fileID: 11400000, guid: 2685cb01e665faa428a61ed02811523b, type: 2}
   moveStartClip: {fileID: 0}
   moveEndClip: {fileID: 0}
+  movementAudioClip: {fileID: 0}
   menuSelectionClip: {fileID: 0}
   awakeEnterClip: {fileID: 0}
   awakeExitClip: {fileID: 0}

@@ -20,6 +20,7 @@ MonoBehaviour:
   characterType: 0
   gameplayType: 3
   harmonicType: 0
+  intelligenceLevel: 1
   characterWorldModel: {fileID: 0}
   characterBattleModel: {fileID: 901204007372340786, guid: d30261cc21c0ee0478c4cde9fb33071f, type: 3}
   battlefieldIndex: 0
@@ -33,12 +34,12 @@ MonoBehaviour:
   basePower: 0
   baseStability: 0
   baseSagacity: 0
-  baseInitiative: 1
-  baseRange: 5
   baseHP: 50
   baseStrength: 1
   baseDefense: 1
   baseSpeed: 0
+  baseRange: 5
+  baseInitiative: 1
   baseInterceptionRange: 2
   baseRage: 0
   maxRage: 0
@@ -56,26 +57,10 @@ MonoBehaviour:
   defaultMusicalMoveSetIndex: -1
   itemSets: []
   defaultItemSetIndex: -1
-  currentInitiative: 1
-  currentRange: 5
-  currentHP: 50
-  currentStrength: 1
-  currentDefense: 1
-  currentPower: 0
-  currentStability: 0
-  currentVitality: 0
-  currentSagacity: 0
   isPlayerControlled: 1
-  currentRage: 0
-  currentFatigue: 0
-  currentReflex: 0
-  currentMobility: 0
-  currentSpeed: 0
-  currentInterceptionRange: 1
-  currentInterceptionChance: 0
-  currentHarmonicCharge: 1
-  currentMusicalMoveSetIndex: -1
-  currentItemSetIndex: -1
+  turnStartVoiceline: {fileID: 0}
+  turnEndVoiceline: {fileID: 0}
+  baseAttackVoiceline: {fileID: 0}
   hitSound: {fileID: 0}
   criticalHitSound: {fileID: 0}
   interceptedSound: {fileID: 0}
@@ -93,20 +78,23 @@ MonoBehaviour:
   dissonanceEffect_Loop: {fileID: 0}
   dissonanceEffect_End: {fileID: 0}
   awakeStatMultiplier: 1.5
+  interceptedAnimation: {fileID: 0}
   hitAnimation: {fileID: 0}
   deathAnimation: {fileID: 0}
   TPAnimation_Start: {fileID: 0}
   TPAnimation_Destination: {fileID: 0}
+  prepareToTargetAnimation: {fileID: 0}
   prepareToUndergoAnimation: {fileID: 0}
+  movementAnimation: {fileID: 7400000, guid: 08462171d177eb5418f8dbe9131eb07a, type: 2}
   awakenIdleAnimation: {fileID: 0}
   dissonantIdleAnimation: {fileID: 0}
   awakeEnterAnimation: {fileID: 0}
   awakeExitAnimation: {fileID: 0}
   dissonanceEnterAnimation: {fileID: 0}
   dissonanceExitAnimation: {fileID: 0}
-  introTimeline: {fileID: 0}
   moveStartClip: {fileID: 0}
   moveEndClip: {fileID: 0}
+  movementAudioClip: {fileID: 0}
   menuSelectionClip: {fileID: 0}
   awakeEnterClip: {fileID: 0}
   awakeExitClip: {fileID: 0}

@@ -946,7 +946,24 @@ public static class BattleAIStrategy
             return true;
 
         if (!manager.IsTargetInRange(caster, target, move))
-            return false;
+        {
+            Vector3 targetPosition = target.transform.position;
+            if (move.targetType == TargetType.SpawnPosition)
+            {
+                if (!manager.TryResolveUnitSpawnPosition(caster, out targetPosition))
+                    return false;
+            }
+
+            Vector3 casterPos = caster.transform.position;
+            casterPos.y = 0f;
+            targetPosition.y = 0f;
+            float distance = Vector3.Distance(casterPos, targetPosition);
+            float maxReach = caster.currentRange + move.castDistance;
+            float required = distance - maxReach;
+
+            if (required > 0f && !caster.CanSpendMovementDistance(required))
+                return false;
+        }
 
         if (!manager.HasSpaceForMove(caster, target, move))
             return false;

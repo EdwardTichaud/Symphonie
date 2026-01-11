@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Gère l'activation et le placement des caméras Cinemachine pendant les combats.
@@ -45,6 +46,30 @@ public class BattleCameraManager : MonoBehaviour
 
     [Tooltip("Amplitude de lacet (en degrés) appliquée à la caméra pendant l'oscillation.")]
     [SerializeField] private float breathingYawAmplitude = 0.4f;
+
+    [Header("Contrôle manuel (combat)")]
+    [Tooltip("Active la rotation manuelle de la caméra (stick droit / souris) lors des phases autorisées.")]
+    [SerializeField] private bool enableManualControl = true;
+    [Tooltip("Sensibilité du contrôle manuel (lacet, tangage).")]
+    [SerializeField] private Vector2 manualOrbitSensitivity = new Vector2(120f, 120f);
+    [Tooltip("Limites du tangage en degrés pour le contrôle manuel.")]
+    [SerializeField] private Vector2 manualPitchLimits = new Vector2(-30f, 60f);
+    [Tooltip("Seuil minimal pour ignorer les micro-entrées du stick droit.")]
+    [SerializeField] private float manualInputDeadzone = 0.1f;
+    [Tooltip("Vitesse de zoom (en mètres par seconde) via le stick droit vertical.")]
+    [SerializeField] private float manualZoomSpeed = 4f;
+    [Tooltip("Distances min/max autorisées pour le zoom manuel.")]
+    [SerializeField] private Vector2 manualZoomDistanceLimits = new Vector2(2f, 12f);
+    [Tooltip("Vitesse d'ajustement de hauteur (mètres par seconde) via les gâchettes.")]
+    [SerializeField] private float manualHeightSpeed = 3f;
+    [Tooltip("Décalage vertical min/max appliqué via les gâchettes.")]
+    [SerializeField] private Vector2 manualHeightOffsetRange = new Vector2(-0.5f, 4f);
+    [Tooltip("Hauteur minimale au-dessus du sol pour la caméra en mode manuel.")]
+    [SerializeField] private float manualMinHeightAboveGround = 0.5f;
+    [Tooltip("Hauteur de départ du rayon pour détecter le sol sous la caméra.")]
+    [SerializeField] private float manualGroundProbeHeight = 6f;
+    [Tooltip("Layers utilisés pour détecter le sol lors du zoom manuel.")]
+    [SerializeField] private LayerMask manualGroundLayer;
 
     [Header("Critical Shake")]
     [Tooltip("Duration of the strong shake triggered by critical hits.")]
@@ -133,6 +158,16 @@ public class BattleCameraManager : MonoBehaviour
     private float shakeFrequency;
     private float shakeRotation;
     private float shakeSeed;
+    private bool manualControlActive;
+    private float manualYaw;
+    private float manualPitch;
+    private float manualZoomOffset;
+    private float manualHeightOffset;
+    private bool manualPivotOverrideActive;
+    private Vector3 manualPivotOverridePosition;
+    private bool manualAnchorOverrideActive;
+    private Vector3 manualAnchorOverridePosition;
+    private Transform manualLookTarget;
 
     /// <summary>État interne utilisé pour lisser chaque caméra.</summary>
     private sealed class CameraState
@@ -246,6 +281,7 @@ public class BattleCameraManager : MonoBehaviour
 
     private void LateUpdate()
     {
+        UpdateManualCameraInput();
         UpdateMotifBlend();
         RefreshAllCameraPlacements();
     }
@@ -383,18 +419,30 @@ public class BattleCameraManager : MonoBehaviour
             state.OrbitActive = false;
         }
 
+        bool hasLookAt = false;
+        Vector3 lookAtPosition = referencePosition;
         if (tuning.LookAtEnabled)
         {
             CharacterUnit lookAtUnit = ResolveReferenceUnit(tuning.LookAtReferencePoint);
             if (lookAtUnit != null)
             {
-                Vector3 lookAtPosition = lookAtUnit.transform.position;
+                lookAtPosition = lookAtUnit.transform.position;
                 if (tuning.CompensateReferenceSize)
                     lookAtPosition = lookAtUnit.GetVisualBounds().center;
                 Vector3 forward = lookAtPosition - desiredPosition;
                 if (forward.sqrMagnitude > 0.0001f)
                     desiredRotation = Quaternion.LookRotation(forward, Vector3.up) * Quaternion.Euler(tuning.ReferenceOffsetRotation);
+                hasLookAt = true;
             }
+        }
+
+        ApplyManualOrbit(ref desiredPosition, ref desiredRotation, referencePosition, hasLookAt, lookAtPosition, tuning);
+
+        if (manualLookTarget != null)
+        {
+            Vector3 forward = manualLookTarget.position - desiredPosition;
+            if (forward.sqrMagnitude > 0.0001f)
+                desiredRotation = Quaternion.LookRotation(forward, Vector3.up) * Quaternion.Euler(tuning.ReferenceOffsetRotation);
         }
 
         float smoothTime = Mathf.Max(0f, tuning.ReferenceOffsetSmoothTime);
@@ -439,6 +487,177 @@ public class BattleCameraManager : MonoBehaviour
         {
             motifBlendTimer = duration;
             motifBlendActive = false;
+        }
+    }
+
+    public void SetManualCameraControl(bool enabled)
+    {
+        bool shouldEnable = enabled && enableManualControl;
+        if (manualControlActive == shouldEnable)
+            return;
+
+        manualControlActive = shouldEnable;
+        manualYaw = 0f;
+        manualPitch = 0f;
+        manualPitch = Mathf.Clamp(manualPitch, manualPitchLimits.x, manualPitchLimits.y);
+        manualZoomOffset = 0f;
+        manualHeightOffset = 0f;
+        if (!manualControlActive)
+        {
+            manualPivotOverrideActive = false;
+            manualAnchorOverrideActive = false;
+        }
+    }
+
+    public void SnapManualCameraTo(Vector3 pivotPosition, float height)
+    {
+        manualPivotOverrideActive = true;
+        manualPivotOverridePosition = pivotPosition;
+        manualAnchorOverrideActive = true;
+        manualAnchorOverridePosition = new Vector3(pivotPosition.x, pivotPosition.y + height, pivotPosition.z);
+        manualYaw = 0f;
+        manualPitch = 0f;
+        manualPitch = Mathf.Clamp(manualPitch, manualPitchLimits.x, manualPitchLimits.y);
+        manualZoomOffset = 0f;
+        manualHeightOffset = 0f;
+        RefreshAllCameraPlacements();
+    }
+
+    public void ClearManualCameraAnchor()
+    {
+        if (!manualPivotOverrideActive && !manualAnchorOverrideActive)
+            return;
+
+        manualPivotOverrideActive = false;
+        manualAnchorOverrideActive = false;
+        RefreshAllCameraPlacements();
+    }
+
+    public void SetManualLookTarget(Transform target)
+    {
+        if (manualLookTarget == target)
+            return;
+
+        manualLookTarget = target;
+        RefreshAllCameraPlacements();
+    }
+
+    private void UpdateManualCameraInput()
+    {
+        if (!manualControlActive || !enableManualControl)
+            return;
+
+        if (Gamepad.current == null)
+            return;
+
+        Vector2 lookInput = Gamepad.current.rightStick.ReadValue();
+
+        float deltaTime = Time.unscaledDeltaTime;
+
+        if (Mathf.Abs(lookInput.x) >= manualInputDeadzone)
+            manualYaw += lookInput.x * manualOrbitSensitivity.x * deltaTime;
+
+        if (Mathf.Abs(lookInput.y) >= manualInputDeadzone)
+            manualZoomOffset -= lookInput.y * manualZoomSpeed * deltaTime;
+
+        float heightInput = 0f;
+        if (Gamepad.current != null)
+        {
+            float downInput = Gamepad.current.leftTrigger.ReadValue();
+            float upInput = Gamepad.current.rightTrigger.ReadValue();
+            heightInput = upInput - downInput;
+        }
+        if (Mathf.Abs(heightInput) >= manualInputDeadzone)
+        {
+            manualHeightOffset += heightInput * manualHeightSpeed * deltaTime;
+            float minHeightOffset = Mathf.Min(manualHeightOffsetRange.x, manualHeightOffsetRange.y);
+            float maxHeightOffset = Mathf.Max(manualHeightOffsetRange.x, manualHeightOffsetRange.y);
+            manualHeightOffset = Mathf.Clamp(manualHeightOffset, minHeightOffset, maxHeightOffset);
+        }
+    }
+
+    private void ApplyManualOrbit(
+        ref Vector3 desiredPosition,
+        ref Quaternion desiredRotation,
+        Vector3 referencePosition,
+        bool hasLookAt,
+        Vector3 lookAtPosition,
+        MotifTuning tuning)
+    {
+        if (!manualControlActive || !enableManualControl)
+            return;
+
+        if (manualLookTarget != null)
+        {
+            hasLookAt = true;
+            lookAtPosition = manualLookTarget.position;
+        }
+
+        if (manualAnchorOverrideActive)
+            desiredPosition = manualAnchorOverridePosition;
+
+        Vector3 pivot = manualPivotOverrideActive
+            ? manualPivotOverridePosition
+            : (hasLookAt ? lookAtPosition : referencePosition);
+        Vector3 baseOffset = desiredPosition - pivot;
+        Vector3 baseHorizontal = new Vector3(baseOffset.x, 0f, baseOffset.z);
+        float baseHorizontalDistance;
+        Vector3 horizontalDir;
+        if (baseHorizontal.sqrMagnitude <= 0.0001f)
+        {
+            baseHorizontalDistance = 0f;
+            horizontalDir = Vector3.forward;
+        }
+        else
+        {
+            baseHorizontalDistance = baseHorizontal.magnitude;
+            horizontalDir = baseHorizontal / baseHorizontalDistance;
+        }
+
+        Quaternion yawRotation = Quaternion.AngleAxis(manualYaw, Vector3.up);
+        horizontalDir = yawRotation * horizontalDir;
+
+        float minDistance = Mathf.Max(0.01f, Mathf.Min(manualZoomDistanceLimits.x, manualZoomDistanceLimits.y));
+        float maxDistance = Mathf.Max(minDistance, Mathf.Max(manualZoomDistanceLimits.x, manualZoomDistanceLimits.y));
+        float effectiveMinDistance = manualAnchorOverrideActive ? 0f : minDistance;
+        float targetDistance = Mathf.Clamp(baseHorizontalDistance + manualZoomOffset, effectiveMinDistance, maxDistance);
+        manualZoomOffset = targetDistance - baseHorizontalDistance;
+
+        Vector3 offset = horizontalDir * targetDistance;
+        float minHeightOffset = Mathf.Min(manualHeightOffsetRange.x, manualHeightOffsetRange.y);
+        float maxHeightOffset = Mathf.Max(manualHeightOffsetRange.x, manualHeightOffsetRange.y);
+        manualHeightOffset = Mathf.Clamp(manualHeightOffset, minHeightOffset, maxHeightOffset);
+        offset.y = baseOffset.y + manualHeightOffset;
+        desiredPosition = pivot + offset;
+        ClampManualCameraHeight(ref desiredPosition);
+
+        if (hasLookAt)
+        {
+            Vector3 forward = lookAtPosition - desiredPosition;
+            if (forward.sqrMagnitude > 0.0001f)
+                desiredRotation = Quaternion.LookRotation(forward, Vector3.up) * Quaternion.Euler(tuning.ReferenceOffsetRotation);
+        }
+        else
+        {
+            desiredRotation = yawRotation * desiredRotation;
+        }
+    }
+
+    private void ClampManualCameraHeight(ref Vector3 desiredPosition)
+    {
+        float minHeight = Mathf.Max(0f, manualMinHeightAboveGround);
+        float probeHeight = Mathf.Max(0.1f, manualGroundProbeHeight);
+
+        int mask = manualGroundLayer.value != 0 ? manualGroundLayer.value : LayerMask.GetMask("Battle_Ground");
+        if (mask == 0)
+            mask = Physics.DefaultRaycastLayers;
+
+        Vector3 rayOrigin = desiredPosition + Vector3.up * probeHeight;
+        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hitInfo, probeHeight * 2f, mask, QueryTriggerInteraction.Ignore))
+        {
+            float minY = hitInfo.point.y + minHeight;
+            if (desiredPosition.y < minY)
+                desiredPosition.y = minY;
         }
     }
 

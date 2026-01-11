@@ -127,6 +127,7 @@ public partial class NewBattleManager
             unit.ReduceCooldowns();
             // Réinitialisation des limites par tour
             unit.ResetTurnMoveUsage();
+            unit.ResetMovementPoints();
             InventoryManager.Instance?.ResetTurnItemUsage();
             isTurnResolving = true;
 
@@ -297,6 +298,39 @@ public partial class NewBattleManager
             RhythmQTEManager.Instance?.PrimeTargetPreparationAnimation(null);
             Debug.LogWarning("[EnemyTurn] Aucune attaque ou cible valide !");
             yield break;
+        }
+
+        if (!IsTargetInRange(enemy, target, move))
+        {
+            Vector3 targetPosition = target.transform.position;
+            if (move.targetType == TargetType.SpawnPosition)
+            {
+                if (!TryResolveUnitSpawnPosition(enemy, out targetPosition))
+                    yield break;
+            }
+
+            Vector3 enemyPos = enemy.transform.position;
+            enemyPos.y = 0f;
+            targetPosition.y = 0f;
+
+            float distance = Vector3.Distance(enemyPos, targetPosition);
+            float maxReach = enemy.currentRange + move.castDistance;
+            float required = distance - maxReach;
+
+            if (required > 0f && enemy.CanSpendMovementDistance(required))
+            {
+                Vector3 direction = targetPosition - enemyPos;
+                if (direction.sqrMagnitude > 0.001f)
+                {
+                    Vector3 destination = enemy.transform.position + direction.normalized * required;
+                    destination.y = enemy.transform.position.y;
+                    if (IsMovementDestinationClear(enemy, destination))
+                        yield return MoveUnitToPosition(enemy, destination, returnToMenu: false);
+                }
+            }
+
+            if (!IsTargetInRange(enemy, target, move))
+                yield break;
         }
 
         bool alreadyKnown = MusicalCodexManager.Instance != null && MusicalCodexManager.Instance.IsMelodyKnown(move);

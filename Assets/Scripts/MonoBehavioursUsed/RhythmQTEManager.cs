@@ -708,6 +708,11 @@ public class RhythmQTEManager : MonoBehaviour
 
         // L'ancienne timeline globale de caméra est désactivée.
 
+        // Rafraîchit la position de retour juste avant le déplacement effectif,
+        // afin de revenir au point exact occupé au début de l'action.
+        if (caster != null)
+            originPosition = caster.transform.position;
+
         // Déplacement ou téléportation vers la cible si nécessaire.
         if (move.requiresMovement && caster != null && target != null)
             yield return MoveTo(caster, target, move);

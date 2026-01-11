@@ -753,6 +753,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private float _currentRage;
     private float _currentFatigue;
     private int _currentHarmonicCharge;
+    private float _currentMovementPoints;
+    private float _maxMovementPoints;
     #endregion
 
     [Header("Critical Hit")]
@@ -770,6 +772,8 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
     public float currentReflex { get => _currentReflex; set => _currentReflex = value; }
     public float currentMobility { get => _currentMobility; set => _currentMobility = value; }
+    public float CurrentMovementPoints => _currentMovementPoints;
+    public float MaxMovementPoints => _maxMovementPoints;
     public float currentVitality
     {
         get => _currentVitality;
@@ -942,6 +946,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         currentInterceptionChance = 0f;
         currentRage = Data.baseRage;
         currentFatigue = Data.baseFatigue;
+        ResetMovementPoints();
 
         harmonicReserve.Clear();
         _currentHarmonicCharge = 0;
@@ -1995,6 +2000,21 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     }
     public void PlayInterceptedAnimation() => PlayAnimationClip(interceptedAnimation);
     public void PlayInterceptionAnimation() => PlayAnimationClip(interceptionAnimation);
+    public void PlayMovementAnimation()
+    {
+        if (Data == null)
+            return;
+
+        PlayAnimationClip(Data.movementAnimation);
+    }
+
+    public void PlayMovementAudio()
+    {
+        if (Data == null || Data.movementAudioClip == null)
+            return;
+
+        AudioManager.Instance?.PlayTempSfx(Data.movementAudioClip);
+    }
     public void PlayPrepareToUndergoAnimation()
     {
         // Pas d'animation si l'unité est morte
@@ -2311,6 +2331,33 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     {
         moveUsesThisTurn.Clear();
         moveUsesThisBattle.Clear();
+    }
+
+    public void ResetMovementPoints()
+    {
+        float max = Mathf.Max(0f, currentMobility);
+        _maxMovementPoints = max;
+        _currentMovementPoints = max;
+    }
+
+    public bool CanSpendMovementDistance(float distance)
+    {
+        if (distance <= 0f)
+            return true;
+
+        return _currentMovementPoints >= distance - 0.01f;
+    }
+
+    public bool ConsumeMovementDistance(float distance)
+    {
+        if (distance <= 0f)
+            return true;
+
+        if (_currentMovementPoints < distance - 0.01f)
+            return false;
+
+        _currentMovementPoints = Mathf.Max(0f, _currentMovementPoints - distance);
+        return true;
     }
 
     /// <summary>

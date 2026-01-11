@@ -12,6 +12,7 @@ public class BattleTimelineUnit : MonoBehaviour
     [SerializeField] private Slider atbSlider;
     [SerializeField] private CustomBar customBar;
     [SerializeField] private TextMeshProUGUI harmonicsText;
+    [SerializeField] private TextMeshProUGUI movementText;
 
     [Header("Couleurs")]
     [SerializeField] private Image backgroundImage;
@@ -134,12 +135,21 @@ public class BattleTimelineUnit : MonoBehaviour
 
     public void UpdateHarmonicsDisplay()
     {
-        if (boundUnit == null || harmonicsText == null)
+        if (boundUnit == null)
             return;
 
-        // Affiche en permanence le total d'harmoniques disponibles.
+        // Affiche en permanence le total d'harmoniques disponibles et les points de déplacement restants.
         int count = boundUnit.GetTotalHarmonicCount();
-        harmonicsText.text = count.ToString();
+        float currentMovement = boundUnit.CurrentMovementPoints;
+        float maxMovement = boundUnit.MaxMovementPoints;
+        if (harmonicsText != null)
+        {
+            harmonicsText.text = movementText == null
+                ? $"H {count} | PM {currentMovement:0.#}/{maxMovement:0.#}"
+                : $"{count}";
+        }
+        if (movementText != null)
+            movementText.text = $"{currentMovement:0.#}/{maxMovement:0.#}";
     }
 
     public void UpdateHPBar()

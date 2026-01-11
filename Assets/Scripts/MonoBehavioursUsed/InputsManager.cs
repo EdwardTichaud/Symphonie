@@ -430,6 +430,12 @@ public class InputsManager : MonoBehaviour
             return;
         }
 
+        if (bm.currentBattleState == BattleState.SquadUnit_MoveSelection)
+        {
+            bm.ConfirmMovementSelection();
+            return;
+        }
+
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill
             || bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
@@ -643,7 +649,8 @@ public class InputsManager : MonoBehaviour
 
         if (bm.currentBattleState == BattleState.SquadUnit_MainMenu)
         {
-            bm.OpenItemMenu();
+            if (bm.TryStartMovementSelection())
+                MettreAJourIgnorerValidationApresSelection(ctx);
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
         {
@@ -682,6 +689,10 @@ public class InputsManager : MonoBehaviour
             // Le troisième bouton atteint le troisième slot paginé (offset 2) afin de couvrir les configurations
             // où plusieurs MusicalMoves sont disponibles sur la même page.
             TrySelectMusicalMoveFromSkillsPanel(bm, ctx, 2, nameof(OnSelect3));
+        }
+        else if (bm.currentBattleState == BattleState.SquadUnit_MainMenu)
+        {
+            bm.OpenItemMenu();
         }
         else if (bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
         {
@@ -895,6 +906,12 @@ public class InputsManager : MonoBehaviour
             bm.currentBattleState == BattleState.SquadUnit_ItemsMenu)
         {
             bm.ShowMainMenu();
+            return;
+        }
+
+        if (bm.currentBattleState == BattleState.SquadUnit_MoveSelection)
+        {
+            bm.CancelMovementSelection();
             return;
         }
 

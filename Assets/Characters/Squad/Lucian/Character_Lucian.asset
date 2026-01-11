@@ -29,7 +29,7 @@ MonoBehaviour:
   interceptable: 1
   avoidable: 1
   baseReflex: 0
-  baseMobility: 0
+  baseMobility: 20
   baseVitality: 0
   basePower: 100
   baseStability: 0
@@ -95,12 +95,14 @@ MonoBehaviour:
   dissonanceEffect_Loop: {fileID: 0}
   dissonanceEffect_End: {fileID: 0}
   awakeStatMultiplier: 1.5
+  interceptedAnimation: {fileID: 0}
   hitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
   deathAnimation: {fileID: 7400000, guid: 7f67a9c1949f03342bd793ce58156a74, type: 2}
   TPAnimation_Start: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
   TPAnimation_Destination: {fileID: 0}
   prepareToTargetAnimation: {fileID: -203655887218126122, guid: fedea3777cd99c44993664d822c06c3a, type: 3}
   prepareToUndergoAnimation: {fileID: 7400000, guid: 84ecef9b8267d434eb7be8dff9ecaec1, type: 2}
+  movementAnimation: {fileID: 7400000, guid: 08462171d177eb5418f8dbe9131eb07a, type: 2}
   awakenIdleAnimation: {fileID: 7400000, guid: a4eb069d620da524c961a54cc910a4af, type: 3}
   dissonantIdleAnimation: {fileID: 0}
   awakeEnterAnimation: {fileID: 0}
@@ -109,6 +111,7 @@ MonoBehaviour:
   dissonanceExitAnimation: {fileID: 0}
   moveStartClip: {fileID: 11400000, guid: 490fcbd9581321b4ebf1a1439be6b128, type: 2}
   moveEndClip: {fileID: 11400000, guid: 211d90b0af76e0c4198c31a6908013d2, type: 2}
+  movementAudioClip: {fileID: 0}
   menuSelectionClip: {fileID: 11400000, guid: 38199859c682d2e4ba05d595d7a2faa2, type: 2}
   awakeEnterClip: {fileID: 0}
   awakeExitClip: {fileID: 0}

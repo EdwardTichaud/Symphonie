@@ -100,12 +100,12 @@ public class ActionUIDisplayManager : MonoBehaviour
 
     public void DisplayInstruction_SelectItemOrSkill()
     {
-        ShowMessage("Choisissez un objet ou une compétence");
+        ShowMessage("Choisissez une compétence, un déplacement ou un objet");
     }
 
     public void DisplayInstruction_SelectItemSkillOrPass()
     {
-        ShowMessage("Choisissez un objet, une compétence ou passez le tour (Retour)");
+        ShowMessage("Choisissez une compétence, un déplacement, un objet ou passez le tour (Retour)");
     }
 
     public void DisplayInstruction_SelectItem()

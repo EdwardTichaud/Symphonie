@@ -29,6 +29,8 @@ public enum BattleState
     SquadUnit_MainMenu,
     SquadUnit_SkillsMenu,
     SquadUnit_ItemsMenu,
+    SquadUnit_MoveSelection,
+    SquadUnit_Moving,
     SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad,
     SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies,
     SquadUnit_TargetSelectionAmongSquadForSkill,
@@ -293,6 +295,16 @@ public partial class NewBattleManager : MonoBehaviour
     [Tooltip("Prefab affichant la fenêtre d'interception")] public GameObject interceptionSignalPrefab;
     [HideInInspector] public GameObject targetCursor;
     [HideInInspector] public List<GameObject> multiTargetCursors = new List<GameObject>();
+
+    [Header("Déplacement libre")]
+    [SerializeField] private float movementCursorSpeed = 4f;
+    [SerializeField] private float movementCursorDeadzone = 0.15f;
+    [SerializeField] private float movementTravelSpeed = 5f;
+    [SerializeField] private float movementCollisionRadius = 0.4f;
+    [SerializeField] private float movementMinDistance = 0.1f;
+    [SerializeField] private float movementCameraCenterHeight = 5f;
+    private Vector3 movementCursorPosition;
+    private bool movementCursorInitialized;
 
     [Tooltip("Canvas monde piloté par la caméra de combat. L'indicateur y est instancié pour bénéficier des mêmes réglages de rendu.")]
     [SerializeField] private Transform battleCameraCanvasTransform;
@@ -1390,6 +1402,8 @@ public partial class NewBattleManager : MonoBehaviour
             case BattleState.SquadUnit_MainMenu:
             case BattleState.SquadUnit_SkillsMenu:
             case BattleState.SquadUnit_ItemsMenu:
+            case BattleState.SquadUnit_MoveSelection:
+            case BattleState.SquadUnit_Moving:
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad:
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies:
             case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
@@ -1946,6 +1960,19 @@ public partial class NewBattleManager : MonoBehaviour
             currentMainMenuSlots = (mainSlotsParent != null)
                 ? mainSlotsParent.Cast<Transform>().ToList()
                 : new List<Transform>();
+
+            if (currentMainMenuSlots.Count > 0)
+            {
+                while (currentMainMenuSlots.Count < 3)
+                {
+                    Transform clone = Instantiate(currentMainMenuSlots[0], currentMainMenuSlots[0].parent);
+                    currentMainMenuSlots.Add(clone);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[SetupCurrentUnitMenus] Aucun slot de menu principal détecté ; impossible de garantir les 3 emplacements requis.");
+            }
         }
 
         // 3) Panneau SkillsMenu_Panel
@@ -2092,8 +2119,8 @@ public partial class NewBattleManager : MonoBehaviour
         for (int i = 0; i < currentMainMenuSlots.Count; i++)
             Debug.Log($"Slot {i} = {currentMainMenuSlots[i].name}, enfants : {currentMainMenuSlots[i].childCount}");
 
-        // Vérifie que la liste contient au moins deux slots avant de tenter de les utiliser
-        if (currentMainMenuSlots == null || currentMainMenuSlots.Count < 2)
+        // Vérifie que la liste contient au moins trois slots avant de tenter de les utiliser
+        if (currentMainMenuSlots == null || currentMainMenuSlots.Count < 3)
         {
             Debug.LogWarning("[ShowMainMenu] Impossible d'afficher le menu principal : nombre de slots insuffisant.");
             return; // Évite un ArgumentOutOfRangeException
@@ -2101,7 +2128,12 @@ public partial class NewBattleManager : MonoBehaviour
 
         // Renseigne les boutons du menu principal
         UpdateButton(currentMainMenuSlots[0], "Compétences", null);
-        UpdateButton(currentMainMenuSlots[1], "Objet", null);
+        float currentMovement = currentCharacterUnit != null ? currentCharacterUnit.CurrentMovementPoints : 0f;
+        float maxMovement = currentCharacterUnit != null ? currentCharacterUnit.MaxMovementPoints : 0f;
+        string movementInfo = $"PM {currentMovement:0.#}/{maxMovement:0.#}";
+        UpdateButton(currentMainMenuSlots[1], "Déplacement", null, movementInfo);
+        SetButtonAvailability(currentMainMenuSlots[1], currentMovement > 0f, false);
+        UpdateButton(currentMainMenuSlots[2], "Objet", null);
     }
 
     public void OpenSkillsMenu()
@@ -2739,6 +2771,9 @@ public partial class NewBattleManager : MonoBehaviour
         if (battleIntroMenusLocked)
             return;
 
+        if (currentBattleState == BattleState.SquadUnit_MoveSelection)
+            return;
+
         bool isSkillTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
                                 currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
                                 (currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad && currentMove != null) ||
@@ -2813,6 +2848,12 @@ public partial class NewBattleManager : MonoBehaviour
         if (battleIntroMenusLocked)
             return;
 
+        if (currentBattleState == BattleState.SquadUnit_MoveSelection)
+        {
+            HandleMovementCursor();
+            return;
+        }
+
         bool isSkillTargeting =
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
             currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadForSkill ||
@@ -2836,6 +2877,7 @@ public partial class NewBattleManager : MonoBehaviour
             UpdateTargetCursorColor(true);
             DeactivateTargetCursorCinemachine();
             DeactivateMultiTargetCursorCinemachine();
+            movementCursorInitialized = false;
             return;
         }
 
@@ -2945,6 +2987,60 @@ public partial class NewBattleManager : MonoBehaviour
                 UpdateTargetCursorCinemachine(currentTargetCharacter);
             }
         }
+    }
+
+    private void HandleMovementCursor()
+    {
+        CharacterUnit unit = currentCharacterUnit;
+        BattleCameraManager cameraManager = BattleCameraManager.Instance;
+        if (unit == null || unit.IsDead)
+        {
+            if (targetCursor != null)
+                targetCursor.SetActive(false);
+            cameraManager?.SetManualLookTarget(null);
+            return;
+        }
+
+        if (targetCursor == null)
+            EnsureTargetCursor();
+
+        if (!movementCursorInitialized)
+        {
+            movementCursorPosition = unit.transform.position;
+            movementCursorInitialized = true;
+        }
+
+        Vector2 input = InputsManager.Instance.playerInputs.Battle.HorizontalNav.ReadValue<Vector2>();
+        Vector2 alternateInput = InputsManager.Instance.playerInputs.Battle.VerticalNav.ReadValue<Vector2>();
+        if (alternateInput.sqrMagnitude > input.sqrMagnitude)
+            input = alternateInput;
+        if (input.sqrMagnitude >= movementCursorDeadzone * movementCursorDeadzone)
+        {
+            Vector3 direction = new Vector3(input.x, 0f, input.y);
+            if (direction.sqrMagnitude > 1f)
+                direction.Normalize();
+
+            movementCursorPosition += direction * movementCursorSpeed * Time.deltaTime;
+        }
+
+        movementCursorPosition = ClampMovementDestination(unit, movementCursorPosition);
+
+        if (targetCursor != null)
+        {
+            targetCursor.SetActive(true);
+            targetCursor.transform.position = movementCursorPosition;
+        }
+        cameraManager?.SetManualLookTarget(targetCursor != null ? targetCursor.transform : null);
+
+        float distance = GetHorizontalDistance(unit.transform.position, movementCursorPosition);
+        bool inRange = distance <= unit.CurrentMovementPoints + 0.01f;
+        bool distanceOk = distance >= movementMinDistance;
+        bool hasSpace = IsMovementDestinationClear(unit, movementCursorPosition);
+        UpdateTargetCursorColor(inRange && distanceOk && hasSpace);
+
+        HideMultiTargetCursors();
+        DeactivateMultiTargetCursorCinemachine();
+        DeactivateTargetCursorCinemachine();
     }
 
     public void HandleTargetSelection(MusicalMoveSO move, bool isBasicAttack = false)
@@ -3278,6 +3374,208 @@ public partial class NewBattleManager : MonoBehaviour
         return true;
     }
 
+    public bool TryStartMovementSelection()
+    {
+        if (!EnsureCurrentCharacterUnitForMenus(nameof(TryStartMovementSelection)))
+            return false;
+
+        CharacterUnit unit = currentCharacterUnit;
+        if (unit == null || unit.IsDead)
+            return false;
+
+        if (unit.CurrentMovementPoints <= 0f)
+        {
+            ActionUIDisplayManager.Instance?.DisplayInstruction("Pas de points de déplacement");
+            return false;
+        }
+
+        EnsureTargetCursor();
+
+        currentMove = null;
+        currentItem = null;
+        currentMoveIsBasicAttack = false;
+        currentTargetCharacter = null;
+
+        PassTurnUI.Instance?.Hide();
+        ChangeBattleState(BattleState.SquadUnit_MoveSelection);
+        ToggleMenuContainers(false, false, false);
+        PlayMenuClip(targetSelectionClip);
+
+        movementCursorPosition = unit.transform.position;
+        movementCursorInitialized = true;
+        ActionUIDisplayManager.Instance?.DisplayInstruction("Sélectionnez une destination");
+        return true;
+    }
+
+    public void ConfirmMovementSelection()
+    {
+        if (currentBattleState != BattleState.SquadUnit_MoveSelection)
+            return;
+
+        CharacterUnit unit = currentCharacterUnit;
+        if (unit == null || unit.IsDead)
+            return;
+
+        Vector3 destination = ClampMovementDestination(unit, movementCursorPosition);
+        float distance = GetHorizontalDistance(unit.transform.position, destination);
+
+        if (distance < movementMinDistance)
+        {
+            ActionUIDisplayManager.Instance?.DisplayInstruction("Déplacement trop court");
+            return;
+        }
+
+        if (!unit.CanSpendMovementDistance(distance))
+        {
+            ActionUIDisplayManager.Instance?.DisplayInstruction("Pas assez de points de déplacement");
+            return;
+        }
+
+        if (!IsMovementDestinationClear(unit, destination))
+        {
+            ActionUIDisplayManager.Instance?.DisplayInstruction("Position occupée");
+            return;
+        }
+
+        movementCursorInitialized = false;
+        ChangeBattleState(BattleState.SquadUnit_Moving);
+        ToggleMenuContainers(false, false, false);
+        StartCoroutine(MoveUnitToPosition(unit, destination, returnToMenu: true));
+    }
+
+    public void CancelMovementSelection()
+    {
+        if (currentBattleState != BattleState.SquadUnit_MoveSelection)
+            return;
+
+        movementCursorInitialized = false;
+        if (targetCursor != null)
+            targetCursor.SetActive(false);
+
+        ShowMainMenu();
+    }
+
+    private Vector3 ClampMovementDestination(CharacterUnit unit, Vector3 destination)
+    {
+        if (unit == null)
+            return destination;
+
+        Vector3 origin = unit.transform.position;
+        Vector3 offset = destination - origin;
+        offset.y = 0f;
+
+        float maxDistance = unit.CurrentMovementPoints;
+        if (offset.sqrMagnitude > maxDistance * maxDistance)
+            offset = offset.normalized * maxDistance;
+
+        Vector3 clamped = origin + offset;
+        clamped.y = origin.y;
+        return clamped;
+    }
+
+    private Vector3 ResolveBattlefieldCenter()
+    {
+        if (unitsInBattle == null || unitsInBattle.Count == 0)
+            return currentCharacterUnit != null ? currentCharacterUnit.transform.position : Vector3.zero;
+
+        bool hasBounds = false;
+        Bounds bounds = default;
+        foreach (var unit in unitsInBattle)
+        {
+            if (unit == null || !unit.gameObject.activeInHierarchy)
+                continue;
+
+            Vector3 position = unit.transform.position;
+            if (!hasBounds)
+            {
+                bounds = new Bounds(position, Vector3.zero);
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(position);
+            }
+        }
+
+        return hasBounds
+            ? bounds.center
+            : (currentCharacterUnit != null ? currentCharacterUnit.transform.position : Vector3.zero);
+    }
+
+    private static float GetHorizontalDistance(Vector3 origin, Vector3 destination)
+    {
+        origin.y = 0f;
+        destination.y = 0f;
+        return Vector3.Distance(origin, destination);
+    }
+
+    private bool IsMovementDestinationClear(CharacterUnit mover, Vector3 destination)
+    {
+        if (mover == null)
+            return false;
+
+        float radius = Mathf.Max(0.01f, movementCollisionRadius);
+        Collider[] hits = Physics.OverlapSphere(destination, radius);
+        foreach (var hit in hits)
+        {
+            if (hit == null)
+                continue;
+
+            CharacterUnit unit = hit.GetComponentInParent<CharacterUnit>();
+            if (unit != null && unit != mover && !unit.IsDead)
+                return false;
+        }
+
+        return true;
+    }
+
+    private IEnumerator MoveUnitToPosition(CharacterUnit unit, Vector3 destination, bool returnToMenu)
+    {
+        if (unit == null)
+            yield break;
+
+        Vector3 origin = unit.transform.position;
+        destination = ClampMovementDestination(unit, destination);
+        float distance = GetHorizontalDistance(origin, destination);
+
+        if (distance <= 0.01f)
+        {
+            if (returnToMenu && unit.IsPlayerControlled)
+                ShowMainMenu();
+            yield break;
+        }
+
+        unit.PlayMovementAnimation();
+        unit.PlayMovementAudio();
+
+        Vector3 direction = destination - origin;
+        direction.y = 0f;
+        if (direction.sqrMagnitude > 0.001f)
+            unit.transform.forward = direction.normalized;
+
+        float speed = Mathf.Max(0.1f, movementTravelSpeed);
+        float duration = distance / speed;
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            if (unit == null)
+                yield break;
+
+            float t = duration > 0f ? elapsed / duration : 1f;
+            unit.transform.position = Vector3.Lerp(origin, destination, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        unit.transform.position = destination;
+        unit.ConsumeMovementDistance(distance);
+        unit.PlayIdleAnimation();
+
+        if (returnToMenu && unit.IsPlayerControlled)
+            ShowMainMenu();
+    }
+
     public bool TryResolveUnitSpawnPosition(CharacterUnit unit, out Vector3 spawnPosition)
     {
         spawnPosition = Vector3.zero;
@@ -3489,6 +3787,7 @@ public partial class NewBattleManager : MonoBehaviour
         bool isActionState = newState == BattleState.SquadUnit_PerformingMusicalMove
                              || newState == BattleState.SquadUnit_PerformingBaseAttack
                              || newState == BattleState.SquadUnit_Item_Use
+                             || newState == BattleState.SquadUnit_Moving
                              || newState == BattleState.EnemyUnit_PerformingMusicalMove
                              || newState == BattleState.EnemyUnit_Item_Use;
         if (stateChanged && !isActionState)
@@ -3527,6 +3826,14 @@ public partial class NewBattleManager : MonoBehaviour
                 }
                 break;
 
+            case BattleState.SquadUnit_MoveSelection:
+                if (stateChanged)
+                {
+                    manager.SetCurrentTarget(null);
+                    RequestCamera(TargetSelectionCameraName, ContextCameraBlendDuration, ContextCameraBlendStyle);
+                }
+                break;
+
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad:
             case BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies:
             case BattleState.SquadUnit_TargetSelectionAmongSquadForSkill:
@@ -3550,9 +3857,10 @@ public partial class NewBattleManager : MonoBehaviour
             case BattleState.SquadUnit_PerformingMusicalMove:
             case BattleState.SquadUnit_PerformingBaseAttack:
             case BattleState.SquadUnit_Item_Use:
+            case BattleState.SquadUnit_Moving:
             case BattleState.EnemyUnit_PerformingMusicalMove:
             case BattleState.EnemyUnit_Item_Use:
-                manager.ConfigureActionTargets(caster, target);
+                manager.ConfigureActionTargets(caster, newState == BattleState.SquadUnit_Moving ? null : target);
                 break;
 
             case BattleState.EnemyUnit_Reflexion:
@@ -3654,6 +3962,22 @@ public partial class NewBattleManager : MonoBehaviour
         BattleState previousState = currentBattleState;
         currentBattleState = newState;
         Debug.Log("Nouvel état de combat: " + newState);
+        BattleCameraManager cameraManager = BattleCameraManager.Instance;
+        if (cameraManager != null)
+        {
+            bool moveSelection = newState == BattleState.SquadUnit_MoveSelection;
+            cameraManager.SetManualCameraControl(moveSelection);
+            if (moveSelection && previousState != BattleState.SquadUnit_MoveSelection)
+            {
+                Vector3 center = ResolveBattlefieldCenter();
+                cameraManager.SnapManualCameraTo(center, movementCameraCenterHeight);
+            }
+            if (!moveSelection)
+            {
+                cameraManager.SetManualLookTarget(null);
+                cameraManager.ClearManualCameraAnchor();
+            }
+        }
         if (IsTargetSelectionState(previousState) && !IsTargetSelectionState(newState))
             currentCharacterUnit?.StopPrepareToTargetAnimation();
         UpdateCameraBehaviour(newState);
