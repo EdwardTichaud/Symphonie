@@ -376,6 +376,7 @@ public partial class NewBattleManager
         switch (move.targetType)
         {
             case TargetType.Self:
+            case TargetType.SpawnPosition:
                 return enemy;
             case TargetType.SingleAlly:
             case TargetType.AllAllies:
@@ -664,23 +665,34 @@ public partial class NewBattleManager
     /// </summary>
     public bool HasSpaceForMove(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
     {
+        if (caster == null || move == null)
+            return false;
+
+        if (!TryResolveMoveTargetPosition(caster, target, move, out Vector3 targetPosition))
+            return false;
+
         // Direction à partir de la cible en fonction de la position relative demandée.
-        Vector3 direction = target.transform.forward;
-        switch (move.relativePosition)
+        Vector3 direction = Vector3.zero;
+        if (move.relativePosition != RelativePosition.On)
         {
-            case RelativePosition.Back:
-                direction = -target.transform.forward;
-                break;
-            case RelativePosition.Left:
-                direction = -target.transform.right;
-                break;
-            case RelativePosition.Right:
-                direction = target.transform.right;
-                break;
+            Transform basis = target != null ? target.transform : caster.transform;
+            direction = basis.forward;
+            switch (move.relativePosition)
+            {
+                case RelativePosition.Back:
+                    direction = -basis.forward;
+                    break;
+                case RelativePosition.Left:
+                    direction = -basis.right;
+                    break;
+                case RelativePosition.Right:
+                    direction = basis.right;
+                    break;
+            }
         }
 
         float mobilityBonus = caster.currentMobility;
-        Vector3 destination = target.transform.position + direction * (move.castDistance + mobilityBonus);
+        Vector3 destination = targetPosition + direction * (move.castDistance + mobilityBonus);
         // Recherche de toute unité se trouvant déjà à l'emplacement calculé.
         Collider[] hits = Physics.OverlapSphere(destination, 0.5f);
         foreach (var h in hits)
@@ -695,12 +707,18 @@ public partial class NewBattleManager
 
     public bool IsTargetInRange(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move)
     {
-        if (caster == null || target == null || move == null)
+        if (caster == null || move == null)
         {
-            Debug.LogWarning("[IsTargetInRange] caster, target ou move manquant.");
+            Debug.LogWarning("[IsTargetInRange] caster ou move manquant.");
             return false;
         }
-        float distance = Vector3.Distance(caster.transform.position, target.transform.position);
+
+        if (!TryResolveMoveTargetPosition(caster, target, move, out Vector3 targetPosition))
+        {
+            Debug.LogWarning("[IsTargetInRange] Position de cible introuvable.");
+            return false;
+        }
+        float distance = Vector3.Distance(caster.transform.position, targetPosition);
         float maxReach = caster.currentRange + move.castDistance;
         return distance <= maxReach;
     }
@@ -763,22 +781,21 @@ public partial class NewBattleManager
     }
 
     /// <summary>
-    ///     Indices attendus des slots paginés dans l'UI. Ils correspondent aux boutons « Select2 », « Select3 » et
-    ///     « Select4 » configurés dans l'InputManager et représentent les cases 2, 3 et 4 visibles dans le panneau.
-    ///     Le tableau est déclaré <see langword="readonly"/> pour éviter toute modification accidentelle en runtime.
+    ///     Nombre maximum de compétences musicales affichées par page.
     /// </summary>
-    private static readonly int[] PaginatedSlotPreferredOrder = { 1, 2, 3 };
+    private const int PaginatedSlotMaxCount = 3;
+    private const int FirstPaginatedSlotIndex = 2;
 
     /// <summary>
-    ///     Retourne la liste des indices exploitables pour les slots paginés (compétences musicales hors attaque de base
-    ///     et hors move spécial). On filtre explicitement pour ignorer le premier slot ainsi que le dernier qui est
-    ///     réservé à la compétence spéciale, conformément au design du menu et aux attentes des joueurs.
+    ///     Retourne la liste des indices exploitables pour les slots paginés (compétences musicales hors attaque de base,
+    ///     hors repli et hors move spécial). On filtre explicitement pour ignorer les deux premiers slots ainsi que le
+    ///     dernier qui est réservé à la compétence spéciale, conformément au design du menu et aux attentes des joueurs.
     /// </summary>
     private List<int> BuildPaginatedSkillSlotIndices()
     {
         // On travaille sur une nouvelle liste à chaque appel : la taille reste minuscule (3 entrées maximum) et cela
         // évite de gérer manuellement des références potentiellement partagées entre plusieurs appels.
-        List<int> indices = new List<int>(PaginatedSlotPreferredOrder.Length);
+        List<int> indices = new List<int>(PaginatedSlotMaxCount);
 
         if (currentSkillsMenuSlots == null || currentSkillsMenuSlots.Count == 0)
             return indices;
@@ -787,19 +804,21 @@ public partial class NewBattleManager
         // les indices supérieurs ou égaux à cette valeur afin de préserver l'indépendance de ce slot.
         int specialSlotIndex = currentSkillsMenuSlots.Count - 1;
 
-        foreach (int preferredIndex in PaginatedSlotPreferredOrder)
+        for (int slotIndex = FirstPaginatedSlotIndex; slotIndex < specialSlotIndex; slotIndex++)
         {
             // a) Les indices négatifs ou au-delà de la taille réelle sont ignorés pour éviter toute exception de type
             //    IndexOutOfRangeException si la hiérarchie UI a été modifiée sans répercussion dans le code.
-            if (preferredIndex < 0 || preferredIndex >= currentSkillsMenuSlots.Count)
+            if (slotIndex < 0 || slotIndex >= currentSkillsMenuSlots.Count)
                 continue;
 
             // b) On exclut volontairement le dernier slot (mouvement spécial) pour que Left/Right Shoulder ne
             //    paginent jamais ce bouton et laissent l'affichage immuable, comme demandé.
-            if (preferredIndex >= specialSlotIndex)
+            if (slotIndex >= specialSlotIndex)
                 continue;
 
-            indices.Add(preferredIndex);
+            indices.Add(slotIndex);
+            if (indices.Count >= PaginatedSlotMaxCount)
+                break;
         }
 
         return indices;
@@ -807,14 +826,13 @@ public partial class NewBattleManager
 
     /// <summary>
     ///     Calcule le nombre de slots réellement disponibles pour les compétences paginées.
-    ///     Le premier slot (attaque de base) et le dernier (move spécial) sont exclus pour
-    ///     empêcher toute réécriture accidentelle de l'attaque basique.
+    ///     Les deux premiers slots (attaque de base + repli) et le dernier (move spécial) sont exclus pour
+    ///     empêcher toute réécriture accidentelle des emplacements réservés.
     /// </summary>
     public int GetPaginatedSkillSlotCount()
     {
-        // Plutôt qu'un simple calcul « Count - 2 », on reconstruit explicitement la liste d'indices autorisés afin de
-        // verrouiller les slots réellement exploités (2, 3 et 4). Cela évite qu'un ajout d'éléments dans l'éditeur
-        // entraîne un débordement visuel ou la pagination du slot spécial.
+        // Plutôt qu'un simple calcul « Count - 3 », on reconstruit explicitement la liste d'indices autorisés afin de
+        // verrouiller les slots réellement exploités (hors attaque basique, repli et move spécial).
         return BuildPaginatedSkillSlotIndices().Count;
     }
 

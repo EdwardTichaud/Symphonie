@@ -6,5 +6,6 @@ public enum TargetType
     SingleAlly,
     AllAllies,
     All,
-    SingleAllyOrEnemy
+    SingleAllyOrEnemy,
+    SpawnPosition
 }

@@ -29,7 +29,7 @@ public class AnimationEventsManager : MonoBehaviour
 
         // Les moves avec QTE appliquent déjà leurs effets via le RhythmQTEManager.
         var qteManager = RhythmQTEManager.Instance;
-        if (qteManager != null && qteManager.currentMove == move && move.notes != null && move.notes.Count > 0)
+        if (qteManager != null && qteManager.IsQteEnabled && qteManager.currentMove == move && move.notes != null && move.notes.Count > 0)
             return;
 
         if (target.isReadyToParry)
@@ -44,6 +44,7 @@ public class AnimationEventsManager : MonoBehaviour
             // ou effets spéciaux. Cela garantit que l'on profite d'EffectValue, des
             // multiplicateurs et des éventuels statuts associés.
             MusicalMoveExecutor.ApplyEffect(move, caster, target);
+            qteManager?.RegisterMoveEffectApplied(move);
         }
     }
 

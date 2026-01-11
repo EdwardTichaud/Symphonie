@@ -1061,6 +1061,12 @@ public class InputsManager : MonoBehaviour
         // Même logique côté alliés : les entrées sont ignorées tant que l'introduction est active.
         if (!TryGetBattleManagerWhileMenusUnlocked(out NewBattleManager bm))
             return;
+        if (bm.currentBattleState == BattleState.SquadUnit_SkillsMenu)
+        {
+            if (bm.TryUseRepli())
+                MettreAJourIgnorerValidationApresSelection(ctx);
+            return;
+        }
         if (bm.currentBattleState == BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnEnemies)
         {
             bool allowed = false;

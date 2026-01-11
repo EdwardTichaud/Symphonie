@@ -33,6 +33,12 @@ public class RhythmQTEManager : MonoBehaviour
     public bool LastItemCritical { get; private set; }
     public bool LastMoveAppliedEffect { get; private set; }
 
+    [Header("QTE")]
+    [Tooltip("Active ou desactive tout le systeme de QTE (affichage, input, resolution).")]
+    [SerializeField] private bool qteEnabled = false;
+
+    public bool IsQteEnabled => qteEnabled;
+
     // QTE
     private Coroutine beatRoutine;
     // Coroutine responsable d'un éventuel changement différé de caméra.
@@ -138,15 +144,21 @@ public class RhythmQTEManager : MonoBehaviour
     /// <param name="notes">Liste des données de notes à afficher</param>
     public void PrepareQTEBar(MusicalMoveSO move)
     {
+        if (!qteEnabled)
+            return;
         // QTE bar legacy: conservation des appels existants sans UI dédiée.
     }
 
     public void PrepareQTEBar(IList<MusicalMoveSO.NoteData> notes)
     {
+        if (!qteEnabled)
+            return;
     }
 
     private void PrepareQTEBar(IList<MusicalMoveSO.NoteData> notes, MusicalMoveSO move)
     {
+        if (!qteEnabled)
+            return;
     }
 
     /// <summary>
@@ -154,6 +166,8 @@ public class RhythmQTEManager : MonoBehaviour
     /// </summary>
     public void PrepareQTEBar(IList<float> beatPattern)
     {
+        if (!qteEnabled)
+            return;
     }
 
     /// <summary>
@@ -265,6 +279,8 @@ public class RhythmQTEManager : MonoBehaviour
 
     private void EnsureQteBarForMove(MusicalMoveSO move)
     {
+        if (!qteEnabled)
+            return;
         // QTE bar legacy: aucun préchargement requis.
     }
 
@@ -280,6 +296,19 @@ public class RhythmQTEManager : MonoBehaviour
             BattleCameraManager.Instance?.TriggerCriticalFeedback(target);
         }
         moveAppliedEffect = true;
+    }
+
+    public void RegisterMoveEffectApplied(MusicalMoveSO move, bool isCritical = false)
+    {
+        if (move == null || currentMove != move)
+            return;
+
+        moveAppliedEffect = true;
+        if (isCritical)
+        {
+            hasCriticalHitThisMove = true;
+            BattleCameraManager.Instance?.TriggerCriticalFeedback(currentTarget);
+        }
     }
 
     private bool RollCritical(CharacterUnit caster)
@@ -324,7 +353,7 @@ public class RhythmQTEManager : MonoBehaviour
     private void StartNoteSchedule(MusicalMoveSO move)
     {
         StopNoteSchedule();
-        if (move == null || move.notes == null || move.notes.Count == 0)
+        if (!qteEnabled || move == null || move.notes == null || move.notes.Count == 0)
             return;
 
         ignoreAnimationNoteEvents = true;
@@ -366,6 +395,8 @@ public class RhythmQTEManager : MonoBehaviour
 
     private IEnumerator ResolveMoveNote(MusicalMoveSO.NoteData note)
     {
+        if (!qteEnabled)
+            yield break;
         if (currentMove == null || currentCaster == null || currentTarget == null)
             yield break;
 
@@ -623,8 +654,15 @@ public class RhythmQTEManager : MonoBehaviour
         currentMove = move;
         currentCaster = caster;
         currentTarget = target;
-        pendingNotes = move.notes != null ? move.notes.Count : 0;
-        StartNoteSchedule(move);
+        if (qteEnabled)
+        {
+            pendingNotes = move.notes != null ? move.notes.Count : 0;
+            StartNoteSchedule(move);
+        }
+        else
+        {
+            pendingNotes = 0;
+        }
 
         bool tauntPlayed = false;
         System.Action<CharacterUnit> deathHandler = null;
@@ -702,30 +740,33 @@ public class RhythmQTEManager : MonoBehaviour
             }
         }
 
-        if (pendingNotes == 0)
+        if (qteEnabled)
         {
-            ApplyMoveEffect(move, caster, target);
-        }
-        else
-        {
-            while (pendingNotes > 0)
+            if (pendingNotes == 0)
             {
-                float safeDelay = GetTotalRhythmSeconds(move);
-                float timer = 0f;
-                while (pendingNotes > 0 && timer < safeDelay)
-                {
-                    // Le timer de sécurité utilise le temps réel pour rester fiable quelle que soit la vitesse globale.
-                    timer += Time.unscaledDeltaTime;
-                    yield return null;
-                }
-                if (pendingNotes > 0)
-                {
-                    Debug.LogWarning($"[MusicalMoveRoutine] {pendingNotes} note(s) non résolues pour {move.moveName}. Forçage de la suite.");
-                    pendingNotes = 0;
-                }
+                ApplyMoveEffect(move, caster, target);
             }
+            else
+            {
+                while (pendingNotes > 0)
+                {
+                    float safeDelay = GetTotalRhythmSeconds(move);
+                    float timer = 0f;
+                    while (pendingNotes > 0 && timer < safeDelay)
+                    {
+                        // Le timer de sécurité utilise le temps réel pour rester fiable quelle que soit la vitesse globale.
+                        timer += Time.unscaledDeltaTime;
+                        yield return null;
+                    }
+                    if (pendingNotes > 0)
+                    {
+                        Debug.LogWarning($"[MusicalMoveRoutine] {pendingNotes} note(s) non résolues pour {move.moveName}. Forçage de la suite.");
+                        pendingNotes = 0;
+                    }
+                }
 
-            TryApplyPerfectQteBonus(move, caster, target);
+                TryApplyPerfectQteBonus(move, caster, target);
+            }
         }
 
         if (animationDuration > 0f)
@@ -914,7 +955,7 @@ public class RhythmQTEManager : MonoBehaviour
         // QTE associé à l'objet durant l'utilisation.
         LastItemSuccess = true;
         LastItemCritical = false;
-        if (item.beatPattern != null && item.beatPattern.Count > 0)
+        if (qteEnabled && item.beatPattern != null && item.beatPattern.Count > 0)
         {
             successResults = new List<bool>();
             List<bool> itemPerfectResults = new();
@@ -1274,23 +1315,38 @@ public class RhythmQTEManager : MonoBehaviour
 
         Vector3 startPosition = caster.transform.position;
 
-        // Calcul de la position cible en fonction de la position relative
-        Vector3 offsetDir = target.transform.forward;
-        switch (move.relativePosition)
+        Vector3 targetBasePosition = target != null ? target.transform.position : startPosition;
+        if (move.targetType == TargetType.SpawnPosition)
         {
-            case RelativePosition.Back:
-                offsetDir = -target.transform.forward;
-                break;
-            case RelativePosition.Left:
-                offsetDir = -target.transform.right;
-                break;
-            case RelativePosition.Right:
-                offsetDir = target.transform.right;
-                break;
+            var battleManager = NewBattleManager.Instance;
+            if (battleManager != null && battleManager.TryResolveUnitSpawnPosition(caster, out Vector3 spawnPosition))
+                targetBasePosition = spawnPosition;
+            else
+                Debug.LogWarning("[MoveTo] Position de spawn introuvable pour le déplacement.");
+        }
+
+        // Calcul de la position cible en fonction de la position relative
+        Vector3 offsetDir = Vector3.zero;
+        if (move.relativePosition != RelativePosition.On)
+        {
+            Transform basis = target != null ? target.transform : caster.transform;
+            offsetDir = basis.forward;
+            switch (move.relativePosition)
+            {
+                case RelativePosition.Back:
+                    offsetDir = -basis.forward;
+                    break;
+                case RelativePosition.Left:
+                    offsetDir = -basis.right;
+                    break;
+                case RelativePosition.Right:
+                    offsetDir = basis.right;
+                    break;
+            }
         }
 
         float mobilityBonus = caster.currentMobility;
-        Vector3 targetPos = target.transform.position + offsetDir * (move.castDistance + mobilityBonus);
+        Vector3 targetPos = targetBasePosition + offsetDir * (move.castDistance + mobilityBonus);
 
         Animator animator = caster.GetCasterAnimator();
         // Stocke le GameObject visuel pour pouvoir le désactiver durant la téléportation
@@ -1354,7 +1410,7 @@ public class RhythmQTEManager : MonoBehaviour
         Vector3 lookDir = Vector3.zero;
         if (target != null)
         {
-            lookDir = target.transform.position - caster.transform.position;
+            lookDir = targetBasePosition - caster.transform.position;
             lookDir.y = 0f; // Ignore l'écart de hauteur
             lookDir = lookDir.normalized;
         }
@@ -1542,6 +1598,8 @@ public class RhythmQTEManager : MonoBehaviour
 
     public void TriggerNote(int index)
     {
+        if (!qteEnabled)
+            return;
         if (ignoreAnimationNoteEvents)
             return;
         if (currentMove == null || currentCaster == null || currentTarget == null)
@@ -1604,17 +1662,23 @@ public class RhythmQTEManager : MonoBehaviour
 
     public void TriggerQTE(float windowDelay)
     {
+        if (!qteEnabled)
+            return;
         // Appel historique sans icône
         StartCoroutine(WaitForQTE(windowDelay, null, Vector2.zero, (_, __) => { }));
     }
 
     public void TriggerQTE(float windowDelay, QTEInputSO qteInput)
     {
+        if (!qteEnabled)
+            return;
         StartCoroutine(WaitForQTE(windowDelay, qteInput, null, Vector2.zero, (_, __) => { }));
     }
 
     public void TriggerQTE(float windowDelay, QTEInputSO qteInput, Vector2 position)
     {
+        if (!qteEnabled)
+            return;
         StartCoroutine(WaitForQTE(windowDelay, qteInput, null, position, (_, __) => { }));
     }
 
@@ -1625,6 +1689,8 @@ public class RhythmQTEManager : MonoBehaviour
     /// <param name="icon">Icône de l'input à afficher</param>
     public void TriggerQTE(float windowDelay, Sprite icon)
     {
+        if (!qteEnabled)
+            return;
         StartCoroutine(WaitForQTE(windowDelay, icon, Vector2.zero, (_, __) => { }));
     }
 
@@ -1636,6 +1702,8 @@ public class RhythmQTEManager : MonoBehaviour
     /// <param name="position">Position du visuel dans le canvas</param>
     public void TriggerQTE(float windowDelay, Sprite icon, Vector2 position)
     {
+        if (!qteEnabled)
+            return;
         StartCoroutine(WaitForQTE(windowDelay, icon, position, (_, __) => { }));
     }
 
@@ -1646,6 +1714,11 @@ public class RhythmQTEManager : MonoBehaviour
 
     private IEnumerator WaitForQTE(float windowDelay, QTEInputSO qteInput, Sprite icon, Vector2 position, System.Action<bool, QTEFeedback> callback, bool persistUntilMoveEnd = false)
     {
+        if (!qteEnabled)
+        {
+            callback?.Invoke(false, QTEFeedback.Miss);
+            yield break;
+        }
         RegisterQteStart();
         float slowestTimeScale = 0f;
         float transitionDuration = 0.1f;
@@ -1786,6 +1859,11 @@ public class RhythmQTEManager : MonoBehaviour
     /// </summary>
     private IEnumerator WaitForDefenseQTE(System.Action<DefenseResult> callback)
     {
+        if (!qteEnabled)
+        {
+            callback?.Invoke(DefenseResult.Miss);
+            yield break;
+        }
         RegisterQteStart();
         float windowScale = Mathf.Max(0.1f, defenseWindowScale);
         float parryWindow = 0.1f * windowScale;

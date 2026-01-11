@@ -711,7 +711,7 @@ public enum MusicalEffectType
     FillATB
 }
 
-public enum RelativePosition { Front, Back, Left, Right , NC}
+public enum RelativePosition { Front, Back, Left, Right, NC, On }
 
 /// <summary>
 /// Définit dans quel contexte d'altitude un <see cref="MusicalMoveSO"/> est réalisable.

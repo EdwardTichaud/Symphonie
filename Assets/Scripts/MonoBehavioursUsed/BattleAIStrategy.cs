@@ -654,13 +654,14 @@ public static class BattleAIStrategy
         return caster.CanUseMove(move);
     }
 
-    private static bool TargetsSelf(MusicalMoveSO move) => ResolveTargetType(move) == TargetType.Self;
+    private static bool TargetsSelf(MusicalMoveSO move)
+        => ResolveTargetType(move) == TargetType.Self || ResolveTargetType(move) == TargetType.SpawnPosition;
     private static bool TargetsSelf(ItemData item) => ResolveTargetType(item) == TargetType.Self;
 
     private static bool TargetsAllies(MusicalMoveSO move, bool includeSelf)
     {
         var type = ResolveTargetType(move);
-        if (includeSelf && type == TargetType.Self)
+        if (includeSelf && (type == TargetType.Self || type == TargetType.SpawnPosition))
             return true;
 
         return type == TargetType.SingleAlly
@@ -697,7 +698,8 @@ public static class BattleAIStrategy
                || type == TargetType.AllAllies
                || type == TargetType.SingleAllyOrEnemy
                || type == TargetType.All
-               || type == TargetType.Self;
+               || type == TargetType.Self
+               || type == TargetType.SpawnPosition;
     }
 
     private static TargetType ResolveTargetType(MusicalMoveSO move)
@@ -902,6 +904,7 @@ public static class BattleAIStrategy
         bool isValid = targetType switch
         {
             TargetType.Self => target == caster,
+            TargetType.SpawnPosition => target == caster,
             TargetType.SingleEnemy or TargetType.AllEnemies or TargetType.All => targetIsEnemy,
             TargetType.SingleAlly or TargetType.AllAllies => !targetIsEnemy,
             TargetType.SingleAllyOrEnemy => true,

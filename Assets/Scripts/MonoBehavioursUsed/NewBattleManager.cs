@@ -395,6 +395,9 @@ public partial class NewBattleManager : MonoBehaviour
     [Header("Attaque basique")]
     [Tooltip("Move utilisé lorsque l'unité ne possède pas d'attaque basique explicite dans sa liste personnelle.")]
     [SerializeField] private MusicalMoveSO defaultBasicAttackMove;
+    [Header("Repli")]
+    [Tooltip("Move déclenché lorsque le joueur utilise l'action Repli (LT).")]
+    [SerializeField] private MusicalMoveSO repliMove;
     /// <summary>
     /// Indicateur runtime permettant de savoir si la compétence courante est l'attaque basique.
     /// Ce drapeau nous aide à appliquer les règles historiques (fin de tour immédiate, etc.).
@@ -2751,7 +2754,7 @@ public partial class NewBattleManager : MonoBehaviour
 
         TargetType type = isSkillTargeting ? currentMoveTargetType : currentItemTargetType;
 
-        if (type == TargetType.Self)
+        if (type == TargetType.Self || type == TargetType.SpawnPosition)
         {
             currentTargetCharacter = currentCharacterUnit;
             return;
@@ -2878,32 +2881,46 @@ public partial class NewBattleManager : MonoBehaviour
                 {
                     // Les attaques spéciales utilisent un décalage en fonction
                     // de la position relative et de la distance de lancement.
-                    Vector3 offsetDir = currentTargetCharacter.transform.forward;
-                    switch (currentMove.relativePosition)
+                    Vector3 targetPosition = currentTargetCharacter.transform.position;
+                    bool hasTargetPosition = true;
+                    if (currentMove.targetType == TargetType.SpawnPosition)
                     {
-                        case RelativePosition.Back:
-                            offsetDir = -currentTargetCharacter.transform.forward;
-                            break;
-                        case RelativePosition.Left:
-                            offsetDir = -currentTargetCharacter.transform.right;
-                            break;
-                        case RelativePosition.Right:
-                            offsetDir = currentTargetCharacter.transform.right;
-                            break;
+                        if (!TryResolveUnitSpawnPosition(currentCharacterUnit, out targetPosition))
+                        {
+                            hasTargetPosition = false;
+                            targetPosition = currentTargetCharacter.transform.position;
+                        }
                     }
 
-                    Vector3 cursorPos = currentTargetCharacter.transform.position +
-                                       offsetDir * currentMove.castDistance;
+                    Vector3 offsetDir = Vector3.zero;
+                    if (currentMove.relativePosition != RelativePosition.On)
+                    {
+                        offsetDir = currentTargetCharacter.transform.forward;
+                        switch (currentMove.relativePosition)
+                        {
+                            case RelativePosition.Back:
+                                offsetDir = -currentTargetCharacter.transform.forward;
+                                break;
+                            case RelativePosition.Left:
+                                offsetDir = -currentTargetCharacter.transform.right;
+                                break;
+                            case RelativePosition.Right:
+                                offsetDir = currentTargetCharacter.transform.right;
+                                break;
+                        }
+                    }
+
+                    Vector3 cursorPos = targetPosition + offsetDir * currentMove.castDistance;
                     targetCursor.transform.position = cursorPos;
 
                     float distance = Vector3.Distance(currentCharacterUnit.transform.position,
-                        currentTargetCharacter.transform.position);
+                        targetPosition);
                     float maxReach = currentCharacterUnit.currentRange + currentMove.castDistance;
-                    bool inRange = distance <= maxReach;
+                    bool inRange = hasTargetPosition && distance <= maxReach;
                     // Vérifie que la position relative est libre avant d'autoriser l'action.
-                    bool hasSpace = HasSpaceForMove(currentCharacterUnit, currentTargetCharacter, currentMove);
+                    bool hasSpace = hasTargetPosition && HasSpaceForMove(currentCharacterUnit, currentTargetCharacter, currentMove);
                     // Vérifie si la cible possède l'altitude adéquate pour ce mouvement.
-                    bool altitudeValid = IsTargetAltitudeValid(currentTargetCharacter, currentMove);
+                    bool altitudeValid = hasTargetPosition && IsTargetAltitudeValid(currentTargetCharacter, currentMove);
                     // La couleur du curseur devient noire si l'une des conditions n'est pas remplie :
                     // distance, espace disponible ou altitude.
                     UpdateTargetCursorColor(inRange && hasSpace && altitudeValid);
@@ -2947,6 +2964,7 @@ public partial class NewBattleManager : MonoBehaviour
         switch (currentMoveTargetType)
         {
             case TargetType.Self:
+            case TargetType.SpawnPosition:
                 ChangeBattleState(allowGroupSwitch
                     ? BattleState.SquadUnit_TargetSelectionAmongSquadOrEnemies_OnSquad
                     : BattleState.SquadUnit_TargetSelectionAmongSquadForSkill);
@@ -2991,7 +3009,9 @@ public partial class NewBattleManager : MonoBehaviour
         SyncCurrentTargetIndex(currentTargetCharacter, includeDeadUnits);
 
         // Affiche l'instruction adaptée selon qu'on peut ou non changer de groupe
-        if (allowGroupSwitch)
+        if (currentMoveTargetType == TargetType.SpawnPosition)
+            ActionUIDisplayManager.Instance.DisplayInstruction("Se replier");
+        else if (allowGroupSwitch)
             ActionUIDisplayManager.Instance.DisplayInstruction_SelectGroup();
         else
             ActionUIDisplayManager.Instance.DisplayInstruction_SelectTarget();
@@ -3167,6 +3187,145 @@ public partial class NewBattleManager : MonoBehaviour
             return false;
         }
 
+        return true;
+    }
+
+    /// <summary>
+    ///     Repositionne l'unité active sur sa position de spawn du début de combat.
+    /// </summary>
+    public bool TryUseRepli()
+    {
+        if (!EnsureCurrentCharacterUnitForMenus(nameof(TryUseRepli)))
+            return false;
+
+        CharacterUnit unit = currentCharacterUnit;
+        if (unit == null || unit.IsDead)
+            return false;
+
+        if (repliMove == null)
+        {
+            Debug.LogWarning("[TryUseRepli] MusicalMove_Repli non assigné.");
+            return false;
+        }
+
+        if (unit.Data == null)
+        {
+            Debug.LogWarning("[TryUseRepli] CharacterData introuvable pour l'unité courante.");
+            return false;
+        }
+
+        Vector3 spawnPosition = Vector3.zero;
+        bool hasSpawnPosition = false;
+        if (repliMove.targetType == TargetType.SpawnPosition)
+        {
+            hasSpawnPosition = TryResolveUnitSpawnPosition(unit, out spawnPosition);
+            if (!hasSpawnPosition)
+            {
+                Debug.LogWarning($"[TryUseRepli] Position de spawn introuvable pour {unit.name}.");
+                ActionUIDisplayManager.Instance.DisplayInstruction("Position de spawn introuvable");
+                return false;
+            }
+
+            const float repliAlreadyAtSpawnDistance = 0.1f;
+            Vector3 toSpawn = unit.transform.position - spawnPosition;
+            toSpawn.y = 0f;
+            if (toSpawn.sqrMagnitude <= repliAlreadyAtSpawnDistance * repliAlreadyAtSpawnDistance)
+            {
+                ActionUIDisplayManager.Instance.DisplayInstruction("Déjà sur la position de repli");
+                return false;
+            }
+        }
+
+        if (repliMove.onlyAwake && !unit.IsAwake)
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction("Compétence indisponible");
+            return false;
+        }
+
+        if (repliMove.enterAwake && unit.IsAwake)
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction("Compétence indisponible");
+            return false;
+        }
+
+        if (repliMove.enterAwake &&
+            unit.GetHarmonicCount(unit.Data.harmonicType) < unit.Data.awakeHarmonicThreshold)
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+            return false;
+        }
+
+        if (unit.GetAvailableHarmonicsForCost(repliMove.consumedHarmonicType) < repliMove.harmonicCost)
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+            return false;
+        }
+
+        if (unit.IsMoveOnCooldown(repliMove))
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_MoveOnCooldown();
+            return false;
+        }
+
+        if (!unit.CanUseMove(repliMove))
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction("Limite d'utilisation atteinte");
+            return false;
+        }
+
+        ToggleMenuContainers(false, false, false);
+        HandleTargetSelection(repliMove);
+        return true;
+    }
+
+    public bool TryResolveUnitSpawnPosition(CharacterUnit unit, out Vector3 spawnPosition)
+    {
+        spawnPosition = Vector3.zero;
+        if (unit == null || unit.Data == null)
+            return false;
+
+        Transform spawnPoint = null;
+        Transform parent = unit.transform.parent;
+        if (parent != null)
+        {
+            Transform root = parent.parent;
+            bool isSpawnSlot = parent.CompareTag("PlayerSpawn") || parent.CompareTag("EnemySpawn");
+            bool isSpawnRoot = root != null && (root.CompareTag("PlayerSpawn") || root.CompareTag("EnemySpawn"));
+            if (isSpawnSlot || isSpawnRoot)
+                spawnPoint = parent;
+        }
+
+        if (spawnPoint == null)
+        {
+            List<Transform> spawnList = unit.IsPlayerControlled ? playerSpawnPoints : enemySpawnPoints;
+            if (TryGetSpawnIndexFromName(unit.name, out int spawnIndex)
+                && spawnIndex >= 0 && spawnIndex < spawnList.Count)
+            {
+                spawnPoint = spawnList[spawnIndex];
+            }
+        }
+
+        if (spawnPoint == null)
+            return false;
+
+        spawnPosition = ComputeSpawnPosition(unit.Data, spawnPoint);
+        return true;
+    }
+
+    private bool TryResolveMoveTargetPosition(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move, out Vector3 targetPosition)
+    {
+        targetPosition = Vector3.zero;
+
+        if (move == null)
+            return false;
+
+        if (move.targetType == TargetType.SpawnPosition)
+            return TryResolveUnitSpawnPosition(caster, out targetPosition);
+
+        if (target == null)
+            return false;
+
+        targetPosition = target.transform.position;
         return true;
     }
 
@@ -3956,6 +4115,8 @@ public partial class NewBattleManager : MonoBehaviour
                 return allowedType;
             case TargetType.All:
                 return TargetType.All;
+            case TargetType.SpawnPosition:
+                return TargetType.SpawnPosition;
             default:
                 return allowedType;
         }
@@ -3970,6 +4131,7 @@ public partial class NewBattleManager : MonoBehaviour
         switch (selectionType)
         {
             case TargetType.Self:
+            case TargetType.SpawnPosition:
                 return caster;
             case TargetType.SingleEnemy:
             case TargetType.AllEnemies:
