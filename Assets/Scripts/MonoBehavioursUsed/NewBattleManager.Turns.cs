@@ -7,6 +7,13 @@ using UnityEngine;
 public partial class NewBattleManager
 {
     private CharacterUnit forcedNextUnit;
+    private readonly Dictionary<CharacterUnit, PrepaidMoveCost> prepaidMoveCosts = new();
+
+    private struct PrepaidMoveCost
+    {
+        public MusicalMoveSO Move;
+        public int HarmonicCost;
+    }
 
     public void ForceNextUnit(CharacterUnit unit)
     {
@@ -17,6 +24,108 @@ public partial class NewBattleManager
             return;
 
         forcedNextUnit = unit;
+    }
+
+    public bool TryGetMovementRequirement(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move, out float requiredDistance)
+    {
+        return TryGetMovementRequirement(caster, target, move, out requiredDistance, out _);
+    }
+
+    private bool TryGetMovementRequirement(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move,
+        out float requiredDistance, out Vector3 targetPosition)
+    {
+        requiredDistance = 0f;
+        targetPosition = Vector3.zero;
+
+        if (caster == null || move == null)
+            return false;
+
+        if (!TryResolveMoveTargetPosition(caster, target, move, out targetPosition))
+            return false;
+
+        if (IsRepliMove(move))
+        {
+            requiredDistance = 0f;
+            return true;
+        }
+
+        float distance = Vector3.Distance(caster.transform.position, targetPosition);
+        float maxReach = caster.currentRange + move.castDistance;
+        requiredDistance = Mathf.Max(0f, distance - maxReach);
+        return true;
+    }
+
+    private bool TryResolveApproachDestination(CharacterUnit caster, CharacterUnit target, MusicalMoveSO move,
+        out float requiredDistance, out Vector3 destination)
+    {
+        requiredDistance = 0f;
+        destination = Vector3.zero;
+
+        if (!TryGetMovementRequirement(caster, target, move, out requiredDistance, out Vector3 targetPosition))
+            return false;
+
+        destination = requiredDistance > 0.01f
+            ? Vector3.MoveTowards(caster.transform.position, targetPosition, requiredDistance)
+            : caster.transform.position;
+        return true;
+    }
+
+    private void RegisterPrepaidMoveCost(CharacterUnit caster, MusicalMoveSO move, int harmonicCost)
+    {
+        if (caster == null || move == null || harmonicCost <= 0)
+            return;
+
+        prepaidMoveCosts[caster] = new PrepaidMoveCost
+        {
+            Move = move,
+            HarmonicCost = harmonicCost
+        };
+    }
+
+    private int ConsumePrepaidMoveCost(CharacterUnit caster, MusicalMoveSO move)
+    {
+        if (caster == null || move == null)
+            return 0;
+
+        if (prepaidMoveCosts.TryGetValue(caster, out PrepaidMoveCost prepaid) && prepaid.Move == move)
+        {
+            prepaidMoveCosts.Remove(caster);
+            return prepaid.HarmonicCost;
+        }
+
+        return 0;
+    }
+
+    private void ClearPrepaidMoveCost(CharacterUnit caster)
+    {
+        if (caster != null)
+            prepaidMoveCosts.Remove(caster);
+    }
+
+    private IEnumerator ApproachToPosition(CharacterUnit caster, Vector3 destination)
+    {
+        if (caster == null)
+            yield break;
+
+        Vector3 start = caster.transform.position;
+        if ((destination - start).sqrMagnitude <= 0.0001f)
+            yield break;
+
+        const float approachSpeed = 6f;
+        const float minDuration = 0.1f;
+        float distance = Vector3.Distance(start, destination);
+        float duration = Mathf.Max(minDuration, distance / approachSpeed);
+        float elapsed = 0f;
+
+        while (elapsed < duration)
+        {
+            float t = Mathf.Clamp01(elapsed / duration);
+            caster.transform.position = Vector3.Lerp(start, destination, t);
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        caster.transform.position = destination;
     }
 
     #region Gestion des tours de combat
@@ -300,46 +409,38 @@ public partial class NewBattleManager
             yield break;
         }
 
-        if (!IsTargetInRange(enemy, target, move))
-        {
-            Vector3 targetPosition = target.transform.position;
-            if (move.targetType == TargetType.SpawnPosition)
-            {
-                if (!TryResolveUnitSpawnPosition(enemy, out targetPosition))
-                    yield break;
-            }
+        if (!TryResolveApproachDestination(enemy, target, move, out float requiredDistance, out Vector3 approachDestination))
+            yield break;
 
-            Vector3 enemyPos = enemy.transform.position;
-            enemyPos.y = 0f;
-            targetPosition.y = 0f;
+        if (requiredDistance > 0.01f && !enemy.CanSpendMovementDistance(requiredDistance))
+            yield break;
 
-            float distance = Vector3.Distance(enemyPos, targetPosition);
-            float maxReach = enemy.currentRange + move.castDistance;
-            float required = distance - maxReach;
-
-            if (required > 0f && enemy.CanSpendMovementDistance(required))
-            {
-                Vector3 direction = targetPosition - enemyPos;
-                if (direction.sqrMagnitude > 0.001f)
-                {
-                    Vector3 destination = enemy.transform.position + direction.normalized * required;
-                    destination.y = enemy.transform.position.y;
-                    if (IsMovementDestinationClear(enemy, destination))
-                        yield return MoveUnitToPosition(enemy, destination, returnToMenu: false);
-                }
-            }
-
-            if (!IsTargetInRange(enemy, target, move))
-                yield break;
-        }
+        if (!IsRepliMove(move)
+            && move.harmonicCost > 0
+            && enemy.GetAvailableHarmonicsForCost(move.consumedHarmonicType) < move.harmonicCost)
+            yield break;
 
         bool alreadyKnown = MusicalCodexManager.Instance != null && MusicalCodexManager.Instance.IsMelodyKnown(move);
         // Affiche le move que l'ennemi prépare
         ActionUIDisplayManager.Instance.DisplayEnemyPreparation(enemy.Data.characterName, alreadyKnown ? move.moveName : null);
 
+        if (requiredDistance > 0.01f)
+            enemy.ConsumeMovementDistance(requiredDistance);
+
+        if (!IsRepliMove(move) && move.harmonicCost > 0)
+        {
+            bool paymentSucceeded = enemy.ConsumeHarmonic(move.consumedHarmonicType, move.harmonicCost);
+            if (!paymentSucceeded)
+                yield break;
+            RegisterPrepaidMoveCost(enemy, move, move.harmonicCost);
+        }
+
         yield return TryResolveInterception(enemy, target, move);
         if (interceptionSucceeded)
             yield break;
+
+        if (requiredDistance > 0.01f)
+            yield return ApproachToPosition(enemy, approachDestination);
 
         // Joue un indice sonore associé à l'attaque pour prévenir le joueur
         // et calcule un délai suffisant pour laisser le clip se terminer
@@ -473,9 +574,15 @@ public partial class NewBattleManager
             ActionUIDisplayManager.Instance.DisplayInstruction("Aucune cible valide");
             yield break;
         }
-        if (!IsTargetInRange(caster, target, move))
+        if (!TryResolveApproachDestination(caster, target, move, out float requiredDistance, out Vector3 approachDestination))
         {
-            ActionUIDisplayManager.Instance.DisplayInstruction_TargetTooFar();
+            ActionUIDisplayManager.Instance.DisplayInstruction("Aucune cible valide");
+            yield break;
+        }
+
+        if (requiredDistance > 0.01f && !caster.CanSpendMovementDistance(requiredDistance))
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction("Pas assez de points de mouvement");
             yield break;
         }
         if (!HasSpaceForMove(caster, target, move))
@@ -503,11 +610,40 @@ public partial class NewBattleManager
             yield break;
         }
 
+        if (!IsRepliMove(move)
+            && move.harmonicCost > 0
+            && caster.GetAvailableHarmonicsForCost(move.consumedHarmonicType) < move.harmonicCost)
+        {
+            ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+            yield break;
+        }
+
+        if (requiredDistance > 0.01f)
+            caster.ConsumeMovementDistance(requiredDistance);
+
+        if (!IsRepliMove(move) && move.harmonicCost > 0)
+        {
+            bool paymentSucceeded = caster.ConsumeHarmonic(move.consumedHarmonicType, move.harmonicCost);
+            if (!paymentSucceeded)
+            {
+                ActionUIDisplayManager.Instance.DisplayInstruction_NotEnoughHarmonics();
+                yield break;
+            }
+            RegisterPrepaidMoveCost(caster, move, move.harmonicCost);
+        }
+
         OrientUnitTowardTarget(caster, target);
 
         yield return TryResolveInterception(caster, target, move);
         if (interceptionSucceeded)
+        {
+            EndTurn(caster, skipIdleAnimation: true);
             yield break;
+        }
+
+        if (requiredDistance > 0.01f)
+            yield return ApproachToPosition(caster, approachDestination);
+
         // Lecture d'un avertissement sonore si le mouvement en possède un
         if (move.warningClip != null)
         {
@@ -610,6 +746,7 @@ public partial class NewBattleManager
             RegisterDamage(caster, dmgVal);
         }
         caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
+        OrientUnitTowardClosestOpponent(caster);
         // L'utilisation d'un objet ne met plus fin immédiatement au tour
         // On laisse l'ATB inchangé pour permettre l'exécution d'un mouvement ensuite
         yield return null;
@@ -687,6 +824,7 @@ public partial class NewBattleManager
             RegisterDamage(caster, dmgVal * appliedTargets);
 
         caster.GetComponent<FatigueSystem>()?.OnActionPerformed();
+        OrientUnitTowardClosestOpponent(caster);
         yield return null;
 
         // Retour au menu principal pour choisir une autre action
@@ -709,24 +847,33 @@ public partial class NewBattleManager
         Vector3 direction = Vector3.zero;
         if (move.relativePosition != RelativePosition.On)
         {
-            Transform basis = target != null ? target.transform : caster.transform;
-            direction = basis.forward;
+            Vector3 referenceDir = caster.transform.position - targetPosition;
+            referenceDir.y = 0f;
+            if (referenceDir.sqrMagnitude <= 0.0001f)
+            {
+                referenceDir = target != null ? target.transform.forward : caster.transform.forward;
+                referenceDir.y = 0f;
+            }
+
+            if (referenceDir.sqrMagnitude > 0.0001f)
+                referenceDir = referenceDir.normalized;
+
+            direction = referenceDir;
             switch (move.relativePosition)
             {
                 case RelativePosition.Back:
-                    direction = -basis.forward;
+                    direction = -referenceDir;
                     break;
                 case RelativePosition.Left:
-                    direction = -basis.right;
+                    direction = -Vector3.Cross(Vector3.up, referenceDir);
                     break;
                 case RelativePosition.Right:
-                    direction = basis.right;
+                    direction = Vector3.Cross(Vector3.up, referenceDir);
                     break;
             }
         }
 
-        float mobilityBonus = caster.currentMobility;
-        Vector3 destination = targetPosition + direction * (move.castDistance + mobilityBonus);
+        Vector3 destination = targetPosition + direction * move.castDistance;
         // Recherche de toute unité se trouvant déjà à l'emplacement calculé.
         Collider[] hits = Physics.OverlapSphere(destination, 0.5f);
         foreach (var h in hits)
@@ -1007,7 +1154,9 @@ public partial class NewBattleManager
 
         caster?.PlayInterceptedAnimation();
         caster?.PlayInterceptedSound();
-        caster?.ClearAllHarmonics();
+        caster?.ConsumeAllMovementPoints();
+        caster?.ReduceHarmonicsByHalf();
+        ClearPrepaidMoveCost(caster);
         interceptor?.PlayInterceptionAnimation();
         // Son joué par l'unité qui intercepte
         interceptor?.PlayInterceptionSound();
@@ -1106,15 +1255,20 @@ public partial class NewBattleManager
 
         if (caster != null)
         {
-            int cost = move.harmonicCost;
-            int generation = move.harmonicGeneration;
+            bool isRepli = IsRepliMove(move);
+            int cost = isRepli ? 0 : move.harmonicCost;
+            int generation = isRepli ? 0 : move.harmonicGeneration;
 
-            if (wasCritical && move.useCriticalVariant)
+            if (!isRepli && wasCritical && move.useCriticalVariant)
             {
                 // Ajoute les valeurs spécifiées pour le coup critique
                 cost += move.criticalHarmonicCost;
                 generation += move.criticalHarmonicGeneration;
             }
+
+            int prepaidCost = ConsumePrepaidMoveCost(caster, move);
+            if (prepaidCost > 0)
+                cost = Mathf.Max(0, cost - prepaidCost);
 
             HarmonicType costType = move.consumedHarmonicType;
             HarmonicType generationType = move.generatedHarmonicType;
@@ -1135,6 +1289,12 @@ public partial class NewBattleManager
                 caster.GetHarmonicCount(caster.Data.harmonicType) >= caster.Data.awakeHarmonicThreshold)
             {
                 caster.EnterAwakeState();
+            }
+
+            if (isRepli)
+            {
+                EndTurn();
+                return;
             }
 
             // Si l'unité n'a plus d'harmonique, son tour se termine immédiatement

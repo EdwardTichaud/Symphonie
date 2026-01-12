@@ -258,10 +258,6 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Animation utilisée pour préparer la cible à subir un coup.")]
     public AnimationClip prepareToUndergoAnimation;
 
-    [Header("Animation de déplacement")]
-    [Tooltip("Animation jouée lors d'un déplacement libre en combat.")]
-    public AnimationClip movementAnimation;
-
     [Header("Animations d'états spéciaux")]
     [Tooltip("Animation Idle utilisée lorsque l'unité est en état Awake.")]
     public AnimationClip awakenIdleAnimation;
@@ -291,9 +287,6 @@ public class CharacterData : ScriptableObject, ITargetable
 
     [Tooltip("Clip joué à la fin d'un mouvement.")]
     public AudioClipSO moveEndClip;
-
-    [Tooltip("Clip joué lors d'un déplacement libre en combat.")]
-    public AudioClipSO movementAudioClip;
 
     [Header("Interface & sélection")]
     [Tooltip("Clip joué lorsque cette unité devient active dans les menus de combat.")]

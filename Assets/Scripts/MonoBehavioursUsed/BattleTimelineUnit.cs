@@ -141,15 +141,14 @@ public class BattleTimelineUnit : MonoBehaviour
         // Affiche en permanence le total d'harmoniques disponibles et les points de déplacement restants.
         int count = boundUnit.GetTotalHarmonicCount();
         float currentMovement = boundUnit.CurrentMovementPoints;
-        float maxMovement = boundUnit.MaxMovementPoints;
         if (harmonicsText != null)
         {
             harmonicsText.text = movementText == null
-                ? $"H {count} | PM {currentMovement:0.#}/{maxMovement:0.#}"
+                ? $"H {count} | PM {currentMovement:0.#}"
                 : $"{count}";
         }
         if (movementText != null)
-            movementText.text = $"{currentMovement:0.#}/{maxMovement:0.#}";
+            movementText.text = $"{currentMovement:0.#}";
     }
 
     public void UpdateHPBar()

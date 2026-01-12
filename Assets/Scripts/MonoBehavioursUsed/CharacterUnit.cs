@@ -2000,21 +2000,6 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     }
     public void PlayInterceptedAnimation() => PlayAnimationClip(interceptedAnimation);
     public void PlayInterceptionAnimation() => PlayAnimationClip(interceptionAnimation);
-    public void PlayMovementAnimation()
-    {
-        if (Data == null)
-            return;
-
-        PlayAnimationClip(Data.movementAnimation);
-    }
-
-    public void PlayMovementAudio()
-    {
-        if (Data == null || Data.movementAudioClip == null)
-            return;
-
-        AudioManager.Instance?.PlayTempSfx(Data.movementAudioClip);
-    }
     public void PlayPrepareToUndergoAnimation()
     {
         // Pas d'animation si l'unité est morte
@@ -2250,6 +2235,20 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         CheckDissonance();
     }
 
+    public void ReduceHarmonicsByHalf()
+    {
+        if (harmonicReserve.Count == 0)
+            return;
+
+        var keys = harmonicReserve.Keys.ToList();
+        foreach (var key in keys)
+            harmonicReserve[key] = harmonicReserve[key] / 2;
+
+        if (Data != null)
+            _currentHarmonicCharge = GetHarmonicCount(Data.harmonicType);
+        CheckDissonance();
+    }
+
     public void ReduceCooldowns()
     {
         var keys = moveCooldowns.Keys.ToList();
@@ -2358,6 +2357,11 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         _currentMovementPoints = Mathf.Max(0f, _currentMovementPoints - distance);
         return true;
+    }
+
+    public void ConsumeAllMovementPoints()
+    {
+        _currentMovementPoints = 0f;
     }
 
     /// <summary>

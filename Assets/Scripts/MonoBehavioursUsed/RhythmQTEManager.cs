@@ -788,6 +788,9 @@ public class RhythmQTEManager : MonoBehaviour
         if (move.requiresMovement && !move.stayInPlace && caster != null && target != null)
             yield return ReturnToInitialPosition(move, caster, target, originPosition);
 
+        if (caster != null)
+            NewBattleManager.Instance?.OrientUnitTowardClosestOpponent(caster);
+
         if (move != null && move.cameraMotif != null)
             BattleCameraManager.Instance?.UnlockCameraMotif(move.cameraMotif);
 
@@ -1334,24 +1337,39 @@ public class RhythmQTEManager : MonoBehaviour
         Vector3 offsetDir = Vector3.zero;
         if (move.relativePosition != RelativePosition.On)
         {
-            Transform basis = target != null ? target.transform : caster.transform;
-            offsetDir = basis.forward;
+            Vector3 referenceDir = Vector3.zero;
+            if (target != null)
+            {
+                referenceDir = caster.transform.position - targetBasePosition;
+                referenceDir.y = 0f;
+                if (referenceDir.sqrMagnitude <= 0.0001f)
+                    referenceDir = target.transform.forward;
+            }
+            else
+            {
+                referenceDir = caster.transform.forward;
+            }
+
+            referenceDir.y = 0f;
+            if (referenceDir.sqrMagnitude > 0.0001f)
+                referenceDir = referenceDir.normalized;
+
+            offsetDir = referenceDir;
             switch (move.relativePosition)
             {
                 case RelativePosition.Back:
-                    offsetDir = -basis.forward;
+                    offsetDir = -referenceDir;
                     break;
                 case RelativePosition.Left:
-                    offsetDir = -basis.right;
+                    offsetDir = -Vector3.Cross(Vector3.up, referenceDir);
                     break;
                 case RelativePosition.Right:
-                    offsetDir = basis.right;
+                    offsetDir = Vector3.Cross(Vector3.up, referenceDir);
                     break;
             }
         }
 
-        float mobilityBonus = caster.currentMobility;
-        Vector3 targetPos = targetBasePosition + offsetDir * (move.castDistance + mobilityBonus);
+        Vector3 targetPos = targetBasePosition + offsetDir * move.castDistance;
 
         Animator animator = caster.GetCasterAnimator();
         // Stocke le GameObject visuel pour pouvoir le désactiver durant la téléportation
