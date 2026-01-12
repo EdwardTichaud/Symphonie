@@ -25,10 +25,37 @@ public class DamagePopup : MonoBehaviour
     private Canvas popupCanvas;
     private RectTransform rectTransform;
     private RectTransform textRect;
+    private TMP_FontAsset defaultFont;
+    private float baseTextScale = 1f;
+    private Vector3 styleOffset;
+    private bool useCameraRelativeOffset;
 
     public void SetOwner(DamagePopupManager manager)
     {
         owner = manager;
+    }
+
+    public void ApplyStyle(TMP_FontAsset font, float fontSize, float textScale, Vector3 offsetOverride, bool offsetUsesCameraAxes)
+    {
+        if (textMesh == null)
+            return;
+
+        if (defaultFont == null)
+            defaultFont = textMesh.font;
+
+        textMesh.font = font != null ? font : defaultFont;
+        if (fontSize > 0f)
+            textMesh.fontSize = fontSize;
+
+        baseTextScale = Mathf.Max(0.001f, textScale);
+        styleOffset = offsetOverride;
+        useCameraRelativeOffset = offsetUsesCameraAxes;
+    }
+
+    private void RefreshStyle()
+    {
+        if (owner != null)
+            owner.ApplyStyle(this);
     }
 
     /// <summary>
@@ -58,7 +85,9 @@ public class DamagePopup : MonoBehaviour
         textMesh.text = text;
         textMesh.color = textColor;
         textRect ??= textMesh.rectTransform;
-        textRect.localScale = Vector3.one;
+        if (styleOffset == Vector3.zero)
+            styleOffset = offset;
+        textRect.localScale = Vector3.one * Mathf.Max(0.001f, baseTextScale);
 
         target = followTarget;
         if (target == null)
@@ -111,6 +140,8 @@ public class DamagePopup : MonoBehaviour
         floatOffset = 0f;
         canvasGroup.alpha = 1f;
 
+        RefreshStyle();
+
         // Position initiale avant la première mise à jour (indispensable pour appliquer l'offset).
         UpdatePosition();
     }
@@ -123,6 +154,8 @@ public class DamagePopup : MonoBehaviour
             return;
         }
 
+        RefreshStyle();
+
         // Les effets d'interface utilisent le temps non-scalé pour rester visibles en pause.
         elapsed += Time.unscaledDeltaTime;
         float t = Mathf.Clamp01(elapsed / duration);
@@ -132,7 +165,10 @@ public class DamagePopup : MonoBehaviour
         floatOffset = rise + bounce;
 
         if (textRect != null)
-            textRect.localScale = Vector3.one * (1f + bounceScale * Mathf.Sin(t * Mathf.PI));
+        {
+            float pulseScale = baseTextScale * (1f + bounceScale * Mathf.Sin(t * Mathf.PI));
+            textRect.localScale = Vector3.one * pulseScale;
+        }
 
         // Met à jour la position à chaque frame.
         UpdatePosition();
@@ -159,7 +195,16 @@ public class DamagePopup : MonoBehaviour
             anchor = bounds.center + Vector3.up * bounds.extents.y;
         }
 
-        Vector3 worldPos = anchor + offset + Vector3.up * floatOffset;
+        Vector3 finalOffset = styleOffset;
+        if (useCameraRelativeOffset && battleCamera != null)
+        {
+            Transform camTransform = battleCamera.transform;
+            finalOffset = camTransform.right * styleOffset.x
+                          + camTransform.up * styleOffset.y
+                          + camTransform.forward * styleOffset.z;
+        }
+
+        Vector3 worldPos = anchor + finalOffset + Vector3.up * floatOffset;
         Vector3 screenPos = battleCamera.WorldToScreenPoint(worldPos);
         if (screenPos.z < 0f)
             return;

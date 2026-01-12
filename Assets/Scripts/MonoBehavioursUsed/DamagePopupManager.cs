@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 public class DamagePopupManager : MonoBehaviour
@@ -22,6 +23,13 @@ public class DamagePopupManager : MonoBehaviour
     [SerializeField] private GameObject damagePopupPrefab;
     [SerializeField] private Camera battleCamera;
     [SerializeField] private int prewarmCount = 10;
+
+    private TMP_FontAsset popupFont;
+    private float popupFontSize = 150f;
+    private float popupTextScale = 1f;
+    private Vector3 popupOffset = new Vector3(0f, 2f, 0f);
+    private bool popupOffsetUsesCameraAxes = false;
+    private bool usePooling = true;
 
     [Header("Couleurs")]
     [SerializeField] private Color damageColor = new Color(1f, 0.35f, 0.35f, 1f);
@@ -71,7 +79,7 @@ public class DamagePopupManager : MonoBehaviour
 
     private void PrewarmPool()
     {
-        if (damagePopupPrefab == null || prewarmCount <= 0)
+        if (!usePooling || damagePopupPrefab == null || prewarmCount <= 0)
             return;
 
         for (int i = popupPool.Count; i < prewarmCount; i++)
@@ -106,16 +114,55 @@ public class DamagePopupManager : MonoBehaviour
 
     private DamagePopup GetPopup()
     {
+        if (!usePooling)
+            return CreatePopupInstance();
+
         if (popupPool.Count > 0)
             return popupPool.Dequeue();
 
         return CreatePopupInstance();
     }
 
+    internal void ApplyStyle(DamagePopup popup)
+    {
+        if (popup == null)
+            return;
+
+        float safeFontSize = Mathf.Max(0.1f, popupFontSize);
+        float safeScale = Mathf.Max(0.001f, popupTextScale);
+        popup.ApplyStyle(popupFont, safeFontSize, safeScale, popupOffset, popupOffsetUsesCameraAxes);
+    }
+
+    public void SetDisplaySettings(TMP_FontAsset font, float fontSize, float textScale, Vector3 offset, bool offsetUsesCameraAxes, bool poolingEnabled)
+    {
+        popupFont = font;
+        popupFontSize = fontSize;
+        popupTextScale = textScale;
+        popupOffset = offset;
+        popupOffsetUsesCameraAxes = offsetUsesCameraAxes;
+        usePooling = poolingEnabled;
+
+        if (!usePooling && popupPool.Count > 0)
+        {
+            while (popupPool.Count > 0)
+            {
+                var pooledPopup = popupPool.Dequeue();
+                if (pooledPopup != null)
+                    Destroy(pooledPopup.gameObject);
+            }
+        }
+    }
+
     public void ReleasePopup(DamagePopup popup)
     {
         if (popup == null)
             return;
+
+        if (!usePooling)
+        {
+            Destroy(popup.gameObject);
+            return;
+        }
 
         popup.gameObject.SetActive(false);
         popup.transform.SetParent(transform, true);

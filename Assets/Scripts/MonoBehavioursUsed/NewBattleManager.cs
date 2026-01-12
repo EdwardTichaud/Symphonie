@@ -303,10 +303,19 @@ public partial class NewBattleManager : MonoBehaviour
     private TMP_Text targetCostLabel;
     private TMP_FontAsset defaultTargetCostLabelFont;
 
+    [Header("Affichage des dégâts et bonus")]
+    [SerializeField] private TMP_FontAsset damagePopupFont;
+    [Min(0.1f)][SerializeField] private float damagePopupFontSize = 150f;
+    [Min(0.001f)][SerializeField] private float damagePopupTextScale = 1f;
+    [SerializeField] private Vector3 damagePopupOffset = new Vector3(0f, 2f, 0f);
+    [SerializeField] private bool damagePopupOffsetUsesCameraAxes = false;
+    [SerializeField] private bool damagePopupUsePooling = true;
+
     [Tooltip("Canvas monde piloté par la caméra de combat. L'indicateur y est instancié pour bénéficier des mêmes réglages de rendu.")]
     [SerializeField] private Transform battleCameraCanvasTransform;
     
     private List<CharacterUnit> filteredUnits = new();
+    private DamagePopupManager damagePopupManager;
     // Liste temporaire réutilisée pour éviter des allocations lors du ciblage multiple
     private readonly List<CharacterUnit> multiTargetUnits = new();
     /// <summary>
@@ -524,6 +533,7 @@ public partial class NewBattleManager : MonoBehaviour
     {
         HandleTargetCursor();
         HandleTargetNavigation();
+        ApplyDamagePopupDisplaySettings();
         BattleEventTrigger.EvaluateAll(this);
     }
     #endregion
@@ -2831,6 +2841,26 @@ public partial class NewBattleManager : MonoBehaviour
     #endregion
 
     #region Gestion de la navigation parmi les unités en combat
+
+    private void ApplyDamagePopupDisplaySettings()
+    {
+        if (damagePopupManager == null)
+            damagePopupManager = DamagePopupManager.Instance;
+
+        if (damagePopupManager == null)
+            return;
+
+        float fontSize = damagePopupFontSize > 0.1f ? damagePopupFontSize : 150f;
+        float textScale = damagePopupTextScale > 0.001f ? damagePopupTextScale : 1f;
+
+        damagePopupManager.SetDisplaySettings(
+            damagePopupFont,
+            fontSize,
+            textScale,
+            damagePopupOffset,
+            damagePopupOffsetUsesCameraAxes,
+            damagePopupUsePooling);
+    }
 
     private void HandleTargetCursor()
     {
