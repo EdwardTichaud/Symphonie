@@ -244,6 +244,14 @@ public class CharacterData : ScriptableObject, ITargetable
     [Tooltip("Animation de décès.")]
     public AnimationClip deathAnimation;
 
+    [Header("Animations de déplacement")]
+    [Tooltip("Animation de marche utilisée pendant les déplacements.")]
+    public AnimationClip walkAnimation;
+
+    [FormerlySerializedAs("movementAnimation")]
+    [Tooltip("Animation de course utilisée pendant les déplacements.")]
+    public AnimationClip runAnimation;
+
     [Header("Animations de téléportation")]
     [Tooltip("Animation jouée avant la téléportation.")]
     public AnimationClip TPAnimation_Start;

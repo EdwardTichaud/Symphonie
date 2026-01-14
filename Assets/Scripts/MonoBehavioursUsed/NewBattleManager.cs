@@ -310,6 +310,13 @@ public partial class NewBattleManager : MonoBehaviour
     [SerializeField] private Vector3 damagePopupOffset = new Vector3(0f, 2f, 0f);
     [SerializeField] private bool damagePopupOffsetUsesCameraAxes = false;
     [SerializeField] private bool damagePopupUsePooling = true;
+    [SerializeField] private Color damagePopupDamageColor = new Color(1f, 0.35f, 0.35f, 1f);
+    [SerializeField] private Color damagePopupHealColor = new Color(0.35f, 1f, 0.55f, 1f);
+    [SerializeField] private Color damagePopupBuffColor = new Color(0.4f, 0.75f, 1f, 1f);
+    [SerializeField] private Color damagePopupDebuffColor = new Color(1f, 0.6f, 0.2f, 1f);
+    [SerializeField] private Color damagePopupStatusColor = new Color(1f, 0.85f, 0.45f, 1f);
+    [SerializeField] private Color damagePopupInterceptionPositiveColor = new Color(0.3f, 1f, 0.4f, 1f);
+    [SerializeField] private Color damagePopupInterceptionNegativeColor = new Color(1f, 0.25f, 0.25f, 1f);
 
     [Tooltip("Canvas monde piloté par la caméra de combat. L'indicateur y est instancié pour bénéficier des mêmes réglages de rendu.")]
     [SerializeField] private Transform battleCameraCanvasTransform;
@@ -2860,6 +2867,15 @@ public partial class NewBattleManager : MonoBehaviour
             damagePopupOffset,
             damagePopupOffsetUsesCameraAxes,
             damagePopupUsePooling);
+
+        damagePopupManager.SetColorSettings(
+            damagePopupDamageColor,
+            damagePopupHealColor,
+            damagePopupBuffColor,
+            damagePopupDebuffColor,
+            damagePopupStatusColor,
+            damagePopupInterceptionPositiveColor,
+            damagePopupInterceptionNegativeColor);
     }
 
     private void HandleTargetCursor()

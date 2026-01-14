@@ -6,7 +6,6 @@ public class DamagePopup : MonoBehaviour
     [Header("Animation")]
     public float floatSpeed = 1f;
     public float duration = 1f;
-    public Vector3 offset = new Vector3(0, 2f, 0);
     [SerializeField] private float bounceHeight = 0.35f;
     [SerializeField] private float bounceFrequency = 2f;
     [SerializeField] private float bounceScale = 0.2f;
@@ -23,12 +22,19 @@ public class DamagePopup : MonoBehaviour
     private CharacterUnit targetUnit;
     private Camera battleCamera;
     private Canvas popupCanvas;
+    private Canvas localCanvas;
     private RectTransform rectTransform;
     private RectTransform textRect;
     private TMP_FontAsset defaultFont;
     private float baseTextScale = 1f;
     private Vector3 styleOffset;
     private bool useCameraRelativeOffset;
+    [SerializeField] private float worldSpaceScale = 0.0033f;
+    private Vector3 baseRectScale = Vector3.one;
+    private bool baseScaleInitialized;
+    private const float MinWorldSpaceScale = 0.0001f;
+    private const float MaxWorldSpaceScale = 0.02f;
+    private const float MinParentScale = 0.0001f;
 
     public void SetOwner(DamagePopupManager manager)
     {
@@ -85,8 +91,6 @@ public class DamagePopup : MonoBehaviour
         textMesh.text = text;
         textMesh.color = textColor;
         textRect ??= textMesh.rectTransform;
-        if (styleOffset == Vector3.zero)
-            styleOffset = offset;
         textRect.localScale = Vector3.one * Mathf.Max(0.001f, baseTextScale);
 
         target = followTarget;
@@ -115,9 +119,14 @@ public class DamagePopup : MonoBehaviour
             return;
         }
 
-        popupCanvas = GetComponent<Canvas>();
-        if (popupCanvas == null)
-            popupCanvas = GetComponentInParent<Canvas>();
+        if (!baseScaleInitialized)
+        {
+            baseRectScale = rectTransform.localScale;
+            baseScaleInitialized = true;
+        }
+
+        localCanvas ??= GetComponent<Canvas>();
+        popupCanvas = ResolvePopupCanvas(localCanvas);
 
         if (popupCanvas == null)
         {
@@ -126,11 +135,21 @@ public class DamagePopup : MonoBehaviour
             return;
         }
 
-        if (popupCanvas.gameObject == gameObject)
-            popupCanvas.renderMode = RenderMode.ScreenSpaceCamera;
+        if (localCanvas != null)
+            localCanvas.enabled = popupCanvas == localCanvas;
 
-        if (popupCanvas.renderMode == RenderMode.ScreenSpaceCamera)
+        if (popupCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
             popupCanvas.worldCamera = battleCamera;
+
+        if (popupCanvas.renderMode == RenderMode.WorldSpace)
+        {
+            float safeScale = GetSafeWorldSpaceScale();
+            rectTransform.localScale = baseRectScale * safeScale;
+        }
+        else
+        {
+            rectTransform.localScale = baseRectScale;
+        }
 
         canvasGroup ??= GetComponent<CanvasGroup>();
         if (canvasGroup == null)
@@ -156,6 +175,15 @@ public class DamagePopup : MonoBehaviour
 
         RefreshStyle();
 
+        if (popupCanvas != null
+            && popupCanvas.renderMode == RenderMode.WorldSpace
+            && rectTransform != null
+            && baseScaleInitialized)
+        {
+            float safeScale = GetSafeWorldSpaceScale();
+            rectTransform.localScale = baseRectScale * safeScale;
+        }
+
         // Les effets d'interface utilisent le temps non-scalé pour rester visibles en pause.
         elapsed += Time.unscaledDeltaTime;
         float t = Mathf.Clamp01(elapsed / duration);
@@ -178,6 +206,22 @@ public class DamagePopup : MonoBehaviour
 
         if (t >= 1f)
             Release();
+    }
+
+    private float GetSafeWorldSpaceScale()
+    {
+        float safeScale = Mathf.Clamp(worldSpaceScale, MinWorldSpaceScale, MaxWorldSpaceScale);
+
+        Transform scaleRoot = rectTransform != null ? rectTransform.parent : null;
+        if (scaleRoot != null)
+        {
+            Vector3 lossyScale = scaleRoot.lossyScale;
+            float parentScale = Mathf.Max(Mathf.Abs(lossyScale.x), Mathf.Abs(lossyScale.y), Mathf.Abs(lossyScale.z));
+            if (parentScale > MinParentScale)
+                safeScale /= parentScale;
+        }
+
+        return safeScale;
     }
 
     /// <summary>
@@ -205,19 +249,58 @@ public class DamagePopup : MonoBehaviour
         }
 
         Vector3 worldPos = anchor + finalOffset + Vector3.up * floatOffset;
+
+        if (popupCanvas != null && popupCanvas.renderMode == RenderMode.WorldSpace)
+        {
+            rectTransform.position = worldPos;
+
+            if (battleCamera != null)
+            {
+                Vector3 toCamera = rectTransform.position - battleCamera.transform.position;
+                if (toCamera.sqrMagnitude > 0.0001f)
+                    rectTransform.rotation = Quaternion.LookRotation(toCamera, Vector3.up);
+            }
+
+            return;
+        }
+
         Vector3 screenPos = battleCamera.WorldToScreenPoint(worldPos);
         if (screenPos.z < 0f)
             return;
 
         screenPos.x = Mathf.Clamp(screenPos.x, 0f, Screen.width);
         screenPos.y = Mathf.Clamp(screenPos.y, 0f, Screen.height);
-        RectTransform canvasRect = popupCanvas.transform as RectTransform;
+        RectTransform canvasRect = popupCanvas != null ? popupCanvas.transform as RectTransform : null;
         if (canvasRect == null)
             return;
 
         if (RectTransformUtility.ScreenPointToWorldPointInRectangle(canvasRect, screenPos, popupCanvas.worldCamera, out Vector3 worldPoint))
             rectTransform.position = worldPoint;
     }
+
+    private Canvas ResolvePopupCanvas(Canvas local)
+    {
+        Canvas parentCanvas = null;
+        Canvas fallbackCanvas = null;
+        Canvas[] canvases = GetComponentsInParent<Canvas>(true);
+        foreach (Canvas canvas in canvases)
+        {
+            if (canvas == null || canvas == local)
+                continue;
+            if (!canvas.enabled)
+                continue;
+            if (canvas.renderMode == RenderMode.WorldSpace)
+            {
+                parentCanvas = canvas;
+                break;
+            }
+
+            fallbackCanvas ??= canvas;
+        }
+
+        return parentCanvas ?? fallbackCanvas ?? local;
+    }
+
 
     private void Release()
     {

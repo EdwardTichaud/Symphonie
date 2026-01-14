@@ -111,21 +111,22 @@ public partial class NewBattleManager
         if ((destination - start).sqrMagnitude <= 0.0001f)
             yield break;
 
-        const float approachSpeed = 6f;
-        const float minDuration = 0.1f;
+        const float approachDuration = 1f;
         float distance = Vector3.Distance(start, destination);
-        float duration = Mathf.Max(minDuration, distance / approachSpeed);
+        if (distance > 0.01f)
+            caster.PlayMovementAnimation(distance);
         float elapsed = 0f;
 
-        while (elapsed < duration)
+        while (elapsed < approachDuration)
         {
-            float t = Mathf.Clamp01(elapsed / duration);
+            float t = Mathf.Clamp01(elapsed / approachDuration);
             caster.transform.position = Vector3.Lerp(start, destination, t);
             elapsed += Time.deltaTime;
             yield return null;
         }
 
         caster.transform.position = destination;
+        caster.StopMovementAnimation();
     }
 
     #region Gestion des tours de combat

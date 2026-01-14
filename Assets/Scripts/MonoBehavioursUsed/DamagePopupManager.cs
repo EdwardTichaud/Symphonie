@@ -23,6 +23,7 @@ public class DamagePopupManager : MonoBehaviour
     [SerializeField] private GameObject damagePopupPrefab;
     [SerializeField] private Camera battleCamera;
     [SerializeField] private int prewarmCount = 10;
+    private Canvas localCanvas;
 
     private TMP_FontAsset popupFont;
     private float popupFontSize = 150f;
@@ -60,6 +61,14 @@ public class DamagePopupManager : MonoBehaviour
         // S'assure que l'objet ne possède pas d'échelle étrange héritée d'un prefab
         transform.localScale = Vector3.one;
 
+        localCanvas = GetComponent<Canvas>();
+        if (localCanvas != null)
+        {
+            Canvas parentCanvas = ResolveParentCanvas(localCanvas);
+            if (parentCanvas != null && parentCanvas.renderMode == RenderMode.WorldSpace)
+                localCanvas.enabled = false;
+        }
+
         ResolveBattleCamera();
         PrewarmPool();
     }
@@ -76,6 +85,22 @@ public class DamagePopupManager : MonoBehaviour
         if (battleCamera == null)
             battleCamera = Camera.main;
     }
+
+    private Canvas ResolveParentCanvas(Canvas local)
+    {
+        Canvas[] canvases = GetComponentsInParent<Canvas>(true);
+        foreach (Canvas canvas in canvases)
+        {
+            if (canvas == null || canvas == local)
+                continue;
+            if (!canvas.enabled)
+                continue;
+            return canvas;
+        }
+
+        return null;
+    }
+
 
     private void PrewarmPool()
     {
@@ -98,7 +123,7 @@ public class DamagePopupManager : MonoBehaviour
         if (damagePopupPrefab == null)
             return null;
 
-        GameObject popupObject = Instantiate(damagePopupPrefab, transform, true);
+        GameObject popupObject = Instantiate(damagePopupPrefab, transform, false);
         DamagePopup popupScript = popupObject.GetComponent<DamagePopup>();
         if (popupScript == null)
         {
@@ -153,6 +178,17 @@ public class DamagePopupManager : MonoBehaviour
         }
     }
 
+    public void SetColorSettings(Color damage, Color heal, Color buff, Color debuff, Color status, Color interceptionPositive, Color interceptionNegative)
+    {
+        damageColor = damage;
+        healColor = heal;
+        buffColor = buff;
+        debuffColor = debuff;
+        statusColor = status;
+        interceptionPositiveColor = interceptionPositive;
+        interceptionNegativeColor = interceptionNegative;
+    }
+
     public void ReleasePopup(DamagePopup popup)
     {
         if (popup == null)
@@ -165,7 +201,7 @@ public class DamagePopupManager : MonoBehaviour
         }
 
         popup.gameObject.SetActive(false);
-        popup.transform.SetParent(transform, true);
+        popup.transform.SetParent(transform, false);
         popupPool.Enqueue(popup);
     }
 
@@ -252,7 +288,7 @@ public class DamagePopupManager : MonoBehaviour
         if (popupScript == null)
             return;
 
-        popupScript.transform.SetParent(transform, true);
+        popupScript.transform.SetParent(transform, false);
         popupScript.gameObject.SetActive(true);
         popupScript.SetOwner(this);
         popupScript.Initialize(text, target, battleCamera, color, durationOverride);

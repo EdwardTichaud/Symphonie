@@ -57,6 +57,16 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
     private PlayableGraph prepareToTargetGraph;
     private AnimationClipPlayable prepareToTargetPlayable;
     private AwakeState awakeState; // Nouveau gestionnaire unifié des états Awake et dissonant.
+    private AnimatorOverrideController movementOverrideController;
+    private AnimationClip movementWalkClipKey;
+    private AnimationClip movementRunClipKey;
+    private static readonly string[] MovementWalkClipHints = { "Walk_Loop", "WalkLoop", "Walk" };
+    private static readonly string[] MovementRunClipHints = { "Run_Loop", "RunLoop", "Run" };
+    private static readonly string[] MovementClipExclusions = { "Stop", "Start", "Crouch", "Crouched" };
+    private static readonly int AnimatorMovementBlendHash = Animator.StringToHash("Speed");
+    private static readonly int AnimatorMovementDashHash = Animator.StringToHash("Dash_Battle");
+    private static readonly int AnimatorMovementBlendStateHash = Animator.StringToHash("LocomotionBT");
+    private const float MovementBlendDistance = 2f;
 
     // Permet de suivre si l'unité joue actuellement son animation d'Idle pour déclencher les sons adéquats.
     private bool isIdleActive;
@@ -959,6 +969,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
         spriteRenderer = GetComponent<SpriteRenderer>();
         // Recherche proactive de l'Animator dédié aux timelines dans les enfants (même inactifs).
         animator = GetCasterAnimator(forceRefresh: true);
+        ApplyMovementAnimationOverrides();
         awakeState = GetComponent<AwakeState>();
         isIdleActive = false; // L'unité n'est pas encore en Idle : permet de jouer le son d'entrée lors du premier appel.
         CacheConcentrationSystem();
@@ -988,6 +999,124 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
         // Vérifie immédiatement l'état harmonique pour déclencher Awake/Dissonant si nécessaire au lancement du combat.
         CheckDissonance();
+    }
+
+    private void ApplyMovementAnimationOverrides()
+    {
+        if (Data == null || animator == null)
+            return;
+
+        if (Data.walkAnimation == null && Data.runAnimation == null)
+            return;
+
+        movementOverrideController = animator.runtimeAnimatorController as AnimatorOverrideController;
+        if (movementOverrideController == null)
+        {
+            if (animator.runtimeAnimatorController == null)
+                return;
+
+            movementOverrideController = new AnimatorOverrideController(animator.runtimeAnimatorController);
+            animator.runtimeAnimatorController = movementOverrideController;
+        }
+
+        if (movementWalkClipKey == null || movementRunClipKey == null)
+            CacheMovementOverrideKeys(movementOverrideController);
+
+        if (Data.walkAnimation != null && movementWalkClipKey != null)
+            movementOverrideController[movementWalkClipKey] = Data.walkAnimation;
+
+        if (Data.runAnimation != null && movementRunClipKey != null)
+            movementOverrideController[movementRunClipKey] = Data.runAnimation;
+    }
+
+    private void CacheMovementOverrideKeys(AnimatorOverrideController overrideController)
+    {
+        if (overrideController == null)
+            return;
+
+        var overrides = new List<KeyValuePair<AnimationClip, AnimationClip>>(overrideController.overridesCount);
+        overrideController.GetOverrides(overrides);
+
+        movementWalkClipKey = FindMovementClipKey(overrides, MovementWalkClipHints);
+        movementRunClipKey = FindMovementClipKey(overrides, MovementRunClipHints);
+    }
+
+    private static AnimationClip FindMovementClipKey(List<KeyValuePair<AnimationClip, AnimationClip>> overrides, string[] hints)
+    {
+        if (overrides == null || hints == null)
+            return null;
+
+        foreach (string hint in hints)
+        {
+            for (int i = 0; i < overrides.Count; i++)
+            {
+                AnimationClip key = overrides[i].Key;
+                if (key == null)
+                    continue;
+
+                if (IsMovementClipNameMatch(key.name, hint))
+                    return key;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool IsMovementClipNameMatch(string clipName, string hint)
+    {
+        if (string.IsNullOrEmpty(clipName) || string.IsNullOrEmpty(hint))
+            return false;
+
+        if (clipName.IndexOf(hint, StringComparison.OrdinalIgnoreCase) < 0)
+            return false;
+
+        foreach (string exclusion in MovementClipExclusions)
+        {
+            if (clipName.IndexOf(exclusion, StringComparison.OrdinalIgnoreCase) >= 0)
+                return false;
+        }
+
+        return true;
+    }
+
+    public void PlayMovementAnimation(float distance)
+    {
+        Animator movementAnimator = GetCasterAnimator();
+        if (movementAnimator == null)
+            return;
+
+        float blend = distance <= 0f ? 0f : Mathf.Clamp01(distance / MovementBlendDistance);
+        if (HasAnimatorParameter(movementAnimator, AnimatorMovementBlendHash))
+            movementAnimator.SetFloat(AnimatorMovementBlendHash, blend);
+
+        if (movementAnimator.HasState(0, AnimatorMovementDashHash))
+            movementAnimator.CrossFade(AnimatorMovementDashHash, IdleCrossFadeDurationSeconds, 0);
+        else if (movementAnimator.HasState(0, AnimatorMovementBlendStateHash))
+            movementAnimator.CrossFade(AnimatorMovementBlendStateHash, IdleCrossFadeDurationSeconds, 0);
+    }
+
+    public void StopMovementAnimation()
+    {
+        Animator movementAnimator = GetCasterAnimator();
+        if (movementAnimator == null)
+            return;
+
+        if (HasAnimatorParameter(movementAnimator, AnimatorMovementBlendHash))
+            movementAnimator.SetFloat(AnimatorMovementBlendHash, 0f);
+    }
+
+    private static bool HasAnimatorParameter(Animator targetAnimator, int parameterHash)
+    {
+        if (targetAnimator == null)
+            return false;
+
+        foreach (var parameter in targetAnimator.parameters)
+        {
+            if (parameter.nameHash == parameterHash)
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>

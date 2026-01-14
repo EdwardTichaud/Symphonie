@@ -76,6 +76,7 @@ public class RhythmQTEManager : MonoBehaviour
     // Durée par défaut utilisée si aucun délai n'est défini dans les données
     // Conserve l'ancien comportement en cas d'oubli de paramétrage
     private const float defaultTeleportDelay = 0.2f;
+    private const float fixedMoveDurationSeconds = 1f;
     private const string ItemUseStateName = "Item_Use";
     private static readonly int AnimatorStateItemUseShortHash = Animator.StringToHash(ItemUseStateName);
 
@@ -1196,15 +1197,13 @@ public class RhythmQTEManager : MonoBehaviour
         }
         else if (!isTeleport)
         {
-            // Animation du dash
-            if (!caster.IsDead)
-                animator?.Play("Dash_Battle");
-
             Vector3 startPos = caster.transform.position;
             float distance = Vector3.Distance(startPos, destination);
             // Instancie les particules uniquement si un déplacement réel est nécessaire.
             ParticleSystem dashParticles = distance > 0.01f ? SpawnDashParticles(caster) : null;
-            float duration = distance / item.moveSpeed;
+            if (distance > 0.01f)
+                caster.PlayMovementAnimation(distance);
+            float duration = fixedMoveDurationSeconds;
             float t = 0f;
             // Mouvement progressif vers la destination
             while (t < 1f)
@@ -1214,6 +1213,7 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
             }
             caster.transform.position = destination;
+            caster.StopMovementAnimation();
 
             // Laisse l'effet se dissiper en douceur maintenant que l'unité est arrivée.
             ReleaseDashParticles(dashParticles);
@@ -1277,13 +1277,12 @@ public class RhythmQTEManager : MonoBehaviour
         }
         else if (!isTeleport)
         {
-            if (!caster.IsDead)
-                animator?.Play("Retreat_Battle");
-
             Vector3 startPos = caster.transform.position;
             float distance = Vector3.Distance(startPos, origin);
             ParticleSystem dashParticles = distance > 0.01f ? SpawnDashParticles(caster) : null;
-            float duration = distance / item.moveSpeed;
+            if (distance > 0.01f)
+                caster.PlayMovementAnimation(distance);
+            float duration = fixedMoveDurationSeconds;
             float t = 0f;
             while (t < 1f)
             {
@@ -1292,6 +1291,7 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
             }
             caster.transform.position = origin;
+            caster.StopMovementAnimation();
 
             ReleaseDashParticles(dashParticles);
         }
@@ -1410,13 +1410,12 @@ public class RhythmQTEManager : MonoBehaviour
         }
         else if (!isTeleport)
         {
-            if (!caster.IsDead)
-                animator?.Play("Dash_Battle");
-
             Vector3 startPos = caster.transform.position;
             float distance = Vector3.Distance(startPos, targetPos);
             ParticleSystem dashParticles = distance > 0.01f ? SpawnDashParticles(caster) : null;
-            float duration = move.GetTravelDuration(distance);
+            if (distance > 0.01f)
+                caster.PlayMovementAnimation(distance);
+            float duration = fixedMoveDurationSeconds;
             float t = 0f;
             while (t < 1f)
             {
@@ -1425,6 +1424,7 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
             }
             caster.transform.position = targetPos;
+            caster.StopMovementAnimation();
 
             ReleaseDashParticles(dashParticles);
         }
@@ -1515,12 +1515,11 @@ public class RhythmQTEManager : MonoBehaviour
         }
         else if (!isTeleport)
         {
-            if (!caster.IsDead)
-                animator?.Play("Dash_Battle");
-
             float distance = Vector3.Distance(startPos, initialPosition);
             ParticleSystem dashParticles = distance > 0.01f ? SpawnDashParticles(caster) : null;
-            float duration = move.GetTravelDuration(distance);
+            if (distance > 0.01f)
+                caster.PlayMovementAnimation(distance);
+            float duration = fixedMoveDurationSeconds;
             float t = 0f;
             while (t < 1f)
             {
@@ -1529,6 +1528,7 @@ public class RhythmQTEManager : MonoBehaviour
                 yield return null;
             }
             caster.transform.position = initialPosition;
+            caster.StopMovementAnimation();
 
             ReleaseDashParticles(dashParticles);
         }
