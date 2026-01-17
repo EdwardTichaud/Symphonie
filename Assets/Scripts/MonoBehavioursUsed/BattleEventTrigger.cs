@@ -1,14 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Timeline;
 
 /// <summary>
-/// Surveille des evenements de combat et declenche un motif camera + animation lorsqu'une condition est atteinte.
+/// Surveille des evenements de combat et declenche un motif camera, une animation ou une timeline lorsqu'une condition est atteinte.
 /// </summary>
 public class BattleEventTrigger : MonoBehaviour
 {
     private static readonly List<BattleEventTrigger> Instances = new();
     private static bool searchedInactiveTriggers;
+    private static bool eventInProgress;
 
     public enum BattleEventCategory
     {
@@ -39,10 +41,12 @@ public class BattleEventTrigger : MonoBehaviour
         public TriggerDelayMode triggerDelayMode = TriggerDelayMode.DelaySeconds;
         [Tooltip("Delai en secondes avant le declenchement si le mode Delai est selectionne.")]
         public float triggerDelaySeconds = 0f;
-        [Tooltip("CameraMotif verouille lorsque le seuil est atteint.")]
+        [Tooltip("CameraMotif verouille lorsque le seuil est atteint (ignore si une Timeline est definie).")]
         public CameraMotifSO cameraMotif;
-        [Tooltip("Animation jouee sur l'unite lorsque le seuil est atteint.")]
+        [Tooltip("Animation jouee sur l'unite lorsque le seuil est atteint (ignore si une Timeline est definie).")]
         public AnimationClip animationClip;
+        [Tooltip("Timeline jouee lorsque le seuil est atteint. Prioritaire sur le CameraMotif et l'AnimationClip.")]
+        public TimelineAsset timeline;
         [Tooltip("Deverrouille le CameraMotif a la fin de l'animation.")]
         public bool unlockMotifAfterAnimation = true;
         [Tooltip("Delai en secondes avant de deverrouiller le CameraMotif si l'option UnlockMotifAfterAnimation est desactivee.")]
@@ -107,6 +111,9 @@ public class BattleEventTrigger : MonoBehaviour
         if (units.Count == 0 || battleManager == null)
             return;
 
+        if (eventInProgress || battleManager.IsBattlePaused || battleManager.IsBattleEventActive)
+            return;
+
         if (debugLogs && Time.unscaledTime >= nextDebugTime)
         {
             nextDebugTime = Time.unscaledTime + Mathf.Max(0.1f, debugInterval);
@@ -153,7 +160,8 @@ public class BattleEventTrigger : MonoBehaviour
                     string unitName = trackedUnit != null ? trackedUnit.name : "(none)";
                     string motifName = t.cameraMotif != null ? t.cameraMotif.name : "(none)";
                     string clipName = t.animationClip != null ? t.animationClip.name : "(none)";
-                    Debug.Log($"[BattleEventTrigger] check unit={unitName} category={t.category} triggered={t.triggered} shouldTrigger={shouldTrigger} motif={motifName} anim={clipName}");
+                    string timelineName = t.timeline != null ? t.timeline.name : "(none)";
+                    Debug.Log($"[BattleEventTrigger] check unit={unitName} category={t.category} triggered={t.triggered} shouldTrigger={shouldTrigger} motif={motifName} anim={clipName} timeline={timelineName}");
                 }
 
                 if (shouldTrigger && trackedUnit != null)
@@ -161,7 +169,7 @@ public class BattleEventTrigger : MonoBehaviour
                     t.triggered = true;
                     StartCoroutine(TriggerEvent(trackedUnit, t, battleManager));
                     if (debugLogs)
-                        Debug.Log($"[BattleEventTrigger] triggered unit={trackedUnit.name} motif={t.cameraMotif?.name} anim={t.animationClip?.name}");
+                        Debug.Log($"[BattleEventTrigger] triggered unit={trackedUnit.name} motif={t.cameraMotif?.name} anim={t.animationClip?.name} timeline={t.timeline?.name}");
                     break;
                 }
             }
@@ -175,9 +183,21 @@ public class BattleEventTrigger : MonoBehaviour
 
         var manager = battleManager != null ? battleManager : NewBattleManager.Instance;
         bool eventStarted = false;
+        bool eventLocked = false;
+        int battlePauseToken = -1;
         try
         {
             yield return WaitBeforeTrigger(threshold, trackedUnit, battleManager);
+            if (battleManager != null && !IsBattleActive(battleManager))
+                yield break;
+            if (trackedUnit == null || trackedUnit.IsDead)
+                yield break;
+
+            while (eventInProgress)
+                yield return null;
+            eventInProgress = true;
+            eventLocked = true;
+
             if (battleManager != null && !IsBattleActive(battleManager))
                 yield break;
             if (trackedUnit == null || trackedUnit.IsDead)
@@ -187,47 +207,83 @@ public class BattleEventTrigger : MonoBehaviour
             eventStarted = true;
 
             var cameraManager = BattleCameraManager.Instance;
-            bool hasCameraMotif = threshold.cameraMotif != null;
+            bool useTimeline = threshold.timeline != null;
+            bool hasCameraMotif = !useTimeline && threshold.cameraMotif != null;
+            bool hasAnimationClip = !useTimeline && threshold.animationClip != null;
             if (hasCameraMotif && cameraManager != null)
             {
                 cameraManager.ConfigureActionTargets(trackedUnit, trackedUnit);
                 cameraManager.LockCameraMotif(threshold.cameraMotif, -1f, BattleCameraManager.MotifLockPriority.High);
             }
 
-            if (threshold.animationClip != null)
-            {
-                trackedUnit.PlayPerformingAnimation(threshold.animationClip);
-            }
-            else if (debugLogs)
-            {
-                Debug.LogWarning($"[BattleEventTrigger] animation manquante pour {trackedUnit.name}.");
-            }
+            if (manager != null && manager.IsBattleActive)
+                battlePauseToken = manager.RequestBattlePause("BattleEventTrigger");
 
-            if (threshold.unlockMotifAfterAnimation && hasCameraMotif && cameraManager != null)
+            if (useTimeline)
             {
-                float duration = threshold.animationClip != null ? threshold.animationClip.length : 0f;
-                if (duration > 0f)
-                    yield return new WaitForSecondsRealtime(duration);
+                yield return PlayTimelineAndWait(trackedUnit, threshold.timeline);
+            }
+            else
+            {
+                if (hasAnimationClip)
+                {
+                    trackedUnit.PlayPerformingAnimation(threshold.animationClip);
+                }
+                else if (debugLogs)
+                {
+                    Debug.LogWarning($"[BattleEventTrigger] animation manquante pour {trackedUnit.name}.");
+                }
+
+                float holdDuration = 0f;
+                if (hasAnimationClip && threshold.animationClip != null)
+                    holdDuration = threshold.animationClip.length;
+                if (hasCameraMotif && !threshold.unlockMotifAfterAnimation && threshold.unlockMotifDelay > 0f)
+                    holdDuration = Mathf.Max(holdDuration, threshold.unlockMotifDelay);
+
+                if (holdDuration > 0f)
+                    yield return new WaitForSecondsRealtime(holdDuration);
                 else
                     yield return null;
 
-                cameraManager.UnlockCameraMotif(threshold.cameraMotif);
-                if (!cameraManager.motifLocked)
-                    cameraManager.ClearRigTargets();
-            }
-            else if (!threshold.unlockMotifAfterAnimation && threshold.unlockMotifDelay > 0f && hasCameraMotif && cameraManager != null)
-            {
-                yield return new WaitForSecondsRealtime(threshold.unlockMotifDelay);
-                cameraManager.UnlockCameraMotif(threshold.cameraMotif);
-                if (!cameraManager.motifLocked)
-                    cameraManager.ClearRigTargets();
+                if (hasCameraMotif && cameraManager != null)
+                {
+                    if (threshold.unlockMotifAfterAnimation || threshold.unlockMotifDelay > 0f)
+                    {
+                        cameraManager.UnlockCameraMotif(threshold.cameraMotif);
+                        if (!cameraManager.motifLocked)
+                            cameraManager.ClearRigTargets();
+                    }
+                }
             }
         }
         finally
         {
+            if (battlePauseToken >= 0 && manager != null)
+                manager.ReleaseBattlePause(battlePauseToken);
             if (eventStarted)
                 manager?.RegisterBattleEventEnd();
+            if (eventLocked)
+                eventInProgress = false;
         }
+    }
+
+    private static IEnumerator PlayTimelineAndWait(CharacterUnit trackedUnit, TimelineAsset timeline)
+    {
+        if (trackedUnit == null || timeline == null)
+            yield break;
+
+        var timelineManager = BattleTimelineManager.Instance;
+        if (timelineManager != null)
+        {
+            timelineManager.PlayCasterTimeline(timeline, trackedUnit, trackedUnit.GetCasterBindingTarget());
+            while (timelineManager.IsCasterTimelinePlaying(trackedUnit))
+                yield return null;
+            yield break;
+        }
+
+        trackedUnit.PlayBattleTimeline(timeline, trackedUnit.GetCasterBindingTarget());
+        while (trackedUnit.IsBattleTimelinePlaying)
+            yield return null;
     }
 
     private IEnumerator WaitBeforeTrigger(ThresholdData threshold, CharacterUnit trackedUnit, NewBattleManager battleManager)

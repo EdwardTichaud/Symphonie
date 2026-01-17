@@ -212,6 +212,8 @@ public partial class NewBattleManager
     {
         if (currentBattleState != BattleState.VictoryScreen_Await && currentBattleState != BattleState.VictoryScreen_CanContinue && currentBattleState != BattleState.GameOverScreen_Await && currentBattleState != BattleState.GameOverScreen_CanContinue)
         {
+            yield return WaitWhileBattlePaused();
+
             if (unit.TryGetComponent<StunnedStatus>(out var stunnedStatus) && stunnedStatus.IsStunned)
             {
                 EndTurn(unit, skipIdleAnimation: true);
@@ -262,34 +264,36 @@ public partial class NewBattleManager
             // Petite pause avant l'exécution du tour, indépendante du timeScale
             yield return new WaitForSecondsRealtime(0.5f);
 
-        if (unit.IsPlayerControlled)
-        {
-            StartSquadUnitTurn(unit);
-            yield return new WaitUntil(() => !isTurnResolving);
-        }
-        else
-        {
-            // 🛰️ Sans cette synchronisation préalable, l'ennemi hérite encore du contexte caméra
-            // du joueur précédent. En répercutant immédiatement l'unité en cours dans toute la pile
-            // (données locales + gestionnaire global), on garantit que la caméra se recale sur la
-            // nouvelle référence avant même que l'IA ne déclenche la moindre action.
-            ChangeCurrentCharacterUnit(unit);
+            yield return WaitWhileBattlePaused();
 
-            var cameraManager = BattleCameraManager.Instance;
-            if (cameraManager != null)
+            if (unit.IsPlayerControlled)
             {
-                // Met à jour l'accès direct "CurrentTurnOwner" et, par extension, "currentCaster".
-                cameraManager.SetTurnOwner(unit);
-                // Aucune cible n'est encore connue : on efface le focus pour laisser la caméra
-                // choisir la bonne orientation lorsqu'elle sera définie.
-                cameraManager.SetCurrentTarget(null);
+                StartSquadUnitTurn(unit);
+                yield return new WaitUntil(() => !isTurnResolving);
+            }
+            else
+            {
+                // 🛰️ Sans cette synchronisation préalable, l'ennemi hérite encore du contexte caméra
+                // du joueur précédent. En répercutant immédiatement l'unité en cours dans toute la pile
+                // (données locales + gestionnaire global), on garantit que la caméra se recale sur la
+                // nouvelle référence avant même que l'IA ne déclenche la moindre action.
+                ChangeCurrentCharacterUnit(unit);
+
+                var cameraManager = BattleCameraManager.Instance;
+                if (cameraManager != null)
+                {
+                    // Met à jour l'accès direct "CurrentTurnOwner" et, par extension, "currentCaster".
+                    cameraManager.SetTurnOwner(unit);
+                    // Aucune cible n'est encore connue : on efface le focus pour laisser la caméra
+                    // choisir la bonne orientation lorsqu'elle sera définie.
+                    cameraManager.SetCurrentTarget(null);
+                }
+
+                yield return EnemyTurnWithQTE(unit);
+                EndTurn();
             }
 
-            yield return EnemyTurnWithQTE(unit);
-            EndTurn();
-        }
-
-        // 8) On mémorise unit comme précédente pour le prochain tour
+            // 8) On mémorise unit comme précédente pour le prochain tour
             previousUnit = unit;
         }
         else
@@ -377,6 +381,8 @@ public partial class NewBattleManager
         if (enemy == null)
             yield break;
 
+        yield return WaitWhileBattlePaused();
+
         // Choix de l'action via l'IA centralisée
         var decision = BattleAIStrategy.Decide(enemy, activeCharacterUnits);
         if (decision.Item != null)
@@ -461,6 +467,7 @@ public partial class NewBattleManager
         // Laisse un délai pour que le joueur prenne connaissance de l'action
         // On utilise ici un temps réel pour éviter tout blocage si le jeu est en pause
         yield return new WaitForSecondsRealtime(delay);
+        yield return WaitWhileBattlePaused();
         yield return RhythmQTEManager.Instance.MusicalMoveRoutine(move, enemy, target);
 
         // Ajoute le move au codex et affiche sa découverte si nécessaire
@@ -474,6 +481,8 @@ public partial class NewBattleManager
     {
         if (enemy == null || item == null)
             yield break;
+
+        yield return WaitWhileBattlePaused();
 
         var target = ResolveAIItemTarget(enemy, preferredTarget, item) ?? enemy.SelectTargetFromSquad();
         if (target == null)
@@ -492,6 +501,7 @@ public partial class NewBattleManager
             RhythmQTEManager.Instance?.PrepareQTEBar(item.beatPattern);
 
         yield return new WaitForSecondsRealtime(ENEMY_MOVE_DELAY);
+        yield return WaitWhileBattlePaused();
 
         ChangeBattleState(BattleState.EnemyUnit_Item_Prepare);
         ChangeBattleState(BattleState.EnemyUnit_Item_Use);

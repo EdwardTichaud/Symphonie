@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem; // Nécessaire pour utiliser les actions d'input
-using UnityEngine.Timeline; // Pour lancer les timelines post-combat
+using UnityEngine.Playables;
 using Unity.Cinemachine; // Pour gérer les caméras Cinemachine
 
 public class BattleTransitionManager : MonoBehaviour
@@ -102,6 +102,11 @@ public class BattleTransitionManager : MonoBehaviour
 
         battleUIShown = false;
     }
+
+    /// <summary>
+    /// Indique si l'interface de combat est actuellement visible.
+    /// </summary>
+    public bool IsBattleUiVisible => battleUIShown;
 
     /// <summary>
     /// Affiche les éléments d'interface lorsque le joueur commence son premier tour.
@@ -290,12 +295,19 @@ public class BattleTransitionManager : MonoBehaviour
 
         ApplyTimelineEnemyAllegiance(enemies);
 
-        // Stocke les timelines post-combat directement dans le gestionnaire de combat
+        // Stocke les séquences post-combat directement dans le gestionnaire de combat
         if (NewBattleManager.Instance != null)
         {
-            NewBattleManager.Instance.victoryTimeline = config.victoryTimeline;
-            NewBattleManager.Instance.defeatTimeline = config.defeatTimeline;
-            NewBattleManager.Instance.gameOverOnDefeat = config.defeatTimeline == null; // Game Over si aucune timeline de défaite
+            NewBattleManager.Instance.victoryTimelineSequence.Clear();
+            if (config.victoryTimelineSequence != null)
+                NewBattleManager.Instance.victoryTimelineSequence.AddRange(config.victoryTimelineSequence);
+
+            NewBattleManager.Instance.defeatTimelineSequence.Clear();
+            if (config.defeatTimelineSequence != null)
+                NewBattleManager.Instance.defeatTimelineSequence.AddRange(config.defeatTimelineSequence);
+
+            NewBattleManager.Instance.activeTimelineBattleConfig = config;
+            NewBattleManager.Instance.gameOverOnDefeat = !config.HasDefeatTimeline; // Game Over si aucune séquence de défaite
             NewBattleManager.Instance.lastBattleOutcome = BattleOutcome.None; // Réinitialisation de l'issue du combat
         }
 
@@ -721,23 +733,23 @@ public class BattleTransitionManager : MonoBehaviour
         // au joueur de revenir visuellement dans le monde.
         yield return new WaitForSecondsRealtime(1f);
 
-        // Détermine si une timeline post-combat doit être jouée avant de réinitialiser
-        TimelineAsset postBattleTimeline = null;
-        if (NewBattleManager.Instance != null)
-        {
-            if (NewBattleManager.Instance.lastBattleOutcome == BattleOutcome.Victory)
-                postBattleTimeline = NewBattleManager.Instance.victoryTimeline;
-            else if (NewBattleManager.Instance.lastBattleOutcome == BattleOutcome.Defeat)
-                postBattleTimeline = NewBattleManager.Instance.defeatTimeline;
-        }
+        // Détermine si une séquence post-combat doit être jouée avant de réinitialiser
+        List<TimelineSequenceEntry> postBattleSequence = BuildPostBattleSequence();
+        TimelineBattleConfigSO postBattleConfig = NewBattleManager.Instance != null
+            ? NewBattleManager.Instance.activeTimelineBattleConfig
+            : null;
+        PostBattleTimelineContext postBattleContext = ResolvePostBattleContext(postBattleConfig);
 
         // Destruction complète du battlefield et remise à zéro des infos du combat
         BattlefieldManager.Instance?.UnloadCurrentBattlefield();
         NewBattleManager.Instance?.ResetBattleInfos();
 
-        // Joue la timeline correspondante si une est définie
-        if (postBattleTimeline != null)
-            TimelineManager.Instance.PlayTimelineOnCurrentNPC(postBattleTimeline);
+        // Joue la séquence correspondante si elle est définie
+        if (postBattleSequence != null && postBattleSequence.Count > 0)
+        {
+            yield return WaitForVictoryScreenClosed();
+            yield return StartCoroutine(PlayPostBattleSequence(postBattleSequence, postBattleContext));
+        }
 
         //yield return FadeToTransparent(1f);
 
@@ -750,6 +762,198 @@ public class BattleTransitionManager : MonoBehaviour
             Debug.LogWarning("[BattleTransitionManager] timeScale forcé à 1 après la transition de combat.");
             Time.timeScale = 1f;
             Time.fixedDeltaTime = 0.02f;
+        }
+    }
+
+    private readonly struct PostBattleTimelineContext
+    {
+        public readonly GameObject caster;
+        public readonly string cameraTag;
+
+        public PostBattleTimelineContext(GameObject caster, string cameraTag)
+        {
+            this.caster = caster;
+            this.cameraTag = cameraTag;
+        }
+    }
+
+    private List<TimelineSequenceEntry> BuildPostBattleSequence()
+    {
+        if (NewBattleManager.Instance == null)
+            return null;
+
+        List<TimelineSequenceEntry> source = null;
+
+        if (NewBattleManager.Instance.lastBattleOutcome == BattleOutcome.Victory)
+        {
+            source = NewBattleManager.Instance.victoryTimelineSequence;
+        }
+        else if (NewBattleManager.Instance.lastBattleOutcome == BattleOutcome.Defeat)
+        {
+            source = NewBattleManager.Instance.defeatTimelineSequence;
+        }
+        else
+        {
+            return null;
+        }
+
+        List<TimelineSequenceEntry> sequence = new();
+        if (source != null && source.Count > 0)
+        {
+            for (int i = 0; i < source.Count; i++)
+            {
+                var entry = source[i];
+                if (entry != null && entry.HasPlayable)
+                    sequence.Add(entry);
+            }
+        }
+
+        return sequence.Count > 0 ? sequence : null;
+    }
+
+    private static PostBattleTimelineContext ResolvePostBattleContext(TimelineBattleConfigSO config)
+    {
+        GameObject caster = null;
+        string cameraTag = "WorldCamera";
+
+        if (config != null)
+        {
+            if (!string.IsNullOrWhiteSpace(config.postBattleCasterTag))
+                caster = FindGameObjectByTagSafe(config.postBattleCasterTag);
+
+            if (!string.IsNullOrWhiteSpace(config.postBattleCameraTag))
+                cameraTag = config.postBattleCameraTag;
+        }
+
+        if (caster == null && InteractionManager.Instance != null)
+            caster = InteractionManager.Instance.currentInteractable;
+
+        return new PostBattleTimelineContext(caster, cameraTag);
+    }
+
+    private static GameObject FindGameObjectByTagSafe(string tag)
+    {
+        if (string.IsNullOrWhiteSpace(tag))
+            return null;
+
+        try
+        {
+            return GameObject.FindGameObjectWithTag(tag);
+        }
+        catch (UnityException)
+        {
+            Debug.LogWarning($"[BattleTransitionManager] Tag '{tag}' is not defined.");
+            return null;
+        }
+    }
+
+    private IEnumerator PlayPostBattleSequence(List<TimelineSequenceEntry> sequence, PostBattleTimelineContext context)
+    {
+        if (sequence == null || sequence.Count == 0)
+            yield break;
+
+        if (TimelineManager.Instance == null)
+        {
+            Debug.LogWarning("[BattleTransitionManager] TimelineManager introuvable pour jouer la séquence post-combat.");
+            yield break;
+        }
+
+        int lastPlayableIndex = -1;
+        for (int i = 0; i < sequence.Count; i++)
+        {
+            var entry = sequence[i];
+            if (entry != null && entry.HasPlayable)
+                lastPlayableIndex = i;
+        }
+
+        for (int i = 0; i < sequence.Count; i++)
+        {
+            var entry = sequence[i];
+            if (entry == null || !entry.HasPlayable)
+                continue;
+
+            bool autoRestore = i == lastPlayableIndex;
+
+            if (entry.directorPrefab != null)
+            {
+                if (!TryPlayDirectorEntry(entry, autoRestore, out PlayableDirector playedDirector, out bool destroyAfter))
+                    continue;
+
+                yield return WaitForTimelineToFinish();
+
+                if (destroyAfter && playedDirector != null)
+                    Destroy(playedDirector.gameObject);
+
+                continue;
+            }
+
+            if (entry.timelineAsset != null)
+            {
+                TimelineManager.Instance.PlayTimeline(entry.timelineAsset, context.caster, context.cameraTag, autoRestore: autoRestore);
+                yield return WaitForTimelineToFinish();
+            }
+        }
+    }
+
+    private bool TryPlayDirectorEntry(
+        TimelineSequenceEntry entry,
+        bool autoRestore,
+        out PlayableDirector director,
+        out bool destroyAfter)
+    {
+        director = null;
+        destroyAfter = false;
+
+        if (entry == null || entry.directorPrefab == null)
+            return false;
+
+        PlayableDirector directorToPlay = entry.directorPrefab;
+        if (!directorToPlay.gameObject.scene.IsValid())
+        {
+            directorToPlay = Instantiate(entry.directorPrefab);
+            destroyAfter = entry.destroyAfterPlay;
+        }
+
+        if (directorToPlay == null)
+            return false;
+
+        directorToPlay.Stop();
+        directorToPlay.time = 0d;
+        directorToPlay.Evaluate();
+        TimelineManager.Instance.PlayTimeline(directorToPlay, autoRestore: autoRestore, requiresWorldCamera: false);
+        director = directorToPlay;
+        return true;
+    }
+
+    private IEnumerator WaitForTimelineToFinish()
+    {
+        if (TimelineManager.Instance == null)
+            yield break;
+
+        yield return null;
+
+        while (TimelineManager.Instance != null && TimelineManager.Instance.IsTimelinePlaying)
+            yield return null;
+    }
+
+    private IEnumerator WaitForVictoryScreenClosed()
+    {
+        var battleManager = NewBattleManager.Instance;
+        if (battleManager == null || battleManager.victoryScreen == null)
+            yield break;
+
+        Transform panel = battleManager.victoryScreen.transform.childCount > 0
+            ? battleManager.victoryScreen.transform.GetChild(0)
+            : null;
+
+        while (battleManager != null
+               && battleManager.victoryScreen != null
+               && battleManager.victoryScreen.activeInHierarchy)
+        {
+            if (panel == null || !panel.gameObject.activeInHierarchy)
+                yield break;
+
+            yield return null;
         }
     }
 
@@ -1155,7 +1359,17 @@ public class BattleTransitionManager : MonoBehaviour
     //    worldFadeOverlay.color = final;
     //}
 
-    private void HideVictoryPanel() => NewBattleManager.Instance.victoryScreen?.transform.GetChild(0).gameObject.SetActive(false);
+    private void HideVictoryPanel()
+    {
+        var battleManager = NewBattleManager.Instance;
+        if (battleManager == null || battleManager.victoryScreen == null)
+            return;
+
+        if (battleManager.victoryScreen.transform.childCount > 0)
+            battleManager.victoryScreen.transform.GetChild(0).gameObject.SetActive(false);
+
+        battleManager.victoryScreen.SetActive(false);
+    }
     private void HideGameOverPanel() => NewBattleManager.Instance.gameOverScreen?.transform.GetChild(0).gameObject.SetActive(false);
 
     private IEnumerator CaptureVersusFrameForGlass()

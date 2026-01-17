@@ -399,8 +399,8 @@ public class InputsManager : MonoBehaviour
     {
         bm = NewBattleManager.Instance;
 
-        // Si aucune instance n'est disponible ou que la BattleIntro joue encore, on ignore l'entrée.
-        if (bm == null || bm.AreMenusLockedByBattleIntro)
+        // Si aucune instance n'est disponible ou que les menus sont verrouillés, on ignore l'entrée.
+        if (bm == null || bm.AreBattleMenusLocked)
             return false;
 
         return true;

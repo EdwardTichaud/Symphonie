@@ -110,6 +110,8 @@ public class TimelineManager : MonoBehaviour
     /// </summary>
     private bool autoRestore = true;
 
+    private int battlePauseToken = -1;
+
     private readonly Dictionary<string, GameObject> cameraTagCache = new();
     private bool overrideDirectorWrapMode;
     private DirectorWrapMode storedDirectorWrapMode;
@@ -769,6 +771,7 @@ public class TimelineManager : MonoBehaviour
     private void OnPlayed(PlayableDirector pd)
     {
         IsTimelinePlaying = true;
+        RequestBattlePauseIfNeeded();
         // Bloque immédiatement toutes les actions "World" pendant l'exécution de la timeline.
         ToggleWorldInputs(false);
         // Active les options de passage uniquement si autorisé
@@ -909,8 +912,33 @@ public class TimelineManager : MonoBehaviour
         // Réinitialise le comportement de restauration pour les prochaines timelines
         autoRestore = true;
 
+        ReleaseBattlePauseIfNeeded();
         ReleaseWorldCameraControl();
         endingTimeline = false;
+    }
+
+    private void RequestBattlePauseIfNeeded()
+    {
+        if (battlePauseToken >= 0)
+            return;
+
+        NewBattleManager battleManager = NewBattleManager.Instance;
+        if (battleManager == null || !battleManager.IsBattleActive)
+            return;
+
+        battlePauseToken = battleManager.RequestBattlePause("TimelineManager");
+    }
+
+    private void ReleaseBattlePauseIfNeeded()
+    {
+        if (battlePauseToken < 0)
+            return;
+
+        NewBattleManager battleManager = NewBattleManager.Instance;
+        if (battleManager != null)
+            battleManager.ReleaseBattlePause(battlePauseToken);
+
+        battlePauseToken = -1;
     }
 
     private bool worldCameraControlRequested;

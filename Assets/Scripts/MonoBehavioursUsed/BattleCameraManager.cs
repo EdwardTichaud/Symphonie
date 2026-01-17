@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Gère l'activation et le placement des caméras Cinemachine pendant les combats.
@@ -62,6 +63,63 @@ public class BattleCameraManager : MonoBehaviour
     [Header("Motif par défaut")]
     [Tooltip("Motif appliqué en continu si aucun motif ponctuel n'est actif.")]
     [SerializeField] private CameraMotifSO defaultMotif;
+
+    [Header("Caméra libre")]
+    [Tooltip("Autorise la libération de la caméra de combat via le clic du joystick droit.")]
+    [SerializeField] private bool enableFreeCamera = true;
+    [Tooltip("Rayon maximum (en mètres) dans lequel la caméra libre peut évoluer autour du joueur.")]
+    [SerializeField] private float freeCameraRadius = 20f;
+    [Tooltip("Vitesse de déplacement de la caméra libre (en mètres par seconde).")]
+    [SerializeField] private float freeCameraMoveSpeed = 8f;
+    [Tooltip("Vitesse de rotation en lacet de la caméra libre (en degrés par seconde).")]
+    [SerializeField] private float freeCameraYawSpeed = 160f;
+    [Tooltip("Vitesse de rotation en tangage de la caméra libre (en degrés par seconde).")]
+    [SerializeField] private float freeCameraPitchSpeed = 120f;
+    [Tooltip("Limite basse du tangage de la caméra libre (en degrés).")]
+    [SerializeField] private float freeCameraMinPitch = -30f;
+    [Tooltip("Limite haute du tangage de la caméra libre (en degrés).")]
+    [SerializeField] private float freeCameraMaxPitch = 75f;
+
+    [Header("Transition camera libre")]
+    [Tooltip("Duree de transition pour la prise de controle en camera libre (en secondes).")]
+    [SerializeField] private float freeCameraUnlockBlendDuration = 0.25f;
+
+    [Header("Collision camera libre")]
+    [Tooltip("Active la protection pour éviter que la camera libre traverse le decor ou les unites.")]
+    [SerializeField] private bool freeCameraCollisionEnabled = true;
+    [Tooltip("Layers considérés comme obstacles pour la camera libre.")]
+    [SerializeField] private LayerMask freeCameraCollisionMask = ~0;
+    [Tooltip("Rayon de la sphere utilisée pour éviter les collisions de la camera libre.")]
+    [SerializeField] private float freeCameraCollisionRadius = 0.2f;
+    [Tooltip("Marge appliquée entre l'obstacle et la camera libre.")]
+    [SerializeField] private float freeCameraCollisionOffset = 0.1f;
+    [Tooltip("Distance minimale autorisée en cas de collision de la camera libre.")]
+    [SerializeField] private float freeCameraMinCollisionDistance = 0.25f;
+
+    [Header("Surbrillance camera libre")]
+    [Tooltip("Active la surbrillance des unites quand la camera est libre.")]
+    [SerializeField] private bool enableFreeCameraHighlights = true;
+    [Tooltip("Couleur de surbrillance pour les ennemis.")]
+    [SerializeField] private Color freeCameraEnemyHighlightColor = new(1f, 0.2f, 0.2f, 1f);
+    [Tooltip("Couleur de surbrillance pour les allies.")]
+    [SerializeField] private Color freeCameraAllyHighlightColor = new(0.45f, 0.75f, 1f, 1f);
+    [Tooltip("Couleur de surbrillance pour l'unite dont c'est le tour.")]
+    [SerializeField] private Color freeCameraTurnHighlightColor = new(0.2f, 1f, 0.2f, 1f);
+
+    private bool freeCameraActive;
+    private float freeCameraYaw;
+    private float freeCameraPitch;
+    private Vector3 freeCameraOffset;
+    private Transform freeCameraAnchor;
+    private bool freeCameraUiHidden;
+    private bool freeCameraBattleUiWasVisible;
+    private readonly HashSet<CharacterUnit> freeCameraHighlightedUnits = new();
+    private readonly HashSet<CharacterUnit> freeCameraHighlightBuffer = new();
+    private static readonly RaycastHit[] freeCameraCollisionHits = new RaycastHit[12];
+    private bool freeCameraBlendActive;
+    private float freeCameraBlendElapsed;
+    private Vector3 freeCameraBlendStartPosition;
+    private Quaternion freeCameraBlendStartRotation;
 
     /// <summary>Unité actuellement en train de jouer son tour.</summary>
     private CharacterUnit currentTurnOwner;
@@ -247,7 +305,428 @@ public class BattleCameraManager : MonoBehaviour
     private void LateUpdate()
     {
         UpdateMotifBlend();
+        if (HandleFreeCamera())
+            return;
+
         RefreshAllCameraPlacements();
+    }
+
+    private void SetFreeCameraActive(bool active)
+    {
+        if (freeCameraActive == active)
+            return;
+
+        freeCameraActive = active;
+        if (freeCameraActive)
+        {
+            SuppressBattleUi();
+            UpdateFreeCameraHighlights();
+        }
+        else
+        {
+            RestoreBattleUi();
+            ClearFreeCameraHighlights();
+            freeCameraBlendActive = false;
+            freeCameraBlendElapsed = 0f;
+        }
+    }
+
+    private void SuppressBattleUi()
+    {
+        if (freeCameraUiHidden)
+            return;
+
+        freeCameraUiHidden = true;
+        var transitionManager = BattleTransitionManager.Instance;
+        freeCameraBattleUiWasVisible = transitionManager != null && transitionManager.IsBattleUiVisible;
+        transitionManager?.HideBattleUI();
+
+        var battleManager = NewBattleManager.Instance;
+        if (battleManager != null)
+            battleManager.HideMenusForFreeCamera();
+
+        PassTurnUI.Instance?.Hide();
+    }
+
+    private void RestoreBattleUi()
+    {
+        if (!freeCameraUiHidden)
+            return;
+
+        freeCameraUiHidden = false;
+        var transitionManager = BattleTransitionManager.Instance;
+        if (transitionManager != null && freeCameraBattleUiWasVisible)
+            transitionManager.ShowBattleUIIfNeeded();
+
+        NewBattleManager.Instance?.RefreshMenusForCurrentState();
+    }
+
+    private bool HandleFreeCamera()
+    {
+        if (!enableFreeCamera)
+            return false;
+
+        var battleManager = NewBattleManager.Instance;
+        if (battleManager == null || !battleManager.IsBattleActive)
+        {
+            SetFreeCameraActive(false);
+            freeCameraAnchor = null;
+            return false;
+        }
+
+        if (battleManager.IsBattleEventActive)
+        {
+            SetFreeCameraActive(false);
+            freeCameraAnchor = null;
+            return false;
+        }
+
+        Gamepad gamepad = Gamepad.current;
+        if (gamepad != null && gamepad.rightStickButton.wasPressedThisFrame)
+        {
+            if (freeCameraActive)
+            {
+                SetFreeCameraActive(false);
+                freeCameraAnchor = null;
+                return false;
+            }
+
+            if (TryGetActiveCamera(out var activeCamera) && TryResolveFreeCameraAnchor(out Transform anchor))
+            {
+                InitializeFreeCamera(activeCamera, anchor);
+                SetFreeCameraActive(true);
+                BeginFreeCameraBlend(activeCamera);
+            }
+        }
+
+        if (!freeCameraActive)
+            return false;
+
+        if (!TryGetActiveCamera(out var camera))
+        {
+            SetFreeCameraActive(false);
+            freeCameraAnchor = null;
+            return false;
+        }
+
+        if (!TryResolveFreeCameraAnchor(out Transform resolvedAnchor))
+        {
+            SetFreeCameraActive(false);
+            freeCameraAnchor = null;
+            return false;
+        }
+
+        if (resolvedAnchor != freeCameraAnchor)
+            InitializeFreeCamera(camera, resolvedAnchor);
+
+        UpdateFreeCamera(camera, resolvedAnchor, gamepad);
+        UpdateFreeCameraHighlights();
+        return true;
+    }
+
+    private void UpdateFreeCameraHighlights()
+    {
+        if (!freeCameraActive || !enableFreeCameraHighlights)
+        {
+            if (freeCameraHighlightedUnits.Count > 0)
+                ClearFreeCameraHighlights();
+            return;
+        }
+
+        var battleManager = NewBattleManager.Instance;
+        if (battleManager == null || battleManager.unitsInBattle == null)
+            return;
+
+        freeCameraHighlightBuffer.Clear();
+        foreach (var unit in battleManager.unitsInBattle)
+        {
+            if (!ShouldHighlightUnit(unit))
+                continue;
+
+            freeCameraHighlightBuffer.Add(unit);
+            var highlighter = unit.GetComponent<BattleUnitHighlight>();
+            if (highlighter == null)
+                highlighter = unit.gameObject.AddComponent<BattleUnitHighlight>();
+
+            highlighter.SetHighlight(ResolveFreeCameraHighlightColor(unit));
+        }
+
+        if (freeCameraHighlightedUnits.Count > 0)
+        {
+            foreach (var unit in freeCameraHighlightedUnits)
+            {
+                if (unit == null || freeCameraHighlightBuffer.Contains(unit))
+                    continue;
+
+                unit.GetComponent<BattleUnitHighlight>()?.ClearHighlight();
+            }
+        }
+
+        freeCameraHighlightedUnits.Clear();
+        foreach (var unit in freeCameraHighlightBuffer)
+            freeCameraHighlightedUnits.Add(unit);
+    }
+
+    private void ClearFreeCameraHighlights()
+    {
+        if (freeCameraHighlightedUnits.Count == 0)
+            return;
+
+        foreach (var unit in freeCameraHighlightedUnits)
+        {
+            if (unit == null)
+                continue;
+
+            unit.GetComponent<BattleUnitHighlight>()?.ClearHighlight();
+        }
+
+        freeCameraHighlightedUnits.Clear();
+        freeCameraHighlightBuffer.Clear();
+    }
+
+    private Color ResolveFreeCameraHighlightColor(CharacterUnit unit)
+    {
+        if (unit != null && unit == currentTurnOwner)
+            return freeCameraTurnHighlightColor;
+
+        if (unit != null && unit.IsPlayerControlled)
+            return freeCameraAllyHighlightColor;
+
+        return freeCameraEnemyHighlightColor;
+    }
+
+    private static bool ShouldHighlightUnit(CharacterUnit unit)
+    {
+        if (unit == null)
+            return false;
+        if (unit.IsPermanentlyDead)
+            return false;
+        if (unit.currentHP <= 0f)
+            return false;
+        if (!unit.gameObject.activeInHierarchy)
+            return false;
+
+        return true;
+    }
+
+    private bool TryGetActiveCamera(out CinemachineCamera camera)
+    {
+        camera = null;
+        if (!blendSwitcher || !blendSwitcher.HasActiveCamera)
+            return false;
+
+        string cameraName = blendSwitcher.CurrentCameraName;
+        if (string.IsNullOrEmpty(cameraName))
+            return false;
+
+        return TryGetCameraByName(cameraName, out camera);
+    }
+
+    private bool TryResolveFreeCameraAnchor(out Transform anchor)
+    {
+        anchor = null;
+        if (currentTurnOwner != null && currentTurnOwner.IsPlayerControlled)
+            anchor = currentTurnOwner.transform;
+        else if (currentCaster != null && currentCaster.IsPlayerControlled)
+            anchor = currentCaster.transform;
+        else if (currentTurnOwner != null)
+            anchor = currentTurnOwner.transform;
+        else if (currentCaster != null)
+            anchor = currentCaster.transform;
+        else if (currentTarget != null)
+            anchor = currentTarget.transform;
+        else if (NewBattleManager.Instance != null && NewBattleManager.Instance.currentCharacterUnit != null)
+            anchor = NewBattleManager.Instance.currentCharacterUnit.transform;
+
+        return anchor != null;
+    }
+
+    private void InitializeFreeCamera(CinemachineCamera camera, Transform anchor)
+    {
+        if (camera == null || anchor == null)
+            return;
+
+        freeCameraAnchor = anchor;
+        Vector3 offset = camera.transform.position - anchor.position;
+        float radius = Mathf.Max(0.1f, freeCameraRadius);
+        if (offset.sqrMagnitude <= 0.0001f)
+            offset = -camera.transform.forward * Mathf.Min(radius, 8f);
+
+        if (offset.sqrMagnitude > radius * radius)
+            offset = offset.normalized * radius;
+
+        freeCameraOffset = offset;
+
+        Vector3 forward = camera.transform.forward;
+        freeCameraYaw = Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
+        freeCameraPitch = Mathf.Asin(Mathf.Clamp(forward.y, -1f, 1f)) * Mathf.Rad2Deg;
+        freeCameraPitch = Mathf.Clamp(freeCameraPitch, freeCameraMinPitch, freeCameraMaxPitch);
+    }
+
+    private void UpdateFreeCamera(CinemachineCamera camera, Transform anchor, Gamepad gamepad)
+    {
+        if (camera == null || anchor == null)
+            return;
+
+        float radius = Mathf.Max(0.1f, freeCameraRadius);
+        Vector2 lookInput = Vector2.zero;
+        Vector2 moveInput = Vector2.zero;
+        if (gamepad != null)
+        {
+            lookInput = gamepad.rightStick.ReadValue();
+            moveInput = gamepad.leftStick.ReadValue();
+        }
+
+        if (lookInput.sqrMagnitude > 0.0001f)
+        {
+            freeCameraYaw += lookInput.x * freeCameraYawSpeed * Time.unscaledDeltaTime;
+            freeCameraPitch = Mathf.Clamp(
+                freeCameraPitch - lookInput.y * freeCameraPitchSpeed * Time.unscaledDeltaTime,
+                freeCameraMinPitch,
+                freeCameraMaxPitch);
+        }
+
+        if (moveInput.sqrMagnitude > 1f)
+            moveInput = moveInput.normalized;
+
+        Quaternion rotation = Quaternion.Euler(freeCameraPitch, freeCameraYaw, 0f);
+        if (moveInput.sqrMagnitude > 0.0001f)
+        {
+            Vector3 forward = rotation * Vector3.forward;
+            Vector3 right = rotation * Vector3.right;
+            Vector3 movement = (right * moveInput.x + forward * moveInput.y)
+                * freeCameraMoveSpeed * Time.unscaledDeltaTime;
+            freeCameraOffset += movement;
+        }
+
+        if (freeCameraOffset.sqrMagnitude > radius * radius)
+            freeCameraOffset = freeCameraOffset.normalized * radius;
+
+        Vector3 anchorPosition = anchor.position;
+        Vector3 desiredPosition = anchorPosition + freeCameraOffset;
+        float minHeight = ResolveFreeCameraMinHeight();
+        if (!float.IsNegativeInfinity(minHeight))
+            desiredPosition.y = Mathf.Max(desiredPosition.y, minHeight);
+
+        Vector3 collisionOrigin = ResolveFreeCameraCollisionOrigin(anchor);
+        desiredPosition = ApplyFreeCameraCollision(collisionOrigin, desiredPosition, anchor);
+        freeCameraOffset = desiredPosition - anchorPosition;
+        Vector3 finalPosition = anchorPosition + freeCameraOffset;
+        Quaternion finalRotation = rotation;
+        if (freeCameraBlendActive)
+        {
+            float duration = Mathf.Max(0.0001f, freeCameraUnlockBlendDuration);
+            freeCameraBlendElapsed += Time.unscaledDeltaTime;
+            float t = Mathf.Clamp01(freeCameraBlendElapsed / duration);
+            float eased = t * t * (3f - 2f * t);
+            finalPosition = Vector3.Lerp(freeCameraBlendStartPosition, finalPosition, eased);
+            finalRotation = Quaternion.Slerp(freeCameraBlendStartRotation, finalRotation, eased);
+            if (t >= 1f)
+                freeCameraBlendActive = false;
+        }
+
+        camera.transform.SetPositionAndRotation(finalPosition, finalRotation);
+
+        CameraState state = GetOrCreateCameraState(camera.gameObject.name, camera);
+        if (state != null)
+        {
+            state.SmoothedPosition = camera.transform.position;
+            state.SmoothedRotation = camera.transform.rotation;
+            state.PositionVelocity = Vector3.zero;
+            state.Initialized = true;
+        }
+    }
+
+    private void BeginFreeCameraBlend(CinemachineCamera camera)
+    {
+        if (camera == null || freeCameraUnlockBlendDuration <= 0f)
+        {
+            freeCameraBlendActive = false;
+            freeCameraBlendElapsed = 0f;
+            return;
+        }
+
+        freeCameraBlendElapsed = 0f;
+        freeCameraBlendActive = true;
+        freeCameraBlendStartPosition = camera.transform.position;
+        freeCameraBlendStartRotation = camera.transform.rotation;
+    }
+
+    private Vector3 ApplyFreeCameraCollision(Vector3 collisionOrigin, Vector3 desiredPosition, Transform anchor)
+    {
+        if (!freeCameraCollisionEnabled)
+            return desiredPosition;
+
+        Vector3 direction = desiredPosition - collisionOrigin;
+        float distance = direction.magnitude;
+        if (distance <= 0.0001f)
+            return desiredPosition;
+
+        direction /= distance;
+        int hitCount = Physics.SphereCastNonAlloc(
+            collisionOrigin,
+            freeCameraCollisionRadius,
+            direction,
+            freeCameraCollisionHits,
+            distance,
+            freeCameraCollisionMask,
+            QueryTriggerInteraction.Ignore);
+
+        if (hitCount <= 0)
+            return desiredPosition;
+
+        float nearestDistance = float.MaxValue;
+        for (int i = 0; i < hitCount; i++)
+        {
+            Collider hitCollider = freeCameraCollisionHits[i].collider;
+            if (hitCollider == null)
+                continue;
+
+            if (anchor != null && hitCollider.transform.IsChildOf(anchor))
+                continue;
+
+            if (freeCameraCollisionHits[i].distance < nearestDistance)
+                nearestDistance = freeCameraCollisionHits[i].distance;
+        }
+
+        if (nearestDistance == float.MaxValue)
+            return desiredPosition;
+
+        float safeDistance = Mathf.Max(freeCameraMinCollisionDistance, nearestDistance - freeCameraCollisionOffset);
+        safeDistance = Mathf.Min(safeDistance, distance);
+        return collisionOrigin + direction * safeDistance;
+    }
+
+    private Vector3 ResolveFreeCameraCollisionOrigin(Transform anchor)
+    {
+        if (anchor == null)
+            return Vector3.zero;
+
+        var unit = anchor.GetComponent<CharacterUnit>();
+        if (unit == null)
+            return anchor.position;
+
+        Bounds bounds = unit.GetVisualBounds(forceRefresh: true);
+        return bounds.center;
+    }
+
+    private float ResolveFreeCameraMinHeight()
+    {
+        var battleManager = NewBattleManager.Instance;
+        if (battleManager == null || battleManager.unitsInBattle == null || battleManager.unitsInBattle.Count == 0)
+            return float.NegativeInfinity;
+
+        float minHeight = float.PositiveInfinity;
+        foreach (var unit in battleManager.unitsInBattle)
+        {
+            if (unit == null)
+                continue;
+
+            Bounds bounds = unit.GetVisualBounds(forceRefresh: true);
+            minHeight = Mathf.Min(minHeight, bounds.min.y);
+        }
+
+        return float.IsPositiveInfinity(minHeight) ? float.NegativeInfinity : minHeight;
     }
 
     /// <summary>Réactualise le cache des CinemachineCamera disponibles.</summary>
@@ -1365,6 +1844,9 @@ public class BattleCameraManager : MonoBehaviour
 
     /// <summary>Indique si une Cinemachine possède la priorité dans le <see cref="CinemachineBrain"/>.</summary>
     public bool HasActiveCinemachineCamera => blendSwitcher && blendSwitcher.HasActiveCamera;
+
+    /// <summary>Expose l'état de la caméra libre pour permettre aux menus de s'adapter.</summary>
+    public bool IsFreeCameraActive => freeCameraActive;
 
     /// <summary>Expose le motif actuellement appliqué par le gestionnaire.</summary>
     public CameraMotifSO CurrentCameraMotif => currentCameraMotif;

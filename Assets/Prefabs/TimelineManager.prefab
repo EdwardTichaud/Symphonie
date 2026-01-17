@@ -418,10 +418,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   units:
-  - unit: {fileID: 2868098831747274196, guid: 44469757a1eb6364cbbae62170301c78, type: 3}
+  - unitData: {fileID: 11400000, guid: 6f5c94983e969874dbb5c017d8a5749e, type: 2}
     thresholds:
-    - hpRatio: 0.5
+    - category: 0
+      hpRatio: 0.5
+      cameraMotif: {fileID: 0}
+      animationClip: {fileID: 0}
       timeline: {fileID: 11400000, guid: 62df51faee2de154992bb3422a6e7638, type: 2}
+      unlockMotifAfterAnimation: 1
       triggered: 0
 --- !u!114 &7666416480328290772
 MonoBehaviour:

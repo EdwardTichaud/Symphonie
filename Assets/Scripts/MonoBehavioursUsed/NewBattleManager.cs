@@ -111,11 +111,49 @@ public partial class NewBattleManager : MonoBehaviour
     /// </summary>
     private bool battleIntroMenusLocked = false;
 
+    [Header("Pause du combat")]
+    [Tooltip("Suspend la boucle de tours pendant les événements de combat (BattleEventTrigger).")]
+    [SerializeField] private bool pauseTurnsDuringBattleEvents = true;
+    private readonly Dictionary<int, string> battlePauseRequests = new();
+    private int nextBattlePauseToken = 1;
+
     /// <summary>
     /// Expose l'état du verrou d'introduction afin que les autres systèmes puissent
     /// savoir s'il est pertinent d'accepter ou d'ignorer les entrées de menu.
     /// </summary>
     public bool AreMenusLockedByBattleIntro => battleIntroMenusLocked;
+
+    /// <summary>
+    /// Indique si le combat est actuellement en pause logique.
+    /// </summary>
+    public bool IsBattlePaused => battlePauseRequests.Count > 0;
+
+    /// <summary>
+    /// Indique si un événement de combat est en cours.
+    /// </summary>
+    public bool IsBattleEventActive => battleEventMenuLockCount > 0;
+
+    /// <summary>
+    /// Indique si la boucle de tours doit être suspendue.
+    /// </summary>
+    public bool IsBattleTurnLoopPaused => IsBattlePaused || (pauseTurnsDuringBattleEvents && IsBattleEventActive);
+
+    /// <summary>
+    /// Centralise les verrous bloquant les menus et les entrées de combat.
+    /// </summary>
+    public bool AreBattleMenusLocked => battleIntroMenusLocked || IsBattlePaused || IsBattleEventActive;
+
+    /// <summary>
+    /// Indique si un combat est actif (hors écrans de victoire/game over).
+    /// </summary>
+    public bool IsBattleActive =>
+        currentBattleState != BattleState.None
+        && currentBattleState != BattleState.VictoryScreen_Await
+        && currentBattleState != BattleState.VictoryScreen_CanContinue
+        && currentBattleState != BattleState.GameOverScreen_Await
+        && currentBattleState != BattleState.GameOverScreen_CanContinue;
+
+    public event Action<bool> BattlePauseStateChanged;
 
     // Paramètres du ralentissement appliqué lors de l'introduction.
     [Tooltip("Facteur de ralentissement au tout début du combat.")]
@@ -134,14 +172,18 @@ public partial class NewBattleManager : MonoBehaviour
     [HideInInspector] public bool respawnAtCheckpointOnExit = false;
     public bool ShouldRespawnAtCheckpoint => respawnAtCheckpointOnExit;
 
-    [Header("Timelines post-combat")]
-    [Tooltip("Timeline jouée automatiquement après une victoire, si définie.")]
-    public TimelineAsset victoryTimeline; // Définie via TimelineBattleConfigSO
+    [Header("Séquences post-combat")]
+    [Tooltip("Séquence jouée après une victoire.")]
+    public List<TimelineSequenceEntry> victoryTimelineSequence = new();
 
-    [Tooltip("Timeline jouée après une défaite lorsqu'il ne s'agit pas d'un Game Over.")]
-    public TimelineAsset defeatTimeline; // Null = Game Over
+    [Tooltip("Séquence jouée après une défaite.")]
+    public List<TimelineSequenceEntry> defeatTimelineSequence = new();
+
+    [HideInInspector] public TimelineBattleConfigSO activeTimelineBattleConfig;
 
     [HideInInspector] public BattleOutcome lastBattleOutcome = BattleOutcome.None; // Stocke l'issue du combat
+    public event Action<BattleOutcome, TimelineBattleConfigSO> BattleEnded;
+    private bool battleEndEventDispatched = false;
 
     [Header("Récompenses")]
     public List<ItemData> rewardItems = new();
@@ -357,9 +399,8 @@ public partial class NewBattleManager : MonoBehaviour
             // On met à jour immédiatement le comportement caméra
             UpdateCameraBehaviour(currentBattleState);
 
-            // Pendant la phase de ciblage, on ne souhaite plus orienter le lanceur
-            if (!IsTargetSelectionState(currentBattleState)
-                && currentCharacterUnit != null && _currentTargetCharacter != null)
+            // Oriente toujours le lanceur dès qu'une cible valide est définie.
+            if (currentCharacterUnit != null && _currentTargetCharacter != null)
             {
                 OrientUnitTowardTarget(currentCharacterUnit, _currentTargetCharacter);
             }
@@ -538,10 +579,56 @@ public partial class NewBattleManager : MonoBehaviour
     /// </summary>
     private void Update()
     {
+        ApplyDamagePopupDisplaySettings();
+        if (IsBattlePaused)
+            return;
+
         HandleTargetCursor();
         HandleTargetNavigation();
-        ApplyDamagePopupDisplaySettings();
         BattleEventTrigger.EvaluateAll(this);
+    }
+
+    public int RequestBattlePause(string reason)
+    {
+        if (string.IsNullOrEmpty(reason))
+            reason = "Unknown";
+
+        int token = nextBattlePauseToken++;
+        battlePauseRequests[token] = reason;
+
+        if (battlePauseRequests.Count == 1)
+            BattlePauseStateChanged?.Invoke(true);
+
+        return token;
+    }
+
+    public void ReleaseBattlePause(int token)
+    {
+        if (!battlePauseRequests.Remove(token))
+            return;
+
+        if (battlePauseRequests.Count == 0)
+        {
+            BattlePauseStateChanged?.Invoke(false);
+            TryStartPendingTimelines();
+        }
+    }
+
+    private void ResetBattlePauseState()
+    {
+        if (battlePauseRequests.Count > 0)
+        {
+            battlePauseRequests.Clear();
+            BattlePauseStateChanged?.Invoke(false);
+        }
+
+        nextBattlePauseToken = 1;
+    }
+
+    private IEnumerator WaitWhileBattlePaused()
+    {
+        while (IsBattleTurnLoopPaused)
+            yield return null;
     }
     #endregion
 
@@ -1034,6 +1121,8 @@ public partial class NewBattleManager : MonoBehaviour
     {
         while (true)
         {
+            yield return WaitWhileBattlePaused();
+
             if (unitsInBattle.All(u => u.currentHP <= 0))
             {
                 Debug.LogWarning("[BattleTurnManager] Tous les combattants sont hors combat.");
@@ -1044,6 +1133,7 @@ public partial class NewBattleManager : MonoBehaviour
             if (pendingTimelines.Count > 0)
                 yield return PlayPendingTimelinesIfNeeded();
 
+            yield return WaitWhileBattlePaused();
             yield return ExecuteTurn(CalculateNextUnit());
             // Utilisation du temps non affecté par le timeScale pour ne pas bloquer
             // la boucle si le jeu est mis en pause (fin de combat par exemple)
@@ -1085,6 +1175,8 @@ public partial class NewBattleManager : MonoBehaviour
         pendingTimelineRoutineRunning = true;
         while (pendingTimelines.Count > 0)
         {
+            yield return WaitWhileBattlePaused();
+
             var data = pendingTimelines.Dequeue();
             BattleTransitionManager.Instance?.HideBattleUI();
 
@@ -1129,7 +1221,7 @@ public partial class NewBattleManager : MonoBehaviour
 
     public void TryStartPendingTimelines()
     {
-        if (pendingTimelineRoutineRunning || pendingTimelines.Count == 0)
+        if (pendingTimelineRoutineRunning || pendingTimelines.Count == 0 || IsBattleTurnLoopPaused)
             return;
 
         StartCoroutine(PlayPendingTimelines());
@@ -1514,14 +1606,16 @@ public partial class NewBattleManager : MonoBehaviour
         {
             Debug.Log("[BattleTurnManager] 🎉 Tous les ennemis sont vaincus !");
             lastBattleOutcome = BattleOutcome.Victory; // Enregistre l'issue du combat
+            DispatchBattleEnded(BattleOutcome.Victory);
             StartCoroutine(ReduceTimeAndShowVictoryPanel());
         }
         else if (allSquadDead)
         {
             Debug.Log("[BattleTurnManager] 💀 Tous les alliés sont morts...");
             lastBattleOutcome = BattleOutcome.Defeat;
+            DispatchBattleEnded(BattleOutcome.Defeat);
 
-            if (defeatTimeline != null)
+            if (HasPostBattleTimeline(defeatTimelineSequence))
             {
                 respawnAtCheckpointOnExit = false;
                 // Aucune interface de Game Over, on quitte directement le combat
@@ -2394,7 +2488,7 @@ public partial class NewBattleManager : MonoBehaviour
 
     public void ToggleMenuContainers(bool showMain, bool showSkills, bool showItems)
     {
-        if (battleEventMenuLockCount > 0)
+        if (AreBattleMenusLocked)
         {
             SetMenuContainersActive(false, false, false);
             return;
@@ -2426,6 +2520,26 @@ public partial class NewBattleManager : MonoBehaviour
             currentSkillsMenuContainer.SetActive(showSkills);
         if (currentItemsMenuContainer != null)
             currentItemsMenuContainer.SetActive(showItems);
+    }
+
+    public void HideMenusForFreeCamera()
+    {
+        SetMenuContainersActive(false, false, false);
+    }
+
+    public void RefreshMenusForCurrentState()
+    {
+        if (AreBattleMenusLocked)
+        {
+            SetMenuContainersActive(false, false, false);
+            return;
+        }
+
+        bool showMain = currentBattleState == BattleState.SquadUnit_MainMenu;
+        bool showSkills = currentBattleState == BattleState.SquadUnit_SkillsMenu;
+        bool showItems = currentBattleState == BattleState.SquadUnit_ItemsMenu;
+
+        SetMenuContainersActive(showMain, showSkills, showItems);
     }
 
     public void RegisterBattleEventStart()
@@ -2778,8 +2892,11 @@ public partial class NewBattleManager : MonoBehaviour
 
     private void HandleTargetNavigation()
     {
-        // Si les menus sont verrouillés par la BattleIntro, aucune navigation ne doit être traitée.
-        if (battleIntroMenusLocked)
+        // Si les menus sont verrouillés, aucune navigation ne doit être traitée.
+        if (AreBattleMenusLocked)
+            return;
+
+        if (BattleCameraManager.Instance != null && BattleCameraManager.Instance.IsFreeCameraActive)
             return;
 
         bool isSkillTargeting = currentBattleState == BattleState.SquadUnit_TargetSelectionAmongEnemiesForSkill ||
@@ -2880,9 +2997,9 @@ public partial class NewBattleManager : MonoBehaviour
 
     private void HandleTargetCursor()
     {
-        // Protection identique pour le curseur de cible : tant que l'introduction se déroule,
+        // Protection identique pour le curseur de cible : tant que les menus sont verrouillés,
         // les éléments d'interface restent complètement inactifs.
-        if (battleIntroMenusLocked)
+        if (AreBattleMenusLocked)
             return;
 
         bool isSkillTargeting =
@@ -4399,6 +4516,9 @@ public partial class NewBattleManager : MonoBehaviour
         // Supprime toute trace d'un éventuel verrou d'introduction pour la prochaine rencontre.
         battleIntroMenusLocked = false;
 
+        // Nettoie toute pause logique résiduelle.
+        ResetBattlePauseState();
+
         // 🧹 Si la restriction d'entrées est encore active (ex : interruption prématurée),
         //     on s'assure de rétablir le mapping complet avant de quitter le combat.
         InputsManager.Instance?.RestoreBattleInputsAfterIntro();
@@ -4420,11 +4540,13 @@ public partial class NewBattleManager : MonoBehaviour
         // Réinitialisation de l'interface de timeline via le gestionnaire dédié
         BattleTimelineUIManager.Instance?.Clear();
 
-        // Réinitialise les timelines et l'issue du combat
-        victoryTimeline = null;
-        defeatTimeline = null;
+        // Réinitialise les séquences post-combat et l'issue du combat
         lastBattleOutcome = BattleOutcome.None;
+        activeTimelineBattleConfig = null;
+        battleEndEventDispatched = false;
         respawnAtCheckpointOnExit = false;
+        victoryTimelineSequence.Clear();
+        defeatTimelineSequence.Clear();
 
         // Réinitialise le curseur cible si existant
         if (targetCursor != null)
@@ -4436,6 +4558,30 @@ public partial class NewBattleManager : MonoBehaviour
         prepaidMoveCosts.Clear();
     }
     #endregion
+
+    private void DispatchBattleEnded(BattleOutcome outcome)
+    {
+        if (battleEndEventDispatched)
+            return;
+
+        battleEndEventDispatched = true;
+        BattleEnded?.Invoke(outcome, activeTimelineBattleConfig);
+    }
+
+    private static bool HasPostBattleTimeline(List<TimelineSequenceEntry> sequence)
+    {
+        if (sequence == null || sequence.Count == 0)
+            return false;
+
+        for (int i = 0; i < sequence.Count; i++)
+        {
+            var entry = sequence[i];
+            if (entry != null && entry.HasPlayable)
+                return true;
+        }
+
+        return false;
+    }
 
     public void ShowHarmonicStatusMenu()
     {

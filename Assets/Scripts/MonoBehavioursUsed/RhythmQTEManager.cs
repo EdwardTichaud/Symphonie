@@ -600,6 +600,27 @@ public class RhythmQTEManager : MonoBehaviour
             Debug.LogWarning($"[RhythmQTEManager] Timeline '{timeline.name}' encore active après {maxDuration}s. Suite forcée.");
     }
 
+    private IEnumerator KeepCasterFacingTarget(CharacterUnit caster, CharacterUnit target, float rotationSpeed = 360f)
+    {
+        while (caster != null && target != null && !caster.IsDead)
+        {
+            Vector3 direction = target.transform.position - caster.transform.position;
+            direction.y = 0f;
+            if (direction.sqrMagnitude > 0.0001f)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(direction.normalized);
+                targetRotation = Quaternion.Euler(0f, targetRotation.eulerAngles.y, 0f);
+                Quaternion currentRotation = Quaternion.Euler(0f, caster.transform.eulerAngles.y, 0f);
+                caster.transform.rotation = Quaternion.RotateTowards(
+                    currentRotation,
+                    targetRotation,
+                    rotationSpeed * Time.unscaledDeltaTime);
+            }
+
+            yield return null;
+        }
+    }
+
     // Séquence du Musicalmove - Ajouter autant de méthodes que d'effets durant le move
     /// <summary>
     /// Indique si l'animation « PrepareToUndergo » doit être retardée pour la cible.
@@ -655,6 +676,9 @@ public class RhythmQTEManager : MonoBehaviour
         currentMove = move;
         currentCaster = caster;
         currentTarget = target;
+        Coroutine faceTargetCoroutine = null;
+        if (move != null && move.stayFaceToTarget && caster != null && target != null)
+            faceTargetCoroutine = StartCoroutine(KeepCasterFacingTarget(caster, target));
         if (qteEnabled)
         {
             pendingNotes = move.notes != null ? move.notes.Count : 0;
@@ -788,6 +812,9 @@ public class RhythmQTEManager : MonoBehaviour
         // --- Retour ou téléportation de repli ---
         if (move.requiresMovement && !move.stayInPlace && caster != null && target != null)
             yield return ReturnToInitialPosition(move, caster, target, originPosition);
+
+        if (faceTargetCoroutine != null)
+            StopCoroutine(faceTargetCoroutine);
 
         if (caster != null)
             NewBattleManager.Instance?.OrientUnitTowardClosestOpponent(caster);

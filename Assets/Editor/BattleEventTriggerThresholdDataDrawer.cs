@@ -56,6 +56,10 @@ public class BattleEventTriggerThresholdDataDrawer : PropertyDrawer
         EditorGUI.PropertyField(lineRect, animProp);
 
         lineRect.y += lineHeight + spacing;
+        SerializedProperty timelineProp = property.FindPropertyRelative("timeline");
+        EditorGUI.PropertyField(lineRect, timelineProp);
+
+        lineRect.y += lineHeight + spacing;
         SerializedProperty unlockProp = property.FindPropertyRelative("unlockMotifAfterAnimation");
         EditorGUI.PropertyField(lineRect, unlockProp);
 
@@ -89,7 +93,7 @@ public class BattleEventTriggerThresholdDataDrawer : PropertyDrawer
         bool showUnlockDelay = unlockProp != null && !unlockProp.boolValue;
 
         int lineCount = 1; // foldout
-        lineCount += 5; // category + triggerDelayMode + cameraMotif + animationClip + unlockMotifAfterAnimation
+        lineCount += 6; // category + triggerDelayMode + cameraMotif + animationClip + timeline + unlockMotifAfterAnimation
         if (showHpRatio)
             lineCount += 1;
         if (showTriggerDelay)

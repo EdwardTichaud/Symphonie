@@ -1,0 +1,161 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &7749221144677661384
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2281722921611424209}
+  - component: {fileID: 5127413321838684695}
+  - component: {fileID: 5610422907222381819}
+  - component: {fileID: 4462638981536768947}
+  - component: {fileID: 4864495669043222330}
+  m_Layer: 0
+  m_Name: Timeline_RunToTheDream
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2281722921611424209
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7749221144677661384}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!320 &5127413321838684695
+PlayableDirector:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7749221144677661384}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_PlayableAsset: {fileID: 11400000, guid: 0bc91acad6d218041898fbd1419a1db0, type: 2}
+  m_InitialState: 1
+  m_WrapMode: 2
+  m_DirectorUpdateMode: 1
+  m_InitialTime: 0
+  m_SceneBindings:
+  - key: {fileID: 2194809099997420291, guid: 0bc91acad6d218041898fbd1419a1db0, type: 2}
+    value: {fileID: 5610422907222381819}
+  - key: {fileID: -8837972945633106914, guid: 0bc91acad6d218041898fbd1419a1db0, type: 2}
+    value: {fileID: 0}
+  - key: {fileID: -1345484433153930033, guid: 0bc91acad6d218041898fbd1419a1db0, type: 2}
+    value: {fileID: 0}
+  - key: {fileID: 489940181612982915, guid: 0bc91acad6d218041898fbd1419a1db0, type: 2}
+    value: {fileID: 0}
+  m_ExposedReferences:
+    m_References: []
+--- !u!114 &5610422907222381819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7749221144677661384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e52de21a22b6dd44c9cc19f810c65059, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Timeline::UnityEngine.Timeline.SignalReceiver
+  m_Events:
+    m_Signals: []
+    m_Events: []
+--- !u!114 &4462638981536768947
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7749221144677661384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff9149ed36a3aa546b500b72c81bee83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  playableDirector: {fileID: 5127413321838684695}
+  bindingTags:
+  - Player
+  - UnitModel
+  - BattleCamera
+  signalReceiver: {fileID: 5610422907222381819}
+  signalBindings:
+  - signal: {fileID: 11400000, guid: afd54ba7816e2104dbda7c5aa034f312, type: 2}
+    target: {fileID: 0}
+    targetScript: {fileID: 0}
+    targetTypeName: TimeManager
+    methodName: SlowTime
+    arguments:
+    - type: 2
+      boolValue: 0
+      intValue: 0
+      floatValue: 0.4
+      stringValue: 
+      objectValue: {fileID: 0}
+  - signal: {fileID: 11400000, guid: 350b00b06a8b3fd429d5083efaef8bcd, type: 2}
+    target: {fileID: 4864495669043222330}
+    targetScript: {fileID: 0}
+    targetTypeName: AreaDissolveTrigger
+    methodName: TriggerDissolve
+    arguments: []
+--- !u!114 &4864495669043222330
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7749221144677661384}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 226e5159f02f50745a8c36e0965a22bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: '::'
+  centerOverride: {fileID: 0}
+  radius: 5000
+  layerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  includeInactive: 0
+  propertyName: _DissolveStrength
+  targetValue: 1
+  duration: 2
+  easing:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  maxRenderers: 0
+  onlyIfHasProperty: 1
