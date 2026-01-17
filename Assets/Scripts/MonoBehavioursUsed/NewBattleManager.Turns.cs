@@ -102,7 +102,7 @@ public partial class NewBattleManager
             prepaidMoveCosts.Remove(caster);
     }
 
-    private IEnumerator ApproachToPosition(CharacterUnit caster, Vector3 destination)
+    private IEnumerator ApproachToPosition(CharacterUnit caster, Vector3 destination, CharacterUnit lookTarget = null)
     {
         if (caster == null)
             yield break;
@@ -121,12 +121,33 @@ public partial class NewBattleManager
         {
             float t = Mathf.Clamp01(elapsed / approachDuration);
             caster.transform.position = Vector3.Lerp(start, destination, t);
+            UpdateFacingDuringApproach(caster, lookTarget, destination);
             elapsed += Time.deltaTime;
             yield return null;
         }
 
         caster.transform.position = destination;
+        UpdateFacingDuringApproach(caster, lookTarget, destination);
         caster.StopMovementAnimation();
+    }
+
+    private static void UpdateFacingDuringApproach(CharacterUnit caster, CharacterUnit lookTarget, Vector3 fallbackDestination)
+    {
+        if (caster == null)
+            return;
+
+        Vector3 targetPosition = lookTarget != null ? lookTarget.transform.position : fallbackDestination;
+        Vector3 direction = targetPosition - caster.transform.position;
+        direction.y = 0f;
+        if (direction.sqrMagnitude <= 0.0001f)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(direction.normalized);
+        targetRotation = Quaternion.Euler(0f, targetRotation.eulerAngles.y, 0f);
+        caster.transform.rotation = Quaternion.RotateTowards(
+            caster.transform.rotation,
+            targetRotation,
+            720f * Time.deltaTime);
     }
 
     #region Gestion des tours de combat
@@ -447,7 +468,7 @@ public partial class NewBattleManager
             yield break;
 
         if (requiredDistance > 0.01f)
-            yield return ApproachToPosition(enemy, approachDestination);
+            yield return ApproachToPosition(enemy, approachDestination, target);
 
         // Joue un indice sonore associé à l'attaque pour prévenir le joueur
         // et calcule un délai suffisant pour laisser le clip se terminer
@@ -653,7 +674,7 @@ public partial class NewBattleManager
         }
 
         if (requiredDistance > 0.01f)
-            yield return ApproachToPosition(caster, approachDestination);
+            yield return ApproachToPosition(caster, approachDestination, target);
 
         // Lecture d'un avertissement sonore si le mouvement en possède un
         if (move.warningClip != null)
