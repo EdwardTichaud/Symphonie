@@ -63,6 +63,7 @@ MonoBehaviour:
   interceptionSound: {fileID: 0}
   prematureDeathTaunt: {fileID: 0}
   loyaltyMarkTargetAlly: {fileID: 0}
+  lastStandAudioClip: {fileID: 11400000, guid: d81551eec47b0d741bef8e0f971c2a0d, type: 2}
   hitEffect: {fileID: 0}
   deathEffect: {fileID: 0}
   dashParticlesPrefab: {fileID: 6843868886689424030, guid: 39cd3db8310d9e045ad6b122b69635a7, type: 3}
@@ -77,11 +78,12 @@ MonoBehaviour:
   interceptedAnimation: {fileID: 0}
   hitAnimation: {fileID: 7400000, guid: 02f778c62305c4145b91022ead9d37eb, type: 3}
   deathAnimation: {fileID: 7400000, guid: 7f67a9c1949f03342bd793ce58156a74, type: 2}
+  walkAnimation: {fileID: 0}
+  runAnimation: {fileID: 7400000, guid: 08462171d177eb5418f8dbe9131eb07a, type: 2}
   TPAnimation_Start: {fileID: 7400000, guid: 4326dd0ea3dda9a45b9c75e45eaf1931, type: 3}
   TPAnimation_Destination: {fileID: 7400000, guid: 4326dd0ea3dda9a45b9c75e45eaf1931, type: 3}
   prepareToTargetAnimation: {fileID: 0}
   prepareToUndergoAnimation: {fileID: 7400002, guid: 4b59baf297d92e54f9c61b85d6b06ebf, type: 3}
-  movementAnimation: {fileID: 7400000, guid: 08462171d177eb5418f8dbe9131eb07a, type: 2}
   awakenIdleAnimation: {fileID: 0}
   dissonantIdleAnimation: {fileID: 0}
   awakeEnterAnimation: {fileID: 0}
@@ -90,7 +92,6 @@ MonoBehaviour:
   dissonanceExitAnimation: {fileID: 0}
   moveStartClip: {fileID: 0}
   moveEndClip: {fileID: 0}
-  movementAudioClip: {fileID: 0}
   menuSelectionClip: {fileID: 0}
   awakeEnterClip: {fileID: 0}
   awakeExitClip: {fileID: 0}

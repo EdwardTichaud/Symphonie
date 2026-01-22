@@ -56,6 +56,10 @@ public class BattleEventTriggerThresholdDataDrawer : PropertyDrawer
         EditorGUI.PropertyField(lineRect, animProp);
 
         lineRect.y += lineHeight + spacing;
+        SerializedProperty audioProp = property.FindPropertyRelative("audioClip");
+        EditorGUI.PropertyField(lineRect, audioProp);
+
+        lineRect.y += lineHeight + spacing;
         SerializedProperty timelineProp = property.FindPropertyRelative("timeline");
         EditorGUI.PropertyField(lineRect, timelineProp);
 
@@ -93,7 +97,7 @@ public class BattleEventTriggerThresholdDataDrawer : PropertyDrawer
         bool showUnlockDelay = unlockProp != null && !unlockProp.boolValue;
 
         int lineCount = 1; // foldout
-        lineCount += 6; // category + triggerDelayMode + cameraMotif + animationClip + timeline + unlockMotifAfterAnimation
+        lineCount += 7; // category + triggerDelayMode + cameraMotif + animationClip + audioClip + timeline + unlockMotifAfterAnimation
         if (showHpRatio)
             lineCount += 1;
         if (showTriggerDelay)
@@ -110,6 +114,8 @@ public class BattleEventTriggerThresholdDataDrawer : PropertyDrawer
             return true;
 
         string currentName = categoryProp.enumNames[categoryProp.enumValueIndex];
-        return currentName != "LastStandUnit" && currentName != "LastStandEnemy";
+        return currentName != "LastStandUnit"
+            && currentName != "LastStandEnemy"
+            && currentName != "LastStandAllUnits";
     }
 }

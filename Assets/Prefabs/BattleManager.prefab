@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 2532479745881820963}
   - component: {fileID: 3242446044733657830}
   - component: {fileID: 7792622988747768174}
-  - component: {fileID: 3866917311187237371}
+  - component: {fileID: 1623051009251991791}
   m_Layer: 0
   m_Name: BattleManager
   m_TagString: Untagged
@@ -61,6 +61,7 @@ MonoBehaviour:
   battleIntroLockDuration: 2
   battleEntranceCameraMotif: {fileID: 11400000, guid: c486779ae68bde64195c4a05d4241085, type: 2}
   battleMainMenuCameraMotif: {fileID: 11400000, guid: d6a18b1112683a04a9523b56dbb503b9, type: 2}
+  pauseTurnsDuringBattleEvents: 1
   equipSlowMotionScale: 1
   victoryScreen: {fileID: 0}
   gameOverScreen: {fileID: 0}
@@ -68,8 +69,9 @@ MonoBehaviour:
   GameOverScreenImage: {fileID: 8400000, guid: 3c33ee4a0b457ed4fad4d2f9fc1598e7, type: 2}
   gameOverOnDefeat: 1
   respawnAtCheckpointOnExit: 0
-  victoryTimeline: {fileID: 0}
-  defeatTimeline: {fileID: 0}
+  victoryTimelineSequence: []
+  defeatTimelineSequence: []
+  activeTimelineBattleConfig: {fileID: 0}
   lastBattleOutcome: 0
   rewardItems: []
   rewardXP: 0
@@ -89,6 +91,24 @@ MonoBehaviour:
   interceptionSignalPrefab: {fileID: 4874408200862977924, guid: 67cfab94118992e4faeb091a7b7ad031, type: 3}
   targetCursor: {fileID: 0}
   multiTargetCursors: []
+  targetCostLabelOffset: {x: 5, y: 1.1, z: 0}
+  targetCostLabelScale: 0.2
+  targetCostLabelFontSize: 50
+  targetCostLabelFont: {fileID: 11400000, guid: 08b65680eb0b87640bccf0d0c6c453f6, type: 2}
+  targetCostLabelColor: {r: 1, g: 1, b: 1, a: 1}
+  damagePopupFont: {fileID: 11400000, guid: 08b65680eb0b87640bccf0d0c6c453f6, type: 2}
+  damagePopupFontSize: 150
+  damagePopupTextScale: 1
+  damagePopupOffset: {x: 0, y: 0, z: 0}
+  damagePopupOffsetUsesCameraAxes: 0
+  damagePopupUsePooling: 1
+  damagePopupDamageColor: {r: 1, g: 0.6966102, b: 0.34901965, a: 1}
+  damagePopupHealColor: {r: 0.35, g: 1, b: 0.55, a: 1}
+  damagePopupBuffColor: {r: 0.4, g: 0.75, b: 1, a: 1}
+  damagePopupDebuffColor: {r: 1, g: 0.6, b: 0.2, a: 1}
+  damagePopupStatusColor: {r: 1, g: 0.85, b: 0.45, a: 1}
+  damagePopupInterceptionPositiveColor: {r: 0.3, g: 1, b: 0.4, a: 1}
+  damagePopupInterceptionNegativeColor: {r: 0.49056602, g: 0, b: 0, a: 1}
   battleCameraCanvasTransform: {fileID: 0}
   battleCamera: {fileID: 0}
   skillChoices: []
@@ -103,6 +123,7 @@ MonoBehaviour:
   currentSkillPageIndex: 0
   emptyMove: {fileID: 11400000, guid: 82b670c14d416ad4f94349c9ecb49cd3, type: 2}
   defaultBasicAttackMove: {fileID: 0}
+  repliMove: {fileID: 11400000, guid: 4e8bcff242dbc1146beb0e9536be0182, type: 2}
   currentMainMenuContainer: {fileID: 0}
   currentMainMenuSlots: []
   currentSkillsMenuContainer: {fileID: 0}
@@ -129,6 +150,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentMove: {fileID: 0}
+  qteEnabled: 0
   qteCirclePrefab: {fileID: 492345646903696854, guid: ce0d6892c2207ab4abe50e1425d978ff, type: 3}
   qteUIParent: {fileID: 0}
   qteBarPrefab: {fileID: 0}
@@ -234,7 +256,7 @@ MonoBehaviour:
   addHarmonicPrefab: {fileID: 5627696518775099638, guid: 86f54945d262c20478b368068c825708, type: 3}
   battleCamera: {fileID: 0}
   prewarmCount: 10
---- !u!114 &3866917311187237371
+--- !u!114 &1623051009251991791
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -245,15 +267,19 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 372a8caa032aa664fbb44227f059a3bb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier: Symphonie.Runtime::BattleEventTrigger
   units:
-  - unitData: {fileID: 11400000, guid: f0947ae5999fbfc4098035591fc542e6, type: 2}
+  - unitData: {fileID: 0}
     thresholds:
-    - category: 1
+    - category: 3
       hpRatio: 0
+      triggerDelayMode: 2
+      triggerDelaySeconds: 0
       cameraMotif: {fileID: 11400000, guid: e4526b1d1d2af0e44889a8aef89cba2c, type: 2}
       animationClip: {fileID: 7400000, guid: 745835b03392d1c4b86a5945332b3ffd, type: 2}
+      timeline: {fileID: 0}
       unlockMotifAfterAnimation: 1
+      unlockMotifDelay: 0
       triggered: 0
   debugLogs: 0
   debugInterval: 1

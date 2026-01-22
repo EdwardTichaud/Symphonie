@@ -17,7 +17,9 @@ public class BattleEventTrigger : MonoBehaviour
         [InspectorName("HP Treshold")]
         HPTreshold,
         LastStandUnit,
-        LastStandEnemy
+        LastStandEnemy,
+        [InspectorName("Last Stand (Toutes les unites)")]
+        LastStandAllUnits
     }
 
     public enum TriggerDelayMode
@@ -45,19 +47,40 @@ public class BattleEventTrigger : MonoBehaviour
         public CameraMotifSO cameraMotif;
         [Tooltip("Animation jouee sur l'unite lorsque le seuil est atteint (ignore si une Timeline est definie).")]
         public AnimationClip animationClip;
-        [Tooltip("Timeline jouee lorsque le seuil est atteint. Prioritaire sur le CameraMotif et l'AnimationClip.")]
+        [Tooltip("AudioClip joue lorsque le seuil est atteint (ignore si une Timeline est definie).")]
+        public AudioClipSO audioClip;
+        [Tooltip("Timeline jouee lorsque le seuil est atteint. Prioritaire sur le CameraMotif et l'AnimationClip (ignore pour LastStandAllUnits).")]
         public TimelineAsset timeline;
         [Tooltip("Deverrouille le CameraMotif a la fin de l'animation.")]
         public bool unlockMotifAfterAnimation = true;
         [Tooltip("Delai en secondes avant de deverrouiller le CameraMotif si l'option UnlockMotifAfterAnimation est desactivee.")]
         public float unlockMotifDelay = 0f;
         [HideInInspector] public bool triggered = false;
+        private HashSet<CharacterUnit> triggeredUnits;
+
+        public bool HasTriggeredFor(CharacterUnit unit)
+        {
+            if (unit == null)
+                return false;
+            if (triggeredUnits == null)
+                triggeredUnits = new HashSet<CharacterUnit>();
+            return triggeredUnits.Contains(unit);
+        }
+
+        public void MarkTriggeredFor(CharacterUnit unit)
+        {
+            if (unit == null)
+                return;
+            if (triggeredUnits == null)
+                triggeredUnits = new HashSet<CharacterUnit>();
+            triggeredUnits.Add(unit);
+        }
     }
 
     [System.Serializable]
     public class UnitThresholds
     {
-        [Tooltip("Données de l'unité à surveiller. La résolution se fait via CharacterBattleModel.")]
+        [Tooltip("Données de l'unité à surveiller. La résolution se fait via CharacterBattleModel (ignore pour LastStandAllUnits).")]
         public CharacterData unitData;
         [Tooltip("Liste des déclencheurs associés")] public List<ThresholdData> thresholds = new();
     }
@@ -131,7 +154,11 @@ public class BattleEventTrigger : MonoBehaviour
 
             foreach (var t in unitData.thresholds)
             {
-                if (t.triggered)
+                if (t == null)
+                    continue;
+
+                bool usesPerUnitTracking = t.category == BattleEventCategory.LastStandAllUnits;
+                if (!usesPerUnitTracking && t.triggered)
                     continue;
 
                 CharacterUnit trackedUnit = resolvedUnit;
@@ -153,6 +180,10 @@ public class BattleEventTrigger : MonoBehaviour
                         trackedUnit = FindLastStandEnemy(battleManager);
                         shouldTrigger = trackedUnit != null;
                         break;
+                    case BattleEventCategory.LastStandAllUnits:
+                        trackedUnit = FindLastStandUnitForAll(battleManager, t);
+                        shouldTrigger = trackedUnit != null;
+                        break;
                 }
 
                 if (debugLogs)
@@ -160,16 +191,24 @@ public class BattleEventTrigger : MonoBehaviour
                     string unitName = trackedUnit != null ? trackedUnit.name : "(none)";
                     string motifName = t.cameraMotif != null ? t.cameraMotif.name : "(none)";
                     string clipName = t.animationClip != null ? t.animationClip.name : "(none)";
+                    AudioClipSO resolvedAudio = ResolveAudioClip(t, trackedUnit);
+                    string audioName = resolvedAudio != null ? resolvedAudio.name : "(none)";
                     string timelineName = t.timeline != null ? t.timeline.name : "(none)";
-                    Debug.Log($"[BattleEventTrigger] check unit={unitName} category={t.category} triggered={t.triggered} shouldTrigger={shouldTrigger} motif={motifName} anim={clipName} timeline={timelineName}");
+                    Debug.Log($"[BattleEventTrigger] check unit={unitName} category={t.category} triggered={t.triggered} shouldTrigger={shouldTrigger} motif={motifName} anim={clipName} audio={audioName} timeline={timelineName}");
                 }
 
                 if (shouldTrigger && trackedUnit != null)
                 {
-                    t.triggered = true;
+                    if (usesPerUnitTracking)
+                        t.MarkTriggeredFor(trackedUnit);
+                    else
+                        t.triggered = true;
                     StartCoroutine(TriggerEvent(trackedUnit, t, battleManager));
                     if (debugLogs)
-                        Debug.Log($"[BattleEventTrigger] triggered unit={trackedUnit.name} motif={t.cameraMotif?.name} anim={t.animationClip?.name} timeline={t.timeline?.name}");
+                    {
+                        AudioClipSO resolvedAudio = ResolveAudioClip(t, trackedUnit);
+                        Debug.Log($"[BattleEventTrigger] triggered unit={trackedUnit.name} motif={t.cameraMotif?.name} anim={t.animationClip?.name} audio={resolvedAudio?.name} timeline={t.timeline?.name}");
+                    }
                     break;
                 }
             }
@@ -207,7 +246,8 @@ public class BattleEventTrigger : MonoBehaviour
             eventStarted = true;
 
             var cameraManager = BattleCameraManager.Instance;
-            bool useTimeline = threshold.timeline != null;
+            bool allowTimeline = threshold.category != BattleEventCategory.LastStandAllUnits;
+            bool useTimeline = allowTimeline && threshold.timeline != null;
             bool hasCameraMotif = !useTimeline && threshold.cameraMotif != null;
             bool hasAnimationClip = !useTimeline && threshold.animationClip != null;
             if (hasCameraMotif && cameraManager != null)
@@ -218,6 +258,10 @@ public class BattleEventTrigger : MonoBehaviour
 
             if (manager != null && manager.IsBattleActive)
                 battlePauseToken = manager.RequestBattlePause("BattleEventTrigger");
+
+            AudioClipSO resolvedAudio = ResolveAudioClip(threshold, trackedUnit);
+            if (!useTimeline && resolvedAudio != null)
+                AudioManager.Instance?.PlaySound(resolvedAudio);
 
             if (useTimeline)
             {
@@ -464,6 +508,52 @@ public class BattleEventTrigger : MonoBehaviour
         }
 
         return lastEnemy;
+    }
+
+    private static bool IsLastStandCategory(BattleEventCategory category)
+    {
+        return category == BattleEventCategory.LastStandUnit
+            || category == BattleEventCategory.LastStandEnemy
+            || category == BattleEventCategory.LastStandAllUnits;
+    }
+
+    private static AudioClipSO ResolveAudioClip(ThresholdData threshold, CharacterUnit trackedUnit)
+    {
+        if (threshold == null)
+            return null;
+
+        if (threshold.audioClip != null)
+            return threshold.audioClip;
+
+        if (!IsLastStandCategory(threshold.category))
+            return null;
+
+        if (trackedUnit == null || trackedUnit.Data == null)
+            return null;
+
+        return trackedUnit.Data.lastStandAudioClip;
+    }
+
+    private static CharacterUnit FindLastStandUnitForAll(NewBattleManager battleManager, ThresholdData threshold)
+    {
+        if (battleManager == null || threshold == null)
+            return null;
+
+        foreach (var candidate in battleManager.unitsInBattle)
+        {
+            if (candidate == null || candidate.IsPermanentlyDead || candidate.currentHP <= 0f)
+                continue;
+
+            if (!IsLastStandUnit(candidate, battleManager))
+                continue;
+
+            if (threshold.HasTriggeredFor(candidate))
+                continue;
+
+            return candidate;
+        }
+
+        return null;
     }
 
     private void DebugEvaluate(NewBattleManager battleManager)

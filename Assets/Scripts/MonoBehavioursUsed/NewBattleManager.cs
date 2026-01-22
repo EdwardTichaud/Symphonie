@@ -3072,16 +3072,15 @@ public partial class NewBattleManager : MonoBehaviour
                 {
                     // Les attaques spéciales utilisent un décalage en fonction
                     // de la position relative et de la distance de lancement.
-                    Vector3 targetPosition = currentTargetCharacter.transform.position;
-                    bool hasTargetPosition = true;
-                    if (currentMove.targetType == TargetType.SpawnPosition)
-                    {
-                        if (!TryResolveUnitSpawnPosition(currentCharacterUnit, out targetPosition))
-                        {
-                            hasTargetPosition = false;
-                            targetPosition = currentTargetCharacter.transform.position;
-                        }
-                    }
+                    Vector3 cursorBasePosition = currentTargetCharacter.transform.position;
+                    Vector3 targetPosition = cursorBasePosition;
+                    bool hasTargetPosition = TryResolveMoveTargetPosition(
+                        currentCharacterUnit,
+                        currentTargetCharacter,
+                        currentMove,
+                        out targetPosition);
+                    if (!hasTargetPosition)
+                        targetPosition = cursorBasePosition;
 
                     Vector3 offsetDir = Vector3.zero;
                     if (currentMove.relativePosition != RelativePosition.On)
@@ -3089,7 +3088,7 @@ public partial class NewBattleManager : MonoBehaviour
                         Vector3 referenceDir = Vector3.zero;
                         if (currentCharacterUnit != null)
                         {
-                            referenceDir = currentCharacterUnit.transform.position - targetPosition;
+                            referenceDir = currentCharacterUnit.transform.position - cursorBasePosition;
                             referenceDir.y = 0f;
                         }
 
@@ -3120,7 +3119,7 @@ public partial class NewBattleManager : MonoBehaviour
                         }
                     }
 
-                    Vector3 cursorPos = targetPosition + offsetDir * currentMove.castDistance;
+                    Vector3 cursorPos = cursorBasePosition + offsetDir * currentMove.castDistance;
                     targetCursor.transform.position = cursorPos;
 
                     float distance = Vector3.Distance(currentCharacterUnit.transform.position,
@@ -3542,14 +3541,16 @@ public partial class NewBattleManager : MonoBehaviour
         if (move == null)
             return false;
 
-        if (move.targetType == TargetType.SpawnPosition)
+        if (target != null)
+        {
+            targetPosition = target.transform.position;
+            return true;
+        }
+
+        if (move.targetType == TargetType.SpawnPosition && caster != null)
             return TryResolveUnitSpawnPosition(caster, out targetPosition);
 
-        if (target == null)
-            return false;
-
-        targetPosition = target.transform.position;
-        return true;
+        return false;
     }
 
     /// <summary>

@@ -30,6 +30,17 @@ public class AudioManager : MonoBehaviour
         return clipAsset != null ? clipAsset.Loop : fallback;
     }
 
+    /// <summary>
+    /// Delai avant lecture d'un clip (ignore si la lecture est en boucle).
+    /// </summary>
+    private static float ResolveDelay(AudioClipSO clipAsset)
+    {
+        if (clipAsset == null || clipAsset.Loop)
+            return 0f;
+
+        return Mathf.Max(0f, clipAsset.StartDelay);
+    }
+
     [Header("Audio Sources")]
     // Sources utilisées comme gabarits (mixer group, spatialisation, etc.).
     public AudioSource[] musicSources = new AudioSource[3];
@@ -1256,7 +1267,8 @@ public class AudioManager : MonoBehaviour
             return;
         }
 
-        PlaySfx(ResolveClip(clipAsset), ResolveVolume(clipAsset), ResolveLoop(clipAsset));
+        float delaySeconds = ResolveDelay(clipAsset);
+        PlaySfx(ResolveClip(clipAsset), ResolveVolume(clipAsset), ResolveLoop(clipAsset), delaySeconds);
     }
 
     /// <summary>
@@ -1267,7 +1279,7 @@ public class AudioManager : MonoBehaviour
     /// <param name="clip">Clip à jouer immédiatement.</param>
     /// <param name="volume">Facteur multiplicatif optionnel (1 = volume par défaut).</param>
     /// <param name="loop">Lecture en boucle ?</param>
-    public void PlaySfx(AudioClip clip, float volume = DefaultVolume, bool loop = DefaultLoop)
+    public void PlaySfx(AudioClip clip, float volume = DefaultVolume, bool loop = DefaultLoop, float delaySeconds = 0f)
     {
         if (!EnsureActive(nameof(PlaySfx)))
             return;
@@ -1287,10 +1299,17 @@ public class AudioManager : MonoBehaviour
 
         src.clip = clip;
         ApplyVolume(handle, sfxVolume);
-        src.Play();
-
-        if (!loop)
-            StartCoroutine(DestroySourceWhenFinished(src, activeSfxHandles, handle));
+        delaySeconds = loop ? 0f : Mathf.Max(0f, delaySeconds);
+        if (!loop && delaySeconds > 0f)
+        {
+            StartCoroutine(PlayDelayedOneShot(src, delaySeconds, activeSfxHandles, handle));
+        }
+        else
+        {
+            src.Play();
+            if (!loop)
+                StartCoroutine(DestroySourceWhenFinished(src, activeSfxHandles, handle));
+        }
     }
 
     /// <summary>
@@ -1361,10 +1380,11 @@ public class AudioManager : MonoBehaviour
         float finalVolume = Mathf.Clamp01(baseVolume * Mathf.Clamp01(volumeMultiplier));
 
         TryShowVoiceOverSubtitles(clipAsset, speakerName);
-        PlayVoice(clip, finalVolume, ResolveLoop(clipAsset));
+        float delaySeconds = ResolveDelay(clipAsset);
+        PlayVoice(clip, finalVolume, ResolveLoop(clipAsset), delaySeconds);
     }
 
-    public void PlayVoice(AudioClip clip, float volume = DefaultVolume, bool loop = DefaultLoop)
+    public void PlayVoice(AudioClip clip, float volume = DefaultVolume, bool loop = DefaultLoop, float delaySeconds = 0f)
     {
         if (!EnsureActive(nameof(PlayVoice)))
             return;
@@ -1383,10 +1403,17 @@ public class AudioManager : MonoBehaviour
 
         src.clip = clip;
         ApplyVolume(handle, voiceVolume);
-        src.Play();
-
-        if (!loop)
-            StartCoroutine(DestroySourceWhenFinished(src, activeVoiceHandles, handle));
+        delaySeconds = loop ? 0f : Mathf.Max(0f, delaySeconds);
+        if (!loop && delaySeconds > 0f)
+        {
+            StartCoroutine(PlayDelayedOneShot(src, delaySeconds, activeVoiceHandles, handle));
+        }
+        else
+        {
+            src.Play();
+            if (!loop)
+                StartCoroutine(DestroySourceWhenFinished(src, activeVoiceHandles, handle));
+        }
     }
 
     private void TryShowVoiceOverSubtitles(AudioClipSO clipAsset, string speakerName)
@@ -1458,8 +1485,16 @@ public class AudioManager : MonoBehaviour
         AudioSource warningSource = CreateManagedSource("Warning", warningTemplate, false);
         warningSource.clip = clip;
         warningSource.volume = Mathf.Clamp01(warningBaseVolume * normalizationFactor * volumeFactor);
-        warningSource.Play();
         currentWarningSource = warningSource;
+
+        float delaySeconds = ResolveDelay(clipAsset);
+        if (delaySeconds > 0f)
+            yield return new WaitForSecondsRealtime(delaySeconds);
+
+        if (warningSource == null)
+            yield break;
+
+        warningSource.Play();
 
         // Attente de la fin du clip puis destruction automatique de la source,
         // garantissant que la source n'existe que pendant la lecture du warning.
@@ -1487,6 +1522,21 @@ public class AudioManager : MonoBehaviour
     public void PlayTempSfx(AudioClipSO clipAsset)
     {
         PlaySfx(clipAsset);
+    }
+
+    private IEnumerator PlayDelayedOneShot(AudioSource source, float delaySeconds, List<DynamicAudioHandle> registry, DynamicAudioHandle handle)
+    {
+        if (source == null || source.loop)
+            yield break;
+
+        if (delaySeconds > 0f)
+            yield return new WaitForSecondsRealtime(delaySeconds);
+
+        if (source == null)
+            yield break;
+
+        source.Play();
+        yield return DestroySourceWhenFinished(source, registry, handle);
     }
 
     #endregion

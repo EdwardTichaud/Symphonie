@@ -35,6 +35,10 @@ public class AudioClipSO : ScriptableObject
     [Tooltip("Lecture en boucle activée par défaut pour ce clip.")]
     public bool loop = false;
 
+    [Min(0f)]
+    [Tooltip("Delai en secondes avant la lecture (ignore si Loop est actif).")]
+    public float startDelay = 0f;
+
     /// <summary>
     /// Retourne le volume sécurisé (compris entre 0 et 1).
     /// </summary>
@@ -49,6 +53,11 @@ public class AudioClipSO : ScriptableObject
     /// Indique si le clip doit boucler par défaut.
     /// </summary>
     public bool Loop => loop;
+
+    /// <summary>
+    /// Delai avant lancement du clip (0 si negatif).
+    /// </summary>
+    public float StartDelay => Mathf.Max(0f, startDelay);
 
     /// <summary>
     /// Durée du clip en secondes (0 si aucun clip n'est assigné).
