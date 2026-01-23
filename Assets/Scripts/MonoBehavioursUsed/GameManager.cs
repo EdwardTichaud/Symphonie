@@ -82,10 +82,9 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         // Au démarrage, on récupère le nom sauvegardé de Munin s'il existe
-        if (PlayerPrefs.HasKey("MuninName"))
+        if (MuninNameStore.HasSavedName())
         {
-            string savedName = PlayerPrefs.GetString("MuninName");
-            gameData.muninName = savedName;
+            gameData.muninName = MuninNameStore.GetNameFromPrefs(defaultMuninName);
         }
         else
         {
@@ -272,15 +271,7 @@ public class GameManager : MonoBehaviour
     {
         string chosenName = nameInputField != null ? nameInputField.text : string.Empty;
 
-        if (string.IsNullOrWhiteSpace(chosenName))
-            chosenName = defaultMuninName; // Utilise le nom par défaut si la saisie est vide
-
-        // Met à jour les données de jeu
-        gameData.muninName = chosenName;
-
-        // Sauvegarde le choix pour les prochaines sessions
-        PlayerPrefs.SetString("MuninName", chosenName);
-        PlayerPrefs.Save();
+        MuninNameStore.SetName(chosenName, defaultMuninName);
 
         if (namePanel != null)
             namePanel.SetActive(false); // Cache le panneau après validation

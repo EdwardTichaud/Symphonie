@@ -124,6 +124,8 @@ public class CameraController : MonoBehaviour
     private float forcedCamDistance = 5f;
     private Vector3 forcedCamOffset = Vector3.zero; // Décalage monde utilisé en mode TPS
     private static readonly RaycastHit[] worldCameraCollisionHits = new RaycastHit[12];
+    private int worldInteractableLayer = -1;
+    private int worldUnitLayer = -1;
 
     // La collision caméra est optionnelle et se limite à empêcher les placements
     // impossibles (sol, murs) sans désactiver les comportements d'occlusion existants.
@@ -222,6 +224,8 @@ public class CameraController : MonoBehaviour
         forcedLookTarget = FindChildRecursive(player, "Point_Chest");
         cameraTargetName = forcedLookTarget?.name;
         eventsManager ??= FindFirstObjectByType<EventsManager>();
+        worldInteractableLayer = LayerMask.NameToLayer("World_Interactable");
+        worldUnitLayer = LayerMask.NameToLayer("World_Unit");
 
         RecalculateThirdPersonOffset();
         FindManagedCameras();
@@ -649,6 +653,14 @@ public class CameraController : MonoBehaviour
                 continue;
 
             if (player != null && hitCollider.transform.IsChildOf(player))
+                continue;
+            if (worldInteractableLayer >= 0 && hitCollider.gameObject.layer == worldInteractableLayer)
+                continue;
+            if (worldUnitLayer >= 0 && hitCollider.gameObject.layer == worldUnitLayer)
+                continue;
+            if (hitCollider.GetComponentInParent<IInteractable>() != null)
+                continue;
+            if (hitCollider.GetComponentInParent<NPCBase>() != null)
                 continue;
 
             if (worldCameraCollisionHits[i].distance < nearestDistance)

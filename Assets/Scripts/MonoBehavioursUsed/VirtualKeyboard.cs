@@ -24,6 +24,13 @@ public class VirtualKeyboard : MonoBehaviour
     [Tooltip("Zone de texte où sera affichée la saisie (champ 'Output Text' dans la scène).")]
     [SerializeField] private TextMeshProUGUI currentVKWord;
 
+    [Tooltip("Texte de sujet affiché au-dessus du clavier (ex: 'Subject').")]
+    [SerializeField] private TextMeshProUGUI subjectText;
+
+    [Header("Munin Name Storage")]
+    [SerializeField] private bool storeMuninNameOnValidate = true;
+    [SerializeField] private string muninNamePrompt = "Comment t'appelles-tu?";
+
     [Header("Paramètres")]
     [Tooltip("Nombre de colonnes dans la grille du clavier.")]
     [SerializeField] private int columns = 13;
@@ -39,6 +46,7 @@ public class VirtualKeyboard : MonoBehaviour
     private float _lastMoveTime;
     // Texte actuellement saisi via le clavier virtuel, accessible aux autres systèmes.
     public string currentVKWordText { get; private set; } = string.Empty;
+    private bool shouldStoreMuninName;
 
     /// <summary>
     /// Évènement déclenché lorsque le joueur valide sa saisie via le bouton "OK".
@@ -133,12 +141,15 @@ public class VirtualKeyboard : MonoBehaviour
         playerInputs.World.Interact.performed += OnInteract;
         playerInputs.World.Cancel.performed += OnCancel;
 
-        GetComponentInChildren<Animator>().Play("VK_Open");
+        Animator animator = GetComponentInChildren<Animator>();
+        if (animator != null)
+            animator.Play("VK_Open");
 
-        if(subject != null && keyboardRoot != null)
-            keyboardRoot.transform.GetChild(3).GetComponentInChildren<TextMeshProUGUI>().text = subject;
-        else
-            keyboardRoot.transform.GetChild(3).GetComponentInChildren<TextMeshProUGUI>().text = "";
+        TextMeshProUGUI subjectLabel = ResolveSubjectText();
+        if (subjectLabel != null)
+            subjectLabel.text = subject ?? string.Empty;
+
+        shouldStoreMuninName = ShouldStoreMuninName(subject);
     }
 
     /// <summary>
@@ -163,6 +174,7 @@ public class VirtualKeyboard : MonoBehaviour
         if (keyboardRoot != null)
             keyboardRoot.SetActive(false);
 
+        shouldStoreMuninName = false;
         KeyboardClosed?.Invoke();
     }
 
@@ -232,6 +244,8 @@ public class VirtualKeyboard : MonoBehaviour
         else if (keyName == "OK")
         {
             WordValidated?.Invoke(currentVKWordText);
+            if (shouldStoreMuninName)
+                MuninNameStore.SetName(currentVKWordText);
             CloseVK();
         }
         else
@@ -276,6 +290,50 @@ public class VirtualKeyboard : MonoBehaviour
         // Le curseur devient enfant de la touche afin de se positionner correctement.
         cursor.SetParent(_keys[_currentIndex], false);
         cursor.anchoredPosition = Vector2.zero;
+    }
+
+    private TextMeshProUGUI ResolveSubjectText()
+    {
+        if (subjectText != null)
+            return subjectText;
+
+        subjectText = FindSubjectText(keyboardRoot != null ? keyboardRoot.transform : transform);
+        if (subjectText == null && keyboardRoot != null && keyboardRoot.transform != transform)
+            subjectText = FindSubjectText(transform);
+
+        return subjectText;
+    }
+
+    private static TextMeshProUGUI FindSubjectText(Transform root)
+    {
+        if (root == null)
+            return null;
+
+        var labels = root.GetComponentsInChildren<TextMeshProUGUI>(true);
+        foreach (var label in labels)
+        {
+            if (label != null && label.name == "VKSubject_Text")
+                return label;
+        }
+
+        return null;
+    }
+
+    private bool ShouldStoreMuninName(string subject)
+    {
+        if (!storeMuninNameOnValidate)
+            return false;
+
+        if (string.IsNullOrWhiteSpace(muninNamePrompt))
+            return true;
+
+        string normalizedSubject = subject != null ? subject.Trim() : string.Empty;
+        string normalizedPrompt = muninNamePrompt.Trim();
+
+        if (normalizedPrompt.Length == 0)
+            return true;
+
+        return string.Equals(normalizedSubject, normalizedPrompt, StringComparison.OrdinalIgnoreCase);
     }
 }
 

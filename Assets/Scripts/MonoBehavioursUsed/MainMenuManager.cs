@@ -98,10 +98,10 @@ public class MainMenuManager : MonoBehaviour
         }
 
         // Chargement ou demande du nom de Munin
-        if (PlayerPrefs.HasKey("MuninName"))
+        if (MuninNameStore.HasSavedName())
         {
             // Si un nom existe déjà, on le charge dans les données de jeu
-            string savedName = PlayerPrefs.GetString("MuninName");
+            string savedName = MuninNameStore.GetNameFromPrefs(defaultMuninName);
             if (GameManager.Instance != null && GameManager.Instance.gameData != null)
                 GameManager.Instance.gameData.muninName = savedName;
         }
@@ -243,16 +243,8 @@ public class MainMenuManager : MonoBehaviour
     public void ConfirmName()
     {
         string chosenName = nameInputField != null ? nameInputField.text : string.Empty;
-        if (string.IsNullOrWhiteSpace(chosenName))
-            chosenName = defaultMuninName; // Utilise le nom par défaut si aucune saisie
 
-        // Met à jour les données de jeu
-        if (GameManager.Instance != null && GameManager.Instance.gameData != null)
-            GameManager.Instance.gameData.muninName = chosenName;
-
-        // Sauvegarde dans les préférences locales
-        PlayerPrefs.SetString("MuninName", chosenName);
-        PlayerPrefs.Save();
+        MuninNameStore.SetName(chosenName, defaultMuninName);
 
         // Cache le panneau et réaffiche "Press A"
         if (namePanel != null)

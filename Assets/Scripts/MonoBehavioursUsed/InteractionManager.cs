@@ -23,6 +23,7 @@ public class InteractionManager : MonoBehaviour
     private Transform playerTransform;
     private GameObject localInfoBox;
     public GameObject currentInteractable;
+    private bool inputsBound;
 
     [Header("References")]
     [Tooltip("Director controlling cutscenes")]
@@ -80,6 +81,11 @@ public class InteractionManager : MonoBehaviour
             localInfoBox.SetActive(false);
     }
 
+    private void OnEnable()
+    {
+        SetInputs();
+    }
+
     void OnDisable()
     {
         ResetBattleInputs();
@@ -94,8 +100,14 @@ public class InteractionManager : MonoBehaviour
         // L'action "Interact" fait partie du mapping d'entrée "World".
         // En l'utilisant directement, on garantit une cohérence des contrôles
         // sur l'ensemble des PointsOfInterest et dans tout le jeu.
+        if (inputsBound)
+            return;
+        if (InputsManager.Instance == null || InputsManager.Instance.playerInputs == null)
+            return;
+
         var world = InputsManager.Instance.playerInputs.World;
         world.Interact.performed += OnConfirm;
+        inputsBound = true;
     }
 
     /// <summary>
@@ -104,8 +116,16 @@ public class InteractionManager : MonoBehaviour
     /// </summary>
     public void ResetBattleInputs()
     {
-        var world = InputsManager.Instance.playerInputs.World;
-        world.Interact.performed -= OnConfirm;
+        if (!inputsBound)
+            return;
+
+        if (InputsManager.Instance != null && InputsManager.Instance.playerInputs != null)
+        {
+            var world = InputsManager.Instance.playerInputs.World;
+            world.Interact.performed -= OnConfirm;
+        }
+
+        inputsBound = false;
     }
 
     void OnConfirm(InputAction.CallbackContext ctx)
@@ -118,7 +138,13 @@ public class InteractionManager : MonoBehaviour
                 localInfoBox.SetActive(false);
                 InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
             }
-            currentInteractable.GetComponent<IInteractable>().Interact();
+            var interactable = ResolveInteractable(currentInteractable);
+            if (interactable == null)
+            {
+                Debug.LogWarning($"[InteractionManager3D] Aucun IInteractable sur '{currentInteractable.name}'.");
+                return;
+            }
+            interactable.Interact();
         }
     }
 
@@ -144,6 +170,10 @@ public class InteractionManager : MonoBehaviour
     {
         // Assure que le masque est toujours cohérent avec l'état du lien
         UpdateInteractableLayer();
+
+        EnsureLocalInfoBox();
+        if (!EnsurePlayerTransform())
+            return;
 
         if (DialogueManager.Instance.isOpen || EventsManager.Instance.eventInProgress)
         {
@@ -185,17 +215,31 @@ public class InteractionManager : MonoBehaviour
         float minDistance = float.MaxValue;
         foreach (Collider hit in hits)
         {
+            if (hit == null)
+                continue;
+
             GameObject obj = hit.gameObject;
+            var interactable = ResolveInteractable(obj);
+            if (interactable == null)
+                continue;
+
+            Component interactableComponent = interactable as Component;
+            if (interactableComponent == null)
+                continue;
+
+            GameObject interactableObject = interactableComponent.gameObject;
 
             // Ignore les Points of Interest déjà consommés afin de ne plus afficher leur LocalInfoBox
-            PointOfInterest poi = obj.GetComponent<PointOfInterest>();
+            PointOfInterest poi = interactableComponent != null
+                ? interactableComponent.GetComponent<PointOfInterest>()
+                : obj.GetComponentInParent<PointOfInterest>();
             if (poi != null && !poi.CanInteract)
                 continue;
 
-            float dist = Vector3.Distance(playerTransform.position, obj.transform.position);
+            float dist = Vector3.Distance(playerTransform.position, interactableObject.transform.position);
             if (dist < minDistance)
             {
-                nearest = obj;
+                nearest = interactableObject;
                 minDistance = dist;
             }
         }
@@ -207,15 +251,20 @@ public class InteractionManager : MonoBehaviour
             {
                 currentInteractable = nearest;
 
+                if (InputsManager.Instance != null)
+                {
+                    // Seule la map "World" est nécessaire pour récupérer l'action Interact.
+                    InputsManager.Instance.ActivateOnly(
+                        InputsManager.Instance.playerInputs.World.Get());
+                }
+
                 if (localInfoBox != null)
                 {
                     // Affiche l'invite locale d'interaction.
                     localInfoBox.SetActive(true);
 
-                    // Seule la map "World" est nécessaire pour récupérer l'action Interact.
-                    InputsManager.Instance.ActivateOnly(
-                        InputsManager.Instance.playerInputs.World.Get());
-                    InputsManager.Instance.playerInputs.World.Jump.Disable();
+                    if (InputsManager.Instance != null)
+                        InputsManager.Instance.playerInputs.World.Jump.Disable();
                 }
             }
         }
@@ -227,10 +276,53 @@ public class InteractionManager : MonoBehaviour
             if (localInfoBox != null)
             {
                 localInfoBox.SetActive(false);
-                InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
-                InputsManager.Instance.playerInputs.World.Jump.Enable();
+                if (InputsManager.Instance != null)
+                {
+                    InputsManager.Instance.ActivateOnly(InputsManager.Instance.playerInputs.World.Get());
+                    InputsManager.Instance.playerInputs.World.Jump.Enable();
+                }
             }
         }
+    }
+
+    private bool EnsurePlayerTransform()
+    {
+        if (playerTransform != null)
+            return true;
+
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player == null)
+            return false;
+
+        playerTransform = player.transform;
+        playerController = playerTransform.GetComponent<ThirdPersonPlayerController>();
+        return true;
+    }
+
+    private void EnsureLocalInfoBox()
+    {
+        if (localInfoBox != null)
+            return;
+
+        localInfoBox = GameObject.Find("LocalInfoBoxCanvas");
+        if (localInfoBox != null)
+            localInfoBox.SetActive(false);
+    }
+
+    private static IInteractable ResolveInteractable(GameObject obj)
+    {
+        if (obj == null)
+            return null;
+
+        var interactable = obj.GetComponent<IInteractable>();
+        if (interactable != null)
+            return interactable;
+
+        interactable = obj.GetComponentInParent<IInteractable>();
+        if (interactable != null)
+            return interactable;
+
+        return obj.GetComponentInChildren<IInteractable>();
     }
 
     private void OnDrawGizmosSelected()

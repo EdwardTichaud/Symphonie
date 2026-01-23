@@ -701,10 +701,7 @@ public class DialogueManager : MonoBehaviour
 
         string resolved = value;
 
-        if (GameManager.Instance != null && GameManager.Instance.gameData != null)
-        {
-            resolved = resolved.Replace("{MuninName}", GameManager.Instance.gameData.muninName);
-        }
+        resolved = resolved.Replace("{MuninName}", MuninNameStore.GetName());
 
         return resolved;
     }
