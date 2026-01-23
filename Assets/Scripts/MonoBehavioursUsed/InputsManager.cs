@@ -70,7 +70,8 @@ public class InputsManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            if (!GameRoot.KeepManagersSceneBound)
+                DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -115,7 +116,7 @@ public class InputsManager : MonoBehaviour
     {
         ActivateOnly(playerInputs.World.Get());
         SetInputs();
-        controller = FindFirstObjectByType<CharacterController3D>();
+        controller = ServiceRegistry.GetOrFind<CharacterController3D>();
         passTurnPulse = PassTurnUI.Instance.gameObject.GetComponentInChildren<Pulse>();
     }
 

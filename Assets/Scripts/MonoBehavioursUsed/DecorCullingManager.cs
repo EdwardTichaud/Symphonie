@@ -36,7 +36,8 @@ public class DecorCullingManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
 
         targetCamera = Camera.main;
         cullingGroup = new CullingGroup();

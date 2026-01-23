@@ -816,7 +816,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
             if (wasDead && _currentHP > 0f && Data != null && Data.characterName == "Lucian")
             {
-                BattleCameraShatter shatter = FindFirstObjectByType<BattleCameraShatter>();
+                BattleCameraShatter shatter = ServiceRegistry.GetOrFind<BattleCameraShatter>();
                 shatter?.ResetEffect();
             }
         }
@@ -1691,7 +1691,7 @@ public class CharacterUnit : MonoBehaviour, IDamageable, IHealable, IBuffable, I
 
             if (Data.characterName == "Lucian")
             {
-                BattleCameraShatter shatter = FindFirstObjectByType<BattleCameraShatter>();
+                BattleCameraShatter shatter = ServiceRegistry.GetOrFind<BattleCameraShatter>();
                 if (shatter != null)
                     shatter.Break();
             }

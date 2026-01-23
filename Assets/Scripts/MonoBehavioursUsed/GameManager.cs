@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro; // Nécessaire pour utiliser TMP_InputField
 using UnityEngine.SceneManagement; // Pour charger le menu principal lors d'un game over
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 /// <summary>
 /// États possibles du déroulement du jeu.
@@ -62,7 +65,8 @@ public class GameManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
 
         EnsureGameData();
     }
@@ -71,9 +75,16 @@ public class GameManager : MonoBehaviour
     {
         if (gameData == null)
         {
-            Debug.LogWarning("[GameManager] GameData manquant, creation d'une instance runtime.");
-            gameData = ScriptableObject.CreateInstance<GameData>();
-            return;
+#if UNITY_EDITOR
+            gameData = AssetDatabase.LoadAssetAtPath<GameData>("Assets/GameDatas/GameData.asset");
+#endif
+
+            if (gameData == null)
+            {
+                Debug.LogWarning("[GameManager] GameData manquant, creation d'une instance runtime.");
+                gameData = ScriptableObject.CreateInstance<GameData>();
+                return;
+            }
         }
 
         gameData = Instantiate(gameData);
@@ -254,7 +265,11 @@ public class GameManager : MonoBehaviour
     {
         if (namePanel == null)
         {
-            Debug.LogWarning("[GameManager] Aucun panneau de saisie de nom n'est assigné.");
+            string fallbackName = string.IsNullOrWhiteSpace(defaultMuninName) ? "Munin" : defaultMuninName;
+            if (gameData != null)
+                gameData.muninName = fallbackName;
+            PlayerPrefs.SetString("MuninName", fallbackName);
+            PlayerPrefs.Save();
             return;
         }
 

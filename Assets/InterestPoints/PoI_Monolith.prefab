@@ -300,9 +300,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 3831119903746844264}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 227879841ab76dc4b9722743a2d2f3be, type: 3}
+  m_Script: {fileID: 11500000, guid: ff9149ed36a3aa546b500b72c81bee83, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playableDirector: {fileID: 834623486238256031}
+  bindingTags: []
+  signalReceiver: {fileID: 15949334637873500}
+  signalBindings: []
 --- !u!1001 &1813220295301507135
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -17,7 +17,8 @@ public class EventsManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
     }
 
     void Start()

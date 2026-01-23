@@ -148,6 +148,9 @@ public class SetTimelineBidings : MonoBehaviour
             return;
         }
 
+        if (bindingTags == null || bindingTags.Count == 0)
+            return;
+
         var asset = playableDirector.playableAsset;
         if (asset == null)
         {
@@ -657,15 +660,11 @@ public class SetTimelineBidings : MonoBehaviour
 
     private static GameObject FindGameObjectByTag(string tag)
     {
-        try
-        {
-            return GameObject.FindGameObjectWithTag(tag);
-        }
-        catch (UnityException)
-        {
-            Debug.LogWarning($"[SetTimelineBidings] Tag '{tag}' is not defined.");
-            return null;
-        }
+        if (SceneBindings.TryGetByTag(tag, out GameObject bound) && bound != null)
+            return bound;
+
+        Debug.LogWarning($"[SetTimelineBidings] Tag '{tag}' non bindee dans SceneBindings.");
+        return null;
     }
 
     private static UnityEngine.Object ResolveBindingTarget(PlayableBinding output, GameObject taggedObject)

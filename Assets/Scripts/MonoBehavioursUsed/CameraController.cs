@@ -16,6 +16,9 @@ public class CameraController : MonoBehaviour
 {
     public static CameraController Instance { get; private set; }
 
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     private Coroutine currentTransition;
 
     /// <summary>
@@ -150,11 +153,18 @@ public class CameraController : MonoBehaviour
         }
 
         Instance = this;
-        player ??= GameObject.FindGameObjectWithTag("Player")?.transform;
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+
+        if (player == null && sceneBindings != null && sceneBindings.Player != null)
+            player = sceneBindings.Player.transform;
         if (player == null) Debug.LogError("[CameraController] Player not found!");
 
         // Récupération de la WorldCamera pour pouvoir la forcer indépendamment de la MainCamera
-        worldCamera ??= GameObject.FindGameObjectWithTag("WorldCamera")?.GetComponent<Camera>();
+        if (worldCamera == null && sceneBindings != null)
+            worldCamera = sceneBindings.WorldCamera;
+        if (worldCamera == null && Camera.main != null)
+            worldCamera = Camera.main;
         if (worldCamera == null) Debug.LogWarning("[CameraController] WorldCamera introuvable !");
         // Récupère le parent pour appliquer les déplacements forcés (suivi, transitions...)
         worldCameraParent = worldCamera != null && worldCamera.transform.parent != null
@@ -182,7 +192,8 @@ public class CameraController : MonoBehaviour
         }
 
         // Recherche de la BattleCamera et de son parent pour gérer séparément forçage et respiration
-        battleCamera ??= GameObject.FindGameObjectWithTag("BattleCamera");
+        if (battleCamera == null && sceneBindings != null)
+            battleCamera = sceneBindings.BattleCamera;
         if (battleCamera == null)
         {
             Debug.LogWarning("[CameraController] BattleCamera introuvable !");
@@ -221,7 +232,7 @@ public class CameraController : MonoBehaviour
 
         forcedLookTarget = FindChildRecursive(player, "Point_Chest");
         cameraTargetName = forcedLookTarget?.name;
-        eventsManager ??= FindFirstObjectByType<EventsManager>();
+        eventsManager ??= ServiceRegistry.GetOrFind<EventsManager>();
 
         RecalculateThirdPersonOffset();
         FindManagedCameras();
@@ -423,7 +434,12 @@ public class CameraController : MonoBehaviour
         if (namedTransformCache.TryGetValue(objectName, out Transform cached) && cached != null)
             return cached;
 
-        Transform found = GameObject.Find(objectName)?.transform;
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+
+        Transform found = null;
+        if (SceneBindings.TryGetByName(objectName, out GameObject bound) && bound != null)
+            found = bound.transform;
         if (found != null)
             namedTransformCache[objectName] = found;
 

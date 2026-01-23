@@ -6,6 +6,9 @@ public class InteractionManager : MonoBehaviour
 {
     public static InteractionManager Instance { get; private set; }
 
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     [Header("Interaction Settings")]
     [Tooltip("Maximum distance from player to interactable objects")]
     public float interactionRange = 3f;
@@ -36,7 +39,8 @@ public class InteractionManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
     }
 
     private void Start()
@@ -44,7 +48,10 @@ public class InteractionManager : MonoBehaviour
         SetInputs();
 
         // Find the player
-        var player = GameObject.FindGameObjectWithTag("Player");
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+
+        GameObject player = sceneBindings != null ? sceneBindings.Player : null;
         if (player != null)
         {
             playerTransform = player.transform;
@@ -73,7 +80,7 @@ public class InteractionManager : MonoBehaviour
             Debug.LogError("[InteractionManager3D] InfoBoxManager not found.");
 
         // Find and hide local info box UI
-        localInfoBox = GameObject.Find("LocalInfoBoxCanvas");
+        localInfoBox = sceneBindings != null ? sceneBindings.LocalInfoBoxCanvas : null;
         if (localInfoBox == null)
             Debug.LogError("[InteractionManager3D] LocalInfoBoxCanvas not found.");
         else

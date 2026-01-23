@@ -17,6 +17,7 @@ public class CinematicStep
 
     [Header("Timeline")]
     public PlayableDirector timeline;
+    public CinematicDefinitionSO timelineDefinition;
 
     [Header("Temps d'attente")]
     public float waitDuration = 1f;

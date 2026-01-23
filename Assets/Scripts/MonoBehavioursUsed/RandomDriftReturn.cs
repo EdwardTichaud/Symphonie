@@ -21,6 +21,9 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
     [Tooltip("Si non renseigné, recherche par tag 'Player'.")]
     public Transform joueur;
 
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     [Tooltip("Distance où le joueur est considéré 'proche' (déclenche le retour).")]
     public float rayonProche = 3f;
 
@@ -82,8 +85,10 @@ public class SimpleDriftReturn_ConstantDirection : MonoBehaviour
         // Trouve le joueur si besoin
         if (joueur == null)
         {
-            var obj = GameObject.FindGameObjectWithTag("Player");
-            if (obj) joueur = obj.transform;
+            if (sceneBindings == null)
+                sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+            if (sceneBindings != null && sceneBindings.Player != null)
+                joueur = sceneBindings.Player.transform;
         }
 
         foreach (var m in morceaux)

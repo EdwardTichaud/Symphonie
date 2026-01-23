@@ -276,7 +276,7 @@ public class BattleCameraManager : MonoBehaviour
         }
         Instance = this;
 
-        blendSwitcher = FindFirstObjectByType<CinemachineBlendSwitcher>();
+        blendSwitcher = ServiceRegistry.GetOrFind<CinemachineBlendSwitcher>();
         if (!blendSwitcher)
             Debug.LogWarning("[BattleCameraManager] Aucun CinemachineBlendSwitcher trouvé dans la scène.");
 

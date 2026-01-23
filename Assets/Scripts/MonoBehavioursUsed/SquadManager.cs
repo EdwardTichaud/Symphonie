@@ -18,7 +18,8 @@ public class SquadManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
     }
 
     public void SetSquad(List<CharacterData> characters)

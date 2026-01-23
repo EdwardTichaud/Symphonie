@@ -9,6 +9,9 @@ public class CameraActivationManager : MonoBehaviour
 {
     public static CameraActivationManager Instance { get; private set; }
 
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     private Camera worldCamera;   // Référence à la WorldCam_Cam
     private Camera battleCamera;  // Référence à la BattleCam_Cam
     private Camera versusCamera;  // Référence à la VersusCam_Cam
@@ -38,15 +41,27 @@ public class CameraActivationManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
+
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
     }
 
     private void Start()
     {
-        // Recherche des caméras par leurs tags respectifs
-        worldCamera = GameObject.FindGameObjectWithTag("WorldCamera")?.GetComponent<Camera>();
-        battleCamera = GameObject.FindGameObjectWithTag("BattleCamera")?.GetComponent<Camera>();
-        versusCamera = GameObject.FindGameObjectWithTag("VersusCamera")?.GetComponent<Camera>();
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+
+        if (sceneBindings != null)
+        {
+            worldCamera = sceneBindings.WorldCamera;
+            battleCamera = sceneBindings.BattleCameraComponent;
+            versusCamera = sceneBindings.VersusCamera;
+        }
+
+        if (worldCamera == null && Camera.main != null)
+            worldCamera = Camera.main;
 
         ActivateWorldCamera(); // État par défaut : exploration
     }

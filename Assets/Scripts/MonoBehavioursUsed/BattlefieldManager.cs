@@ -11,6 +11,9 @@ public class BattlefieldManager : MonoBehaviour
 {
     public static BattlefieldManager Instance { get; private set; }
 
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     [Header("Zone active (copiée depuis ZoneManager)")]
     public ZoneSO currentZone;
 
@@ -31,8 +34,13 @@ public class BattlefieldManager : MonoBehaviour
         //DontDestroyOnLoad(gameObject);
 
         // Recherche automatique du parent si besoin pour éviter les erreurs
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+
+        if (battlefieldParent == null && sceneBindings != null)
+            battlefieldParent = sceneBindings.BattlefieldParent;
         if (battlefieldParent == null)
-            battlefieldParent = GameObject.Find("BattleScene/Battlefields")?.transform;
+            Debug.LogWarning("[BattlefieldManager] Battlefield parent non assigne dans SceneBindings.");
     }
 
     /// <summary>
@@ -52,8 +60,10 @@ public class BattlefieldManager : MonoBehaviour
         // Si un battlefield était encore présent, on le retire pour repartir propre
         UnloadCurrentBattlefield();
 
+        if (battlefieldParent == null && sceneBindings != null)
+            battlefieldParent = sceneBindings.BattlefieldParent;
         if (battlefieldParent == null)
-            battlefieldParent = GameObject.Find("BattleScene/Battlefields")?.transform;
+            Debug.LogWarning("[BattlefieldManager] Battlefield parent non assigne dans SceneBindings.");
     }
 
     /// <summary>
@@ -75,8 +85,10 @@ public class BattlefieldManager : MonoBehaviour
             yield break;
         }
 
+        if (battlefieldParent == null && sceneBindings != null)
+            battlefieldParent = sceneBindings.BattlefieldParent;
         if (battlefieldParent == null)
-            battlefieldParent = GameObject.Find("BattleScene/Battlefields")?.transform;
+            Debug.LogWarning("[BattlefieldManager] Battlefield parent non assigne dans SceneBindings.");
 
         // Détruit l'ancien champ de bataille s'il existe déjà
         UnloadCurrentBattlefield();
@@ -102,7 +114,7 @@ public class BattlefieldManager : MonoBehaviour
         yield return null;
 
         // ✅ Réapplique les Rendering Layers à toute la scène après le changement de layer
-        var renderingLayerSetter = FindFirstObjectByType<SetRenderingLayer>(FindObjectsInactive.Include);
+        var renderingLayerSetter = ServiceRegistry.GetOrFind<SetRenderingLayer>(FindObjectsInactive.Include);
         renderingLayerSetter?.ApplyToAll();
 
         Debug.Log($"[BattlefieldManager] Battlefield #{index} chargé pour {currentZone.zoneName}.");

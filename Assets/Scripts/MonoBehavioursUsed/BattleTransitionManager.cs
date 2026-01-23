@@ -12,6 +12,10 @@ public class BattleTransitionManager : MonoBehaviour
 {
     public static BattleTransitionManager Instance { get; private set; }
 
+    [Header("Bindings")]
+    [SerializeField] private BattleSceneBindings battleBindings;
+    [SerializeField] private SceneBindings sceneBindings;
+
     private PlayerDetection playerDetection;
 
     /// <summary>
@@ -208,7 +212,8 @@ public class BattleTransitionManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            if (!GameRoot.KeepManagersSceneBound)
+                DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -216,8 +221,13 @@ public class BattleTransitionManager : MonoBehaviour
             return;
         }
 
-        worldFadeOverlay ??= GameObject.Find("WorldFadeOverlayPanel")?.GetComponent<Image>();
-        playerDetection ??= FindFirstObjectByType<PlayerDetection>();
+        if (battleBindings == null)
+            battleBindings = ServiceRegistry.GetOrFind<BattleSceneBindings>(FindObjectsInactive.Include);
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+        ApplyBindingsIfAvailable();
+
+        playerDetection ??= ServiceRegistry.GetOrFind<PlayerDetection>();
         ResolveBattleCamera();
         ResolveVersusCamera();
         ResolveTransitionCanvas();
@@ -228,9 +238,6 @@ public class BattleTransitionManager : MonoBehaviour
             brokenGlassRenderers = brokenGlass.GetComponentsInChildren<Renderer>(true);
             brokenGlassRawImages = brokenGlass.GetComponentsInChildren<RawImage>(true);
         }
-
-        // Tente de récupérer automatiquement le GameObject "WorldScene" si l'on n'a rien assigné dans l'inspecteur
-        worldScene ??= GameObject.Find("WorldScene");
 
         // Recherche automatique des éléments "Continuer" si aucun n'est assigné
         if (continuePrompts == null || continuePrompts.Count == 0)
@@ -246,6 +253,56 @@ public class BattleTransitionManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void ApplyBindingsIfAvailable()
+    {
+        if (battleBindings == null)
+            return;
+
+        worldFadeOverlay ??= battleBindings.WorldFadeOverlay;
+        battleCamera ??= battleBindings.BattleCamera;
+        battleCameraCam ??= battleBindings.BattleCameraCam;
+        battleSceneTransitionCanvas ??= battleBindings.BattleSceneTransitionCanvas;
+        enemyPosition01 ??= battleBindings.EnemyPosition01;
+        playerRoot ??= battleBindings.PlayerRoot;
+        worldScene ??= battleBindings.WorldScene;
+        qteCircle ??= battleBindings.QteCircle;
+        battleTimeline ??= battleBindings.BattleTimeline;
+        passTurnButton ??= battleBindings.PassTurnButton;
+        actionDisplayPanel ??= battleBindings.ActionDisplayPanel;
+        versusCameraCanvas ??= battleBindings.VersusCameraCanvas;
+        brokenGlass ??= battleBindings.BrokenGlass;
+        versusTransition ??= battleBindings.VersusTransition;
+        victoryScreen ??= battleBindings.VictoryScreen;
+        gameOverScreen ??= battleBindings.GameOverScreen;
+        versusCamera ??= battleBindings.VersusCamera;
+        SU1 ??= battleBindings.SU1;
+        SU2 ??= battleBindings.SU2;
+        SU3 ??= battleBindings.SU3;
+        EU1 ??= battleBindings.EU1;
+        EU2 ??= battleBindings.EU2;
+        EU3 ??= battleBindings.EU3;
+        unitSpawnPointsAnimator ??= battleBindings.UnitSpawnPointsAnimator;
+
+        if ((continuePrompts == null || continuePrompts.Count == 0) && battleBindings.ContinuePrompts != null && battleBindings.ContinuePrompts.Count > 0)
+            continuePrompts = battleBindings.ContinuePrompts;
+
+        if (sceneBindings == null)
+            return;
+
+        worldFadeOverlay ??= sceneBindings.WorldFadeOverlayPanel != null
+            ? sceneBindings.WorldFadeOverlayPanel.GetComponent<Image>()
+            : null;
+        battleCamera ??= sceneBindings.BattleCamera;
+        if (battleCameraCam == null && sceneBindings.BattleCameraCam != null)
+            battleCameraCam = sceneBindings.BattleCameraCam.GetComponent<Camera>();
+        battleSceneTransitionCanvas ??= sceneBindings.BattleSceneTransitionCanvas;
+        enemyPosition01 ??= sceneBindings.EnemyPosition01;
+        playerRoot ??= sceneBindings.Player;
+        worldScene ??= sceneBindings.WorldScene;
+        if (versusCamera == null && sceneBindings.VersusCamera != null)
+            versusCamera = sceneBindings.VersusCamera;
     }
 
     /// <summary>
@@ -314,7 +371,7 @@ public class BattleTransitionManager : MonoBehaviour
         // --------------------------------------------------------------
         // 2) Simule la détection classique en remplissant PlayerDetection
         // --------------------------------------------------------------
-        playerDetection ??= FindFirstObjectByType<PlayerDetection>();
+        playerDetection ??= ServiceRegistry.GetOrFind<PlayerDetection>();
         if (playerDetection != null)
         {
             playerDetection.detectedEnemies.Clear();
@@ -468,7 +525,7 @@ public class BattleTransitionManager : MonoBehaviour
         // dans le NewBattleManager.
 
         // Récupération (ou création) de la référence vers PlayerDetection
-        playerDetection ??= FindFirstObjectByType<PlayerDetection>();
+        playerDetection ??= ServiceRegistry.GetOrFind<PlayerDetection>();
 
         // Valeur par défaut au cas où aucun ennemi valide n'est trouvé
         int battlefieldIndex = 0;
@@ -630,7 +687,7 @@ public class BattleTransitionManager : MonoBehaviour
         //     pour une recherche classique. Sans ce paramètre, l'appel suivant
         //     (playerDetection.enemiesInFight) provoquait une NullReferenceException
         //     et bloquait la sortie de l'écran de victoire.
-        playerDetection ??= FindFirstObjectByType<PlayerDetection>(FindObjectsInactive.Include);
+        playerDetection ??= ServiceRegistry.GetOrFind<PlayerDetection>(FindObjectsInactive.Include);
 
         if (playerDetection == null)
         {
@@ -836,15 +893,11 @@ public class BattleTransitionManager : MonoBehaviour
         if (string.IsNullOrWhiteSpace(tag))
             return null;
 
-        try
-        {
-            return GameObject.FindGameObjectWithTag(tag);
-        }
-        catch (UnityException)
-        {
-            Debug.LogWarning($"[BattleTransitionManager] Tag '{tag}' is not defined.");
-            return null;
-        }
+        if (SceneBindings.TryGetByTag(tag, out GameObject bound) && bound != null)
+            return bound;
+
+        Debug.LogWarning($"[BattleTransitionManager] Tag '{tag}' non bindee dans SceneBindings.");
+        return null;
     }
 
     private IEnumerator PlayPostBattleSequence(List<TimelineSequenceEntry> sequence, PostBattleTimelineContext context)
@@ -1148,18 +1201,28 @@ public class BattleTransitionManager : MonoBehaviour
 
     private void ResolveBattleCamera()
     {
+        if (battleCamera == null && battleBindings != null)
+            battleCamera = battleBindings.BattleCamera;
+        if (battleCamera == null && sceneBindings != null)
+            battleCamera = sceneBindings.BattleCamera;
         if (battleCamera == null)
-            battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+            Debug.LogWarning("[BattleTransitionManager] BattleCamera non assignee dans les bindings.");
     }
 
     private void ResolveVersusCamera()
     {
+        if (versusCamera == null && battleBindings != null)
+            versusCamera = battleBindings.VersusCamera;
+        if (versusCamera == null && sceneBindings != null)
+            versusCamera = sceneBindings.VersusCamera;
         if (versusCamera == null)
-            versusCamera = GameObject.FindGameObjectWithTag("VersusCamera")?.GetComponent<Camera>();
+            Debug.LogWarning("[BattleTransitionManager] VersusCamera non assignee dans les bindings.");
     }
 
     private void ResolveBattleCameraCam()
     {
+        if (battleCameraCam == null && battleBindings != null)
+            battleCameraCam = battleBindings.BattleCameraCam;
         if (battleCameraCam != null)
             return;
 
@@ -1176,15 +1239,21 @@ public class BattleTransitionManager : MonoBehaviour
             }
         }
 
-        GameObject camObj = GameObject.Find("BattleCamera_Cam");
-        if (camObj != null)
-            battleCameraCam = camObj.GetComponent<Camera>();
+        if (sceneBindings != null && sceneBindings.BattleCameraCam != null)
+            battleCameraCam = sceneBindings.BattleCameraCam.GetComponent<Camera>();
+
+        if (battleCameraCam == null)
+            Debug.LogWarning("[BattleTransitionManager] BattleCamera_Cam non assignee dans les bindings.");
     }
 
     private void ResolveTransitionCanvas()
     {
+        if (battleSceneTransitionCanvas == null && battleBindings != null)
+            battleSceneTransitionCanvas = battleBindings.BattleSceneTransitionCanvas;
+        if (battleSceneTransitionCanvas == null && sceneBindings != null)
+            battleSceneTransitionCanvas = sceneBindings.BattleSceneTransitionCanvas;
         if (battleSceneTransitionCanvas == null)
-            battleSceneTransitionCanvas = GameObject.Find("BattleScene_TransitionCanvas");
+            Debug.LogWarning("[BattleTransitionManager] BattleScene_TransitionCanvas non assigne dans les bindings.");
 
         if (battleSceneTransitionPanel == null && battleSceneTransitionCanvas != null)
         {
@@ -1199,7 +1268,19 @@ public class BattleTransitionManager : MonoBehaviour
         if (enemyPosition01 != null)
             return enemyPosition01;
 
-        enemyPosition01 = GameObject.Find("EnemyPosition_01")?.transform;
+        if (battleBindings != null && battleBindings.EnemyPosition01 != null)
+        {
+            enemyPosition01 = battleBindings.EnemyPosition01;
+            return enemyPosition01;
+        }
+
+        if (sceneBindings != null && sceneBindings.EnemyPosition01 != null)
+        {
+            enemyPosition01 = sceneBindings.EnemyPosition01;
+            return enemyPosition01;
+        }
+
+        Debug.LogWarning("[BattleTransitionManager] EnemyPosition_01 non assigne dans les bindings.");
         return enemyPosition01;
     }
 
@@ -1208,7 +1289,19 @@ public class BattleTransitionManager : MonoBehaviour
         if (playerRoot != null)
             return playerRoot;
 
-        playerRoot = GameObject.FindGameObjectWithTag("Player");
+        if (battleBindings != null && battleBindings.PlayerRoot != null)
+        {
+            playerRoot = battleBindings.PlayerRoot;
+            return playerRoot;
+        }
+
+        if (sceneBindings != null && sceneBindings.Player != null)
+        {
+            playerRoot = sceneBindings.Player;
+            return playerRoot;
+        }
+
+        Debug.LogWarning("[BattleTransitionManager] Player non assigne dans les bindings.");
         return playerRoot;
     }
 
@@ -1217,7 +1310,7 @@ public class BattleTransitionManager : MonoBehaviour
         if (cachedPlayerController != null)
             return cachedPlayerController;
 
-        cachedPlayerController = FindFirstObjectByType<CharacterController>(FindObjectsInactive.Include);
+        cachedPlayerController = ServiceRegistry.GetOrFind<CharacterController>(FindObjectsInactive.Include);
         if (cachedPlayerController != null)
             return cachedPlayerController;
 

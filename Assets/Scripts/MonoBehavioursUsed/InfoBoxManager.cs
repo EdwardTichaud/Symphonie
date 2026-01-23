@@ -34,7 +34,8 @@ public class InfoBoxManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
     }
 
     public void OpenInfoBox(string infoTitle, string infoMessage, Sprite infoSprite)

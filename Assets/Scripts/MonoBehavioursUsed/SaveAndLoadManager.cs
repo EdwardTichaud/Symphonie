@@ -20,7 +20,8 @@ public class SaveAndLoadManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
 
         saveDirectory = Path.Combine(Application.persistentDataPath, "Saves");
         if (!Directory.Exists(saveDirectory))

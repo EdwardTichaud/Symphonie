@@ -37,7 +37,10 @@ public class CinematicPlayer : MonoBehaviour
             switch (step.type)
             {
                 case CinematicStepType.PlayTimeline:
-                    yield return PlayTimelineStep(step.timeline);
+                    if (step.timelineDefinition != null)
+                        yield return PlayDefinitionStep(step.timelineDefinition);
+                    else
+                        yield return PlayTimelineStep(step.timeline);
                     break;
                 case CinematicStepType.Wait:
                     yield return new WaitForSeconds(step.waitDuration);
@@ -80,5 +83,89 @@ public class CinematicPlayer : MonoBehaviour
             while (director.state == PlayState.Playing)
                 yield return null;
         }
+    }
+
+    private IEnumerator PlayDefinitionStep(CinematicDefinitionSO definition)
+    {
+        if (definition == null || !definition.HasPlayable)
+        {
+            Debug.LogWarning("[CinematicPlayer] Definition de timeline manquante ou vide.");
+            yield break;
+        }
+
+        if (definition.directorPrefab != null)
+        {
+            PlayableDirector directorToPlay = definition.directorPrefab;
+            bool destroyAfter = false;
+
+            if (!directorToPlay.gameObject.scene.IsValid())
+            {
+                directorToPlay = Instantiate(definition.directorPrefab);
+                destroyAfter = definition.destroyAfterPlay;
+            }
+
+            if (directorToPlay == null)
+                yield break;
+
+            directorToPlay.Stop();
+            directorToPlay.time = 0d;
+            directorToPlay.Evaluate();
+
+            SetTimelineBidings bindings = directorToPlay.GetComponent<SetTimelineBidings>();
+            if (bindings != null)
+                bindings.ApplyBindings();
+
+            if (TimelineManager.Instance != null)
+            {
+                TimelineManager.Instance.PlayTimeline(
+                    directorToPlay,
+                    definition.withFade,
+                    definition.interruptMusic,
+                    definition.allowSkip,
+                    definition.autoRestore,
+                    definition.requiresWorldCamera);
+
+                while (TimelineManager.Instance.IsTimelinePlaying)
+                    yield return null;
+            }
+            else
+            {
+                directorToPlay.Play();
+                while (directorToPlay.state == PlayState.Playing)
+                    yield return null;
+            }
+
+            if (destroyAfter && directorToPlay != null)
+                Destroy(directorToPlay.gameObject);
+
+            yield break;
+        }
+
+        if (definition.timelineAsset == null)
+            yield break;
+
+        if (TimelineManager.Instance == null)
+        {
+            Debug.LogWarning("[CinematicPlayer] TimelineManager introuvable pour jouer un TimelineAsset.");
+            yield break;
+        }
+
+        GameObject caster = null;
+        if (!string.IsNullOrWhiteSpace(definition.casterTag))
+            SceneBindings.TryGetByTag(definition.casterTag, out caster);
+
+        string cameraTag = string.IsNullOrWhiteSpace(definition.cameraTag) ? null : definition.cameraTag;
+
+        TimelineManager.Instance.PlayTimeline(
+            definition.timelineAsset,
+            caster,
+            cameraTag,
+            definition.withFade,
+            definition.interruptMusic,
+            definition.allowSkip,
+            definition.autoRestore);
+
+        while (TimelineManager.Instance.IsTimelinePlaying)
+            yield return null;
     }
 }

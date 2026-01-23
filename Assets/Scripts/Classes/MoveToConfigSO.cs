@@ -101,10 +101,10 @@ public class MoveToConfigSO : ScriptableObject
 
             case DestinationMode.TargetByName:
                 {
-                    var go = GameObject.Find(targetName);
-                    if (go != null)
+                    Transform target = ResolveTargetByName(targetName);
+                    if (target != null)
                     {
-                        moveTarget = go.transform.position + worldOffset;
+                        moveTarget = target.position + worldOffset;
                         return true;
                     }
                     moveTarget = Vector3.zero;
@@ -135,10 +135,10 @@ public class MoveToConfigSO : ScriptableObject
                 {
                     // On réutilise targetName (le même que le déplacement) pour simplicité,
                     // mais tu peux créer un champ dédié si tu veux.
-                    var go = GameObject.Find(targetName);
-                    if (go != null)
+                    Transform target = ResolveTargetByName(targetName);
+                    if (target != null)
                     {
-                        lookTarget = go.transform.position;
+                        lookTarget = target.position;
                         return true;
                     }
                     lookTarget = Vector3.zero;
@@ -148,6 +148,17 @@ public class MoveToConfigSO : ScriptableObject
 
         lookTarget = Vector3.zero;
         return false;
+    }
+
+    private static Transform ResolveTargetByName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return null;
+
+        if (SceneBindings.TryGetByName(name, out GameObject bound) && bound != null)
+            return bound.transform;
+
+        return null;
     }
 }
 

@@ -17,7 +17,7 @@ public class MusicInfoBoxUI : MonoBehaviour
         {
             if (instance == null)
             {
-                instance = FindFirstObjectByType<MusicInfoBoxUI>(FindObjectsInactive.Include);
+                instance = ServiceRegistry.GetOrFind<MusicInfoBoxUI>(FindObjectsInactive.Include);
                 if (instance == null)
                 {
                     var go = new GameObject("MusicInfoBoxUI");
@@ -58,7 +58,8 @@ public class MusicInfoBoxUI : MonoBehaviour
         }
 
         instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
         InitializeUI();
         HideImmediate();
     }

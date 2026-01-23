@@ -7,6 +7,9 @@ using UnityEngine;
 [RequireComponent(typeof(Canvas))]
 public class LocalInfoBox : MonoBehaviour
 {
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     [Header("Placement")]
     [Tooltip("Référence du joueur à suivre. Laisser vide pour recherche automatique via le tag Player.")]
     public Transform playerTransform;
@@ -28,8 +31,14 @@ public class LocalInfoBox : MonoBehaviour
         // Force un rendu en World Space pour suivre un objet dans la scène.
         canvas.renderMode = RenderMode.WorldSpace;
 
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+
         // Récupération de la WorldCamera définie par son tag.
-        worldCamera = GameObject.FindGameObjectWithTag("WorldCamera")?.GetComponent<Camera>();
+        if (worldCamera == null && sceneBindings != null)
+            worldCamera = sceneBindings.WorldCamera;
+        if (worldCamera == null && Camera.main != null)
+            worldCamera = Camera.main;
         if (worldCamera != null)
         {
             canvas.worldCamera = worldCamera;
@@ -74,10 +83,12 @@ public class LocalInfoBox : MonoBehaviour
 
     private bool TryResolvePlayer()
     {
-        var player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+
+        if (sceneBindings != null && sceneBindings.Player != null)
         {
-            playerTransform = player.transform;
+            playerTransform = sceneBindings.Player.transform;
             warnedMissingPlayer = false;
             return true;
         }

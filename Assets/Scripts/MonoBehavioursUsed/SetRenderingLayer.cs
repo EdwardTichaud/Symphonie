@@ -40,7 +40,8 @@ public class SetRenderingLayer : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            if (!GameRoot.KeepManagersSceneBound)
+                DontDestroyOnLoad(gameObject);
         }
         else
         {

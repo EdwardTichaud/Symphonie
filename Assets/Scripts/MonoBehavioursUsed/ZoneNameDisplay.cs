@@ -36,7 +36,8 @@ public class ZoneNameDisplay : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
 
         canvasGroup = canvasGroup ?? GetComponentInChildren<CanvasGroup>(true) ?? gameObject.AddComponent<CanvasGroup>();
         InitializeCanvasGroup();

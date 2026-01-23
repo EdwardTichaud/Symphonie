@@ -18,7 +18,8 @@ public class FadeChildrenOpacity : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
     }
 
     /// <summary>

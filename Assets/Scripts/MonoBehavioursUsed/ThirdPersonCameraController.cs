@@ -11,6 +11,9 @@ public class ThirdPersonCameraController : MonoBehaviour
     [Tooltip("Transform du joueur (Lucian) autour duquel la caméra orbite.")]
     public Transform target;
 
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     [Header("Paramètres d'orbite")]
     [Tooltip("Distance par défaut entre la caméra et la cible.")]
     public float distance = 5f;
@@ -42,8 +45,10 @@ public class ThirdPersonCameraController : MonoBehaviour
         if (target == null)
         {
             Debug.LogWarning("[ThirdPersonCameraController] Aucune cible assignée, recherche d'un objet tagué 'Player'.");
-            var playerObj = GameObject.FindGameObjectWithTag("Player");
-            if (playerObj != null) target = playerObj.transform;
+            if (sceneBindings == null)
+                sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+            if (sceneBindings != null && sceneBindings.Player != null)
+                target = sceneBindings.Player.transform;
         }
 
         // Initialisation des angles à partir de la rotation actuelle de la caméra.

@@ -11,6 +11,9 @@ public class RhythmQTEManager : MonoBehaviour
 {
     public static RhythmQTEManager Instance { get; private set; }
 
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     public MusicalMoveSO currentMove;
     private float startTime;
     private int currentBeatIndex = 0;
@@ -195,32 +198,31 @@ public class RhythmQTEManager : MonoBehaviour
         if (qteUIParent != null)
             return qteUIParent;
 
-        var freeformPanel = GameObject.Find("QTEPanel");
-        if (freeformPanel != null)
-        {
-            qteUIParent = freeformPanel.transform;
-            return qteUIParent;
-        }
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
 
-        var qtePanel = GameObject.Find("QTECirclesPanel");
-        if (qtePanel != null)
+        if (sceneBindings != null)
         {
-            qteUIParent = qtePanel.transform;
-            return qteUIParent;
-        }
-
-        string[] preferredNames = { "Battle_UICanvas_BattleCamera", "BattleScene_UI_QTECircle", "BattleCameraCanvas" };
-        foreach (string name in preferredNames)
-        {
-            var go = GameObject.Find(name);
-            if (go != null)
+            if (sceneBindings.QtePanel != null)
             {
-                qteUIParent = go.transform;
+                qteUIParent = sceneBindings.QtePanel.transform;
+                return qteUIParent;
+            }
+
+            if (sceneBindings.QteCirclesPanel != null)
+            {
+                qteUIParent = sceneBindings.QteCirclesPanel.transform;
+                return qteUIParent;
+            }
+
+            if (sceneBindings.BattleCameraCanvas != null)
+            {
+                qteUIParent = sceneBindings.BattleCameraCanvas.transform;
                 return qteUIParent;
             }
         }
 
-        Canvas canvas = FindObjectOfType<Canvas>(true);
+        Canvas canvas = ServiceRegistry.GetOrFind<Canvas>(FindObjectsInactive.Include);
         if (canvas != null)
         {
             qteUIParent = canvas.transform;

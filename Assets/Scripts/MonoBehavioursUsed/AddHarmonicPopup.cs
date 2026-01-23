@@ -57,8 +57,17 @@ public class AddHarmonicPopup : MonoBehaviour
         {
             // Dans certaines scènes de tests simplifiées, la BattleCamera n'est pas instanciée :
             // on sécurise donc sa récupération pour éviter une NullReference qui crasherait le popup.
-            GameObject battleCameraGO = GameObject.FindGameObjectWithTag("BattleCamera");
-            if (battleCameraGO == null)
+            SceneBindings bindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+            if (bindings != null && bindings.BattleCameraComponent != null)
+                battleCamera = bindings.BattleCameraComponent;
+
+            if (battleCamera == null && Camera.main != null)
+            {
+                battleCamera = Camera.main;
+                Debug.LogWarning("[AddHarmonicPopup] BattleCamera non assignée, fallback sur Camera.main.");
+            }
+
+            if (battleCamera == null)
             {
                 Debug.LogWarning("[AddHarmonicPopup] Aucune BattleCamera trouvée : initialisation du popup annulée pour cette scène simplifiée.");
                 Release();
@@ -66,7 +75,6 @@ public class AddHarmonicPopup : MonoBehaviour
             }
 
             // La caméra est indispensable pour convertir la position monde en position écran du popup.
-            battleCamera = battleCameraGO.GetComponent<Camera>();
             if (battleCamera == null)
             {
                 Debug.LogWarning("[AddHarmonicPopup] Le GameObject BattleCamera n'a pas de composant Camera : initialisation du popup annulée.");

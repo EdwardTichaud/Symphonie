@@ -30,7 +30,8 @@ public class AchievementManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
 
         // Applique immédiatement l'état chargé si une sauvegarde a déjà été lue.
         if (GameManager.Instance != null && GameManager.Instance.gameData != null)

@@ -2,6 +2,9 @@ using UnityEngine;
 
 public class EnemyOrientationHandler : MonoBehaviour
 {
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     [Header("Réglages")]
     public float rotationSpeed = 5f;
     public float detectionRange = 10f;
@@ -9,7 +12,11 @@ public class EnemyOrientationHandler : MonoBehaviour
 
     void Start()
     {
-        player = GameObject.FindGameObjectWithTag("Player")?.transform;
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+        if (sceneBindings != null && sceneBindings.Player != null)
+            player = sceneBindings.Player.transform;
+
         if (player == null)
         {
             Debug.LogError("Player manquant !");

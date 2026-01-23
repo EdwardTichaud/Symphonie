@@ -25,7 +25,8 @@ public class ConfirmationBox : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
         gameObject.SetActive(false); // Masqué par défaut
     }
 

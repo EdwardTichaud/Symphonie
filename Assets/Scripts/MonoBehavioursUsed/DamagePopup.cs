@@ -312,9 +312,9 @@ public class DamagePopup : MonoBehaviour
 
     private Camera ResolveBattleCamera()
     {
-        GameObject battleCameraGO = GameObject.FindGameObjectWithTag("BattleCamera");
-        if (battleCameraGO != null)
-            return battleCameraGO.GetComponent<Camera>();
+        SceneBindings bindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+        if (bindings != null && bindings.BattleCameraComponent != null)
+            return bindings.BattleCameraComponent;
 
         return Camera.main;
     }

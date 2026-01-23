@@ -82,7 +82,8 @@ public class DialogueManager : MonoBehaviour
         // Évite l'avertissement "DontDestroyOnLoad" hors Play Mode
         if (Application.isPlaying)
         {
-            DontDestroyOnLoad(gameObject);
+            if (!GameRoot.KeepManagersSceneBound)
+                DontDestroyOnLoad(gameObject);
         }
 
         rectTransform = GetComponent<RectTransform>();

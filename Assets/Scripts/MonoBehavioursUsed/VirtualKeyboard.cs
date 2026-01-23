@@ -74,7 +74,8 @@ public class VirtualKeyboard : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            if (!GameRoot.KeepManagersSceneBound)
+                DontDestroyOnLoad(gameObject);
         }
         else
         {

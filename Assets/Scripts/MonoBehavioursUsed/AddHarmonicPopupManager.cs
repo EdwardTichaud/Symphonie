@@ -9,6 +9,9 @@ public class AddHarmonicPopupManager : MonoBehaviour
 {
     private static AddHarmonicPopupManager _instance;
 
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     /// <summary>
     /// Accès global au gestionnaire. Recherche automatiquement une instance dans la scène si nécessaire.
     /// </summary>
@@ -17,7 +20,7 @@ public class AddHarmonicPopupManager : MonoBehaviour
         get
         {
             if (_instance == null)
-                _instance = FindFirstObjectByType<AddHarmonicPopupManager>(); // Utilise la nouvelle API; l'ancienne méthode FindObjectOfType est obsolète
+                _instance = ServiceRegistry.GetOrFind<AddHarmonicPopupManager>(); // Utilise une recherche centralisée et mise en cache.
             return _instance;
         }
     }
@@ -51,9 +54,16 @@ public class AddHarmonicPopupManager : MonoBehaviour
         if (battleCamera != null)
             return;
 
-        GameObject battleCameraGO = GameObject.FindGameObjectWithTag("BattleCamera");
-        if (battleCameraGO != null)
-            battleCamera = battleCameraGO.GetComponent<Camera>();
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+        if (sceneBindings != null)
+            battleCamera = sceneBindings.BattleCameraComponent;
+
+        if (battleCamera != null)
+            return;
+
+        if (Camera.main != null)
+            battleCamera = Camera.main;
     }
 
     private void PrewarmPool()

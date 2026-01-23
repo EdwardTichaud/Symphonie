@@ -43693,6 +43693,127 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 3559804880400748945, guid: 8d3f6f7585963af41ae264de453fbd90, type: 3}
   m_PrefabInstance: {fileID: 604496005}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &606972344
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 606972346}
+  - component: {fileID: 606972348}
+  - component: {fileID: 606972345}
+  - component: {fileID: 606972347}
+  m_Layer: 0
+  m_Name: GameRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &606972345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606972344}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b83f038d4d4439fb47cc927d26c12b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Symphonie.Core::SceneBindings
+  player: {fileID: 0}
+  worldCamera: {fileID: 0}
+  battleCamera: {fileID: 0}
+  versusCamera: {fileID: 0}
+  worldScene: {fileID: 0}
+  worldFadeOverlayPanel: {fileID: 0}
+  battleCameraCam: {fileID: 0}
+  battleSceneTransitionCanvas: {fileID: 0}
+  enemyPosition01: {fileID: 0}
+  battlefieldParent: {fileID: 0}
+  localInfoBoxCanvas: {fileID: 0}
+  battleCameraCanvas: {fileID: 0}
+  timelineLauncher: {fileID: 0}
+  timelineManagerCanvas: {fileID: 0}
+  qtePanel: {fileID: 0}
+  qteCirclesPanel: {fileID: 0}
+  extraNames: []
+  extraTags: []
+--- !u!4 &606972346
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606972344}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &606972347
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606972344}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 07bfdee5df374c15a418f22e1dbfff81, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Symphonie.Runtime::BattleSceneBindings
+  worldScene: {fileID: 0}
+  worldFadeOverlay: {fileID: 0}
+  battleCamera: {fileID: 0}
+  battleCameraCam: {fileID: 0}
+  battleCameraRig: {fileID: 0}
+  battleCameraCanvasTransform: {fileID: 0}
+  battleCameraCanvas: {fileID: 0}
+  versusCamera: {fileID: 0}
+  qteCircle: {fileID: 0}
+  battleTimeline: {fileID: 0}
+  passTurnButton: {fileID: 0}
+  actionDisplayPanel: {fileID: 0}
+  victoryScreen: {fileID: 0}
+  gameOverScreen: {fileID: 0}
+  battleSceneTransitionCanvas: {fileID: 0}
+  enemyPosition01: {fileID: 0}
+  playerRoot: {fileID: 0}
+  versusCameraCanvas: {fileID: 0}
+  brokenGlass: {fileID: 0}
+  versusTransition: {fileID: 0}
+  su1: {fileID: 0}
+  su2: {fileID: 0}
+  su3: {fileID: 0}
+  eu1: {fileID: 0}
+  eu2: {fileID: 0}
+  eu3: {fileID: 0}
+  unitSpawnPointsAnimator: {fileID: 0}
+  continuePrompts: []
+--- !u!114 &606972348
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 606972344}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c83b18ad406347bdbcec15e47f9cee6c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Symphonie.Runtime::GameRoot
+  keepManagersSceneBound: 1
+  persistRootAcrossScenes: 0
+  sceneBindings: {fileID: 606972345}
+  battleSceneBindings: {fileID: 606972347}
+  services: []
 --- !u!1001 &607295219
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -127309,7 +127430,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1753353395}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.73989725, y: 0.45654818, z: 0.3822965, w: 0.31299397}
+  m_LocalRotation: {x: -0.578901, y: -0.64866084, z: -0.27711403, w: -0.40904844}
   m_LocalPosition: {x: 0.000032186508, y: 0.31699875, z: -0.000006561318}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -168336,15 +168457,15 @@ PrefabInstance:
       objectReference: {fileID: 9100000, guid: 537fed15c54a0bc4bb8020d85ab7d303, type: 2}
     - target: {fileID: 6358138649205898532, guid: b7bdc31b739d78046952ff3fac003073, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 3.8937733
+      value: 4.354372
       objectReference: {fileID: 0}
     - target: {fileID: 6358138649205898532, guid: b7bdc31b739d78046952ff3fac003073, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.8885053
+      value: 0.91083467
       objectReference: {fileID: 0}
     - target: {fileID: 6358138649205898532, guid: b7bdc31b739d78046952ff3fac003073, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.45886657
+      value: 0.41277143
       objectReference: {fileID: 0}
     - target: {fileID: 6523373087759728669, guid: b7bdc31b739d78046952ff3fac003073, type: 3}
       propertyPath: m_Name
@@ -222609,7 +222730,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4957865243419136189, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.017919034
+      value: 0.20016953
       objectReference: {fileID: 0}
     - target: {fileID: 5328497704870498945, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchorMax.y
@@ -222953,7 +223074,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9002251911775550289, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0.112501234
+      value: 0.010774702
       objectReference: {fileID: 0}
     - target: {fileID: 9190650189389976031, guid: 038d7e51498c83145875dc84d021fe80, type: 3}
       propertyPath: m_AnchorMax.y
@@ -352563,15 +352684,15 @@ PrefabInstance:
       objectReference: {fileID: 21300000, guid: ed96294a13cc071448b3f7c68c0caed7, type: 3}
     - target: {fileID: 3530916593182424209, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.89778566
+      value: 0.8852932
       objectReference: {fileID: 0}
     - target: {fileID: 3530916593182424209, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.89778566
+      value: 0.8852932
       objectReference: {fileID: 0}
     - target: {fileID: 3530916593182424209, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.89778566
+      value: 0.8852932
       objectReference: {fileID: 0}
     - target: {fileID: 3864065477802772568, guid: afcdc6a22ba63e34b9b1f408a190fd7c, type: 3}
       propertyPath: m_IsActive
@@ -567381,6 +567502,7 @@ SceneRoots:
   - {fileID: 6407035962756847837}
   - {fileID: 5932041926164081105}
   - {fileID: 1353433953795746756}
+  - {fileID: 606972346}
   - {fileID: 2143709549}
   - {fileID: 8775904671158352580}
   - {fileID: 4882348263175097079}

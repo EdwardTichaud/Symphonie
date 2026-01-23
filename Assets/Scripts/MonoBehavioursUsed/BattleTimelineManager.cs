@@ -11,6 +11,9 @@ public class BattleTimelineManager : MonoBehaviour
     /// <summary>Instance statique accessible depuis les autres scripts.</summary>
     public static BattleTimelineManager Instance { get; private set; }
 
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     /// <summary>
     /// Mémorise l'unité ayant lancé la dernière timeline. Cette information
     /// permet de fournir un arrêt ou un suivi de lecture par défaut lorsque
@@ -27,6 +30,8 @@ public class BattleTimelineManager : MonoBehaviour
             return;
         }
         Instance = this;
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
     }
 
     /// <summary>
@@ -41,7 +46,22 @@ public class BattleTimelineManager : MonoBehaviour
             return;
 
         // On récupère le parent direct (BattleCamera_Origin) pour déplacer l'ensemble du rig.
-        GameObject cameraGO = GameObject.FindGameObjectWithTag(cameraTag);
+        GameObject cameraGO = null;
+        if (sceneBindings != null)
+        {
+            if (cameraTag == "BattleCamera")
+                cameraGO = sceneBindings.BattleCamera;
+            else if (cameraTag == "WorldCamera" && sceneBindings.WorldCamera != null)
+                cameraGO = sceneBindings.WorldCamera.gameObject;
+            else if (cameraTag == "VersusCamera" && sceneBindings.VersusCamera != null)
+                cameraGO = sceneBindings.VersusCamera.gameObject;
+        }
+
+        if (cameraGO == null)
+        {
+            Debug.LogWarning($"[BattleTimelineManager] Camera tag '{cameraTag}' non bindee dans SceneBindings.");
+            return;
+        }
         Transform cameraParent = cameraGO != null ? cameraGO.transform.parent : null;
 
         if (cameraParent != null)

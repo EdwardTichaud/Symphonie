@@ -12,6 +12,8 @@ public class ThirdPersonPlayerController : MonoBehaviour
     [Tooltip("Transform de la WorldCamera utilisée pour orienter le déplacement.")]
     public Transform cameraTransform;
 
+    [SerializeField] private SceneBindings sceneBindings;
+
     private CharacterController controller;
     [SerializeField] private Animator animator;
 
@@ -141,6 +143,9 @@ public class ThirdPersonPlayerController : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
 
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+
         if (animator != null)
         {
             animator.applyRootMotion = false;
@@ -167,7 +172,7 @@ public class ThirdPersonPlayerController : MonoBehaviour
 
         if (cameraTransform == null)
         {
-            Camera worldCam = GameObject.FindGameObjectWithTag("WorldCamera")?.GetComponent<Camera>();
+            Camera worldCam = sceneBindings != null ? sceneBindings.WorldCamera : null;
             if (worldCam != null) cameraTransform = worldCam.transform;
             else if (Camera.main != null) cameraTransform = Camera.main.transform;
             else Debug.LogWarning("[ThirdPersonPlayerController] Aucune WorldCamera ou MainCamera trouvée.");

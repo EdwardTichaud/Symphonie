@@ -72,6 +72,9 @@ public partial class NewBattleManager : MonoBehaviour
 {
     public static NewBattleManager Instance { get; private set; }
 
+    [Header("Bindings")]
+    [SerializeField] private BattleSceneBindings battleBindings;
+
     [Header("État du combat")]
     public BattleState currentBattleState;
     private int battleEventMenuLockCount;
@@ -514,7 +517,12 @@ public partial class NewBattleManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
+
+        if (battleBindings == null)
+            battleBindings = ServiceRegistry.GetOrFind<BattleSceneBindings>(FindObjectsInactive.Include);
+        ApplyBattleBindings();
 
         // 🗑️ Les expérimentations de tours lents ayant été supprimées, le BattleManager
         //     fonctionne désormais exclusivement avec la boucle classique.
@@ -2016,6 +2024,21 @@ public partial class NewBattleManager : MonoBehaviour
         if (battleCameraRig != null)
             return battleCameraRig;
 
+        if (battleBindings != null)
+        {
+            if (battleBindings.BattleCameraRig != null)
+            {
+                battleCameraRig = battleBindings.BattleCameraRig;
+                return battleCameraRig;
+            }
+
+            if (battleBindings.BattleCameraCam != null)
+            {
+                battleCameraRig = battleBindings.BattleCameraCam.transform;
+                return battleCameraRig;
+            }
+        }
+
         if (battleCamera != null)
         {
             Camera[] cameras = battleCamera.GetComponentsInChildren<Camera>(true);
@@ -2029,15 +2052,8 @@ public partial class NewBattleManager : MonoBehaviour
             }
         }
 
-        var cameraGO = GameObject.Find("BattleCamera_Cam");
-        if (cameraGO == null)
-        {
-            Debug.LogWarning("[NewBattleManager] Impossible de localiser 'BattleCamera_Cam' dans la scène.");
-            return null;
-        }
-
-        battleCameraRig = cameraGO.transform;
-        return battleCameraRig;
+        Debug.LogWarning("[NewBattleManager] BattleCamera_Cam non assignee dans BattleSceneBindings.");
+        return null;
     }
 
     private void SetupCurrentUnitMenus()
@@ -3906,11 +3922,25 @@ public partial class NewBattleManager : MonoBehaviour
         PlayCharacterSelectionClip(currentCharacterUnit);
     }
 
+    private void ApplyBattleBindings()
+    {
+        if (battleBindings == null)
+            return;
+
+        if (battleCamera == null)
+            battleCamera = battleBindings.BattleCamera;
+        if (battleCameraRig == null)
+            battleCameraRig = battleBindings.BattleCameraRig;
+        if (battleCameraCanvasTransform == null)
+            battleCameraCanvasTransform = battleBindings.BattleCameraCanvasTransform ?? battleBindings.BattleCameraCanvas?.transform;
+    }
+
     private void EnsureBattleCamera()
     {
+        ApplyBattleBindings();
         if (battleCamera == null)
         {
-            battleCamera = GameObject.FindGameObjectWithTag("BattleCamera");
+            Debug.LogWarning("[NewBattleManager] BattleCamera non assignee dans BattleSceneBindings.");
         }
     }
 
@@ -3921,6 +3951,7 @@ public partial class NewBattleManager : MonoBehaviour
     /// </summary>
     private void EnsureBattleCameraCanvas()
     {
+        ApplyBattleBindings();
         if (battleCameraCanvasTransform != null)
         {
             return; // Une référence manuelle a peut-être été fournie dans l'inspecteur.
@@ -3946,13 +3977,6 @@ public partial class NewBattleManager : MonoBehaviour
         }
 
         // Deuxième tentative : recherche directe par nom, adaptée aux scènes déjà configurées.
-        GameObject canvasGO = GameObject.Find("BattleCameraCanvas");
-        if (canvasGO != null)
-        {
-            battleCameraCanvasTransform = canvasGO.transform;
-            return;
-        }
-
         Debug.LogWarning("[NewBattleManager] Impossible de localiser 'BattleCameraCanvas'. L'indicateur de portée ne sera pas instancié.");
     }
 

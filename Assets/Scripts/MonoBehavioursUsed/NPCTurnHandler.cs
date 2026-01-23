@@ -16,6 +16,7 @@ public class NPCTurnHandler : MonoBehaviour
 
     private Animator animator;          // Référence vers l'Animator du PNJ
     private Transform playerTransform;  // Transform du joueur, recherché au premier appel
+    [SerializeField] private SceneBindings sceneBindings;
 
     void Awake()
     {
@@ -31,9 +32,10 @@ public class NPCTurnHandler : MonoBehaviour
         // Récupère le transform du joueur si besoin
         if (playerTransform == null)
         {
-            GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
-            if (playerObj != null)
-                playerTransform = playerObj.transform;
+            if (sceneBindings == null)
+                sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+            if (sceneBindings != null && sceneBindings.Player != null)
+                playerTransform = sceneBindings.Player.transform;
         }
 
         if (playerTransform == null)

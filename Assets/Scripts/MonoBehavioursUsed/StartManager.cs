@@ -36,6 +36,27 @@ public class StartManager : MonoBehaviour
     /// </summary>
     void SetIdleInWorld()
     {
-        GameObject.FindGameObjectWithTag("Player").GetComponentInChildren<Animator>().Play("Idle_World");
+        SceneBindings bindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+        GameObject player = bindings != null ? bindings.Player : null;
+        if (player == null)
+        {
+            Debug.LogWarning("[StartManager] Aucun joueur trouvé pour forcer l'animation Idle_World.");
+            return;
+        }
+
+        Animator animator = player.GetComponentInChildren<Animator>();
+        if (animator == null)
+        {
+            Debug.LogWarning("[StartManager] Aucun Animator trouvé sur le joueur.");
+            return;
+        }
+
+        if (animator.runtimeAnimatorController == null)
+        {
+            Debug.LogWarning("[StartManager] Animator sans controller, impossible de jouer Idle_World.");
+            return;
+        }
+
+        animator.Play("Idle_World");
     }
 }

@@ -34,15 +34,22 @@ public partial class NewBattleManager
         if (cache != null)
             return cache;
 
-        var taggedRoot = GameObject.FindGameObjectWithTag(requiredTag);
-        if (taggedRoot == null)
+        if (battleBindings != null)
         {
-            Debug.LogWarning($"[NewBattleManager] Aucun objet avec le tag '{requiredTag}' n'a été trouvé dans la scène.");
-            return null;
+            if (requiredTag == "PlayerSpawn" && battleBindings.PlayerSpawnRoot != null)
+            {
+                cache = battleBindings.PlayerSpawnRoot;
+                return cache;
+            }
+            if (requiredTag == "EnemySpawn" && battleBindings.EnemySpawnRoot != null)
+            {
+                cache = battleBindings.EnemySpawnRoot;
+                return cache;
+            }
         }
 
-        cache = taggedRoot.transform;
-        return cache;
+        Debug.LogWarning($"[NewBattleManager] Aucun spawn root '{requiredTag}' n'a été assigné dans BattleSceneBindings.");
+        return null;
     }
 
     private void SpawnSquadUnits()

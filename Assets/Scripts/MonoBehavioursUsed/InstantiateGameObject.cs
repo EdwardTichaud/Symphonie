@@ -103,7 +103,7 @@ public class InstantiateGameObject : MonoBehaviour
         {
             // Pas de gestionnaire de combat : contexte non prévu (ex. cinématique).
             Debug.LogWarning("[InstantiateGameObject] NewBattleManager introuvable, instanciation sur le porteur de script.");
-            var playerController = FindFirstObjectByType<ThirdPersonPlayerController>();
+            var playerController = ServiceRegistry.GetOrFind<ThirdPersonPlayerController>();
             if (playerController != null)
             {
                 // Hors combat, on aligne la rotation sur le joueur si possible.
@@ -111,7 +111,8 @@ public class InstantiateGameObject : MonoBehaviour
             }
             else
             {
-                var player = GameObject.FindGameObjectWithTag("Player");
+                SceneBindings bindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+                GameObject player = bindings != null ? bindings.Player : null;
                 if (player != null)
                     spawnRotation = player.transform.rotation;
             }

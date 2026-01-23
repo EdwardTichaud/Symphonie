@@ -11,6 +11,9 @@ public class TimelineManager : MonoBehaviour
 {
     public static TimelineManager Instance { get; private set; }
 
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     /// <summary>
     /// Référence de la Timeline en cours.
     /// </summary>
@@ -352,12 +355,14 @@ public class TimelineManager : MonoBehaviour
         else
         {
             Instance = this;
+            if (sceneBindings == null)
+                sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
 
             // Recherche ou création du PlayableDirector dédié à la lecture des TimelineAsset.
             if (reusableDirector == null)
             {
                 // Tente de récupérer l'ancien objet "TimelineLauncher" s'il existe encore dans la scène.
-                var launcherGO = GameObject.Find("TimelineLauncher");
+                var launcherGO = sceneBindings != null ? sceneBindings.TimelineLauncher : null;
                 if (launcherGO != null)
                 {
                     reusableDirector = launcherGO.GetComponent<PlayableDirector>();
@@ -375,7 +380,7 @@ public class TimelineManager : MonoBehaviour
             // Recherche et désactivation du Canvas de gestion des timelines
             if (timelineCanvas == null)
             {
-                timelineCanvas = GameObject.Find("TimelineManagerCanvas");
+                timelineCanvas = sceneBindings != null ? sceneBindings.TimelineManagerCanvas : null;
             }
             if (timelineCanvas != null)
             {
@@ -467,9 +472,21 @@ public class TimelineManager : MonoBehaviour
         if (cameraTagCache.TryGetValue(cameraTag, out GameObject cached) && cached != null)
             return cached;
 
-        GameObject found = GameObject.FindGameObjectWithTag(cameraTag);
+        GameObject found = null;
+        if (sceneBindings != null)
+        {
+            if (cameraTag == "WorldCamera" && sceneBindings.WorldCamera != null)
+                found = sceneBindings.WorldCamera.gameObject;
+            else if (cameraTag == "BattleCamera" && sceneBindings.BattleCamera != null)
+                found = sceneBindings.BattleCamera;
+            else if (cameraTag == "VersusCamera" && sceneBindings.VersusCamera != null)
+                found = sceneBindings.VersusCamera.gameObject;
+        }
+
         if (found != null)
             cameraTagCache[cameraTag] = found;
+        else
+            Debug.LogWarning($"[TimelineManager] Camera tag '{cameraTag}' non bindee dans SceneBindings.");
 
         return found;
     }
@@ -983,7 +1000,11 @@ public class TimelineManager : MonoBehaviour
         if (timeline == null)
             return;
 
-        var worldCam = GameObject.FindGameObjectWithTag("WorldCamera");
+        Camera worldCamComponent = sceneBindings != null ? sceneBindings.WorldCamera : null;
+        GameObject worldCam = worldCamComponent != null ? worldCamComponent.gameObject : null;
+        if (worldCam == null && Camera.main != null)
+            worldCam = Camera.main.gameObject;
+
         Animator camAnimator = worldCam != null
             ? (worldCam.transform.parent != null
                 ? worldCam.transform.parent.GetComponent<Animator>()
@@ -1015,7 +1036,7 @@ public class TimelineManager : MonoBehaviour
         if (hasStoredPlayerRotation)
             return;
 
-        var player = FindFirstObjectByType<ThirdPersonPlayerController>();
+        var player = ServiceRegistry.GetOrFind<ThirdPersonPlayerController>();
         if (player == null)
             return;
 

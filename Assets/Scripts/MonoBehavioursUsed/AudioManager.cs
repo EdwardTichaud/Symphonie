@@ -243,7 +243,8 @@ public class AudioManager : MonoBehaviour
     private void RegisterInstance()
     {
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
         if (transform.parent != null)
             transform.SetParent(null, true);
     }

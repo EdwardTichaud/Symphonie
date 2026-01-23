@@ -17,7 +17,8 @@ public class CombatSkyboxManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
         defaultSkybox = RenderSettings.skybox;
     }
 

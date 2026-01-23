@@ -75,7 +75,8 @@ public class PostProcessManager : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
 
         // Récupération des effets pour sauvegarder leurs valeurs de base
         if (volume != null && volume.profile != null)

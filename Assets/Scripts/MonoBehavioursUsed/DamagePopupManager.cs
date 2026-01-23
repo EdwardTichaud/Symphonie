@@ -6,6 +6,9 @@ public class DamagePopupManager : MonoBehaviour
 {
     private static DamagePopupManager _instance;
 
+    [Header("Bindings")]
+    [SerializeField] private SceneBindings sceneBindings;
+
     /// <summary>
     /// Accès global au gestionnaire. Cherche automatiquement une instance
     /// existante dans la scène si aucune n'a encore été assignée.
@@ -15,7 +18,7 @@ public class DamagePopupManager : MonoBehaviour
         get
         {
             if (_instance == null)
-                _instance = FindFirstObjectByType<DamagePopupManager>(); // Migration vers la nouvelle API de recherche d'objets
+                _instance = ServiceRegistry.GetOrFind<DamagePopupManager>(); // Recherche centralisée et mise en cache.
             return _instance;
         }
     }
@@ -78,11 +81,12 @@ public class DamagePopupManager : MonoBehaviour
         if (battleCamera != null)
             return;
 
-        GameObject battleCameraGO = GameObject.FindGameObjectWithTag("BattleCamera");
-        if (battleCameraGO != null)
-            battleCamera = battleCameraGO.GetComponent<Camera>();
+        if (sceneBindings == null)
+            sceneBindings = ServiceRegistry.GetOrFind<SceneBindings>(FindObjectsInactive.Include);
+        if (sceneBindings != null)
+            battleCamera = sceneBindings.BattleCameraComponent;
 
-        if (battleCamera == null)
+        if (battleCamera == null && Camera.main != null)
             battleCamera = Camera.main;
     }
 

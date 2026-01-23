@@ -30,7 +30,8 @@ public class AllegianceManager : MonoBehaviour
         }
 
         Instance = this;
-        DontDestroyOnLoad(gameObject);
+        if (!GameRoot.KeepManagersSceneBound)
+            DontDestroyOnLoad(gameObject);
     }
 
     public static AllegianceManager EnsureInstance()
@@ -38,7 +39,7 @@ public class AllegianceManager : MonoBehaviour
         if (Instance != null)
             return Instance;
 
-        var existing = FindFirstObjectByType<AllegianceManager>();
+        var existing = ServiceRegistry.GetOrFind<AllegianceManager>();
         if (existing != null)
         {
             Instance = existing;

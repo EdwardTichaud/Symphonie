@@ -25,7 +25,10 @@ public class OrbitAroundTriggerSO : ScriptableObject
             return;
         }
 
-        target = GameObject.Find(targetName)?.transform;
+        if (SceneBindings.TryGetByName(targetName, out GameObject bound) && bound != null)
+            target = bound.transform;
+        else
+            target = null;
 
         if (target == null)
         {
